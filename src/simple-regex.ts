@@ -5,7 +5,7 @@ const specialCharacters = ['.', '+', '?', '$', '{', '}', '(', ')', '[', ']', '/'
 const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g');
 
 /**
- * Replaces all occurencies of a string "find" with "replace" str;
+ * Replaces all occurrences of a string "find" with "replace" str;
  */
 const replaceAll = function(str: string, find: string, replace: string): string {
   if (!str) {
@@ -104,8 +104,8 @@ export class SimpleRegex {
         regex.substring(0, this.MASK_START_URL.length) +
         replaceAll(
           regex.substring(this.MASK_START_URL.length, regex.length - this.MASK_PIPE.length),
-          '|',
-          '\\|',
+          this.MASK_PIPE,
+          `\\${this.MASK_PIPE}`,
         ) +
         regex.substring(regex.length - this.MASK_PIPE.length);
     } else {
