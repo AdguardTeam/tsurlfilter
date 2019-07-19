@@ -5,7 +5,7 @@ describe('SimpleRegex.patternToRegexp', () => {
         const regex = SimpleRegex.patternToRegexp('||example.org^')
         const expected = SimpleRegex.REGEX_START_URL + 'example\\.org' + SimpleRegex.REGEX_SEPARATOR
         expect(regex).toEqual(expected)
-    })
+    });
 
     it('works if pipes are transformed properly', () => {
         const regex = SimpleRegex.patternToRegexp('|https://example.org|')
@@ -14,7 +14,7 @@ describe('SimpleRegex.patternToRegexp', () => {
             'https:\\/\\/example\\.org' +
             SimpleRegex.REGEX_END_STRING
         expect(regex).toEqual(expected)
-    })
+    });
 
     it('works if separator and any characters are transformed properly', () => {
         const regex = SimpleRegex.patternToRegexp('|https://example.org/[*]^')
@@ -25,11 +25,11 @@ describe('SimpleRegex.patternToRegexp', () => {
             '\\]' +
             SimpleRegex.REGEX_SEPARATOR
         expect(regex).toEqual(expected)
-    })
+    });
 
     it('works if regex pattern is properly transformed', () => {
         const regex = SimpleRegex.patternToRegexp('/(example)+\\.org/')
         const expected = '(example)+\\.org'
         expect(regex).toEqual(expected)
-    })
+    });
 })
