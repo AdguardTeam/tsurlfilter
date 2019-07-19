@@ -1,6 +1,4 @@
 {
-  "extends": [
-    "tslint-config-standard",
-    "tslint-config-prettier"
-  ]
+  "extends": ["tslint-config-airbnb"],
+  "space-before-function-paren": "never"
 }
