@@ -1,5 +1,4 @@
 import { parse } from 'tldts';
-import { IResult } from 'tldts-core';
 
 /**
  * RequestType is the request types enumeration
@@ -86,12 +85,12 @@ export class Request {
 
     /**
      * Creates an instance of a Request
-     * 
+     *
      * @param url request URL
      * @param sourceUrl source URL
      * @param requestType request type
-     * 
-     * @throws 
+     *
+     * @throws
      */
     constructor(url: string, sourceUrl: string | null, requestType: RequestType) {
         this.url = url;
@@ -99,12 +98,12 @@ export class Request {
         this.sourceUrl = sourceUrl;
         this.requestType = requestType;
 
-        let tldResult = parse(url);
+        const tldResult = parse(url);
         this.hostname = tldResult.hostname!;
         this.domain = tldResult.domain!;
 
         if (sourceUrl) {
-            let sourceTldResult = parse(sourceUrl);
+            const sourceTldResult = parse(sourceUrl);
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
         } else {
@@ -113,7 +112,7 @@ export class Request {
         }
 
         if (this.sourceDomain) {
-            this.thirdParty = (this.domain !== this.sourceDomain);
+            this.thirdParty = this.domain !== this.sourceDomain;
         } else {
             this.thirdParty = null;
         }
