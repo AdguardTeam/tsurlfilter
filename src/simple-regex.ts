@@ -7,12 +7,12 @@ const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g')
 /**
  * Replaces all occurrences of a string "find" with "replace" str;
  */
-const replaceAll = function(str: string, find: string, replace: string): string {
+function replaceAll(str: string, find: string, replace: string): string {
     if (!str) {
         return str;
     }
     return str.split(find).join(replace);
-};
+}
 
 /**
  * Class with static helper methods for working with basic filtering rules patterns.
@@ -73,6 +73,104 @@ export class SimpleRegex {
     public static readonly REGEX_ANY_CHARACTER: string = '.*';
 
     /**
+     * Enclose regex in two backslashes to mark a regex rule:
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regular-expressions-support
+     */
+    public static readonly MASK_REGEX_RULE: string = '/';
+
+    /** Regex with basic matching pattern special characters */
+    private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
+
+    /**
+     * Extracts the shortcut from the rule's pattern.
+     * Shortcut is the longest substring of the pattern that does not contain
+     * any special characters.
+     *
+     * Please note, that the shortcut is always lower-case!
+     *
+     * @param pattern network rule's pattern.
+     * @returns the shortcut or the empty string if we could not extract any.
+     */
+    static extractShortcut(pattern: string): string {
+        if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
+            return this.extractRegexpShortcut(pattern);
+        }
+        return this.extractBasicShortcut(pattern);
+    }
+
+    /**
+     * Searches for the longest substring of the pattern that
+     * does not contain any special characters: *,^,|.
+     *
+     * @param pattern network rule's pattern.
+     * @returns the shortcut or the empty string
+     */
+    private static extractBasicShortcut(pattern: string): string {
+        let longest = '';
+
+        const parts = pattern.split(this.rePatternSpecialCharacters);
+        for (let i = 0; i < parts.length; i += 1) {
+            const part = parts[i];
+            if (part.length > longest.length) {
+                longest = part;
+            }
+        }
+
+        return (longest || '').toLowerCase();
+    }
+
+    /**
+     * Searches for a shortcut inside of a regexp pattern.
+     * Shortcut in this case is a longest string with no REGEX special characters.
+     * Also, we discard complicated regexps right away.
+     *
+     * @param pattern network rule's pattern (regexp).
+     * @returns the shortcut or the empty string
+     */
+    private static extractRegexpShortcut(pattern: string): string {
+        let reText = pattern.substring(this.MASK_REGEX_RULE.length, pattern.length - this.MASK_REGEX_RULE.length);
+
+        if (reText.length === 0) {
+            // The rule is too short, doing nothing
+            return '';
+        }
+
+        if (reText.indexOf('?') !== -1) {
+            // Do not mess with complex expressions which use lookahead
+            // And with those using ? special character:
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/978
+            return '';
+        }
+
+        const specialCharacter = '...';
+
+        // Prepend specialCharacter for the following replace calls to work properly
+        reText = specialCharacter + reText;
+
+        // Strip all types of brackets
+        reText = reText.replace(/[^\\]\(.*[^\\]\)/, specialCharacter);
+        reText = reText.replace(/[^\\]\[.*[^\\]\]/, specialCharacter);
+        reText = reText.replace(/[^\\]\{.*[^\\]\}/, specialCharacter);
+
+        // Strip some special characters
+        reText = reText.replace(/[^\\]\\[a-zA-Z]/, specialCharacter);
+
+        // Split by special characters
+        // `.` is one of the special characters so our `specialCharacter`
+        // will be removed from the resulting array
+        const parts = reText.split(/[\\^$*+?.()|[\]{}]/);
+        let longest = '';
+        for (let i = 0; i < parts.length; i += 1) {
+            const part = parts[i];
+            if (part.length > longest.length) {
+                longest = part;
+            }
+        }
+
+        return longest.toLowerCase();
+    }
+
+    /**
      * patternToRegexp is a helper method for creating regular expressions from the simple
      * wildcard-based syntax which is used in basic filters:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
@@ -90,9 +188,9 @@ export class SimpleRegex {
             return this.REGEX_ANY_CHARACTER;
         }
 
-        if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
             // This is a regex rule, just remove the regex markers
-            return pattern.substring(1, pattern.length - 1);
+            return pattern.substring(this.MASK_REGEX_RULE.length, pattern.length - this.MASK_REGEX_RULE.length);
         }
 
         // Escape special characters except of * | ^

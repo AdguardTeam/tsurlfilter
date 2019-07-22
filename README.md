@@ -33,3 +33,35 @@ Good news: the setup is here for you, you must only include the dependency name 
 ### Git Hooks
 
 There is already set a `precommit` hook for formatting your code with Prettier :nail_care:
+
+### TODO
+
+#### TODO:
+
+* [ ] Basic filtering rules
+    * [X] Core blocking syntax
+    * [ ] Basic network engine
+    * [ ] Basic rules validation (don't match everything, unexpected modifiers, etc)
+* [ ] Benchmark basic rules matching
+* [ ] Hosts matching rules
+    * [ ] /etc/hosts matching
+* [ ] Memory optimization
+* [ ] Tech document
+* [ ] Cosmetic rules
+    * [ ] Basic element hiding and CSS rules
+        * [ ] Proper CSS rules validation
+    * [ ] ExtCSS rules
+    * [ ] Scriptlet rules
+    * [ ] JS rules
+* [ ] Basic filtering engine implementation
+    * [ ] Handling cosmetic modifiers $elemhide, $generichide, $jsinject
+    * [ ] Advanced modifiers part 1
+        * [ ] $important
+        * [ ] $badfilter
+    * [ ] Web extension example
+* [ ] HTML filtering rules
+* [ ] Advanced modifiers part 2
+    * [ ] $replace
+    * [ ] $csp
+    * [ ] $cookie
+    * [ ] $redirect

@@ -26,4 +26,39 @@ describe('SimpleRegex.patternToRegexp', () => {
         const expected = '(example)+\\.org';
         expect(regex).toEqual(expected);
     });
+
+    it('works if detects "any character" patterns properly', () => {
+        const regex = SimpleRegex.patternToRegexp('||');
+        const expected = '.*';
+        expect(regex).toEqual(expected);
+    });
+});
+
+describe('SimpleRegex.extractShortcut', () => {
+    it('works if it is able to extract basic shortcuts', () => {
+        let shortcut = SimpleRegex.extractShortcut('||example.org^');
+        expect(shortcut).toEqual('example.org');
+
+        shortcut = SimpleRegex.extractShortcut('|https://*examp');
+        expect(shortcut).toEqual('https://');
+    });
+
+    it('works if it is able to extract regex shortcuts', () => {
+        let shortcut = SimpleRegex.extractShortcut('/example/');
+        expect(shortcut).toEqual('example');
+
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/example/');
+        expect(shortcut).toEqual('/example');
+
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]+\\.example/');
+        expect(shortcut).toEqual('example');
+    });
+
+    it('works if it discards incorrect patterns', () => {
+        let shortcut = SimpleRegex.extractShortcut('//');
+        expect(shortcut).toEqual('');
+
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?!test.)example.org/');
+        expect(shortcut).toEqual('');
+    });
 });
