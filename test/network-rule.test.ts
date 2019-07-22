@@ -140,8 +140,10 @@ describe('NetworkRule constructor', () => {
         const rule = new NetworkRule(ruleText, 0);
         if (enabled) {
             expect(rule.isOptionEnabled(option)).toEqual(true);
+            expect(rule.isOptionDisabled(option)).toEqual(false);
         } else {
             expect(rule.isOptionDisabled(option)).toEqual(true);
+            expect(rule.isOptionEnabled(option)).toEqual(false);
         }
     }
 
@@ -177,8 +179,10 @@ describe('NetworkRule constructor', () => {
         const rule = new NetworkRule(`||example.org^$${name}`, 0);
         if (permitted) {
             expect(rule.getPermittedRequestTypes()).toEqual(requestType);
+            expect(rule.getRestrictedRequestTypes()).toEqual(0);
         } else {
             expect(rule.getRestrictedRequestTypes()).toEqual(requestType);
+            expect(rule.getPermittedRequestTypes()).toEqual(0);
         }
     }
 
