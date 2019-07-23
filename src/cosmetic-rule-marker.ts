@@ -52,7 +52,7 @@ export const enum CosmeticRuleMarker {
 
 /**
  * Contains all possible cosmetic rule markers.
- * We need this to make {@link findRuleMarker} work.
+ * We need this to make {@link findCosmeticRuleMarker} work.
  *
  * Please note, that it's sorted in the {@link init} function.
  */
@@ -73,7 +73,7 @@ const markers: CosmeticRuleMarker[] = [
 
 /**
  * First characters of the cosmetic rules markers.
- * Necessary for {@link findRuleMarker} to work properly.
+ * Necessary for {@link findCosmeticRuleMarker} to work properly.
  */
 const markersFirstChars: string[] = [];
 
