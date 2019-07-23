@@ -1,10 +1,10 @@
 /**
  * Splits the string by the delimiter, ignoring escaped delimiters.
  *
- * @param str string to split
- * @param delimiter delimiter
- * @param escapeCharacter escape character
- * @param preserveAllTokens if true, preserve empty parts
+ * @param str - string to split
+ * @param delimiter - delimiter
+ * @param escapeCharacter - escape character
+ * @param preserveAllTokens - if true, preserve empty parts
  */
 export function splitByDelimiterWithEscapeCharacter(
     str: string,
@@ -44,4 +44,26 @@ export function splitByDelimiterWithEscapeCharacter(
     }
 
     return parts;
+}
+
+/**
+ * Checks if the specified string starts with a substr at the specified index.
+ *
+ * @param str - String to check
+ * @param startIndex - Index to start checking from
+ * @param substr - Substring to check
+ * @return boolean true if it does start
+ */
+export function startsAtIndexWith(str: string, startIndex: number, substr: string): boolean {
+    if (str.length - startIndex < substr.length) {
+        return false;
+    }
+
+    for (let i = 0; i < substr.length; i += 1) {
+        if (str.charAt(startIndex + i) !== substr.charAt(i)) {
+            return false;
+        }
+    }
+
+    return true;
 }

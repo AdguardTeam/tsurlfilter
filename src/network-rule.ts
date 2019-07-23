@@ -90,6 +90,7 @@ const escapeCharacter = '\\';
 const reEscapedOptionsDelimiter = new RegExp(`${escapeCharacter}${OPTIONS_DELIMITER}`, 'g');
 
 /** Data class for basic rules */
+// TODO: Use tuple instead of this
 export class BasicRuleParts {
     /**
      * Basic rule pattern (which can be easily converted into a regex).
@@ -199,7 +200,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * Checks if this filtering rule matches the specified request.
-     * @param request request to check.
+     * @param request - request to check.
      */
     match(request: Request): boolean {
         if (!this.matchShortcut(request)) {
@@ -227,7 +228,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * matchShortcut simply checks if shortcut is a substring of the URL.
-     * @param request request to check.
+     * @param request - request to check.
      */
     private matchShortcut(request: Request): boolean {
         return request.urlLowercase.includes(this.shortcut);
@@ -235,7 +236,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * matchDomain checks if the filtering rule is allowed on this domain.
-     * @param domain domain to check.
+     * @param domain - domain to check.
      */
     private matchDomain(domain: string): boolean {
         if (!this.permittedDomains && !this.restrictedDomains) {
@@ -263,7 +264,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * matchRequestType checks if the request's type matches the rule properties
-     * @param requestType request type to check.
+     * @param requestType - request type to check.
      */
     private matchRequestType(requestType: RequestType): boolean {
         if (this.permittedRequestTypes !== 0) {
@@ -283,7 +284,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * matchPattern uses the regex pattern to match the request URL
-     * @param request request to check.
+     * @param request - request to check.
      */
     private matchPattern(request: Request): boolean {
         if (!this.regex) {
@@ -311,8 +312,8 @@ export class NetworkRule implements rule.IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param ruleText original rule text.
-     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleText - original rule text.
+     * @param filterListId - ID of the filter list this rule belongs to.
      *
      * @throws error if it fails to parse the rule.
      */
@@ -349,7 +350,7 @@ export class NetworkRule implements rule.IRule {
      * More on the rule modifiers:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers
      *
-     * @param options string with the rule modifiers
+     * @param options - string with the rule modifiers
      *
      * @throws an error if there is an unsupported modifier
      */
@@ -392,7 +393,7 @@ export class NetworkRule implements rule.IRule {
      * Returns true if the specified option is enabled.
      * Please note, that options have three state: enabled, disabled, undefined.
      *
-     * @param option rule option to check.
+     * @param option - rule option to check.
      */
     isOptionEnabled(option: NetworkRuleOption): boolean {
         return (this.enabledOptions & option) === option;
@@ -402,7 +403,7 @@ export class NetworkRule implements rule.IRule {
      * Returns true if the specified option is disabled.
      * Please note, that options have three state: enabled, disabled, undefined.
      *
-     * @param option rule option to check.
+     * @param option - rule option to check.
      */
     isOptionDisabled(option: NetworkRuleOption): boolean {
         return (this.disabledOptions & option) === option;
@@ -411,8 +412,8 @@ export class NetworkRule implements rule.IRule {
     /**
      * Enables or disables the specified option.
      *
-     * @param option option to enable or disable.
-     * @param enabled true to enable, false to disable.
+     * @param option - option to enable or disable.
+     * @param enabled - true to enable, false to disable.
      *
      * @throws an error if the option we're trying to enable cannot be.
      * For instance, you cannot enable $elemhide for blacklist rules.
@@ -438,8 +439,8 @@ export class NetworkRule implements rule.IRule {
      * "Permits" means that the rule will match **only** the types that are permitted.
      * "Restricts" means that the rule will match **all but restricted**.
      *
-     * @param requestType request type.
-     * @param permitted true if it's permitted (whic)
+     * @param requestType - request type.
+     * @param permitted - true if it's permitted (whic)
      */
     private setRequestType(requestType: RequestType, permitted: boolean) {
         if (permitted) {
@@ -453,8 +454,8 @@ export class NetworkRule implements rule.IRule {
      * Loads the specified modifier:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers
      *
-     * @param optionName modifier name.
-     * @param optionValue modifier value.
+     * @param optionName - modifier name.
+     * @param optionValue - modifier value.
      *
      * @throws an error if there is an unsupported modifier
      */
@@ -613,7 +614,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * parseRuleText splits the rule text into multiple parts.
-     * @param ruleText original rule text
+     * @param ruleText - original rule text
      * @returns basic rule parts
      *
      * @throws error if the rule is empty (for instance, empty string or `@@`)

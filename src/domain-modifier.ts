@@ -22,8 +22,8 @@ export class DomainModifier {
     /**
      * Parses the `domains` string and initializes the object.
      *
-     * @param domains domains string
-     * @param sep separator (`,` or `|`)
+     * @param domains - domains string
+     * @param sep - separator (`,` or `|`)
      *
      * @throws an error if the domains string is empty or invalid
      */
@@ -63,8 +63,8 @@ export class DomainModifier {
      * isDomainOrSubdomainOfAny checks if `domain` is the same or a subdomain
      * of any of `domains`.
      *
-     * @param domain domain to check
-     * @param domains domains list to check against
+     * @param domain - domain to check
+     * @param domains - domains list to check against
      */
     static isDomainOrSubdomainOfAny(domain: string, domains: string[]): boolean {
         for (let i = 0; i < domains.length; i += 1) {

@@ -86,9 +86,9 @@ export class Request {
     /**
      * Creates an instance of a Request
      *
-     * @param url request URL
-     * @param sourceUrl source URL
-     * @param requestType request type
+     * @param url - request URL
+     * @param sourceUrl - source URL
+     * @param requestType - request type
      *
      * @throws
      */

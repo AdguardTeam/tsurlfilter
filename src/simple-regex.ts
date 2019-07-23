@@ -88,7 +88,7 @@ export class SimpleRegex {
      *
      * Please note, that the shortcut is always lower-case!
      *
-     * @param pattern network rule's pattern.
+     * @param pattern - network rule's pattern.
      * @returns the shortcut or the empty string if we could not extract any.
      */
     static extractShortcut(pattern: string): string {
@@ -102,7 +102,7 @@ export class SimpleRegex {
      * Searches for the longest substring of the pattern that
      * does not contain any special characters: *,^,|.
      *
-     * @param pattern network rule's pattern.
+     * @param pattern - network rule's pattern.
      * @returns the shortcut or the empty string
      */
     private static extractBasicShortcut(pattern: string): string {
@@ -124,7 +124,7 @@ export class SimpleRegex {
      * Shortcut in this case is a longest string with no REGEX special characters.
      * Also, we discard complicated regexps right away.
      *
-     * @param pattern network rule's pattern (regexp).
+     * @param pattern - network rule's pattern (regexp).
      * @returns the shortcut or the empty string
      */
     private static extractRegexpShortcut(pattern: string): string {
@@ -175,7 +175,7 @@ export class SimpleRegex {
      * wildcard-based syntax which is used in basic filters:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
      *
-     * @param pattern basic rule pattern
+     * @param pattern - basic rule pattern
      * @returns regular expression
      */
     static patternToRegexp(pattern: string): string {
