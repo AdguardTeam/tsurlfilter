@@ -5,6 +5,7 @@
             "options": [120]
         },
         "indent": [true, "spaces"],
-        "ter-indent": [true, 4, { "SwitchCase": 1 }]
+        "ter-indent": [true, 4, { "SwitchCase": 1 }],
+        "ter-arrow-parens": [true, "as-needed"]
     }
 }
