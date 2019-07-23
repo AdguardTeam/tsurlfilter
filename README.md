@@ -36,8 +36,6 @@ There is already set a `precommit` hook for formatting your code with Prettier :
 
 ### TODO
 
-#### TODO:
-
 * [ ] Basic filtering rules
     * [X] Core blocking syntax
     * [ ] Basic network engine
