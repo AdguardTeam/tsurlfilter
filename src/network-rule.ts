@@ -89,9 +89,11 @@ const replaceOption = 'replace';
 const escapeCharacter = '\\';
 const reEscapedOptionsDelimiter = new RegExp(`${escapeCharacter}${OPTIONS_DELIMITER}`, 'g');
 
-/** Data class for basic rules */
-// TODO: Use tuple instead of this
-export class BasicRuleParts {
+/**
+ * Helper class that is used for passing {@link NetworkRule.parseRuleText}
+ * result to the caller. Should not be used outside of this file.
+ */
+class BasicRuleParts {
     /**
      * Basic rule pattern (which can be easily converted into a regex).
      * See {@link SimpleRegex} for more details.
@@ -570,12 +572,6 @@ export class NetworkRule implements rule.IRule {
                 break;
             case '~xmlhttprequest':
                 this.setRequestType(RequestType.XmlHttpRequest, false);
-                break;
-            case 'object-subrequest':
-                this.setRequestType(RequestType.ObjectSubrequest, true);
-                break;
-            case '~object-subrequest':
-                this.setRequestType(RequestType.ObjectSubrequest, false);
                 break;
             case 'media':
                 this.setRequestType(RequestType.Media, true);

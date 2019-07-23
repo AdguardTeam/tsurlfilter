@@ -208,9 +208,6 @@ describe('NetworkRule constructor', () => {
         checkRequestType('xmlhttprequest', RequestType.XmlHttpRequest, true);
         checkRequestType('~xmlhttprequest', RequestType.XmlHttpRequest, false);
 
-        checkRequestType('object-subrequest', RequestType.ObjectSubrequest, true);
-        checkRequestType('~object-subrequest', RequestType.ObjectSubrequest, false);
-
         checkRequestType('media', RequestType.Media, true);
         checkRequestType('~media', RequestType.Media, false);
 

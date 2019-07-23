@@ -18,16 +18,14 @@ export enum RequestType {
     Image = 1 << 5,
     /** (ajax/fetch) $xmlhttprequest */
     XmlHttpRequest = 1 << 6,
-    /** a request sent from inside of an object (flash) $object-subrequest */
-    ObjectSubrequest = 1 << 7,
     /** (video/music) $media */
-    Media = 1 << 8,
+    Media = 1 << 7,
     /** (any custom font) $font */
-    Font = 1 << 9,
+    Font = 1 << 8,
     /** (a websocket connection) $websocket */
-    Websocket = 1 << 10,
+    Websocket = 1 << 9,
     /** any other request type */
-    Other = 1 << 11,
+    Other = 1 << 10,
 }
 
 /**
