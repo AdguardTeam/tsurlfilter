@@ -1,5 +1,5 @@
 import * as rule from './rule';
-import { CosmeticRuleMarker, findCosmeticRuleMarker } from '../src/cosmetic-rule-marker';
+import { CosmeticRuleMarker, findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { DomainModifier } from './domain-modifier';
 
 /**
