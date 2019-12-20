@@ -35,9 +35,12 @@ There is already set a `precommit` hook for formatting your code with Prettier :
     -   [x] Core blocking syntax
     -   [ ] Basic network engine
     -   [ ] Basic rules validation (don't match everything, unexpected modifiers, etc)
+    -   [ ] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
 -   [ ] Benchmark basic rules matching
 -   [ ] Hosts matching rules
     -   [ ] /etc/hosts matching
+    -   [ ] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
+    -   [ ] \$badfilter support for host-blocking network rules
 -   [ ] Memory optimization
 -   [ ] Tech document
 -   [ ] Cosmetic rules
@@ -53,8 +56,10 @@ There is already set a `precommit` hook for formatting your code with Prettier :
         -   [ ] \$badfilter
     -   [ ] Web extension example
 -   [ ] HTML filtering rules
--   [ ] Advanced modifiers part 2
+-   [ ] Advanced modifiers
+    -   [ ] \$important
     -   [ ] \$replace
     -   [ ] \$csp
     -   [ ] \$cookie
     -   [ ] \$redirect
+    -   [ ] \$badfilter

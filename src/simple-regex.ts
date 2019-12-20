@@ -59,7 +59,7 @@ export class SimpleRegex {
     /**
      * REGEX_SEPARATOR corresponds to MASK_SEPARATOR
      */
-    public static readonly REGEX_SEPARATOR: string = '([^ a-zA-Z0-9.%]|$)';
+    public static readonly REGEX_SEPARATOR: string = '([^ a-zA-Z0-9.%_-]|$)';
 
     /**
      * This is a wildcard character. It is used to represent "any set of characters".
