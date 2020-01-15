@@ -62,4 +62,4 @@ There is already set a `precommit` hook for formatting your code with Prettier :
     -   [ ] \$csp
     -   [ ] \$cookie
     -   [ ] \$redirect
-    -   [ ] \$badfilter
+    -   [ ] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
