@@ -47,6 +47,7 @@ There is already set a `precommit` hook for formatting your code with Prettier :
     -   [ ] Basic element hiding and CSS rules
         -   [ ] Proper CSS rules validation
     -   [ ] ExtCSS rules
+        -   [ ] ExtCSS rules validation
     -   [ ] Scriptlet rules
     -   [ ] JS rules
 -   [ ] Basic filtering engine implementation
