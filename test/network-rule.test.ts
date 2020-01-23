@@ -1,5 +1,6 @@
-import { NetworkRule, NetworkRuleOption } from '../src/network-rule';
-import { Request, RequestType } from '../src/request';
+import {
+    Request, RequestType, NetworkRuleOption, NetworkRule,
+} from '../src';
 
 describe('NetworkRule.parseRuleText', () => {
     it('works when it parses the basic rules properly', () => {
@@ -131,7 +132,7 @@ describe('NetworkRule constructor', () => {
         expect(rule.getText()).toEqual('$domain=ya.ru');
     });
 
-    function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean) {
+    function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean): void {
         let ruleText = `||example.org^$${name}`;
         if ((option & NetworkRuleOption.WhitelistOnly) === option) {
             ruleText = `@@${ruleText}`;
@@ -175,7 +176,7 @@ describe('NetworkRule constructor', () => {
         checkModifier('mp4', NetworkRuleOption.Mp4, true);
     });
 
-    function checkRequestType(name: string, requestType: RequestType, permitted: boolean) {
+    function checkRequestType(name: string, requestType: RequestType, permitted: boolean): void {
         const rule = new NetworkRule(`||example.org^$${name}`, 0);
         if (permitted) {
             expect(rule.getPermittedRequestTypes()).toEqual(requestType);

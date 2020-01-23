@@ -9,14 +9,13 @@ describe('SimpleRegex.patternToRegexp', () => {
 
     it('works if pipes are transformed properly', () => {
         const regex = SimpleRegex.patternToRegexp('|https://example.org|');
-        // tslint:disable-next-line: max-line-length
         const expected = `${SimpleRegex.REGEX_START_STRING}https:\\/\\/example\\.org${SimpleRegex.REGEX_END_STRING}`;
         expect(regex).toEqual(expected);
     });
 
     it('works if separator and any characters are transformed properly', () => {
         const regex = SimpleRegex.patternToRegexp('|https://example.org/[*]^');
-        // tslint:disable-next-line: max-line-length
+        // eslint-disable-next-line max-len
         const expected = `${SimpleRegex.REGEX_START_STRING}https:\\/\\/example\\.org\\/\\[${SimpleRegex.REGEX_ANY_CHARACTER}\\]${SimpleRegex.REGEX_SEPARATOR}`;
         expect(regex).toEqual(expected);
     });

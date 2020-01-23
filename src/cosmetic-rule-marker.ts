@@ -78,13 +78,11 @@ const markers: CosmeticRuleMarker[] = [
 const markersFirstChars: string[] = [];
 
 /** Initializes helper structures */
-function init() {
+function init(): void {
     // Sort by markers length in reverse order
-    markers.sort((left, right) => {
-        return right.length - left.length;
-    });
+    markers.sort((left, right) => right.length - left.length);
 
-    markers.forEach(marker => {
+    markers.forEach((marker) => {
         const c = marker.charAt(0);
         if (!markersFirstChars.includes(c)) {
             markersFirstChars.push(c);
@@ -108,6 +106,7 @@ init();
  * @param ruleText - rule text to scan.
  */
 export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleMarker | null] {
+    // eslint-disable-next-line no-restricted-syntax
     for (const firstMarkerChar of markersFirstChars) {
         const startIndex = ruleText.indexOf(firstMarkerChar);
         if (startIndex === -1) {
@@ -122,6 +121,7 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
             continue;
         }
 
+        // eslint-disable-next-line no-restricted-syntax
         for (const marker of markers) {
             if (utils.startsAtIndexWith(ruleText, startIndex, marker)) {
                 return [startIndex, marker];

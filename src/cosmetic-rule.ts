@@ -63,12 +63,17 @@ export enum CosmeticRuleType {
  */
 export class CosmeticRule implements rule.IRule {
     private readonly ruleText: string;
+
     private readonly filterListId: number;
+
     private readonly type: CosmeticRuleType;
+
     private readonly content: string;
 
-    private whitelist: boolean = false;
+    private whitelist = false;
+
     private permittedDomains: string[] | null = null;
+
     private restrictedDomains: string[] | null = null;
 
     getText(): string {
