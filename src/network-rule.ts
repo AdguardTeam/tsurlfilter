@@ -341,10 +341,10 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (
-            this.pattern === SimpleRegex.MASK_START_URL ||
-            this.pattern === SimpleRegex.MASK_ANY_CHARACTER ||
-            this.pattern === '' ||
-            this.pattern.length < 3
+            this.pattern === SimpleRegex.MASK_START_URL
+            || this.pattern === SimpleRegex.MASK_ANY_CHARACTER
+            || this.pattern === ''
+            || this.pattern.length < 3
         ) {
             if (this.permittedDomains === null || this.permittedDomains!.length === 0) {
                 // Rule matches too much and does not have any domain restriction
@@ -388,13 +388,13 @@ export class NetworkRule implements rule.IRule {
         // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for whitelist rules.
         // $popup - for url blocking
         if (
-            this.isOptionEnabled(NetworkRuleOption.Jsinject) ||
-            this.isOptionEnabled(NetworkRuleOption.Elemhide) ||
-            this.isOptionEnabled(NetworkRuleOption.Content) ||
-            this.isOptionEnabled(NetworkRuleOption.Urlblock) ||
-            this.isOptionEnabled(NetworkRuleOption.Genericblock) ||
-            this.isOptionEnabled(NetworkRuleOption.Generichide) ||
-            this.isOptionEnabled(NetworkRuleOption.Popup)
+            this.isOptionEnabled(NetworkRuleOption.Jsinject)
+            || this.isOptionEnabled(NetworkRuleOption.Elemhide)
+            || this.isOptionEnabled(NetworkRuleOption.Content)
+            || this.isOptionEnabled(NetworkRuleOption.Urlblock)
+            || this.isOptionEnabled(NetworkRuleOption.Genericblock)
+            || this.isOptionEnabled(NetworkRuleOption.Generichide)
+            || this.isOptionEnabled(NetworkRuleOption.Popup)
         ) {
             this.permittedRequestTypes = RequestType.Document;
         }
@@ -607,10 +607,10 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Other, false);
                 break;
 
-            // TODO: Add $csp
-            // TODO: Add $replace
-            // TODO: Add $cookie
-            // TODO: Add $redirect
+                // TODO: Add $csp
+                // TODO: Add $replace
+                // TODO: Add $cookie
+                // TODO: Add $redirect
 
             default:
                 throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue}`);
@@ -640,9 +640,9 @@ export class NetworkRule implements rule.IRule {
 
         // Avoid parsing options inside of a regex rule
         if (
-            ruleText.startsWith(SimpleRegex.MASK_REGEX_RULE) &&
-            ruleText.endsWith(SimpleRegex.MASK_REGEX_RULE) &&
-            !ruleText.includes(`${replaceOption}=`)
+            ruleText.startsWith(SimpleRegex.MASK_REGEX_RULE)
+            && ruleText.endsWith(SimpleRegex.MASK_REGEX_RULE)
+            && !ruleText.includes(`${replaceOption}=`)
         ) {
             ruleParts.pattern = ruleText;
             return ruleParts;

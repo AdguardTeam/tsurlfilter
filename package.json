@@ -34,7 +34,7 @@
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
-      "prettier --write",
+      "eslint --fix",
       "git add"
     ]
   },
@@ -76,12 +76,13 @@
     ]
   },
   "devDependencies": {
-    "@commitlint/cli": "^7.6.1",
-    "@commitlint/config-conventional": "^7.6.0",
+    "@commitlint/cli": "^8.3.5",
+    "@commitlint/config-conventional": "^8.3.4",
     "@rollup/plugin-commonjs": "^11.0.1",
     "@rollup/plugin-json": "^4.0.1",
     "@rollup/plugin-node-resolve": "^7.0.0",
     "@types/jest": "^23.3.14",
+    "@types/lodash": "^4.14.149",
     "@types/node": "^10.17.13",
     "@typescript-eslint/eslint-plugin": "^2.17.0",
     "@typescript-eslint/parser": "^2.17.0",
@@ -96,7 +97,6 @@
     "jest": "^24.9.0",
     "lint-staged": "^10.0.2",
     "lodash": "^4.17.15",
-    "prettier": "^1.19.1",
     "rimraf": "^3.0.0",
     "rollup": "^1.29.1",
     "rollup-plugin-sourcemaps": "^0.5.0",
@@ -105,8 +105,7 @@
     "ts-jest": "^24.3.0",
     "ts-node": "^8.6.2",
     "typedoc": "^0.16.8",
-    "typescript": "^3.7.5",
-    "@types/lodash": "^4.14.149"
+    "typescript": "^3.7.5"
   },
   "dependencies": {
     "@rollup/plugin-typescript": "^2.1.0",

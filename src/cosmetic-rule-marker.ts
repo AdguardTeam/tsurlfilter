@@ -82,7 +82,7 @@ function init(): void {
     // Sort by markers length in reverse order
     markers.sort((left, right) => right.length - left.length);
 
-    markers.forEach(marker => {
+    markers.forEach((marker) => {
         const c = marker.charAt(0);
         if (!markersFirstChars.includes(c)) {
             markersFirstChars.push(c);

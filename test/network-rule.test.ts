@@ -1,4 +1,6 @@
-import { Request, RequestType, NetworkRuleOption, NetworkRule } from '../src';
+import {
+    Request, RequestType, NetworkRuleOption, NetworkRule,
+} from '../src';
 
 describe('NetworkRule.parseRuleText', () => {
     it('works when it parses the basic rules properly', () => {

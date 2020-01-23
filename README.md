@@ -27,7 +27,7 @@ Good news: the setup is here for you, you must only include the dependency name 
 
 ### Git Hooks
 
-There is already set a `precommit` hook for formatting your code with Prettier :nail_care:
+There is already set a `precommit` hook for formatting your code with Eslint :nail_care:
 
 ### TODO
 
