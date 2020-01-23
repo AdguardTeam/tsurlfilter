@@ -59,7 +59,7 @@ export class SimpleRegex {
     /**
      * REGEX_SEPARATOR corresponds to MASK_SEPARATOR
      */
-    public static readonly REGEX_SEPARATOR: string = '([^ a-zA-Z0-9.%]|$)';
+    public static readonly REGEX_SEPARATOR: string = '([^ a-zA-Z0-9.%_-]|$)';
 
     /**
      * This is a wildcard character. It is used to represent "any set of characters".
@@ -180,10 +180,10 @@ export class SimpleRegex {
      */
     static patternToRegexp(pattern: string): string {
         if (
-            pattern === this.MASK_START_URL ||
-            pattern === this.MASK_PIPE ||
-            pattern === this.MASK_ANY_CHARACTER ||
-            pattern === ''
+            pattern === this.MASK_START_URL
+            || pattern === this.MASK_PIPE
+            || pattern === this.MASK_ANY_CHARACTER
+            || pattern === ''
         ) {
             return this.REGEX_ANY_CHARACTER;
         }
@@ -198,23 +198,21 @@ export class SimpleRegex {
 
         // Now escape "|" characters but avoid escaping them in the special places
         if (regex.startsWith(this.MASK_START_URL)) {
-            regex =
-                regex.substring(0, this.MASK_START_URL.length) +
-                replaceAll(
+            regex = regex.substring(0, this.MASK_START_URL.length)
+                + replaceAll(
                     regex.substring(this.MASK_START_URL.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
-                ) +
-                regex.substring(regex.length - this.MASK_PIPE.length);
+                )
+                + regex.substring(regex.length - this.MASK_PIPE.length);
         } else {
-            regex =
-                regex.substring(0, this.MASK_PIPE.length) +
-                replaceAll(
+            regex = regex.substring(0, this.MASK_PIPE.length)
+                + replaceAll(
                     regex.substring(this.MASK_PIPE.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
-                ) +
-                regex.substring(regex.length - this.MASK_PIPE.length);
+                )
+                + regex.substring(regex.length - this.MASK_PIPE.length);
         }
 
         // Replace special URL masks

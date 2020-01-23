@@ -16,6 +16,7 @@
 export class DomainModifier {
     /** list of permitted domains or null */
     public readonly permittedDomains: string[] | null;
+
     /** list of restricted domains or null */
     public readonly restrictedDomains: string[] | null;
 

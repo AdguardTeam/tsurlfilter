@@ -27,12 +27,10 @@ export function splitByDelimiterWithEscapeCharacter(
             } else if (str.charAt(i - 1) === escapeCharacter) {
                 sb.splice(sb.length - 1, 1);
                 sb.push(c);
-            } else {
-                if (preserveAllTokens || sb.length > 0) {
-                    const part = sb.join('');
-                    parts.push(part);
-                    sb = [];
-                }
+            } else if (preserveAllTokens || sb.length > 0) {
+                const part = sb.join('');
+                parts.push(part);
+                sb = [];
             }
         } else {
             sb.push(c);
