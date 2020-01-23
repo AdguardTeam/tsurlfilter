@@ -1,3 +1,4 @@
+// eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { Request, RequestType } from './request';
@@ -117,26 +118,34 @@ class BasicRuleParts {
  */
 export class NetworkRule implements rule.IRule {
     private readonly ruleText: string;
+
     private readonly filterListId: number;
+
     private readonly whitelist: boolean;
 
     private readonly pattern: string;
+
     private readonly shortcut: string;
+
     /** Regular expression compiled from the pattern. */
     private regex: RegExp | undefined;
+
     /** Marks the rule as invalid. Match will always return false in this case. */
-    private invalid: boolean = false;
+    private invalid = false;
 
     private permittedDomains: string[] | null = null;
+
     private restrictedDomains: string[] | null = null;
 
     /** Flag with all enabled rule options */
     private enabledOptions: NetworkRuleOption = 0;
+
     /** Flag with all disabled rule options */
     private disabledOptions: NetworkRuleOption = 0;
 
     /** Flag with all permitted request types. 0 means ALL. */
     private permittedRequestTypes: RequestType = 0;
+
     /** Flag with all restricted request types. 0 means NONE. */
     private restrictedRequestTypes: RequestType = 0;
 
@@ -356,7 +365,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws an error if there is an unsupported modifier
      */
-    private loadOptions(options: string) {
+    private loadOptions(options: string): void {
         if (!options) {
             return;
         }
@@ -420,7 +429,7 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if the option we're trying to enable cannot be.
      * For instance, you cannot enable $elemhide for blacklist rules.
      */
-    private setOptionEnabled(option: NetworkRuleOption, enabled: boolean) {
+    private setOptionEnabled(option: NetworkRuleOption, enabled: boolean): void {
         if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
             throw new SyntaxError(`modifier ${NetworkRuleOption[option]} cannot be used in a whitelist rule`);
         }
@@ -444,7 +453,7 @@ export class NetworkRule implements rule.IRule {
      * @param requestType - request type.
      * @param permitted - true if it's permitted (whic)
      */
-    private setRequestType(requestType: RequestType, permitted: boolean) {
+    private setRequestType(requestType: RequestType, permitted: boolean): void {
         if (permitted) {
             this.permittedRequestTypes |= requestType;
         } else {
@@ -461,7 +470,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws an error if there is an unsupported modifier
      */
-    private loadOption(optionName: string, optionValue: string) {
+    private loadOption(optionName: string, optionValue: string): void {
         switch (optionName) {
             // General options
             case 'third-party':
@@ -483,12 +492,12 @@ export class NetworkRule implements rule.IRule {
                 break;
 
             // $domain modifier
-            case 'domain':
+            case 'domain': {
                 const domainModifier = new DomainModifier(optionValue, '|');
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
                 break;
-
+            }
             // Document-level whitelist rules
             case 'elemhide':
                 this.setOptionEnabled(NetworkRuleOption.Elemhide, true);

@@ -1,17 +1,10 @@
-// tslint:disable-next-line: import-name
-import resolve from 'rollup-plugin-node-resolve';
-// tslint:disable-next-line: import-name
-import commonjs from 'rollup-plugin-commonjs';
-// tslint:disable-next-line: import-name
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import sourceMaps from 'rollup-plugin-sourcemaps';
-// tslint:disable-next-line: import-name
-import camelCase from 'lodash.camelcase';
-// tslint:disable-next-line: import-name
-import typescript from 'rollup-plugin-typescript2';
-// tslint:disable-next-line: import-name
-import json from 'rollup-plugin-json';
-
-const pkg = require('./package.json');
+import camelCase from 'lodash/camelCase';
+import typescript from '@rollup/plugin-typescript';
+import json from '@rollup/plugin-json';
+import pkg from './package.json';
 
 const libraryName = 'tsurlfilter';
 
@@ -30,7 +23,7 @@ export default {
         // Allow json resolution
         json(),
         // Compile TypeScript files
-        typescript({ useTsconfigDeclarationDir: true }),
+        typescript(),
         // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
         commonjs(),
         // Allow node_modules resolution, so you can use 'external' to control
