@@ -67,3 +67,34 @@ export function startsAtIndexWith(str: string, startIndex: number, substr: strin
 
     return true;
 }
+
+/**
+ * djb2 hash algorithm
+ *
+ * @param str
+ * @param begin
+ * @param end
+ * @return {number}
+ */
+export function fastHashBetween(str: string, begin: number, end: number): number {
+    let hash = 5381;
+    for (let idx = begin; idx < end; idx += 1) {
+        hash = 33 * hash + str.charCodeAt(idx);
+    }
+
+    return hash;
+}
+/**
+ * djb2 hash algorithm
+ *
+ * @param str
+ * @return {any}
+ */
+export function fastHash(str: string): number {
+    if (str === '') {
+        return 0;
+    }
+
+    const len = str.length;
+    return fastHashBetween(str, 0, len);
+}

@@ -2,6 +2,7 @@ import { CosmeticEngine } from './cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
 import { MatchingResult } from './matching-result';
+import { NetworkRule } from '../network-rule';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -37,9 +38,9 @@ export class Engine {
      */
     matchRequest(request: Request): MatchingResult {
         const networkRules = this.networkEngine.matchAll(request);
-        let sourceRules;
+        let sourceRules: NetworkRule[] = [];
 
-        if (!request.sourceUrl) {
+        if (request.sourceUrl) {
             const sourceRequest = new Request(request.sourceUrl, '', RequestType.Document);
             sourceRules = this.networkEngine.matchAll(sourceRequest);
         }

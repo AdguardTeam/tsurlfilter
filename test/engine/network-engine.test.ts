@@ -2,7 +2,7 @@ import { NetworkEngine } from '../../src/engine/network-engine';
 import { Request, RequestType } from '../../src/request';
 
 describe('TestEmptyNetworkEngine', () => {
-    it('works if it finds simple rules', () => {
+    it('works if empty engine is ok', () => {
         const engine = new NetworkEngine([]);
         const request = new Request('http://example.org/', '', RequestType.Other);
         const result = engine.match(request);
@@ -12,7 +12,7 @@ describe('TestEmptyNetworkEngine', () => {
 });
 
 describe('TestMatchWhitelistRule', () => {
-    it('works if it finds simple rules', () => {
+    it('works if it finds simple whitelist rule', () => {
         const rule = '||example.org^$script';
         const exceptionRule = '@@http://example.org^';
 
@@ -20,7 +20,6 @@ describe('TestMatchWhitelistRule', () => {
         const request = new Request('http://example.org/', '', RequestType.Script);
         const result = engine.match(request);
 
-        expect(result).toBeDefined();
         expect(result).toEqual(exceptionRule);
     });
 });
