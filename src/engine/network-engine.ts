@@ -64,7 +64,7 @@ export class NetworkEngine {
         // TODO: Implement RulesStorage
         this.ruleStorage = {
             retrieveNetworkRule(index: number) {
-                return rules[index];
+                return new NetworkRule(rules[index], 0);
             },
         };
 
@@ -205,7 +205,11 @@ export class NetworkEngine {
 
         shortcuts.forEach((shortcutToCheck) => {
             const hash = fastHash(shortcutToCheck);
-            const count = this.shortcutsHistogram[hash];
+            let count = this.shortcutsHistogram[hash];
+            if (!count) {
+                count = 0;
+            }
+
             if (count < minCount) {
                 minCount = count;
                 shortcutHash = hash;

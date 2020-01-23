@@ -20,8 +20,8 @@ describe('TestMatchWhitelistRule', () => {
         const request = new Request('http://example.org/', '', RequestType.Script);
         const result = engine.match(request);
 
-        // TODO: Fix
-        //expect(result).toEqual(exceptionRule);
+        expect(result).toBeDefined();
+        expect(result && result.getText()).toEqual(exceptionRule);
     });
 });
 
