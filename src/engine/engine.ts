@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { CosmeticEngine } from './cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';

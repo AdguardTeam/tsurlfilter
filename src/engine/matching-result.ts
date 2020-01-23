@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods

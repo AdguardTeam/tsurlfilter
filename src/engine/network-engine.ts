@@ -10,7 +10,7 @@ export class NetworkEngine {
     /**
      * Rule shortcut max length
      */
-    private static SHORTCUT_LENGTH: number = 5;
+    private static SHORTCUT_LENGTH = 5;
 
     /**
      * Limit the URL length with 4KB.
@@ -38,6 +38,7 @@ export class NetworkEngine {
      * Shortcuts lookup table. Key is the shortcut hash.
      */
     private shortcutsLookupTable: any;
+
     /**
      * Shortcuts histogram helps us choose the best shortcut for the shortcuts lookup table.
      */
@@ -67,7 +68,7 @@ export class NetworkEngine {
             },
         };
 
-        rules.forEach(r => this.addRule(new NetworkRule(r, 0), rules.indexOf(r)));
+        rules.forEach((r) => this.addRule(new NetworkRule(r, 0), rules.indexOf(r)));
     }
 
     /**
@@ -99,7 +100,7 @@ export class NetworkEngine {
         result.push(...this.matchDomainsLookupTable(request));
 
         // Now check other rules
-        this.otherRules.forEach(r => {
+        this.otherRules.forEach((r) => {
             if (r.match(request)) {
                 result.push(r);
             }
@@ -124,10 +125,8 @@ export class NetworkEngine {
         for (let i = 0; i <= urlLen - NetworkEngine.SHORTCUT_LENGTH; i += 1) {
             const hash = fastHashBetween(request.urlLowercase, i, i + NetworkEngine.SHORTCUT_LENGTH);
             const rulesIndexes: number[] = this.shortcutsLookupTable[hash];
-            console.log(rulesIndexes);
-
             if (rulesIndexes) {
-                rulesIndexes.forEach(ruleIdx => {
+                rulesIndexes.forEach((ruleIdx) => {
                     const rule: NetworkRule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
                     if (rule && rule.match(request)) {
                         result.push(rule);
@@ -152,11 +151,11 @@ export class NetworkEngine {
         }
 
         const domains = NetworkEngine.getSubdomains(request.sourceHostname);
-        domains.forEach(domain => {
+        domains.forEach((domain) => {
             const hash = fastHash(domain);
             const rulesIndexes: number[] = this.domainsLookupTable[hash];
             if (rulesIndexes) {
-                rulesIndexes.forEach(ruleIdx => {
+                rulesIndexes.forEach((ruleIdx) => {
                     const rule: NetworkRule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
                     if (rule && rule.match(request)) {
                         result.push(rule);
@@ -194,17 +193,17 @@ export class NetworkEngine {
      * @param storageIdx
      */
     private addRuleToShortcutsTable(rule: NetworkRule, storageIdx: number) {
-        const shortcuts = this.getRuleShortcuts(rule);
+        const shortcuts = NetworkEngine.getRuleShortcuts(rule);
         if (!shortcuts || shortcuts.length === 0) {
             return false;
         }
 
         // Find the applicable shortcut (the least used)
-        let shortcutHash: number = -1;
+        let shortcutHash = -1;
         // Max int32
         let minCount = 2147483647;
 
-        shortcuts.forEach(shortcutToCheck => {
+        shortcuts.forEach((shortcutToCheck) => {
             const hash = fastHash(shortcutToCheck);
             const count = this.shortcutsHistogram[hash];
             if (count < minCount) {
@@ -234,7 +233,7 @@ export class NetworkEngine {
      * @param rule
      * @return {any}
      */
-    private getRuleShortcuts(rule: NetworkRule): string[] | null {
+    private static getRuleShortcuts(rule: NetworkRule): string[] | null {
         const shortcut = rule.getShortcut();
         if (shortcut.length < NetworkEngine.SHORTCUT_LENGTH) {
             return null;
@@ -295,7 +294,7 @@ export class NetworkEngine {
             return false;
         }
 
-        permittedDomains.forEach(domain => {
+        permittedDomains.forEach((domain) => {
             const hash = fastHash(domain);
 
             // Add the rule to the lookup table

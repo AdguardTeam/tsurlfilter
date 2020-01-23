@@ -483,8 +483,8 @@ export class NetworkRule implements rule.IRule {
 
         // More specific rules (i.e. with more modifiers) have higher priority
         // TODO: Fix options count
-        const count =
-            this.enabledOptions + this.disabledOptions + this.permittedRequestTypes + this.restrictedRequestTypes;
+        const count = this.enabledOptions + this.disabledOptions
+            + this.permittedRequestTypes + this.restrictedRequestTypes;
         const rCount = r.enabledOptions + r.disabledOptions + r.permittedRequestTypes + r.restrictedRequestTypes;
 
         return count > rCount;

@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
  * find all rules matching this or that hostname
