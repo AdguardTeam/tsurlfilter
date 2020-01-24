@@ -96,3 +96,26 @@ export function fastHash(str: string): number {
     const len = str.length;
     return fastHashBetween(str, 0, len);
 }
+
+/**
+ * Look for any symbol from "chars" array starting at "start" index or from the start of the string
+ *
+ * @param str   String to search
+ * @param chars Chars to search for
+ * @param start Start index (optional, inclusive)
+ * @return int Index of the element found or -1 if not
+ */
+export function indexOfAny(str: string, chars: string[], start = 0): number {
+    if (str.length <= start) {
+        return -1;
+    }
+
+    for (let i = start; i < str.length; i += 1) {
+        const c = str.charAt(i);
+        if (chars.indexOf(c) > -1) {
+            return i;
+        }
+    }
+
+    return -1;
+}

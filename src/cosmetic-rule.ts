@@ -1,6 +1,7 @@
 import * as rule from './rule';
 import { CosmeticRuleMarker, findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { DomainModifier } from './domain-modifier';
+import { indexOfAny } from './utils';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -39,6 +40,86 @@ export enum CosmeticRuleType {
      */
     HTML,
 }
+
+/**
+ * Parses first pseudo class from the specified CSS selector
+ *
+ * @param selector
+ * @returns pseudo class name if found or null
+ */
+function parsePseudoClass(selector: string): string | null {
+    let beginIndex = 0;
+    let nameStartIndex = -1;
+    let squareBracketIndex = 0;
+
+    while (squareBracketIndex >= 0) {
+        nameStartIndex = selector.indexOf(':', beginIndex);
+        if (nameStartIndex < 0) {
+            return null;
+        }
+
+        if (nameStartIndex > 0 && selector.charAt(nameStartIndex - 1) === '\\') {
+            // Escaped colon character
+            return null;
+        }
+
+        squareBracketIndex = selector.indexOf('[', beginIndex);
+        while (squareBracketIndex >= 0) {
+            if (nameStartIndex > squareBracketIndex) {
+                const squareEndBracketIndex = selector.indexOf(']', squareBracketIndex + 1);
+                beginIndex = squareEndBracketIndex + 1;
+                if (nameStartIndex < squareEndBracketIndex) {
+                    // Means that colon character is somewhere inside attribute selector
+                    // Something like a[src^="http://domain.com"]
+                    break;
+                }
+
+                if (squareEndBracketIndex > 0) {
+                    squareBracketIndex = selector.indexOf('[', beginIndex);
+                } else {
+                    // bad rule, example: a[src="http:
+                    return null;
+                }
+            } else {
+                squareBracketIndex = -1;
+                break;
+            }
+        }
+    }
+
+    let nameEndIndex = indexOfAny(
+        selector,
+        [' ', '\t', '>', '(', '[', '.', '#', ':', '+', '~', '"', '\''],
+        nameStartIndex + 1,
+    );
+
+    if (nameEndIndex < 0) {
+        nameEndIndex = selector.length;
+    }
+
+    const name = selector.substring(nameStartIndex, nameEndIndex);
+    if (name.length <= 1) {
+        // Either empty name or a pseudo element (like ::content)
+        return null;
+    }
+
+    return name;
+}
+
+/**
+ * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
+ * which contains a lot more selectors. So, if CSS selector contains a pseudo-class, we should try to validate it.
+ * <p>
+ * One more problem with pseudo-classes is that they are actively used in uBlock, hence it may mess AG styles.
+ */
+const SUPPORTED_PSEUDO_CLASSES = [':active',
+    ':checked', ':contains', ':disabled', ':empty', ':enabled', ':first-child', ':first-of-type',
+    ':focus', ':has', ':has-text', ':hover', ':if', ':if-not', ':in-range', ':invalid', ':lang',
+    ':last-child', ':last-of-type', ':link', ':matches-css', ':matches-css-before', ':matches-css-after',
+    ':not', ':nth-child', ':nth-last-child', ':nth-last-of-type', ':nth-of-type',
+    ':only-child', ':only-of-type', ':optional', ':out-of-range', ':properties', ':read-only',
+    ':read-write', ':required', ':root', ':target', ':valid', ':visited',
+    ':-abp-has', ':-abp-contains', ':-abp-properties'];
 
 /**
  * Implements a basic cosmetic rule.
@@ -139,9 +220,7 @@ export class CosmeticRule implements rule.IRule {
         this.ruleText = ruleText;
         this.filterListId = filterListId;
 
-        const markerResult = findCosmeticRuleMarker(ruleText);
-        const index = markerResult[0];
-        const marker = markerResult[1];
+        const [index, marker] = findCosmeticRuleMarker(ruleText);
 
         if (index < 0 || marker === null) {
             throw new SyntaxError('This is not a cosmetic rule');
@@ -169,6 +248,15 @@ export class CosmeticRule implements rule.IRule {
                 this.type = CosmeticRuleType.ElementHiding;
                 this.whitelist = true;
                 break;
+            case CosmeticRuleMarker.Css:
+            case CosmeticRuleMarker.CssExtCSS:
+                this.type = CosmeticRuleType.CSS;
+                break;
+            case CosmeticRuleMarker.CssException:
+            case CosmeticRuleMarker.CSSExtCSSException:
+                this.type = CosmeticRuleType.CSS;
+                this.whitelist = true;
+                break;
             default:
                 // TODO: Start supporting other types
                 throw new SyntaxError('Unsupported rule type');
@@ -176,6 +264,35 @@ export class CosmeticRule implements rule.IRule {
 
         if (this.whitelist && (this.permittedDomains === null || this.permittedDomains.length === 0)) {
             throw new SyntaxError('Whitelist rule must have at least one domain specified');
+        }
+
+        // validate pseudo class for CSS type
+        if (this.type !== CosmeticRuleType.CSS) {
+            // We need to validate pseudo-classes
+            const pseudoClass = parsePseudoClass(this.content);
+            if (pseudoClass !== null) {
+                if (SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
+                    throw new SyntaxError(`Unknown pseudo class: ${this.content}`);
+                }
+            }
+        }
+
+        if (this.type === CosmeticRuleType.CSS) {
+            // Simple validation for css injection rules
+            if (!/{.+}/.test(this.content)) {
+                throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
+            }
+            // discard css inject rules containing "url"
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196
+            if (/url\(.*\)/gi.test(this.content)) {
+                throw new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`);
+            }
+
+            // Prohibit "\" character in CSS injection rules
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1444
+            if (this.content.indexOf('\\') > -1) {
+                throw new SyntaxError(`CSS injection rule with '\\' was omitted: ${ruleText}`);
+            }
         }
 
         // TODO: validate content
