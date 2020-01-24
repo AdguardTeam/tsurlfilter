@@ -4,8 +4,6 @@ import { NetworkRule, NetworkRuleOption } from '../network-rule';
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
  * that define how a web request should be processed
- *
- * TODO: Add tests
  */
 export class MatchingResult {
     /**
