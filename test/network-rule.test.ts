@@ -396,3 +396,42 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(true);
     });
 });
+
+describe('NetworkRule.isHigherPriority', () => {
+    function compareRulesPriority(left: string, right: string, expected: boolean): void {
+        const l = new NetworkRule(left, -1);
+        const r = new NetworkRule(right, -1);
+
+        expect(l.isHigherPriority(r)).toBe(expected);
+    }
+
+    it('checks rule priority', () => {
+        compareRulesPriority('@@||example.org$important', '@@||example.org$important', false);
+        compareRulesPriority('@@||example.org$important', '||example.org$important', true);
+        compareRulesPriority('@@||example.org$important', '@@||example.org', true);
+        compareRulesPriority('@@||example.org$important', '||example.org', true);
+
+        // $important -> whitelist
+        compareRulesPriority('||example.org$important', '@@||example.org$important', false);
+        compareRulesPriority('||example.org$important', '||example.org$important', false);
+        compareRulesPriority('||example.org$important', '@@||example.org', true);
+        compareRulesPriority('||example.org$important', '||example.org', true);
+
+        // whitelist -> basic
+        compareRulesPriority('@@||example.org', '@@||example.org$important', false);
+        compareRulesPriority('@@||example.org', '||example.org$important', false);
+        compareRulesPriority('@@||example.org', '@@||example.org', false);
+        compareRulesPriority('@@||example.org', '||example.org', true);
+
+        compareRulesPriority('||example.org', '@@||example.org$important', false);
+        compareRulesPriority('||example.org', '||example.org$important', false);
+        compareRulesPriority('||example.org', '@@||example.org', false);
+        compareRulesPriority('||example.org', '||example.org', false);
+
+        // specific -> generic
+        compareRulesPriority('||example.org$domain=example.org', '||example.org$script,stylesheet', true);
+
+        // more modifiers -> less modifiers
+        compareRulesPriority('||example.org$script,stylesheet', '||example.org$script', true);
+    });
+});

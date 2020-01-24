@@ -382,10 +382,6 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if there is an unsupported modifier
      */
     private loadOptions(options: string): void {
-        if (!options) {
-            return;
-        }
-
         const optionParts = utils.splitByDelimiterWithEscapeCharacter(options, ',', '\\', false);
 
         for (let i = 0; i < optionParts.length; i += 1) {
@@ -441,8 +437,6 @@ export class NetworkRule implements rule.IRule {
      * whitelist + $important > $important > whitelist > basic rules
      */
     isHigherPriority(r: NetworkRule): boolean {
-        // TODO: Implement isHigherPriority
-
         const important = this.isOptionEnabled(NetworkRuleOption.Important);
         const rImportant = r.isOptionEnabled(NetworkRuleOption.Important);
         if (this.isWhitelist() && important && !(r.isWhitelist() && rImportant)) {
