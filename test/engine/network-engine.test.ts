@@ -1,5 +1,5 @@
 import { NetworkEngine } from '../../src/engine/network-engine';
-import { Request, RequestType } from '../../src/request';
+import { Request, RequestType } from '../../src';
 
 describe('TestEmptyNetworkEngine', () => {
     it('works if empty engine is ok', () => {

@@ -1,5 +1,5 @@
 import { Engine } from '../../src/engine/engine';
-import { Request, RequestType } from '../../src/request';
+import { Request, RequestType } from '../../src';
 
 describe('TestEngineMatchRequest', () => {
     it('works if request matches rule', () => {
