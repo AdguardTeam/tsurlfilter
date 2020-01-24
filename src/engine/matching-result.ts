@@ -1,6 +1,7 @@
 /* eslint-disable */
 
-import { NetworkRule, NetworkRuleOption } from '../network-rule';
+import {NetworkRule, NetworkRuleOption} from '../network-rule';
+
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
  * that define how a web request should be processed
@@ -63,9 +64,10 @@ export class MatchingResult {
         this.cspRules = null;
         this.stealthRule = null;
 
-        // TODO: Implement bad filter rules
-        // rules = removeBadfilterRules(rules)
-        // sourceRules = removeBadfilterRules(sourceRules)
+        rules = MatchingResult.removeBadfilterRules(rules);
+        if (sourceRules) {
+            sourceRules = MatchingResult.removeBadfilterRules(sourceRules);
+        }
 
         // First of all, find document-level whitelist rules
         if (sourceRules) {
@@ -159,5 +161,36 @@ export class MatchingResult {
         }
 
         return this.basicRule;
+    }
+
+    /**
+     * Looks if there are any matching $badfilter rules and removes
+     * matching bad filters from the array (see the $badfilter description for more info)
+     *
+     * @param rules
+     */
+    private static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
+        const badfilterRules: NetworkRule[] = [];
+        for (const rule of rules) {
+            if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+                badfilterRules.push(rule);
+            }
+        }
+
+        if (badfilterRules.length > 0) {
+            const filteredRules: NetworkRule[] = [];
+
+            for (const badfilter of badfilterRules) {
+                for (const rule of rules) {
+                    if (!badfilter.negatesBadfilter(rule) && !rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+                        filteredRules.push(rule);
+                    }
+                }
+            }
+
+            return filteredRules;
+        }
+
+        return rules;
     }
 }

@@ -97,66 +97,65 @@ describe('TestGetCosmeticOption', () => {
     });
 });
 
-// TODO: Fix badfilter modifier
-// describe('TestNewMatchingResultBadfilter', () => {
-//     it('works if badfilter is ok', () => {
-//         const rules = [
-//             new NetworkRule('||example.org^', 0),
-//             new NetworkRule('||example.org^$badfilter', 0),
-//         ];
-//         const sourceRules: NetworkRule[] = [];
-//
-//         const result = new MatchingResult(rules, sourceRules);
-//
-//         expect(result).toBeTruthy();
-//         expect(result.basicRule).toBeNull();
-//         expect(result.documentRule).toBeNull();
-//     });
-// });
-//
-// describe('TestNewMatchingResultBadfilterWhitelist', () => {
-//     it('works if badfilter whitelist is ok', () => {
-//         const rules = [
-//             new NetworkRule('||example.org^', 0),
-//             new NetworkRule('@@||example.org^', 0),
-//             new NetworkRule('@@||example.org^$badfilter', 0),
-//         ];
-//         const sourceRules: NetworkRule[] = [];
-//
-//         const result = new MatchingResult(rules, sourceRules);
-//
-//         expect(result).toBeTruthy();
-//         expect(result.basicRule).toBeTruthy();
-//         expect(result.documentRule).toBeNull();
-//
-//         const basicResult = result.getBasicResult();
-//         expect(basicResult).toBeTruthy();
-//         if (basicResult) {
-//             expect(basicResult.getText()).toEqual('||example.org^');
-//         }
-//     });
-// });
-//
-// describe('TestNewMatchingResultBadfilterSourceRules', () => {
-//     it('works if badfilter source whitelist is ok', () => {
-//         const rules = [
-//             new NetworkRule('||example.org^', 0),
-//         ];
-//         const sourceRules: NetworkRule[] = [
-//             new NetworkRule('@@||example.org^$document', 0),
-//             new NetworkRule('@@||example.org^$document,badfilter', 0),
-//         ];
-//
-//         const result = new MatchingResult(rules, sourceRules);
-//
-//         expect(result).toBeTruthy();
-//         expect(result.basicRule).toBeTruthy();
-//         expect(result.documentRule).toBeNull();
-//
-//         const basicResult = result.getBasicResult();
-//         expect(basicResult).toBeTruthy();
-//         if (basicResult) {
-//             expect(basicResult.getText()).toEqual('||example.org^');
-//         }
-//     });
-// });
+describe('TestNewMatchingResultBadfilter', () => {
+    it('works if badfilter is ok', () => {
+        const rules = [
+            new NetworkRule('||example.org^', 0),
+            new NetworkRule('||example.org^$badfilter', 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeNull();
+    });
+});
+
+describe('TestNewMatchingResultBadfilterWhitelist', () => {
+    it('works if badfilter whitelist is ok', () => {
+        const rules = [
+            new NetworkRule('||example.org^', 0),
+            new NetworkRule('@@||example.org^', 0),
+            new NetworkRule('@@||example.org^$badfilter', 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeTruthy();
+        expect(result.documentRule).toBeNull();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        if (basicResult) {
+            expect(basicResult.getText()).toEqual('||example.org^');
+        }
+    });
+});
+
+describe('TestNewMatchingResultBadfilterSourceRules', () => {
+    it('works if badfilter source whitelist is ok', () => {
+        const rules = [
+            new NetworkRule('||example.org^', 0),
+        ];
+        const sourceRules: NetworkRule[] = [
+            new NetworkRule('@@||example.org^$document', 0),
+            new NetworkRule('@@||example.org^$document,badfilter', 0),
+        ];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeTruthy();
+        expect(result.documentRule).toBeNull();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        if (basicResult) {
+            expect(basicResult.getText()).toEqual('||example.org^');
+        }
+    });
+});

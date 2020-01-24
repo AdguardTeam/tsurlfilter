@@ -170,6 +170,7 @@ describe('NetworkRule constructor', () => {
         checkModifier('document', NetworkRuleOption.Content, true);
 
         checkModifier('stealth', NetworkRuleOption.Stealth, true);
+        checkModifier('badfilter', NetworkRuleOption.Badfilter, true);
 
         checkModifier('popup', NetworkRuleOption.Popup, true);
         checkModifier('empty', NetworkRuleOption.Empty, true);
@@ -220,6 +221,25 @@ describe('NetworkRule constructor', () => {
 
         checkRequestType('other', RequestType.Other, true);
         checkRequestType('~other', RequestType.Other, false);
+    });
+
+    function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean) {
+        const r = new NetworkRule(rule, -1);
+        expect(r).toBeTruthy();
+
+        const b = new NetworkRule(badfilter, -1);
+        expect(b).toBeTruthy();
+
+        expect(b.negatesBadfilter(r)).toEqual(expected);
+    }
+
+    it('works if badfilter modifier works properly', () => {
+        assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org,badfilter', true);
+        assertBadfilterNegates('*$image,domain=example.org', '*$domain=example.org,badfilter', false);
+        assertBadfilterNegates('*$image,domain=example.org', '*$image,badfilter,domain=example.org', true);
+        assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', false);
+        assertBadfilterNegates('@@*$image,domain=example.org', '@@*$image,domain=example.org,badfilter', true);
+        assertBadfilterNegates('@@*$image,domain=example.org', '*$image,domain=example.org,badfilter', false);
     });
 });
 

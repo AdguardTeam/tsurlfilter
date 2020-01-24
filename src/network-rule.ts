@@ -56,6 +56,8 @@ export enum NetworkRuleOption {
     Cookie = 1 << 16,
     /** $redirect modifier */
     Redirect = 1 << 17,
+    /** $badfilter modifier */
+    Badfilter = 1 << 18,
 
     // TODO: Add other modifiers
 
@@ -502,6 +504,74 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Returns true if this rule negates the specified rule
+     * Only makes sense when this rule has a `badfilter` modifier
+     */
+    negatesBadfilter(specifiedRule: NetworkRule): boolean {
+        if (!this.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+            return false;
+        }
+
+        if (this.whitelist !== specifiedRule.whitelist) {
+            return false;
+        }
+
+        if (this.pattern !== specifiedRule.pattern) {
+            return false;
+        }
+
+        if (this.permittedRequestTypes !== specifiedRule.permittedRequestTypes) {
+            return false;
+        }
+
+        if (this.restrictedRequestTypes !== specifiedRule.restrictedRequestTypes) {
+            return false;
+        }
+
+        if ((this.enabledOptions ^ NetworkRuleOption.Badfilter) !== specifiedRule.enabledOptions) {
+            return false;
+        }
+
+        if (this.disabledOptions !== specifiedRule.disabledOptions) {
+            return false;
+        }
+
+        if (!NetworkRule.stringArraysEquals(this.permittedDomains, specifiedRule.permittedDomains)) {
+            return false;
+        }
+
+        if (!NetworkRule.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if arrays are equal
+     *
+     * @param l
+     * @param r
+     */
+    private static stringArraysEquals(l: string[] | null, r: string[] | null): boolean {
+        if (!l || !r) {
+            return !l && !r;
+        }
+
+        if (l.length !== r.length) {
+            return false;
+        }
+
+        for (let i = 0; i < l.length; i += 1) {
+            if (l[i] !== r[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Enables or disables the specified option.
      *
      * @param option - option to enable or disable.
@@ -686,6 +756,11 @@ export class NetworkRule implements rule.IRule {
                 break;
             case '~other':
                 this.setRequestType(RequestType.Other, false);
+                break;
+
+            // Special modifiers
+            case 'badfilter':
+                this.setOptionEnabled(NetworkRuleOption.Badfilter, true);
                 break;
 
                 // TODO: Add $csp
