@@ -1,4 +1,4 @@
-import { MatchingResult } from '../../src/engine/matching-result';
+import { CosmeticOption, MatchingResult } from '../../src/engine/matching-result';
 import { NetworkRule } from '../../src';
 
 describe('TestNewMatchingResult', () => {
@@ -41,7 +41,6 @@ describe('TestNewMatchingResultWhitelist', () => {
     });
 });
 
-// TODO: Check getCosmeticOption
 describe('TestGetCosmeticOption', () => {
     let rules: NetworkRule[];
     const sourceRules: NetworkRule[] = [];
@@ -52,8 +51,8 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRules);
 
         expect(result).toBeTruthy();
-        // expect(result.getCosmeticOption()).toBeTruthy();
-        // expect(result.getCosmeticOption()).toEqual(CosmeticOptionAll);
+        expect(result.getCosmeticOption()).toBeTruthy();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionAll);
     });
 
     it('works with $generichide modifier', () => {
@@ -62,8 +61,9 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRules);
 
         expect(result).toBeTruthy();
-        // expect(result.getCosmeticOption()).toBeTruthy();
-        // expect(result.getCosmeticOption()).toEqual(CosmeticOptionCSS|CosmeticOptionJS);
+        expect(result.getCosmeticOption()).toBeTruthy();
+        expect(result.getCosmeticOption())
+            .toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionJS);
     });
 
     it('works with $jsinject modifier', () => {
@@ -72,8 +72,9 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRules);
 
         expect(result).toBeTruthy();
-        // expect(result.getCosmeticOption()).toBeTruthy();
-        // expect(result.getCosmeticOption()).toEqual(CosmeticOptionCSS|CosmeticOptionGenericCSS);
+        expect(result.getCosmeticOption()).toBeTruthy();
+        expect(result.getCosmeticOption())
+            .toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionGenericCSS);
     });
 
     it('works with $elemhide modifier', () => {
@@ -82,8 +83,8 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRules);
 
         expect(result).toBeTruthy();
-        // expect(result.getCosmeticOption()).toBeTruthy();
-        // expect(result.getCosmeticOption()).toEqual(CosmeticOptionJS);
+        expect(result.getCosmeticOption()).toBeTruthy();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS);
     });
 
     it('works with $document modifier', () => {
@@ -92,8 +93,8 @@ describe('TestGetCosmeticOption', () => {
         const result = new MatchingResult(rules, sourceRules);
 
         expect(result).toBeTruthy();
-        // expect(result.getCosmeticOption()).toBeTruthy();
-        // expect(result.getCosmeticOption()).toEqual(CosmeticOptionNone);
+        expect(result.getCosmeticOption()).toBeDefined();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
     });
 });
 

@@ -3,6 +3,47 @@
 import {NetworkRule, NetworkRuleOption} from '../network-rule';
 
 /**
+ * CosmeticOption is the enumeration of various content script options.
+ * Depending on the set of enabled flags the content script will contain different set of settings.
+ */
+export enum CosmeticOption {
+    /**
+     * if generic elemhide and CSS rules are enabled
+     * Could be disabled by a $generichide rule.
+     */
+    CosmeticOptionGenericCSS = 1 << 1,
+    /**
+     * if elemhide and CSS rules are enabled
+     * Could be disabled by an $elemhide rule.
+     */
+    CosmeticOptionCSS = 1 << 2,
+    /**
+     * if JS rules and scriptlets are enabled
+     * Could be disabled by a $jsinject rule.
+     */
+    CosmeticOptionJS = 1 << 3,
+
+    /**
+     * TODO: Add support for these flags
+     * They are useful when content script is injected into an iframe
+     * In this case we can check what flags were applied to the top-level frame
+     */
+    CosmeticOptionSourceGenericCSS = 1 << 4,
+    CosmeticOptionSourceCSS = 1 << 5,
+    CosmeticOptionSourceJS = 1 << 6,
+
+    /**
+     * everything is enabled
+     */
+    CosmeticOptionAll = CosmeticOptionGenericCSS | CosmeticOptionCSS | CosmeticOptionJS,
+
+    /**
+     * everything is disabled
+     */
+    CosmeticOptionNone = 0
+}
+
+/**
  * MatchingResult contains all the rules matching a web request, and provides methods
  * that define how a web request should be processed
  */
@@ -161,6 +202,32 @@ export class MatchingResult {
         }
 
         return this.basicRule;
+    }
+
+    /**
+     * Returns a bit-flag with the list of cosmetic options
+     */
+    getCosmeticOption() : CosmeticOption {
+        if (!this.basicRule || !this.basicRule.isWhitelist()) {
+            return CosmeticOption.CosmeticOptionAll;
+        }
+
+        let option = CosmeticOption.CosmeticOptionAll;
+
+        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Elemhide)) {
+            option ^= CosmeticOption.CosmeticOptionCSS;
+            option ^= CosmeticOption.CosmeticOptionGenericCSS;
+        }
+
+        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Generichide)) {
+            option ^= CosmeticOption.CosmeticOptionGenericCSS;
+        }
+
+        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
+            option ^= CosmeticOption.CosmeticOptionJS;
+        }
+
+        return option;
     }
 
     /**
