@@ -59,6 +59,18 @@ describe('NetworkRule.parseRuleText', () => {
         expect(parts.whitelist).toEqual(false);
     });
 
+    it('works when it handles escaped delimiter properly', () => {
+        let parts = NetworkRule.parseRuleText('||example.org\\$smth');
+        expect(parts.pattern).toEqual('||example.org\\$smth');
+        expect(parts.options).toBeUndefined();
+        expect(parts.whitelist).toEqual(false);
+
+        parts = NetworkRule.parseRuleText('/regex/$replace=/test\\$/test2/');
+        expect(parts.pattern).toEqual('/regex/');
+        expect(parts.options).toEqual('replace=/test\\$/test2/');
+        expect(parts.whitelist).toEqual(false);
+    });
+
     it('works when it handles incorrect rules properly', () => {
         expect(() => {
             NetworkRule.parseRuleText('@@');
@@ -76,6 +88,7 @@ describe('NetworkRule constructor', () => {
         expect(rule.isRegexRule()).toEqual(false);
         expect(rule.getPermittedDomains()).toEqual(null);
         expect(rule.getRestrictedDomains()).toEqual(null);
+        expect(rule.isGeneric()).toEqual(true);
     });
 
     it('works when it handles unknown modifiers properly', () => {
@@ -223,7 +236,7 @@ describe('NetworkRule constructor', () => {
         checkRequestType('~other', RequestType.Other, false);
     });
 
-    function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean) {
+    function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
         const r = new NetworkRule(rule, -1);
         expect(r).toBeTruthy();
 
@@ -235,11 +248,17 @@ describe('NetworkRule constructor', () => {
 
     it('works if badfilter modifier works properly', () => {
         assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org,badfilter', true);
+        assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org', false);
+        assertBadfilterNegates('*$~third-party,domain=example.org', '*$domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org', '*$domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org', '*$image,badfilter,domain=example.org', true);
         assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', false);
         assertBadfilterNegates('@@*$image,domain=example.org', '@@*$image,domain=example.org,badfilter', true);
         assertBadfilterNegates('@@*$image,domain=example.org', '*$image,domain=example.org,badfilter', false);
+        assertBadfilterNegates('@@path$image,domain=~example.org', '@@path$image,domain=~example.com,badfilter', false);
+        // eslint-disable-next-line max-len
+        assertBadfilterNegates('@@path$image,domain=~example.org', '@@an-other-path$image,domain=~example.org,badfilter', false);
+        assertBadfilterNegates('*$~image,domain=example.org', '*$~script,domain=example.org,badfilter', false);
     });
 });
 
