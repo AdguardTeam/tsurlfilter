@@ -20,7 +20,7 @@ describe('TestMatchWhitelistRule', () => {
         const request = new Request('http://example.org/', '', RequestType.Script);
         const result = engine.match(request);
 
-        expect(result).toBeDefined();
+        expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(exceptionRule);
     });
 });
@@ -38,7 +38,7 @@ describe('TestMatchImportantRule', () => {
         request = new Request('http://example.org/', '', RequestType.Other);
         result = engine.match(request);
 
-        expect(result).toBeDefined();
+        expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(r2);
     });
 
@@ -46,7 +46,7 @@ describe('TestMatchImportantRule', () => {
         request = new Request('http://test1.example.org/', '', RequestType.Other);
         result = engine.match(request);
 
-        expect(result).toBeDefined();
+        expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(r2);
     });
 
@@ -54,7 +54,7 @@ describe('TestMatchImportantRule', () => {
         request = new Request('http://test2.example.org/', '', RequestType.Other);
         result = engine.match(request);
 
-        expect(result).toBeDefined();
+        expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(r1);
     });
 });
@@ -71,7 +71,7 @@ describe('TestMatchSourceRule', () => {
         const request = new Request(url, sourceURL, RequestType.Image);
         const result = engine.match(request);
 
-        expect(result).toBeDefined();
+        expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(rule);
     });
 });
@@ -87,7 +87,7 @@ describe('TestMatchSimplePattern', () => {
         const request = new Request(url, sourceURL, RequestType.XmlHttpRequest);
         const result = engine.match(request);
 
-        expect(result).toBeDefined();
+        expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(rule);
     });
 });

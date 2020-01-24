@@ -322,7 +322,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(true);
     });
 
-    it('wors when content type restrictions are applied properly', () => {
+    it('works when content type restrictions are applied properly', () => {
         let rule: NetworkRule;
         let request: Request;
 
