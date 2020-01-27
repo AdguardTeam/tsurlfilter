@@ -27,6 +27,7 @@ export class NetworkEngine {
     /**
      * Storage for the network filtering rules
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private ruleStorage: any;
 
     /**
@@ -50,7 +51,7 @@ export class NetworkEngine {
     private otherRules: NetworkRule[];
 
     /**
-     * Constructor
+     * Builds an instance of the network engine
      *
      * @param rules
      */
@@ -63,6 +64,7 @@ export class NetworkEngine {
 
         // TODO: Implement RulesStorage
         this.ruleStorage = {
+            // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
             retrieveNetworkRule(index: number) {
                 return new NetworkRule(rules[index], 0);
             },
@@ -73,9 +75,10 @@ export class NetworkEngine {
 
     /**
      * Match searches over all filtering rules loaded to the engine
-     * It returns true if a match was found alongside the matching rule
+     * It returns rule if a match was found alongside the matching rule
      *
-     * @param request
+     * @param request to check
+     * @return rule matching request or null
      */
     match(request: Request): NetworkRule | null {
         const networkRules = this.matchAll(request);
@@ -92,7 +95,8 @@ export class NetworkEngine {
      * Finds all rules matching the specified request regardless of the rule types
      * It will find both whitelist and blacklist rules
      *
-     * @param request
+     * @param request to check
+     * @return array of matching rules
      */
     matchAll(request: Request): NetworkRule[] {
         // First check by shortcuts
@@ -112,7 +116,8 @@ export class NetworkEngine {
     /**
      * Finds all matching rules from the shortcuts lookup table
      *
-     * @param request
+     * @param request to check
+     * @return array of matching rules
      */
     private matchShortcutsLookupTable(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
@@ -141,7 +146,8 @@ export class NetworkEngine {
     /**
      * Finds all matching rules from the domains lookup table
      *
-     * @param request
+     * @param request to check
+     * @return array of matching rules
      */
     private matchDomainsLookupTable(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
@@ -173,7 +179,7 @@ export class NetworkEngine {
      * @param rule
      * @param storageIdx
      */
-    private addRule(rule: NetworkRule, storageIdx: number) {
+    private addRule(rule: NetworkRule, storageIdx: number): void {
         if (!this.addRuleToShortcutsTable(rule, storageIdx)) {
             if (!this.addRuleToDomainsTable(rule, storageIdx)) {
                 if (!this.otherRules.includes(rule)) {
@@ -189,10 +195,11 @@ export class NetworkEngine {
      * Tries to add the rule to the domains lookup table.
      * returns true if it was added
      *
-     * @param rule
-     * @param storageIdx
+     * @param rule to add
+     * @param storageIdx index
+     * @return {boolean} true if the rule been added
      */
-    private addRuleToShortcutsTable(rule: NetworkRule, storageIdx: number) {
+    private addRuleToShortcutsTable(rule: NetworkRule, storageIdx: number): boolean {
         const shortcuts = NetworkEngine.getRuleShortcuts(rule);
         if (!shortcuts || shortcuts.length === 0) {
             return false;
@@ -235,7 +242,7 @@ export class NetworkEngine {
      * Returns a list of shortcuts that can be used for the lookup table
      *
      * @param rule
-     * @return {any}
+     * @return array of shortcuts or null
      */
     private static getRuleShortcuts(rule: NetworkRule): string[] | null {
         const shortcut = rule.getShortcut();
@@ -260,7 +267,8 @@ export class NetworkEngine {
      * Checks if the rule potentially matches too many URLs.
      * We'd better use another type of lookup table for this kind of rules.
      *
-     * @param rule
+     * @param rule to check
+     * @return check result
      */
     private static isAnyURLShortcut(rule: NetworkRule): boolean {
         const shortcut = rule.getShortcut();
@@ -278,21 +286,18 @@ export class NetworkEngine {
             return true;
         }
 
-        if (shortcut.length < 10 && shortcut.indexOf('|http') === 0) {
-            return true;
-        }
-
-        return false;
+        return !!(shortcut.length < 10 && shortcut.indexOf('|http') === 0);
     }
 
     /**
      * Tries to add the rule to the shortcuts table.
      * returns true if it was added or false if the shortcut is too short
      *
-     * @param rule
-     * @param storageIdx
+     * @param rule to add
+     * @param storageIdx index
+     * @return {boolean} true if the rule been added
      */
-    private addRuleToDomainsTable(rule: NetworkRule, storageIdx: number) {
+    private addRuleToDomainsTable(rule: NetworkRule, storageIdx: number): boolean {
         const permittedDomains = rule.getPermittedDomains();
         if (!permittedDomains || permittedDomains.length === 0) {
             return false;
@@ -317,7 +322,7 @@ export class NetworkEngine {
      * Splits the specified hostname and returns all subdomains (including the hostname itself)
      *
      * @param hostname
-     * @return {any}
+     * @return array of subdomains
      */
     private static getSubdomains(hostname: string): string[] {
         const parts = hostname.split('.');

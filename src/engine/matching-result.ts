@@ -1,6 +1,4 @@
-/* eslint-disable */
-
-import {NetworkRule, NetworkRuleOption} from '../network-rule';
+import { NetworkRule, NetworkRuleOption } from '../network-rule';
 
 /**
  * CosmeticOption is the enumeration of various content script options.
@@ -91,10 +89,13 @@ export class MatchingResult {
      * Note that the stealth rule can be be received from both rules and sourceRules
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
      */
-    public readonly stealthRule: NetworkRule | null;
+    public stealthRule: NetworkRule | null;
 
     /**
      * Creates an instance of the MatchingResult struct and fills it with the rules.
+     *
+     * @param rules network rules
+     * @param sourceRules source rules
      */
     constructor(rules: NetworkRule[], sourceRules: NetworkRule[] | null) {
         this.basicRule = null;
@@ -105,14 +106,16 @@ export class MatchingResult {
         this.cspRules = null;
         this.stealthRule = null;
 
+        // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
         if (sourceRules) {
+            // eslint-disable-next-line no-param-reassign
             sourceRules = MatchingResult.removeBadfilterRules(sourceRules);
         }
 
         // First of all, find document-level whitelist rules
         if (sourceRules) {
-            for (const r of sourceRules) {
+            sourceRules.forEach((r) => {
                 if (r.isDocumentWhitelistRule()) {
                     if (!this.documentRule || r.isHigherPriority(this.documentRule)) {
                         this.documentRule = r;
@@ -122,7 +125,7 @@ export class MatchingResult {
                 if (r.isOptionEnabled(NetworkRuleOption.Stealth)) {
                     this.stealthRule = r;
                 }
-            }
+            });
         }
 
         // Second - check if blocking rules (generic or all of them) are allowed
@@ -131,14 +134,16 @@ export class MatchingResult {
         // basic blocking rules are allowed by default
         let basicAllowed = true;
         if (this.documentRule) {
-            if (this.documentRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
+            const documentRule = this.documentRule as NetworkRule;
+            if (documentRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
                 basicAllowed = false;
-            } else if (this.documentRule.isOptionEnabled(NetworkRuleOption.Genericblock)) {
+            } else if (documentRule.isOptionEnabled(NetworkRuleOption.Genericblock)) {
                 genericAllowed = false;
             }
         }
 
         // Iterate through the list of rules and fill the MatchingResult
+        // eslint-disable-next-line no-restricted-syntax
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
                 this.cookieRules = [];
@@ -179,7 +184,7 @@ export class MatchingResult {
      * returns a whitelist rule -- bypass the request.
      * returns a blocking rule -- block the request.
      *
-     * @return {any}
+     * @return {NetworkRule | null} basic result rule
      */
     getBasicResult(): NetworkRule | null {
         // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#replace-modifier
@@ -206,8 +211,10 @@ export class MatchingResult {
 
     /**
      * Returns a bit-flag with the list of cosmetic options
+     *
+     * @return {CosmeticOption} mask
      */
-    getCosmeticOption() : CosmeticOption {
+    getCosmeticOption(): CosmeticOption {
         if (!this.basicRule || !this.basicRule.isWhitelist()) {
             return CosmeticOption.CosmeticOptionAll;
         }
@@ -234,10 +241,12 @@ export class MatchingResult {
      * Looks if there are any matching $badfilter rules and removes
      * matching bad filters from the array (see the $badfilter description for more info)
      *
-     * @param rules
+     * @param rules to filter
+     * @return filtered rules
      */
     private static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
+        // eslint-disable-next-line no-restricted-syntax
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
                 badfilterRules.push(rule);
@@ -247,7 +256,9 @@ export class MatchingResult {
         if (badfilterRules.length > 0) {
             const filteredRules: NetworkRule[] = [];
 
+            // eslint-disable-next-line no-restricted-syntax
             for (const badfilter of badfilterRules) {
+                // eslint-disable-next-line no-restricted-syntax
                 for (const rule of rules) {
                     if (!badfilter.negatesBadfilter(rule) && !rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
                         filteredRules.push(rule);
