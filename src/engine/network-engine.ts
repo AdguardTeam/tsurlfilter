@@ -70,7 +70,14 @@ export class NetworkEngine {
             },
         };
 
-        rules.forEach((r) => this.addRule(new NetworkRule(r, 0), rules.indexOf(r)));
+        rules.forEach((r) => {
+            try {
+                this.addRule(new NetworkRule(r, 0), rules.indexOf(r));
+            } catch (e) {
+                // Error loading rule
+                // TODO: Implement RulesStorage
+            }
+        });
     }
 
     /**
