@@ -478,10 +478,23 @@ export class NetworkRule implements rule.IRule {
         }
 
         // More specific rules (i.e. with more modifiers) have higher priority
-        // TODO: Fix options count
-        const count = this.enabledOptions + this.disabledOptions
-            + this.permittedRequestTypes + this.restrictedRequestTypes;
-        const rCount = r.enabledOptions + r.disabledOptions + r.permittedRequestTypes + r.restrictedRequestTypes;
+        let count = utils.countElementsInEnum(this.enabledOptions, NetworkRuleOption)
+            + utils.countElementsInEnum(this.disabledOptions, NetworkRuleOption)
+            + utils.countElementsInEnum(this.permittedRequestTypes, RequestType)
+            + utils.countElementsInEnum(this.restrictedRequestTypes, RequestType);
+        if ((this.permittedDomains && this.permittedDomains.length > 0)
+            || (this.restrictedDomains && this.restrictedDomains.length > 0)) {
+            count += 1;
+        }
+
+        let rCount = utils.countElementsInEnum(r.enabledOptions, NetworkRuleOption)
+            + utils.countElementsInEnum(r.disabledOptions, NetworkRuleOption)
+            + utils.countElementsInEnum(r.permittedRequestTypes, RequestType)
+            + utils.countElementsInEnum(r.restrictedRequestTypes, RequestType);
+        if ((r.permittedDomains && r.permittedDomains.length > 0)
+            || (r.restrictedDomains && r.restrictedDomains.length > 0)) {
+            rCount += 1;
+        }
 
         return count > rCount;
     }
@@ -530,36 +543,12 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (!NetworkRule.stringArraysEquals(this.permittedDomains, specifiedRule.permittedDomains)) {
+        if (!utils.stringArraysEquals(this.permittedDomains, specifiedRule.permittedDomains)) {
             return false;
         }
 
-        if (!NetworkRule.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+        if (!utils.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
             return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks if arrays are equal
-     *
-     * @param l
-     * @param r
-     */
-    private static stringArraysEquals(l: string[] | null, r: string[] | null): boolean {
-        if (!l || !r) {
-            return !l && !r;
-        }
-
-        if (l.length !== r.length) {
-            return false;
-        }
-
-        for (let i = 0; i < l.length; i += 1) {
-            if (l[i] !== r[i]) {
-                return false;
-            }
         }
 
         return true;

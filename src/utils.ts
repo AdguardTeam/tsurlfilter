@@ -119,3 +119,48 @@ export function indexOfAny(str: string, chars: string[], start = 0): number {
 
     return -1;
 }
+
+/**
+ * Checks if arrays are equal
+ *
+ * @param l
+ * @param r
+ */
+export function stringArraysEquals(l: string[] | null, r: string[] | null): boolean {
+    if (!l || !r) {
+        return !l && !r;
+    }
+
+    if (l.length !== r.length) {
+        return false;
+    }
+
+    for (let i = 0; i < l.length; i += 1) {
+        if (l[i] !== r[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Count enabled options in value of specified enumaration type
+ *
+ * @param value
+ * @param enumerationType
+ * @returns count
+ */
+export function countElementsInEnum(value: number, enumerationType: any): number {
+    let count = 0;
+
+    // eslint-disable-next-line no-restricted-syntax,guard-for-in
+    for (const item in enumerationType) {
+        const mask = enumerationType[item];
+        if ((value & mask) === mask) {
+            count += 1;
+        }
+    }
+
+    return count;
+}

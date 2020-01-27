@@ -54,7 +54,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [ ] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
     -   [ ] Advanced modifiers part 1
         -   [ ] \$important
-        -   [ ] \$badfilter
+        -   [x] \$badfilter
     -   [ ] Web extension example
 -   [ ] HTML filtering rules
 -   [ ] Advanced modifiers
