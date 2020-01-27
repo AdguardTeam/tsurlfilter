@@ -163,18 +163,6 @@ describe('CosmeticRule.CSS', () => {
         cssRule = new CosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
-
-        selector = '.some-class:properties(background-color: rgb(0, 0, 0))';
-        ruleText = `example.org##${selector}`;
-        cssRule = new CosmeticRule(ruleText, 0);
-        expect(cssRule).toBeDefined();
-        expect(cssRule.getContent()).toBe(selector);
-
-        selector = '.some-class:-abp-properties(background-color: rgb(0, 0, 0))';
-        ruleText = `example.org##${selector}`;
-        cssRule = new CosmeticRule(ruleText, 0);
-        expect(cssRule).toBeDefined();
-        expect(cssRule.getContent()).toBe(selector);
     });
 
     it('throws error on invalid pseudo class', () => {
@@ -239,4 +227,36 @@ describe('CosmeticRule.CSS', () => {
         const validRule = new CosmeticRule(validRuleText, 0);
         expect(validRule).toBeDefined();
     });
+});
+
+describe('Extended css rule', () => {
+    let ruleText = '~example.com,example.org##.sponsored[-ext-contains=test]';
+    let rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.sponsored[-ext-contains=test]');
+
+    ruleText = '~example.com,example.org##.sponsored[-ext-has=test]';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.sponsored[-ext-has=test]');
+
+    ruleText = '~example.com,example.org##.sponsored:has(test)';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.sponsored:has(test)');
+
+    ruleText = '~example.com,example.org#?#div';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('div');
+
+    ruleText = '~example.com,example.org#$?#div { background-color: #333!important; }';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
 });
