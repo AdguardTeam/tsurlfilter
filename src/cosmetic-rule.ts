@@ -318,6 +318,7 @@ export class CosmeticRule implements rule.IRule {
             for (let i = 0; i < this.EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
                 if (this.content.indexOf(this.EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
                     this.extendedCss = true;
+                    break;
                 }
             }
         }
