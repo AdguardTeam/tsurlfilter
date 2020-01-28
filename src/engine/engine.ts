@@ -37,6 +37,7 @@ export class Engine {
      * Matches the specified request against the filtering engine and returns the matching result.
      *
      * @param request - request to check
+     * @return matching result
      */
     matchRequest(request: Request): MatchingResult {
         const networkRules = this.networkEngine.matchAll(request);

@@ -106,7 +106,6 @@ init();
  * @param ruleText - rule text to scan.
  */
 export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleMarker | null] {
-    // eslint-disable-next-line no-restricted-syntax
     for (const firstMarkerChar of markersFirstChars) {
         const startIndex = ruleText.indexOf(firstMarkerChar);
         if (startIndex === -1) {
@@ -121,7 +120,6 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
             continue;
         }
 
-        // eslint-disable-next-line no-restricted-syntax
         for (const marker of markers) {
             if (utils.startsAtIndexWith(ruleText, startIndex, marker)) {
                 return [startIndex, marker];

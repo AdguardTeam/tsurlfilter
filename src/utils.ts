@@ -5,6 +5,7 @@
  * @param delimiter - delimiter
  * @param escapeCharacter - escape character
  * @param preserveAllTokens - if true, preserve empty parts
+ * @return array of string parts
  */
 export function splitByDelimiterWithEscapeCharacter(
     str: string,
@@ -69,10 +70,10 @@ export function startsAtIndexWith(str: string, startIndex: number, substr: strin
 /**
  * djb2 hash algorithm
  *
- * @param str
- * @param begin
- * @param end
- * @return {number}
+ * @param str string to get hash
+ * @param begin index from
+ * @param end index to
+ * @return {number} hash
  */
 export function fastHashBetween(str: string, begin: number, end: number): number {
     let hash = 5381;
@@ -85,8 +86,8 @@ export function fastHashBetween(str: string, begin: number, end: number): number
 /**
  * djb2 hash algorithm
  *
- * @param str
- * @return {any}
+ * @param str string to get hash
+ * @return {number} hash
  */
 export function fastHash(str: string): number {
     if (str === '') {
@@ -118,4 +119,51 @@ export function indexOfAny(str: string, chars: string[], start = 0): number {
     }
 
     return -1;
+}
+
+/**
+ * Checks if arrays are equal
+ *
+ * @param left array
+ * @param right array
+ * @return {boolean} true on equality
+ */
+export function stringArraysEquals(left: string[] | null, right: string[] | null): boolean {
+    if (!left || !right) {
+        return !left && !right;
+    }
+
+    if (left.length !== right.length) {
+        return false;
+    }
+
+    for (let i = 0; i < left.length; i += 1) {
+        if (left[i] !== right[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Count enabled options in specified value of specified enumeration type
+ *
+ * @param value bit mask to check
+ * @param enumerationType type of enum
+ * @returns count of enabled bits
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function countElementsInEnum(value: number, enumerationType: any): number {
+    let count = 0;
+
+    // eslint-disable-next-line guard-for-in
+    for (const item in enumerationType) {
+        const mask = enumerationType[item];
+        if ((value & mask) === mask) {
+            count += 1;
+        }
+    }
+
+    return count;
 }
