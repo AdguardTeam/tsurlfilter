@@ -156,7 +156,7 @@ export function stringArraysEquals(left: string[] | null, right: string[] | null
 export function countElementsInEnum(value: number, enumerationType: any): number {
     let count = 0;
 
-    // eslint-disable-next-line no-restricted-syntax,guard-for-in
+    // eslint-disable-next-line guard-for-in
     for (const item in enumerationType) {
         const mask = enumerationType[item];
         if ((value & mask) === mask) {

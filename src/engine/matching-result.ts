@@ -143,7 +143,6 @@ export class MatchingResult {
         }
 
         // Iterate through the list of rules and fill the MatchingResult
-        // eslint-disable-next-line no-restricted-syntax
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
                 this.cookieRules = [];
@@ -246,7 +245,6 @@ export class MatchingResult {
      */
     private static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
-        // eslint-disable-next-line no-restricted-syntax
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
                 badfilterRules.push(rule);
@@ -255,10 +253,7 @@ export class MatchingResult {
 
         if (badfilterRules.length > 0) {
             const filteredRules: NetworkRule[] = [];
-
-            // eslint-disable-next-line no-restricted-syntax
             for (const badfilter of badfilterRules) {
-                // eslint-disable-next-line no-restricted-syntax
                 for (const rule of rules) {
                     if (!badfilter.negatesBadfilter(rule) && !rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
                         filteredRules.push(rule);
