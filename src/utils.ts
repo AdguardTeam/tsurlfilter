@@ -153,6 +153,7 @@ export function stringArraysEquals(left: string[] | null, right: string[] | null
  * @param enumerationType type of enum
  * @returns count of enabled bits
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function countElementsInEnum(value: number, enumerationType: any): number {
     let count = 0;
 
