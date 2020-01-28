@@ -1,4 +1,5 @@
 import fs from 'fs';
+import zlib from 'zlib';
 import console from 'console';
 import { NetworkEngine } from '../../src/engine/network-engine';
 import { Request, RequestType } from '../../src';
@@ -95,11 +96,29 @@ describe('TestMatchSimplePattern', () => {
 });
 
 describe('TestBenchNetworkEngine', () => {
-    function loadRequests(): any[] {
-        function isSupportedURL(url: string): boolean {
-            return (!!url && (url.startsWith('http') || url.startsWith('ws')));
-        }
+    function isSupportedURL(url: string): boolean {
+        return (!!url && (url.startsWith('http') || url.startsWith('ws')));
+    }
 
+    async function unzipRequests(): Promise<void> {
+        return new Promise(((resolve, reject) => {
+            const fileContents = fs.createReadStream('./test/resources/requests.json.gz');
+            const writeStream = fs.createWriteStream('./test/resources/requests.json');
+            const unzip = zlib.createGunzip();
+
+            fileContents.pipe(unzip).pipe(writeStream).on('close', () => {
+                resolve();
+            }).on('error', () => {
+                reject();
+            });
+        }));
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async function loadRequests(): Promise<any[]> {
+        await unzipRequests();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const requests: any[] = [];
         const data = fs.readFileSync('./test/resources/requests.json', 'utf8');
         data.split('\n').forEach((line) => {
@@ -149,62 +168,68 @@ describe('TestBenchNetworkEngine', () => {
         }
     }
 
-    const testRequests = loadRequests();
-    expect(testRequests.length).toBe(30524);
-
-    const requests: Request[] = [];
-    testRequests.forEach((t) => {
-        requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.requestType)));
-    });
-
-    // TODO: Implement memory measurement
-    // start := getRSS()
-    // console.log("RSS before loading rules - %d kB\n", start/1024);
-
-    const startParse = Date.now();
-    const engine = new NetworkEngine(loadRules());
-    expect(engine).toBeTruthy();
-    console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
-
-    // afterLoad := getRSS();
-    // console.log("RSS after loading rules - %d kB (%d kB diff)\n", afterLoad/1024, (afterLoad-start)/1024);
-
-    let totalMatches = 0;
-    let totalElapsed = 0;
-    let minElapsedMatch = 100 * 1000; // 100 seconds
-    let maxElapsedMatch = 0;
-
-    for (let i = 0; i < requests.length; i += 1) {
-        if (i !== 0 && i % 10000 === 0) {
-            console.log(`Processed ${i} requests`);
-        }
-
-        const req = requests[i];
-
-        const startMatch = Date.now();
-        const rule = engine.match(req);
-        const elapsedMatch = Date.now() - startMatch;
-        totalElapsed += elapsedMatch;
-
-        if (elapsedMatch > maxElapsedMatch) {
-            maxElapsedMatch = elapsedMatch;
-        }
-        if (elapsedMatch < minElapsedMatch) {
-            minElapsedMatch = elapsedMatch;
-        }
-
-        if (rule && !rule.isWhitelist()) {
-            totalMatches += 1;
-        }
+    function getRSS(): number {
+        return process.memoryUsage().rss;
     }
 
-    console.log(`Total matches: ${totalMatches}`);
-    console.log(`Total elapsed: ${totalElapsed}`);
-    console.log(`Average per request: ${totalElapsed / requests.length}`);
-    console.log(`Max per request: ${maxElapsedMatch}`);
-    console.log(`Min per request: ${minElapsedMatch}`);
-    // console.log('Storage cache length: %d', engine.ruleStorage.GetCacheSize());
+    it('matches requests', async () => {
+        const testRequests = await loadRequests();
+        expect(testRequests.length).toBe(30524);
 
-    // afterMatch := getRSS()
-    // console.log("RSS after matching - %d kB (%d kB diff)\n", afterMatch/1024, (afterMatch-afterLoad)/1024)
+        const requests: Request[] = [];
+        testRequests.forEach((t) => {
+            requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.requestType)));
+        });
+
+        const start = getRSS();
+        console.log(`RSS before loading rules - ${start / 1024} kB`);
+
+        const startParse = Date.now();
+        const engine = new NetworkEngine(loadRules());
+        expect(engine).toBeTruthy();
+        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
+
+        const afterLoad = getRSS();
+        console.log(`RSS after loading rules - ${afterLoad / 1024} kB (${(afterLoad - start) / 1024} kB diff)`);
+
+        let totalMatches = 0;
+        let totalElapsed = 0;
+        let minElapsedMatch = 100 * 1000; // 100 seconds
+        let maxElapsedMatch = 0;
+
+        for (let i = 0; i < requests.length; i += 1) {
+            if (i !== 0 && i % 10000 === 0) {
+                console.log(`Processed ${i} requests`);
+            }
+
+            const req = requests[i];
+
+            const startMatch = Date.now();
+            const rule = engine.match(req);
+            const elapsedMatch = Date.now() - startMatch;
+            totalElapsed += elapsedMatch;
+
+            if (elapsedMatch > maxElapsedMatch) {
+                maxElapsedMatch = elapsedMatch;
+            }
+            if (elapsedMatch < minElapsedMatch) {
+                minElapsedMatch = elapsedMatch;
+            }
+
+            if (rule && !rule.isWhitelist()) {
+                totalMatches += 1;
+            }
+        }
+
+        console.log(`Total matches: ${totalMatches}`);
+        console.log(`Total elapsed: ${totalElapsed}`);
+        console.log(`Average per request: ${totalElapsed / requests.length}`);
+        console.log(`Max per request: ${maxElapsedMatch}`);
+        console.log(`Min per request: ${minElapsedMatch}`);
+        // TODO: Rule storage cache
+        // console.log('Storage cache length: %d', engine.ruleStorage.GetCacheSize());
+
+        const afterMatch = getRSS();
+        console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);
+    });
 });
