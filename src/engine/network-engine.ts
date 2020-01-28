@@ -64,8 +64,7 @@ export class NetworkEngine {
 
         // TODO: Implement RulesStorage
         this.ruleStorage = {
-            // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-            retrieveNetworkRule(index: number) {
+            retrieveNetworkRule(index: number): NetworkRule {
                 return new NetworkRule(rules[index], 0);
             },
         };

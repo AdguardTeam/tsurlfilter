@@ -37,7 +37,7 @@ export const enum CosmeticRuleMarker {
      */
     CssExtCSS = '#$?#',
     /** Basically the same as {@link CosmeticRuleMarker.CssException} */
-    CSSExtCSSException = '#@$?#',
+    CssExtCSSException = '#@$?#',
 
     /** https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#javascript-rules */
     Js = '#%#',
@@ -64,7 +64,7 @@ const markers: CosmeticRuleMarker[] = [
     CosmeticRuleMarker.Css,
     CosmeticRuleMarker.CssException,
     CosmeticRuleMarker.CssExtCSS,
-    CosmeticRuleMarker.CSSExtCSSException,
+    CosmeticRuleMarker.CssExtCSSException,
     CosmeticRuleMarker.Js,
     CosmeticRuleMarker.JsException,
     CosmeticRuleMarker.Html,
@@ -106,7 +106,6 @@ init();
  * @param ruleText - rule text to scan.
  */
 export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleMarker | null] {
-    // eslint-disable-next-line no-restricted-syntax
     for (const firstMarkerChar of markersFirstChars) {
         const startIndex = ruleText.indexOf(firstMarkerChar);
         if (startIndex === -1) {
@@ -121,7 +120,6 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
             continue;
         }
 
-        // eslint-disable-next-line no-restricted-syntax
         for (const marker of markers) {
             if (utils.startsAtIndexWith(ruleText, startIndex, marker)) {
                 return [startIndex, marker];
@@ -140,4 +138,19 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
 export function isCosmetic(ruleText: string): boolean {
     const marker = findCosmeticRuleMarker(ruleText);
     return marker[0] !== -1;
+}
+
+/**
+ * Detects is the rule is extended css rule
+ * @param marker - string to check
+ */
+export function isExtCssMarker(marker: string): boolean {
+    const EXTENDED_CSS_MARKERS = [
+        CosmeticRuleMarker.CssExtCSS,
+        CosmeticRuleMarker.CssExtCSSException,
+        CosmeticRuleMarker.ElementHidingExtCSS,
+        CosmeticRuleMarker.ElementHidingExtCSSException,
+    ];
+
+    return EXTENDED_CSS_MARKERS.indexOf(marker as CosmeticRuleMarker) !== -1;
 }
