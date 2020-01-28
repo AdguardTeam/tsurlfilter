@@ -59,6 +59,18 @@ describe('NetworkRule.parseRuleText', () => {
         expect(parts.whitelist).toEqual(false);
     });
 
+    it('works when it handles escaped delimiter properly', () => {
+        let parts = NetworkRule.parseRuleText('||example.org\\$smth');
+        expect(parts.pattern).toEqual('||example.org\\$smth');
+        expect(parts.options).toBeUndefined();
+        expect(parts.whitelist).toEqual(false);
+
+        parts = NetworkRule.parseRuleText('/regex/$replace=/test\\$/test2/');
+        expect(parts.pattern).toEqual('/regex/');
+        expect(parts.options).toEqual('replace=/test\\$/test2/');
+        expect(parts.whitelist).toEqual(false);
+    });
+
     it('works when it handles incorrect rules properly', () => {
         expect(() => {
             NetworkRule.parseRuleText('@@');
@@ -76,6 +88,7 @@ describe('NetworkRule constructor', () => {
         expect(rule.isRegexRule()).toEqual(false);
         expect(rule.getPermittedDomains()).toEqual(null);
         expect(rule.getRestrictedDomains()).toEqual(null);
+        expect(rule.isGeneric()).toEqual(true);
     });
 
     it('works when it handles unknown modifiers properly', () => {
@@ -170,6 +183,7 @@ describe('NetworkRule constructor', () => {
         checkModifier('document', NetworkRuleOption.Content, true);
 
         checkModifier('stealth', NetworkRuleOption.Stealth, true);
+        checkModifier('badfilter', NetworkRuleOption.Badfilter, true);
 
         checkModifier('popup', NetworkRuleOption.Popup, true);
         checkModifier('empty', NetworkRuleOption.Empty, true);
@@ -220,6 +234,31 @@ describe('NetworkRule constructor', () => {
 
         checkRequestType('other', RequestType.Other, true);
         checkRequestType('~other', RequestType.Other, false);
+    });
+
+    function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
+        const r = new NetworkRule(rule, -1);
+        expect(r).toBeTruthy();
+
+        const b = new NetworkRule(badfilter, -1);
+        expect(b).toBeTruthy();
+
+        expect(b.negatesBadfilter(r)).toEqual(expected);
+    }
+
+    it('works if badfilter modifier works properly', () => {
+        assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org,badfilter', true);
+        assertBadfilterNegates('*$image,domain=example.org', '*$image,domain=example.org', false);
+        assertBadfilterNegates('*$~third-party,domain=example.org', '*$domain=example.org,badfilter', false);
+        assertBadfilterNegates('*$image,domain=example.org', '*$domain=example.org,badfilter', false);
+        assertBadfilterNegates('*$image,domain=example.org', '*$image,badfilter,domain=example.org', true);
+        assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', false);
+        assertBadfilterNegates('@@*$image,domain=example.org', '@@*$image,domain=example.org,badfilter', true);
+        assertBadfilterNegates('@@*$image,domain=example.org', '*$image,domain=example.org,badfilter', false);
+        assertBadfilterNegates('@@path$image,domain=~example.org', '@@path$image,domain=~example.com,badfilter', false);
+        // eslint-disable-next-line max-len
+        assertBadfilterNegates('@@path$image,domain=~example.org', '@@an-other-path$image,domain=~example.org,badfilter', false);
+        assertBadfilterNegates('*$~image,domain=example.org', '*$~script,domain=example.org,badfilter', false);
     });
 });
 
@@ -322,7 +361,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(true);
     });
 
-    it('wors when content type restrictions are applied properly', () => {
+    it('works when content type restrictions are applied properly', () => {
         let rule: NetworkRule;
         let request: Request;
 
@@ -355,5 +394,44 @@ describe('NetworkRule.match', () => {
 
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(true);
+    });
+});
+
+describe('NetworkRule.isHigherPriority', () => {
+    function compareRulesPriority(left: string, right: string, expected: boolean): void {
+        const l = new NetworkRule(left, -1);
+        const r = new NetworkRule(right, -1);
+
+        expect(l.isHigherPriority(r)).toBe(expected);
+    }
+
+    it('checks rule priority', () => {
+        compareRulesPriority('@@||example.org$important', '@@||example.org$important', false);
+        compareRulesPriority('@@||example.org$important', '||example.org$important', true);
+        compareRulesPriority('@@||example.org$important', '@@||example.org', true);
+        compareRulesPriority('@@||example.org$important', '||example.org', true);
+
+        // $important -> whitelist
+        compareRulesPriority('||example.org$important', '@@||example.org$important', false);
+        compareRulesPriority('||example.org$important', '||example.org$important', false);
+        compareRulesPriority('||example.org$important', '@@||example.org', true);
+        compareRulesPriority('||example.org$important', '||example.org', true);
+
+        // whitelist -> basic
+        compareRulesPriority('@@||example.org', '@@||example.org$important', false);
+        compareRulesPriority('@@||example.org', '||example.org$important', false);
+        compareRulesPriority('@@||example.org', '@@||example.org', false);
+        compareRulesPriority('@@||example.org', '||example.org', true);
+
+        compareRulesPriority('||example.org', '@@||example.org$important', false);
+        compareRulesPriority('||example.org', '||example.org$important', false);
+        compareRulesPriority('||example.org', '@@||example.org', false);
+        compareRulesPriority('||example.org', '||example.org', false);
+
+        // specific -> generic
+        compareRulesPriority('||example.org$domain=example.org', '||example.org$script,stylesheet', true);
+
+        // more modifiers -> less modifiers
+        compareRulesPriority('||example.org$script,stylesheet', '||example.org$script', true);
     });
 });

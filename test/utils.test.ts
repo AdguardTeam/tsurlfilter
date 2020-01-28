@@ -26,3 +26,15 @@ describe('startsAtIndexWith', () => {
         expect(utils.startsAtIndexWith('example', 6, 'e')).toEqual(true);
     });
 });
+
+describe('fastHash', () => {
+    it('works if it can fastHash', () => {
+        expect(utils.fastHash('')).toEqual(0);
+        expect(utils.fastHash('test')).toEqual(6385723493);
+    });
+
+    it('works if it can fastHashBetween', () => {
+        expect(utils.fastHashBetween('', 0, 0)).toEqual(5381);
+        expect(utils.fastHashBetween('test', 1, 2)).toEqual(177674);
+    });
+});

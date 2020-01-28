@@ -56,6 +56,8 @@ export enum NetworkRuleOption {
     Cookie = 1 << 16,
     /** $redirect modifier */
     Redirect = 1 << 17,
+    /** $badfilter modifier */
+    Badfilter = 1 << 18,
 
     // TODO: Add other modifiers
 
@@ -163,6 +165,20 @@ export class NetworkRule implements rule.IRule {
      */
     isWhitelist(): boolean {
         return this.whitelist;
+    }
+
+    /**
+     * Checks if the rule is a document-level whitelist rule
+     * This means that the rule is supposed to disable or modify blocking
+     * of the page subrequests.
+     * For instance, `@@||example.org^$urlblock` unblocks all sub-requests.
+     */
+    isDocumentWhitelistRule(): boolean {
+        if (!this.isWhitelist()) {
+            return false;
+        }
+
+        return this.isOptionEnabled(NetworkRuleOption.Urlblock) || this.isOptionEnabled(NetworkRuleOption.Genericblock);
     }
 
     /**
@@ -310,7 +326,7 @@ export class NetworkRule implements rule.IRule {
                     flags = '';
                 }
                 this.regex = new RegExp(regex, flags);
-            } catch {
+            } catch (e) {
                 this.invalid = true;
             }
         }
@@ -366,10 +382,6 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if there is an unsupported modifier
      */
     private loadOptions(options: string): void {
-        if (!options) {
-            return;
-        }
-
         const optionParts = utils.splitByDelimiterWithEscapeCharacter(options, ',', '\\', false);
 
         for (let i = 0; i < optionParts.length; i += 1) {
@@ -418,6 +430,139 @@ export class NetworkRule implements rule.IRule {
      */
     isOptionDisabled(option: NetworkRuleOption): boolean {
         return (this.disabledOptions & option) === option;
+    }
+
+    /**
+     * Checks if the rule has higher priority that the specified rule
+     * whitelist + $important > $important > whitelist > basic rules
+     */
+    isHigherPriority(r: NetworkRule): boolean {
+        const important = this.isOptionEnabled(NetworkRuleOption.Important);
+        const rImportant = r.isOptionEnabled(NetworkRuleOption.Important);
+        if (this.isWhitelist() && important && !(r.isWhitelist() && rImportant)) {
+            return true;
+        }
+
+        if (r.isWhitelist() && rImportant && !(this.isWhitelist() && important)) {
+            return false;
+        }
+
+        if (important && !rImportant) {
+            return true;
+        }
+
+        if (rImportant && !important) {
+            return false;
+        }
+
+        if (this.isWhitelist() && !r.isWhitelist()) {
+            return true;
+        }
+
+        if (r.isWhitelist() && !this.isWhitelist()) {
+            return false;
+        }
+
+        const redirect = this.isOptionEnabled(NetworkRuleOption.Redirect);
+        const rRedirect = r.isOptionEnabled(NetworkRuleOption.Redirect);
+        if (redirect && !rRedirect) {
+            // $redirect rules have "slightly" higher priority than regular basic rules
+            return true;
+        }
+
+        const generic = this.isGeneric();
+        const rGeneric = r.isGeneric();
+        if (!generic && rGeneric) {
+            // specific rules have priority over generic rules
+            return true;
+        }
+
+        // More specific rules (i.e. with more modifiers) have higher priority
+        // TODO: Fix options count
+        const count = this.enabledOptions + this.disabledOptions
+            + this.permittedRequestTypes + this.restrictedRequestTypes;
+        const rCount = r.enabledOptions + r.disabledOptions + r.permittedRequestTypes + r.restrictedRequestTypes;
+
+        return count > rCount;
+    }
+
+    /**
+     * Returns true if the rule is considered "generic"
+     * "generic" means that the rule is not restricted to a limited set of domains
+     * Please note that it might be forbidden on some domains, though.
+     *
+     * @return {boolean}
+     */
+    isGeneric(): boolean {
+        return !this.permittedDomains || this.permittedDomains.length === 0;
+    }
+
+    /**
+     * Returns true if this rule negates the specified rule
+     * Only makes sense when this rule has a `badfilter` modifier
+     */
+    negatesBadfilter(specifiedRule: NetworkRule): boolean {
+        if (!this.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+            return false;
+        }
+
+        if (this.whitelist !== specifiedRule.whitelist) {
+            return false;
+        }
+
+        if (this.pattern !== specifiedRule.pattern) {
+            return false;
+        }
+
+        if (this.permittedRequestTypes !== specifiedRule.permittedRequestTypes) {
+            return false;
+        }
+
+        if (this.restrictedRequestTypes !== specifiedRule.restrictedRequestTypes) {
+            return false;
+        }
+
+        if ((this.enabledOptions ^ NetworkRuleOption.Badfilter) !== specifiedRule.enabledOptions) {
+            return false;
+        }
+
+        if (this.disabledOptions !== specifiedRule.disabledOptions) {
+            return false;
+        }
+
+        if (!NetworkRule.stringArraysEquals(this.permittedDomains, specifiedRule.permittedDomains)) {
+            return false;
+        }
+
+        if (!NetworkRule.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if arrays are equal
+     *
+     * @param l
+     * @param r
+     */
+    private static stringArraysEquals(l: string[] | null, r: string[] | null): boolean {
+        if (!l || !r) {
+            return !l && !r;
+        }
+
+        if (l.length !== r.length) {
+            return false;
+        }
+
+        for (let i = 0; i < l.length; i += 1) {
+            if (l[i] !== r[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -605,6 +750,11 @@ export class NetworkRule implements rule.IRule {
                 break;
             case '~other':
                 this.setRequestType(RequestType.Other, false);
+                break;
+
+            // Special modifiers
+            case 'badfilter':
+                this.setOptionEnabled(NetworkRuleOption.Badfilter, true);
                 break;
 
                 // TODO: Add $csp

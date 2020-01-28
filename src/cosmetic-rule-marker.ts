@@ -37,7 +37,7 @@ export const enum CosmeticRuleMarker {
      */
     CssExtCSS = '#$?#',
     /** Basically the same as {@link CosmeticRuleMarker.CssException} */
-    CSSExtCSSException = '#@$?#',
+    CssExtCSSException = '#@$?#',
 
     /** https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#javascript-rules */
     Js = '#%#',
@@ -64,7 +64,7 @@ const markers: CosmeticRuleMarker[] = [
     CosmeticRuleMarker.Css,
     CosmeticRuleMarker.CssException,
     CosmeticRuleMarker.CssExtCSS,
-    CosmeticRuleMarker.CSSExtCSSException,
+    CosmeticRuleMarker.CssExtCSSException,
     CosmeticRuleMarker.Js,
     CosmeticRuleMarker.JsException,
     CosmeticRuleMarker.Html,
@@ -140,4 +140,19 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
 export function isCosmetic(ruleText: string): boolean {
     const marker = findCosmeticRuleMarker(ruleText);
     return marker[0] !== -1;
+}
+
+/**
+ * Detects is the rule is extended css rule
+ * @param marker - string to check
+ */
+export function isExtCssMarker(marker: string): boolean {
+    const EXTENDED_CSS_MARKERS = [
+        CosmeticRuleMarker.CssExtCSS,
+        CosmeticRuleMarker.CssExtCSSException,
+        CosmeticRuleMarker.ElementHidingExtCSS,
+        CosmeticRuleMarker.ElementHidingExtCSSException,
+    ];
+
+    return EXTENDED_CSS_MARKERS.indexOf(marker as CosmeticRuleMarker) !== -1;
 }
