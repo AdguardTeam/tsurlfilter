@@ -101,7 +101,7 @@ describe('TestBenchNetworkEngine', () => {
     }
 
     async function unzipRequests(): Promise<void> {
-        return new Promise(((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             const fileContents = fs.createReadStream('./test/resources/requests.json.gz');
             const writeStream = fs.createWriteStream('./test/resources/requests.json');
             const unzip = zlib.createGunzip();
@@ -111,7 +111,7 @@ describe('TestBenchNetworkEngine', () => {
             }).on('error', () => {
                 reject();
             });
-        }));
+        });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,7 +120,7 @@ describe('TestBenchNetworkEngine', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const requests: any[] = [];
-        const data = fs.readFileSync('./test/resources/requests.json', 'utf8');
+        const data = await fs.promises.readFile('./test/resources/requests.json', 'utf8');
         data.split('\n').forEach((line) => {
             const request = JSON.parse(line);
             if (isSupportedURL(request.url)) {
@@ -133,8 +133,8 @@ describe('TestBenchNetworkEngine', () => {
         return requests;
     }
 
-    function loadRules(): string[] {
-        const data = fs.readFileSync('./test/resources/easylist.txt', 'utf8');
+    async function loadRules(): Promise<string[]> {
+        const data = await fs.promises.readFile('./test/resources/easylist.txt', 'utf8');
         const rules = data.split('\n');
 
         console.log(`Loaded rules: ${rules.length}`);
@@ -185,7 +185,7 @@ describe('TestBenchNetworkEngine', () => {
         console.log(`RSS before loading rules - ${start / 1024} kB`);
 
         const startParse = Date.now();
-        const engine = new NetworkEngine(loadRules());
+        const engine = new NetworkEngine(await loadRules());
         expect(engine).toBeTruthy();
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
 
