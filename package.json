@@ -68,8 +68,8 @@
     },
     "collectCoverageFrom": [
       "src/*.{js,ts}",
-      "src/engine/*.{js,ts}",
-      "src/filterlist/*.{js,ts}"
+      "src/*/*.{js,ts}",
+      "src/*/*/*.{js,ts}"
     ]
   },
   "commitlint": {

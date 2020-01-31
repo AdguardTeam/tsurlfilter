@@ -1,18 +1,6 @@
-import { IndexedRule, IRule } from '../rule';
-import { RuleBuilder } from '../rule-builder';
-
-/**
- *
- */
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
-export interface ILineReader {
-    /**
-     * Reads the next line
-     *
-     * @return line string or null
-     */
-    readLine(): string| null;
-}
+import { IndexedRule, IRule } from '../../rule';
+import { RuleBuilder } from '../../rule-builder';
+import { ILineReader } from '../reader/line-reader';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.

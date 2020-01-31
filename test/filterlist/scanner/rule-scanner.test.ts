@@ -1,6 +1,6 @@
-import { RuleScanner } from '../../src/filterlist/rule-scanner';
-import { StringLineReader } from '../../src/filterlist/string-line-reader';
-import { FileLineReader } from '../../src/filterlist/file-line-reader';
+import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
+import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
+import { FileLineReader } from '../../../src/filterlist/reader/file-line-reader';
 
 describe('TestRuleScannerOfStringReader', () => {
     it('works if scanner is fine with string reader', () => {

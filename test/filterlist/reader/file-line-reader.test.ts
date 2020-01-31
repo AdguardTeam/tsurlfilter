@@ -1,4 +1,4 @@
-import { FileLineReader } from '../../src/filterlist/file-line-reader';
+import { FileLineReader } from '../../../src/filterlist/reader/file-line-reader';
 
 describe('FileLineReader Test', () => {
     it('works if reader gets lines', () => {

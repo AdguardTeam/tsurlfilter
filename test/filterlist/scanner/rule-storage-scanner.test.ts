@@ -1,6 +1,6 @@
-import { StringLineReader } from '../../src/filterlist/string-line-reader';
-import { RuleScanner } from '../../src/filterlist/rule-scanner';
-import { RuleStorageScanner } from '../../src/filterlist/rule-storage-scanner';
+import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
+import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
+import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
 
 describe('RuleStorageScanner Test', () => {
     // TODO: Check indexes

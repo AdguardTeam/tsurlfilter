@@ -1,4 +1,4 @@
-import { StringLineReader } from '../../src/filterlist/string-line-reader';
+import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 
 describe('StringLineReader Test', () => {
     it('works if reader gets lines', () => {

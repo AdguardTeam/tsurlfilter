@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { ILineReader } from './rule-scanner';
+import { ILineReader } from './line-reader';
 import { StringLineReader } from './string-line-reader';
 
 /**

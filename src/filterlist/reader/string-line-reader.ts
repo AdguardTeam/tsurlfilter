@@ -1,4 +1,4 @@
-import { ILineReader } from './rule-scanner';
+import { ILineReader } from './line-reader';
 
 /**
  * Reads string line by line
