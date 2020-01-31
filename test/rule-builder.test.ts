@@ -1,4 +1,4 @@
-import {RuleBuilder} from "../src/rule-builder";
+import { RuleBuilder } from '../src/rule-builder';
 
 describe('Rule Builder Test', () => {
     it('works if builder creates correct rules', () => {
