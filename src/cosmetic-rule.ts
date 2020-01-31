@@ -192,6 +192,14 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
+     * Rule is cosmetic by definition
+     */
+    // eslint-disable-next-line class-methods-use-this
+    isCosmetic(): boolean {
+        return true;
+    }
+
+    /**
      * Gets the rule content. The meaning of this field depends on the rule type.
      * For instance, for an element hiding rule, this is just a CSS selector.
      * While, for a CSS rule, this is a CSS selector + style.

@@ -89,6 +89,7 @@ describe('NetworkRule constructor', () => {
         expect(rule.getPermittedDomains()).toEqual(null);
         expect(rule.getRestrictedDomains()).toEqual(null);
         expect(rule.isGeneric()).toEqual(true);
+        expect(rule.isCosmetic()).toEqual(false);
     });
 
     it('works when it handles unknown modifiers properly', () => {
