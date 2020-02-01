@@ -52,6 +52,12 @@ describe('TestStringRuleListScanner', () => {
             expect(rule.getText()).toBe('##banner');
             expect(rule.getFilterListId()).toBe(1);
         }
+
+        rule = ruleList.retrieveRule(-1);
+        expect(rule).toBeNull();
+
+        rule = ruleList.retrieveRule(999);
+        expect(rule).toBeNull();
     });
 
     ruleList.close();

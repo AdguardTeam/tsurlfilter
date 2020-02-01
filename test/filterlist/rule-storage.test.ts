@@ -113,5 +113,13 @@ describe('Test RuleStorage', () => {
             expect(rule.getText()).toBe('##advert');
             expect(rule.getFilterListId()).toBe(2);
         }
+
+        // Check cache
+        rule = storage.retrieveRule(0x0000000002000015);
+        expect(rule).toBeTruthy();
+
+        // Incorrect index
+        rule = storage.retrieveRule(0x0000000004000015);
+        expect(rule).toBeNull();
     });
 });

@@ -2,6 +2,14 @@ import { StringLineReader } from '../../../src/filterlist/reader/string-line-rea
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
 
+describe('Empty Scanners Test', () => {
+    const storageScanner = new RuleStorageScanner([]);
+    it('checks incorrectly initialized storage', () => {
+        expect(storageScanner.getRule()).toBeNull();
+        expect(storageScanner.scan()).toBeFalsy();
+    });
+});
+
 describe('RuleStorageScanner Test', () => {
     // Create two filter lists
     const filterList1 = '||example.org\n! test\n##banner';
