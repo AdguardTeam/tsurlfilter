@@ -36,24 +36,23 @@ describe('TestStringRuleListScanner', () => {
         expect(scanner.scan()).toBeFalsy();
     });
 
-    // TODO: Fix tests
-    // it('retrieves rules by index', () => {
-    //     let rule = ruleList.retrieveRule(0);
-    //
-    //     expect(rule).toBeTruthy();
-    //     if (rule) {
-    //         expect(rule.getText()).toBe('||example.org');
-    //         expect(rule.getFilterListId()).toBe(1);
-    //     }
-    //
-    //     rule = ruleList.retrieveRule(21);
-    //
-    //     expect(rule).toBeTruthy();
-    //     if (rule) {
-    //         expect(rule.getText()).toBe('##banner');
-    //         expect(rule.getFilterListId()).toBe(1);
-    //     }
-    // });
+    it('retrieves rules by index', () => {
+        let rule = ruleList.retrieveRule(0);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule.getText()).toBe('||example.org');
+            expect(rule.getFilterListId()).toBe(1);
+        }
+
+        rule = ruleList.retrieveRule(21);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule.getText()).toBe('##banner');
+            expect(rule.getFilterListId()).toBe(1);
+        }
+    });
 
     ruleList.close();
 });

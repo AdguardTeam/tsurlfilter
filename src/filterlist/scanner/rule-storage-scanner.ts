@@ -89,9 +89,8 @@ export class RuleStorageScanner {
      * @param ruleIdx
      */
     private static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): number {
-        // TODO: Implement ruleListIdxToStorageIdx
-        return listId + ruleIdx;
-        // return listId << 32 | ruleIdx & 0xFFFFFFFF;
+        // eslint-disable-next-line no-mixed-operators
+        return listId << 24 | ruleIdx;
     }
 
     /**
@@ -103,6 +102,6 @@ export class RuleStorageScanner {
      * @return [listId, ruleIdx]
      */
     public static storageIdxToRuleListIdx(storageIdx: number): [number, number] {
-        return [storageIdx >> 32, storageIdx];
+        return [storageIdx >> 24, storageIdx & 0xFFFFFF];
     }
 }

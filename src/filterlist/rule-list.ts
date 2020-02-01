@@ -4,6 +4,7 @@
 import { RuleScanner } from './scanner/rule-scanner';
 import { IRule } from '../rule';
 import { StringLineReader } from './reader/string-line-reader';
+import { RuleBuilder } from '../rule-builder';
 
 /**
  * RuleList represents a set of filtering rules
@@ -92,7 +93,8 @@ export class StringRuleList implements IRuleList {
 
     /**
      * RetrieveRule finds and deserializes rule by its index.
-     * If there's no rule by that index or rule is invalid, it will return an error.
+     * If there's no rule by that index or rule is invalid, it will return null
+     *
      * @param ruleIdx
      * @return rule object
      */
@@ -101,20 +103,16 @@ export class StringRuleList implements IRuleList {
             return null;
         }
 
-        // TODO: Implement
-        return null;
-        // endOfLine := strings.IndexByte(l.RulesText[ruleIdx:], '\n')
-        // if endOfLine == -1 {
-        //     endOfLine = len(l.RulesText)
-        // } else {
-        //     endOfLine += ruleIdx
-        // }
-        //
-        // line := strings.TrimSpace(l.RulesText[ruleIdx:endOfLine])
-        // if len(line) == 0 {
-        //     return nil, ErrRuleRetrieval
-        // }
-        //
-        // return rules.NewRule(line, l.ID)
+        let endOfLine = this.rulesText.indexOf('\n', ruleIdx);
+        if (endOfLine === -1) {
+            endOfLine = this.rulesText.length;
+        }
+
+        const line = this.rulesText.substr(ruleIdx, endOfLine).trim();
+        if (!line) {
+            return null;
+        }
+
+        return RuleBuilder.createRule(line, this.id);
     }
 }

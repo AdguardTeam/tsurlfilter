@@ -3,11 +3,6 @@ import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
 
 describe('RuleStorageScanner Test', () => {
-    // TODO: Check indexes
-    // func int642hex(v int64) string {
-    //     return fmt.Sprintf("0x%016x", v)
-    // }
-
     // Create two filter lists
     const filterList1 = '||example.org\n! test\n##banner';
     const r1 = new StringLineReader(filterList1);
@@ -30,7 +25,7 @@ describe('RuleStorageScanner Test', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('||example.org');
             expect(indexedRule.rule.getFilterListId()).toBe(1);
-            // assert.Equal(t, "0x0000000100000000", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('1000000');
         }
     });
 
@@ -43,7 +38,7 @@ describe('RuleStorageScanner Test', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('##banner');
             expect(indexedRule.rule.getFilterListId()).toBe(1);
-            // assert.Equal(t, "0x0000000100000015", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('1000015');
         }
     });
 
@@ -56,7 +51,7 @@ describe('RuleStorageScanner Test', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('||example.com');
             expect(indexedRule.rule.getFilterListId()).toBe(2);
-            // assert.Equal(t, "0x0000000200000000", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('2000000');
         }
     });
 
@@ -69,7 +64,7 @@ describe('RuleStorageScanner Test', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('##advert');
             expect(indexedRule.rule.getFilterListId()).toBe(2);
-            // assert.Equal(t, "0x0000000200000015", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('2000015');
         }
     });
 

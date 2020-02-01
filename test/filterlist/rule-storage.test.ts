@@ -27,7 +27,7 @@ describe('Test RuleStorage', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('||example.org');
             expect(indexedRule.rule.getFilterListId()).toBe(1);
-            // assert.Equal(t, "0x0000000100000000", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('1000000');
         }
     });
 
@@ -40,7 +40,7 @@ describe('Test RuleStorage', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('##banner');
             expect(indexedRule.rule.getFilterListId()).toBe(1);
-            // assert.Equal(t, "0x0000000100000015", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('1000015');
         }
     });
 
@@ -53,7 +53,7 @@ describe('Test RuleStorage', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('||example.com');
             expect(indexedRule.rule.getFilterListId()).toBe(2);
-            // assert.Equal(t, "0x0000000200000000", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('2000000');
         }
     });
 
@@ -66,7 +66,7 @@ describe('Test RuleStorage', () => {
             expect(indexedRule.rule).toBeTruthy();
             expect(indexedRule.rule.getText()).toBe('##advert');
             expect(indexedRule.rule.getFilterListId()).toBe(2);
-            // assert.Equal(t, "0x0000000200000015", int642hex(idx))
+            expect(indexedRule.index.toString(16)).toBe('2000015');
         }
     });
 
@@ -77,42 +77,41 @@ describe('Test RuleStorage', () => {
     });
 
     // Time to retrieve!
-    // TODO: Fix tests
-    // it('retrieves rules by index', () => {
-    //     // Rule 1 from the list 1
-    //     let rule = storage.retrieveRule(0x0000000100000000);
-    //
-    //     expect(rule).toBeTruthy();
-    //     if (rule) {
-    //         expect(rule.getText()).toBe('||example.org');
-    //         expect(rule.getFilterListId()).toBe(1);
-    //     }
-    //
-    //     // Rule 2 from the list 1
-    //     rule = storage.retrieveRule(0x0000000100000015);
-    //
-    //     expect(rule).toBeTruthy();
-    //     if (rule) {
-    //         expect(rule.getText()).toBe('##banner');
-    //         expect(rule.getFilterListId()).toBe(1);
-    //     }
-    //
-    //     // Rule 1 from the list 2
-    //     rule = storage.retrieveRule(0x0000000200000000);
-    //
-    //     expect(rule).toBeTruthy();
-    //     if (rule) {
-    //         expect(rule.getText()).toBe('||example.com');
-    //         expect(rule.getFilterListId()).toBe(1);
-    //     }
-    //
-    //     // Rule 2 from the list 2
-    //     rule = storage.retrieveRule(0x0000000200000015);
-    //
-    //     expect(rule).toBeTruthy();
-    //     if (rule) {
-    //         expect(rule.getText()).toBe('##advert');
-    //         expect(rule.getFilterListId()).toBe(1);
-    //     }
-    // });
+    it('retrieves rules by index', () => {
+        // Rule 1 from the list 1
+        let rule = storage.retrieveRule(0x1000000);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule.getText()).toBe('||example.org');
+            expect(rule.getFilterListId()).toBe(1);
+        }
+
+        // Rule 2 from the list 1
+        rule = storage.retrieveRule(0x0000000001000015);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule.getText()).toBe('##banner');
+            expect(rule.getFilterListId()).toBe(1);
+        }
+
+        // Rule 1 from the list 2
+        rule = storage.retrieveRule(0x0000000002000000);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule.getText()).toBe('||example.com');
+            expect(rule.getFilterListId()).toBe(2);
+        }
+
+        // Rule 2 from the list 2
+        rule = storage.retrieveRule(0x0000000002000015);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule.getText()).toBe('##advert');
+            expect(rule.getFilterListId()).toBe(2);
+        }
+    });
 });
