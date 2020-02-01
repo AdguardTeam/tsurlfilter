@@ -93,4 +93,16 @@ export class RuleStorageScanner {
         return listId + ruleIdx;
         // return listId << 32 | ruleIdx & 0xFFFFFFFF;
     }
+
+    /**
+     * Converts the "storage index" to two integers:
+     * listID -- rule list identifier
+     * ruleIdx -- index of the rule in the list
+     *
+     * @param storageIdx
+     * @return [listId, ruleIdx]
+     */
+    public static storageIdxToRuleListIdx(storageIdx: number): [number, number] {
+        return [storageIdx >> 32, storageIdx];
+    }
 }
