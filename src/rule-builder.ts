@@ -22,11 +22,18 @@ export class RuleBuilder {
 
         const line = text.trim();
 
-        if (isCosmetic(line)) {
-            return new CosmeticRule(line, filterListId);
+        try {
+            if (isCosmetic(line)) {
+                return new CosmeticRule(line, filterListId);
+            }
+
+            return new NetworkRule(line, filterListId);
+        } catch (e) {
+            // TODO: Log error
+            // console.log(e);
         }
 
-        return new NetworkRule(line, filterListId);
+        return null;
     }
 
     /**

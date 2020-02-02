@@ -2,6 +2,7 @@ import { IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { IRule } from '../rule';
 import { RuleScanner } from './scanner/rule-scanner';
+import { NetworkRule } from '../network-rule';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -91,5 +92,24 @@ export class RuleStorage {
         }
 
         return result;
+    }
+
+    /**
+     * RetrieveNetworkRule is a helper method that retrieves a network rule from the storage
+     *
+     * @param storageIdx
+     * @return the rule or nil in any other case (not found or error)
+     */
+    retrieveNetworkRule(storageIdx: number): NetworkRule | null {
+        const rule = this.retrieveRule(storageIdx);
+        if (!rule) {
+            return null;
+        }
+
+        if (rule instanceof NetworkRule) {
+            return rule as NetworkRule;
+        }
+
+        return null;
     }
 }

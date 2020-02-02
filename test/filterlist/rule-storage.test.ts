@@ -1,5 +1,6 @@
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { NetworkRule } from '../../src';
 
 describe('Test RuleStorage', () => {
     const list1 = new StringRuleList(1, '||example.org\n! test\n##banner', false);
@@ -120,6 +121,24 @@ describe('Test RuleStorage', () => {
 
         // Incorrect index
         rule = storage.retrieveRule(0x0000000004000015);
+        expect(rule).toBeNull();
+    });
+
+    it('retrieves rules by index', () => {
+        // Rule 1 from the list 1
+        let rule = storage.retrieveNetworkRule(0x1000000);
+
+        expect(rule).toBeTruthy();
+        if (rule) {
+            expect(rule instanceof NetworkRule).toBeTruthy();
+            expect(rule.getText()).toBe('||example.org');
+            expect(rule.getFilterListId()).toBe(1);
+        }
+
+        rule = storage.retrieveNetworkRule(0x0000000001000015);
+        expect(rule).toBeNull();
+
+        rule = storage.retrieveNetworkRule(0x0000000004000015);
         expect(rule).toBeNull();
     });
 });

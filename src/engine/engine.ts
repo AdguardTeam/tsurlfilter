@@ -1,10 +1,9 @@
-/* eslint-disable */
-
 import { CosmeticEngine } from './cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
 import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../network-rule';
+import { RuleStorage } from '../filterlist/rule-storage';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -24,13 +23,13 @@ export class Engine {
      * Creates an instance of an Engine
      * Parses the filtering rules and creates a filtering engine of them
      *
-     * @param rules - array of rules
+     * @param ruleStorage storage
      *
      * @throws
      */
-    constructor(rules: string[]) {
-        this.networkEngine = new NetworkEngine(rules);
-        this.cosmeticEngine = new CosmeticEngine(rules);
+    constructor(ruleStorage: RuleStorage) {
+        this.networkEngine = new NetworkEngine(ruleStorage);
+        this.cosmeticEngine = new CosmeticEngine(ruleStorage);
     }
 
     /**
@@ -54,6 +53,7 @@ export class Engine {
     /**
      * Gets cosmetic result for the specified hostname and cosmetic options
      */
+    // eslint-disable-next-line class-methods-use-this
     getCosmeticResult(): any {
         // TODO: Implement getCosmeticResult
     }

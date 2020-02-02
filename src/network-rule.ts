@@ -335,11 +335,16 @@ export class NetworkRule implements rule.IRule {
                 }
                 this.regex = new RegExp(regex, flags);
             } catch (e) {
+                // console.log(e);
                 this.invalid = true;
             }
         }
 
-        return this.regex!.test(request.url);
+        if (this.regex) {
+            return this.regex.test(request.url);
+        }
+
+        return false;
     }
 
     /**
