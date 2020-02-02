@@ -41,40 +41,39 @@ describe('TestMatchWhitelistRule', () => {
     });
 });
 
-// TODO: Fix important modifier
-// describe('TestMatchImportantRule', () => {
-//     const r1 = '||test2.example.org^$important';
-//     const r2 = '@@||example.org^';
-//     const r3 = '||test1.example.org^';
-//
-//     const engine = new NetworkEngine(createTestRuleStorage(1, [r1, r2, r3]));
-//     let request;
-//     let result;
-//
-//     it('should find domain whitelist rule ', () => {
-//         request = new Request('http://example.org/', '', RequestType.Other);
-//         result = engine.match(request);
-//
-//         expect(result).toBeTruthy();
-//         expect(result && result.getText()).toEqual(r2);
-//     });
-//
-//     it('should find domain whitelist rule', () => {
-//         request = new Request('http://test1.example.org/', '', RequestType.Other);
-//         result = engine.match(request);
-//
-//         expect(result).toBeTruthy();
-//         expect(result && result.getText()).toEqual(r2);
-//     });
-//
-//     it('should find suitable sub-domain whitelist rule', () => {
-//         request = new Request('http://test2.example.org/', '', RequestType.Other);
-//         result = engine.match(request);
-//
-//         expect(result).toBeTruthy();
-//         expect(result && result.getText()).toEqual(r1);
-//     });
-// });
+describe('TestMatchImportantRule', () => {
+    const r1 = '||test2.example.org^$important';
+    const r2 = '@@||example.org^';
+    const r3 = '||test1.example.org^';
+
+    const engine = new NetworkEngine(createTestRuleStorage(1, [r1, r2, r3]));
+    let request;
+    let result;
+
+    it('should find domain whitelist rule ', () => {
+        request = new Request('http://example.org/', '', RequestType.Other);
+        result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(r2);
+    });
+
+    it('should find domain whitelist rule', () => {
+        request = new Request('http://test1.example.org/', '', RequestType.Other);
+        result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(r2);
+    });
+
+    it('should find suitable sub-domain whitelist rule', () => {
+        request = new Request('http://test2.example.org/', '', RequestType.Other);
+        result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(r1);
+    });
+});
 
 describe('TestMatchSourceRule', () => {
     it('works if it finds rule for source url', () => {
@@ -190,7 +189,7 @@ describe('TestBenchNetworkEngine', () => {
         console.log(`RSS before loading rules - ${start / 1024} kB`);
 
         const startParse = Date.now();
-        const list = new StringRuleList(1, await fs.promises.readFile('./test/resources/easylist.txt', 'utf8'), false);
+        const list = new StringRuleList(1, await fs.promises.readFile('./test/resources/easylist.txt', 'utf8'), true);
         const ruleStorage = new RuleStorage([list]);
         const engine = new NetworkEngine(ruleStorage);
         expect(engine).toBeTruthy();

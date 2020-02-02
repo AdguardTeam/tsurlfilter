@@ -53,7 +53,7 @@ export class Engine {
     /**
      * Gets cosmetic result for the specified hostname and cosmetic options
      */
-    // eslint-disable-next-line class-methods-use-this
+    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-explicit-any
     getCosmeticResult(): any {
         // TODO: Implement getCosmeticResult
     }

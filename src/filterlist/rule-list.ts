@@ -108,7 +108,7 @@ export class StringRuleList implements IRuleList {
             endOfLine = this.rulesText.length;
         }
 
-        const line = this.rulesText.substr(ruleIdx, endOfLine).trim();
+        const line = this.rulesText.substring(ruleIdx, endOfLine).trim();
         if (!line) {
             return null;
         }
