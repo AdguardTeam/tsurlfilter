@@ -5,19 +5,13 @@ describe('FileLineReader Test', () => {
         let line;
         let reader;
 
-        try {
+        expect(() => {
             reader = new FileLineReader('');
-            expect(reader).toBeFalsy();
-        } catch (e) {
-            expect(e).toBeTruthy();
-        }
+        }).toThrowError(/ENOENT: no such file or directory.+/);
 
-        try {
+        expect(() => {
             reader = new FileLineReader('incorrect path');
-            expect(reader).toBeFalsy();
-        } catch (e) {
-            expect(e).toBeTruthy();
-        }
+        }).toThrowError(/ENOENT: no such file or directory.+/);
 
         reader = new FileLineReader('./test/resources/hosts');
         expect(reader).toBeTruthy();
