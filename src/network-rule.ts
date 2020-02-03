@@ -182,14 +182,6 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Rule is not cosmetic by definition
-     */
-    // eslint-disable-next-line class-methods-use-this
-    isCosmetic(): boolean {
-        return false;
-    }
-
-    /**
      * The longest part of pattern without any special characters.
      * It is used to improve the matching performance.
      */

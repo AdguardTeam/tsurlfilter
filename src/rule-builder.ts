@@ -30,7 +30,6 @@ export class RuleBuilder {
             return new NetworkRule(line, filterListId);
         } catch (e) {
             // TODO: Log error
-            // console.log(e);
         }
 
         return null;

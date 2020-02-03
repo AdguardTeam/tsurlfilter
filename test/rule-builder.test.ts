@@ -15,18 +15,12 @@ describe('Rule Builder Test', () => {
 
         rule = RuleBuilder.createRule('##.banner', 1);
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('##.banner');
-            expect(rule.getFilterListId()).toBe(1);
-            expect(rule.isCosmetic()).toBeTruthy();
-        }
+        expect(rule!.getText()).toBe('##.banner');
+        expect(rule!.getFilterListId()).toBe(1);
 
         rule = RuleBuilder.createRule('||example.org^', 1);
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('||example.org^');
-            expect(rule.getFilterListId()).toBe(1);
-            expect(rule.isCosmetic()).toBeFalsy();
-        }
+        expect(rule!.getText()).toBe('||example.org^');
+        expect(rule!.getFilterListId()).toBe(1);
     });
 });

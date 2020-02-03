@@ -1,6 +1,7 @@
 import { IndexedRule, IRule } from '../../rule';
 import { RuleBuilder } from '../../rule-builder';
 import { ILineReader } from '../reader/line-reader';
+import { CosmeticRule } from '../../cosmetic-rule';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
@@ -92,17 +93,15 @@ export class RuleScanner {
      * @return next line string or null
      */
     private readNextLine(): string | null {
-        while (true) {
-            const line = this.reader.readLine();
+        const line = this.reader.readLine();
 
-            if (line) {
-                // TODO: Read bytes in readLine
-                this.currentPos += Buffer.from(line).length;
-                return line.trim();
-            }
-
-            return line;
+        if (line) {
+            // TODO: Read bytes in readLine
+            this.currentPos += Buffer.from(line).length;
+            return line.trim();
         }
+
+        return line;
     }
 
     /**
@@ -116,6 +115,6 @@ export class RuleScanner {
             return false;
         }
 
-        return rule.isCosmetic();
+        return (rule instanceof CosmeticRule);
     }
 }

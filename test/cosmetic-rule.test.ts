@@ -10,7 +10,6 @@ describe('Element hiding rules constructor', () => {
         expect(rule.getText()).toEqual('##.banner');
         expect(rule.getContent()).toEqual('.banner');
         expect(rule.isWhitelist()).toEqual(false);
-        expect(rule.isCosmetic()).toEqual(true);
     });
 
     it('works if it parses domains properly', () => {

@@ -11,11 +11,6 @@ export interface IRule {
      * ID of the filter list this rule belongs to
      */
     getFilterListId(): number;
-
-    /**
-     * Is rule is cosmetic rule
-     */
-    isCosmetic(): boolean;
 }
 
 /**
