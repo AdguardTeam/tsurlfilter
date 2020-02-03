@@ -21,7 +21,8 @@ module.exports = {
         '@typescript-eslint/no-non-null-assertion': 'off',
         'no-continue': 'off',
         'import/no-extraneous-dependencies': ['error', { 'devDependencies': true }],
-        "no-restricted-syntax": ["error", "LabeledStatement", "WithStatement"],
-        "no-constant-condition": ["error", { "checkLoops": false }]
+        'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
+        'no-constant-condition': ['error', { 'checkLoops': false }],
+        '@typescript-eslint/interface-name-prefix': 'off'
     },
 };

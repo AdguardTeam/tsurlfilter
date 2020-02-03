@@ -335,7 +335,6 @@ export class NetworkRule implements rule.IRule {
                 }
                 this.regex = new RegExp(regex, flags);
             } catch (e) {
-                // console.log(e);
                 this.invalid = true;
             }
         }

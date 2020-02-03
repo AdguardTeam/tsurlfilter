@@ -19,7 +19,7 @@ export class RuleStorageScanner {
     private currentScanner: RuleScanner | null = null;
 
     /**
-     * // Index of the current scanner
+     * Index of the current scanner
      */
     private currentScannerIdx = -1;
 
@@ -36,6 +36,7 @@ export class RuleStorageScanner {
      * Scan advances the RuleStorageScanner to the next rule, which will then be available
      * through the Rule method. It returns false when the scan stops, either by
      * reaching the end of the input or an error.
+     *
      * @return true if there is some result
     */
     public scan(): boolean {

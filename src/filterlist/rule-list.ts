@@ -9,7 +9,6 @@ import { RuleBuilder } from '../rule-builder';
 /**
  * RuleList represents a set of filtering rules
  */
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IRuleList {
     /**
      * GetID returns the rule list identifier
