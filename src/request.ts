@@ -62,6 +62,13 @@ export class Request {
     public readonly hostname: string;
 
     /**
+     * Means that the request is for a given Hostname,
+     * and not for a URL, and we don't really know what protocol it is.
+     * This can be true for DNS requests, or for HTTP CONNECT, or SNI matching.
+     */
+    public readonly isHostnameRequest: boolean;
+
+    /**
      * Request's domain (eTLD+1)
      */
     public readonly domain: string;
@@ -98,6 +105,7 @@ export class Request {
 
         const tldResult = parse(url);
         this.hostname = tldResult.hostname!;
+        this.isHostnameRequest = false;
         this.domain = tldResult.domain!;
 
         if (sourceUrl) {

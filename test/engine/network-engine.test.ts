@@ -135,9 +135,11 @@ describe('TestBenchNetworkEngine', () => {
         const requests: any[] = [];
         const data = await fs.promises.readFile('./test/resources/requests.json', 'utf8');
         data.split('\n').forEach((line) => {
-            const request = JSON.parse(line);
-            if (isSupportedURL(request.url)) {
-                requests.push(request);
+            if (line) {
+                const request = JSON.parse(line);
+                if (isSupportedURL(request.url) && isSupportedURL(request.frameUrl)) {
+                    requests.push(request);
+                }
             }
         });
 
@@ -178,11 +180,11 @@ describe('TestBenchNetworkEngine', () => {
 
     it('matches requests', async () => {
         const testRequests = await loadRequests();
-        expect(testRequests.length).toBe(30524);
+        expect(testRequests.length).toBe(27969);
 
         const requests: Request[] = [];
         testRequests.forEach((t) => {
-            requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.requestType)));
+            requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.cpt)));
         });
 
         const start = getRSS();
@@ -228,13 +230,13 @@ describe('TestBenchNetworkEngine', () => {
             }
         }
 
+        expect(totalMatches).toBe(4667);
+
         console.log(`Total matches: ${totalMatches}`);
         console.log(`Total elapsed: ${totalElapsed}`);
         console.log(`Average per request: ${totalElapsed / requests.length}`);
         console.log(`Max per request: ${maxElapsedMatch}`);
         console.log(`Min per request: ${minElapsedMatch}`);
-        // TODO: Rule storage cache
-        // console.log('Storage cache length: %d', engine.ruleStorage.GetCacheSize());
 
         const afterMatch = getRSS();
         console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);

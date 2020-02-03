@@ -97,7 +97,7 @@ export class RuleScanner {
 
         if (line) {
             // TODO: Read bytes in readLine
-            this.currentPos += Buffer.from(line).length;
+            this.currentPos += line.length;
             return line.trim();
         }
 
