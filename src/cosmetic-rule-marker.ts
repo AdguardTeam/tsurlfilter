@@ -131,16 +131,6 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
 }
 
 /**
- * Detects if the rule is cosmetic or not.
- *
- * @param ruleText - rule text to check.
- */
-export function isCosmetic(ruleText: string): boolean {
-    const marker = findCosmeticRuleMarker(ruleText);
-    return marker[0] !== -1;
-}
-
-/**
  * Detects is the rule is extended css rule
  * @param marker - string to check
  */

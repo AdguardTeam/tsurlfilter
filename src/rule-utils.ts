@@ -1,12 +1,12 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
-import { isCosmetic } from './cosmetic-rule-marker';
+import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 
 /**
  * Rule builder class
  */
-export class RuleBuilder {
+export class RuleUtils {
     /**
      * Creates rule of suitable class from text string
      * It returns null if the line is empty or if it is a comment
@@ -16,14 +16,14 @@ export class RuleBuilder {
      * @return IRule object or null
      */
     public static createRule(text: string, filterListId: number): IRule | null {
-        if (!text || RuleBuilder.isComment(text)) {
+        if (!text || RuleUtils.isComment(text)) {
             return null;
         }
 
         const line = text.trim();
 
         try {
-            if (isCosmetic(line)) {
+            if (RuleUtils.isCosmetic(line)) {
                 return new CosmeticRule(line, filterListId);
             }
 
@@ -40,7 +40,7 @@ export class RuleBuilder {
      *
      * @param text
      */
-    private static isComment(text: string): boolean {
+    public static isComment(text: string): boolean {
         if (text.charAt(0) === '!') {
             return true;
         }
@@ -51,9 +51,19 @@ export class RuleBuilder {
             }
 
             // Now we should check that this is not a cosmetic rule
-            return !isCosmetic(text);
+            return !RuleUtils.isCosmetic(text);
         }
 
         return false;
+    }
+
+    /**
+     * Detects if the rule is cosmetic or not.
+     *
+     * @param ruleText - rule text to check.
+     */
+    public static isCosmetic(ruleText: string): boolean {
+        const marker = findCosmeticRuleMarker(ruleText);
+        return marker[0] !== -1;
     }
 }

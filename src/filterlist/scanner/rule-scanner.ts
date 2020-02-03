@@ -1,5 +1,5 @@
 import { IndexedRule, IRule } from '../../rule';
-import { RuleBuilder } from '../../rule-builder';
+import { RuleUtils } from '../../rule-utils';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule } from '../../cosmetic-rule';
 
@@ -66,7 +66,7 @@ export class RuleScanner {
             }
 
             if (line) {
-                const rule = RuleBuilder.createRule(line, this.listId);
+                const rule = RuleUtils.createRule(line, this.listId);
                 if (rule && !this.isIgnored(rule)) {
                     this.currentRule = rule;
                     this.currentRuleIndex = lineIndex;
