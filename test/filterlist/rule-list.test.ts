@@ -16,21 +16,17 @@ describe('TestStringRuleListScanner', () => {
 
         let rule = scanner.getRule();
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.rule.getText()).toBe('||example.org');
-            expect(rule.rule.getFilterListId()).toBe(1);
-            expect(rule.index).toBe(0);
-        }
+        expect(rule!.rule.getText()).toBe('||example.org');
+        expect(rule!.rule.getFilterListId()).toBe(1);
+        expect(rule!.index).toBe(0);
 
         expect(scanner.scan()).toBeTruthy();
 
         rule = scanner.getRule();
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.rule.getText()).toBe('##banner');
-            expect(rule.rule.getFilterListId()).toBe(1);
-            expect(rule.index).toBe(21);
-        }
+        expect(rule!.rule.getText()).toBe('##banner');
+        expect(rule!.rule.getFilterListId()).toBe(1);
+        expect(rule!.index).toBe(21);
 
         // Finish scanning
         expect(scanner.scan()).toBeFalsy();
@@ -40,18 +36,14 @@ describe('TestStringRuleListScanner', () => {
         let rule = ruleList.retrieveRule(0);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('||example.org');
-            expect(rule.getFilterListId()).toBe(1);
-        }
+        expect(rule!.getText()).toBe('||example.org');
+        expect(rule!.getFilterListId()).toBe(1);
 
         rule = ruleList.retrieveRule(21);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('##banner');
-            expect(rule.getFilterListId()).toBe(1);
-        }
+        expect(rule!.getText()).toBe('##banner');
+        expect(rule!.getFilterListId()).toBe(1);
 
         rule = ruleList.retrieveRule(-1);
         expect(rule).toBeNull();

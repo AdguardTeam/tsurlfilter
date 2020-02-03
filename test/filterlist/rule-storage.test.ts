@@ -24,12 +24,10 @@ describe('Test RuleStorage', () => {
         indexedRule = scanner.getRule();
 
         expect(indexedRule).toBeTruthy();
-        if (indexedRule) {
-            expect(indexedRule.rule).toBeTruthy();
-            expect(indexedRule.rule.getText()).toBe('||example.org');
-            expect(indexedRule.rule.getFilterListId()).toBe(1);
-            expect(indexedRule.index.toString(16)).toBe('1000000');
-        }
+        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.rule.getText()).toBe('||example.org');
+        expect(indexedRule!.rule.getFilterListId()).toBe(1);
+        expect(indexedRule!.index.toString(16)).toBe('1000000');
     });
 
     it('scans rule 2 from list 1', () => {
@@ -37,12 +35,10 @@ describe('Test RuleStorage', () => {
         indexedRule = scanner.getRule();
 
         expect(indexedRule).toBeTruthy();
-        if (indexedRule) {
-            expect(indexedRule.rule).toBeTruthy();
-            expect(indexedRule.rule.getText()).toBe('##banner');
-            expect(indexedRule.rule.getFilterListId()).toBe(1);
-            expect(indexedRule.index.toString(16)).toBe('1000015');
-        }
+        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.rule.getText()).toBe('##banner');
+        expect(indexedRule!.rule.getFilterListId()).toBe(1);
+        expect(indexedRule!.index.toString(16)).toBe('1000015');
     });
 
     it('scans rule 1 from list 2', () => {
@@ -50,12 +46,10 @@ describe('Test RuleStorage', () => {
         indexedRule = scanner.getRule();
 
         expect(indexedRule).toBeTruthy();
-        if (indexedRule) {
-            expect(indexedRule.rule).toBeTruthy();
-            expect(indexedRule.rule.getText()).toBe('||example.com');
-            expect(indexedRule.rule.getFilterListId()).toBe(2);
-            expect(indexedRule.index.toString(16)).toBe('2000000');
-        }
+        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.rule.getText()).toBe('||example.com');
+        expect(indexedRule!.rule.getFilterListId()).toBe(2);
+        expect(indexedRule!.index.toString(16)).toBe('2000000');
     });
 
     it('scans rule 2 from list 2', () => {
@@ -63,12 +57,10 @@ describe('Test RuleStorage', () => {
         indexedRule = scanner.getRule();
 
         expect(indexedRule).toBeTruthy();
-        if (indexedRule) {
-            expect(indexedRule.rule).toBeTruthy();
-            expect(indexedRule.rule.getText()).toBe('##advert');
-            expect(indexedRule.rule.getFilterListId()).toBe(2);
-            expect(indexedRule.index.toString(16)).toBe('2000015');
-        }
+        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.rule.getText()).toBe('##advert');
+        expect(indexedRule!.rule.getFilterListId()).toBe(2);
+        expect(indexedRule!.index.toString(16)).toBe('2000015');
     });
 
     it('checks that there\'s nothing more to read', () => {
@@ -83,37 +75,29 @@ describe('Test RuleStorage', () => {
         let rule = storage.retrieveRule(0x1000000);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('||example.org');
-            expect(rule.getFilterListId()).toBe(1);
-        }
+        expect(rule!.getText()).toBe('||example.org');
+        expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 2 from the list 1
         rule = storage.retrieveRule(0x0000000001000015);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('##banner');
-            expect(rule.getFilterListId()).toBe(1);
-        }
+        expect(rule!.getText()).toBe('##banner');
+        expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 1 from the list 2
         rule = storage.retrieveRule(0x0000000002000000);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('||example.com');
-            expect(rule.getFilterListId()).toBe(2);
-        }
+        expect(rule!.getText()).toBe('||example.com');
+        expect(rule!.getFilterListId()).toBe(2);
 
         // Rule 2 from the list 2
         rule = storage.retrieveRule(0x0000000002000015);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('##advert');
-            expect(rule.getFilterListId()).toBe(2);
-        }
+        expect(rule!.getText()).toBe('##advert');
+        expect(rule!.getFilterListId()).toBe(2);
 
         // Check cache
         rule = storage.retrieveRule(0x0000000002000015);
@@ -129,11 +113,9 @@ describe('Test RuleStorage', () => {
         let rule = storage.retrieveNetworkRule(0x1000000);
 
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule instanceof NetworkRule).toBeTruthy();
-            expect(rule.getText()).toBe('||example.org');
-            expect(rule.getFilterListId()).toBe(1);
-        }
+        expect(rule instanceof NetworkRule).toBeTruthy();
+        expect(rule!.getText()).toBe('||example.org');
+        expect(rule!.getFilterListId()).toBe(1);
 
         rule = storage.retrieveNetworkRule(0x0000000001000015);
         expect(rule).toBeNull();

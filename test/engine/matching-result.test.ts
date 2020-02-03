@@ -13,9 +13,7 @@ describe('TestNewMatchingResult', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        if (basicResult) {
-            expect(basicResult.getText()).toEqual(ruleText);
-        }
+        expect(basicResult!.getText()).toEqual(ruleText);
     });
 });
 
@@ -35,9 +33,7 @@ describe('TestNewMatchingResultWhitelist', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        if (basicResult) {
-            expect(basicResult.getText()).toEqual(sourceRuleText);
-        }
+        expect(basicResult!.getText()).toEqual(sourceRuleText);
     });
 });
 
@@ -131,9 +127,7 @@ describe('TestNewMatchingResultBadfilterWhitelist', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        if (basicResult) {
-            expect(basicResult.getText()).toEqual('||example.org^');
-        }
+        expect(basicResult!.getText()).toEqual('||example.org^');
     });
 });
 
@@ -155,8 +149,6 @@ describe('TestNewMatchingResultBadfilterSourceRules', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        if (basicResult) {
-            expect(basicResult.getText()).toEqual('||example.org^');
-        }
+        expect(basicResult!.getText()).toEqual('||example.org^');
     });
 });

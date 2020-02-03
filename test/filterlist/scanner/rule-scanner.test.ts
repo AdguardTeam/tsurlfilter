@@ -18,10 +18,8 @@ describe('TestRuleScannerOfStringReader', () => {
 
         let rule = indexedRule && indexedRule.rule;
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('||example.org');
-            expect(rule.getFilterListId()).toEqual(1);
-        }
+        expect(rule!.getText()).toBe('||example.org');
+        expect(rule!.getFilterListId()).toEqual(1);
 
         expect(scanner.scan()).toBeTruthy();
 
@@ -31,10 +29,8 @@ describe('TestRuleScannerOfStringReader', () => {
 
         rule = indexedRule && indexedRule.rule;
         expect(rule).toBeTruthy();
-        if (rule) {
-            expect(rule.getText()).toBe('##banner');
-            expect(rule.getFilterListId()).toEqual(1);
-        }
+        expect(rule!.getText()).toBe('##banner');
+        expect(rule!.getFilterListId()).toEqual(1);
 
         expect(scanner.scan()).toBeFalsy();
         expect(scanner.scan()).toBeFalsy();
@@ -53,8 +49,8 @@ describe('TestRuleScannerOfFileReader', () => {
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
             expect(indexedRule).toBeTruthy();
-            expect(indexedRule && indexedRule.rule).toBeTruthy();
-            expect(indexedRule && indexedRule.index).toBeTruthy();
+            expect(indexedRule!.rule).toBeTruthy();
+            expect(indexedRule!.index).toBeTruthy();
 
             rulesCount += 1;
         }
