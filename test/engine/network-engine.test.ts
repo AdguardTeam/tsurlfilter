@@ -109,14 +109,27 @@ describe('TestMatchSimplePattern', () => {
 });
 
 describe('TestBenchNetworkEngine', () => {
+    /**
+     * Resources file paths
+     */
+    const requestsZipFilePath = './test/resources/requests.json.gz';
+    const requestsFilePath = './test/resources/requests.json';
+    const expectedRequestsCount = 27969;
+    const rulesFilePath = './test/resources/easylist.txt';
+
+    /**
+     * Expected matches for specified requests and rules
+     */
+    const expectedMatchesCount = 4667;
+
     function isSupportedURL(url: string): boolean {
         return (!!url && (url.startsWith('http') || url.startsWith('ws')));
     }
 
     async function unzipRequests(): Promise<void> {
         return new Promise((resolve, reject) => {
-            const fileContents = fs.createReadStream('./test/resources/requests.json.gz');
-            const writeStream = fs.createWriteStream('./test/resources/requests.json');
+            const fileContents = fs.createReadStream(requestsZipFilePath);
+            const writeStream = fs.createWriteStream(requestsFilePath);
             const unzip = zlib.createGunzip();
 
             fileContents.pipe(unzip).pipe(writeStream).on('close', () => {
@@ -133,7 +146,7 @@ describe('TestBenchNetworkEngine', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const requests: any[] = [];
-        const data = await fs.promises.readFile('./test/resources/requests.json', 'utf8');
+        const data = await fs.promises.readFile(requestsFilePath, 'utf8');
         data.split('\n').forEach((line) => {
             if (line) {
                 const request = JSON.parse(line);
@@ -180,7 +193,7 @@ describe('TestBenchNetworkEngine', () => {
 
     it('matches requests', async () => {
         const testRequests = await loadRequests();
-        expect(testRequests.length).toBe(27969);
+        expect(testRequests.length).toBe(expectedRequestsCount);
 
         const requests: Request[] = [];
         testRequests.forEach((t) => {
@@ -191,7 +204,7 @@ describe('TestBenchNetworkEngine', () => {
         console.log(`RSS before loading rules - ${start / 1024} kB`);
 
         const startParse = Date.now();
-        const list = new StringRuleList(1, await fs.promises.readFile('./test/resources/easylist.txt', 'utf8'), true);
+        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
         const ruleStorage = new RuleStorage([list]);
         const engine = new NetworkEngine(ruleStorage);
         expect(engine).toBeTruthy();
@@ -230,7 +243,7 @@ describe('TestBenchNetworkEngine', () => {
             }
         }
 
-        expect(totalMatches).toBe(4667);
+        expect(totalMatches).toBe(expectedMatchesCount);
 
         console.log(`Total matches: ${totalMatches}`);
         console.log(`Total elapsed: ${totalElapsed}`);
