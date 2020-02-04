@@ -1,4 +1,4 @@
-import { CosmeticRuleMarker, findCosmeticRuleMarker, isCosmetic } from '../src/cosmetic-rule-marker';
+import { CosmeticRuleMarker, findCosmeticRuleMarker } from '../src/cosmetic-rule-marker';
 
 describe('findCosmeticRuleMarker', () => {
     it('works if it finds element hiding marker properly', () => {
@@ -35,16 +35,5 @@ describe('findCosmeticRuleMarker', () => {
         marker = findCosmeticRuleMarker('127.0.0.1 localhost ## this is just a comment');
         expect(marker[0]).toEqual(-1);
         expect(marker[1]).toEqual(null);
-    });
-});
-
-describe('isCosmetic', () => {
-    it('works if it detects cosmetic rules', () => {
-        expect(isCosmetic('$$script')).toEqual(true);
-        expect(isCosmetic('#%#//scriptlet("test")')).toEqual(true);
-        expect(isCosmetic('example.org##banenr')).toEqual(true);
-
-        expect(isCosmetic('||example.org^')).toEqual(false);
-        expect(isCosmetic('$domain=example.org')).toEqual(false);
     });
 });

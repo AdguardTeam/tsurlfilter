@@ -331,7 +331,11 @@ export class NetworkRule implements rule.IRule {
             }
         }
 
-        return this.regex!.test(request.url);
+        if (this.regex) {
+            return this.regex.test(request.url);
+        }
+
+        return false;
     }
 
     /**

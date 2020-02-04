@@ -2,6 +2,7 @@ import { Request } from '../request';
 import { NetworkRule } from '../network-rule';
 import { MatchingResult } from './matching-result';
 import { fastHash, fastHashBetween } from '../utils';
+import { RuleStorage } from '../filterlist/rule-storage';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules
@@ -22,13 +23,12 @@ export class NetworkEngine {
     /**
      * Count of rules added to the engine
      */
-    private rulesCount: number;
+    public rulesCount: number;
 
     /**
      * Storage for the network filtering rules
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private ruleStorage: any;
+    private ruleStorage: RuleStorage;
 
     /**
      * Domain lookup table. Key is the domain name hash.
@@ -53,30 +53,25 @@ export class NetworkEngine {
     /**
      * Builds an instance of the network engine
      *
-     * @param rules
+     * @param storage
      */
-    constructor(rules: string[]) {
+    constructor(storage: RuleStorage) {
+        this.ruleStorage = storage;
         this.rulesCount = 0;
         this.domainsLookupTable = new Map<number, number[]>();
         this.shortcutsLookupTable = new Map<number, number[]>();
         this.shortcutsHistogram = new Map<number, number>();
         this.otherRules = [];
 
-        // TODO: Implement RulesStorage
-        this.ruleStorage = {
-            retrieveNetworkRule(index: number): NetworkRule {
-                return new NetworkRule(rules[index], 0);
-            },
-        };
+        const scanner = this.ruleStorage.createRuleStorageScanner();
 
-        rules.forEach((r) => {
-            try {
-                this.addRule(new NetworkRule(r, 0), rules.indexOf(r));
-            } catch (e) {
-                // Error loading rule
-                // TODO: Implement RulesStorage
+        while (scanner.scan()) {
+            const indexedRule = scanner.getRule();
+            if (indexedRule
+                && indexedRule.rule instanceof NetworkRule) {
+                this.addRule(indexedRule.rule, indexedRule.index);
             }
-        });
+        }
     }
 
     /**
@@ -138,7 +133,7 @@ export class NetworkEngine {
             const rulesIndexes = this.shortcutsLookupTable.get(hash);
             if (rulesIndexes) {
                 rulesIndexes.forEach((ruleIdx) => {
-                    const rule: NetworkRule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
+                    const rule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
                     if (rule && rule.match(request)) {
                         result.push(rule);
                     }
@@ -168,7 +163,7 @@ export class NetworkEngine {
             const rulesIndexes = this.domainsLookupTable.get(hash);
             if (rulesIndexes) {
                 rulesIndexes.forEach((ruleIdx) => {
-                    const rule: NetworkRule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
+                    const rule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
                     if (rule && rule.match(request)) {
                         result.push(rule);
                     }
