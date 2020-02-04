@@ -44,10 +44,10 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
 -   [ ] Memory optimization
 -   [ ] Tech document
 -   [ ] Cosmetic rules
-    -   [ ] Basic element hiding and CSS rules
-        -   [ ] Proper CSS rules validation
-    -   [ ] ExtCSS rules
-        -   [ ] ExtCSS rules validation
+    -   [x] Basic element hiding and CSS rules
+        -   [x] Proper CSS rules validation
+    -   [x] ExtCSS rules
+        -   [x] ExtCSS rules validation
     -   [ ] Scriptlet rules
     -   [ ] JS rules
 -   [ ] Basic filtering engine implementation
@@ -64,3 +64,5 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [ ] \$cookie
     -   [ ] \$redirect
     -   [ ] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
+    -   [ ] \$stealth modifier
+    -   [ ] \$ping modifier (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1584)
