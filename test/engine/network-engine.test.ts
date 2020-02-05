@@ -109,14 +109,27 @@ describe('TestMatchSimplePattern', () => {
 });
 
 describe('TestBenchNetworkEngine', () => {
+    /**
+     * Resources file paths
+     */
+    const requestsZipFilePath = './test/resources/requests.json.gz';
+    const requestsFilePath = './test/resources/requests.json';
+    const expectedRequestsCount = 27969;
+    const rulesFilePath = './test/resources/easylist.txt';
+
+    /**
+     * Expected matches for specified requests and rules
+     */
+    const expectedMatchesCount = 4667;
+
     function isSupportedURL(url: string): boolean {
         return (!!url && (url.startsWith('http') || url.startsWith('ws')));
     }
 
     async function unzipRequests(): Promise<void> {
         return new Promise((resolve, reject) => {
-            const fileContents = fs.createReadStream('./test/resources/requests.json.gz');
-            const writeStream = fs.createWriteStream('./test/resources/requests.json');
+            const fileContents = fs.createReadStream(requestsZipFilePath);
+            const writeStream = fs.createWriteStream(requestsFilePath);
             const unzip = zlib.createGunzip();
 
             fileContents.pipe(unzip).pipe(writeStream).on('close', () => {
@@ -133,11 +146,13 @@ describe('TestBenchNetworkEngine', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const requests: any[] = [];
-        const data = await fs.promises.readFile('./test/resources/requests.json', 'utf8');
+        const data = await fs.promises.readFile(requestsFilePath, 'utf8');
         data.split('\n').forEach((line) => {
-            const request = JSON.parse(line);
-            if (isSupportedURL(request.url)) {
-                requests.push(request);
+            if (line) {
+                const request = JSON.parse(line);
+                if (isSupportedURL(request.url) && isSupportedURL(request.frameUrl)) {
+                    requests.push(request);
+                }
             }
         });
 
@@ -178,18 +193,18 @@ describe('TestBenchNetworkEngine', () => {
 
     it('matches requests', async () => {
         const testRequests = await loadRequests();
-        expect(testRequests.length).toBe(30524);
+        expect(testRequests.length).toBe(expectedRequestsCount);
 
         const requests: Request[] = [];
         testRequests.forEach((t) => {
-            requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.requestType)));
+            requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.cpt)));
         });
 
         const start = getRSS();
         console.log(`RSS before loading rules - ${start / 1024} kB`);
 
         const startParse = Date.now();
-        const list = new StringRuleList(1, await fs.promises.readFile('./test/resources/easylist.txt', 'utf8'), true);
+        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
         const ruleStorage = new RuleStorage([list]);
         const engine = new NetworkEngine(ruleStorage);
         expect(engine).toBeTruthy();
@@ -228,13 +243,13 @@ describe('TestBenchNetworkEngine', () => {
             }
         }
 
+        expect(totalMatches).toBe(expectedMatchesCount);
+
         console.log(`Total matches: ${totalMatches}`);
         console.log(`Total elapsed: ${totalElapsed}`);
         console.log(`Average per request: ${totalElapsed / requests.length}`);
         console.log(`Max per request: ${maxElapsedMatch}`);
         console.log(`Min per request: ${minElapsedMatch}`);
-        // TODO: Rule storage cache
-        // console.log('Storage cache length: %d', engine.ruleStorage.GetCacheSize());
 
         const afterMatch = getRSS();
         console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);
