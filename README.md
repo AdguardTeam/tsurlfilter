@@ -64,3 +64,11 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [ ] \$cookie
     -   [ ] \$redirect
     -   [ ] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
+    
+### Chrome sample extension
+
+```
+./sample-extension
+```
+
+There is a sample unpacked extension with an engine built from sources.

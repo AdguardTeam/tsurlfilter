@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "TS Url Filter Sample",
+  "author": "Adguard Software Ltd.",
+  "version": "0.1.0",
+  "description": "An example using tsurlfilter engine",
+  "permissions": [
+    "http://*/*",
+    "https://*/*",
+    "ws://*/*",
+    "wss://*/*",
+    "webRequest",
+    "webRequestBlocking"
+  ],
+  "background": {
+    "page": "background.html",
+    "persistent": true
+  }
+}
+
