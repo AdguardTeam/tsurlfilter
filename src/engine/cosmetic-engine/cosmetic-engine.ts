@@ -66,7 +66,7 @@ export class CosmeticEngine {
         if (includeCss) {
             if (includeGenericCss) {
                 for (const genericRule of this.cosmeticElementHiding.genericRules) {
-                    if (this.cosmeticElementHiding.isWhitelisted(hostname, genericRule)
+                    if (!this.cosmeticElementHiding.isWhitelisted(hostname, genericRule)
                         && genericRule.match(hostname)) {
                         cosmeticResult.elementHiding.append(genericRule);
                     }

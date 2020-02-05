@@ -1,13 +1,13 @@
 import { CosmeticRule } from '../../cosmetic-rule';
 
 export class CosmeticStylesResult {
-    private generic: string[];
+    public generic: string[];
 
-    private specific: string[];
+    public specific: string[];
 
-    private genericExtCss: string[];
+    public genericExtCss: string[];
 
-    private specificExtCss: string[];
+    public specificExtCss: string[];
 
     constructor() {
         this.generic = [] as string[];
