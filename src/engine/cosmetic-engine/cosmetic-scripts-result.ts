@@ -10,6 +10,10 @@ export class CosmeticScriptsResult {
         this.specific = [] as string[];
     }
 
+    /**
+     * Appends rule to appropriate collection
+     * @param rule
+     */
     append(rule: CosmeticRule): void {
         const ruleContent = rule.getContent();
         if (rule.isGeneric()) {

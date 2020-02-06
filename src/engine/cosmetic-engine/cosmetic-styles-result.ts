@@ -16,6 +16,10 @@ export class CosmeticStylesResult {
         this.specificExtCss = [] as string[];
     }
 
+    /**
+     * Appends rule to the appropriate collection
+     * @param rule
+     */
     append(rule: CosmeticRule): void {
         const ruleContent = rule.getContent();
         if (rule.isGeneric()) {
