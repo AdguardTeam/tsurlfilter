@@ -83,6 +83,59 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.specific.length).toBe(0);
     });
 
-    // TODO add tests CSS cosmetic script results
-    // TODO add tests cosmetic script results
+    it('correctly detects extended css rules', () => {
+        const extCssSpecificRuleText = '.ext_css_specific[-ext-contains=test]';
+        const extCssSpecificRule = `example.org##${extCssSpecificRuleText}`;
+        const extCssGenericRuleText = '.ext_css_generic[-ext-contains=test]';
+        const extCssGenericRule = `##${extCssGenericRuleText}`;
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            specificRule,
+            genericRule,
+            extCssGenericRule,
+            extCssSpecificRule,
+        ]));
+        const result = cosmeticEngine.match('example.org', true, true, true);
+        expect(result.elementHiding.genericExtCss).toContain(extCssGenericRuleText);
+        expect(result.elementHiding.specificExtCss).toContain(extCssSpecificRuleText);
+    });
+
+    it('correctly detects cosmetic css rules', () => {
+        const cssRuleText = '.cosmetic { visibility: hidden; }';
+        const specificCssRule = `example.org#$#${cssRuleText}`;
+        const genericCssRule = `#$#${cssRuleText}`;
+        const extCssCssRuleText = ':has(.ext-css-cosmetic) { visibility: hidden; }';
+        const extCssSpecificCssRule = `example.org#$#${extCssCssRuleText}`;
+        const extCssGenericCssRule = `#$#${extCssCssRuleText}`;
+
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            specificCssRule,
+            genericCssRule,
+            extCssSpecificCssRule,
+            extCssGenericCssRule,
+        ]));
+
+        const result = cosmeticEngine.match('example.org', true, true, true);
+
+        expect(result.CSS.specific).toContain(cssRuleText);
+        expect(result.CSS.generic).toContain(cssRuleText);
+        expect(result.CSS.specificExtCss).toContain(extCssCssRuleText);
+        expect(result.CSS.genericExtCss).toContain(extCssCssRuleText);
+    });
+
+
+    it('correctly detects cosmetic JS rules', () => {
+        const jsRuleText = 'window.__gaq = undefined;';
+        const specificJsRule = `example.org#%#${jsRuleText}`;
+        const genericJsRule = `#%#${jsRuleText}`;
+
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            specificJsRule,
+            genericJsRule,
+        ]));
+
+        const result = cosmeticEngine.match('example.org', true, true, true);
+
+        expect(result.JS.specific).toContain(jsRuleText);
+        expect(result.JS.generic).toContain(jsRuleText);
+    });
 });

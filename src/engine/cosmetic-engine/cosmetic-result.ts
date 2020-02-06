@@ -4,9 +4,9 @@ import { CosmeticScriptsResult } from './cosmetic-scripts-result';
 export class CosmeticResult {
     public elementHiding: CosmeticStylesResult;
 
-    private CSS: CosmeticStylesResult;
+    public CSS: CosmeticStylesResult;
 
-    private JS: CosmeticScriptsResult;
+    public JS: CosmeticScriptsResult;
 
     constructor() {
         this.elementHiding = new CosmeticStylesResult();
