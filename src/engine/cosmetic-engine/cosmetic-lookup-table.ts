@@ -16,6 +16,10 @@ export class CosmeticLookupTable {
         this.whitelist = new Map();
     }
 
+    /**
+     * Adds rule to the appropriate collection
+     * @param rule
+     */
     addRule(rule: CosmeticRule): void {
         if (rule.isWhitelist()) {
             const ruleContent = rule.getContent();
@@ -40,12 +44,21 @@ export class CosmeticLookupTable {
         }
     }
 
+    /**
+     * Finds rule by hostname
+     * @param hostname
+     */
     findByHostname(hostname: string): CosmeticRule[] {
         const rules = this.byHostname.get(hostname) || [] as CosmeticRule[];
 
         return rules.filter((rule) => !rule.isWhitelist());
     }
 
+    /**
+     * Checks if rule is whitelisted
+     * @param hostname
+     * @param rule
+     */
     isWhitelisted(hostname: string, rule: CosmeticRule): boolean {
         const whitelistedRules = this.whitelist.get(rule.getContent());
 
