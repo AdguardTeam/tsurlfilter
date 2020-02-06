@@ -1,6 +1,6 @@
-import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
-import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { StringRuleList } from '../../src/filterlist/rule-list';
+import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-engine';
+import { RuleStorage } from '../../../src/filterlist/rule-storage';
+import { StringRuleList } from '../../../src/filterlist/rule-list';
 
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
     const list = new StringRuleList(listId, rules.join('\n'), false);
@@ -137,5 +137,17 @@ describe('Test cosmetic engine', () => {
 
         expect(result.JS.specific).toContain(jsRuleText);
         expect(result.JS.generic).toContain(jsRuleText);
+    });
+
+    it('checks cosmetic JS exceptions', () => {
+        const jsRule = 'testcases.adguard.com,surge.sh#%#window.__testCase2 = true;';
+        const jsExceptionRule = 'testcases.adguard.com,surge.sh#@%#window.__testCase2 = true;';
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            jsRule,
+            jsExceptionRule,
+        ]));
+        const result = cosmeticEngine.match('testcases.adguard.com', true, true, true);
+        expect(result.JS.specific.length).toBe(0);
+        expect(result.JS.generic.length).toBe(0);
     });
 });
