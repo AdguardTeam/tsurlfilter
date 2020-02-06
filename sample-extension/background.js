@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable no-console, no-undef */
 // eslint-disable-next-line import/extensions
 import * as AGUrlFilter from './engine.js';
 
@@ -67,7 +67,6 @@ import * as AGUrlFilter from './engine.js';
     /**
      * Add on before request listener
      */
-    // eslint-disable-next-line no-undef
     chrome.webRequest.onBeforeRequest.addListener((details) => {
         console.debug('Processing request..');
         console.debug(details);
@@ -77,4 +76,26 @@ import * as AGUrlFilter from './engine.js';
 
         console.debug(result);
     }, { urls: ['<all_urls>'] }, ['blocking']);
+
+    /**
+     * Add listener for content script css and js request
+     */
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === 'getSelectorsAndScripts') {
+            console.debug('Processing content script request..');
+            const { hostname } = new URL(request.documentUrl);
+
+            const cosmeticResult = engine.getCosmeticResult(hostname);
+            console.debug(cosmeticResult);
+
+            // TODO: Fill with cosmetic result
+            sendResponse({
+                selectors: {
+                    css: 'css',
+                    extendedCss: 'extendedCss',
+                },
+                scripts: 'console.log("test js")',
+            });
+        }
+    });
 })();
