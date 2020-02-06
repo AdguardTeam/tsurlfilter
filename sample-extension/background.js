@@ -75,6 +75,8 @@ import * as AGUrlFilter from './engine.js';
         const result = engine.matchRequest(request);
 
         console.debug(result);
+
+        // TODO: Handle result
     }, { urls: ['<all_urls>'] }, ['blocking']);
 
     /**
