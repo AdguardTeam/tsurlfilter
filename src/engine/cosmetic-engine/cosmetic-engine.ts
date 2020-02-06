@@ -2,6 +2,8 @@ import { RuleStorage } from '../../filterlist/rule-storage';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
 import { CosmeticRule, CosmeticRuleType } from '../../cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
+import { CosmeticStylesResult } from './cosmetic-styles-result';
+import { CosmeticScriptsResult } from './cosmetic-scripts-result';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -53,34 +55,59 @@ export class CosmeticEngine {
                 this.cosmeticJs.addRule(rule);
                 break;
             }
-            // TODO add scriptlet + HTML
+            // TODO add Scriptlet + HTML
             default: {
                 break;
             }
         }
     }
 
-    match(hostname: string, includeCss: boolean, includeJs: boolean, includeGenericCss: boolean): CosmeticResult {
+    match(hostname: string, includeCss: boolean, includeJs: boolean, includeGeneric: boolean): CosmeticResult {
         const cosmeticResult = new CosmeticResult();
 
         if (includeCss) {
-            if (includeGenericCss) {
-                for (const genericRule of this.cosmeticElementHiding.genericRules) {
-                    if (!this.cosmeticElementHiding.isWhitelisted(hostname, genericRule)
-                        && genericRule.match(hostname)) {
-                        cosmeticResult.elementHiding.append(genericRule);
-                    }
-                }
+            if (includeGeneric) {
+                CosmeticEngine.appendGenericRules(cosmeticResult.elementHiding, this.cosmeticElementHiding, hostname);
+                CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cosmeticCss, hostname);
             }
 
-            const hostnameRules = this.cosmeticElementHiding.findByHostname(hostname);
-            if (hostnameRules.length > 0) {
-                for (const hostnameRule of hostnameRules) {
-                    cosmeticResult.elementHiding.append(hostnameRule);
-                }
+            CosmeticEngine.appendSpecificRules(cosmeticResult.elementHiding, this.cosmeticElementHiding, hostname);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cosmeticCss, hostname);
+        }
+
+        if (includeJs) {
+            if (includeGeneric) {
+                CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.cosmeticJs, hostname);
             }
+            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.cosmeticJs, hostname);
         }
 
         return cosmeticResult;
+    }
+
+    private static appendGenericRules(
+        cosmeticResult: CosmeticStylesResult | CosmeticScriptsResult,
+        lookupTable: CosmeticLookupTable,
+        hostname: string,
+    ): void {
+        for (const genericRule of lookupTable.genericRules) {
+            if (!lookupTable.isWhitelisted(hostname, genericRule)
+                && genericRule.match(hostname)) {
+                cosmeticResult.append(genericRule);
+            }
+        }
+    }
+
+    private static appendSpecificRules(
+        cosmeticResult: CosmeticScriptsResult | CosmeticStylesResult,
+        lookupTable: CosmeticLookupTable,
+        hostname: string,
+    ): void {
+        const jsHostnameRules = lookupTable.findByHostname(hostname);
+        if (jsHostnameRules.length > 0) {
+            for (const jsHostnameRule of jsHostnameRules) {
+                cosmeticResult.append(jsHostnameRule);
+            }
+        }
     }
 }

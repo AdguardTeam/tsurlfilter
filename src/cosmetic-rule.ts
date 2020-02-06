@@ -285,6 +285,13 @@ export class CosmeticRule implements rule.IRule {
                 this.type = CosmeticRuleType.Css;
                 this.whitelist = true;
                 break;
+            case CosmeticRuleMarker.Js:
+                this.type = CosmeticRuleType.Js;
+                break;
+            case CosmeticRuleMarker.JsException:
+                this.type = CosmeticRuleType.Js;
+                this.whitelist = true;
+                break;
             default:
                 // TODO: Start supporting other types
                 throw new SyntaxError('Unsupported rule type');
