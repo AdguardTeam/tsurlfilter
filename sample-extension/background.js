@@ -88,11 +88,11 @@ import * as AGUrlFilter from './engine.js';
             const cosmeticResult = engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
             console.debug(cosmeticResult);
 
-            const css = [...cosmeticResult.elementHiding.generic, cosmeticResult.elementHiding.specific]
+            const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
                 .map((selector) => `${selector} { display: none!important; }`);
             // eslint-disable-next-line max-len
-            const extendedCss = [...cosmeticResult.elementHiding.genericExtCss, cosmeticResult.elementHiding.specificExtCss];
-            const scripts = [...cosmeticResult.JS.generic, cosmeticResult.JS.specific].join('\n');
+            const extendedCss = [...cosmeticResult.elementHiding.genericExtCss, ...cosmeticResult.elementHiding.specificExtCss];
+            const scripts = [...cosmeticResult.JS.generic, ...cosmeticResult.JS.specific];
 
             sendResponse({
                 selectors: {

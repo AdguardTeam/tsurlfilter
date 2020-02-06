@@ -28,11 +28,23 @@
             return;
         }
 
+        const scriptsCode = scripts.join('\r\n');
+
+        const toExecute = `
+            (function () {
+                try {
+                    ${scriptsCode}
+                } catch (ex) {
+                    console.error('Error executing AG js: ' + ex);
+                }
+            })();
+            `;
+
         /**
          * JS injections are created by JS filtering rules:
          * http://adguard.com/en/filterrules.html#javascriptInjection
          */
-        executeScript(scripts);
+        executeScript(toExecute);
     };
 
     /**
