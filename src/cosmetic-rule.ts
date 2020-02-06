@@ -19,14 +19,14 @@ export enum CosmeticRuleType {
      * Cosmetic rules that allow adding custom CSS styles.
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules
      */
-    CSS,
+    Css,
 
     /**
      * Cosmetic rules that allow executing custom JS scripts.
      * Some restrictions are applied to this type of rules by default.
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#javascript-rules
      */
-    JS,
+    Js,
 
     /**
      * A subset of JS rules that allows executing a special JS function on a web page.
@@ -208,6 +208,17 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
+     * Returns true if the rule is considered "generic"
+     * "generic" means that the rule is not restricted to a limited set of domains
+     * Please note that it might be forbidden on some domains, though.
+     *
+     * @return {boolean}
+     */
+    isGeneric(): boolean {
+        return !this.permittedDomains || this.permittedDomains.length === 0;
+    }
+
+    /**
      * Gets list of restricted domains.
      */
     getRestrictedDomains(): string[] | null {
@@ -267,11 +278,11 @@ export class CosmeticRule implements rule.IRule {
                 break;
             case CosmeticRuleMarker.Css:
             case CosmeticRuleMarker.CssExtCSS:
-                this.type = CosmeticRuleType.CSS;
+                this.type = CosmeticRuleType.Css;
                 break;
             case CosmeticRuleMarker.CssException:
             case CosmeticRuleMarker.CssExtCSSException:
-                this.type = CosmeticRuleType.CSS;
+                this.type = CosmeticRuleType.Css;
                 this.whitelist = true;
                 break;
             default:
@@ -284,7 +295,7 @@ export class CosmeticRule implements rule.IRule {
         }
 
         // validate pseudo class for non CSS type
-        if (this.type !== CosmeticRuleType.CSS) {
+        if (this.type !== CosmeticRuleType.Css) {
             // We need to validate pseudo-classes
             const pseudoClass = CosmeticRule.parsePseudoClass(this.content);
             if (pseudoClass !== null) {
@@ -294,7 +305,7 @@ export class CosmeticRule implements rule.IRule {
             }
         }
 
-        if (this.type === CosmeticRuleType.CSS) {
+        if (this.type === CosmeticRuleType.Css) {
             // Simple validation for css injection rules
             if (!/{.+}/.test(this.content)) {
                 throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
