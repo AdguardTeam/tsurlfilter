@@ -74,3 +74,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
 ```
 
 There is a sample unpacked extension with an engine built from sources.
+Test pages: 
+http://testcases.adguard.com/Filters/simple-rules/test-simple-rules.html
+http://testcases.adguard.com/Filters/script-rules/test-script-rules.html
+

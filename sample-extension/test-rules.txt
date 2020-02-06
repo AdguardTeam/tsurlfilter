@@ -19,3 +19,16 @@ testcases.adguard.com,surge.sh#@##case-3-elemhide-exception > .test-banner
 testcases.adguard.*,surge.*###case-5-wildcard-for-tld > .test-banner
 ! Test case 6: wildcard for tld support with $domain modifier
 ||*/test-files/adguard.png$domain=testcases.adguard.*|surge.*
+
+!
+! Title: Rules for script rules test
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-script-rules-filter
+!
+testcases.adguard.com,surge.sh#%#window.__testCase1 = true;
+testcases.adguard.com,surge.sh#%#window.__testCase2 = true;
+testcases.adguard.com,surge.sh#@%#window.__testCase2 = true;

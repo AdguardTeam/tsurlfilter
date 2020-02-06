@@ -10,7 +10,7 @@ import * as AGUrlFilter from './engine.js';
      */
     const loadRules = async () => new Promise(((resolve) => {
         // eslint-disable-next-line no-undef
-        const url = chrome.runtime.getURL('test-simple-rules.txt');
+        const url = chrome.runtime.getURL('test-rules.txt');
         // eslint-disable-next-line no-undef
         fetch(url).then((response) => resolve(response.text()));
     }));
@@ -85,16 +85,21 @@ import * as AGUrlFilter from './engine.js';
             console.debug('Processing content script request..');
             const { hostname } = new URL(request.documentUrl);
 
-            const cosmeticResult = engine.getCosmeticResult(hostname);
+            const cosmeticResult = engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
             console.debug(cosmeticResult);
 
-            // TODO: Fill with cosmetic result
+            const css = [...cosmeticResult.elementHiding.generic, cosmeticResult.elementHiding.specific]
+                .map((selector) => `${selector} { display: none!important; }`);
+            // eslint-disable-next-line max-len
+            const extendedCss = [...cosmeticResult.elementHiding.genericExtCss, cosmeticResult.elementHiding.specificExtCss];
+            const scripts = [...cosmeticResult.JS.generic, cosmeticResult.JS.specific].join('\n');
+
             sendResponse({
                 selectors: {
-                    css: 'css',
-                    extendedCss: 'extendedCss',
+                    css,
+                    extendedCss,
                 },
-                scripts: 'console.log("test js")',
+                scripts,
             });
         }
     });
