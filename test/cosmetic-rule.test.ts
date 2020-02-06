@@ -49,7 +49,7 @@ describe('Element hiding rules constructor', () => {
 
     it('throws error if css marker is not supported yet', () => {
         expect(() => {
-            new CosmeticRule('example.org#%#window.__gaq = undefined;', 0);
+            new CosmeticRule('example.org$$script[data-src="banner"]', 0);
         }).toThrow(new SyntaxError('Unsupported rule type'));
     });
 });
