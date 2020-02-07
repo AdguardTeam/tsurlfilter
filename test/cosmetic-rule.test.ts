@@ -49,7 +49,7 @@ describe('Element hiding rules constructor', () => {
 
     it('throws error if css marker is not supported yet', () => {
         expect(() => {
-            new CosmeticRule('example.org#%#window.__gaq = undefined;', 0);
+            new CosmeticRule('example.org$$script[data-src="banner"]', 0);
         }).toThrow(new SyntaxError('Unsupported rule type'));
     });
 });
@@ -74,20 +74,20 @@ describe('CosmeticRule.CSS', () => {
     it('correctly detects Cosmetic.CSS whitelist and blacklist rules', () => {
         const rule = new CosmeticRule('example.org#$#.textad { visibility: hidden; }\n', 0);
         expect(rule.isWhitelist()).toBeFalsy();
-        expect(rule.getType()).toBe(CosmeticRuleType.CSS);
+        expect(rule.getType()).toBe(CosmeticRuleType.Css);
 
         const whitelistRule = new CosmeticRule('example.org#@$#.textad { visibility: hidden; }', 0);
         expect(whitelistRule.isWhitelist()).toBeTruthy();
-        expect(whitelistRule.getType()).toBe(CosmeticRuleType.CSS);
+        expect(whitelistRule.getType()).toBe(CosmeticRuleType.Css);
 
         const extendedRule = new CosmeticRule('example.com#$?#h3:contains(cookies) { display: none!important; }', 0);
         expect(extendedRule.isWhitelist()).toBeFalsy();
-        expect(extendedRule.getType()).toBe(CosmeticRuleType.CSS);
+        expect(extendedRule.getType()).toBe(CosmeticRuleType.Css);
 
         // eslint-disable-next-line max-len
         const extendedWhitelistRule = new CosmeticRule('example.com#@$?#h3:contains(cookies) { display: none!important; }', 0);
         expect(extendedWhitelistRule.isWhitelist()).toBeTruthy();
-        expect(extendedWhitelistRule.getType()).toBe(CosmeticRuleType.CSS);
+        expect(extendedWhitelistRule.getType()).toBe(CosmeticRuleType.Css);
     });
 
     it('accepts VALID pseudo classes', () => {

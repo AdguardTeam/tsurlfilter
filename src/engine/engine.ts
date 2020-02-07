@@ -1,4 +1,4 @@
-import { CosmeticEngine } from './cosmetic-engine';
+import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
 import { MatchingResult } from './matching-result';
