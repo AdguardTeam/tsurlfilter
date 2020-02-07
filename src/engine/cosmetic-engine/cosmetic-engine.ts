@@ -8,6 +8,7 @@ import { CosmeticScriptsResult } from './cosmetic-scripts-result';
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
  * find all rules matching this or that hostname
+ * It is primarily used by the {@see Engine}
  */
 export class CosmeticEngine {
     private ruleStorage: RuleStorage;

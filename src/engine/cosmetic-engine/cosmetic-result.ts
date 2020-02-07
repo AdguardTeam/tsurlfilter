@@ -1,6 +1,10 @@
 import { CosmeticStylesResult } from './cosmetic-styles-result';
 import { CosmeticScriptsResult } from './cosmetic-scripts-result';
 
+/**
+ * Cosmetic result is the representation of rules
+ * It is primarily used by the {@see CosmeticEngine}
+ */
 export class CosmeticResult {
     /**
      * Storage of element hiding rules

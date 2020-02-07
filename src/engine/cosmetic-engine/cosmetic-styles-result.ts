@@ -1,5 +1,9 @@
 import { CosmeticRule } from '../../cosmetic-rule';
 
+/**
+ * This class stores found cosmetic css rules content in the appropriate collections
+ * It is primarily used by the {@see CosmeticResult}
+ */
 export class CosmeticStylesResult {
     /**
      * Collection of generic rules
