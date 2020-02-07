@@ -4,26 +4,15 @@
   "author": "Adguard Software Ltd.",
   "version": "0.1.0",
   "description": "An example using tsurlfilter engine",
-  "content_scripts": [
-    {
-      "all_frames": true,
-      "js": [
-        "content-script.js"
-      ],
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "run_at": "document_start"
-    }
-  ],
   "permissions": [
+    "tabs",
     "http://*/*",
     "https://*/*",
     "ws://*/*",
     "wss://*/*",
     "webRequest",
-    "webRequestBlocking"
+    "webRequestBlocking",
+    "webNavigation"
   ],
   "background": {
     "page": "background.html",
