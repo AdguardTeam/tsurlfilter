@@ -1,12 +1,28 @@
 import { CosmeticRule } from '../../cosmetic-rule';
 
+/**
+ * This class stores found cosmetic css rules content in the appropriate collections
+ * It is primarily used by the {@see CosmeticResult}
+ */
 export class CosmeticStylesResult {
+    /**
+     * Collection of generic rules
+     */
     public generic: string[];
 
+    /**
+     * Collection of specific rules
+     */
     public specific: string[];
 
+    /**
+     * Collection of generic extcss rules
+     */
     public genericExtCss: string[];
 
+    /**
+     * Collection of specific extcss rules
+     */
     public specificExtCss: string[];
 
     constructor() {

@@ -8,6 +8,7 @@ import { CosmeticScriptsResult } from './cosmetic-scripts-result';
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
  * find all rules matching this or that hostname
+ * It is primarily used by the {@see Engine}
  */
 export class CosmeticEngine {
     private ruleStorage: RuleStorage;
@@ -45,7 +46,7 @@ export class CosmeticEngine {
      * Adds rules into appropriate tables
      * @param rule
      */
-    addRule(rule: CosmeticRule): void {
+    private addRule(rule: CosmeticRule): void {
         switch (rule.getType()) {
             case CosmeticRuleType.ElementHiding: {
                 this.elementHidingLookupTable.addRule(rule);

@@ -1,18 +1,31 @@
 import { CosmeticRule } from '../../cosmetic-rule';
 
+/**
+ * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
+ * It is primarily used by the {@see CosmeticEngine}.
+ */
 export class CosmeticLookupTable {
+    /**
+     * Map with rules grouped by the permitted domains names
+     */
     private byHostname: Map<string, CosmeticRule[]>;
 
+    /**
+     * Collection of generic rules.
+     * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
+     */
     public genericRules: CosmeticRule[];
 
+    /**
+     * Map with whitelist rules. Key is the rule content.
+     * More information about whitelist here:
+     *  https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
+     */
     private whitelist: Map<string, CosmeticRule[]>;
 
     constructor() {
-        // map with rules grouped by the permitted domains names
         this.byHostname = new Map();
-        // list of generic rules
         this.genericRules = [] as CosmeticRule[];
-        // map with whitelist rules. key is the rule content
         this.whitelist = new Map();
     }
 
@@ -45,7 +58,7 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * Finds rule by hostname
+     * Finds rules by hostname
      * @param hostname
      */
     findByHostname(hostname: string): CosmeticRule[] {
@@ -55,7 +68,7 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * Checks if rule is whitelisted
+     * Checks if the rule is disabled on the specified hostname.
      * @param hostname
      * @param rule
      */
