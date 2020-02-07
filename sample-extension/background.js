@@ -61,6 +61,14 @@ import * as AGUrlFilter from './engine.js';
         }
     };
 
+    /**
+     * If url is http or websocket
+     *
+     * @param url
+     * @return {*|boolean}
+     */
+    const isHttpOrWsRequest = (url) => url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
+
     const rulesText = await loadRules();
     const engine = await startEngine(rulesText);
 
@@ -72,8 +80,13 @@ import * as AGUrlFilter from './engine.js';
         console.debug('Processing request..');
         console.debug(details);
 
+        const { url } = details;
+        if (!isHttpOrWsRequest(url)) {
+            return;
+        }
+
         const requestType = testGetRequestType(details.type);
-        const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
+        const request = new AGUrlFilter.Request(url, details.initiator, requestType);
         const result = engine.matchRequest(request);
 
         console.debug(result);
@@ -181,6 +194,10 @@ import * as AGUrlFilter from './engine.js';
      */
     const applyScripts = (tabId, cosmeticResult) => {
         const scripts = [...cosmeticResult.JS.generic, ...cosmeticResult.JS.specific];
+        if (scripts.length === 0) {
+            return;
+        }
+
         const scriptsCode = scripts.join('\r\n');
         const toExecute = buildScriptText(scriptsCode);
 
@@ -220,6 +237,10 @@ import * as AGUrlFilter from './engine.js';
      */
     const applyCosmetic = (tabId, url) => {
         console.debug(`Processing tab ${tabId} changes..`);
+
+        if (!isHttpOrWsRequest(url)) {
+            return;
+        }
 
         const { hostname } = new URL(url);
         const cosmeticResult = engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
