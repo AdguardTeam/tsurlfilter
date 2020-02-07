@@ -18,6 +18,7 @@ The idea is to have a single library that we can reuse for the following tasks:
 -   `npm run build`: Generate bundles and typings, create docs
 -   `npm run lint`: Lints code
 -   `npm run commit`: Commit using conventional commit style ([husky](https://github.com/typicode/husky) will tell you to use it if you haven't :wink:)
+-   `npm run build-extension`: Build sample chrome extension
 
 ### Excluding peerDependencies
 
@@ -77,4 +78,10 @@ There is a sample unpacked extension with an engine built from sources.
 Test pages: 
 http://testcases.adguard.com/Filters/simple-rules/test-simple-rules.html
 http://testcases.adguard.com/Filters/script-rules/test-script-rules.html
+
+```
+npm run build-extension
+```
+
+Builds extension to `./dist-extension`. After that it's ready to be added to chrome using "Load unpacked".
 
