@@ -1,12 +1,24 @@
 import { CosmeticRule } from '../../cosmetic-rule';
 
 export class CosmeticStylesResult {
+    /**
+     * Collection of generic rules
+     */
     public generic: string[];
 
+    /**
+     * Collection of specific rules
+     */
     public specific: string[];
 
+    /**
+     * Collection of generic extcss rules
+     */
     public genericExtCss: string[];
 
+    /**
+     * Collection of specific extcss rules
+     */
     public specificExtCss: string[];
 
     constructor() {

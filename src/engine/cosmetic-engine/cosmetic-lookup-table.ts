@@ -3,6 +3,9 @@ import { CosmeticRule } from '../../cosmetic-rule';
 export class CosmeticLookupTable {
     private byHostname: Map<string, CosmeticRule[]>;
 
+    /**
+     * Collection of generic rules
+     */
     public genericRules: CosmeticRule[];
 
     private whitelist: Map<string, CosmeticRule[]>;

@@ -1,8 +1,14 @@
 import { CosmeticRule } from '../../cosmetic-rule';
 
 export class CosmeticScriptsResult {
+    /**
+     * Collection of generic (domain insensitive) rules
+     */
     public generic: string[];
 
+    /**
+     * Collection of domain specific rules
+     */
     public specific: string[];
 
     constructor() {

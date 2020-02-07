@@ -45,7 +45,7 @@ export class CosmeticEngine {
      * Adds rules into appropriate tables
      * @param rule
      */
-    addRule(rule: CosmeticRule): void {
+    private addRule(rule: CosmeticRule): void {
         switch (rule.getType()) {
             case CosmeticRuleType.ElementHiding: {
                 this.elementHidingLookupTable.addRule(rule);
