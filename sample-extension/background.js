@@ -67,16 +67,23 @@ import * as AGUrlFilter from './engine.js';
     /**
      * Add on before request listener
      */
+    // eslint-disable-next-line consistent-return
     chrome.webRequest.onBeforeRequest.addListener((details) => {
         console.debug('Processing request..');
         console.debug(details);
 
-        const request = new AGUrlFilter.Request(details.url, details.initiator, testGetRequestType(details.type));
+        const requestType = testGetRequestType(details.type);
+        const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
         const result = engine.matchRequest(request);
 
         console.debug(result);
 
-        // TODO: Handle result
+        const requestRule = result.getBasicResult();
+
+        if (requestRule
+            && !requestRule.isWhitelist()) {
+            return { cancel: true };
+        }
     }, { urls: ['<all_urls>'] }, ['blocking']);
 
     /**
