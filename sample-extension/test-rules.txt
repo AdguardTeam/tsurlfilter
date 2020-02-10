@@ -1,0 +1,34 @@
+!
+! Title: Rules for simple rules tests
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-simple-rules-filter
+! Test case 1: domain-specific elemhide rule
+testcases.adguard.com,surge.sh###case-1-elemhide > .test-banner
+! Test case 2: generic elemhide rule
+###case-2-generic-elemhide > .test-banner
+! Test case 3: elemhide rule exception
+###case-3-elemhide-exception > .test-banner
+testcases.adguard.com,surge.sh#@##case-3-elemhide-exception > .test-banner
+! Test case 4: domain exclusion
+~testcases.adguard.com,~surge.sh###case-4-domain-exclusion > .test-banner
+! Test case 5: wildcard for tld
+testcases.adguard.*,surge.*###case-5-wildcard-for-tld > .test-banner
+! Test case 6: wildcard for tld support with $domain modifier
+||*/test-files/adguard.png$domain=testcases.adguard.*|surge.*
+
+!
+! Title: Rules for script rules test
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-script-rules-filter
+!
+testcases.adguard.com,surge.sh#%#window.__testCase1 = true;
+testcases.adguard.com,surge.sh#%#window.__testCase2 = true;
+testcases.adguard.com,surge.sh#@%#window.__testCase2 = true;
