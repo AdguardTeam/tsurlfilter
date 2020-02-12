@@ -32,3 +32,23 @@ testcases.adguard.com,surge.sh###subscribe-to-test-script-rules-filter
 testcases.adguard.com,surge.sh#%#window.__testCase1 = true;
 testcases.adguard.com,surge.sh#%#window.__testCase2 = true;
 testcases.adguard.com,surge.sh#@%#window.__testCase2 = true;
+
+
+!
+! Title: Rules for extended css rules test
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-extended-css-rules-filter
+!
+testcases.adguard.com,surge.sh###case1.banner:has(a.banner-link)
+testcases.adguard.com,surge.sh###case2.banner:contains(Click Me!)
+testcases.adguard.com,surge.sh###case3.banner:matches-css(opacity: 0.9)
+testcases.adguard.com,surge.sh###case4.banner:matches-css-after(content: sponsored)
+testcases.adguard.com,surge.sh###case5.banner:matches-css-before(content: sponsored)
+testcases.adguard.com,surge.sh###case6.banner:has-text(You would want to click me for sure!)
+testcases.adguard.com,surge.sh###case7.banner:-abp-has(a.banner-link)
+testcases.adguard.com,surge.sh###case8.banner:contains(Click Me!)
+testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)
