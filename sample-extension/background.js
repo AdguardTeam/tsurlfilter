@@ -130,9 +130,24 @@ import { buildScriptText } from './injection-helper.js';
         const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
             .map((selector) => `${selector} { display: none!important; }`);
 
-        // TODO: Apply extended css
-        // eslint-disable-next-line max-len
-        // const extendedCss = [...cosmeticResult.elementHiding.genericExtCss, ...cosmeticResult.elementHiding.specificExtCss];
+        const extendedCssStylesheets = [
+            ...cosmeticResult.elementHiding.genericExtCss,
+            ...cosmeticResult.elementHiding.specificExtCss
+        ]
+            .map((selector => `${selector} { display: none!important}`))
+            .join('\n');
+
+        // Apply extended css stylesheets
+        chrome.tabs.executeScript(tabId, {
+            code: `
+                (() => {
+                    const { ExtendedCss } = AGUrlFilter;
+                    const extendedCssContent = \`${extendedCssStylesheets}\`;
+                    const extendedCss = new ExtendedCss({styleSheet: extendedCssContent});
+                    extendedCss.apply();
+                })();
+            `,
+        });
 
         const styleText = css.join('\n');
         const injectDetails = {
