@@ -781,18 +781,16 @@ export class NetworkRule implements rule.IRule {
             throw new SyntaxError(`The rule is too short: ${ruleText}`);
         }
 
-        // Avoid parsing options inside of a regex rule
-        if (
-            ruleText.startsWith(SimpleRegex.MASK_REGEX_RULE)
-            && ruleText.endsWith(SimpleRegex.MASK_REGEX_RULE)
-            && !ruleText.includes(`${replaceOption}=`)
-        ) {
-            ruleParts.pattern = ruleText;
-            return ruleParts;
-        }
-
         // Setting pattern to rule text (for the case of empty options)
         ruleParts.pattern = ruleText.substring(startIndex);
+
+        // Avoid parsing options inside of a regex rule
+        if (ruleParts.pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)
+            && ruleParts.pattern.endsWith(SimpleRegex.MASK_REGEX_RULE)
+            && !ruleParts.pattern.includes(`${replaceOption}=`)
+        ) {
+            return ruleParts;
+        }
 
         let foundEscaped = false;
         for (let i = ruleText.length - 2; i >= startIndex; i -= 1) {
