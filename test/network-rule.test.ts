@@ -262,6 +262,34 @@ describe('NetworkRule constructor', () => {
     });
 });
 
+describe('NetworkRule - csp rules', () => {
+    it('works if csp modifier is correctly parsed', () => {
+        const directive = 'frame-src \'none\'';
+        const rule = new NetworkRule(`||example.org^$csp=${directive}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getCspDirective()).toBe(directive);
+    });
+
+    it('works if csp modifier is correctly parsed', () => {
+        const directive = 'frame-src \'none\'';
+        const rule = new NetworkRule(`||example.org^$csp=${directive},subdocument`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getCspDirective()).toBe(directive);
+    });
+
+    it('works if invalid csp modifier is detected', () => {
+        expect(() => {
+            new NetworkRule('||example.org$csp=report-uri /csp-violation-report-endpoint/', 0);
+        }).toThrowError(/Forbidden CSP directive:*/);
+    });
+
+    it('works if invalid csp modifier is detected', () => {
+        expect(() => {
+            new NetworkRule('||example.org$csp=report-to /csp-violation-report-endpoint/', 0);
+        }).toThrowError(/Forbidden CSP directive:*/);
+    });
+});
+
 describe('NetworkRule.match', () => {
     it('works when it matches simple rules properly', () => {
         const rule = new NetworkRule('||example.org^', 0);

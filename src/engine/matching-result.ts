@@ -153,8 +153,11 @@ export class MatchingResult {
                 this.replaceRules.push(rule);
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-                this.cspRules = [];
+                if (!this.cspRules) {
+                    this.cspRules = [];
+                }
                 this.cspRules.push(rule);
+                continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Stealth)) {
                 this.stealthRule = rule;
@@ -234,6 +237,87 @@ export class MatchingResult {
         }
 
         return option;
+    }
+
+    /**
+     * Returns an array of csp rules
+     */
+    getCspRules(): NetworkRule[] {
+        if (!this.cspRules) {
+            return [];
+        }
+
+        const whiteRules: NetworkRule[] = [];
+        const blockingRules: NetworkRule[] = [];
+
+        for (const r of this.cspRules) {
+            if (r.isWhitelist()) {
+                if (!r.getCspDirective()) { // Global whitelist rule
+                    return [r];
+                }
+
+                whiteRules.push(r);
+            } else {
+                blockingRules.push(r);
+            }
+        }
+
+        const whitelistedRulesByDirective = new Map<string, NetworkRule>();
+
+        let i;
+        let rule;
+
+        // Collect whitelisted CSP rules
+        if (whiteRules.length > 0) {
+            for (i = 0; i < whiteRules.length; i += 1) {
+                rule = whiteRules[i];
+                if (!rule.getCspDirective()) { // Global whitelist rule
+                    return [rule];
+                }
+
+                MatchingResult.putWithPriority(rule, undefined, whitelistedRulesByDirective);
+            }
+        }
+
+        const rulesByDirective = new Map<string, NetworkRule>();
+
+        // Collect whitelist and blocking CSP rules in one array
+        if (blockingRules.length > 0) {
+            for (i = 0; i < blockingRules.length; i += 1) {
+                rule = blockingRules[i];
+                if (rule.getCspDirective()) {
+                    const whiteListRule = whitelistedRulesByDirective.get(rule.getCspDirective()!);
+                    MatchingResult.putWithPriority(rule, whiteListRule, rulesByDirective);
+                }
+            }
+        }
+
+        return Array.from(rulesByDirective.values());
+    }
+
+    /**
+     * Decides which rule should be put into the given map.
+     * Compares priorities of the two given rules with the equal CSP directive and the rule that may already in the map.
+     *
+     * @param rule CSP rule (not null)
+     * @param whiteListRule CSP whitelist rule (may be null)
+     * @param map Rules mapped by csp directive
+     */
+    // eslint-disable-next-line max-len
+    static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
+        const cspDirective = rule.getCspDirective();
+        const currentRule = cspDirective ? map.get(cspDirective) : null;
+
+        let newRule = rule;
+        if (currentRule && !rule.isHigherPriority(currentRule)) {
+            newRule = currentRule;
+        }
+
+        if (whiteListRule && whiteListRule.isHigherPriority(newRule)) {
+            newRule = whiteListRule;
+        }
+
+        map.set(cspDirective!, newRule);
     }
 
     /**
