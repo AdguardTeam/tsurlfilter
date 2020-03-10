@@ -62,7 +62,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
 -   [ ] Advanced modifiers
     -   [ ] \$important
     -   [ ] \$replace
-    -   [ ] \$csp
+    -   [x] \$csp
     -   [ ] \$cookie
     -   [ ] \$redirect
     -   [ ] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
@@ -79,6 +79,7 @@ There is a sample unpacked extension with an engine built from sources.
 Test pages: 
 http://testcases.adguard.com/Filters/simple-rules/test-simple-rules.html
 http://testcases.adguard.com/Filters/script-rules/test-script-rules.html
+http://testcases.adguard.com/Filters/csp-rules/test-csp-rules.html
 
 ```
 npm run build-extension
