@@ -9,9 +9,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
      * @return {Promise<void>}
      */
     const loadRules = async () => new Promise(((resolve) => {
-        // eslint-disable-next-line no-undef
         const url = chrome.runtime.getURL('test-rules.txt');
-        // eslint-disable-next-line no-undef
         fetch(url).then((response) => resolve(response.text()));
     }));
 

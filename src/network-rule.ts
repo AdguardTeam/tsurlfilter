@@ -151,6 +151,9 @@ export class NetworkRule implements rule.IRule {
     /** Flag with all restricted request types. 0 means NONE. */
     private restrictedRequestTypes: RequestType = 0;
 
+    /**
+     * Csp directive value
+     */
     private cspDirective: string | null = null;
 
     getText(): string {

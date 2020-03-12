@@ -247,50 +247,30 @@ export class MatchingResult {
             return [];
         }
 
-        const whiteRules: NetworkRule[] = [];
         const blockingRules: NetworkRule[] = [];
-
-        for (const r of this.cspRules) {
-            if (r.isWhitelist()) {
-                if (!r.getCspDirective()) { // Global whitelist rule
-                    return [r];
-                }
-
-                whiteRules.push(r);
-            } else {
-                blockingRules.push(r);
-            }
-        }
-
         const whitelistedRulesByDirective = new Map<string, NetworkRule>();
 
-        let i;
-        let rule;
-
-        // Collect whitelisted CSP rules
-        if (whiteRules.length > 0) {
-            for (i = 0; i < whiteRules.length; i += 1) {
-                rule = whiteRules[i];
+        for (const rule of this.cspRules) {
+            if (rule.isWhitelist()) {
                 if (!rule.getCspDirective()) { // Global whitelist rule
                     return [rule];
                 }
 
                 MatchingResult.putWithPriority(rule, undefined, whitelistedRulesByDirective);
+            } else {
+                blockingRules.push(rule);
             }
         }
 
         const rulesByDirective = new Map<string, NetworkRule>();
 
         // Collect whitelist and blocking CSP rules in one array
-        if (blockingRules.length > 0) {
-            for (i = 0; i < blockingRules.length; i += 1) {
-                rule = blockingRules[i];
-                if (rule.getCspDirective()) {
-                    const whiteListRule = whitelistedRulesByDirective.get(rule.getCspDirective()!);
-                    MatchingResult.putWithPriority(rule, whiteListRule, rulesByDirective);
-                }
+        blockingRules.forEach((rule) => {
+            if (rule.getCspDirective()) {
+                const whiteListRule = whitelistedRulesByDirective.get(rule.getCspDirective()!);
+                MatchingResult.putWithPriority(rule, whiteListRule, rulesByDirective);
             }
-        }
+        });
 
         return Array.from(rulesByDirective.values());
     }
