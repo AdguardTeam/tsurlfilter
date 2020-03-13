@@ -1,6 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
 import * as utils from './utils';
-import {Err} from "typedoc/dist/lib/utils/result";
 
 /**
  * Rule advanced modifier interface
@@ -30,6 +29,7 @@ export class CspModifier implements IAdvancedModifier {
      * Constructor
      *
      * @param value
+     * @param isWhitelist
      */
     constructor(value: string, isWhitelist: boolean) {
         this.cspDirective = value;
@@ -103,7 +103,10 @@ export class ReplaceModifier implements IAdvancedModifier {
      */
     private static parseReplaceOption(option: string): { apply: (input: string) => string; optionText: string } {
         if (!option) {
-            throw new Error('Option is empty');
+            return {
+                apply: (x: string): string => x,
+                optionText: '',
+            };
         }
 
         const parts = utils.splitByDelimiterWithEscapeCharacter(option, '/', '\\', true);
@@ -120,7 +123,7 @@ export class ReplaceModifier implements IAdvancedModifier {
         const pattern = new RegExp(parts[0], modifiers);
         const replacement = parts[1];
 
-        const apply = (input: string) => input.replace(pattern, replacement);
+        const apply = (input: string): string => input.replace(pattern, replacement);
 
         return {
             apply,

@@ -243,6 +243,59 @@ export class MatchingResult {
     }
 
     /**
+     * Return an array of replace rules
+     */
+    getReplaceRules(): NetworkRule[] {
+        if (!this.replaceRules) {
+            return [];
+        }
+
+        const blockingRules: NetworkRule[] = [];
+        const whitelistRules: NetworkRule[] = [];
+
+        for (const rule of this.replaceRules) {
+            if (rule.isWhitelist()) {
+                whitelistRules.push(rule);
+            } else {
+                blockingRules.push(rule);
+            }
+        }
+
+        if (blockingRules.length === 0) {
+            return [];
+        }
+
+        if (whitelistRules.length === 0) {
+            return blockingRules;
+        }
+
+        if (whitelistRules.length > 0) {
+            const whiteRuleWithEmptyOptionText = whitelistRules
+                .find((whiteRule) => whiteRule.getAdvancedModifierValue() === '');
+
+            // @@||example.org^$replace will disable all $replace rules matching ||example.org^.
+            if (whiteRuleWithEmptyOptionText) {
+                return [whiteRuleWithEmptyOptionText];
+            }
+
+            const foundReplaceRules: NetworkRule[] = [];
+            blockingRules.forEach((blockRule) => {
+                const whitelistingRule = whitelistRules
+                    .find((x) => x.getAdvancedModifierValue() === blockRule.getAdvancedModifierValue());
+                if (whitelistingRule) {
+                    foundReplaceRules.push(whitelistingRule);
+                } else {
+                    foundReplaceRules.push(blockRule);
+                }
+            });
+
+            return foundReplaceRules;
+        }
+
+        return blockingRules;
+    }
+
+    /**
      * Returns an array of csp rules
      */
     getCspRules(): NetworkRule[] {
@@ -287,7 +340,7 @@ export class MatchingResult {
      * @param map Rules mapped by csp directive
      */
     // eslint-disable-next-line max-len
-    static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
+    private static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
         const cspDirective = rule.getAdvancedModifierValue();
         const currentRule = cspDirective ? map.get(cspDirective) : null;
 
