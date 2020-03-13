@@ -255,7 +255,7 @@ export class MatchingResult {
 
         for (const rule of this.cspRules) {
             if (rule.isWhitelist()) {
-                if (!rule.getCspDirective()) { // Global whitelist rule
+                if (!rule.getAdvancedModifierValue()) { // Global whitelist rule
                     return [rule];
                 }
 
@@ -269,8 +269,8 @@ export class MatchingResult {
 
         // Collect whitelist and blocking CSP rules in one array
         blockingRules.forEach((rule) => {
-            if (rule.getCspDirective()) {
-                const whiteListRule = whitelistedRulesByDirective.get(rule.getCspDirective()!);
+            if (rule.getAdvancedModifierValue()) {
+                const whiteListRule = whitelistedRulesByDirective.get(rule.getAdvancedModifierValue()!);
                 MatchingResult.putWithPriority(rule, whiteListRule, rulesByDirective);
             }
         });
@@ -288,7 +288,7 @@ export class MatchingResult {
      */
     // eslint-disable-next-line max-len
     static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
-        const cspDirective = rule.getCspDirective();
+        const cspDirective = rule.getAdvancedModifierValue();
         const currentRule = cspDirective ? map.get(cspDirective) : null;
 
         let newRule = rule;

@@ -267,14 +267,14 @@ describe('NetworkRule - csp rules', () => {
         const directive = 'frame-src \'none\'';
         const rule = new NetworkRule(`||example.org^$csp=${directive}`, 0);
         expect(rule).toBeTruthy();
-        expect(rule.getCspDirective()).toBe(directive);
+        expect(rule.getAdvancedModifierValue()).toBe(directive);
     });
 
     it('works if csp modifier is correctly parsed', () => {
         const directive = 'frame-src \'none\'';
         const rule = new NetworkRule(`||example.org^$csp=${directive},subdocument`, 0);
         expect(rule).toBeTruthy();
-        expect(rule.getCspDirective()).toBe(directive);
+        expect(rule.getAdvancedModifierValue()).toBe(directive);
     });
 
     it('works if invalid csp modifier is detected', () => {
