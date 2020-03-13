@@ -149,8 +149,11 @@ export class MatchingResult {
                 this.cookieRules.push(rule);
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
-                this.replaceRules = [];
+                if (!this.replaceRules) {
+                    this.replaceRules = [];
+                }
                 this.replaceRules.push(rule);
+                continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
                 if (!this.cspRules) {

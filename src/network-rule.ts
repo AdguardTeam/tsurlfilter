@@ -156,6 +156,11 @@ export class NetworkRule implements rule.IRule {
      */
     private cspDirective: string | null = null;
 
+    /**
+     * Replace option value
+     */
+    private replaceOption: string | null = null;
+
     getText(): string {
         return this.ruleText;
     }
@@ -225,6 +230,13 @@ export class NetworkRule implements rule.IRule {
      */
     getCspDirective(): string | null {
         return this.cspDirective;
+    }
+
+    /**
+     * Replace option
+     */
+    getReplaceOption(): string | null {
+        return this.replaceOption;
     }
 
     /**
@@ -769,6 +781,13 @@ export class NetworkRule implements rule.IRule {
             case 'csp':
                 this.setOptionEnabled(NetworkRuleOption.Csp, true);
                 this.cspDirective = optionValue;
+                break;
+
+            case 'replace':
+                this.setOptionEnabled(NetworkRuleOption.Replace, true);
+                // TODO: Parse replace option properly
+                // this.replaceOption = new ReplaceOption(optionValue);
+                this.replaceOption = optionValue;
                 break;
 
                 // TODO: Add $replace
