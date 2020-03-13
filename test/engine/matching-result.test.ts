@@ -152,3 +152,60 @@ describe('TestNewMatchingResultBadfilterSourceRules', () => {
         expect(basicResult!.getText()).toEqual('||example.org^');
     });
 });
+
+describe('TestNewMatchingResult - csp rules', () => {
+    const cspRule = '||example.org^$third-party,csp=connect-src \'none\',domain=~example.com|test.com';
+    const directiveWhiteListRule = '@@||example.org^$csp=connect-src \'none\'';
+    const globalWhiteListRule = '@@||example.org^$csp';
+    const directiveMissWhiteListRule = '@@||example.org^$csp=frame-src \'none\'';
+
+    it('works if csp rule is found', () => {
+        const rules = [new NetworkRule(cspRule, 0)];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cspRules = result.getCspRules();
+        expect(cspRules.length).toBe(1);
+        expect(cspRules[0].getText()).toBe(cspRule);
+    });
+
+    it('works if csp directive whitelist rule is found', () => {
+        const rules = [
+            new NetworkRule(cspRule, 0),
+            new NetworkRule(directiveWhiteListRule, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cspRules = result.getCspRules();
+        expect(cspRules.length).toBe(1);
+        expect(cspRules[0].getText()).toBe(directiveWhiteListRule);
+    });
+
+    it('works if csp global whitelist rule is found', () => {
+        const rules = [
+            new NetworkRule(cspRule, 0),
+            new NetworkRule(directiveWhiteListRule, 0),
+            new NetworkRule(globalWhiteListRule, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        expect(result).toBeTruthy();
+        const cspRules = result.getCspRules();
+        expect(cspRules.length).toBe(1);
+        expect(cspRules[0].getText()).toBe(globalWhiteListRule);
+    });
+
+    it('works if csp wrong directive whitelist rule is not found', () => {
+        const rules = [
+            new NetworkRule(cspRule, 0),
+            new NetworkRule(directiveMissWhiteListRule, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        expect(result).toBeTruthy();
+        const cspRules = result.getCspRules();
+        expect(cspRules.length).toBe(1);
+        expect(cspRules[0].getText()).toBe(cspRule);
+    });
+});

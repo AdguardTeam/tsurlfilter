@@ -37,7 +37,8 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [x] Basic network engine
     -   [x] Basic rules validation (don't match everything, unexpected modifiers, etc)
     -   [ ] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
--   [ ] Benchmark basic rules matching
+    -   [ ] Domain semantics: AG-254
+-   [x] Benchmark basic rules matching
 -   [ ] Hosts matching rules
     -   [ ] /etc/hosts matching
     -   [ ] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
@@ -50,18 +51,18 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [x] ExtCSS rules
         -   [x] ExtCSS rules validation
     -   [ ] Scriptlet rules
-    -   [ ] JS rules
--   [ ] Basic filtering engine implementation
+    -   [x] JS rules
+-   [x] Basic filtering engine implementation
     -   [ ] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
-    -   [ ] Advanced modifiers part 1
-        -   [ ] \$important
+    -   [x] Advanced modifiers part 1
+        -   [x] \$important
         -   [x] \$badfilter
-    -   [ ] Web extension example
+    -   [x] Web extension example
 -   [ ] HTML filtering rules
 -   [ ] Advanced modifiers
     -   [ ] \$important
     -   [ ] \$replace
-    -   [ ] \$csp
+    -   [x] \$csp
     -   [ ] \$cookie
     -   [ ] \$redirect
     -   [ ] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
@@ -78,6 +79,7 @@ There is a sample unpacked extension with an engine built from sources.
 Test pages: 
 http://testcases.adguard.com/Filters/simple-rules/test-simple-rules.html
 http://testcases.adguard.com/Filters/script-rules/test-script-rules.html
+http://testcases.adguard.com/Filters/csp-rules/test-csp-rules.html
 
 ```
 npm run build-extension

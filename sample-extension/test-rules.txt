@@ -52,3 +52,18 @@ testcases.adguard.com,surge.sh###case6.banner:has-text(You would want to click m
 testcases.adguard.com,surge.sh###case7.banner:-abp-has(a.banner-link)
 testcases.adguard.com,surge.sh###case8.banner:contains(Click Me!)
 testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)
+
+!
+! Title: Rules for $csp rules test
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-csp-rules-filter
+!
+! Case 2
+||testcases.adguard.com$csp=img-src https:
+||surge.sh$csp=img-src https:
+||testcases.adguard.com$csp=img-src adguard.com
+||surge.sh$csp=img-src adguard.com

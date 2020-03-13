@@ -22,6 +22,28 @@ describe('TestEngineMatchRequest', () => {
     });
 });
 
+describe('TestEngineMatchRequest - advanced modifiers', () => {
+    it('works if advanced modifier rules are found', () => {
+        const cspRule = '||example.org^$csp=frame-src \'none\'';
+        // TODO: Add more modifiers
+        const rules = [cspRule];
+
+        const list = new StringRuleList(1, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        const request = new Request('https://example.org', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeNull();
+        expect(result.replaceRules).toBeNull();
+        expect(result.cspRules && result.cspRules.length).toBe(1);
+        expect(result.cspRules && result.cspRules[0].getText()).toBe(cspRule);
+        expect(result.cookieRules).toBeNull();
+        expect(result.stealthRule).toBeNull();
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;

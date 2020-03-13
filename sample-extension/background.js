@@ -1,6 +1,6 @@
-/* eslint-disable no-console, no-undef, import/extensions,import/no-unresolved, import/named */
+/* eslint-disable no-console, no-undef, import/extensions,import/no-unresolved, import/named, max-len */
 import * as AGUrlFilter from './engine.js';
-import { buildScriptText } from './injection-helper.js';
+import { applyCss, applyScripts } from './cosmetic.js';
 
 (async () => {
     /**
@@ -9,9 +9,7 @@ import { buildScriptText } from './injection-helper.js';
      * @return {Promise<void>}
      */
     const loadRules = async () => new Promise(((resolve) => {
-        // eslint-disable-next-line no-undef
         const url = chrome.runtime.getURL('test-rules.txt');
-        // eslint-disable-next-line no-undef
         fetch(url).then((response) => resolve(response.text()));
     }));
 
@@ -101,64 +99,6 @@ import { buildScriptText } from './injection-helper.js';
     }, { urls: ['<all_urls>'] }, ['blocking']);
 
     /**
-     * Applies scripts from cosmetic result
-     *
-     * @param tabId
-     * @param cosmeticResult
-     */
-    const applyScripts = (tabId, cosmeticResult) => {
-        const scripts = [...cosmeticResult.JS.generic, ...cosmeticResult.JS.specific];
-        if (scripts.length === 0) {
-            return;
-        }
-
-        const scriptsCode = scripts.join('\r\n');
-        const toExecute = buildScriptText(scriptsCode);
-
-        chrome.tabs.executeScript(tabId, {
-            code: toExecute,
-        });
-    };
-
-    /**
-     * Applies css from cosmetic result
-     *
-     * @param tabId
-     * @param cosmeticResult
-     */
-    const applyCss = (tabId, cosmeticResult) => {
-        const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
-            .map((selector) => `${selector} { display: none!important; }`);
-
-        const extendedCssStylesheets = [
-            ...cosmeticResult.elementHiding.genericExtCss,
-            ...cosmeticResult.elementHiding.specificExtCss
-        ]
-            .map((selector => `${selector} { display: none!important}`))
-            .join('\n');
-
-        // Apply extended css stylesheets
-        chrome.tabs.executeScript(tabId, {
-            code: `
-                (() => {
-                    const { ExtendedCss } = AGUrlFilter;
-                    const extendedCssContent = \`${extendedCssStylesheets}\`;
-                    const extendedCss = new ExtendedCss({styleSheet: extendedCssContent});
-                    extendedCss.apply();
-                })();
-            `,
-        });
-
-        const styleText = css.join('\n');
-        const injectDetails = {
-            code: styleText,
-            runAt: 'document_start',
-        };
-
-        chrome.tabs.insertCSS(tabId, injectDetails);
-    };
-
-    /**
      * Applies cosmetic rules to tab
      *
      * @param tabId
@@ -166,10 +106,6 @@ import { buildScriptText } from './injection-helper.js';
      */
     const applyCosmetic = (tabId, url) => {
         console.debug(`Processing tab ${tabId} changes..`);
-
-        if (!isHttpOrWsRequest(url)) {
-            return;
-        }
 
         const { hostname } = new URL(url);
         const cosmeticResult = engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
@@ -184,6 +120,70 @@ import { buildScriptText } from './injection-helper.js';
      */
     chrome.webNavigation.onCommitted.addListener((details) => {
         const { tabId, url } = details;
+
+        if (!isHttpOrWsRequest(url)) {
+            return;
+        }
+
         applyCosmetic(tabId, url);
     });
+
+    /**
+     * Modify CSP header to block WebSocket, prohibit data: and blob: frames and WebWorkers
+     *
+     * @param details
+     * @returns {{responseHeaders: *}} CSP headers
+     */
+    const getCSPHeaders = (details) => {
+        const request = new AGUrlFilter.Request(details.url, details.initiator, AGUrlFilter.RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        const cspHeaders = [];
+        const cspRules = result.getCspRules();
+        if (cspRules) {
+            for (let i = 0; i < cspRules.length; i += 1) {
+                const rule = cspRules[i];
+                cspHeaders.push({
+                    name: 'Content-Security-Policy',
+                    value: rule.getCspDirective(),
+                });
+            }
+        }
+
+        return cspHeaders;
+    };
+
+    /**
+     * On headers received callback function.
+     * We do check request for safebrowsing
+     * and check if websocket connections should be blocked.
+     *
+     * @param details Request details
+     * @returns {{responseHeaders: *}} Headers to send
+     */
+    // eslint-disable-next-line consistent-return
+    const onHeadersReceived = (details) => {
+        let responseHeaders = details.responseHeaders || [];
+
+        let responseHeadersModified = false;
+        if (details.type === 'main_frame') {
+            const cspHeaders = getCSPHeaders(details);
+            console.debug(cspHeaders);
+
+            if (cspHeaders && cspHeaders.length > 0) {
+                responseHeaders = responseHeaders.concat(cspHeaders);
+                responseHeadersModified = true;
+            }
+        }
+
+        if (responseHeadersModified) {
+            console.log('Response headers modified');
+            return { responseHeaders };
+        }
+    };
+
+    /**
+     * Add listener on headers received
+     */
+    chrome.webRequest.onHeadersReceived.addListener(onHeadersReceived, { urls: ['<all_urls>'] }, ['responseHeaders', 'blocking']);
 })();
