@@ -227,6 +227,13 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Advanced modifier
+     */
+    getAdvancedModifier(): IAdvancedModifier | null {
+        return this.advancedModifier;
+    }
+
+    /**
      * Advanced modifier value
      */
     getAdvancedModifierValue(): string | null {

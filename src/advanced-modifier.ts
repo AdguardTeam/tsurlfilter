@@ -1,7 +1,10 @@
+// eslint-disable-next-line max-classes-per-file
+import * as utils from './utils';
+import {Err} from "typedoc/dist/lib/utils/result";
+
 /**
  * Rule advanced modifier interface
  */
-// eslint-disable-next-line max-classes-per-file
 export interface IAdvancedModifier {
     /**
      * Modifier value
@@ -78,14 +81,51 @@ export class ReplaceModifier implements IAdvancedModifier {
     private readonly replaceOption: string;
 
     /**
+     * Replace option apply func
+     */
+    private readonly replaceApply: (input: string) => string;
+
+    /**
      * Constructor
      *
      * @param value
      */
     constructor(value: string) {
-        this.replaceOption = value;
+        const parsed = ReplaceModifier.parseReplaceOption(value);
 
-        // TODO: Parse replace option properly
+        this.replaceOption = parsed.optionText;
+        this.replaceApply = parsed.apply;
+    }
+
+    /**
+     *
+     * @param option
+     */
+    private static parseReplaceOption(option: string): { apply: (input: string) => string; optionText: string } {
+        if (!option) {
+            throw new Error('Option is empty');
+        }
+
+        const parts = utils.splitByDelimiterWithEscapeCharacter(option, '/', '\\', true);
+
+        if (parts.length < 2 || parts.length > 3) {
+            throw new Error(`Cannot parse ${option}`);
+        }
+
+        let modifiers = (parts[2] || '');
+        if (modifiers.indexOf('g') < 0) {
+            modifiers += 'g';
+        }
+
+        const pattern = new RegExp(parts[0], modifiers);
+        const replacement = parts[1];
+
+        const apply = (input: string) => input.replace(pattern, replacement);
+
+        return {
+            apply,
+            optionText: option,
+        };
     }
 
     /**
@@ -93,5 +133,12 @@ export class ReplaceModifier implements IAdvancedModifier {
      */
     getValue(): string {
         return this.replaceOption;
+    }
+
+    /**
+     * Replace apply function
+     */
+    getApplyFunc(): (input: string) => string {
+        return this.replaceApply;
     }
 }
