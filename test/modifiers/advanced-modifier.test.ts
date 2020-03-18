@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
-import { NetworkRule } from '../src';
-import { CspModifier, ReplaceModifier } from '../src/advanced-modifier';
+import { NetworkRule } from '../../src';
+import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
+import { CspModifier } from '../../src/modifiers/csp-modifier';
 
 describe('NetworkRule - csp rules', () => {
     it('works if csp modifier is correctly parsed', () => {
