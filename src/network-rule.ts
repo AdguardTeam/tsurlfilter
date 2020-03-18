@@ -2,9 +2,11 @@
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { Request, RequestType } from './request';
-import { DomainModifier } from './domain-modifier';
+import { DomainModifier } from './modifiers/domain-modifier';
 import * as utils from './utils';
-import { CspModifier, ReplaceModifier, IAdvancedModifier } from './advanced-modifier';
+import { IAdvancedModifier } from './modifiers/advanced-modifier';
+import { ReplaceModifier } from './modifiers/replace-modifier';
+import { CspModifier } from './modifiers/csp-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
