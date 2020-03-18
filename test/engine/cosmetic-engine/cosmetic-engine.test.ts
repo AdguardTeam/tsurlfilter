@@ -150,4 +150,37 @@ describe('Test cosmetic engine', () => {
         expect(result.JS.specific.length).toBe(0);
         expect(result.JS.generic.length).toBe(0);
     });
+
+    it('correctly detects scriptlet rules', () => {
+        const ruleContent = "//scriptlet('abort-on-property-read', 'I10C')";
+        const specificJsRule = `example.org#%#${ruleContent}`;
+        const genericJsRule = `#%#${ruleContent}`;
+
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            specificJsRule,
+            genericJsRule,
+        ]));
+
+        const result = cosmeticEngine.match('example.org', true, true, true);
+
+        expect(result.JS.specific.length).toBe(1);
+        expect(result.JS.generic.length).toBe(1);
+        expect(result.JS.specific[0]).toContain(ruleContent);
+        expect(result.JS.generic[0]).toContain(ruleContent);
+    });
+
+    it('checks scriptlet exceptions', () => {
+        const ruleContent = "//scriptlet('abort-on-property-read', 'I10C')";
+        const jsRule = `testcases.adguard.com,surge.sh#%#${ruleContent}`;
+        const jsExceptionRule = `testcases.adguard.com,surge.sh#@%#${ruleContent}`;
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            jsRule,
+            jsExceptionRule,
+        ]));
+
+        const result = cosmeticEngine.match('testcases.adguard.com', true, true, true);
+
+        expect(result.JS.specific.length).toBe(0);
+        expect(result.JS.generic.length).toBe(0);
+    });
 });
