@@ -1,8 +1,8 @@
 import { IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
-import { IRule } from '../rule';
+import { IRule } from '../rules/rule';
 import { RuleScanner } from './scanner/rule-scanner';
-import { NetworkRule } from '../network-rule';
+import { NetworkRule } from '../rules/network-rule';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists

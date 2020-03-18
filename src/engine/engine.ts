@@ -2,7 +2,7 @@ import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
 import { CosmeticOption, MatchingResult } from './matching-result';
-import { NetworkRule } from '../network-rule';
+import { NetworkRule } from '../rules/network-rule';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
 

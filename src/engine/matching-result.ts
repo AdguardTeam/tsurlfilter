@@ -1,4 +1,4 @@
-import { NetworkRule, NetworkRuleOption } from '../network-rule';
+import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 
 /**
  * CosmeticOption is the enumeration of various content script options.

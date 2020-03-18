@@ -1,12 +1,12 @@
 // eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
-import { SimpleRegex } from './simple-regex';
-import { Request, RequestType } from './request';
-import { DomainModifier } from './modifiers/domain-modifier';
-import * as utils from './utils';
-import { IAdvancedModifier } from './modifiers/advanced-modifier';
-import { ReplaceModifier } from './modifiers/replace-modifier';
-import { CspModifier } from './modifiers/csp-modifier';
+import { SimpleRegex } from '../simple-regex';
+import { Request, RequestType } from '../request';
+import { DomainModifier } from '../modifiers/domain-modifier';
+import * as utils from '../utils';
+import { IAdvancedModifier } from '../modifiers/advanced-modifier';
+import { ReplaceModifier } from '../modifiers/replace-modifier';
+import { CspModifier } from '../modifiers/csp-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.

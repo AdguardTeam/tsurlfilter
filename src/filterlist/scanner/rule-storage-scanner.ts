@@ -1,5 +1,5 @@
 import { RuleScanner } from './rule-scanner';
-import { IndexedRule } from '../../rule';
+import { IndexedRule } from '../../rules/rule';
 
 /**
  * RuleStorageScanner scans multiple RuleScanner instances

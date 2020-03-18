@@ -1,4 +1,4 @@
-import { CosmeticRule } from '../../cosmetic-rule';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 
 /**
  * This class stores found script rules content in the appropriate collections

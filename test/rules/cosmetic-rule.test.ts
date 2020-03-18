@@ -1,4 +1,4 @@
-import { CosmeticRuleType, CosmeticRule } from '../src/cosmetic-rule';
+import { CosmeticRuleType, CosmeticRule } from '../../src/rules/cosmetic-rule';
 
 describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {

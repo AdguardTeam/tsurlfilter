@@ -2,9 +2,9 @@
  * RuleList represents a set of filtering rules
  */
 import { RuleScanner } from './scanner/rule-scanner';
-import { IRule } from '../rule';
+import { IRule } from '../rules/rule';
 import { StringLineReader } from './reader/string-line-reader';
-import { RuleUtils } from '../rule-utils';
+import { RuleUtils } from '../rules/rule-utils';
 
 /**
  * RuleList represents a set of filtering rules

@@ -1,6 +1,6 @@
 import { RuleStorage } from '../../filterlist/rule-storage';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
-import { CosmeticRule, CosmeticRuleType } from '../../cosmetic-rule';
+import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
 import { CosmeticStylesResult } from './cosmetic-styles-result';
 import { CosmeticScriptsResult } from './cosmetic-scripts-result';

@@ -1,6 +1,6 @@
 import {
     Request, RequestType, NetworkRuleOption, NetworkRule,
-} from '../src';
+} from '../../src';
 
 describe('NetworkRule.parseRuleText', () => {
     it('works when it parses the basic rules properly', () => {

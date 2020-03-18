@@ -2,7 +2,7 @@ import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
-import { RuleConverter } from './rules/rule-converter';
+import { RuleConverter } from './rule-converter';
 
 /**
  * Rule builder class

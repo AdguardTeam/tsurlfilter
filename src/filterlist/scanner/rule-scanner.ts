@@ -1,7 +1,7 @@
-import { IndexedRule, IRule } from '../../rule';
-import { RuleUtils } from '../../rule-utils';
+import { IndexedRule, IRule } from '../../rules/rule';
+import { RuleUtils } from '../../rules/rule-utils';
 import { ILineReader } from '../reader/line-reader';
-import { CosmeticRule } from '../../cosmetic-rule';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
