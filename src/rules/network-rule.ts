@@ -159,11 +159,6 @@ export class NetworkRule implements rule.IRule {
      */
     private advancedModifier: IAdvancedModifier | null = null;
 
-    /**
-     * Csp directive value
-     */
-    private cspDirective: string | null = null;
-
     getText(): string {
         return this.ruleText;
     }
