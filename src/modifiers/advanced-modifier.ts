@@ -1,5 +1,3 @@
-// eslint-disable-next-line max-classes-per-file
-
 /**
  * Rule advanced modifier interface
  */
