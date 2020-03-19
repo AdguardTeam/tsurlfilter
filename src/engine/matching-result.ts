@@ -149,8 +149,11 @@ export class MatchingResult {
                 this.cookieRules.push(rule);
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
-                this.replaceRules = [];
+                if (!this.replaceRules) {
+                    this.replaceRules = [];
+                }
                 this.replaceRules.push(rule);
+                continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
                 if (!this.cspRules) {
@@ -240,6 +243,59 @@ export class MatchingResult {
     }
 
     /**
+     * Return an array of replace rules
+     */
+    getReplaceRules(): NetworkRule[] {
+        if (!this.replaceRules) {
+            return [];
+        }
+
+        const blockingRules: NetworkRule[] = [];
+        const whitelistRules: NetworkRule[] = [];
+
+        for (const rule of this.replaceRules) {
+            if (rule.isWhitelist()) {
+                whitelistRules.push(rule);
+            } else {
+                blockingRules.push(rule);
+            }
+        }
+
+        if (blockingRules.length === 0) {
+            return [];
+        }
+
+        if (whitelistRules.length === 0) {
+            return blockingRules;
+        }
+
+        if (whitelistRules.length > 0) {
+            const whiteRuleWithEmptyOptionText = whitelistRules
+                .find((whiteRule) => whiteRule.getAdvancedModifierValue() === '');
+
+            // @@||example.org^$replace will disable all $replace rules matching ||example.org^.
+            if (whiteRuleWithEmptyOptionText) {
+                return [whiteRuleWithEmptyOptionText];
+            }
+
+            const foundReplaceRules: NetworkRule[] = [];
+            blockingRules.forEach((blockRule) => {
+                const whitelistingRule = whitelistRules
+                    .find((x) => x.getAdvancedModifierValue() === blockRule.getAdvancedModifierValue());
+                if (whitelistingRule) {
+                    foundReplaceRules.push(whitelistingRule);
+                } else {
+                    foundReplaceRules.push(blockRule);
+                }
+            });
+
+            return foundReplaceRules;
+        }
+
+        return blockingRules;
+    }
+
+    /**
      * Returns an array of csp rules
      */
     getCspRules(): NetworkRule[] {
@@ -252,7 +308,7 @@ export class MatchingResult {
 
         for (const rule of this.cspRules) {
             if (rule.isWhitelist()) {
-                if (!rule.getCspDirective()) { // Global whitelist rule
+                if (!rule.getAdvancedModifierValue()) { // Global whitelist rule
                     return [rule];
                 }
 
@@ -266,8 +322,8 @@ export class MatchingResult {
 
         // Collect whitelist and blocking CSP rules in one array
         blockingRules.forEach((rule) => {
-            if (rule.getCspDirective()) {
-                const whiteListRule = whitelistedRulesByDirective.get(rule.getCspDirective()!);
+            if (rule.getAdvancedModifierValue()) {
+                const whiteListRule = whitelistedRulesByDirective.get(rule.getAdvancedModifierValue()!);
                 MatchingResult.putWithPriority(rule, whiteListRule, rulesByDirective);
             }
         });
@@ -284,8 +340,8 @@ export class MatchingResult {
      * @param map Rules mapped by csp directive
      */
     // eslint-disable-next-line max-len
-    static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
-        const cspDirective = rule.getCspDirective();
+    private static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
+        const cspDirective = rule.getAdvancedModifierValue();
         const currentRule = cspDirective ? map.get(cspDirective) : null;
 
         let newRule = rule;

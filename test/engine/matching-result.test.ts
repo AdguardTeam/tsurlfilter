@@ -209,3 +209,51 @@ describe('TestNewMatchingResult - csp rules', () => {
         expect(cspRules[0].getText()).toBe(cspRule);
     });
 });
+
+describe('TestNewMatchingResult - replace rules', () => {
+    it('works if replace rules are found', () => {
+        const rules = [
+            new NetworkRule('||example.org^$replace=/test/test1/g', 0),
+            new NetworkRule('||example.org^$replace=/test1/test2/g', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const replaceRules = result.getReplaceRules();
+        expect(replaceRules.length).toBe(rules.length);
+    });
+
+    it('works if whitelisted replace filter with same option is omitted', () => {
+        const expectedRuleText = '||example.org^$replace=/test/test1/g';
+
+        const ruleTexts = [
+            expectedRuleText,
+            '||example.org^$replace=/test1/test2/g',
+            '@@||example.org^$replace=/test1/test2/g',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const replaceRules = result.getReplaceRules();
+        expect(replaceRules.length).toBe(2);
+    });
+
+    it('work if @@||example.org^$replace will disable all $replace rules matching ||example.org^.', () => {
+        const ruleTexts = [
+            '||example.org^$replace=/test1/test2/g',
+            '@@||example.org^$replace',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const replaceRules = result.getReplaceRules();
+        expect(replaceRules.length).toBe(1);
+    });
+});

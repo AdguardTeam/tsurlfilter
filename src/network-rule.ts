@@ -2,8 +2,11 @@
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { Request, RequestType } from './request';
-import { DomainModifier } from './domain-modifier';
+import { DomainModifier } from './modifiers/domain-modifier';
 import * as utils from './utils';
+import { IAdvancedModifier } from './modifiers/advanced-modifier';
+import { ReplaceModifier } from './modifiers/replace-modifier';
+import { CspModifier } from './modifiers/csp-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -152,9 +155,9 @@ export class NetworkRule implements rule.IRule {
     private restrictedRequestTypes: RequestType = 0;
 
     /**
-     * Csp directive value
+     * Rule Advanced modifier
      */
-    private cspDirective: string | null = null;
+    private advancedModifier: IAdvancedModifier | null = null;
 
     getText(): string {
         return this.ruleText;
@@ -221,10 +224,17 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Csp directive
+     * Advanced modifier
      */
-    getCspDirective(): string | null {
-        return this.cspDirective;
+    getAdvancedModifier(): IAdvancedModifier | null {
+        return this.advancedModifier;
+    }
+
+    /**
+     * Advanced modifier value
+     */
+    getAdvancedModifierValue(): string | null {
+        return this.advancedModifier && this.advancedModifier.getValue();
     }
 
     /**
@@ -386,10 +396,6 @@ export class NetworkRule implements rule.IRule {
         }
 
         this.shortcut = SimpleRegex.extractShortcut(this.pattern);
-
-        if (this.isOptionEnabled(NetworkRuleOption.Csp)) {
-            this.validateCspRule();
-        }
     }
 
     /**
@@ -768,10 +774,14 @@ export class NetworkRule implements rule.IRule {
 
             case 'csp':
                 this.setOptionEnabled(NetworkRuleOption.Csp, true);
-                this.cspDirective = optionValue;
+                this.advancedModifier = new CspModifier(optionValue, this.isWhitelist());
                 break;
 
-                // TODO: Add $replace
+            case 'replace':
+                this.setOptionEnabled(NetworkRuleOption.Replace, true);
+                this.advancedModifier = new ReplaceModifier(optionValue);
+                break;
+
                 // TODO: Add $cookie
                 // TODO: Add $redirect
 
@@ -837,30 +847,5 @@ export class NetworkRule implements rule.IRule {
         }
 
         return ruleParts;
-    }
-
-    /**
-     * Validates CSP rule
-     */
-    validateCspRule(): void {
-        /**
-         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/685
-         * CSP directive may be empty in case of whitelist rule,
-         * it means to disable all $csp rules matching the whitelist rule
-         */
-        if (!this.isWhitelist() && !this.cspDirective) {
-            throw new Error('Invalid $CSP rule: CSP directive must not be empty');
-        }
-
-        if (this.cspDirective) {
-            /**
-             * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/685#issue-228287090
-             * Forbids report-to and report-uri directives
-             */
-            const cspDirective = this.cspDirective.toLowerCase();
-            if (cspDirective.indexOf('report-') >= 0) {
-                throw new Error(`Forbidden CSP directive: ${cspDirective}`);
-            }
-        }
     }
 }

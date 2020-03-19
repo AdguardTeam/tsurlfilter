@@ -145,7 +145,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
                 const rule = cspRules[i];
                 cspHeaders.push({
                     name: 'Content-Security-Policy',
-                    value: rule.getCspDirective(),
+                    value: rule.getAdvancedModifierValue(),
                 });
             }
         }

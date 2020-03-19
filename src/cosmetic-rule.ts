@@ -1,6 +1,6 @@
 import * as rule from './rule';
 import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
-import { DomainModifier } from './domain-modifier';
+import { DomainModifier } from './modifiers/domain-modifier';
 import { indexOfAny } from './utils';
 
 /**
