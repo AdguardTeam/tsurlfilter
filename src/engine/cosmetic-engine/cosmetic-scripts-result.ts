@@ -50,7 +50,7 @@ export class CosmeticScriptsResult {
      *
      * @param ruleContent
      */
-    public static getScriptCode(rule: CosmeticRule): string | null {
+    private static getScriptCode(rule: CosmeticRule): string | null {
         const scriptletContent = rule.getContent().substr(CosmeticScriptsResult.ADG_SCRIPTLET_MASK.length);
         const scriptletParams = ScriptletParser.parseRule(scriptletContent);
 
