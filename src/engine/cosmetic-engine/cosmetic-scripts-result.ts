@@ -48,14 +48,15 @@ export class CosmeticScriptsResult {
     /**
      * Returns script ready to execute
      *
-     * @param ruleContent
+     * @param rule
      */
     private static getScriptCode(rule: CosmeticRule): string | null {
         const scriptletContent = rule.getContent().substr(CosmeticScriptsResult.ADG_SCRIPTLET_MASK.length);
         const scriptletParams = ScriptletParser.parseRule(scriptletContent);
 
-        // TODO: Add cache
-        // rule.script = ..
+        if (rule.script) {
+            return rule.script;
+        }
 
         // TODO: Use proper params
         const params: Scriptlets.IConfiguration = {
@@ -67,6 +68,9 @@ export class CosmeticScriptsResult {
             version: '1.0.0',
         };
 
-        return Scriptlets.invoke(params);
+        // eslint-disable-next-line no-param-reassign
+        rule.script = Scriptlets.invoke(params);
+
+        return rule.script;
     }
 }

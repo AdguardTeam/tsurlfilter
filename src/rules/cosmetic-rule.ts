@@ -80,6 +80,12 @@ export class CosmeticRule implements rule.IRule {
     private restrictedDomains: string[] | null = null;
 
     /**
+     * Js script to execute
+     * Used for Scriptlets cache
+     */
+    public script: string | null = null;
+
+    /**
      * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
      * which contains a lot more selectors. So, if CSS selector contains a pseudo-class, we should try to validate it.
      * <p>

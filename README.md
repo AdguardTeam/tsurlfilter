@@ -50,7 +50,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
         -   [x] Proper CSS rules validation
     -   [x] ExtCSS rules
         -   [x] ExtCSS rules validation
-    -   [ ] Scriptlet rules
+    -   [x] Scriptlet rules
     -   [x] JS rules
 -   [x] Basic filtering engine implementation
     -   [ ] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject

@@ -67,3 +67,32 @@ testcases.adguard.com,surge.sh###subscribe-to-test-csp-rules-filter
 ||surge.sh$csp=img-src https:
 ||testcases.adguard.com$csp=img-src adguard.com
 ||surge.sh$csp=img-src adguard.com
+
+!
+! Title: Rules for scriptlet rules test
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-scriptlet-rules-filter
+!
+! abort-on-property-write
+!
+testcases.adguard.com,surge.sh#%#//scriptlet("abort-on-property-write", "__testCase1")
+testcases.adguard.com,surge.sh##+js(abort-on-property-write.js, __testCase2)
+testcases.adguard.com,surge.sh#$#abort-on-property-write __testCase3
+!
+! abort-current-inline-script
+!
+testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase4")
+testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase5")
+testcases.adguard.com,surge.sh#$#abort-current-inline-script __testCase6
+testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase7.__AG")
+testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase8", "Case8")
+!
+! abort-on-property-read
+!
+testcases.adguard.com,surge.sh#%#//scriptlet("abort-on-property-read", "propReadCaseAG")
+testcases.adguard.com,surge.sh##+js(abort-on-property-read.js, propReadCaseUBO)
+testcases.adguard.com,surge.sh#$#abort-on-property-read propReadCaseABP
