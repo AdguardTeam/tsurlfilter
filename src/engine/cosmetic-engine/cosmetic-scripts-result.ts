@@ -1,6 +1,7 @@
 import Scriptlets from 'scriptlets';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScriptletParser } from './scriptlet-parser';
+import { config } from '../../configuration';
 
 /**
  * This class stores found script rules content in the appropriate collections
@@ -58,14 +59,13 @@ export class CosmeticScriptsResult {
             return rule.script;
         }
 
-        // TODO: Use proper params
         const params: Scriptlets.IConfiguration = {
             args: scriptletParams.args,
-            engine: 'extension',
+            engine: config.engine ? config.engine : '',
             name: scriptletParams.name,
             ruleText: rule.getText(),
-            verbose: false,
-            version: '1.0.0',
+            verbose: config.verbose,
+            version: config.version ? config.version : '',
         };
 
         // eslint-disable-next-line no-param-reassign
