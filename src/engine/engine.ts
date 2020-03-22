@@ -26,11 +26,11 @@ export class Engine {
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
-     * @param configuration configuration
+     * @param configuration optional configuration
      *
      * @throws
      */
-    constructor(ruleStorage: RuleStorage, configuration: IConfiguration | undefined) {
+    constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined) {
         this.networkEngine = new NetworkEngine(ruleStorage);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage);
 
