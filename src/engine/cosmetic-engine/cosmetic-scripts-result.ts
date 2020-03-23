@@ -1,10 +1,18 @@
-import { CosmeticRule } from '../../cosmetic-rule';
+import Scriptlets from 'scriptlets';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { ScriptletParser } from './scriptlet-parser';
+import { config } from '../../configuration';
 
 /**
  * This class stores found script rules content in the appropriate collections
  * It is primarily used by the {@see CosmeticResult}
  */
 export class CosmeticScriptsResult {
+    /**
+     * AdGuard scriptlet rule mask
+     */
+    private static ADG_SCRIPTLET_MASK = '//scriptlet';
+
     /**
      * Collection of generic (domain insensitive) rules
      */
@@ -25,11 +33,44 @@ export class CosmeticScriptsResult {
      * @param rule
      */
     append(rule: CosmeticRule): void {
-        const ruleContent = rule.getContent();
+        let ruleContent = rule.getContent();
+        if (ruleContent.startsWith(CosmeticScriptsResult.ADG_SCRIPTLET_MASK)) {
+            const scriptCode = CosmeticScriptsResult.getScriptCode(rule);
+            ruleContent = scriptCode ? scriptCode! : '';
+        }
+
         if (rule.isGeneric()) {
             this.generic.push(ruleContent);
         } else {
             this.specific.push(ruleContent);
         }
+    }
+
+    /**
+     * Returns script ready to execute
+     *
+     * @param rule
+     */
+    private static getScriptCode(rule: CosmeticRule): string | null {
+        const scriptletContent = rule.getContent().substr(CosmeticScriptsResult.ADG_SCRIPTLET_MASK.length);
+        const scriptletParams = ScriptletParser.parseRule(scriptletContent);
+
+        if (rule.script) {
+            return rule.script;
+        }
+
+        const params: Scriptlets.IConfiguration = {
+            args: scriptletParams.args,
+            engine: config.engine ? config.engine : '',
+            name: scriptletParams.name,
+            ruleText: rule.getText(),
+            verbose: config.verbose,
+            version: config.version ? config.version : '',
+        };
+
+        // eslint-disable-next-line no-param-reassign
+        rule.script = Scriptlets.invoke(params);
+
+        return rule.script;
     }
 }

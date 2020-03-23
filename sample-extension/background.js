@@ -23,7 +23,13 @@ import { applyCss, applyScripts } from './cosmetic.js';
 
         const list = new AGUrlFilter.StringRuleList(1, rulesText, false);
         const ruleStorage = new AGUrlFilter.RuleStorage([list]);
-        const engine = new AGUrlFilter.Engine(ruleStorage);
+        const config = {
+            engine: 'extension',
+            version: chrome.runtime.getManifest().version,
+            verbose: true,
+        };
+
+        const engine = new AGUrlFilter.Engine(ruleStorage, config);
 
         console.log('Starting url filter engine..ok');
 

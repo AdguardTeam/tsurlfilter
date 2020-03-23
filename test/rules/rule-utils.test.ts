@@ -1,4 +1,4 @@
-import { RuleUtils } from '../src/rule-utils';
+import { RuleUtils } from '../../src/rules/rule-utils';
 
 describe('Rule Utils Builder Test', () => {
     it('works if builder creates correct rules', () => {

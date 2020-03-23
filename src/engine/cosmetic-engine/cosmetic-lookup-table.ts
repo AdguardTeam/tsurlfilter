@@ -1,4 +1,4 @@
-import { CosmeticRule } from '../../cosmetic-rule';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.

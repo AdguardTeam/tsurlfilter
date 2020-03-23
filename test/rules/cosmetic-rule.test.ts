@@ -1,4 +1,4 @@
-import { CosmeticRuleType, CosmeticRule } from '../src/cosmetic-rule';
+import { CosmeticRuleType, CosmeticRule } from '../../src/rules/cosmetic-rule';
 
 describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
@@ -259,4 +259,44 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
+});
+
+describe('Javascript rules', () => {
+    it('correctly parses js rules', () => {
+        const jsContent = 'window.__gaq = undefined;';
+        const ruleText = `example.org#%#${jsContent}`;
+        const rule = new CosmeticRule(ruleText, 0);
+
+        expect(rule).toBeTruthy();
+        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.Js);
+        expect(rule.getContent()).toBe(jsContent);
+
+        const whiteRuleText = `example.org#@%#${jsContent}`;
+        const whiteRule = new CosmeticRule(whiteRuleText, 0);
+
+        expect(whiteRule).toBeTruthy();
+        expect(whiteRule.isWhitelist()).toBeTruthy();
+        expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
+        expect(whiteRule.getContent()).toBe(jsContent);
+    });
+
+    it('correctly parses js scriptlets rules', () => {
+        const jsContent = '//scriptlet("set-constant", "test", "true")';
+        const ruleText = `example.org#%#${jsContent}`;
+        const rule = new CosmeticRule(ruleText, 0);
+
+        expect(rule).toBeTruthy();
+        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.Js);
+        expect(rule.getContent()).toBe(jsContent);
+
+        const whiteRuleText = `example.org#@%#${jsContent}`;
+        const whiteRule = new CosmeticRule(whiteRuleText, 0);
+
+        expect(whiteRule).toBeTruthy();
+        expect(whiteRule.isWhitelist()).toBeTruthy();
+        expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
+        expect(whiteRule.getContent()).toBe(jsContent);
+    });
 });

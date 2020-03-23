@@ -1,4 +1,4 @@
-import { CosmeticRuleMarker, findCosmeticRuleMarker } from '../src/cosmetic-rule-marker';
+import { CosmeticRuleMarker, findCosmeticRuleMarker } from '../../src/rules/cosmetic-rule-marker';
 
 describe('findCosmeticRuleMarker', () => {
     it('works if it finds element hiding marker properly', () => {

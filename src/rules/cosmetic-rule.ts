@@ -1,7 +1,7 @@
 import * as rule from './rule';
 import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
-import { DomainModifier } from './modifiers/domain-modifier';
-import { indexOfAny } from './utils';
+import { DomainModifier } from '../modifiers/domain-modifier';
+import { indexOfAny } from '../utils';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -78,6 +78,12 @@ export class CosmeticRule implements rule.IRule {
     private permittedDomains: string[] | null = null;
 
     private restrictedDomains: string[] | null = null;
+
+    /**
+     * Js script to execute
+     * Used for Scriptlets cache
+     */
+    public script: string | null = null;
 
     /**
      * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,

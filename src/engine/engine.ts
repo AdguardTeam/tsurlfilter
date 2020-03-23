@@ -2,9 +2,10 @@ import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
 import { CosmeticOption, MatchingResult } from './matching-result';
-import { NetworkRule } from '../network-rule';
+import { NetworkRule } from '../rules/network-rule';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
+import { config, IConfiguration } from '../configuration';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -25,12 +26,19 @@ export class Engine {
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
+     * @param configuration optional configuration
      *
      * @throws
      */
-    constructor(ruleStorage: RuleStorage) {
+    constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined) {
         this.networkEngine = new NetworkEngine(ruleStorage);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage);
+
+        if (configuration) {
+            config.engine = configuration.engine;
+            config.version = configuration.version;
+            config.verbose = configuration.verbose;
+        }
     }
 
     /**
