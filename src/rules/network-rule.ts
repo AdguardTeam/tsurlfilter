@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
-import { SimpleRegex } from '../simple-regex';
+import { SimpleRegex } from './simple-regex';
 import { Request, RequestType } from '../request';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils';
