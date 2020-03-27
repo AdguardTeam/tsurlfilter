@@ -2,12 +2,13 @@ import Scriptlets from 'scriptlets';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScriptletParser } from './scriptlet-parser';
 import { config } from '../../configuration';
+import { CosmeticContentResult } from './cosmetic-content-result';
 
 /**
  * This class stores found script rules content in the appropriate collections
  * It is primarily used by the {@see CosmeticResult}
  */
-export class CosmeticScriptsResult {
+export class CosmeticScriptsResult implements CosmeticContentResult {
     /**
      * AdGuard scriptlet rule mask
      */
@@ -22,6 +23,11 @@ export class CosmeticScriptsResult {
      * Collection of domain specific rules
      */
     public specific: string[];
+
+    /**
+     * Rules
+     */
+    private rules: CosmeticRule[] = [];
 
     constructor() {
         this.generic = [] as string[];
@@ -44,6 +50,15 @@ export class CosmeticScriptsResult {
         } else {
             this.specific.push(ruleContent);
         }
+
+        this.rules.push(rule);
+    }
+
+    /**
+     * Returns rules collected
+     */
+    getRules(): CosmeticRule[] {
+        return this.rules;
     }
 
     /**

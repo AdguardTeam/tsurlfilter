@@ -1,10 +1,11 @@
 import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { CosmeticContentResult } from './cosmetic-content-result';
 
 /**
  * This class stores found cosmetic css rules content in the appropriate collections
  * It is primarily used by the {@see CosmeticResult}
  */
-export class CosmeticStylesResult {
+export class CosmeticStylesResult implements CosmeticContentResult {
     /**
      * Collection of generic rules
      */
@@ -24,6 +25,11 @@ export class CosmeticStylesResult {
      * Collection of specific extcss rules
      */
     public specificExtCss: string[];
+
+    /**
+     * Rules
+     */
+    private rules: CosmeticRule[] = [];
 
     constructor() {
         this.generic = [] as string[];
@@ -49,5 +55,14 @@ export class CosmeticStylesResult {
         } else {
             this.specific.push(ruleContent);
         }
+
+        this.rules.push(rule);
+    }
+
+    /**
+     * Returns rules collected
+     */
+    getRules(): CosmeticRule[] {
+        return this.rules;
     }
 }
