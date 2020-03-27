@@ -31,6 +31,11 @@ import { applyCss, applyScripts } from './cosmetic.js';
 
         const engine = new AGUrlFilter.Engine(ruleStorage, config);
 
+        const journal = engine.getJournal();
+        journal.on('rule', (event) => {
+            console.log(`[TAB ${event.tabId}] Rule found: [${event.ruleText}]`);
+        });
+
         console.log('Starting url filter engine..ok');
 
         return engine;
