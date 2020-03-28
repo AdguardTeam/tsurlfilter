@@ -96,7 +96,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
 
         const requestType = testGetRequestType(details.type);
         const request = new AGUrlFilter.Request(url, details.initiator, requestType);
-        const result = engine.matchRequest(request);
+        const result = engine.matchRequestWithTabId(details.tabId, request);
 
         console.debug(result);
 
@@ -119,7 +119,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
         console.debug(`Processing tab ${tabId} changes..`);
 
         const { hostname } = new URL(url);
-        const cosmeticResult = engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
+        const cosmeticResult = engine.getCosmeticResultWithTabId(tabId, hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
         console.debug(cosmeticResult);
 
         applyCss(tabId, cosmeticResult);

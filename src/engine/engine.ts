@@ -129,7 +129,7 @@ export class Engine {
 
     /**
      * Returns rule journal object
-     * TODO: Add instructions how to use, eg
+     * Usage:
      * journal.on('rule', (event) => { .. });
      */
     getJournal(): Journal {
