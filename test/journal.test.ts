@@ -1,8 +1,9 @@
 import {
-    CosmeticOption, Engine, Request, RequestType, RuleStorage, StringRuleList,
+    CosmeticOption, Engine, NetworkRule, Request, RequestType, RuleStorage, StringRuleList,
 } from '../src';
 import { Journal } from '../src/journal';
 import { JournalEvent } from '../src/journal-event';
+import { CosmeticRule } from '../src/rules/cosmetic-rule';
 
 const TAB_ID = 1;
 
@@ -19,9 +20,9 @@ describe('TestJournal', () => {
         journal.on('rule', ruleEventHandler);
 
         const request = new Request('https://example.org', '', RequestType.Document);
-        journal.recordNetworkRuleEvent(TAB_ID, request, '||example.org^$third-party');
+        journal.recordNetworkRuleEvent(TAB_ID, request, new NetworkRule('||example.org^$third-party', 1));
 
-        journal.recordCosmeticRuleEvent(TAB_ID, 'example.org', 'example.org##cosmetic');
+        journal.recordCosmeticRuleEvent(TAB_ID, 'example.org', new CosmeticRule('example.org##cosmetic', 1));
     });
 });
 
@@ -39,7 +40,7 @@ describe('TestJournalRecordsOnEngine', () => {
         const ruleEventHandler = (event: JournalEvent): void => {
             expect(event).toBeTruthy();
             expect(event.tabId).toBe(TAB_ID);
-            expect(event.ruleText).toBe(networkRule);
+            expect(event.getRuleText()).toBe(networkRule);
         };
 
         journal.on('rule', ruleEventHandler);
@@ -56,7 +57,7 @@ describe('TestJournalRecordsOnEngine', () => {
         const ruleEventHandler = (event: JournalEvent): void => {
             expect(event).toBeTruthy();
             expect(event.tabId).toBe(TAB_ID);
-            expect(event.ruleText).toBe(cosmeticRule);
+            expect(event.getRuleText()).toBe(cosmeticRule);
         };
 
         journal.on('rule', ruleEventHandler);

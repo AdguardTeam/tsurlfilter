@@ -33,7 +33,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
 
         const journal = engine.getJournal();
         journal.on('rule', (event) => {
-            console.log(`[TAB ${event.tabId}] Rule found: [${event.ruleText}]`);
+            console.log(`[TAB ${event.tabId}] Rule found: [${event.getRuleText()}]`);
         });
 
         console.log('Starting url filter engine..ok');

@@ -78,11 +78,24 @@ export class Engine {
     matchRequestWithTabId(tabId: number, request: Request): MatchingResult {
         const result = this.matchRequest(request);
 
-        // TODO: add other rules to journal
         if (result) {
             const rule = result.getBasicResult();
             if (rule) {
-                this.journal.recordNetworkRuleEvent(tabId, request, rule.getText());
+                this.journal.recordNetworkRuleEvent(tabId, request, rule);
+            }
+
+            const cspRules = result.getCspRules();
+            if (cspRules) {
+                cspRules.forEach((r) => {
+                    this.journal.recordNetworkRuleEvent(tabId, request, r);
+                });
+            }
+
+            const replaceRules = result.getReplaceRules();
+            if (replaceRules) {
+                replaceRules.forEach((r) => {
+                    this.journal.recordNetworkRuleEvent(tabId, request, r);
+                });
             }
         }
 
@@ -120,7 +133,7 @@ export class Engine {
         if (result) {
             const rules = result.getRules();
             rules.forEach((r: CosmeticRule) => {
-                this.journal.recordCosmeticRuleEvent(tabId, hostname, r.getText());
+                this.journal.recordCosmeticRuleEvent(tabId, hostname, r);
             });
         }
 

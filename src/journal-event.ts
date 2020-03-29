@@ -1,3 +1,5 @@
+import { IRule } from './rules/rule';
+
 /**
  * Rule journal event
  */
@@ -8,18 +10,25 @@ export class JournalEvent {
     public readonly tabId: number;
 
     /**
-     * Event rule text
+     * Event rule
      */
-    public readonly ruleText: string;
+    public readonly rule: IRule;
 
     /**
      * Constructor
      *
      * @param tabId
-     * @param ruleText
+     * @param rule
      */
-    constructor(tabId: number, ruleText: string) {
+    constructor(tabId: number, rule: IRule) {
         this.tabId = tabId;
-        this.ruleText = ruleText;
+        this.rule = rule;
+    }
+
+    /**
+     * Rule text
+     */
+    public getRuleText(): string {
+        return this.rule.getText();
     }
 }

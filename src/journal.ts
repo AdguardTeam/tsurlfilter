@@ -1,5 +1,7 @@
 import { Request } from './request';
 import { JournalEvent } from './journal-event';
+import { NetworkRule } from './rules/network-rule';
+import { CosmeticRule } from './rules/cosmetic-rule';
 
 /**
  * Rule triggering journal class
@@ -15,11 +17,11 @@ export class Journal {
      *
      * @param tabId
      * @param request
-     * @param ruleText
+     * @param rule
      */
-    public recordNetworkRuleEvent(tabId: number, request: Request, ruleText: string): void {
+    public recordNetworkRuleEvent(tabId: number, request: Request, rule: NetworkRule): void {
         if (this.listeners.length > 0) {
-            const event = new JournalEvent(tabId, ruleText);
+            const event = new JournalEvent(tabId, rule);
 
             this.listeners.forEach((l) => {
                 l.call(null, event);
@@ -32,11 +34,11 @@ export class Journal {
      *
      * @param tabId
      * @param hostname
-     * @param ruleText
+     * @param rule
      */
-    public recordCosmeticRuleEvent(tabId: number, hostname: string, ruleText: string): void {
+    public recordCosmeticRuleEvent(tabId: number, hostname: string, rule: CosmeticRule): void {
         if (this.listeners.length > 0) {
-            const event = new JournalEvent(tabId, ruleText);
+            const event = new JournalEvent(tabId, rule);
 
             this.listeners.forEach((l) => {
                 l.call(null, event);
