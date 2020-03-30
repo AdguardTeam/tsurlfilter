@@ -1,34 +1,28 @@
 import { IRule } from './rules/rule';
+import { Request } from './request';
 
 /**
  * Rule journal event
  */
 export class JournalEvent {
     /**
-     * Tab identifier
+     * Request
      */
-    public readonly tabId: number;
+    public readonly request: Request;
 
     /**
-     * Event rule
+     * Event rules
      */
-    public readonly rule: IRule;
+    public readonly rules: IRule[];
 
     /**
      * Constructor
      *
-     * @param tabId
-     * @param rule
+     * @param request
+     * @param rules
      */
-    constructor(tabId: number, rule: IRule) {
-        this.tabId = tabId;
-        this.rule = rule;
-    }
-
-    /**
-     * Rule text
-     */
-    public getRuleText(): string {
-        return this.rule.getText();
+    constructor(request: Request, rules: IRule[]) {
+        this.request = request;
+        this.rules = rules;
     }
 }

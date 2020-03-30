@@ -32,8 +32,11 @@ import { applyCss, applyScripts } from './cosmetic.js';
         const engine = new AGUrlFilter.Engine(ruleStorage, config);
 
         const journal = engine.getJournal();
-        journal.on('rule', (event) => {
-            console.log(`[TAB ${event.tabId}] Rule found: [${event.getRuleText()}]`);
+        journal.on('request', (event) => {
+            console.log(`[Request ${event.request.url}] Rules found: [${event.rules.length}]`);
+            event.rules.forEach((r) => {
+                console.debug(r.getText());
+            });
         });
 
         console.log('Starting url filter engine..ok');
@@ -96,7 +99,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
 
         const requestType = testGetRequestType(details.type);
         const request = new AGUrlFilter.Request(url, details.initiator, requestType);
-        const result = engine.matchRequestWithTabId(details.tabId, request);
+        const result = engine.matchRequest(request);
 
         console.debug(result);
 
@@ -112,14 +115,16 @@ import { applyCss, applyScripts } from './cosmetic.js';
     /**
      * Applies cosmetic rules to tab
      *
-     * @param tabId
-     * @param url
+     * @param details
      */
-    const applyCosmetic = (tabId, url) => {
+    const applyCosmetic = (details) => {
+        const { tabId, url } = details;
+
         console.debug(`Processing tab ${tabId} changes..`);
 
-        const { hostname } = new URL(url);
-        const cosmeticResult = engine.getCosmeticResultWithTabId(tabId, hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
+        // This is a mock request, to do it properly we should pass main frame request with correct cosmetic option
+        const request = new AGUrlFilter.Request(url, url, AGUrlFilter.RequestType.Document);
+        const cosmeticResult = engine.getCosmeticResultForRequest(request, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
         console.debug(cosmeticResult);
 
         applyCss(tabId, cosmeticResult);
@@ -130,13 +135,11 @@ import { applyCss, applyScripts } from './cosmetic.js';
      * Add listener on tab updated
      */
     chrome.webNavigation.onCommitted.addListener((details) => {
-        const { tabId, url } = details;
-
-        if (!isHttpOrWsRequest(url)) {
+        if (!isHttpOrWsRequest(details.url)) {
             return;
         }
 
-        applyCosmetic(tabId, url);
+        applyCosmetic(details);
     });
 
     /**

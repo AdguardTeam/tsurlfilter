@@ -7,7 +7,6 @@ import { RuleStorage } from '../filterlist/rule-storage';
 import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
 import { config, IConfiguration } from '../configuration';
 import { Journal } from '../journal';
-import { CosmeticRule } from '../rules/cosmetic-rule';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -51,6 +50,7 @@ export class Engine {
 
     /**
      * Matches the specified request against the filtering engine and returns the matching result.
+     * Adds rule journal records
      *
      * @param request - request to check
      * @return matching result
@@ -64,40 +64,9 @@ export class Engine {
             sourceRules = this.networkEngine.matchAll(sourceRequest);
         }
 
-        return new MatchingResult(networkRules, sourceRules);
-    }
+        const result = new MatchingResult(networkRules, sourceRules);
 
-    /**
-     * Matches the specified request against the filtering engine and returns the matching result.
-     * Adds rule journal records
-     *
-     * @param tabId
-     * @param request
-     * @return matching result
-     */
-    matchRequestWithTabId(tabId: number, request: Request): MatchingResult {
-        const result = this.matchRequest(request);
-
-        if (result) {
-            const rule = result.getBasicResult();
-            if (rule) {
-                this.journal.recordNetworkRuleEvent(tabId, request, rule);
-            }
-
-            const cspRules = result.getCspRules();
-            if (cspRules) {
-                cspRules.forEach((r) => {
-                    this.journal.recordNetworkRuleEvent(tabId, request, r);
-                });
-            }
-
-            const replaceRules = result.getReplaceRules();
-            if (replaceRules) {
-                replaceRules.forEach((r) => {
-                    this.journal.recordNetworkRuleEvent(tabId, request, r);
-                });
-            }
-        }
+        this.journal.recordNetworkRuleEvent(request, result.getRules());
 
         return result;
     }
@@ -122,20 +91,14 @@ export class Engine {
      * Gets cosmetic result for the specified hostname and cosmetic options
      * Adds rule journal records
      *
-     * @param tabId
-     * @param hostname
+     * @param request
      * @param option
      * @return matching result
      */
-    getCosmeticResultWithTabId(tabId: number, hostname: string, option: CosmeticOption): CosmeticResult {
-        const result = this.getCosmeticResult(hostname, option);
+    getCosmeticResultForRequest(request: Request, option: CosmeticOption): CosmeticResult {
+        const result = this.getCosmeticResult(request.hostname, option);
 
-        if (result) {
-            const rules = result.getRules();
-            rules.forEach((r: CosmeticRule) => {
-                this.journal.recordCosmeticRuleEvent(tabId, hostname, r);
-            });
-        }
+        this.journal.recordCosmeticRuleEvent(request, result.getRules());
 
         return result;
     }
@@ -143,7 +106,7 @@ export class Engine {
     /**
      * Returns rule journal object
      * Usage:
-     * journal.on('rule', (event) => { .. });
+     * journal.on('request', (event) => { .. });
      */
     getJournal(): Journal {
         return this.journal;

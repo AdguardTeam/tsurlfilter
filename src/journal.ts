@@ -15,13 +15,12 @@ export class Journal {
     /**
      * Adds network rule event
      *
-     * @param tabId
      * @param request
-     * @param rule
+     * @param rules
      */
-    public recordNetworkRuleEvent(tabId: number, request: Request, rule: NetworkRule): void {
+    public recordNetworkRuleEvent(request: Request, rules: NetworkRule[]): void {
         if (this.listeners.length > 0) {
-            const event = new JournalEvent(tabId, rule);
+            const event = new JournalEvent(request, rules);
 
             this.listeners.forEach((l) => {
                 l.call(null, event);
@@ -32,13 +31,12 @@ export class Journal {
     /**
      * Adds cosmetic rule event
      *
-     * @param tabId
-     * @param hostname
-     * @param rule
+     * @param request
+     * @param rules
      */
-    public recordCosmeticRuleEvent(tabId: number, hostname: string, rule: CosmeticRule): void {
+    public recordCosmeticRuleEvent(request: Request, rules: CosmeticRule[]): void {
         if (this.listeners.length > 0) {
-            const event = new JournalEvent(tabId, rule);
+            const event = new JournalEvent(request, rules);
 
             this.listeners.forEach((l) => {
                 l.call(null, event);
@@ -53,7 +51,7 @@ export class Journal {
      * @param eventHandler
      */
     public on(eventName: string, eventHandler: (event: JournalEvent) => void): void {
-        if (eventName !== 'rule') {
+        if (eventName !== 'request') {
             throw new Error(`Event ${eventName} is not supported`);
         }
 

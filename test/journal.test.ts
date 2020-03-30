@@ -5,25 +5,25 @@ import { Journal } from '../src/journal';
 import { JournalEvent } from '../src/journal-event';
 import { CosmeticRule } from '../src/rules/cosmetic-rule';
 
-const TAB_ID = 1;
-
 describe('TestJournal', () => {
     it('works if journal created and manages rules correctly', () => {
         const journal = new Journal();
 
         const ruleEventHandler = jest.fn((event: JournalEvent): void => {
             expect(event).toBeTruthy();
-            expect(event.tabId).toBe(TAB_ID);
+            expect(event.request).toBeTruthy();
         });
 
-        journal.on('rule', ruleEventHandler);
+        journal.on('request', ruleEventHandler);
 
         const request = new Request('https://example.org', '', RequestType.Document);
-        journal.recordNetworkRuleEvent(TAB_ID, request, new NetworkRule('||example.org^$third-party', 1));
+        journal.recordNetworkRuleEvent(request, []);
+        journal.recordNetworkRuleEvent(request, [new NetworkRule('||example.org^$third-party', 1)]);
 
-        journal.recordCosmeticRuleEvent(TAB_ID, 'example.org', new CosmeticRule('example.org##cosmetic', 1));
+        journal.recordCosmeticRuleEvent(request, []);
+        journal.recordCosmeticRuleEvent(request, [new CosmeticRule('example.org##cosmetic', 1)]);
 
-        expect(ruleEventHandler).toHaveBeenCalledTimes(2);
+        expect(ruleEventHandler).toHaveBeenCalledTimes(4);
     });
 });
 
@@ -40,14 +40,15 @@ describe('TestJournalRecordsOnEngine', () => {
 
         const ruleEventHandler = jest.fn((event: JournalEvent): void => {
             expect(event).toBeTruthy();
-            expect(event.tabId).toBe(TAB_ID);
-            expect(event.getRuleText()).toBe(networkRule);
+            expect(event.request).toBeTruthy();
+            expect(event.rules).toHaveLength(1);
+            expect(event.rules[0].getText()).toBe(networkRule);
         });
 
-        journal.on('rule', ruleEventHandler);
+        journal.on('request', ruleEventHandler);
 
         const request = new Request('https://example.org', '', RequestType.Document);
-        const result = engine.matchRequestWithTabId(TAB_ID, request);
+        const result = engine.matchRequest(request);
         expect(result).toBeTruthy();
 
         expect(ruleEventHandler).toHaveBeenCalledTimes(1);
@@ -59,13 +60,15 @@ describe('TestJournalRecordsOnEngine', () => {
 
         const ruleEventHandler = jest.fn((event: JournalEvent): void => {
             expect(event).toBeTruthy();
-            expect(event.tabId).toBe(TAB_ID);
-            expect(event.getRuleText()).toBe(cosmeticRule);
+            expect(event.request).toBeTruthy();
+            expect(event.rules).toHaveLength(1);
+            expect(event.rules[0].getText()).toBe(cosmeticRule);
         });
 
-        journal.on('rule', ruleEventHandler);
+        journal.on('request', ruleEventHandler);
 
-        const result = engine.getCosmeticResultWithTabId(TAB_ID, 'example.org', CosmeticOption.CosmeticOptionAll);
+        const request = new Request('https://example.org', '', RequestType.Document);
+        const result = engine.getCosmeticResultForRequest(request, CosmeticOption.CosmeticOptionAll);
         expect(result).toBeTruthy();
 
         expect(ruleEventHandler).toHaveBeenCalledTimes(1);

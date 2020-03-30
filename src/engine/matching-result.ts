@@ -332,6 +332,32 @@ export class MatchingResult {
     }
 
     /**
+     * Returns effective rules in this matching result
+     *
+     * @return rules
+     */
+    public getRules(): NetworkRule[] {
+        const rules = [];
+
+        const rule = this.getBasicResult();
+        if (rule) {
+            rules.push(rule);
+        }
+
+        const cspRules = this.getCspRules();
+        if (cspRules) {
+            rules.push(...cspRules);
+        }
+
+        const replaceRules = this.getReplaceRules();
+        if (replaceRules) {
+            rules.push(...replaceRules);
+        }
+
+        return rules;
+    }
+
+    /**
      * Decides which rule should be put into the given map.
      * Compares priorities of the two given rules with the equal CSP directive and the rule that may already in the map.
      *
