@@ -96,3 +96,6 @@ testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__t
 testcases.adguard.com,surge.sh#%#//scriptlet("abort-on-property-read", "propReadCaseAG")
 testcases.adguard.com,surge.sh##+js(abort-on-property-read.js, propReadCaseUBO)
 testcases.adguard.com,surge.sh#$#abort-on-property-read propReadCaseABP
+
+! Cookie test rules
+||testcases.adguard.com^$cookie=test_cookie;maxAge=15
