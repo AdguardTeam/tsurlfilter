@@ -167,10 +167,10 @@ describe('TestEngineCosmeticResult - js', () => {
         genericJsRule,
     ];
 
-    const list = new StringRuleList(1, rules.join('\n'), false);
-    const engine = new Engine(new RuleStorage([list]));
+    it('works if returns correct cosmetic js result', () => {
+        const list = new StringRuleList(1, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
 
-    it('works if returns correct cosmetic css result', () => {
         let result = engine.getCosmeticResult('an-other-domain.org', CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.generic.length).toEqual(1);
@@ -185,5 +185,25 @@ describe('TestEngineCosmeticResult - js', () => {
 
         expect(result.JS.generic.length).toEqual(0);
         expect(result.JS.specific.length).toEqual(1);
+    });
+
+    it('works javascript rules are ignored with filter list setting', () => {
+        const list = new StringRuleList(1, rules.join('\n'), false, true);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let result = engine.getCosmeticResult('an-other-domain.org', CosmeticOption.CosmeticOptionAll);
+
+        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.specific.length).toEqual(0);
+
+        result = engine.getCosmeticResult('example.org', CosmeticOption.CosmeticOptionAll);
+
+        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.specific.length).toEqual(0);
+
+        result = engine.getCosmeticResult('example.org', CosmeticOption.CosmeticOptionJS);
+
+        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.specific.length).toEqual(0);
     });
 });

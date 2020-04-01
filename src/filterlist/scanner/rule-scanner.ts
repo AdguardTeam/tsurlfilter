@@ -1,7 +1,7 @@
 import { IndexedRule, IRule } from '../../rules/rule';
 import { RuleUtils } from '../../rules/rule-utils';
 import { ILineReader } from '../reader/line-reader';
-import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
@@ -16,6 +16,11 @@ export class RuleScanner {
      * True if we should ignore cosmetic rules
      */
     private readonly ignoreCosmetic: boolean;
+
+    /**
+     * True if we should ignore javascript cosmetic rules
+     */
+    private readonly ignoreJS: boolean;
 
     /**
      * Reader object
@@ -43,11 +48,13 @@ export class RuleScanner {
      * @param reader source of the filtering rules
      * @param listId filter list ID
      * @param ignoreCosmetic if true, cosmetic rules will be ignored
+     * @param ignoreJS if true, javascript cosmetic rules will be ignored
      */
-    constructor(reader: ILineReader, listId: number, ignoreCosmetic: boolean) {
+    constructor(reader: ILineReader, listId: number, ignoreCosmetic?: boolean, ignoreJS?: boolean) {
         this.reader = reader;
         this.listId = listId;
-        this.ignoreCosmetic = ignoreCosmetic;
+        this.ignoreCosmetic = !!ignoreCosmetic;
+        this.ignoreJS = !!ignoreJS;
     }
 
     /**
@@ -110,10 +117,18 @@ export class RuleScanner {
      * @return is rule ignored
      */
     private isIgnored(rule: IRule): boolean {
-        if (!this.ignoreCosmetic) {
+        if (!this.ignoreCosmetic && !this.ignoreJS) {
             return false;
         }
 
-        return (rule instanceof CosmeticRule);
+        if (rule instanceof CosmeticRule) {
+            if (this.ignoreCosmetic) {
+                return true;
+            }
+            // Ignore JS type rules
+            return (rule.getType() === CosmeticRuleType.Js);
+        }
+
+        return false;
     }
 }
