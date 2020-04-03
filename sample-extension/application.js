@@ -99,10 +99,70 @@ export class Application {
             }
         }
 
+        const cookieRules = this.getCookieRules(details);
+        if (this.processHeaders(responseHeaders, cookieRules)) {
+            responseHeadersModified = true;
+        }
+
         if (responseHeadersModified) {
             console.debug('Response headers modified');
             return { responseHeaders };
         }
+    }
+
+    /**
+     * Called before request is sent to the remote endpoint.
+     *
+     * @param details Request details
+     * @returns {*} headers to send
+     */
+    // eslint-disable-next-line consistent-return
+    onBeforeSendHeaders(details) {
+        const requestHeaders = details.requestHeaders || [];
+
+        let requestHeadersModified = false;
+
+        const cookieRules = this.getCookieRules(details);
+        if (this.processHeaders(requestHeaders, cookieRules)) {
+            requestHeadersModified = true;
+        }
+
+        if (requestHeadersModified) {
+            console.debug('Request headers modified');
+            return { requestHeaders };
+        }
+    }
+
+    /**
+     * Returns cookie rules matching request details
+     *
+     * @param details
+     * @return {NetworkRule[]}
+     */
+    getCookieRules(details) {
+        const request = new AGUrlFilter.Request(details.url, details.initiator, AGUrlFilter.RequestType.Document);
+        const result = this.engine.matchRequest(request);
+
+        return result.getCookieRules();
+    }
+
+    /**
+     * Modifies cookie header
+     *
+     * @param headers
+     * @param cookieRules
+     * @return {null}
+     */
+    // eslint-disable-next-line class-methods-use-this
+    processHeaders(headers, cookieRules) {
+        console.debug('Processing headers');
+
+        console.debug(headers);
+        console.debug(cookieRules);
+
+        // TODO: Modify cookie header
+
+        return null;
     }
 
     /**
