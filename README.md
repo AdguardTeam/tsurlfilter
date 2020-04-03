@@ -63,7 +63,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [ ] \$important
     -   [ ] \$replace
     -   [x] \$csp
-    -   [ ] \$cookie
+    -   [x] \$cookie
     -   [ ] \$redirect
     -   [ ] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
     -   [ ] \$stealth modifier

@@ -257,3 +257,89 @@ describe('TestNewMatchingResult - replace rules', () => {
         expect(replaceRules.length).toBe(1);
     });
 });
+
+describe('TestNewMatchingResult - cookie rules', () => {
+    const cookieRuleTextOne = '$cookie=/__utm[a-z]/';
+    const cookieRuleTextTwo = '$cookie=__cfduid';
+    const cookieRuleWhitelistTextOne = '@@$cookie=/__utm[a-z]/';
+    const cookieRuleWhitelistTextTwo = '@@$cookie=__cfduid';
+    const cookieRuleWhitelistText = '@@$cookie';
+    const cookieRuleWhitelistRegexpText = '@@$cookie=/__cfd[a-z]/';
+
+    it('works if cookie rules are found', () => {
+        const rules = [
+            new NetworkRule(cookieRuleTextOne, 0),
+            new NetworkRule(cookieRuleTextTwo, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(rules.length);
+        expect(cookieRules[0].getText()).toBe(cookieRuleTextOne);
+        expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
+    });
+
+    it('works if cookie whitelist rule is ok', () => {
+        const rules = [
+            new NetworkRule(cookieRuleTextOne, 0),
+            new NetworkRule(cookieRuleTextTwo, 0),
+            new NetworkRule(cookieRuleWhitelistTextOne, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(rules.length - 1);
+        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
+        expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
+    });
+
+    it('works if cookie whitelist rule is ok', () => {
+        const rules = [
+            new NetworkRule(cookieRuleTextOne, 0),
+            new NetworkRule(cookieRuleTextTwo, 0),
+            new NetworkRule(cookieRuleWhitelistTextOne, 0),
+            new NetworkRule(cookieRuleWhitelistTextTwo, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(rules.length - 2);
+        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
+        expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistTextTwo);
+    });
+
+    it('works if cookie whitelist all rule is ok', () => {
+        const rules = [
+            new NetworkRule(cookieRuleTextOne, 0),
+            new NetworkRule(cookieRuleTextTwo, 0),
+            new NetworkRule(cookieRuleWhitelistTextOne, 0),
+            new NetworkRule(cookieRuleWhitelistTextTwo, 0),
+            new NetworkRule(cookieRuleWhitelistText, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistText);
+    });
+
+    it('works if cookie whitelist all rule is ok', () => {
+        const rules = [
+            new NetworkRule(cookieRuleTextOne, 0),
+            new NetworkRule(cookieRuleTextTwo, 0),
+            new NetworkRule(cookieRuleWhitelistTextOne, 0),
+            new NetworkRule(cookieRuleWhitelistRegexpText, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(2);
+        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
+        expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistRegexpText);
+    });
+});
