@@ -6,7 +6,6 @@ import { NetworkRule } from '../rules/network-rule';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
 import { config, IConfiguration } from '../configuration';
-import { Journal } from '../journal';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -23,11 +22,6 @@ export class Engine {
     private readonly cosmeticEngine: CosmeticEngine;
 
     /**
-     * Rule journal
-     */
-    private readonly journal: Journal;
-
-    /**
      * Creates an instance of an Engine
      * Parses the filtering rules and creates a filtering engine of them
      *
@@ -39,7 +33,6 @@ export class Engine {
     constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined) {
         this.networkEngine = new NetworkEngine(ruleStorage);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage);
-        this.journal = new Journal();
 
         if (configuration) {
             config.engine = configuration.engine;
@@ -64,11 +57,7 @@ export class Engine {
             sourceRules = this.networkEngine.matchAll(sourceRequest);
         }
 
-        const result = new MatchingResult(networkRules, sourceRules);
-
-        this.journal.recordNetworkRuleEvent(request, result.getRules());
-
-        return result;
+        return new MatchingResult(networkRules, sourceRules);
     }
 
     /**
@@ -85,30 +74,5 @@ export class Engine {
         const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
 
         return this.cosmeticEngine.match(hostname, includeCss, includeJs, includeGenericCss);
-    }
-
-    /**
-     * Gets cosmetic result for the specified hostname and cosmetic options
-     * Adds rule journal records
-     *
-     * @param request
-     * @param option
-     * @return matching result
-     */
-    getCosmeticResultForRequest(request: Request, option: CosmeticOption): CosmeticResult {
-        const result = this.getCosmeticResult(request.hostname, option);
-
-        this.journal.recordCosmeticRuleEvent(request, result.getRules());
-
-        return result;
-    }
-
-    /**
-     * Returns rule journal object
-     * Usage:
-     * journal.on('request', (event) => { .. });
-     */
-    getJournal(): Journal {
-        return this.journal;
     }
 }

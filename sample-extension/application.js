@@ -79,9 +79,8 @@ export class Application {
         console.debug(`Processing tab ${tabId} changes..`);
 
         // This is a mock request, to do it properly we should pass main frame request with correct cosmetic option
-        const request = new AGUrlFilter.Request(url, url, AGUrlFilter.RequestType.Document);
-        const cosmeticResult = this.engine.getCosmeticResultForRequest(request,
-            AGUrlFilter.CosmeticOption.CosmeticOptionAll);
+        const { hostname } = new URL(url);
+        const cosmeticResult = this.engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
         console.debug(cosmeticResult);
 
         applyCss(tabId, cosmeticResult);
