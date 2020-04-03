@@ -34,4 +34,11 @@ export class CosmeticResult {
     public getRules(): CosmeticRule[] {
         return [...this.elementHiding.getRules(), ...this.CSS.getRules(), ...this.JS.getRules()];
     }
+
+    /**
+     * Script rules
+     */
+    public getScriptRules(): CosmeticRule[] {
+        return this.JS.getRules();
+    }
 }

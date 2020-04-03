@@ -1,6 +1,7 @@
 /* eslint-disable no-console, import/extensions, import/no-unresolved */
 import * as AGUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
+import { FilteringLog } from './filtering-log/filtering-log.js';
 
 /**
  * Extension application class
@@ -10,6 +11,11 @@ export class Application {
      * TS Engine instance
      */
     engine;
+
+    /**
+     * Filtering log
+     */
+    filteringLog = new FilteringLog();
 
     /**
      * Initializes engine instance
@@ -51,6 +57,10 @@ export class Application {
 
         const requestRule = result.getBasicResult();
 
+        if (details.type === 'main_frame') {
+            this.filteringLog.addHttpRequestEvent(details.tabId, details.url, details.url, requestRule);
+        }
+
         if (requestRule
             && !requestRule.isWhitelist()) {
             // eslint-disable-next-line consistent-return
@@ -76,6 +86,19 @@ export class Application {
 
         applyCss(tabId, cosmeticResult);
         applyScripts(tabId, cosmeticResult);
+
+        // const domainName = adguard.utils.url.getHost(url);
+        cosmeticResult.getScriptRules().forEach((scriptRule) => {
+            // if (!scriptRule.rule.isDomainSpecific(domainName)) {
+            //     return;
+            // }
+
+            this.filteringLog.addScriptInjectionEvent(
+                tabId,
+                url,
+                scriptRule,
+            );
+        });
     }
 
     /**
@@ -100,7 +123,7 @@ export class Application {
         }
 
         const cookieRules = this.getCookieRules(details);
-        if (this.processHeaders(responseHeaders, cookieRules)) {
+        if (this.processHeaders(details, responseHeaders, cookieRules)) {
             responseHeadersModified = true;
         }
 
@@ -123,7 +146,7 @@ export class Application {
         let requestHeadersModified = false;
 
         const cookieRules = this.getCookieRules(details);
-        if (this.processHeaders(requestHeaders, cookieRules)) {
+        if (this.processHeaders(details, requestHeaders, cookieRules)) {
             requestHeadersModified = true;
         }
 
@@ -149,16 +172,18 @@ export class Application {
     /**
      * Modifies cookie header
      *
+     * @param details
      * @param headers
      * @param cookieRules
      * @return {null}
      */
-    // eslint-disable-next-line class-methods-use-this
-    processHeaders(headers, cookieRules) {
+    processHeaders(details, headers, cookieRules) {
         console.debug('Processing headers');
-
         console.debug(headers);
-        console.debug(cookieRules);
+
+        cookieRules.forEach((r) => {
+            this.filteringLog.addCookieEvent(details.tabId, details.url, r);
+        });
 
         // TODO: Modify cookie header
 
