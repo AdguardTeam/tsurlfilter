@@ -1,7 +1,6 @@
 /* eslint-disable no-console, no-undef, import/extensions,import/no-unresolved, import/named, max-len */
 import * as AGUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
-import { processRequestHeaders, processResponseHeaders } from './cookies/cookie-helper.js';
 
 (async () => {
     /**
@@ -182,6 +181,24 @@ import { processRequestHeaders, processResponseHeaders } from './cookies/cookie-
     };
 
     /**
+     * Modifies cookie header
+     *
+     * @param headers
+     * @param cookieRules
+     * @return {null}
+     */
+    const processHeaders = (headers, cookieRules) => {
+        console.log('Processing headers');
+
+        console.debug(headers);
+        console.debug(cookieRules);
+
+        // TODO: Modify cookie header
+
+        return null;
+    };
+
+    /**
      * On headers received callback function.
      * We do check request for safebrowsing
      * and check if websocket connections should be blocked.
@@ -205,7 +222,7 @@ import { processRequestHeaders, processResponseHeaders } from './cookies/cookie-
         }
 
         const cookieRules = getCookieRules(details);
-        if (processResponseHeaders(responseHeaders, cookieRules)) {
+        if (processHeaders(responseHeaders, cookieRules)) {
             responseHeadersModified = true;
         }
 
@@ -230,7 +247,7 @@ import { processRequestHeaders, processResponseHeaders } from './cookies/cookie-
         let requestHeadersModified = false;
 
         const cookieRules = getCookieRules(details);
-        if (processRequestHeaders(requestHeaders, cookieRules)) {
+        if (processHeaders(requestHeaders, cookieRules)) {
             requestHeadersModified = true;
         }
 
