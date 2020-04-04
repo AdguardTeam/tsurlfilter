@@ -26,6 +26,9 @@ export class CosmeticStylesResult implements CosmeticContentResult {
      */
     public specificExtCss: CosmeticRule[];
 
+    /**
+     * Constructor
+     */
     constructor() {
         this.generic = [];
         this.specific = [];

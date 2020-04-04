@@ -1,9 +1,12 @@
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 
+/**
+ * Cosmetic results interface
+ */
 export interface CosmeticContentResult {
     /**
      * Append rule to result
-     * @param rule
+     * @param rule to add
      */
     append(rule: CosmeticRule): void;
 

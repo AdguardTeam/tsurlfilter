@@ -81,7 +81,6 @@ export class CosmeticRule implements rule.IRule {
 
     /**
      * Js script to execute
-     * Used for Scriptlets cache
      */
     public script: string | null = null;
 
