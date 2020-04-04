@@ -59,6 +59,7 @@ export class FilteringLog {
             requestType: 'DOCUMENT',
             requestThirdParty: false,
             rule: requestRule,
+            eventType: 'URL',
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -84,6 +85,7 @@ export class FilteringLog {
             frameDomain,
             requestType: 'DOCUMENT',
             rule: requestRule,
+            eventType: 'CSS',
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -105,6 +107,7 @@ export class FilteringLog {
             frameDomain,
             requestType: 'DOCUMENT',
             rule,
+            eventType: 'SCRIPT',
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -123,18 +126,19 @@ export class FilteringLog {
             frameDomain,
             requestType: 'COOKIE',
             rule,
+            eventType: 'COOKIE',
         };
 
         this.pushFilteringEvent(filteringEvent);
     }
 
     // eslint-disable-next-line class-methods-use-this
-    pushFilteringEvent(filteringEvent) {
-        if (filteringEvent.rule) {
-            console.log(`[FILTERING-LOG] Event rule: ${filteringEvent.rule.getText()}`);
+    pushFilteringEvent(event) {
+        if (event.rule) {
+            console.log(`[FILTERING-LOG][${event.eventType}] Event rule: ${event.rule.getText()}`);
             return;
         }
 
-        console.log(`[FILTERING-LOG] Request: ${filteringEvent.requestUrl}`);
+        console.log(`[FILTERING-LOG] Request: ${event.requestUrl}`);
     }
 }
