@@ -80,14 +80,14 @@ export const applyCss = (tabId, cosmeticResult) => {
     });
 
     // Init css hits counter
-    // TODO: Pass message to filtering log
     chrome.tabs.executeScript(tabId, {
         code: `
                 (() => {
                     CssHitsCounter.init((stats) => {
                         console.debug('Css stats ready');
                         console.debug(stats);
-                        //getContentPage().sendMessage({ type: 'saveCssHitStats', stats });
+                        
+                        chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
                     });
                 })();
             `,

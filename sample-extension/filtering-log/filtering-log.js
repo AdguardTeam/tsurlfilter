@@ -11,6 +11,35 @@ export class FilteringLog {
     // bindReplaceRulesToHttpRequestEvent,
 
     /**
+     * Constructor
+     */
+    constructor() {
+        // eslint-disable-next-line no-undef
+        chrome.runtime.onMessage.addListener(
+            (request, sender) => {
+                if (request.type === 'saveCssHitStats') {
+                    const { id, url } = sender.tab;
+                    const stats = JSON.parse(request.stats);
+                    stats.forEach((s) => {
+                        // Mock rule
+                        const rule = {
+                            getFilterListId() {
+                                return s.filterId;
+                            },
+                            getText() {
+                                return s.ruleText;
+                            },
+                        };
+
+                        this.addCosmeticEvent(id, s.element, url, rule);
+                    });
+                }
+            },
+        );
+    }
+
+
+    /**
      * Add request to log
      *
      * @param tabId
@@ -41,10 +70,9 @@ export class FilteringLog {
      * @param tabId
      * @param elementString
      * @param frameUrl
-     * @param requestType
      * @param requestRule
      */
-    addCosmeticEvent(tabId, elementString, frameUrl, requestType, requestRule) {
+    addCosmeticEvent(tabId, elementString, frameUrl, requestRule) {
         if (!requestRule) {
             return;
         }
@@ -54,12 +82,12 @@ export class FilteringLog {
             element: elementString,
             frameUrl,
             frameDomain,
-            requestType,
+            requestType: 'DOCUMENT',
             rule: requestRule,
         };
 
         this.pushFilteringEvent(filteringEvent);
-    };
+    }
 
     /**
      * Add script event to log with the corresponding rule
