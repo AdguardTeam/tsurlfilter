@@ -1,19 +1,14 @@
 /* eslint-disable no-console, import/extensions, import/no-unresolved, no-param-reassign */
 
-import { getDomainName } from './utils.js';
-
 /**
  * Filtering log
  */
 export class FilteringLog {
-    // TODO:
-    // bindRuleToHttpRequestEvent,
-    // bindReplaceRulesToHttpRequestEvent,
-
     /**
      * Constructor
      */
     constructor() {
+        // Add listener for css hits
         // eslint-disable-next-line no-undef
         chrome.runtime.onMessage.addListener(
             (request, sender) => {
@@ -42,24 +37,15 @@ export class FilteringLog {
     /**
      * Add request to log
      *
-     * @param tabId
-     * @param requestUrl
-     * @param frameUrl
-     * @param requestRule
+     * @param {Number} tabId - tab id
+     * @param {String} requestUrl - url
+     * @param {Object} requestRule - rule
      */
-    addHttpRequestEvent(tabId, requestUrl, frameUrl, requestRule) {
-        const requestDomain = getDomainName(requestUrl);
-        const frameDomain = getDomainName(frameUrl);
-
+    addHttpRequestEvent(tabId, requestUrl, requestRule) {
         const filteringEvent = {
+            eventType: 'REQUEST',
             requestUrl,
-            requestDomain,
-            frameUrl,
-            frameDomain,
-            requestType: 'DOCUMENT',
-            requestThirdParty: false,
             rule: requestRule,
-            eventType: 'URL',
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -68,24 +54,21 @@ export class FilteringLog {
     /**
      * Add event to log with the corresponding rule
      *
-     * @param tabId
-     * @param elementString
-     * @param frameUrl
-     * @param requestRule
+     * @param {Number} tabId - tab id
+     * @param {String} elementString - element string presentation
+     * @param {String} frameUrl - Frame url
+     * @param {Object} rule - css rule
      */
-    addCosmeticEvent(tabId, elementString, frameUrl, requestRule) {
-        if (!requestRule) {
+    addCosmeticEvent(tabId, elementString, frameUrl, rule) {
+        if (!rule) {
             return;
         }
 
-        const frameDomain = getDomainName(frameUrl);
         const filteringEvent = {
+            eventType: 'CSS',
             element: elementString,
             frameUrl,
-            frameDomain,
-            requestType: 'DOCUMENT',
-            rule: requestRule,
-            eventType: 'CSS',
+            rule,
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -99,15 +82,10 @@ export class FilteringLog {
      * @param {Object} rule - script rule
      */
     addScriptInjectionEvent(tabId, frameUrl, rule) {
-        const frameDomain = getDomainName(frameUrl);
         const filteringEvent = {
-            script: true,
-            requestUrl: frameUrl,
-            frameUrl,
-            frameDomain,
-            requestType: 'DOCUMENT',
-            rule,
             eventType: 'SCRIPT',
+            frameUrl,
+            rule,
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -116,29 +94,37 @@ export class FilteringLog {
     /**
      * Add cookie event to log
      *
-     * @param tabId
-     * @param frameUrl
-     * @param rule
+     * @param {Number} tabId - tab id
+     * @param {String} frameUrl - Frame url
+     * @param {Object} rule - cookie rule
      */
     addCookieEvent(tabId, frameUrl, rule) {
-        const frameDomain = getDomainName(frameUrl);
         const filteringEvent = {
-            frameDomain,
-            requestType: 'COOKIE',
-            rule,
             eventType: 'COOKIE',
+            frameUrl,
+            rule,
         };
 
         this.pushFilteringEvent(filteringEvent);
     }
 
+    /**
+     * Push event to listeners
+     *
+     * TODO: This is the place to notify UI
+     *
+     * @param event
+     */
     // eslint-disable-next-line class-methods-use-this
     pushFilteringEvent(event) {
-        if (event.rule) {
-            console.log(`[FILTERING-LOG][${event.eventType}] Event rule: ${event.rule.getText()}`);
-            return;
+        // Temp implementation
+
+        if (event.eventType === 'REQUEST') {
+            console.log(`[FILTERING-LOG] Request: ${event.requestUrl}`);
         }
 
-        console.log(`[FILTERING-LOG] Request: ${event.requestUrl}`);
+        if (event.rule) {
+            console.log(`[FILTERING-LOG][${event.eventType}] Event rule: ${event.rule.getText()}`);
+        }
     }
 }

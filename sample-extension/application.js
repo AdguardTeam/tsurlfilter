@@ -58,7 +58,7 @@ export class Application {
         const requestRule = result.getBasicResult();
 
         if (details.type === 'main_frame') {
-            this.filteringLog.addHttpRequestEvent(details.tabId, details.url, details.url, requestRule);
+            this.filteringLog.addHttpRequestEvent(details.tabId, details.url, requestRule);
         }
 
         if (requestRule
