@@ -8,7 +8,12 @@ export interface CosmeticContentResult {
     append(rule: CosmeticRule): void;
 
     /**
-     * Returns collected rules
+     * Collection of generic (domain insensitive) rules
      */
-    getRules(): CosmeticRule[];
+    generic: CosmeticRule[];
+
+    /**
+     * Collection of domain specific rules
+     */
+    specific: CosmeticRule[];
 }

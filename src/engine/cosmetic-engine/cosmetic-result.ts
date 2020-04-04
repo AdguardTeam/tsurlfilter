@@ -29,13 +29,6 @@ export class CosmeticResult {
     }
 
     /**
-     * Rules of current cosmetic result
-     */
-    public getRules(): CosmeticRule[] {
-        return [...this.elementHiding.getRules(), ...this.CSS.getRules(), ...this.JS.getRules()];
-    }
-
-    /**
      * Script rules
      */
     public getScriptRules(): CosmeticRule[] {

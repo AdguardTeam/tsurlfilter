@@ -8,12 +8,12 @@ import { buildScriptText } from './injection-helper.js';
  * @param cosmeticResult
  */
 export const applyScripts = (tabId, cosmeticResult) => {
-    const scripts = [...cosmeticResult.JS.generic, ...cosmeticResult.JS.specific];
-    if (scripts.length === 0) {
+    const cosmeticRules = cosmeticResult.getScriptRules();
+    if (cosmeticRules.length === 0) {
         return;
     }
 
-    const scriptsCode = scripts.join('\r\n');
+    const scriptsCode = cosmeticRules.map((x) => x.script).join('\r\n');
     const toExecute = buildScriptText(scriptsCode);
 
     chrome.tabs.executeScript(tabId, {
@@ -22,20 +22,46 @@ export const applyScripts = (tabId, cosmeticResult) => {
 };
 
 /**
+ * Urlencodes rule text.
+ *
+ * @param ruleText
+ * @return {string}
+ */
+const escapeRule = (ruleText) => encodeURIComponent(ruleText)
+    .replace(/['()]/g, (match) => ({ "'": '%27', '(': '%28', ')': '%29' }[match]));
+
+/**
+ * Creates rules style string
+ *
+ * @param rule
+ * @return {string}
+ */
+const mapRuleStyle = (rule) => {
+    // eslint-disable-next-line max-len
+    const contentMarker = `content: 'adguard${rule.getFilterListId()}${encodeURIComponent(';')}${escapeRule(rule.getText())}' !important`;
+
+    return `${rule.getContent()} { display: none!important; ${contentMarker};}`;
+};
+
+/**
  * Applies css from cosmetic result
+ *
+ * Patches rule selector adding adguard mark rule info in the content attribute
+ * Example:
+ * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
  *
  * @param tabId
  * @param cosmeticResult
  */
 export const applyCss = (tabId, cosmeticResult) => {
     const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
-        .map((selector) => `${selector} { display: none!important; }`);
+        .map(mapRuleStyle);
 
     const extendedCssStylesheets = [
         ...cosmeticResult.elementHiding.genericExtCss,
         ...cosmeticResult.elementHiding.specificExtCss,
     ]
-        .map(((selector) => `${selector} { display: none!important}`))
+        .map(mapRuleStyle)
         .join('\n');
 
     // Apply extended css stylesheets
@@ -44,12 +70,30 @@ export const applyCss = (tabId, cosmeticResult) => {
                 (() => {
                     const { ExtendedCss } = AGUrlFilter;
                     const extendedCssContent = \`${extendedCssStylesheets}\`;
-                    const extendedCss = new ExtendedCss({styleSheet: extendedCssContent});
+                    const extendedCss = new ExtendedCss({
+                        styleSheet: extendedCssContent, 
+                        beforeStyleApplied: CssHitsCounter.countAffectedByExtendedCss
+                    });
                     extendedCss.apply();
                 })();
             `,
     });
 
+    // Init css hits counter
+    // TODO: Pass message to filtering log
+    chrome.tabs.executeScript(tabId, {
+        code: `
+                (() => {
+                    CssHitsCounter.init((stats) => {
+                        console.debug('Css stats ready');
+                        console.debug(stats);
+                        //getContentPage().sendMessage({ type: 'saveCssHitStats', stats });
+                    });
+                })();
+            `,
+    });
+
+    // Apply css
     const styleText = css.join('\n');
     const injectDetails = {
         code: styleText,

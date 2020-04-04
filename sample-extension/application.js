@@ -86,12 +86,7 @@ export class Application {
         applyCss(tabId, cosmeticResult);
         applyScripts(tabId, cosmeticResult);
 
-        // const domainName = adguard.utils.url.getHost(url);
-        cosmeticResult.getScriptRules().forEach((scriptRule) => {
-            // if (!scriptRule.rule.isDomainSpecific(domainName)) {
-            //     return;
-            // }
-
+        cosmeticResult.JS.specific.forEach((scriptRule) => {
             this.filteringLog.addScriptInjectionEvent(
                 tabId,
                 url,

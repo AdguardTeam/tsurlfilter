@@ -9,33 +9,28 @@ export class CosmeticStylesResult implements CosmeticContentResult {
     /**
      * Collection of generic rules
      */
-    public generic: string[];
+    public generic: CosmeticRule[];
 
     /**
      * Collection of specific rules
      */
-    public specific: string[];
+    public specific: CosmeticRule[];
 
     /**
      * Collection of generic extcss rules
      */
-    public genericExtCss: string[];
+    public genericExtCss: CosmeticRule[];
 
     /**
      * Collection of specific extcss rules
      */
-    public specificExtCss: string[];
-
-    /**
-     * Rules
-     */
-    private rules: CosmeticRule[] = [];
+    public specificExtCss: CosmeticRule[];
 
     constructor() {
-        this.generic = [] as string[];
-        this.specific = [] as string[];
-        this.genericExtCss = [] as string[];
-        this.specificExtCss = [] as string[];
+        this.generic = [];
+        this.specific = [];
+        this.genericExtCss = [];
+        this.specificExtCss = [];
     }
 
     /**
@@ -43,26 +38,16 @@ export class CosmeticStylesResult implements CosmeticContentResult {
      * @param rule
      */
     append(rule: CosmeticRule): void {
-        const ruleContent = rule.getContent();
         if (rule.isGeneric()) {
             if (rule.isExtendedCss()) {
-                this.genericExtCss.push(ruleContent);
+                this.genericExtCss.push(rule);
             } else {
-                this.generic.push(ruleContent);
+                this.generic.push(rule);
             }
         } else if (rule.isExtendedCss()) {
-            this.specificExtCss.push(ruleContent);
+            this.specificExtCss.push(rule);
         } else {
-            this.specific.push(ruleContent);
+            this.specific.push(rule);
         }
-
-        this.rules.push(rule);
-    }
-
-    /**
-     * Returns rules collected
-     */
-    getRules(): CosmeticRule[] {
-        return this.rules;
     }
 }
