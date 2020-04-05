@@ -22,8 +22,7 @@
     "content_scripts": [
         {
             "js": [
-                "engine-content-script.js",
-                "filtering-log/css-hits-counter.js"
+                "engine-content-script.js"
             ],
             "all_frames": true,
             "matches": [

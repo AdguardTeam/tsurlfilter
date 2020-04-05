@@ -71,10 +71,11 @@ export const applyCss = (tabId, cosmeticResult) => {
                     const { ExtendedCss } = AGUrlFilter;
                     const extendedCssContent = \`${extendedCssStylesheets}\`;
                     const extendedCss = new ExtendedCss({
-                        styleSheet: extendedCssContent, 
-                        beforeStyleApplied: CssHitsCounter.countAffectedByExtendedCss
+                        styleSheet: extendedCssContent
                     });
                     extendedCss.apply();
+                    
+                    console.debug('Extended css applied');
                 })();
             `,
     });
@@ -83,12 +84,16 @@ export const applyCss = (tabId, cosmeticResult) => {
     chrome.tabs.executeScript(tabId, {
         code: `
                 (() => {
-                    CssHitsCounter.init((stats) => {
+                    // Init css hits counter
+                    const { CssHitsCounter } = AGUrlFilter;
+                    window.cssCssHitsCounter = new CssHitsCounter((stats) => {
                         console.debug('Css stats ready');
                         console.debug(stats);
                         
                         chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
                     });
+                    
+                    console.debug('CssHitsCounter initialized');
                 })();
             `,
     });
