@@ -29,6 +29,7 @@ export default class ElementUtils {
 
     /**
      * Appends node children to the array
+     *
      * @param node - element whose children we would like to add
      * @param arrayWithNodes - array where we add children
      */
@@ -43,6 +44,7 @@ export default class ElementUtils {
 
     /**
      * Adds elements into array if they are not in the array yet
+     *
      * @param {*} targetArray
      * @param {*} sourceArray
      */
@@ -99,7 +101,6 @@ export default class ElementUtils {
 
     /**
      * Parses hits info from style content
-     * in extended style case
      *
      * @param content style
      * @param attributeMarker
