@@ -5,12 +5,13 @@ import { Application } from './application.js';
     /**
      * Loads rules
      *
-     * @return {Promise<void>}
+     * @return rules text
      */
-    const loadRules = async () => new Promise(((resolve) => {
+    const loadRules = async () => {
         const url = chrome.runtime.getURL('test-rules.txt');
-        fetch(url).then((response) => resolve(response.text()));
-    }));
+        const response = await fetch(url);
+        return response.text();
+    };
 
     /**
      * If url is http or websocket
@@ -25,7 +26,7 @@ import { Application } from './application.js';
 
     // Load rules and start engine
     const rulesText = await loadRules();
-    await application.startEngine(rulesText);
+    application.startEngine(rulesText);
 
     /**
      * Add on before request listener

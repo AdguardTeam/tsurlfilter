@@ -94,6 +94,10 @@ export default class ElementUtils {
         }
 
         const filterId = parseInt(filterIdAndRuleText.substring(0, index), 10);
+        if (Number.isNaN(filterId)) {
+            return null;
+        }
+
         const ruleText = filterIdAndRuleText.substring(index + 1);
 
         return { filterId, ruleText };

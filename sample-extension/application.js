@@ -22,7 +22,7 @@ export class Application {
      *
      * @param rulesText
      */
-    async startEngine(rulesText) {
+    startEngine(rulesText) {
         console.log('Starting url filter engine');
 
         const list = new AGUrlFilter.StringRuleList(1, rulesText, false);

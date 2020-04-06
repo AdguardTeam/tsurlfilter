@@ -11,6 +11,9 @@ describe('Element utils - parsing', () => {
         result = ElementUtils.parseInfo('marker:1', 'marker');
         expect(result).toBeNull();
 
+        result = ElementUtils.parseInfo('\'adguard-;ruleText\'', 'adguard');
+        expect(result).toBeNull();
+
         result = ElementUtils.parseInfo('\'adguard1;ruleText\'', 'adguard');
         expect(result).not.toBeNull();
         expect(result?.filterId).toBe(1);

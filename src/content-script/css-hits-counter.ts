@@ -206,7 +206,7 @@ export default class CssHitsCounter {
         end += step;
 
         // Start next task with some delay
-        setTimeout(() => {
+        window.setTimeout(() => {
             this.countCssHitsBatch(elements, start, end, step, result, callback);
         }, CssHitsCounter.COUNT_CSS_HITS_BATCH_DELAY);
     }
@@ -233,8 +233,7 @@ export default class CssHitsCounter {
                 continue;
             }
 
-            const { filterId } = cssHitData;
-            const { ruleText } = cssHitData;
+            const { filterId, ruleText } = cssHitData;
             const ruleAndFilterString = filterId + RULE_FILTER_SEPARATOR + ruleText;
 
             if (this.hitsStorage.isCounted(element, ruleAndFilterString)) {
@@ -262,7 +261,7 @@ export default class CssHitsCounter {
             return;
         }
 
-        let timeoutId: any = null;
+        let timeoutId: number | null = null;
         this.observer = new MutationObserver(((mutationRecords) => {
             // Collect probe elements, count them, then remove from their targets
             const probeElements: Element[] = [];
@@ -334,11 +333,11 @@ export default class CssHitsCounter {
 
             // debounce counting all css hits when mutation record fires
             if (timeoutId) {
-                clearTimeout(timeoutId);
+                window.clearTimeout(timeoutId);
             }
-            timeoutId = setTimeout(() => {
+            timeoutId = window.setTimeout(() => {
                 this.countAllCssHits();
-                clearTimeout(timeoutId);
+                window.clearTimeout(timeoutId!);
             }, CssHitsCounter.COUNT_ALL_CSS_HITS_TIMEOUT_MS);
         }));
 
@@ -382,10 +381,6 @@ export default class CssHitsCounter {
      * @param nodeTag
      */
     private static isIgnoredNodeTag(nodeTag: string): boolean {
-        if (!nodeTag) {
-            return false;
-        }
-
         const ignoredTags = ['script'];
         return ignoredTags.includes(nodeTag.toLowerCase());
     }

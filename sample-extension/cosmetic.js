@@ -34,13 +34,17 @@ const escapeRule = (ruleText) => encodeURIComponent(ruleText)
  * Creates rules style string
  *
  * @param rule
+ * @param addMarker
  * @return {string}
  */
-const mapRuleStyle = (rule) => {
-    // eslint-disable-next-line max-len
-    const contentMarker = `content: 'adguard${rule.getFilterListId()}${encodeURIComponent(';')}${escapeRule(rule.getText())}' !important`;
+const createRuleStyle = (rule, addMarker) => {
+    let contentMarker = '';
+    if (addMarker) {
+        // eslint-disable-next-line max-len
+        contentMarker = ` content: 'adguard${rule.getFilterListId()}${encodeURIComponent(';')}${escapeRule(rule.getText())}' !important;`;
+    }
 
-    return `${rule.getContent()} { display: none!important; ${contentMarker};}`;
+    return `${rule.getContent()} { display: none!important;${contentMarker}}`;
 };
 
 /**
@@ -54,14 +58,16 @@ const mapRuleStyle = (rule) => {
  * @param cosmeticResult
  */
 export const applyCss = (tabId, cosmeticResult) => {
+    const ADD_CSS_HITS_MARKER = true;
+
     const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
-        .map(mapRuleStyle);
+        .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER));
 
     const extendedCssStylesheets = [
         ...cosmeticResult.elementHiding.genericExtCss,
         ...cosmeticResult.elementHiding.specificExtCss,
     ]
-        .map(mapRuleStyle)
+        .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER))
         .join('\n');
 
     // Apply extended css stylesheets
@@ -86,7 +92,7 @@ export const applyCss = (tabId, cosmeticResult) => {
                 (() => {
                     // Init css hits counter
                     const { CssHitsCounter } = AGUrlFilter;
-                    window.cssCssHitsCounter = new CssHitsCounter((stats) => {
+                    const cssCssHitsCounter = new CssHitsCounter((stats) => {
                         console.debug('Css stats ready');
                         console.debug(stats);
                         
