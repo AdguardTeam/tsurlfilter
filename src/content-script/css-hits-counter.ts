@@ -1,7 +1,17 @@
 /* eslint-disable no-param-reassign */
 
+import { IAffectedElement } from 'extended-css';
 import ElementUtils from './element-utils';
 import HitsStorage from './hits-storage';
+
+/**
+ * Counted element interface
+ */
+interface ICountedElement {
+    filterId: number;
+    ruleText: string;
+    element: string;
+}
 
 /**
  * Class represents collecting css style hits process
@@ -39,7 +49,7 @@ export default class CssHitsCounter {
     /**
      * Callback function for counted css hits handling
      */
-    private onCssHitsFoundCallback: any;
+    private onCssHitsFoundCallback: (x: ICountedElement[]) => void;
 
     /**
      * Hits storage
@@ -61,7 +71,7 @@ export default class CssHitsCounter {
      * We are waiting for 'load' event and start calculation.
      * @param callback - ({filterId: number; ruleText: string; element: string}[]) => {} handles counted css hits
      */
-    constructor(callback: any) {
+    constructor(callback: (x: ICountedElement[]) => void) {
         if (typeof callback !== 'function') {
             throw new Error('AdGuard: "callback" parameter is not a function');
         }
@@ -93,7 +103,7 @@ export default class CssHitsCounter {
      * @return {object} affectedEl
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public countAffectedByExtendedCss(affectedEl: any): any {
+    public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
         if (typeof this.onCssHitsFoundCallback !== 'function') {
             return affectedEl;
         }
@@ -165,7 +175,7 @@ export default class CssHitsCounter {
             CssHitsCounter.CSS_HITS_BATCH_SIZE,
             CssHitsCounter.CSS_HITS_BATCH_SIZE,
             [],
-            (result: any): void => {
+            (result: ICountedElement[]): void => {
                 if (result.length > 0) {
                     this.onCssHitsFoundCallback(result);
                 }
@@ -193,8 +203,8 @@ export default class CssHitsCounter {
         start: number,
         end: number,
         step: number,
-        result: {filterId: number; ruleText: string; element: string}[],
-        callback: any): void {
+        result: ICountedElement[],
+        callback: (x: ICountedElement[]) => void): void {
         const length = Math.min(end, elements.length);
         result = result.concat(this.countCssHitsForElements(elements, start, length));
         if (length === elements.length) {
