@@ -149,6 +149,8 @@ describe('Test cosmetic engine', () => {
         expect(result.JS.specific[0].getContent()).toContain(jsRuleText);
         expect(result.JS.generic).toHaveLength(1);
         expect(result.JS.generic[0].getContent()).toContain(jsRuleText);
+
+        expect(result.getScriptRules()).toHaveLength(2);
     });
 
     it('checks cosmetic JS exceptions', () => {

@@ -23,11 +23,13 @@ describe('NetworkRule - csp rules', () => {
 
     it('works if invalid csp modifier is detected', () => {
         expect(() => {
+            new NetworkRule('||example.org$csp=', 0);
+        }).toThrowError(/CSP directive must not be empty*/);
+
+        expect(() => {
             new NetworkRule('||example.org$csp=report-uri /csp-violation-report-endpoint/', 0);
         }).toThrowError(/Forbidden CSP directive:*/);
-    });
 
-    it('works if invalid csp modifier is detected', () => {
         expect(() => {
             new NetworkRule('||example.org$csp=report-to /csp-violation-report-endpoint/', 0);
         }).toThrowError(/Forbidden CSP directive:*/);
@@ -65,6 +67,12 @@ describe('NetworkRule - replace rules', () => {
         expect(rule).toBeTruthy();
         expect(rule.getAdvancedModifier()).toBeInstanceOf(ReplaceModifier);
         expect(rule.getAdvancedModifierValue()).toBe(replaceOptionText);
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('||example.org^$replace=/1/2/3/', 0);
+        }).toThrowError(/Cannot parse*/);
     });
 });
 
@@ -210,5 +218,11 @@ describe('NetworkRule - cookie rules', () => {
         expect(cookieModifier.matches('aaaa')).toBeFalsy();
         expect(cookieModifier.getMaxAge()).toBe(15);
         expect(cookieModifier.getSameSite()).toBe('lax');
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('||example.org^$cookie=__cfduid;maxAge=15;sameSite=lax;some=some', 0);
+        }).toThrowError(/Unknown \$cookie option:*/);
     });
 });

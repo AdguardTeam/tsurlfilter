@@ -3,6 +3,7 @@ import { Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { CosmeticOption } from '../../src/engine/matching-result';
+import { config } from '../../src/configuration';
 
 describe('TestEngineMatchRequest', () => {
     it('works if request matches rule', () => {
@@ -10,8 +11,18 @@ describe('TestEngineMatchRequest', () => {
         const list = new StringRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
-        const request = new Request('https://example.org', '', RequestType.Document);
-        const result = engine.matchRequest(request);
+        let request = new Request('https://example.org', '', RequestType.Document);
+        let result = engine.matchRequest(request);
+
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeNull();
+        expect(result.replaceRules).toBeNull();
+        expect(result.cspRules).toBeNull();
+        expect(result.cookieRules).toBeNull();
+        expect(result.stealthRule).toBeNull();
+
+        request = new Request('https://example.org', 'https://example.org', RequestType.Document);
+        result = engine.matchRequest(request);
 
         expect(result.basicRule).toBeNull();
         expect(result.documentRule).toBeNull();
@@ -20,6 +31,20 @@ describe('TestEngineMatchRequest', () => {
         expect(result.cookieRules).toBeNull();
         expect(result.stealthRule).toBeNull();
     });
+});
+
+describe('TestEngine - configuration', () => {
+    const rules = ['||example.org^$third-party'];
+    const list = new StringRuleList(1, rules.join('\n'), false);
+    new Engine(new RuleStorage([list]), {
+        engine: 'test-engine',
+        version: 'test-version',
+        verbose: true,
+    });
+
+    expect(config.engine).toBe('test-engine');
+    expect(config.version).toBe('test-version');
+    expect(config.verbose).toBe(true);
 });
 
 describe('TestEngineMatchRequest - advanced modifiers', () => {
