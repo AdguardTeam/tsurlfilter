@@ -72,10 +72,6 @@ export default class CssHitsCounter {
      * @param callback - ({filterId: number; ruleText: string; element: string}[]) => {} handles counted css hits
      */
     constructor(callback: (x: ICountedElement[]) => void) {
-        if (typeof callback !== 'function') {
-            throw new Error('AdGuard: "callback" parameter is not a function');
-        }
-
         this.onCssHitsFoundCallback = callback;
 
         if (document.readyState === 'complete'
@@ -103,10 +99,6 @@ export default class CssHitsCounter {
      * @return {object} affectedEl
      */
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
-        if (typeof this.onCssHitsFoundCallback !== 'function') {
-            return affectedEl;
-        }
-
         if (affectedEl && affectedEl.rules && affectedEl.rules.length > 0) {
             const result = [];
 
@@ -373,15 +365,7 @@ export default class CssHitsCounter {
      * @returns {({filterId: Number, ruleText: String} | null)}
      */
     private static getCssHitData(element: Element): {filterId: number; ruleText: string} | null {
-        if (!(element instanceof Element)) {
-            return null;
-        }
-
         const style = getComputedStyle(element);
-        if (!style) {
-            return null;
-        }
-
         return ElementUtils.parseInfo(style.content, CssHitsCounter.CONTENT_ATTR_PREFIX);
     }
 

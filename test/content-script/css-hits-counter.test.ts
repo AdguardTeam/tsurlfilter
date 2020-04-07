@@ -18,6 +18,18 @@ describe('CssHitsCounter', () => {
          </div>
         `;
 
+    it('checks class parameters', () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const cssHitsCounter = new CssHitsCounter((stats: any): void => {});
+        cssHitsCounter.stop();
+
+        const elementToCount = {
+            rules: [{ style: { content: 'adguard4;test-rule-ext-css' } }],
+            node: document.getElementById('testDiv')!,
+        };
+        cssHitsCounter.countAffectedByExtendedCss(elementToCount);
+    });
+
     it('checks counting', () => {
         const onCssHitsFound = jest.fn((stats: any): void => {
             expect(stats).toHaveLength(2);
@@ -81,14 +93,20 @@ describe('CssHitsCounter', () => {
         const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
 
         const elementToCount = {
-            rules: [{ style: { content: 'adguard4;test-rule-ext-css' } }],
+            rules: [{ style: { content: 'some' } }],
             node: document.getElementById('testDiv')!,
         };
-        const affectedElement = cssHitsCounter.countAffectedByExtendedCss(elementToCount);
+
+        let affectedElement = cssHitsCounter.countAffectedByExtendedCss(elementToCount);
+        expect(affectedElement).toBe(elementToCount);
+
+        elementToCount.rules[0].style.content = 'adguard4;test-rule-ext-css';
+
+        affectedElement = cssHitsCounter.countAffectedByExtendedCss(elementToCount);
 
         expect(affectedElement).toBe(elementToCount);
 
-        expect(onCssHitsFound).toHaveBeenCalledTimes(2);
+        expect(onCssHitsFound).toHaveBeenCalledTimes(3);
         expect(onCssHitsFound).toHaveBeenLastCalledWith([{
             filterId: 4,
             ruleText: 'test-rule-ext-css',
