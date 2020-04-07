@@ -102,7 +102,6 @@ export default class CssHitsCounter {
      * @param {object} affectedEl
      * @return {object} affectedEl
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
         if (typeof this.onCssHitsFoundCallback !== 'function') {
             return affectedEl;
