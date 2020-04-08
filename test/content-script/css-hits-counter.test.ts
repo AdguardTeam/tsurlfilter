@@ -4,7 +4,6 @@
 
 /* eslint-disable max-len */
 
-import MutationObserver from 'mutation-observer';
 import CssHitsCounter from '../../src/content-script/css-hits-counter';
 
 describe('CssHitsCounter', () => {
@@ -52,35 +51,69 @@ describe('CssHitsCounter', () => {
 
     it('checks counting with mutations', () => {
         const onCssHitsFound = jest.fn((stats: any): void => {
-            console.log(stats);
-
-            expect(stats).toHaveLength(2);
-
-            expect(stats[0].filterId).toBe(1);
-            expect(stats[0].ruleText).toBe('test-rule-one');
-            expect(stats[0].element).toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;test-rule-one\';">');
-
-            expect(stats[1].filterId).toBe(2);
-            expect(stats[1].ruleText).toBe('test-rule-two');
-            expect(stats[1].element).toBe('<div id="hiddenDiv2" style="display: none !important; content:\'adguard2;test-rule-two\' !important;">');
+            expect(stats).not.toBeNull();
         });
 
-        window.MutationObserver = MutationObserver;
+        let mutationObserverRef: any;
+
+        /**
+         * Mock mutation observer class
+         * In case original class doesn't work properly in jest jsdom environment
+         */
+        window.MutationObserver = class {
+            private callback: MutationCallback;
+
+            constructor(callback: MutationCallback) {
+                this.callback = callback;
+
+                // Keep the link to current instance
+                mutationObserverRef = this;
+            }
+
+            // eslint-disable-next-line class-methods-use-this
+            disconnect() {
+                // do nothing;
+            }
+
+            // eslint-disable-next-line class-methods-use-this
+            observe() {
+                // do nothing;
+            }
+
+            // eslint-disable-next-line class-methods-use-this
+            takeRecords(): MutationRecord[] {
+                // do nothing;
+                return [];
+            }
+
+            /**
+             * Mock trigger mutations
+             * @param mutations
+             */
+            public trigger(mutations: MutationRecord[]) {
+                this.callback(mutations, this);
+            }
+        };
 
         const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
 
-        expect(onCssHitsFound).toHaveBeenCalled();
-
-        // Do some mutations
-        document.body.setAttribute('test-attr', 'test-attr-value');
-
         const template = document.createElement('div');
         template.innerHTML = '<div id="mutationDiv" style="display: none !important; content:\'adguard3;test-rule-three\';"></div>';
-        document.body.appendChild(template);
 
-        // TODO: Check mutations
+        const mutationRecord = {
+            addedNodes: [template],
+            type: 'childList',
+            attributeName: 'style',
+            target: document.body,
+        };
+        mutationObserverRef!.trigger([mutationRecord]);
 
-        expect(onCssHitsFound).toHaveBeenCalled();
+        expect(onCssHitsFound).toHaveBeenCalledTimes(2);
+        expect(onCssHitsFound).toHaveBeenLastCalledWith([{
+            filterId: 3,
+            ruleText: 'test-rule-three',
+            element: '<div id="mutationDiv" style="display: none !important; content:\'adguard3;test-rule-three\';">',
+        }]);
 
         cssHitsCounter.stop();
     });
