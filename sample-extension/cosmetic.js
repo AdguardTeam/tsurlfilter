@@ -70,29 +70,12 @@ export const applyCss = (tabId, cosmeticResult) => {
         .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER))
         .join('\n');
 
-    // Apply extended css stylesheets
-    chrome.tabs.executeScript(tabId, {
-        code: `
-                (() => {
-                    const { ExtendedCss } = AGUrlFilter;
-                    const extendedCssContent = \`${extendedCssStylesheets}\`;
-                    const extendedCss = new ExtendedCss({
-                        styleSheet: extendedCssContent
-                    });
-                    extendedCss.apply();
-                    
-                    console.debug('Extended css applied');
-                })();
-            `,
-    });
-
-    // Init css hits counter
     chrome.tabs.executeScript(tabId, {
         code: `
                 (() => {
                     // Init css hits counter
                     const { CssHitsCounter } = AGUrlFilter;
-                    const cssCssHitsCounter = new CssHitsCounter((stats) => {
+                    const cssHitsCounter = new CssHitsCounter((stats) => {
                         console.debug('Css stats ready');
                         console.debug(stats);
                         
@@ -100,6 +83,19 @@ export const applyCss = (tabId, cosmeticResult) => {
                     });
                     
                     console.debug('CssHitsCounter initialized');
+                    
+                    // Apply extended css stylesheets
+                    const { ExtendedCss } = AGUrlFilter;
+                    const extendedCssContent = \`${extendedCssStylesheets}\`;
+                    const extendedCss = new ExtendedCss({
+                        styleSheet: extendedCssContent,
+                        beforeStyleApplied: (el) => {
+                            return cssHitsCounter.countAffectedByExtendedCss(el);
+                        }
+                    });
+                    extendedCss.apply();
+
+                    console.debug('Extended css applied');
                 })();
             `,
     });
