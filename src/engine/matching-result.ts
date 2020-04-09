@@ -1,4 +1,5 @@
 import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
+import { CookieModifier } from '../modifiers/cookie-modifier';
 
 /**
  * CosmeticOption is the enumeration of various content script options.
@@ -145,8 +146,11 @@ export class MatchingResult {
         // Iterate through the list of rules and fill the MatchingResult
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
-                this.cookieRules = [];
+                if (!this.cookieRules) {
+                    this.cookieRules = [];
+                }
                 this.cookieRules.push(rule);
+                continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
                 if (!this.replaceRules) {
@@ -250,10 +254,25 @@ export class MatchingResult {
             return [];
         }
 
+        return MatchingResult.filterAdvancedModifierRules(this.replaceRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+    }
+
+    /**
+     * Filters array of rules according to whitelist rules contained.
+     * Empty advanced modifier whitelists everything.
+     *
+     * @param rules
+     * @param whitelistPredicate whitelist criteria
+     * This function result will be called for testing if rule `x` whitelists rule `r`
+     */
+    private static filterAdvancedModifierRules(
+        rules: NetworkRule[], whitelistPredicate: (r: NetworkRule) => ((x: NetworkRule) => boolean),
+    ): NetworkRule[] {
         const blockingRules: NetworkRule[] = [];
         const whitelistRules: NetworkRule[] = [];
 
-        for (const rule of this.replaceRules) {
+        for (const rule of rules) {
             if (rule.isWhitelist()) {
                 whitelistRules.push(rule);
             } else {
@@ -280,8 +299,7 @@ export class MatchingResult {
 
             const foundReplaceRules: NetworkRule[] = [];
             blockingRules.forEach((blockRule) => {
-                const whitelistingRule = whitelistRules
-                    .find((x) => x.getAdvancedModifierValue() === blockRule.getAdvancedModifierValue());
+                const whitelistingRule = whitelistRules.find(whitelistPredicate(blockRule));
                 if (whitelistingRule) {
                     foundReplaceRules.push(whitelistingRule);
                 } else {
@@ -329,6 +347,36 @@ export class MatchingResult {
         });
 
         return Array.from(rulesByDirective.values());
+    }
+
+    /**
+     * Returns an array of cookie rules
+     */
+    getCookieRules(): NetworkRule[] {
+        if (!this.cookieRules) {
+            return [];
+        }
+
+        const whitelistPredicate = (rule: NetworkRule) => (
+            (whiteRule: NetworkRule): boolean => {
+                const whiteRuleCookieModifier = whiteRule.getAdvancedModifier() as CookieModifier;
+                const ruleCookieModifier = rule.getAdvancedModifier() as CookieModifier;
+
+                if (whiteRule.getAdvancedModifierValue() === rule.getAdvancedModifierValue()) {
+                    return true;
+                }
+
+                // Matches by cookie name
+                if (whiteRuleCookieModifier.matches(ruleCookieModifier.getCookieName())) {
+                    return true;
+                }
+
+                return false;
+            }
+        );
+
+        return MatchingResult.filterAdvancedModifierRules(this.cookieRules,
+            whitelistPredicate);
     }
 
     /**

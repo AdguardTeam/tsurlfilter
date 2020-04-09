@@ -3,6 +3,7 @@ import { Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { CosmeticOption } from '../../src/engine/matching-result';
+import { config } from '../../src/configuration';
 
 describe('TestEngineMatchRequest', () => {
     it('works if request matches rule', () => {
@@ -10,8 +11,18 @@ describe('TestEngineMatchRequest', () => {
         const list = new StringRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
-        const request = new Request('https://example.org', '', RequestType.Document);
-        const result = engine.matchRequest(request);
+        let request = new Request('https://example.org', '', RequestType.Document);
+        let result = engine.matchRequest(request);
+
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeNull();
+        expect(result.replaceRules).toBeNull();
+        expect(result.cspRules).toBeNull();
+        expect(result.cookieRules).toBeNull();
+        expect(result.stealthRule).toBeNull();
+
+        request = new Request('https://example.org', 'https://example.org', RequestType.Document);
+        result = engine.matchRequest(request);
 
         expect(result.basicRule).toBeNull();
         expect(result.documentRule).toBeNull();
@@ -22,12 +33,27 @@ describe('TestEngineMatchRequest', () => {
     });
 });
 
+describe('TestEngine - configuration', () => {
+    const rules = ['||example.org^$third-party'];
+    const list = new StringRuleList(1, rules.join('\n'), false);
+    new Engine(new RuleStorage([list]), {
+        engine: 'test-engine',
+        version: 'test-version',
+        verbose: true,
+    });
+
+    expect(config.engine).toBe('test-engine');
+    expect(config.version).toBe('test-version');
+    expect(config.verbose).toBe(true);
+});
+
 describe('TestEngineMatchRequest - advanced modifiers', () => {
     it('works if advanced modifier rules are found', () => {
         const cspRule = '||example.org^$csp=frame-src \'none\'';
         const replaceRule = '||example.org^$replace=/text-to-be-replaced/new-text/i';
+        const cookieRule = '||example.org^$cookie';
         // TODO: Add more modifiers
-        const rules = [cspRule, replaceRule];
+        const rules = [cspRule, replaceRule, cookieRule];
 
         const list = new StringRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
@@ -41,7 +67,8 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         expect(result.replaceRules && result.replaceRules[0].getText()).toBe(replaceRule);
         expect(result.cspRules && result.cspRules.length).toBe(1);
         expect(result.cspRules && result.cspRules[0].getText()).toBe(cspRule);
-        expect(result.cookieRules).toBeNull();
+        expect(result.cookieRules && result.cookieRules.length).toBe(1);
+        expect(result.cookieRules && result.cookieRules[0].getText()).toBe(cookieRule);
         expect(result.stealthRule).toBeNull();
     });
 });
@@ -167,10 +194,10 @@ describe('TestEngineCosmeticResult - js', () => {
         genericJsRule,
     ];
 
-    const list = new StringRuleList(1, rules.join('\n'), false);
-    const engine = new Engine(new RuleStorage([list]));
+    it('works if returns correct cosmetic js result', () => {
+        const list = new StringRuleList(1, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
 
-    it('works if returns correct cosmetic css result', () => {
         let result = engine.getCosmeticResult('an-other-domain.org', CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.generic.length).toEqual(1);
@@ -185,5 +212,25 @@ describe('TestEngineCosmeticResult - js', () => {
 
         expect(result.JS.generic.length).toEqual(0);
         expect(result.JS.specific.length).toEqual(1);
+    });
+
+    it('works javascript rules are ignored with filter list setting', () => {
+        const list = new StringRuleList(1, rules.join('\n'), false, true);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let result = engine.getCosmeticResult('an-other-domain.org', CosmeticOption.CosmeticOptionAll);
+
+        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.specific.length).toEqual(0);
+
+        result = engine.getCosmeticResult('example.org', CosmeticOption.CosmeticOptionAll);
+
+        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.specific.length).toEqual(0);
+
+        result = engine.getCosmeticResult('example.org', CosmeticOption.CosmeticOptionJS);
+
+        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.specific.length).toEqual(0);
     });
 });

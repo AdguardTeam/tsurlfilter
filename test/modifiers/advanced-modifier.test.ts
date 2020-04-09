@@ -2,6 +2,7 @@
 import { NetworkRule } from '../../src';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
+import { CookieModifier } from '../../src/modifiers/cookie-modifier';
 
 describe('NetworkRule - csp rules', () => {
     it('works if csp modifier is correctly parsed', () => {
@@ -22,11 +23,13 @@ describe('NetworkRule - csp rules', () => {
 
     it('works if invalid csp modifier is detected', () => {
         expect(() => {
+            new NetworkRule('||example.org$csp=', 0);
+        }).toThrowError(/CSP directive must not be empty*/);
+
+        expect(() => {
             new NetworkRule('||example.org$csp=report-uri /csp-violation-report-endpoint/', 0);
         }).toThrowError(/Forbidden CSP directive:*/);
-    });
 
-    it('works if invalid csp modifier is detected', () => {
         expect(() => {
             new NetworkRule('||example.org$csp=report-to /csp-violation-report-endpoint/', 0);
         }).toThrowError(/Forbidden CSP directive:*/);
@@ -64,6 +67,12 @@ describe('NetworkRule - replace rules', () => {
         expect(rule).toBeTruthy();
         expect(rule.getAdvancedModifier()).toBeInstanceOf(ReplaceModifier);
         expect(rule.getAdvancedModifierValue()).toBe(replaceOptionText);
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('||example.org^$replace=/1/2/3/', 0);
+        }).toThrowError(/Cannot parse*/);
     });
 });
 
@@ -146,5 +155,74 @@ describe('NetworkRule - replace rules apply', () => {
         const applyFunc = modifier.getApplyFunc();
         expect(applyFunc).toBeTruthy();
         expect(applyFunc(input)).toBe(expected);
+    });
+});
+
+describe('NetworkRule - cookie rules', () => {
+    it('works if cookie modifier is correctly parsed', () => {
+        const cookieOptionText = 'c_user';
+        const rule = new NetworkRule(`||facebook.com^$third-party,cookie=${cookieOptionText}`, 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(CookieModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(cookieOptionText);
+
+        const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
+        expect(cookieModifier.isEmpty()).toBeFalsy();
+        expect(cookieModifier.matches('c_user')).toBeTruthy();
+        expect(cookieModifier.matches('not_c_user')).toBeFalsy();
+    });
+
+    it('works if cookie modifier is correctly parsed', () => {
+        const cookieOptionText = 'c_user';
+        const rule = new NetworkRule(`$cookie=${cookieOptionText}`, 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(CookieModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(cookieOptionText);
+
+        const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
+        expect(cookieModifier.isEmpty()).toBeFalsy();
+        expect(cookieModifier.matches('c_user')).toBeTruthy();
+        expect(cookieModifier.matches('not_c_user')).toBeFalsy();
+    });
+
+    it('works if cookie modifier regexp is correctly parsed', () => {
+        const cookieOptionText = '/__utm[a-z]/';
+        const rule = new NetworkRule(`$cookie=${cookieOptionText}`, 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(CookieModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(cookieOptionText);
+
+        const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
+        expect(cookieModifier.isEmpty()).toBeFalsy();
+        expect(cookieModifier.matches('__utma')).toBeTruthy();
+        expect(cookieModifier.matches('__utm0')).toBeFalsy();
+    });
+
+    it('works if empty cookie modifier is correctly parsed', () => {
+        const rule = new NetworkRule('@@||example.org^$cookie', 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(CookieModifier);
+        expect(rule.getAdvancedModifierValue()).toBe('');
+
+        const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
+        expect(cookieModifier.isEmpty()).toBeTruthy();
+        expect(cookieModifier.matches('123')).toBeTruthy();
+        expect(cookieModifier.matches('aaaa')).toBeTruthy();
+    });
+
+    it('works if cookie modifier options are correctly parsed', () => {
+        const cookieOptionText = '__cfduid;maxAge=15;sameSite=lax';
+        const rule = new NetworkRule(`$cookie=${cookieOptionText}`, 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(CookieModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(cookieOptionText);
+
+        const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
+        expect(cookieModifier.isEmpty()).toBeFalsy();
+        expect(cookieModifier.matches('__cfduid')).toBeTruthy();
+        expect(cookieModifier.matches('aaaa')).toBeFalsy();
+        expect(cookieModifier.getMaxAge()).toBe(15);
+        expect(cookieModifier.getSameSite()).toBe('lax');
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('||example.org^$cookie=__cfduid;maxAge=15;sameSite=lax;some=some', 0);
+        }).toThrowError(/Unknown \$cookie option:*/);
     });
 });

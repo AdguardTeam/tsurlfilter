@@ -100,6 +100,7 @@
     "fs-extra": "^8.1.0",
     "husky": "^4.2.1",
     "jest": "^24.9.0",
+    "jsdom": "^16.2.2",
     "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",
     "rimraf": "^3.0.1",
@@ -114,8 +115,8 @@
   },
   "dependencies": {
     "@rollup/plugin-typescript": "^2.1.0",
-    "tldts": "^5.6.3",
-    "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.2",
-    "scriptlets": "https://github.com/AdguardTeam/Scriptlets.git#v1.1.10"
+    "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.3",
+    "scriptlets": "https://github.com/AdguardTeam/Scriptlets.git#v1.1.13",
+    "tldts": "^5.6.3"
   }
 }

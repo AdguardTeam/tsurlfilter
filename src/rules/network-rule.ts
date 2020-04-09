@@ -1,12 +1,13 @@
 // eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
-import { SimpleRegex } from '../simple-regex';
+import { SimpleRegex } from './simple-regex';
 import { Request, RequestType } from '../request';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils';
 import { IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
+import { CookieModifier } from '../modifiers/cookie-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -388,10 +389,14 @@ export class NetworkRule implements rule.IRule {
             || this.pattern === ''
             || this.pattern.length < 3
         ) {
-            if (this.permittedDomains === null || this.permittedDomains!.length === 0) {
-                // Rule matches too much and does not have any domain restriction
-                // We should not allow this kind of rules
-                throw new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific');
+            // Except cookie rules, they have their own atmosphere
+            if (!(this.advancedModifier instanceof CookieModifier)) {
+                if (this.permittedDomains === null || this.permittedDomains!.length === 0) {
+                    // Rule matches too much and does not have any domain restriction
+                    // We should not allow this kind of rules
+                    // eslint-disable-next-line max-len
+                    throw new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific');
+                }
             }
         }
 
@@ -782,7 +787,11 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new ReplaceModifier(optionValue);
                 break;
 
-                // TODO: Add $cookie
+            case 'cookie':
+                this.setOptionEnabled(NetworkRuleOption.Cookie, true);
+                this.advancedModifier = new CookieModifier(optionValue);
+                break;
+
                 // TODO: Add $redirect
 
             default:

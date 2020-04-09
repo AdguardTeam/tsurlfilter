@@ -12,7 +12,8 @@
         "wss://*/*",
         "webRequest",
         "webRequestBlocking",
-        "webNavigation"
+        "webNavigation",
+        "cookies"
     ],
     "background": {
         "page": "background.html",

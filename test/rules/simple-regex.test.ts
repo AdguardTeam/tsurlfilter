@@ -1,4 +1,4 @@
-import { SimpleRegex } from '../src/simple-regex';
+import { SimpleRegex } from '../../src/rules/simple-regex';
 
 describe('SimpleRegex.patternToRegexp', () => {
     it('works if simple pattern is transformed properly', () => {

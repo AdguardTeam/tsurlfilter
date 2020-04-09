@@ -1,5 +1,6 @@
 import { CosmeticStylesResult } from './cosmetic-styles-result';
 import { CosmeticScriptsResult } from './cosmetic-scripts-result';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 
 /**
  * Cosmetic result is the representation of rules
@@ -25,5 +26,12 @@ export class CosmeticResult {
         this.elementHiding = new CosmeticStylesResult();
         this.CSS = new CosmeticStylesResult();
         this.JS = new CosmeticScriptsResult();
+    }
+
+    /**
+     * Script rules
+     */
+    public getScriptRules(): CosmeticRule[] {
+        return this.JS.getRules();
     }
 }

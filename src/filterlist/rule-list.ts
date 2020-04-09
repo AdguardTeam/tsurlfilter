@@ -52,18 +52,25 @@ export class StringRuleList implements IRuleList {
      */
     private readonly ignoreCosmetic: boolean;
 
+    /**
+     * Whether to ignore javascript cosmetic rules or not
+     */
+    private readonly ignoreJS: boolean;
+
 
     /**
      * Constructor
      *
      * @param listId
      * @param ruleText
-     * @param ignoreCosmetic
+     * @param ignoreCosmetic (Optional) default false
+     * @param ignoreJS (Optional) default false
      */
-    constructor(listId: number, ruleText: string, ignoreCosmetic: boolean) {
+    constructor(listId: number, ruleText: string, ignoreCosmetic?: boolean, ignoreJS?: boolean) {
         this.id = listId;
         this.rulesText = ruleText;
-        this.ignoreCosmetic = ignoreCosmetic;
+        this.ignoreCosmetic = !!ignoreCosmetic;
+        this.ignoreJS = !!ignoreJS;
     }
 
     /**
@@ -87,7 +94,7 @@ export class StringRuleList implements IRuleList {
      */
     newScanner(): RuleScanner {
         const reader = new StringLineReader(this.rulesText);
-        return new RuleScanner(reader, this.id, this.ignoreCosmetic);
+        return new RuleScanner(reader, this.id, this.ignoreCosmetic, this.ignoreJS);
     }
 
     /**

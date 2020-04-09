@@ -63,10 +63,10 @@ testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)
 testcases.adguard.com,surge.sh###subscribe-to-test-csp-rules-filter
 !
 ! Case 2
-||testcases.adguard.com$csp=img-src https:
-||surge.sh$csp=img-src https:
-||testcases.adguard.com$csp=img-src adguard.com
-||surge.sh$csp=img-src adguard.com
+!||testcases.adguard.com$csp=img-src https:
+!||surge.sh$csp=img-src https:
+!||testcases.adguard.com$csp=img-src adguard.com
+!||surge.sh$csp=img-src adguard.com
 
 !
 ! Title: Rules for scriptlet rules test
@@ -96,3 +96,6 @@ testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__t
 testcases.adguard.com,surge.sh#%#//scriptlet("abort-on-property-read", "propReadCaseAG")
 testcases.adguard.com,surge.sh##+js(abort-on-property-read.js, propReadCaseUBO)
 testcases.adguard.com,surge.sh#$#abort-on-property-read propReadCaseABP
+
+! Cookie test rules
+||testcases.adguard.com^$cookie=test_cookie;maxAge=15

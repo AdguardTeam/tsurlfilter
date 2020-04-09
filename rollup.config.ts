@@ -10,7 +10,7 @@ const libraryName = 'AGUrlFilter';
 
 const contentScriptFilename = 'AGUrlFilterContentScript';
 const contentScriptConfig = {
-    input: 'src/content-script/content-script.ts',
+    input: 'src/content-script/index.ts',
     output: [
         {
             file: `dist/${contentScriptFilename}.js`,

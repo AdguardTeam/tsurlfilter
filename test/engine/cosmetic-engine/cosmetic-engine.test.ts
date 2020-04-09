@@ -47,9 +47,11 @@ describe('Test cosmetic engine', () => {
         const result = cosmeticEngine.match('example.org', true, true, true);
         expect(result).toBeDefined();
 
-        expect(result.elementHiding.generic).toContain(genericRuleContent);
-        expect(result.elementHiding.generic).not.toContain(genericDisabledRuleContent);
-        expect(result.elementHiding.specific).toContain(specificRuleContent);
+        expect(result.elementHiding.generic).toHaveLength(1);
+        expect(result.elementHiding.generic[0].getContent()).toContain(genericRuleContent);
+        expect(result.elementHiding.generic[0].getContent()).not.toContain(genericDisabledRuleContent);
+        expect(result.elementHiding.specific).toHaveLength(1);
+        expect(result.elementHiding.specific[0].getContent()).toContain(specificRuleContent);
     });
 
     it('finds generic rules for domain without specific rules', () => {
@@ -57,9 +59,10 @@ describe('Test cosmetic engine', () => {
         const result = cosmeticEngine.match('example.com', true, true, true);
         expect(result).toBeDefined();
 
-        expect(result.elementHiding.generic).toContain(genericRuleContent);
-        expect(result.elementHiding.generic).toContain(genericDisabledRuleContent);
-        expect(result.elementHiding.specific).not.toContain(specificRuleContent);
+        expect(result.elementHiding.generic).toHaveLength(2);
+        expect(result.elementHiding.generic[0].getContent()).toContain(genericRuleContent);
+        expect(result.elementHiding.generic[1].getContent()).toContain(genericDisabledRuleContent);
+        expect(result.elementHiding.specific).toHaveLength(0);
     });
 
 
@@ -69,8 +72,9 @@ describe('Test cosmetic engine', () => {
         expect(result).toBeDefined();
 
 
-        expect(result.elementHiding.generic.length).toBe(0);
-        expect(result.elementHiding.specific).toContain(specificRuleContent);
+        expect(result.elementHiding.generic).toHaveLength(0);
+        expect(result.elementHiding.specific).toHaveLength(1);
+        expect(result.elementHiding.specific[0].getContent()).toContain(specificRuleContent);
     });
 
     it('excludes all css rules if necessary, even if generic argument is true', () => {
@@ -95,8 +99,10 @@ describe('Test cosmetic engine', () => {
             extCssSpecificRule,
         ]));
         const result = cosmeticEngine.match('example.org', true, true, true);
-        expect(result.elementHiding.genericExtCss).toContain(extCssGenericRuleText);
-        expect(result.elementHiding.specificExtCss).toContain(extCssSpecificRuleText);
+        expect(result.elementHiding.genericExtCss).toHaveLength(1);
+        expect(result.elementHiding.genericExtCss[0].getContent()).toContain(extCssGenericRuleText);
+        expect(result.elementHiding.specificExtCss).toHaveLength(1);
+        expect(result.elementHiding.specificExtCss[0].getContent()).toContain(extCssSpecificRuleText);
     });
 
     it('correctly detects cosmetic css rules', () => {
@@ -116,10 +122,14 @@ describe('Test cosmetic engine', () => {
 
         const result = cosmeticEngine.match('example.org', true, true, true);
 
-        expect(result.CSS.specific).toContain(cssRuleText);
-        expect(result.CSS.generic).toContain(cssRuleText);
-        expect(result.CSS.specificExtCss).toContain(extCssCssRuleText);
-        expect(result.CSS.genericExtCss).toContain(extCssCssRuleText);
+        expect(result.CSS.specific).toHaveLength(1);
+        expect(result.CSS.specific[0].getContent()).toContain(cssRuleText);
+        expect(result.CSS.generic).toHaveLength(1);
+        expect(result.CSS.generic[0].getContent()).toContain(cssRuleText);
+        expect(result.CSS.specificExtCss).toHaveLength(1);
+        expect(result.CSS.specificExtCss[0].getContent()).toContain(extCssCssRuleText);
+        expect(result.CSS.genericExtCss).toHaveLength(1);
+        expect(result.CSS.genericExtCss[0].getContent()).toContain(extCssCssRuleText);
     });
 
 
@@ -135,8 +145,12 @@ describe('Test cosmetic engine', () => {
 
         const result = cosmeticEngine.match('example.org', true, true, true);
 
-        expect(result.JS.specific).toContain(jsRuleText);
-        expect(result.JS.generic).toContain(jsRuleText);
+        expect(result.JS.specific).toHaveLength(1);
+        expect(result.JS.specific[0].getContent()).toContain(jsRuleText);
+        expect(result.JS.generic).toHaveLength(1);
+        expect(result.JS.generic[0].getContent()).toContain(jsRuleText);
+
+        expect(result.getScriptRules()).toHaveLength(2);
     });
 
     it('checks cosmetic JS exceptions', () => {
@@ -165,8 +179,8 @@ describe('Test cosmetic engine', () => {
 
         expect(result.JS.specific.length).toBe(1);
         expect(result.JS.generic.length).toBe(1);
-        expect(result.JS.specific[0]).toContain(ruleContent);
-        expect(result.JS.generic[0]).toContain(ruleContent);
+        expect(result.JS.specific[0].getContent()).toContain(ruleContent);
+        expect(result.JS.generic[0].getContent()).toContain(ruleContent);
     });
 
     it('checks scriptlet exceptions', () => {
