@@ -131,8 +131,9 @@ describe('Test cosmetic engine', () => {
         expect(result.CSS.genericExtCss).toHaveLength(1);
         expect(result.CSS.genericExtCss[0].getContent()).toContain(extCssCssRuleText);
     });
+});
 
-
+describe('Test cosmetic engine - JS rules', () => {
     it('correctly detects cosmetic JS rules', () => {
         const jsRuleText = 'window.__gaq = undefined;';
         const specificJsRule = `example.org#%#${jsRuleText}`;
@@ -196,5 +197,37 @@ describe('Test cosmetic engine', () => {
 
         expect(result.JS.specific.length).toBe(0);
         expect(result.JS.generic.length).toBe(0);
+    });
+});
+
+describe('Test cosmetic engine - HTML filtering rules', () => {
+    it('correctly detects HTML rules', () => {
+        const contentPart = 'div[id="ad_text"]';
+        const specificRule = `example.org$$${contentPart}`;
+        const genericRule = `$$${contentPart}`;
+
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            specificRule,
+            genericRule,
+        ]));
+
+        const result = cosmeticEngine.match('example.org', true, true, true, true);
+
+        expect(result.Html.specific).toHaveLength(1);
+        expect(result.Html.specific[0].getContent()).toContain(contentPart);
+        expect(result.Html.generic).toHaveLength(1);
+        expect(result.Html.generic[0].getContent()).toContain(contentPart);
+    });
+
+    it('checks cosmetic HTML exceptions', () => {
+        const rule = 'example.org$$div[id="ad_text"]';
+        const exceptionRule = 'example.org$@$div[id="ad_text"]';
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            rule,
+            exceptionRule,
+        ]));
+        const result = cosmeticEngine.match('example.org', true, true, true, true);
+        expect(result.Html.specific).toHaveLength(0);
+        expect(result.Html.generic).toHaveLength(0);
     });
 });

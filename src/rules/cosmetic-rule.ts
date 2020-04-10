@@ -29,12 +29,6 @@ export enum CosmeticRuleType {
     Js,
 
     /**
-     * A subset of JS rules that allows executing a special JS function on a web page.
-     * https://github.com/AdguardTeam/Scriptlets
-     */
-    Scriptlet,
-
-    /**
      * Special type of rules that allows filtering HTML code of web pages.
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules
      */
