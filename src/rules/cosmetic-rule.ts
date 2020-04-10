@@ -38,7 +38,7 @@ export enum CosmeticRuleType {
      * Special type of rules that allows filtering HTML code of web pages.
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules
      */
-    HTML,
+    Html,
 }
 
 /**
@@ -295,6 +295,13 @@ export class CosmeticRule implements rule.IRule {
                 break;
             case CosmeticRuleMarker.JsException:
                 this.type = CosmeticRuleType.Js;
+                this.whitelist = true;
+                break;
+            case CosmeticRuleMarker.Html:
+                this.type = CosmeticRuleType.Html;
+                break;
+            case CosmeticRuleMarker.HtmlException:
+                this.type = CosmeticRuleType.Html;
                 this.whitelist = true;
                 break;
             default:
