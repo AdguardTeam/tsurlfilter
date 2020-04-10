@@ -35,4 +35,11 @@ export class CosmeticHtmlResult implements CosmeticContentResult {
             this.specific.push(rule);
         }
     }
+
+    /**
+     * Returns rules collected
+     */
+    getRules(): CosmeticRule[] {
+        return [...this.generic, ...this.specific];
+    }
 }

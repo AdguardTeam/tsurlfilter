@@ -23,18 +23,24 @@ export enum CosmeticOption {
     CosmeticOptionJS = 1 << 3,
 
     /**
+     * if Html filtering rules are enabled
+     * Could be disabled by a $content rule.
+     */
+    CosmeticOptionHtml = 1 << 4,
+
+    /**
      * TODO: Add support for these flags
      * They are useful when content script is injected into an iframe
      * In this case we can check what flags were applied to the top-level frame
      */
-    CosmeticOptionSourceGenericCSS = 1 << 4,
-    CosmeticOptionSourceCSS = 1 << 5,
-    CosmeticOptionSourceJS = 1 << 6,
+    CosmeticOptionSourceGenericCSS = 1 << 5,
+    CosmeticOptionSourceCSS = 1 << 6,
+    CosmeticOptionSourceJS = 1 << 7,
 
     /**
      * everything is enabled
      */
-    CosmeticOptionAll = CosmeticOptionGenericCSS | CosmeticOptionCSS | CosmeticOptionJS,
+    CosmeticOptionAll = CosmeticOptionGenericCSS | CosmeticOptionCSS | CosmeticOptionJS | CosmeticOptionHtml,
 
     /**
      * everything is disabled

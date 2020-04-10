@@ -2,6 +2,7 @@
 import * as AGUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
+import { ContentFiltering } from './content-filtering/content-filtering.js';
 
 /**
  * Extension application class
@@ -16,6 +17,22 @@ export class Application {
      * Filtering log
      */
     filteringLog = new FilteringLog();
+
+    // eslint-disable-next-line no-undef
+    browser = chrome;
+
+    /**
+     * Content filtering support
+     *
+     * @type {boolean}
+     */
+    responseContentFilteringSupported = (typeof this.browser.webRequest !== 'undefined'
+        && typeof this.browser.webRequest.filterResponseData !== 'undefined');
+
+    /**
+     * Content filtering module
+     */
+    contentFiltering = new ContentFiltering();
 
     /**
      * Initializes engine instance
@@ -104,6 +121,17 @@ export class Application {
     // eslint-disable-next-line consistent-return
     onResponseHeadersReceived(details) {
         let responseHeaders = details.responseHeaders || [];
+
+        // Apply Html filtering and replace rules
+        if (this.responseContentFilteringSupported) {
+            const contentType = Application.getHeaderValueByName(responseHeaders, 'content-type');
+            const replaceRules = this.getReplaceRules(details);
+            const htmlRules = this.getHtmlRules(details);
+
+            this.contentFiltering.apply(details, contentType, replaceRules, htmlRules);
+
+            // TODO: Add filtering log records
+        }
 
         let responseHeadersModified = false;
         if (details.type === 'main_frame') {
@@ -210,6 +238,32 @@ export class Application {
     }
 
     /**
+     * Returns replace rules matching request details
+     *
+     * @param details
+     */
+    getReplaceRules(details) {
+        // TODO: Cache request - matching results
+
+        const request = new AGUrlFilter.Request(details.url, details.initiator, AGUrlFilter.RequestType.Document);
+        const result = this.engine.matchRequest(request);
+
+        return result.getReplaceRules();
+    }
+
+    /**
+     * Returns replace rules matching request details
+     *
+     * @param details
+     */
+    getHtmlRules(details) {
+        const { hostname } = new URL(details.url);
+        const cosmeticResult = this.engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionHtml);
+
+        return cosmeticResult.Html.getRules();
+    }
+
+    /**
      * Transform string to Request type object
      *
      * @param requestType
@@ -236,5 +290,34 @@ export class Application {
             default:
                 return AGUrlFilter.RequestType.Other;
         }
+    }
+
+    /**
+     * Finds header object by header name (case insensitive)
+     * @param headers Headers collection
+     * @param headerName Header name
+     * @returns {*}
+     */
+    static findHeaderByName(headers, headerName) {
+        if (headers) {
+            for (let i = 0; i < headers.length; i += 1) {
+                const header = headers[i];
+                if (header.name.toLowerCase() === headerName.toLowerCase()) {
+                    return header;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds header value by name (case insensitive)
+     * @param headers Headers collection
+     * @param headerName Header name
+     * @returns {null}
+     */
+    static getHeaderValueByName(headers, headerName) {
+        const header = this.findHeaderByName(headers, headerName);
+        return header ? header.value : null;
     }
 }

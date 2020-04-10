@@ -71,7 +71,8 @@ export class Engine {
         const includeGenericCss = (option
             & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
         const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
+        const includeHtml = option === CosmeticOption.CosmeticOptionAll;
 
-        return this.cosmeticEngine.match(hostname, includeCss, includeJs, includeGenericCss);
+        return this.cosmeticEngine.match(hostname, includeCss, includeJs, includeGenericCss, includeHtml);
     }
 }
