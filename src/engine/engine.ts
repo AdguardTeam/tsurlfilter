@@ -70,8 +70,9 @@ export class Engine {
         const includeCss = (option & CosmeticOption.CosmeticOptionCSS) === CosmeticOption.CosmeticOptionCSS;
         const includeGenericCss = (option
             & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
+
         const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
-        const includeHtml = option === CosmeticOption.CosmeticOptionAll;
+        const includeHtml = (option & CosmeticOption.CosmeticOptionHtml) === CosmeticOption.CosmeticOptionHtml;
 
         return this.cosmeticEngine.match(hostname, includeCss, includeJs, includeGenericCss, includeHtml);
     }
