@@ -4,6 +4,8 @@ import { SUPPORTED_CHARSETS, parseCharsetFromHeader } from './charsets.js';
 import * as AGUrlFilter from '../engine.js';
 import { ContentFilter } from './content-filter.js';
 import { DocumentParser } from './document-parser.js';
+import { HtmlRuleParser } from './rule/html-rule-parser.js';
+import { HtmlRuleSelector } from './rule/html-rule-selector.js';
 /**
  * Content filtering module
  * Handles Html filtering and replace rules
@@ -67,7 +69,7 @@ export class ContentFiltering {
     };
 
     /**
-     * Applies content rules to the document.
+     * Applies Html rules to the document.
      * If document wasn't modified then method will return null
      *
      * @param {object} doc Document
@@ -75,25 +77,25 @@ export class ContentFiltering {
      * @returns null or document html
      */
     // eslint-disable-next-line class-methods-use-this
-    applyContentRules(doc, rules) {
+    applyHtmlRules(doc, rules) {
         const deleted = [];
 
         for (let i = 0; i < rules.length; i += 1) {
-            // const rule = rules[i];
-            // TODO: Implement getMatchedElements
-            // const elements = rule.getMatchedElements(doc);
-            // if (elements) {
-            //     for (let j = 0; j < elements.length; j += 1) {
-            //         const element = elements[j];
-            //         if (element.parentNode && deleted.indexOf(element) < 0) {
-            //             element.parentNode.removeChild(element);
-            //             // eslint-disable-next-line max-len
-            //             // adguard.requestContextStorage.bindContentRule(requestId,
-            //                  rule, adguard.utils.strings.elementToString(element));
-            //             deleted.push(element);
-            //         }
-            //     }
-            // }
+            const rule = rules[i];
+
+            const parsed = new HtmlRuleParser().parse(rule);
+            const elements = new HtmlRuleSelector(parsed).getMatchedElements(doc);
+            if (elements) {
+                for (let j = 0; j < elements.length; j += 1) {
+                    const element = elements[j];
+                    if (element.parentNode && deleted.indexOf(element) < 0) {
+                        element.parentNode.removeChild(element);
+                        // eslint-disable-next-line max-len
+                        // adguard.requestContextStorage.bindContentRule(requestId, rule, ElementUtils.elementToString(element));
+                        deleted.push(element);
+                    }
+                }
+            }
         }
 
         // Add <!DOCTYPE html ... >
@@ -166,7 +168,7 @@ export class ContentFiltering {
      * @param requestType Request type
      */
     // eslint-disable-next-line class-methods-use-this
-    shouldApplyContentRules(requestType) {
+    shouldApplyHtmlRules(requestType) {
         return requestType === AGUrlFilter.RequestType.DOCUMENT
             || requestType === AGUrlFilter.RequestType.SUBDOCUMENT;
     }
@@ -190,8 +192,7 @@ export class ContentFiltering {
         if (contentRules && contentRules.length > 0) {
             const doc = this.documentParser.parse(content);
             if (doc !== null) {
-                // eslint-disable-next-line max-len
-                const modified = this.applyContentRules(doc, contentRules);
+                const modified = this.applyHtmlRules(doc, contentRules);
                 if (modified !== null) {
                     result = modified;
                 }
@@ -244,7 +245,7 @@ export class ContentFiltering {
         }
 
         let htmlRulesToApply = null;
-        if (this.shouldApplyContentRules(requestType)) {
+        if (this.shouldApplyHtmlRules(requestType)) {
             htmlRulesToApply = htmlRules;
         }
 
