@@ -234,6 +234,10 @@ export class MatchingResult {
             return CosmeticOption.CosmeticOptionAll;
         }
 
+        if (this.basicRule.isDocumentWhitelistRule()) {
+            return CosmeticOption.CosmeticOptionNone;
+        }
+
         let option = CosmeticOption.CosmeticOptionAll;
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Elemhide)) {
@@ -247,6 +251,10 @@ export class MatchingResult {
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
             option ^= CosmeticOption.CosmeticOptionJS;
+        }
+
+        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Content)) {
+            option ^= CosmeticOption.CosmeticOptionHtml;
         }
 
         return option;

@@ -1,5 +1,5 @@
-import { CosmeticOption, MatchingResult } from '../../src/engine/matching-result';
-import { NetworkRule } from '../../src';
+import {CosmeticOption, MatchingResult} from '../../src/engine/matching-result';
+import {NetworkRule} from '../../src';
 
 describe('TestNewMatchingResult', () => {
     it('works if constructor is ok', () => {
@@ -58,8 +58,8 @@ describe('TestGetCosmeticOption', () => {
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
-        expect(result.getCosmeticOption())
-            .toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionJS);
+        // eslint-disable-next-line max-len
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionJS | CosmeticOption.CosmeticOptionHtml);
     });
 
     it('works with $jsinject modifier', () => {
@@ -69,8 +69,8 @@ describe('TestGetCosmeticOption', () => {
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
-        expect(result.getCosmeticOption())
-            .toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionGenericCSS);
+        // eslint-disable-next-line max-len
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionGenericCSS | CosmeticOption.CosmeticOptionHtml);
     });
 
     it('works with $elemhide modifier', () => {
@@ -80,7 +80,18 @@ describe('TestGetCosmeticOption', () => {
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
-        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS);
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS | CosmeticOption.CosmeticOptionHtml);
+    });
+
+    it('works with $content modifier', () => {
+        rules = [new NetworkRule('@@||example.org^$content', 0)];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeTruthy();
+        // eslint-disable-next-line max-len
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionGenericCSS | CosmeticOption.CosmeticOptionJS);
     });
 
     it('works with $document modifier', () => {
