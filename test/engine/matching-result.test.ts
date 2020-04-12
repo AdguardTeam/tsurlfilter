@@ -1,5 +1,5 @@
-import {CosmeticOption, MatchingResult} from '../../src/engine/matching-result';
-import {NetworkRule} from '../../src';
+import { CosmeticOption, MatchingResult } from '../../src/engine/matching-result';
+import { NetworkRule } from '../../src';
 
 describe('TestNewMatchingResult', () => {
     it('works if constructor is ok', () => {
