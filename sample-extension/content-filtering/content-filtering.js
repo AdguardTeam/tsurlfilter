@@ -10,6 +10,29 @@ import { DocumentParser } from './document-parser.js';
  */
 export class ContentFiltering {
     /**
+     * Contains collection of accepted request types for replace rules
+     */
+    replaceRulesRequestTypes = [
+        AGUrlFilter.RequestType.DOCUMENT,
+        AGUrlFilter.RequestType.SUBDOCUMENT,
+        AGUrlFilter.RequestType.SCRIPT,
+        AGUrlFilter.RequestType.STYLESHEET,
+        AGUrlFilter.RequestType.XMLHTTPREQUEST,
+    ];
+
+    /**
+     * Contains collection of accepted content types for replace rules
+     */
+    replaceRuleAllowedContentTypes = [
+        'text/',
+        'application/json',
+        'application/xml',
+        'application/xhtml+xml',
+        'application/javascript',
+        'application/x-javascript',
+    ];
+
+    /**
      * Document parser
      */
     documentParser = new DocumentParser();
@@ -125,25 +148,17 @@ export class ContentFiltering {
      *
      * @returns {boolean}
      */
-    // eslint-disable-next-line class-methods-use-this
-    shouldApplyReplaceRule() {
-        // TODO: Fix replace rules application criteria
-        return true;
+    shouldApplyReplaceRule(requestType, contentType) {
+        if (this.replaceRulesRequestTypes.indexOf(requestType) >= 0) {
+            return true;
+        }
 
-        // var requestTypeMask = adguard.rules.UrlFilterRule.contentTypes[requestType];
-        // if ((requestTypeMask & replaceRuleAllowedRequestTypeMask) === requestTypeMask) {
-        //     return true;
-        // }
+        if (requestType === AGUrlFilter.RequestType.OTHER
+            && this.replaceRuleAllowedContentTypes.indexOf(contentType) >= 0) {
+            return true;
+        }
 
-        // if (requestType === adguard.RequestTypes.OTHER && contentType) {
-        //     for (let i = 0; i < replaceRuleAllowedContentTypes.length; i++) {
-        //         if (contentType.indexOf(replaceRuleAllowedContentTypes[i]) === 0) {
-        //             return true;
-        //         }
-        //     }
-        // }
-
-        // return false;
+        return false;
     }
 
     /**
@@ -165,7 +180,6 @@ export class ContentFiltering {
      * @param {string} content
      * @returns {string} Modified content
      */
-    // eslint-disable-next-line max-len
     applyRulesToContent(details, contentRules, replaceRules, content) {
         if (!content) {
             return content;
