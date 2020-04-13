@@ -27,6 +27,12 @@ describe('startsAtIndexWith', () => {
     });
 });
 
+describe('replaceAll', () => {
+    it('works if it can replace simple strings', () => {
+        expect(utils.replaceAll('example_example', 'ex', 'EX')).toEqual('EXample_EXample');
+    });
+});
+
 describe('fastHash', () => {
     it('works if it can fastHash', () => {
         expect(utils.fastHash('')).toEqual(0);
