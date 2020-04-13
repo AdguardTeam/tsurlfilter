@@ -1,7 +1,7 @@
 import * as rule from './rule';
 import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
-import { indexOfAny } from '../utils';
+import { indexOfAny } from '../utils/utils';
 
 /**
  * CosmeticRuleType is an enumeration of the possible

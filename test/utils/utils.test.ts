@@ -1,4 +1,4 @@
-import * as utils from '../src/utils';
+import * as utils from '../../src/utils/utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
     it('works if it splits with or without preserving tokens', () => {
