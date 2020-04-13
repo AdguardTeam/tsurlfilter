@@ -15,11 +15,11 @@ export class ContentFiltering {
      * Contains collection of accepted request types for replace rules
      */
     replaceRulesRequestTypes = [
-        AGUrlFilter.RequestType.DOCUMENT,
-        AGUrlFilter.RequestType.SUBDOCUMENT,
-        AGUrlFilter.RequestType.SCRIPT,
-        AGUrlFilter.RequestType.STYLESHEET,
-        AGUrlFilter.RequestType.XMLHTTPREQUEST,
+        AGUrlFilter.RequestType.Document,
+        AGUrlFilter.RequestType.Subdocument,
+        AGUrlFilter.RequestType.Script,
+        AGUrlFilter.RequestType.Stylesheet,
+        AGUrlFilter.RequestType.XmlHttpRequest,
     ];
 
     /**
@@ -155,7 +155,7 @@ export class ContentFiltering {
             return true;
         }
 
-        if (requestType === AGUrlFilter.RequestType.OTHER
+        if (requestType === AGUrlFilter.RequestType.Other
             && this.replaceRuleAllowedContentTypes.indexOf(contentType) >= 0) {
             return true;
         }
@@ -169,8 +169,8 @@ export class ContentFiltering {
      */
     // eslint-disable-next-line class-methods-use-this
     shouldApplyHtmlRules(requestType) {
-        return requestType === AGUrlFilter.RequestType.DOCUMENT
-            || requestType === AGUrlFilter.RequestType.SUBDOCUMENT;
+        return requestType === AGUrlFilter.RequestType.Document
+            || requestType === AGUrlFilter.RequestType.Subdocument;
     }
 
     /**
@@ -205,10 +205,7 @@ export class ContentFiltering {
         }
 
         if (replaceRules) {
-            const modifiedContent = this.applyReplaceRules(content, replaceRules);
-            if (modifiedContent !== null) {
-                result = modifiedContent;
-            }
+            result = this.applyReplaceRules(result, replaceRules);
         }
 
         return result;
@@ -217,15 +214,18 @@ export class ContentFiltering {
     /**
      * Applies content and replace rules to the request
      *
+     * @param request
      * @param details
      * @param contentType Content-Type header
      * @param replaceRules
      * @param htmlRules
      */
-    apply(details, contentType, replaceRules, htmlRules) {
+    apply(request, details, contentType, replaceRules, htmlRules) {
         const {
-            requestUrl, requestType, requestId, statusCode, method,
+            requestId, statusCode, method,
         } = details;
+
+        const { url: requestUrl, requestType } = request;
 
         if (statusCode !== 200) {
             console.debug('Skipping request to {0} - {1} with status {2}', requestUrl, requestType, statusCode);

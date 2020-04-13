@@ -128,7 +128,10 @@ export class Application {
             const replaceRules = this.getReplaceRules(details);
             const htmlRules = this.getHtmlRules(details);
 
-            this.contentFiltering.apply(details, contentType, replaceRules, htmlRules);
+            const requestType = Application.testGetRequestType(details.type);
+            const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
+
+            this.contentFiltering.apply(request, details, contentType, replaceRules, htmlRules);
 
             // TODO: Add filtering log records
         }
@@ -271,6 +274,8 @@ export class Application {
      */
     static testGetRequestType(requestType) {
         switch (requestType) {
+            case 'main_frame':
+                return AGUrlFilter.RequestType.Document;
             case 'document':
                 return AGUrlFilter.RequestType.Subdocument;
             case 'stylesheet':
