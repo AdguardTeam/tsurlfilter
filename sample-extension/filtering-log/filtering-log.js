@@ -109,6 +109,42 @@ export class FilteringLog {
     }
 
     /**
+     * Add html rule event to log
+     *
+     * @param {Number} tabId - tab id
+     * @param {String} elementString - element string presentation
+     * @param {String} frameUrl - Frame url
+     * @param {Object} rule - cookie rule
+     */
+    addHtmlEvent(tabId, elementString, frameUrl, rule) {
+        const filteringEvent = {
+            eventType: 'HTML',
+            element: elementString,
+            frameUrl,
+            rule,
+        };
+
+        this.pushFilteringEvent(filteringEvent);
+    }
+
+    /**
+     * Add html rule event to log
+     *
+     * @param {Number} tabId - tab id
+     * @param {String} frameUrl - Frame url
+     * @param {Object} rules - cookie rule
+     */
+    addReplaceRulesEvent(tabId, frameUrl, rules) {
+        rules.forEach((r) => {
+            this.pushFilteringEvent({
+                eventType: 'REPLACE',
+                frameUrl,
+                rule: r,
+            });
+        });
+    }
+
+    /**
      * Push event to listeners
      *
      * TODO: This is the place to notify UI

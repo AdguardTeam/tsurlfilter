@@ -32,7 +32,7 @@ export class Application {
     /**
      * Content filtering module
      */
-    contentFiltering = new ContentFiltering();
+    contentFiltering = new ContentFiltering(this.filteringLog);
 
     /**
      * Initializes engine instance
@@ -132,8 +132,6 @@ export class Application {
             const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
 
             this.contentFiltering.apply(request, details, contentType, replaceRules, htmlRules);
-
-            // TODO: Add filtering log records
         }
 
         let responseHeadersModified = false;

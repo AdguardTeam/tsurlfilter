@@ -12,6 +12,20 @@ import { HtmlRuleSelector } from './rule/html-rule-selector.js';
  */
 export class ContentFiltering {
     /**
+     * Filtering log
+     */
+    filteringLog;
+
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    constructor(filteringLog) {
+        this.filteringLog = filteringLog;
+    }
+
+    /**
      * Contains collection of accepted request types for replace rules
      */
     replaceRulesRequestTypes = [
@@ -90,8 +104,9 @@ export class ContentFiltering {
                     const element = elements[j];
                     if (element.parentNode && deleted.indexOf(element) < 0) {
                         element.parentNode.removeChild(element);
-                        // eslint-disable-next-line max-len
-                        // adguard.requestContextStorage.bindContentRule(requestId, rule, ElementUtils.elementToString(element));
+
+                        // TODO: Pass params
+                        this.filteringLog.addHtmlEvent(0, element.innerHTML, null, rule);
                         deleted.push(element);
                     }
                 }
@@ -139,7 +154,8 @@ export class ContentFiltering {
         }
 
         if (appliedRules.length > 0) {
-            // adguard.requestContextStorage.update(requestId, { replaceRules: appliedRules });
+            // TODO: Pass params
+            this.filteringLog.addReplaceRulesEvent(0, null, appliedRules);
         }
 
         return result;
