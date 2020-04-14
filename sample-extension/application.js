@@ -2,7 +2,6 @@
 import * as AGUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
-import { ContentFiltering } from './content-filtering/content-filtering.js';
 
 /**
  * Extension application class
@@ -29,10 +28,10 @@ export class Application {
     responseContentFilteringSupported = (typeof this.browser.webRequest !== 'undefined'
         && typeof this.browser.webRequest.filterResponseData !== 'undefined');
 
-    /**
-     * Content filtering module
-     */
-    contentFiltering = new ContentFiltering(this.filteringLog);
+    // /**
+    //  * Content filtering module
+    //  */
+    // contentFiltering = null;
 
     /**
      * Initializes engine instance
@@ -131,7 +130,9 @@ export class Application {
             const requestType = Application.testGetRequestType(details.type);
             const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
 
-            this.contentFiltering.apply(request, details, contentType, replaceRules, htmlRules);
+            // eslint-disable-next-line no-undef,max-len
+            const contentFiltering = new AGUrlFilter.ContentFiltering(chrome.webRequest.filterResponseData(details.requestId), this.filteringLog);
+            contentFiltering.apply(request, details, contentType, replaceRules, htmlRules);
         }
 
         let responseHeadersModified = false;

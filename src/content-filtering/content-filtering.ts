@@ -32,6 +32,8 @@ export class ContentFiltering {
      */
     constructor(streamFilter: StreamFilter, filteringLog: any) {
         this.filteringLog = filteringLog;
+
+        // TODO: Move to apply as parameter
         this.streamFilter = streamFilter;
     }
 
