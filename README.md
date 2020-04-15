@@ -53,15 +53,15 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [x] Scriptlet rules
     -   [x] JS rules
 -   [x] Basic filtering engine implementation
-    -   [ ] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
+    -   [x] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
     -   [x] Advanced modifiers part 1
         -   [x] \$important
         -   [x] \$badfilter
     -   [x] Web extension example
--   [ ] HTML filtering rules
+-   [x] HTML filtering rules
 -   [ ] Advanced modifiers
-    -   [ ] \$important
-    -   [ ] \$replace
+    -   [x] \$important
+    -   [x] \$replace
     -   [x] \$csp
     -   [x] \$cookie
     -   [ ] \$redirect
