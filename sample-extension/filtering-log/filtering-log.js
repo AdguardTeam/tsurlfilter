@@ -1,4 +1,4 @@
-/* eslint-disable no-console, import/extensions, import/no-unresolved, no-param-reassign */
+/* eslint-disable no-console */
 
 /**
  * Filtering log

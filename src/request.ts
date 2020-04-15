@@ -50,6 +50,26 @@ export class Request {
     public readonly url: string;
 
     /**
+     * Request identifier
+     */
+    public requestId: number | undefined;
+
+    /**
+     * Status code
+     */
+    public statusCode: number | undefined;
+
+    /**
+     * Method name
+     */
+    public method: string | undefined;
+
+    /**
+     * Request tab identifier
+     */
+    public tabId: number | undefined;
+
+    /**
      * The same request URL, but in lower case.
      * It is necessary to use lower-cased URL in several places,
      * that's why we keep it in the object.

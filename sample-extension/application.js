@@ -129,10 +129,14 @@ export class Application {
 
             const requestType = Application.testGetRequestType(details.type);
             const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
+            request.requestId = details.requestId;
+            request.tabId = details.tabId;
+            request.statusCode = details.statusCode;
+            request.method = details.method;
 
-            // eslint-disable-next-line no-undef,max-len
             const contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
-            contentFiltering.apply(chrome.webRequest.filterResponseData(details.requestId), request, details, contentType, replaceRules, htmlRules);
+            // eslint-disable-next-line no-undef,max-len
+            contentFiltering.apply(chrome.webRequest.filterResponseData(details.requestId), request, contentType, replaceRules, htmlRules);
         }
 
         let responseHeadersModified = false;

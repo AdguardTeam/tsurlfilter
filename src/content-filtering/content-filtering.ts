@@ -8,6 +8,7 @@ import { StreamFilter } from './stream-filter';
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { NetworkRule } from '../rules/network-rule';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
+import { FilteringLog } from '../filtering-log';
 
 /**
  * Content filtering module
@@ -16,16 +17,15 @@ import { ReplaceModifier } from '../modifiers/replace-modifier';
 export class ContentFiltering {
     /**
      * Filtering log
-     * TODO: Declare interface
      */
-    private readonly filteringLog: any;
+    private readonly filteringLog: FilteringLog;
 
     /**
      * Constructor
      *
      * @param filteringLog
      */
-    constructor(filteringLog: any) {
+    constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
     }
 
@@ -61,17 +61,21 @@ export class ContentFiltering {
      * For correctly applying replace or content rules we have to work with the whole response content.
      * This function allows read response fully.
      * See some details here: https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
+     *
+     * @param streamFilter
+     * @param request
+     * @param charset
+     * @param callback
      */
     private static handleResponse(
         streamFilter: StreamFilter,
-        requestId: number,
-        requestUrl: string,
-        requestType: RequestType,
+        request: Request,
         charset: string | null,
         callback: (x: string) => string,
     ): void {
         try {
-            const contentFilter = new ContentFilter(streamFilter, requestId, requestType, charset, (content) => {
+            // eslint-disable-next-line max-len
+            const contentFilter = new ContentFilter(streamFilter, request.requestId!, request.requestType, charset, (content) => {
                 try {
                     // eslint-disable-next-line no-param-reassign
                     content = callback(content);
@@ -92,11 +96,12 @@ export class ContentFiltering {
      * Applies Html rules to the document.
      * If document wasn't modified then method will return null
      *
+     * @param request
      * @param {object} doc Document
      * @param {Array} rules Content rules
      * @returns null or document html
      */
-    private applyHtmlRules(doc: Document, rules: CosmeticRule[]): string | null {
+    private applyHtmlRules(request: Request, doc: Document, rules: CosmeticRule[]): string | null {
         const deleted = [];
 
         for (let i = 0; i < rules.length; i += 1) {
@@ -110,8 +115,7 @@ export class ContentFiltering {
                     if (element.parentNode && deleted.indexOf(element) < 0) {
                         element.parentNode.removeChild(element);
 
-                        // TODO: Pass params
-                        this.filteringLog.addHtmlEvent(0, element.innerHTML, null, rule);
+                        this.filteringLog.addHtmlEvent(request.tabId!, element.innerHTML, request.url, rule);
                         deleted.push(element);
                     }
                 }
@@ -129,10 +133,11 @@ export class ContentFiltering {
     /**
      * Applies replace rules to content
      *
+     * @param request
      * @param content
      * @param replaceRules
      */
-    private applyReplaceRules(content: string, replaceRules: NetworkRule[]): string {
+    private applyReplaceRules(request: Request, content: string, replaceRules: NetworkRule[]): string {
         let modifiedContent = content;
         const appliedRules = [];
 
@@ -167,8 +172,7 @@ export class ContentFiltering {
         }
 
         if (appliedRules.length > 0) {
-            // TODO: Pass params
-            this.filteringLog.addReplaceRulesEvent(0, null, appliedRules);
+            this.filteringLog.addReplaceRulesEvent(request.tabId!, request.url, appliedRules);
         }
 
         return result;
@@ -207,14 +211,14 @@ export class ContentFiltering {
     /**
      * Applies replace/content rules to the content
      *
-     * @param details
+     * @param request
      * @param {Array} contentRules
      * @param {Array} replaceRules
      * @param {string} content
      * @returns {string} Modified content
      */
     private applyRulesToContent(
-        details: any,
+        request: Request,
         contentRules: CosmeticRule[] | null,
         replaceRules: NetworkRule[] | null,
         content: string,
@@ -224,7 +228,7 @@ export class ContentFiltering {
         if (contentRules && contentRules.length > 0) {
             const doc = this.documentParser.parse(content);
             if (doc !== null) {
-                const modified = this.applyHtmlRules(doc, contentRules);
+                const modified = this.applyHtmlRules(request, doc, contentRules);
                 if (modified !== null) {
                     result = modified;
                 }
@@ -237,7 +241,7 @@ export class ContentFiltering {
         }
 
         if (replaceRules) {
-            result = this.applyReplaceRules(result, replaceRules);
+            result = this.applyReplaceRules(request, result, replaceRules);
         }
 
         return result;
@@ -248,7 +252,6 @@ export class ContentFiltering {
      *
      * @param streamFilter
      * @param request
-     * @param details
      * @param contentType Content-Type header
      * @param replaceRules
      * @param htmlRules
@@ -256,24 +259,26 @@ export class ContentFiltering {
     public apply(
         streamFilter: StreamFilter,
         request: Request,
-        details: any,
         contentType: string,
         replaceRules: NetworkRule[],
         htmlRules: CosmeticRule[],
     ): void {
         const {
-            requestId, statusCode, method,
-        } = details;
+            requestId, requestType, statusCode, method, tabId,
+        } = request;
 
-        const { url: requestUrl, requestType } = request;
+        if (!requestId || !tabId) {
+            // console.debug('Skipping request {0} requestId|tabId not defined', requestUrl, statusCode);
+            return;
+        }
 
         if (statusCode !== 200) {
-            // console.debug('Skipping request to {0} - {1} with status {2}', requestUrl, requestType, statusCode);
+            // console.debug('Skipping request {0} - {1} with status {2}', requestUrl, requestType, statusCode);
             return;
         }
 
         if (method !== 'GET' && method !== 'POST') {
-            // console.debug('Skipping request to {0} - {1} with method {2}', requestUrl, requestType, method);
+            // console.debug('Skipping request {0} - {1} with method {2}', requestUrl, requestType, method);
             return;
         }
 
@@ -281,7 +286,7 @@ export class ContentFiltering {
         if (charset && SUPPORTED_CHARSETS.indexOf(charset) < 0) {
             // Charset is detected and it is not supported
             // eslint-disable-next-line max-len
-            // console.warn('Skipping request to {0} - {1} with Content-Type {2}', requestUrl, requestType, contentType);
+            // console.warn('Skipping request {0} - {1} with Content-Type {2}', requestUrl, requestType, contentType);
             return;
         }
 
@@ -302,9 +307,9 @@ export class ContentFiltering {
         // Call this method to prevent removing context on request complete/error event
         // adguard.requestContextStorage.onContentModificationStarted(requestId);
 
-        ContentFiltering.handleResponse(streamFilter, requestId, requestUrl, requestType, charset, (content) => {
+        ContentFiltering.handleResponse(streamFilter, request, charset, (content) => {
             try {
-                return this.applyRulesToContent(details, htmlRulesToApply, replaceRulesToApply, content!);
+                return this.applyRulesToContent(request, htmlRulesToApply, replaceRulesToApply, content!);
             } finally {
                 // adguard.requestContextStorage.onContentModificationFinished(requestId);
             }

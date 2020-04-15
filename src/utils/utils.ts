@@ -128,7 +128,7 @@ export function indexOfAny(str: string, chars: string[], start = 0): number {
  * @param find
  * @param replace
  */
-export function replaceAll(str: string, find: string, replace: string) {
+export function replaceAll(str: string, find: string, replace: string): string {
     if (!str) {
         return str;
     }
