@@ -21,20 +21,12 @@ export class ContentFiltering {
     private readonly filteringLog: any;
 
     /**
-     * Stream filter implementation
-     */
-    private readonly streamFilter: StreamFilter;
-
-    /**
      * Constructor
      *
      * @param filteringLog
      */
-    constructor(streamFilter: StreamFilter, filteringLog: any) {
+    constructor(filteringLog: any) {
         this.filteringLog = filteringLog;
-
-        // TODO: Move to apply as parameter
-        this.streamFilter = streamFilter;
     }
 
     /**
@@ -70,7 +62,8 @@ export class ContentFiltering {
      * This function allows read response fully.
      * See some details here: https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
      */
-    private handleResponse(
+    private static handleResponse(
+        streamFilter: StreamFilter,
         requestId: number,
         requestUrl: string,
         requestType: RequestType,
@@ -78,7 +71,7 @@ export class ContentFiltering {
         callback: (x: string) => string,
     ): void {
         try {
-            const contentFilter = new ContentFilter(this.streamFilter, requestId, requestType, charset, (content) => {
+            const contentFilter = new ContentFilter(streamFilter, requestId, requestType, charset, (content) => {
                 try {
                     // eslint-disable-next-line no-param-reassign
                     content = callback(content);
@@ -253,6 +246,7 @@ export class ContentFiltering {
     /**
      * Applies content and replace rules to the request
      *
+     * @param streamFilter
      * @param request
      * @param details
      * @param contentType Content-Type header
@@ -260,6 +254,7 @@ export class ContentFiltering {
      * @param htmlRules
      */
     public apply(
+        streamFilter: StreamFilter,
         request: Request,
         details: any,
         contentType: string,
@@ -307,7 +302,7 @@ export class ContentFiltering {
         // Call this method to prevent removing context on request complete/error event
         // adguard.requestContextStorage.onContentModificationStarted(requestId);
 
-        this.handleResponse(requestId, requestUrl, requestType, charset, (content) => {
+        ContentFiltering.handleResponse(streamFilter, requestId, requestUrl, requestType, charset, (content) => {
             try {
                 return this.applyRulesToContent(details, htmlRulesToApply, replaceRulesToApply, content!);
             } finally {

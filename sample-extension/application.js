@@ -131,8 +131,8 @@ export class Application {
             const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
 
             // eslint-disable-next-line no-undef,max-len
-            const contentFiltering = new AGUrlFilter.ContentFiltering(chrome.webRequest.filterResponseData(details.requestId), this.filteringLog);
-            contentFiltering.apply(request, details, contentType, replaceRules, htmlRules);
+            const contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
+            contentFiltering.apply(chrome.webRequest.filterResponseData(details.requestId), request, details, contentType, replaceRules, htmlRules);
         }
 
         let responseHeadersModified = false;
