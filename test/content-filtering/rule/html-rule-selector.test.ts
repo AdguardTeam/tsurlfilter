@@ -117,7 +117,7 @@ describe('Html rule selector', () => {
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
-        expect(elements).toContain(document.getElementsByTagName('div')[0]);
+        expect(elements).toContain(document.getElementsByTagName('table')[0]);
 
         rule = new CosmeticRule('example.org$$div[parent-search-level="5"][parent-elements=""]', 0);
         parsed = HtmlRuleParser.parse(rule);

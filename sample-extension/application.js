@@ -28,10 +28,10 @@ export class Application {
     responseContentFilteringSupported = (typeof this.browser.webRequest !== 'undefined'
         && typeof this.browser.webRequest.filterResponseData !== 'undefined');
 
-    // /**
-    //  * Content filtering module
-    //  */
-    // contentFiltering = null;
+    /**
+     * Content filtering module
+     */
+    contentFiltering = null;
 
     /**
      * Initializes engine instance
@@ -51,6 +51,7 @@ export class Application {
         };
 
         this.engine = new AGUrlFilter.Engine(ruleStorage, config);
+        this.contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
 
         console.log('Starting url filter engine..ok');
     }
@@ -65,7 +66,7 @@ export class Application {
         console.debug('Processing request..');
         console.debug(details);
 
-        const requestType = Application.testGetRequestType(details.type);
+        const requestType = Application.transformRequestType(details.type);
         const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
         const result = this.engine.matchRequest(request);
 
@@ -127,16 +128,20 @@ export class Application {
             const replaceRules = this.getReplaceRules(details);
             const htmlRules = this.getHtmlRules(details);
 
-            const requestType = Application.testGetRequestType(details.type);
+            const requestType = Application.transformRequestType(details.type);
             const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
             request.requestId = details.requestId;
             request.tabId = details.tabId;
             request.statusCode = details.statusCode;
             request.method = details.method;
 
-            const contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
-            // eslint-disable-next-line no-undef,max-len
-            contentFiltering.apply(chrome.webRequest.filterResponseData(details.requestId), request, contentType, replaceRules, htmlRules);
+            this.contentFiltering.apply(
+                this.browser.webRequest.filterResponseData(details.requestId),
+                request,
+                contentType,
+                replaceRules,
+                htmlRules,
+            );
         }
 
         let responseHeadersModified = false;
@@ -275,7 +280,7 @@ export class Application {
      * @param requestType
      * @return {RequestType}
      */
-    static testGetRequestType(requestType) {
+    static transformRequestType(requestType) {
         switch (requestType) {
             case 'main_frame':
                 return AGUrlFilter.RequestType.Document;

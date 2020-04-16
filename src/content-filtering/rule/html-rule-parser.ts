@@ -27,6 +27,8 @@ export class HtmlRuleParser {
 
     private static DEFAULT_PARENT_SEARCH_LEVEL = 3;
 
+    private static DEFAULT_MAX_LENGTH = 8192;
+
     /**
      * Parses html rule
      *
@@ -36,7 +38,7 @@ export class HtmlRuleParser {
         const result = new HtmlRuleAttributes();
 
         result.parentSearchLevel = HtmlRuleParser.DEFAULT_PARENT_SEARCH_LEVEL;
-        result.maxLength = 8192;
+        result.maxLength = HtmlRuleParser.DEFAULT_MAX_LENGTH;
 
         const ruleContent = rule.getContent();
         let htmlAttributesStartIndex = ruleContent.indexOf(HtmlRuleParser.ATTRIBUTE_START_MARK);
@@ -54,7 +56,7 @@ export class HtmlRuleParser {
         while (htmlAttributesStartIndex !== -1) {
             const equalityIndex = ruleContent.indexOf('=', htmlAttributesStartIndex + 1);
             const quoteStartIndex = ruleContent.indexOf(HtmlRuleParser.QUOTES, equalityIndex + 1);
-            const quoteEndIndex = HtmlRuleParser.getQuoteIndex(ruleContent, quoteStartIndex + 1);
+            const quoteEndIndex = HtmlRuleParser.getClosingQuoteIndex(ruleContent, quoteStartIndex + 1);
             if (quoteStartIndex === -1 || quoteEndIndex === -1) {
                 break;
             }
@@ -101,21 +103,26 @@ export class HtmlRuleParser {
 
         result.selector = selector.join('');
 
+        // Validates selector immediately
         // eslint-disable-next-line no-undef
-        window.document.querySelectorAll(result.selector);
+        if (typeof window !== 'undefined') {
+            window.document.querySelectorAll(result.selector);
+        }
 
         return result;
     }
 
     /**
-     * Look up next quotation
+     * Looks up next closing quotation
+     * Skips double quotes in text like:
+     * [tag-content="teas""ernet"]
      *
      * @param text
      * @param startIndex
      * @return {number}
      */
-    private static getQuoteIndex(text: string, startIndex: number): number {
-        let nextChar = '"';
+    private static getClosingQuoteIndex(text: string, startIndex: number): number {
+        let nextChar = HtmlRuleParser.QUOTES;
         let quoteIndex = startIndex - 2;
 
         while (nextChar === '"') {
@@ -123,6 +130,7 @@ export class HtmlRuleParser {
             if (quoteIndex === -1) {
                 return -1;
             }
+
             nextChar = text.length === (quoteIndex + 1) ? '0' : text.charAt(quoteIndex + 1);
         }
 

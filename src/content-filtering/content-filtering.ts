@@ -304,15 +304,11 @@ export class ContentFiltering {
             return;
         }
 
-        // Call this method to prevent removing context on request complete/error event
-        // adguard.requestContextStorage.onContentModificationStarted(requestId);
-
-        ContentFiltering.handleResponse(streamFilter, request, charset, (content) => {
-            try {
-                return this.applyRulesToContent(request, htmlRulesToApply, replaceRulesToApply, content!);
-            } finally {
-                // adguard.requestContextStorage.onContentModificationFinished(requestId);
-            }
-        });
+        ContentFiltering.handleResponse(
+            streamFilter,
+            request,
+            charset,
+            (content) => this.applyRulesToContent(request, htmlRulesToApply, replaceRulesToApply, content!),
+        );
     }
 }

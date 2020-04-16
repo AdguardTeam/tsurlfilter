@@ -21,8 +21,8 @@ export class HtmlRuleSelector {
     /**
      * Returns matched elements for provided html rule
      *
-     * @param doc
-     * @return {null}
+     * @param doc document object
+     * @return Array of elements or null
      */
     public getMatchedElements(doc: HTMLDocument): Element[] | null {
         const elements = doc.querySelectorAll(this.ruleAttributes.selector!);
@@ -48,7 +48,7 @@ export class HtmlRuleSelector {
                     if (result === null) {
                         result = [];
                     }
-                    result.push(element);
+                    result.push(elementToDelete);
                 }
             }
         }
@@ -59,8 +59,8 @@ export class HtmlRuleSelector {
     /**
      * Checks if element is filtered by provided rule
      *
-     * @param element
-     * @return {boolean}
+     * @param element to check
+     * @return {boolean} is element filtered
      */
     private isFiltered(element: Element): boolean {
         // Checking tag content length limits

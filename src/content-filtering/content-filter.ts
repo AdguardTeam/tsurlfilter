@@ -63,8 +63,6 @@ export class ContentFilter {
         charset: string | null,
         onContentCallback: (data: string) => void,
     ) {
-        // eslint-disable-next-line no-undef
-        // this.filter = chrome.webRequest.filterResponseData(requestId);
         this.filter = filter;
         this.requestType = requestType;
         this.charset = charset;
@@ -166,8 +164,6 @@ export class ContentFilter {
     private disconnect(data: BufferSource): void {
         this.filter.write(data);
         this.filter.disconnect();
-
-        // this.onContentCallback(null);
     }
 
     /**
