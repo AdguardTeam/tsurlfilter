@@ -3,6 +3,7 @@ import { CosmeticLookupTable } from './cosmetic-lookup-table';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
 import { CosmeticContentResult } from './cosmetic-content-result';
+import { CosmeticOption } from '../cosmetic-option';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -91,19 +92,17 @@ export class CosmeticEngine {
      * Prepares cosmetic result by hostname
      *
      * @param hostname domain to check
-     * @param includeCss
-     * @param includeJs
-     * @param includeGeneric
-     * @param includeHtml
+     * @param option mask of enabled cosmetic types
      * @return CosmeticResult
      */
-    match(
-        hostname: string,
-        includeCss?: boolean,
-        includeJs?: boolean,
-        includeGeneric?: boolean,
-        includeHtml?: boolean,
-    ): CosmeticResult {
+    match(hostname: string, option: CosmeticOption): CosmeticResult {
+        const includeCss = (option & CosmeticOption.CosmeticOptionCSS) === CosmeticOption.CosmeticOptionCSS;
+        const includeGeneric = (option
+            & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
+
+        const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
+        const includeHtml = (option & CosmeticOption.CosmeticOptionHtml) === CosmeticOption.CosmeticOptionHtml;
+
         const cosmeticResult = new CosmeticResult();
 
         if (includeCss) {

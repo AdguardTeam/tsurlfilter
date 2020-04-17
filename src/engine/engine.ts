@@ -1,11 +1,12 @@
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
-import { CosmeticOption, MatchingResult } from './matching-result';
+import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
 import { config, IConfiguration } from '../configuration';
+import { CosmeticOption } from './cosmetic-option';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -67,13 +68,6 @@ export class Engine {
      * @return cosmetic result
      */
     getCosmeticResult(hostname: string, option: CosmeticOption): CosmeticResult {
-        const includeCss = (option & CosmeticOption.CosmeticOptionCSS) === CosmeticOption.CosmeticOptionCSS;
-        const includeGenericCss = (option
-            & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
-
-        const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
-        const includeHtml = (option & CosmeticOption.CosmeticOptionHtml) === CosmeticOption.CosmeticOptionHtml;
-
-        return this.cosmeticEngine.match(hostname, includeCss, includeJs, includeGenericCss, includeHtml);
+        return this.cosmeticEngine.match(hostname, option);
     }
 }

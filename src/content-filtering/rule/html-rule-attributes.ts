@@ -17,6 +17,11 @@ export class HtmlRuleAttributes {
 
     /**
      * Composed selector
+     * Parsed [attributes] excepting special attributes
+     * are joined here to be a valid css selector string.
+     * Example:
+     * For "example.org$$div[id="ad_text"][tag-content="teas""ernet"]" rule,
+     * css selector will be "div[id*="ad_text"]"
      */
     selector: string | undefined;
 
