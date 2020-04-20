@@ -1,7 +1,7 @@
 import { Request } from '../request';
 import { NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from './matching-result';
-import { fastHash, fastHashBetween } from '../utils';
+import { fastHash, fastHashBetween } from '../utils/utils';
 import { RuleStorage } from '../filterlist/rule-storage';
 
 /**

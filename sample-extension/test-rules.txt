@@ -1,101 +1,74 @@
 !
-! Title: Rules for simple rules tests
+! Title: Rules for $replace rules test
+!
+! Filter to be used for testing purposes
+! https://testcases.adguard.com
+!
+!
+! Hide warning
+testcases.adguard.com,surge.sh###subscribe-to-test-replace-rules-filter
+!
+!
+! Case 1: text response
+||testcases.adguard.com/*/case1-text-response.txt$replace=/adguard/Test passed/i
+||surge.sh/*/case1-text-response.txt$replace=/adguard/Test passed/i
+!
+!
+! Case 2: response is more then 3MB
+||testcases.adguard.com/*/case2-response-over-3mb.txt$replace=/Adguard/Replaced/i
+||surge.sh/*/case2-response-over-3mb.txt$replace=/Adguard/Replaced/i
+!
+!
+! Case 3: using with other rules (without $replace modifier) for a same request
+||testcases.adguard.com/*/case3-using-with-other-rules.txt$replace=/adguard/Test passed/i
+||surge.sh/*/case3-using-with-other-rules.txt$replace=/adguard/Test passed/i
+||testcases.adguard.com/*/case3-using-with-other-rules.txt
+||surge.sh/*/case3-using-with-other-rules.txt
+!
+!
+! Case 4: multiple $replace rules matching a single request
+||testcases.adguard.com/*/case4-multiple-replace-rules.txt$replace=/adguard/first replace rule work/i
+||surge.sh/*/case4-multiple-replace-rules.txt$replace=/adguard/first replace rule work/i
+||testcases.adguard.com/*/case4-multiple-replace-rules.txt$replace=/team/and second as well/i
+||surge.sh/*/case4-multiple-replace-rules.txt$replace=/team/and second as well/i
+!
+!
+! Case 5: disabling $replace rules
+||testcases.adguard.com/*/case5-disabling-replace-rule.txt$replace=/adguard/first replace rule works/i
+||surge.sh/*/case5-disabling-replace-rule.txt$replace=/adguard/first replace rule works/i
+||testcases.adguard.com/*/case5-disabling-replace-rule.txt$replace=/team/and second as well/i
+||surge.sh/*/case5-disabling-replace-rule.txt$replace=/team/and second as well/i
+@@||testcases.adguard.com/*/case5-disabling-replace-rule.txt$replace
+@@||surge.sh/*/case5-disabling-replace-rule.txt$replace
+!
+!
+! Case 6: multiple $replace rules
+||testcases.adguard.com/*/case6-disabling-multiple-replace-rules.txt$replace=/adguard/first replace rule/i
+||surge.sh/*/case6-disabling-multiple-replace-rules.txt$replace=/adguard/first replace rule/i
+||testcases.adguard.com/*/case6-disabling-multiple-replace-rules.txt$replace=/works/works and second as well/i
+||surge.sh/*/case6-disabling-multiple-replace-rules.txt$replace=/works/works and second as well/i
+@@||testcases.adguard.com/*/case6-disabling-multiple-replace-rules.txt$replace=/works/works and second as well/i
+@@||surge.sh/*/case6-disabling-multiple-replace-rules.txt$replace=/works/works and second as well/i
+!
+!
+! Case 7: using with $script exception modifier for a same request
+||testcases.adguard.com/*/case7-content-type-modifier.js$replace=/tmp\s+\=\s+0/tmp = 1/i
+||surge.sh/*/case7-content-type-modifier.js$replace=/tmp\s+\=\s+0/tmp = 1/i
+||testcases.adguard.com/*/case7-content-type-modifier.js$script
+||surge.sh/*/case7-content-type-modifier.js$script
+
+!
+! Title: Rules for content rules test
 !
 ! Filter to be used for testing purposes
 ! https://testcases.adguard.com
 !
 ! Hide warning
-testcases.adguard.com,surge.sh###subscribe-to-test-simple-rules-filter
-! Test case 1: domain-specific elemhide rule
-testcases.adguard.com,surge.sh###case-1-elemhide > .test-banner
-! Test case 2: generic elemhide rule
-###case-2-generic-elemhide > .test-banner
-! Test case 3: elemhide rule exception
-###case-3-elemhide-exception > .test-banner
-testcases.adguard.com,surge.sh#@##case-3-elemhide-exception > .test-banner
-! Test case 4: domain exclusion
-~testcases.adguard.com,~surge.sh###case-4-domain-exclusion > .test-banner
-! Test case 5: wildcard for tld
-testcases.adguard.*,surge.*###case-5-wildcard-for-tld > .test-banner
-! Test case 6: wildcard for tld support with $domain modifier
-||*/test-files/adguard.png$domain=testcases.adguard.*|surge.*
-
+testcases.adguard.com,surge.sh###subscribe-to-test-content-rules-filter
 !
-! Title: Rules for script rules test
-!
-! Filter to be used for testing purposes
-! https://testcases.adguard.com
-!
-! Hide warning
-testcases.adguard.com,surge.sh###subscribe-to-test-script-rules-filter
-!
-testcases.adguard.com,surge.sh#%#window.__testCase1 = true;
-testcases.adguard.com,surge.sh#%#window.__testCase2 = true;
-testcases.adguard.com,surge.sh#@%#window.__testCase2 = true;
-
-
-!
-! Title: Rules for extended css rules test
-!
-! Filter to be used for testing purposes
-! https://testcases.adguard.com
-!
-! Hide warning
-testcases.adguard.com,surge.sh###subscribe-to-test-extended-css-rules-filter
-!
-testcases.adguard.com,surge.sh###case1.banner:has(a.banner-link)
-testcases.adguard.com,surge.sh###case2.banner:contains(Click Me!)
-testcases.adguard.com,surge.sh###case3.banner:matches-css(opacity: 0.9)
-testcases.adguard.com,surge.sh###case4.banner:matches-css-after(content: sponsored)
-testcases.adguard.com,surge.sh###case5.banner:matches-css-before(content: sponsored)
-testcases.adguard.com,surge.sh###case6.banner:has-text(You would want to click me for sure!)
-testcases.adguard.com,surge.sh###case7.banner:-abp-has(a.banner-link)
-testcases.adguard.com,surge.sh###case8.banner:contains(Click Me!)
-testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)
-
-!
-! Title: Rules for $csp rules test
-!
-! Filter to be used for testing purposes
-! https://testcases.adguard.com
-!
-! Hide warning
-testcases.adguard.com,surge.sh###subscribe-to-test-csp-rules-filter
-!
-! Case 2
-!||testcases.adguard.com$csp=img-src https:
-!||surge.sh$csp=img-src https:
-!||testcases.adguard.com$csp=img-src adguard.com
-!||surge.sh$csp=img-src adguard.com
-
-!
-! Title: Rules for scriptlet rules test
-!
-! Filter to be used for testing purposes
-! https://testcases.adguard.com
-!
-! Hide warning
-testcases.adguard.com,surge.sh###subscribe-to-test-scriptlet-rules-filter
-!
-! abort-on-property-write
-!
-testcases.adguard.com,surge.sh#%#//scriptlet("abort-on-property-write", "__testCase1")
-testcases.adguard.com,surge.sh##+js(abort-on-property-write.js, __testCase2)
-testcases.adguard.com,surge.sh#$#abort-on-property-write __testCase3
-!
-! abort-current-inline-script
-!
-testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase4")
-testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase5")
-testcases.adguard.com,surge.sh#$#abort-current-inline-script __testCase6
-testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase7.__AG")
-testcases.adguard.com,surge.sh#%#//scriptlet("abort-current-inline-script", "__testCase8", "Case8")
-!
-! abort-on-property-read
-!
-testcases.adguard.com,surge.sh#%#//scriptlet("abort-on-property-read", "propReadCaseAG")
-testcases.adguard.com,surge.sh##+js(abort-on-property-read.js, propReadCaseUBO)
-testcases.adguard.com,surge.sh#$#abort-on-property-read propReadCaseABP
-
-! Cookie test rules
-||testcases.adguard.com^$cookie=test_cookie;maxAge=15
+testcases.adguard.com,surge.sh$$div[id="case1"]
+testcases.adguard.com,surge.sh$$div[id="case2"][tag-content="test-case-2-content"]
+testcases.adguard.com,surge.sh$$div[class="test-case-3-class"]
+testcases.adguard.com,surge.sh$$div[id="case4"][wildcard="*teasernet*tararar*"]
+testcases.adguard.com,surge.sh$$div[id="case5"]
+testcases.adguard.com,surge.sh$@$div[id="case5"]

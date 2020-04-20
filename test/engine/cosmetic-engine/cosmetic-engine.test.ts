@@ -1,6 +1,7 @@
 import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../../src/filterlist/rule-storage';
 import { StringRuleList } from '../../../src/filterlist/rule-list';
+import { CosmeticOption } from '../../../src';
 
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
     const list = new StringRuleList(listId, rules.join('\n'), false);
@@ -33,7 +34,7 @@ describe('Test cosmetic engine', () => {
             genericDisabledRule,
         ]));
 
-        const result = cosmeticEngine.match('example.org', true, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
         expect(result).toBeDefined();
 
         expect(result.elementHiding.generic.length).toEqual(1);
@@ -44,7 +45,7 @@ describe('Test cosmetic engine', () => {
 
     it('finds specific rule and not whitelisted generic rule', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
-        const result = cosmeticEngine.match('example.org', true, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
         expect(result).toBeDefined();
 
         expect(result.elementHiding.generic).toHaveLength(1);
@@ -56,7 +57,7 @@ describe('Test cosmetic engine', () => {
 
     it('finds generic rules for domain without specific rules', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
-        const result = cosmeticEngine.match('example.com', true, true, true);
+        const result = cosmeticEngine.match('example.com', CosmeticOption.CosmeticOptionAll);
         expect(result).toBeDefined();
 
         expect(result.elementHiding.generic).toHaveLength(2);
@@ -68,7 +69,7 @@ describe('Test cosmetic engine', () => {
 
     it('excludes generic css rules if necessary', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
-        const result = cosmeticEngine.match('example.org', true, true, false);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionCSS);
         expect(result).toBeDefined();
 
 
@@ -79,7 +80,7 @@ describe('Test cosmetic engine', () => {
 
     it('excludes all css rules if necessary, even if generic argument is true', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
-        const result = cosmeticEngine.match('example.org', false, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionGenericCSS);
         expect(result).toBeDefined();
 
 
@@ -98,7 +99,7 @@ describe('Test cosmetic engine', () => {
             extCssGenericRule,
             extCssSpecificRule,
         ]));
-        const result = cosmeticEngine.match('example.org', true, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
         expect(result.elementHiding.genericExtCss).toHaveLength(1);
         expect(result.elementHiding.genericExtCss[0].getContent()).toContain(extCssGenericRuleText);
         expect(result.elementHiding.specificExtCss).toHaveLength(1);
@@ -120,7 +121,7 @@ describe('Test cosmetic engine', () => {
             extCssGenericCssRule,
         ]));
 
-        const result = cosmeticEngine.match('example.org', true, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
 
         expect(result.CSS.specific).toHaveLength(1);
         expect(result.CSS.specific[0].getContent()).toContain(cssRuleText);
@@ -131,8 +132,9 @@ describe('Test cosmetic engine', () => {
         expect(result.CSS.genericExtCss).toHaveLength(1);
         expect(result.CSS.genericExtCss[0].getContent()).toContain(extCssCssRuleText);
     });
+});
 
-
+describe('Test cosmetic engine - JS rules', () => {
     it('correctly detects cosmetic JS rules', () => {
         const jsRuleText = 'window.__gaq = undefined;';
         const specificJsRule = `example.org#%#${jsRuleText}`;
@@ -143,7 +145,7 @@ describe('Test cosmetic engine', () => {
             genericJsRule,
         ]));
 
-        const result = cosmeticEngine.match('example.org', true, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.specific).toHaveLength(1);
         expect(result.JS.specific[0].getContent()).toContain(jsRuleText);
@@ -160,7 +162,7 @@ describe('Test cosmetic engine', () => {
             jsRule,
             jsExceptionRule,
         ]));
-        const result = cosmeticEngine.match('testcases.adguard.com', true, true, true);
+        const result = cosmeticEngine.match('testcases.adguard.com', CosmeticOption.CosmeticOptionAll);
         expect(result.JS.specific.length).toBe(0);
         expect(result.JS.generic.length).toBe(0);
     });
@@ -175,7 +177,7 @@ describe('Test cosmetic engine', () => {
             genericJsRule,
         ]));
 
-        const result = cosmeticEngine.match('example.org', true, true, true);
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.specific.length).toBe(1);
         expect(result.JS.generic.length).toBe(1);
@@ -192,9 +194,41 @@ describe('Test cosmetic engine', () => {
             jsExceptionRule,
         ]));
 
-        const result = cosmeticEngine.match('testcases.adguard.com', true, true, true);
+        const result = cosmeticEngine.match('testcases.adguard.com', CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.specific.length).toBe(0);
         expect(result.JS.generic.length).toBe(0);
+    });
+});
+
+describe('Test cosmetic engine - HTML filtering rules', () => {
+    it('correctly detects HTML rules', () => {
+        const contentPart = 'div[id="ad_text"]';
+        const specificRule = `example.org$$${contentPart}`;
+        const genericRule = `$$${contentPart}`;
+
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            specificRule,
+            genericRule,
+        ]));
+
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
+
+        expect(result.Html.specific).toHaveLength(1);
+        expect(result.Html.specific[0].getContent()).toContain(contentPart);
+        expect(result.Html.generic).toHaveLength(1);
+        expect(result.Html.generic[0].getContent()).toContain(contentPart);
+    });
+
+    it('checks cosmetic HTML exceptions', () => {
+        const rule = 'example.org$$div[id="ad_text"]';
+        const exceptionRule = 'example.org$@$div[id="ad_text"]';
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            rule,
+            exceptionRule,
+        ]));
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(0);
+        expect(result.Html.generic).toHaveLength(0);
     });
 });

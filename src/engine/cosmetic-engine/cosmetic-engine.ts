@@ -2,8 +2,8 @@ import { RuleStorage } from '../../filterlist/rule-storage';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
-import { CosmeticStylesResult } from './cosmetic-styles-result';
-import { CosmeticScriptsResult } from './cosmetic-scripts-result';
+import { CosmeticContentResult } from './cosmetic-content-result';
+import { CosmeticOption } from '../cosmetic-option';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -11,13 +11,30 @@ import { CosmeticScriptsResult } from './cosmetic-scripts-result';
  * It is primarily used by the {@see Engine}
  */
 export class CosmeticEngine {
+    /**
+     * Rules storage
+     */
     private ruleStorage: RuleStorage;
 
+    /**
+     * Lookup table for elemhide rules
+     */
     private elementHidingLookupTable: CosmeticLookupTable;
 
+    /**
+     * Lookup table for css rules
+     */
     private cssLookupTable: CosmeticLookupTable;
 
+    /**
+     * Lookup table for js and scriptlets rules
+     */
     private jsLookupTable: CosmeticLookupTable;
+
+    /**
+     * Lookup table for html filtering rules
+     */
+    private htmlLookupTable: CosmeticLookupTable;
 
     /**
      * Builds instance of cosmetic engine
@@ -30,6 +47,7 @@ export class CosmeticEngine {
         this.elementHidingLookupTable = new CosmeticLookupTable();
         this.cssLookupTable = new CosmeticLookupTable();
         this.jsLookupTable = new CosmeticLookupTable();
+        this.htmlLookupTable = new CosmeticLookupTable();
 
         const scanner = this.ruleStorage.createRuleStorageScanner();
 
@@ -60,7 +78,10 @@ export class CosmeticEngine {
                 this.jsLookupTable.addRule(rule);
                 break;
             }
-            // TODO add Scriptlet + HTML
+            case CosmeticRuleType.Html: {
+                this.htmlLookupTable.addRule(rule);
+                break;
+            }
             default: {
                 break;
             }
@@ -69,12 +90,19 @@ export class CosmeticEngine {
 
     /**
      * Prepares cosmetic result by hostname
-     * @param hostname
-     * @param includeCss
-     * @param includeJs
-     * @param includeGeneric
+     *
+     * @param hostname domain to check
+     * @param option mask of enabled cosmetic types
+     * @return CosmeticResult
      */
-    match(hostname: string, includeCss: boolean, includeJs: boolean, includeGeneric: boolean): CosmeticResult {
+    match(hostname: string, option: CosmeticOption): CosmeticResult {
+        const includeCss = (option & CosmeticOption.CosmeticOptionCSS) === CosmeticOption.CosmeticOptionCSS;
+        const includeGeneric = (option
+            & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
+
+        const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
+        const includeHtml = (option & CosmeticOption.CosmeticOptionHtml) === CosmeticOption.CosmeticOptionHtml;
+
         const cosmeticResult = new CosmeticResult();
 
         if (includeCss) {
@@ -98,6 +126,13 @@ export class CosmeticEngine {
             CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, hostname);
         }
 
+        if (includeHtml) {
+            if (includeGeneric) {
+                CosmeticEngine.appendGenericRules(cosmeticResult.Html, this.htmlLookupTable, hostname);
+            }
+            CosmeticEngine.appendSpecificRules(cosmeticResult.Html, this.htmlLookupTable, hostname);
+        }
+
         return cosmeticResult;
     }
 
@@ -108,7 +143,7 @@ export class CosmeticEngine {
      * @param hostname
      */
     private static appendGenericRules(
-        cosmeticResult: CosmeticStylesResult | CosmeticScriptsResult,
+        cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
         hostname: string,
     ): void {
@@ -128,7 +163,7 @@ export class CosmeticEngine {
      * @param hostname
      */
     private static appendSpecificRules(
-        cosmeticResult: CosmeticScriptsResult | CosmeticStylesResult,
+        cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
         hostname: string,
     ): void {

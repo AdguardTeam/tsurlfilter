@@ -47,10 +47,10 @@ describe('Element hiding rules constructor', () => {
         }).toThrowError(/Whitelist rule must have at least one domain specified/);
     });
 
-    it('throws error if css marker is not supported yet', () => {
+    it('throws error if marker is not supported yet', () => {
         expect(() => {
-            new CosmeticRule('example.org$$script[data-src="banner"]', 0);
-        }).toThrow(new SyntaxError('Unsupported rule type'));
+            new CosmeticRule('example.org$@@$script[data-src="banner"]', 0);
+        }).toThrow(new SyntaxError('This is not a cosmetic rule'));
     });
 });
 
@@ -298,5 +298,58 @@ describe('Javascript rules', () => {
         expect(whiteRule.isWhitelist()).toBeTruthy();
         expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
         expect(whiteRule.getContent()).toBe(jsContent);
+    });
+});
+
+describe('HTML filtering rules (content rules)', () => {
+    it('correctly parses html rules', () => {
+        const contentPart = 'div[id="ad_text"]';
+        const domainPart = 'example.org';
+        const ruleText = `${domainPart}$$${contentPart}`;
+
+        const rule = new CosmeticRule(ruleText, 0);
+
+        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.Html);
+        expect(rule.getContent()).toBe(contentPart);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+
+        const whiteRuleText = `${domainPart}$@$${contentPart}`;
+        const whiteRule = new CosmeticRule(whiteRuleText, 0);
+
+        expect(whiteRule.isWhitelist()).toBeTruthy();
+        expect(whiteRule.getType()).toBe(CosmeticRuleType.Html);
+        expect(whiteRule.getContent()).toBe(contentPart);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+    });
+
+    it('correctly parses html rules - wildcards', () => {
+        const contentPart = 'div[id="ad_text"][wildcard="*Test*[123]{123}*"]';
+        const domainPart = 'example.org';
+        const ruleText = `${domainPart}$$${contentPart}`;
+        const rule = new CosmeticRule(ruleText, 0);
+
+        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.Html);
+        expect(rule.getContent()).toBe(contentPart);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
+    });
+
+    it('correctly parses html rules - complicated cases', () => {
+        // eslint-disable-next-line max-len
+        const contentPart = 'div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]';
+        const ruleText = `~nigma.ru,google.com$$${contentPart}`;
+        const rule = new CosmeticRule(ruleText, 0);
+
+        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.Html);
+        expect(rule.getContent()).toBe(contentPart);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getPermittedDomains()![0]).toBe('google.com');
+        expect(rule.getRestrictedDomains()).toHaveLength(1);
+        expect(rule.getRestrictedDomains()![0]).toBe('nigma.ru');
     });
 });

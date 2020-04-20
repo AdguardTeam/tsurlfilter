@@ -1,4 +1,4 @@
-import * as utils from '../utils';
+import * as utils from '../utils/utils';
 import { IAdvancedModifier } from './advanced-modifier';
 
 /**

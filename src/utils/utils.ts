@@ -122,6 +122,20 @@ export function indexOfAny(str: string, chars: string[], start = 0): number {
 }
 
 /**
+ * Replaces all occurences of find with replace in str
+ *
+ * @param str
+ * @param find
+ * @param replace
+ */
+export function replaceAll(str: string, find: string, replace: string): string {
+    if (!str) {
+        return str;
+    }
+    return str.split(find).join(replace);
+}
+
+/**
  * Checks if arrays are equal
  *
  * @param left array

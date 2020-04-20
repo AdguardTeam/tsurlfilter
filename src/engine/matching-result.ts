@@ -1,46 +1,6 @@
 import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
-
-/**
- * CosmeticOption is the enumeration of various content script options.
- * Depending on the set of enabled flags the content script will contain different set of settings.
- */
-export enum CosmeticOption {
-    /**
-     * if generic elemhide and CSS rules are enabled
-     * Could be disabled by a $generichide rule.
-     */
-    CosmeticOptionGenericCSS = 1 << 1,
-    /**
-     * if elemhide and CSS rules are enabled
-     * Could be disabled by an $elemhide rule.
-     */
-    CosmeticOptionCSS = 1 << 2,
-    /**
-     * if JS rules and scriptlets are enabled
-     * Could be disabled by a $jsinject rule.
-     */
-    CosmeticOptionJS = 1 << 3,
-
-    /**
-     * TODO: Add support for these flags
-     * They are useful when content script is injected into an iframe
-     * In this case we can check what flags were applied to the top-level frame
-     */
-    CosmeticOptionSourceGenericCSS = 1 << 4,
-    CosmeticOptionSourceCSS = 1 << 5,
-    CosmeticOptionSourceJS = 1 << 6,
-
-    /**
-     * everything is enabled
-     */
-    CosmeticOptionAll = CosmeticOptionGenericCSS | CosmeticOptionCSS | CosmeticOptionJS,
-
-    /**
-     * everything is disabled
-     */
-    CosmeticOptionNone = 0
-}
+import { CosmeticOption } from './cosmetic-option';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
@@ -228,6 +188,10 @@ export class MatchingResult {
             return CosmeticOption.CosmeticOptionAll;
         }
 
+        if (this.basicRule.isDocumentWhitelistRule()) {
+            return CosmeticOption.CosmeticOptionNone;
+        }
+
         let option = CosmeticOption.CosmeticOptionAll;
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Elemhide)) {
@@ -241,6 +205,10 @@ export class MatchingResult {
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
             option ^= CosmeticOption.CosmeticOptionJS;
+        }
+
+        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Content)) {
+            option ^= CosmeticOption.CosmeticOptionHtml;
         }
 
         return option;

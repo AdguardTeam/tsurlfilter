@@ -1,4 +1,4 @@
-import * as utils from '../src/utils';
+import * as utils from '../../src/utils/utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
     it('works if it splits with or without preserving tokens', () => {
@@ -24,6 +24,12 @@ describe('startsAtIndexWith', () => {
         expect(utils.startsAtIndexWith('example', 0, 'ex')).toEqual(true);
         expect(utils.startsAtIndexWith('example', 1, 'xa')).toEqual(true);
         expect(utils.startsAtIndexWith('example', 6, 'e')).toEqual(true);
+    });
+});
+
+describe('replaceAll', () => {
+    it('works if it can replace simple strings', () => {
+        expect(utils.replaceAll('example_example', 'ex', 'EX')).toEqual('EXample_EXample');
     });
 });
 

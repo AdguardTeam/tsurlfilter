@@ -2,8 +2,8 @@ import { Engine } from '../../src/engine/engine';
 import { Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { CosmeticOption } from '../../src/engine/matching-result';
 import { config } from '../../src/configuration';
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
 
 describe('TestEngineMatchRequest', () => {
     it('works if request matches rule', () => {

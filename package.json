@@ -115,6 +115,7 @@
   },
   "dependencies": {
     "@rollup/plugin-typescript": "^2.1.0",
+    "text-encoding": "https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.3",
     "scriptlets": "https://github.com/AdguardTeam/Scriptlets.git#v1.1.13",
     "tldts": "^5.6.3"

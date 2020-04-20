@@ -1,18 +1,10 @@
+import { replaceAll } from '../utils/utils';
+
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/regexp
 // should be escaped . * + ? ^ $ { } ( ) | [ ] / \
 // except of * | ^
 const specialCharacters = ['.', '+', '?', '$', '{', '}', '(', ')', '[', ']', '/', '\\'];
 const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g');
-
-/**
- * Replaces all occurrences of a string "find" with "replace" str;
- */
-function replaceAll(str: string, find: string, replace: string): string {
-    if (!str) {
-        return str;
-    }
-    return str.split(find).join(replace);
-}
 
 /**
  * Class with static helper methods for working with basic filtering rules patterns.
