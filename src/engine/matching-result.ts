@@ -391,8 +391,10 @@ export class MatchingResult {
             const filteredRules: NetworkRule[] = [];
             for (const badfilter of badfilterRules) {
                 for (const rule of rules) {
-                    if (!badfilter.negatesBadfilter(rule) && !rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
-                        filteredRules.push(rule);
+                    if (!rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+                        if (!badfilter.negatesBadfilter(rule)) {
+                            filteredRules.push(rule);
+                        }
                     }
                 }
             }
