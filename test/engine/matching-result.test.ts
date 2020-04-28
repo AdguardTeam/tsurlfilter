@@ -104,7 +104,7 @@ describe('TestGetCosmeticOption', () => {
     });
 });
 
-describe('TestNewMatchingResult - badfilter modificator', () => {
+describe('TestNewMatchingResult - badfilter modifier', () => {
     it('works if badfilter is ok', () => {
         const rules = [
             new NetworkRule('||example.org^', 0),
@@ -167,23 +167,6 @@ describe('TestNewMatchingResult - badfilter modificator', () => {
 
         const result = new MatchingResult(rules, sourceRules);
 
-        expect(result).toBeTruthy();
-        expect(result.basicRule).not.toBeNull();
-        expect(result.basicRule!.getPermittedDomains()).toHaveLength(1);
-        expect(result.basicRule!.getPermittedDomains()).toContain('example.org');
-    });
-
-    it('checks badfilter for a distinct domain - 2 domains', () => {
-        const rules = [
-            new NetworkRule('/some$domain=example.com|example.org', 0),
-            new NetworkRule('/some$domain=example.com,badfilter', 0),
-            new NetworkRule('/some$domain=example.org,badfilter', 0),
-        ];
-        const sourceRules: NetworkRule[] = [];
-
-        const result = new MatchingResult(rules, sourceRules);
-
-        expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
     });
 
@@ -196,9 +179,7 @@ describe('TestNewMatchingResult - badfilter modificator', () => {
 
         const result = new MatchingResult(rules, sourceRules);
 
-        expect(result.basicRule).not.toBeNull();
-        expect(result.basicRule!.getPermittedDomains()).toHaveLength(1);
-        expect(result.basicRule!.getPermittedDomains()).toContain('example.test');
+        expect(result.basicRule).toBeNull();
     });
 
     it('checks badfilter could not be applied - negated domain', () => {
