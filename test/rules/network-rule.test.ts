@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import {
     Request, RequestType, NetworkRuleOption, NetworkRule,
 } from '../../src';
@@ -254,12 +255,15 @@ describe('NetworkRule constructor', () => {
         assertBadfilterNegates('*$image,domain=example.org', '*$image,badfilter,domain=example.org', true);
         assertBadfilterNegates('@@*$image,domain=example.org', '@@*$image,domain=example.org,badfilter', true);
         assertBadfilterNegates('@@*$image,domain=example.org', '*$image,domain=example.org,badfilter', false);
+
+        assertBadfilterNegates('@@path$image,domain=~example.org', '@@path$image,domain=~example.org,badfilter', true);
         assertBadfilterNegates('@@path$image,domain=~example.org', '@@path$image,domain=~example.com,badfilter', false);
-        // eslint-disable-next-line max-len
         assertBadfilterNegates('@@path$image,domain=~example.org', '@@an-other-path$image,domain=~example.org,badfilter', false);
+        assertBadfilterNegates('@@path$image,domain=~example.org|~example.com', '@@path$image,domain=~example.org,badfilter', false);
+
         assertBadfilterNegates('*$~image,domain=example.org', '*$~script,domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org|example.com', '*$image,domain=example.org,badfilter', true);
-        // eslint-disable-next-line max-len
+        assertBadfilterNegates('*$image,domain=example.com', '*$image,domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org|~example.com', '*$image,domain=example.org,badfilter', false);
     });
 });
