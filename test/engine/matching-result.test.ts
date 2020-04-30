@@ -3,7 +3,7 @@ import { NetworkRule } from '../../src';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
 
 describe('TestNewMatchingResult', () => {
-    it('works if constructor is ok', () => {
+    it('works if basic rule is found', () => {
         const ruleText = '||example.org^';
         const rules = [new NetworkRule(ruleText, 0)];
 
@@ -16,10 +16,8 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual(ruleText);
     });
-});
 
-describe('TestNewMatchingResultWhitelist', () => {
-    it('works if constructor is ok', () => {
+    it('works if whitelist rule is found', () => {
         const ruleText = '||example.org^';
         const sourceRuleText = '@@||example.com^$document';
 
@@ -106,7 +104,7 @@ describe('TestGetCosmeticOption', () => {
     });
 });
 
-describe('TestNewMatchingResultBadfilter', () => {
+describe('TestNewMatchingResult - badfilter modifier', () => {
     it('works if badfilter is ok', () => {
         const rules = [
             new NetworkRule('||example.org^', 0),
@@ -120,9 +118,7 @@ describe('TestNewMatchingResultBadfilter', () => {
         expect(result.basicRule).toBeNull();
         expect(result.documentRule).toBeNull();
     });
-});
 
-describe('TestNewMatchingResultBadfilterWhitelist', () => {
     it('works if badfilter whitelist is ok', () => {
         const rules = [
             new NetworkRule('||example.org^', 0),
@@ -141,9 +137,7 @@ describe('TestNewMatchingResultBadfilterWhitelist', () => {
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual('||example.org^');
     });
-});
 
-describe('TestNewMatchingResultBadfilterSourceRules', () => {
     it('works if badfilter source whitelist is ok', () => {
         const rules = [
             new NetworkRule('||example.org^', 0),
@@ -162,6 +156,44 @@ describe('TestNewMatchingResultBadfilterSourceRules', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual('||example.org^');
+    });
+
+    it('checks badfilter for a distinct domain', () => {
+        const rules = [
+            new NetworkRule('/some$domain=example.com|example.org', 0),
+            new NetworkRule('/some$domain=example.com,badfilter', 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result.basicRule).toBeNull();
+    });
+
+    it('checks badfilter for a few domains', () => {
+        const rules = [
+            new NetworkRule('/some$domain=example.com|example.org|example.test', 0),
+            new NetworkRule('/some$domain=example.com|example.org,badfilter', 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result.basicRule).toBeNull();
+    });
+
+    it('checks badfilter could not be applied - negated domain', () => {
+        const rules = [
+            new NetworkRule('/some$domain=example.com|example.org|~negated.com', 0),
+            new NetworkRule('/some$domain=example.com,badfilter', 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getPermittedDomains()).toHaveLength(2);
+        expect(result.basicRule!.getPermittedDomains()).toContain('example.com');
     });
 });
 

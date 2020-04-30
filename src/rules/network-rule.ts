@@ -574,11 +574,11 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (!utils.stringArraysEquals(this.permittedDomains, specifiedRule.permittedDomains)) {
+        if (!utils.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
             return false;
         }
 
-        if (!utils.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+        if (!utils.stringArraysHaveIntersection(this.permittedDomains, specifiedRule.permittedDomains)) {
             return false;
         }
 

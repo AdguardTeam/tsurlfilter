@@ -161,6 +161,27 @@ export function stringArraysEquals(left: string[] | null, right: string[] | null
 }
 
 /**
+ * Checks if arrays have an intersection
+ *
+ * @param left array
+ * @param right array
+ * @return {boolean} true on equality
+ */
+export function stringArraysHaveIntersection(left: string[] | null, right: string[] | null): boolean {
+    if (!left || !right) {
+        return true;
+    }
+
+    for (let i = 0; i < left.length; i += 1) {
+        if (right.includes(left[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Count enabled options in specified value of specified enumeration type
  *
  * @param value bit mask to check
