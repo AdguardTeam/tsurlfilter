@@ -8,7 +8,7 @@ export class RedirectModifier implements IAdvancedModifier {
     /**
      * Value
      */
-    private readonly redirectValue: string;
+    private readonly redirectTitle: string;
 
     /**
      * Constructor
@@ -17,30 +17,26 @@ export class RedirectModifier implements IAdvancedModifier {
      * @param ruleText
      */
     constructor(value: string, ruleText: string) {
-        this.redirectValue = value;
+        RedirectModifier.validate(ruleText, value);
 
-        this.validate(ruleText);
-
-        // function RedirectOption(option) {
-        //     const getRedirectUrl = () => adguard.rules.RedirectFilterService.buildRedirectUrl(option);
-        //     return { getRedirectUrl, redirectTitle: option };
-        // }
+        this.redirectTitle = value;
     }
 
     /**
-     * Redirect value
+     * Redirect title
      */
     getValue(): string {
-        return this.redirectValue;
+        return this.redirectTitle;
     }
 
     /**
      * Validates redirect rule
      *
      * @param ruleText
+     * @param redirectTitle
      */
-    private validate(ruleText: string): void {
-        if (!this.redirectValue) {
+    private static validate(ruleText: string, redirectTitle: string): void {
+        if (!redirectTitle) {
             throw new Error(`Invalid $redirect rule: Redirect value must not be empty: ${ruleText}`);
         }
 
