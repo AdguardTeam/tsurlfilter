@@ -244,4 +244,16 @@ describe('NetworkRule - redirect rules', () => {
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
         expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
     });
+
+    it('works if it throws empty redirect rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect', 0);
+        }).toThrowError(/Redirect value must not be empty:*/);
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect=space', 0);
+        }).toThrowError(/Rule redirect modifier is invalid:*/);
+    });
 });

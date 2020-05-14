@@ -795,7 +795,7 @@ export class NetworkRule implements rule.IRule {
 
             case 'redirect':
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
-                this.advancedModifier = new RedirectModifier(optionValue);
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText);
                 break;
 
             default:
