@@ -36,8 +36,8 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [x] Core blocking syntax
     -   [x] Basic network engine
     -   [x] Basic rules validation (don't match everything, unexpected modifiers, etc)
-    -   [ ] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
-    -   [ ] Domain semantics: AG-254
+    -   [x] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
+    -   [x] Domain semantics: AG-254
 -   [x] Benchmark basic rules matching
 -   [ ] Hosts matching rules
     -   [ ] /etc/hosts matching

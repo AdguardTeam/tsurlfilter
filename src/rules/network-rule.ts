@@ -270,7 +270,14 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (!this.matchDomain(request.sourceHostname || '')) {
-            return false;
+            // https://jira.adguard.com/browse/AG-2082
+            if (request.requestType !== RequestType.Document && request.requestType !== RequestType.Subdocument) {
+                return false;
+            }
+
+            if (!this.matchDomain(request.hostname || '')) {
+                return false;
+            }
         }
 
         return this.matchPattern(request);
