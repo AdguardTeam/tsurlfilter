@@ -387,3 +387,17 @@ describe('TestNewMatchingResult - cookie rules', () => {
         expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistRegexpText);
     });
 });
+
+describe('TestNewMatchingResult - redirect rules', () => {
+    it('works if redirect rules are found', () => {
+        const rules = [
+            new NetworkRule('||8s8.eu^*fa.js$script,redirect=noopjs', 0),
+            new NetworkRule('||8s8.eu^*fa.js$script', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBeTruthy();
+        expect(resultRule!.getText()).toBe('||8s8.eu^*fa.js$script,redirect=noopjs');
+    });
+});
