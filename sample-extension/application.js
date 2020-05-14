@@ -2,6 +2,7 @@
 import * as AGUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
+import { RedirectsService } from './redirects/redirects-service.js';
 
 /**
  * Extension application class
@@ -32,6 +33,13 @@ export class Application {
      * Content filtering module
      */
     contentFiltering = null;
+
+    /**
+     * Redirects service
+     *
+     * @type {RedirectsService}
+     */
+    redirectsService = new RedirectsService();
 
     /**
      * Initializes engine instance
@@ -78,10 +86,17 @@ export class Application {
             this.filteringLog.addHttpRequestEvent(details.tabId, details.url, requestRule);
         }
 
-        if (requestRule
-            && !requestRule.isWhitelist()) {
-            // eslint-disable-next-line consistent-return
-            return { cancel: true };
+        if (requestRule && !requestRule.isWhitelist()) {
+            if (requestType === AGUrlFilter.RequestType.Document) {
+                return { cancel: true };
+            }
+
+            if (requestRule.isOptionEnabled(AGUrlFilter.NetworkRuleOption.Redirect)) {
+                const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
+                if (redirectUrl) {
+                    return { redirectUrl };
+                }
+            }
         }
     }
 
