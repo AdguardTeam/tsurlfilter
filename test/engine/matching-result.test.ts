@@ -387,3 +387,38 @@ describe('TestNewMatchingResult - cookie rules', () => {
         expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistRegexpText);
     });
 });
+
+describe('TestNewMatchingResult - stealth modifier', () => {
+    it('works if stealth rule is found', () => {
+        const ruleText = '@@||example.org^$stealth';
+        const rules = [
+            new NetworkRule(ruleText, 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getText()).toBe(ruleText);
+        expect(result.documentRule).toBeNull();
+        expect(result.stealthRule).not.toBeNull();
+        expect(result.stealthRule!.getText()).toBe(ruleText);
+    });
+
+    it('works if stealth rule is found for source', () => {
+        const ruleText = '@@||example.org^$stealth';
+        const rules: NetworkRule[] = [];
+        const sourceRules: NetworkRule[] = [
+            new NetworkRule(ruleText, 0),
+        ];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeNull();
+        expect(result.stealthRule).not.toBeNull();
+        expect(result.stealthRule!.getText()).toBe(ruleText);
+    });
+});
