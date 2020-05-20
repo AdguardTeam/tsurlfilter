@@ -1,39 +1,29 @@
-/* eslint-disable no-console, no-undef */
+/* eslint-disable no-console, no-undef, import/extensions */
+
+import { loadResource } from '../utils/resources.js';
 
 /**
-     * Redirects service class
-     */
+ * Redirects service class
+ */
 export class RedirectsService {
     redirects = null;
 
     /**
-         * Constructor
-         */
+     * Constructor
+     */
     constructor() {
         (async () => {
-            /**
-                 * Loads redirects data
-                 *
-                 * @return rules text
-                 */
-            const loadInfo = async () => {
-                const url = chrome.runtime.getURL('/redirects/lib/redirects.yml');
-                const response = await fetch(url);
-                return response.text();
-            };
-
-            const rawYaml = await loadInfo();
-
+            const rawYaml = await loadResource('redirects.yml');
             this.redirects = new Redirects(rawYaml);
         })();
     }
 
     /**
-         * Creates url
-         *
-         * @param title
-         * @return string|null
-         */
+     * Creates url
+     *
+     * @param title
+     * @return string|null
+     */
     createRedirectUrl(title) {
         if (!title) {
             return null;
