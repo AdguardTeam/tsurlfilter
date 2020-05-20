@@ -270,7 +270,10 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (!this.matchDomain(request.sourceHostname || '')) {
-            // https://jira.adguard.com/browse/AG-2082
+            /**
+             * In some cases we will use the host of the request URL to check domain restrictions
+             * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
+             */
             if (request.requestType !== RequestType.Document && request.requestType !== RequestType.Subdocument) {
                 return false;
             }
