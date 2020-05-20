@@ -128,6 +128,7 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Stealth)) {
                 this.stealthRule = rule;
+                continue;
             }
 
             // Check blocking rules against $genericblock / $urlblock

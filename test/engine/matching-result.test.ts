@@ -399,8 +399,7 @@ describe('TestNewMatchingResult - stealth modifier', () => {
         const result = new MatchingResult(rules, sourceRules);
 
         expect(result).toBeTruthy();
-        expect(result.basicRule).not.toBeNull();
-        expect(result.basicRule!.getText()).toBe(ruleText);
+        expect(result.basicRule).toBeNull();
         expect(result.documentRule).toBeNull();
         expect(result.stealthRule).not.toBeNull();
         expect(result.stealthRule!.getText()).toBe(ruleText);
@@ -420,5 +419,24 @@ describe('TestNewMatchingResult - stealth modifier', () => {
         expect(result.documentRule).toBeNull();
         expect(result.stealthRule).not.toBeNull();
         expect(result.stealthRule!.getText()).toBe(ruleText);
+    });
+
+    it('works if stealth rule is found with an other rule', () => {
+        const ruleText = '||example.org^';
+        const stealthRuleText = '@@||example.org^$stealth';
+        const rules = [
+            new NetworkRule(ruleText, 0),
+            new NetworkRule(stealthRuleText, 0),
+        ];
+        const sourceRules: NetworkRule[] = [];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getText()).toBe(ruleText);
+        expect(result.documentRule).toBeNull();
+        expect(result.stealthRule).not.toBeNull();
+        expect(result.stealthRule!.getText()).toBe(stealthRuleText);
     });
 });
