@@ -92,6 +92,49 @@ describe('TestMatchSourceRule', () => {
     });
 });
 
+describe('Test $domain modifier semantics', () => {
+    const rule = '||check.com/url$domain=example.org|check.com';
+    const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+    it('will match document url host', () => {
+        const request = new Request('http://check.com/url', 'http://www.example.org/', RequestType.Document);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result!.getText()).toEqual(rule);
+    });
+
+    it('checks request url does not match', () => {
+        const request = new Request('http://another.org/url', 'http://www.example.org/', RequestType.Document);
+        const result = engine.match(request);
+
+        expect(result).toBeFalsy();
+    });
+
+    it('will match request url host', () => {
+        const request = new Request('http://check.com/url', 'http://test.com/', RequestType.Document);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result!.getText()).toEqual(rule);
+    });
+
+    it('will match request url host - subdocument', () => {
+        const request = new Request('http://check.com/url', 'http://test.com/', RequestType.Subdocument);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result!.getText()).toEqual(rule);
+    });
+
+    it('checks request type Document is required', () => {
+        const request = new Request('http://check.com/url', 'http://test.com/', RequestType.Image);
+        const result = engine.match(request);
+
+        expect(result).toBeFalsy();
+    });
+});
+
 describe('TestMatchSimplePattern', () => {
     it('works if it finds rule matching pattern', () => {
         const rule = '_prebid_';

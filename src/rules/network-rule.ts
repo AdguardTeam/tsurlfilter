@@ -270,7 +270,18 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (!this.matchDomain(request.sourceHostname || '')) {
-            return false;
+            /**
+             * We make an exception for HTML documents and also check $domain against the request URL hostname.
+             * We do this in order to simplify creating rules like this: $cookie,domain=example.org|example.com
+             * as otherwise, you'd need to create an additional rule for each of these domains.
+             */
+            if (request.requestType !== RequestType.Document && request.requestType !== RequestType.Subdocument) {
+                return false;
+            }
+
+            if (!this.matchDomain(request.hostname || '')) {
+                return false;
+            }
         }
 
         return this.matchPattern(request);
