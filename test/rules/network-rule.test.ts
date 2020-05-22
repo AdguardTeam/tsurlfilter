@@ -365,6 +365,21 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('$domain=example.org', 0);
         request = new Request('https://example.com/', 'https://example.org/', RequestType.Script);
         expect(rule.match(request)).toEqual(true);
+
+        // Match request url host
+        rule = new NetworkRule('$domain=example.org', 0);
+        request = new Request('https://example.org/', 'https://example.com/', RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+
+        // Match request url host
+        rule = new NetworkRule('$domain=example.org', 0);
+        request = new Request('https://example.org/', 'https://example.com/', RequestType.Subdocument);
+        expect(rule.match(request)).toEqual(true);
+
+        // Document or Subdocument only
+        rule = new NetworkRule('$domain=example.org', 0);
+        request = new Request('https://example.org/', 'https://example.com/', RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
     });
 
     it('works when content type restrictions are applied properly', () => {

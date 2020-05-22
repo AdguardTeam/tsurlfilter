@@ -41,10 +41,6 @@ describe('Element hiding rules constructor', () => {
         expect(() => {
             new CosmeticRule('example.org## ', 0);
         }).toThrowError(/Empty rule content/);
-
-        expect(() => {
-            new CosmeticRule('#@#.banner', 0);
-        }).toThrowError(/Whitelist rule must have at least one domain specified/);
     });
 
     it('throws error if marker is not supported yet', () => {

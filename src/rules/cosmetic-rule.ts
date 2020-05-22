@@ -303,10 +303,6 @@ export class CosmeticRule implements rule.IRule {
                 throw new SyntaxError('Unsupported rule type');
         }
 
-        if (this.whitelist && (this.permittedDomains === null || this.permittedDomains.length === 0)) {
-            throw new SyntaxError('Whitelist rule must have at least one domain specified');
-        }
-
         // validate pseudo class for non CSS type
         if (this.type !== CosmeticRuleType.Css) {
             // We need to validate pseudo-classes
