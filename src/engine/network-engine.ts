@@ -305,7 +305,7 @@ export class NetworkEngine {
             return false;
         }
 
-        const hasWildcardDomain = permittedDomains.find((d) => DomainModifier.isWildcardDomain(d));
+        const hasWildcardDomain = permittedDomains.some((d) => DomainModifier.isWildcardDomain(d));
         if (hasWildcardDomain) {
             return false;
         }
