@@ -91,7 +91,7 @@ export class DomainModifier {
      *
      * @param domain
      */
-    private static isWildcardDomain(domain: string): boolean {
+    public static isWildcardDomain(domain: string): boolean {
         return domain.endsWith('.*');
     }
 
