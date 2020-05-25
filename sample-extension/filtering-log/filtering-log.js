@@ -145,6 +145,23 @@ export class FilteringLog {
     }
 
     /**
+     * Add stealth event
+     *
+     * @param tabId
+     * @param frameUrl
+     * @param action
+     */
+    addStealthEvent(tabId, frameUrl, action) {
+        const filteringEvent = {
+            eventType: 'STEALTH',
+            frameUrl,
+            action,
+        };
+
+        this.pushFilteringEvent(filteringEvent);
+    }
+
+    /**
      * Push event to listeners
      *
      * TODO: This is the place to notify UI
@@ -157,6 +174,10 @@ export class FilteringLog {
 
         if (event.eventType === 'REQUEST') {
             console.log(`[FILTERING-LOG] Request: ${event.requestUrl}`);
+        }
+
+        if (event.eventType === 'STEALTH') {
+            console.log(`[FILTERING-LOG] Request: ${event.frameUrl} Stealth action: ${event.action}`);
         }
 
         if (event.rule) {
