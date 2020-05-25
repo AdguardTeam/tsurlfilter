@@ -51,6 +51,7 @@ export class Application {
 
         const list = new AGUrlFilter.StringRuleList(1, rulesText, false);
         const ruleStorage = new AGUrlFilter.RuleStorage([list]);
+
         const config = {
             engine: 'extension',
             // eslint-disable-next-line no-undef
@@ -58,8 +59,18 @@ export class Application {
             verbose: true,
         };
 
+        const stealthConfig = {
+            stripTrackingParameters: true,
+            trackingParameters: 'utm_source,utm_medium,utm_term',
+            selfDestructThirdPartyCookies: true,
+            selfDestructThirdPartyCookiesTime: 0,
+            selfDestructFirstPartyCookies: true,
+            selfDestructFirstPartyCookiesTime: 1,
+        };
+
         this.engine = new AGUrlFilter.Engine(ruleStorage, config);
         this.contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
+        this.stealthService = new AGUrlFilter.StealthService(stealthConfig);
 
         console.log('Starting url filter engine..ok');
     }
@@ -84,6 +95,14 @@ export class Application {
 
         if (details.type === 'main_frame') {
             this.filteringLog.addHttpRequestEvent(details.tabId, details.url, requestRule);
+        }
+
+        // Strip tracking parameters
+        const cleansedUrl = this.stealthService.removeTrackersFromUrl(request);
+        if (cleansedUrl) {
+            console.debug(`Stealth stripped tracking parameters for url: ${details.url}`);
+            this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
+            return { redirectUrl: cleansedUrl };
         }
 
         if (requestRule && !requestRule.isWhitelist()) {
