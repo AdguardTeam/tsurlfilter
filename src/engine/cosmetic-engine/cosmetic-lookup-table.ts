@@ -15,7 +15,7 @@ export class CosmeticLookupTable {
      * Collection of domain specific rules, those could not be grouped by domain name
      * For instance, wildcard domain rules.
      */
-    public otherRules: CosmeticRule[];
+    public wildcardRules: CosmeticRule[];
 
     /**
      * Collection of generic rules.
@@ -32,7 +32,7 @@ export class CosmeticLookupTable {
 
     constructor() {
         this.byHostname = new Map();
-        this.otherRules = [] as CosmeticRule[];
+        this.wildcardRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
         this.whitelist = new Map();
     }
@@ -59,7 +59,7 @@ export class CosmeticLookupTable {
         if (domains) {
             const hasWildcardDomain = domains.some((d) => DomainModifier.isWildcardDomain(d));
             if (hasWildcardDomain) {
-                this.otherRules.push(rule);
+                this.wildcardRules.push(rule);
                 return;
             }
 
@@ -77,7 +77,7 @@ export class CosmeticLookupTable {
      */
     findByHostname(hostname: string): CosmeticRule[] {
         const rules = this.byHostname.get(hostname) || [] as CosmeticRule[];
-        rules.push(...this.otherRules.filter((r) => r.match(hostname)));
+        rules.push(...this.wildcardRules.filter((r) => r.match(hostname)));
 
         return rules.filter((rule) => !rule.isWhitelist());
     }
