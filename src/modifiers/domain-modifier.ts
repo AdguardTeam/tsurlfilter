@@ -1,3 +1,5 @@
+import { getPublicSuffix } from 'tldts';
+
 /**
  * This is a helper class that is used specifically to work
  * with domains restrictions.
@@ -67,14 +69,60 @@ export class DomainModifier {
      * @param domain - domain to check
      * @param domains - domains list to check against
      */
-    static isDomainOrSubdomainOfAny(domain: string, domains: string[]): boolean {
+    public static isDomainOrSubdomainOfAny(domain: string, domains: string[]): boolean {
         for (let i = 0; i < domains.length; i += 1) {
             const d = domains[i];
+            if (DomainModifier.isWildcardDomain(d)) {
+                if (DomainModifier.matchAsWildcard(d, domain)) {
+                    return true;
+                }
+            }
+
             if (domain === d || (domain.endsWith(d) && domain.endsWith(`.${d}`))) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Checks if domain ends with wildcard
+     *
+     * @param domain
+     */
+    public static isWildcardDomain(domain: string): boolean {
+        return domain.endsWith('.*');
+    }
+
+    /**
+     * Checks if wildcard matches domain
+     *
+     * @param wildcard
+     * @param domainNameToCheck
+     */
+    private static matchAsWildcard(wildcard: string, domainNameToCheck: string): boolean {
+        const wildcardedDomainToCheck = DomainModifier.genTldWildcard(domainNameToCheck);
+        if (wildcardedDomainToCheck) {
+            return wildcardedDomainToCheck === wildcard
+                || (wildcardedDomainToCheck.endsWith(wildcard) && wildcardedDomainToCheck.endsWith(`.${wildcard}`));
+        }
+
+        return false;
+    }
+
+    /**
+     * Generates from domain tld wildcard e.g. google.com -> google.* ; youtube.co.uk -> youtube.*
+     *
+     * @param {string} domainName
+     * @returns {string} string is empty if tld for provided domain name doesn't exists
+     */
+    private static genTldWildcard(domainName: string): string {
+        const tld = getPublicSuffix(domainName);
+        if (tld) {
+            return `${domainName.slice(0, domainName.indexOf(`.${tld}`))}.*`;
+        }
+
+        return '';
     }
 }

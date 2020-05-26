@@ -1,4 +1,5 @@
 import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { DomainModifier } from '../../modifiers/domain-modifier';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -9,6 +10,12 @@ export class CosmeticLookupTable {
      * Map with rules grouped by the permitted domains names
      */
     private byHostname: Map<string, CosmeticRule[]>;
+
+    /**
+     * Collection of domain specific rules, those could not be grouped by domain name
+     * For instance, wildcard domain rules.
+     */
+    public wildcardRules: CosmeticRule[];
 
     /**
      * Collection of generic rules.
@@ -25,6 +32,7 @@ export class CosmeticLookupTable {
 
     constructor() {
         this.byHostname = new Map();
+        this.wildcardRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
         this.whitelist = new Map();
     }
@@ -49,6 +57,12 @@ export class CosmeticLookupTable {
 
         const domains = rule.getPermittedDomains();
         if (domains) {
+            const hasWildcardDomain = domains.some((d) => DomainModifier.isWildcardDomain(d));
+            if (hasWildcardDomain) {
+                this.wildcardRules.push(rule);
+                return;
+            }
+
             for (const domain of domains) {
                 const rules = this.byHostname.get(domain) || [] as CosmeticRule[];
                 rules.push(rule);
@@ -63,6 +77,7 @@ export class CosmeticLookupTable {
      */
     findByHostname(hostname: string): CosmeticRule[] {
         const rules = this.byHostname.get(hostname) || [] as CosmeticRule[];
+        rules.push(...this.wildcardRules.filter((r) => r.match(hostname)));
 
         return rules.filter((rule) => !rule.isWhitelist());
     }

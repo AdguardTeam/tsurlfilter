@@ -145,6 +145,27 @@ describe('Test cosmetic engine', () => {
         expect(result.CSS.genericExtCss).toHaveLength(1);
         expect(result.CSS.genericExtCss[0].getContent()).toContain(extCssCssRuleText);
     });
+
+    it('finds wildcard hiding rules', () => {
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            `example.*##${specificRuleContent}`,
+            specificDisablingRule,
+            genericRule,
+            genericDisabledRule,
+        ]));
+
+        const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionAll);
+        expect(result).toBeDefined();
+
+        expect(result.elementHiding.generic.length).toEqual(1);
+        expect(result.elementHiding.specific.length).toEqual(1);
+
+        const negativeResult = cosmeticEngine.match('test.org', CosmeticOption.CosmeticOptionAll);
+        expect(negativeResult).toBeDefined();
+
+        expect(negativeResult.elementHiding.generic.length).toEqual(2);
+        expect(negativeResult.elementHiding.specific.length).toEqual(0);
+    });
 });
 
 describe('Test cosmetic engine - JS rules', () => {
