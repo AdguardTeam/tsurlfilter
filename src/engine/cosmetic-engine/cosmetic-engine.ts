@@ -167,11 +167,11 @@ export class CosmeticEngine {
         lookupTable: CosmeticLookupTable,
         hostname: string,
     ): void {
-        const jsHostnameRules = lookupTable.findByHostname(hostname);
-        if (jsHostnameRules.length > 0) {
-            for (const jsHostnameRule of jsHostnameRules) {
-                if (!lookupTable.isWhitelisted(hostname, jsHostnameRule)) {
-                    cosmeticResult.append(jsHostnameRule);
+        const hostnameRules = lookupTable.findByHostname(hostname);
+        if (hostnameRules.length > 0) {
+            for (const rule of hostnameRules) {
+                if (!lookupTable.isWhitelisted(hostname, rule)) {
+                    cosmeticResult.append(rule);
                 }
             }
         }

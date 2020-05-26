@@ -64,6 +64,29 @@ describe('CosmeticRule match', () => {
         expect(rule.match('sub.example.org')).toEqual(false);
         expect(rule.match('sub.sub.example.org')).toEqual(false);
     });
+
+    it('works if it matches wildcard domain restrictions properly', () => {
+        const rule = new CosmeticRule('example.*##body', 0);
+        expect(rule.match('example.org')).toEqual(true);
+        expect(rule.match('example.de')).toEqual(true);
+        expect(rule.match('example.co.uk')).toEqual(true);
+        expect(rule.match('sub.example.org')).toEqual(true);
+
+        expect(rule.match('testexample.org')).toEqual(false);
+        // non-existent tld
+        expect(rule.match('example.eu.uk')).toEqual(false);
+    });
+
+    it('works if it matches wildcard domain restrictions properly - complicated', () => {
+        const rule = new CosmeticRule('~yandex.*,google.*,youtube.*###ad-iframe', 0);
+        expect(rule.match('google.com')).toEqual(true);
+        expect(rule.match('youtube.ru')).toEqual(true);
+        expect(rule.match('youtube.co.id')).toEqual(true);
+
+        expect(rule.match('yandex.com')).toEqual(false);
+        expect(rule.match('www.yandex.ru')).toEqual(false);
+        expect(rule.match('www.adguard.com')).toEqual(false);
+    });
 });
 
 describe('CosmeticRule.CSS', () => {

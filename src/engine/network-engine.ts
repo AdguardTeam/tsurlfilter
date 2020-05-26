@@ -3,6 +3,7 @@ import { NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from './matching-result';
 import { fastHash, fastHashBetween } from '../utils/utils';
 import { RuleStorage } from '../filterlist/rule-storage';
+import { DomainModifier } from '../modifiers/domain-modifier';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules
@@ -291,8 +292,8 @@ export class NetworkEngine {
     }
 
     /**
-     * Tries to add the rule to the shortcuts table.
-     * returns true if it was added or false if the shortcut is too short
+     * Tries to add the rule to the domains table.
+     * returns true if it was added or false if it is not possible
      *
      * @param rule to add
      * @param storageIdx index
@@ -301,6 +302,11 @@ export class NetworkEngine {
     private addRuleToDomainsTable(rule: NetworkRule, storageIdx: number): boolean {
         const permittedDomains = rule.getPermittedDomains();
         if (!permittedDomains || permittedDomains.length === 0) {
+            return false;
+        }
+
+        const hasWildcardDomain = permittedDomains.some((d) => DomainModifier.isWildcardDomain(d));
+        if (hasWildcardDomain) {
             return false;
         }
 

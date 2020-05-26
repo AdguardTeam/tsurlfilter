@@ -151,6 +151,35 @@ describe('TestMatchSimplePattern', () => {
     });
 });
 
+describe('Test Match Wildcard domain', () => {
+    it('works if it finds rule matching wildcard domain', () => {
+        const rule = '||*/te/^$domain=~negative.*|example.*,third-party';
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+        const request = new Request('https://test.ru/te/', 'https://example.com/', RequestType.Image);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+
+        const negativeRequest = new Request('https://test.ru/te/', 'https://negative.com/', RequestType.Image);
+        const negativeResult = engine.match(negativeRequest);
+
+        expect(negativeResult).toBeNull();
+    });
+
+    it('works if it finds rule matching wildcard domain - shortcuts', () => {
+        const rule = '||*/tests/^$domain=~negative.*|example.*,third-party';
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+        const request = new Request('https://test.ru/tests/', 'https://example.com/', RequestType.Image);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+    });
+});
+
 describe('TestBenchNetworkEngine', () => {
     /**
      * Resources file paths

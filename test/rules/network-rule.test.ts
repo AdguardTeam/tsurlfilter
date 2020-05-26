@@ -382,6 +382,47 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(false);
     });
 
+    it('works when $domain modifier is applied properly - wildcards', () => {
+        let request: Request;
+
+        const rule = new NetworkRule('||test.ru/^$domain=~nigma.*|google.*,third-party,match-case,popup', 0);
+
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getRestrictedDomains()).toHaveLength(1);
+
+        request = new Request('https://test.ru/', 'https://google.com/', RequestType.Document);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://test.ru/', 'https://www.google.com/', RequestType.Document);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://test.ru/', 'https://www.google.de/', RequestType.Document);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://test.ru/', 'https://www.google.co.uk/', RequestType.Document);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://test.ru/', 'https://google.co.uk/', RequestType.Document);
+        expect(rule.match(request)).toBeTruthy();
+
+
+        // non-existent tld
+        request = new Request('https://test.ru/', 'https://google.uk.eu/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request = new Request('https://test.ru/', 'https://nigma.ru/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request = new Request('https://test.ru/', 'https://nigma.com/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request = new Request('https://test.ru/', 'https://www.nigma.ru/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request = new Request('https://test.ru/', 'https://adguard.ru/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+    });
+
     it('works when content type restrictions are applied properly', () => {
         let rule: NetworkRule;
         let request: Request;
