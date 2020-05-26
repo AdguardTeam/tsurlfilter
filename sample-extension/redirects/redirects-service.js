@@ -1,6 +1,6 @@
 /* eslint-disable no-console, no-undef, import/extensions */
 
-import { loadResource } from '../utils/resources.js';
+import { loadResource, createRedirectFileUrl } from '../utils/resources.js';
 
 /**
  * Redirects service class
@@ -35,14 +35,6 @@ export class RedirectsService {
             return null;
         }
 
-        let { content, contentType } = redirectSource;
-        // if contentType does not include "base64" string we convert it to base64
-        const BASE_64 = 'base64';
-        if (!contentType.includes(BASE_64)) {
-            content = window.btoa(content);
-            contentType = `${contentType};${BASE_64}`;
-        }
-
-        return `data:${contentType},${content}`;
+        return createRedirectFileUrl(redirectSource.file);
     }
 }

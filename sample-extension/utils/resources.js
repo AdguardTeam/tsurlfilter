@@ -64,3 +64,13 @@ export async function loadResource(path) {
     const response = await fetch(url);
     return response.text();
 }
+
+/**
+ * Create url for redirect file
+ *
+ * @param redirectFile
+ * @return {*}
+ */
+export function createRedirectFileUrl(redirectFile) {
+    return chrome.runtime.getURL(`${WEB_ACCESSIBLE_RESOURCES}/redirects/${redirectFile}${warSecret()}`);
+}
