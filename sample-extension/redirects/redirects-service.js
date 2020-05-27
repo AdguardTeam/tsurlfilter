@@ -9,13 +9,11 @@ export class RedirectsService {
     redirects = null;
 
     /**
-     * Constructor
+     * Initialize service
      */
-    constructor() {
-        (async () => {
-            const rawYaml = await loadResource('redirects.yml');
-            this.redirects = new Redirects(rawYaml);
-        })();
+    async init() {
+        const rawYaml = await loadResource('redirects.yml');
+        this.redirects = new Redirects(rawYaml);
     }
 
     /**

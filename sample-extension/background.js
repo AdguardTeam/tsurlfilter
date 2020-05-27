@@ -26,7 +26,7 @@ import { Application } from './application.js';
 
     // Load rules and start engine
     const rulesText = await loadRules();
-    application.startEngine(rulesText);
+    await application.startEngine(rulesText);
 
     /**
      * Add on before request listener

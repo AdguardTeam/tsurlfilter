@@ -46,7 +46,7 @@ export class Application {
      *
      * @param rulesText
      */
-    startEngine(rulesText) {
+    async startEngine(rulesText) {
         console.log('Starting url filter engine');
 
         const list = new AGUrlFilter.StringRuleList(1, rulesText, false);
@@ -71,6 +71,7 @@ export class Application {
         this.engine = new AGUrlFilter.Engine(ruleStorage, config);
         this.contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
         this.stealthService = new AGUrlFilter.StealthService(stealthConfig);
+        await this.redirectsService.init();
 
         console.log('Starting url filter engine..ok');
     }
