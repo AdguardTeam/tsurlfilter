@@ -3,6 +3,7 @@ import { NetworkRule } from '../../src';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
+import { RedirectModifier } from '../../src/modifiers/redirect-modifier';
 
 describe('NetworkRule - csp rules', () => {
     it('works if csp modifier is correctly parsed', () => {
@@ -224,5 +225,35 @@ describe('NetworkRule - cookie rules', () => {
         expect(() => {
             new NetworkRule('||example.org^$cookie=__cfduid;maxAge=15;sameSite=lax;some=some', 0);
         }).toThrowError(/Unknown \$cookie option:*/);
+    });
+});
+
+describe('NetworkRule - redirect rules', () => {
+    it('works if redirect modifier is correctly parsed', () => {
+        const redirectValue = 'noopjs';
+        const rule = new NetworkRule(`||example.org/script.js$script,redirect=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works if redirect modifier is correctly parsed - mp4', () => {
+        const redirectValue = 'noopmp4-1s';
+        const rule = new NetworkRule(`||example.org/test.mp4$media,redirect=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works if it throws empty redirect rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect', 0);
+        }).toThrowError(/Redirect value must not be empty:*/);
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect=space', 0);
+        }).toThrowError(/Rule redirect modifier is invalid:*/);
     });
 });

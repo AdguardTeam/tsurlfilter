@@ -65,3 +65,49 @@ describe('Scriptlets', () => {
         expect(res[1]).toBe(exp2);
     });
 });
+
+describe('Redirects', () => {
+    it('works if AG rule is not converted', () => {
+        const rule = '||example.com/banner$image,redirect=1x1-transparent.gif';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(rule);
+    });
+
+    it('works if redirect value is converted', () => {
+        const rule = '||example.com/banner$image,redirect=1x1.gif';
+        const exp = '||example.com/banner$image,redirect=1x1-transparent.gif';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(exp);
+    });
+
+    it('works if abp rewrite is converted', () => {
+        const rule = '||example.com^$script,rewrite=abp-resource:blank-js';
+        const exp = '||example.com^$script,redirect=noopjs';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(exp);
+    });
+
+    it('works if redirect is converted', () => {
+        const rule = '||googletagservices.com/test.js$domain=test.com,redirect=googletagservices_gpt.js';
+        const exp = '||googletagservices.com/test.js$domain=test.com,redirect=googletagservices-gpt';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(exp);
+    });
+
+    it('works if abp rewrite is converted in complicated case', () => {
+        const rule = '||delivery.tf1.fr/pub$media,rewrite=abp-resource:blank-mp3,domain=tf1.fr';
+        const exp = '||delivery.tf1.fr/pub$media,redirect=noopmp3-0.1s,domain=tf1.fr';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(exp);
+    });
+});

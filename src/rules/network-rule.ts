@@ -8,6 +8,7 @@ import { IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
+import { RedirectModifier } from '../modifiers/redirect-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -713,7 +714,7 @@ export class NetworkRule implements rule.IRule {
                 break;
 
             // $empty and $mp4
-            // TODO: Deprecate in favor of $redirect
+            // Deprecated in favor of $redirect
             case 'empty':
                 this.setOptionEnabled(NetworkRuleOption.Empty, true);
                 break;
@@ -803,7 +804,10 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new CookieModifier(optionValue);
                 break;
 
-                // TODO: Add $redirect
+            case 'redirect':
+                this.setOptionEnabled(NetworkRuleOption.Redirect, true);
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText);
+                break;
 
             default:
                 throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue}`);

@@ -2,6 +2,7 @@
 import * as AGUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
+import { RedirectsService } from './redirects/redirects-service.js';
 
 /**
  * Extension application class
@@ -34,11 +35,18 @@ export class Application {
     contentFiltering = null;
 
     /**
+     * Redirects service
+     *
+     * @type {RedirectsService}
+     */
+    redirectsService = new RedirectsService();
+
+    /**
      * Initializes engine instance
      *
      * @param rulesText
      */
-    startEngine(rulesText) {
+    async startEngine(rulesText) {
         console.log('Starting url filter engine');
 
         const list = new AGUrlFilter.StringRuleList(1, rulesText, false);
@@ -63,6 +71,7 @@ export class Application {
         this.engine = new AGUrlFilter.Engine(ruleStorage, config);
         this.contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
         this.stealthService = new AGUrlFilter.StealthService(stealthConfig);
+        await this.redirectsService.init();
 
         console.log('Starting url filter engine..ok');
     }
@@ -97,10 +106,17 @@ export class Application {
             return { redirectUrl: cleansedUrl };
         }
 
-        if (requestRule
-            && !requestRule.isWhitelist()) {
-            // eslint-disable-next-line consistent-return
-            return { cancel: true };
+        if (requestRule && !requestRule.isWhitelist()) {
+            if (requestType === AGUrlFilter.RequestType.Document) {
+                return { cancel: true };
+            }
+
+            if (requestRule.isOptionEnabled(AGUrlFilter.NetworkRuleOption.Redirect)) {
+                const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
+                if (redirectUrl) {
+                    return { redirectUrl };
+                }
+            }
         }
     }
 

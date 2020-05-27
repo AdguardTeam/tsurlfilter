@@ -32,6 +32,9 @@
             "match_about_blank": true,
             "run_at": "document_start"
         }
+    ],
+    "web_accessible_resources": [
+        "/web-accessible-resources/*"
     ]
 }
 
