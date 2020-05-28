@@ -64,6 +64,21 @@ describe('Scriptlets', () => {
         expect(res[0]).toBe(exp1);
         expect(res[1]).toBe(exp2);
     });
+
+    it('works if ubo script tag rules are converted properly', () => {
+        let result = RuleConverter.convertRule('example.com##^script:some-another-rule(test)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.com##^script:some-another-rule(test)');
+
+        result = RuleConverter.convertRule('example.com##^script:has-text(12313)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.com$$script[tag-content="12313"][max-length="262144"]');
+
+        result = RuleConverter.convertRule('example.com##^script:has-text(===):has-text(/[wW]{16000}/)');
+        expect(result).toHaveLength(2);
+        expect(result).toContain('example.com$$script[tag-content="==="][max-length="262144"]');
+        expect(result).toContain('example.com##^script:has-text(/[wW]{16000}/)');
+    });
 });
 
 describe('Redirects', () => {
