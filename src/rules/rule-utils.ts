@@ -1,7 +1,7 @@
-import {CosmeticRule} from './cosmetic-rule';
-import {NetworkRule} from './network-rule';
-import {IRule} from './rule';
-import {findCosmeticRuleMarker} from './cosmetic-rule-marker';
+import { CosmeticRule } from './cosmetic-rule';
+import { NetworkRule } from './network-rule';
+import { IRule } from './rule';
+import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 
 /**
  * Rule builder class
