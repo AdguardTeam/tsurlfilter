@@ -67,6 +67,22 @@ export class RuleConverter {
     }
 
     /**
+     * Converts rules text
+     *
+     * @param rulesText
+     */
+    public static convertRules(rulesText: string): string {
+        const result = [];
+
+        const lines = rulesText.split('\n');
+        for (const line of lines) {
+            result.push(...RuleConverter.convertRule(line));
+        }
+
+        return result.join('\n');
+    }
+
+    /**
      * Convert external scriptlet rule to AdGuard scriptlet syntax
      *
      * @param {string} rule convert rule
@@ -94,7 +110,11 @@ export class RuleConverter {
                 return [abpRedirectRule];
             }
 
-            // TODO: Convert options
+            // // Convert options
+            // const ruleWithConvertedOptions = RuleConverter.convertOptions(rule);
+            // if (ruleWithConvertedOptions) {
+            //     return ruleWithConvertedOptions;
+            // }
         } catch (e) {
             // TODO: Log error
         }

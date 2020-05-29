@@ -2,7 +2,6 @@ import { RuleScanner } from './scanner/rule-scanner';
 import { IRule } from '../rules/rule';
 import { StringLineReader } from './reader/string-line-reader';
 import { RuleUtils } from '../rules/rule-utils';
-import { RuleConverter } from '../rules/rule-converter';
 
 /**
  * RuleList represents a set of filtering rules
@@ -66,7 +65,7 @@ export class StringRuleList implements IRuleList {
      */
     constructor(listId: number, ruleText: string, ignoreCosmetic?: boolean, ignoreJS?: boolean) {
         this.id = listId;
-        this.rulesText = StringRuleList.convertRules(ruleText);
+        this.rulesText = ruleText;
         this.ignoreCosmetic = !!ignoreCosmetic;
         this.ignoreJS = !!ignoreJS;
     }
@@ -118,21 +117,5 @@ export class StringRuleList implements IRuleList {
         }
 
         return RuleUtils.createRule(line, this.id);
-    }
-
-    /**
-     * Converts rules line by line
-     *
-     * @param rulesText
-     */
-    private static convertRules(rulesText: string): string {
-        const result = [];
-
-        const lines = rulesText.split('\n');
-        for (const line of lines) {
-            result.push(...RuleConverter.convertRule(line));
-        }
-
-        return result.join('\n');
     }
 }

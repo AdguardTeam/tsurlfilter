@@ -1,5 +1,17 @@
 import { RuleConverter } from '../../src/rules/rule-converter';
 
+describe('General', () => {
+    it('checks general method', () => {
+        const rulesText = `
+            example.org#%#//scriptlet('abort-on-property-read', 'I10C')
+            example.org##+js(setTimeout-defuser.js, [native code], 8000)`;
+
+        const converted = RuleConverter.convertRules(rulesText);
+
+        expect(converted).not.toBeNull();
+    });
+});
+
 describe('Scriptlets', () => {
     it('works if AG rule is not converted', () => {
         const rule = "example.org#%#//scriptlet('abort-on-property-read', 'I10C')";
