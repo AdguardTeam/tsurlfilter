@@ -70,6 +70,62 @@ export class RuleConverter {
     private static REMOVE_RULE_REPLACER = ' { remove: true; }';
 
     /**
+     * Converts rules text
+     *
+     * @param rulesText
+     */
+    public static convertRules(rulesText: string): string {
+        const result = [];
+
+        const lines = rulesText.split('\n');
+        for (const line of lines) {
+            result.push(...RuleConverter.convertRule(line));
+        }
+
+        return result.join('\n');
+    }
+
+    /**
+     * Convert external scriptlet rule to AdGuard scriptlet syntax
+     *
+     * @param {string} rule convert rule
+     */
+    public static convertRule(rule: string): string[] {
+        try {
+            const comment = RuleConverter.convertUboComments(rule);
+            if (comment) {
+                return [comment];
+            }
+
+            let converted = RuleConverter.convertCssInjection(rule);
+            converted = RuleConverter.convertRemoveRule(converted);
+            converted = RuleConverter.replaceOptions(converted);
+            converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
+
+            const scriptlet = Scriptlets.convertScriptletToAdg(converted);
+            if (scriptlet) {
+                return scriptlet;
+            }
+
+            const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
+            if (abpRedirectRule) {
+                return [abpRedirectRule];
+            }
+
+            const ruleWithConvertedOptions = RuleConverter.convertOptions(converted);
+            if (ruleWithConvertedOptions) {
+                return ruleWithConvertedOptions;
+            }
+
+            return [converted];
+        } catch (e) {
+            // TODO: Log error
+        }
+
+        return [rule];
+    }
+
+    /**
      * Converts UBO Script rule
      *
      * @param {string} ruleText rule text
@@ -236,7 +292,7 @@ export class RuleConverter {
      * @param parts
      * @param ruleMark
      */
-    private static executeConversion(rule: string, parts: string[], ruleMark: string) {
+    private static executeConversion(rule: string, parts: string[], ruleMark: string): string {
         let result = rule;
         const domain = parts[0];
 
@@ -353,61 +409,5 @@ export class RuleConverter {
         }
 
         return rule;
-    }
-
-    /**
-     * Converts rules text
-     *
-     * @param rulesText
-     */
-    public static convertRules(rulesText: string): string {
-        const result = [];
-
-        const lines = rulesText.split('\n');
-        for (const line of lines) {
-            result.push(...RuleConverter.convertRule(line));
-        }
-
-        return result.join('\n');
-    }
-
-    /**
-     * Convert external scriptlet rule to AdGuard scriptlet syntax
-     *
-     * @param {string} rule convert rule
-     */
-    public static convertRule(rule: string): string[] {
-        try {
-            const comment = RuleConverter.convertUboComments(rule);
-            if (comment) {
-                return [comment];
-            }
-
-            let converted = RuleConverter.convertCssInjection(rule);
-            converted = RuleConverter.convertRemoveRule(converted);
-            converted = RuleConverter.replaceOptions(converted);
-            converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
-
-            const scriptlet = Scriptlets.convertScriptletToAdg(converted);
-            if (scriptlet) {
-                return scriptlet;
-            }
-
-            const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
-            if (abpRedirectRule) {
-                return [abpRedirectRule];
-            }
-
-            const ruleWithConvertedOptions = RuleConverter.convertOptions(converted);
-            if (ruleWithConvertedOptions) {
-                return ruleWithConvertedOptions;
-            }
-
-            return [converted];
-        } catch (e) {
-            // TODO: Log error
-        }
-
-        return [rule];
     }
 }
