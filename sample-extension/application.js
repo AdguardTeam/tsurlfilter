@@ -99,11 +99,13 @@ export class Application {
         }
 
         // Strip tracking parameters
-        const cleansedUrl = this.stealthService.removeTrackersFromUrl(request);
-        if (cleansedUrl) {
-            console.debug(`Stealth stripped tracking parameters for url: ${details.url}`);
-            this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
-            return { redirectUrl: cleansedUrl };
+        if (!result.stealthRule) {
+            const cleansedUrl = this.stealthService.removeTrackersFromUrl(request);
+            if (cleansedUrl) {
+                console.debug(`Stealth stripped tracking parameters for url: ${details.url}`);
+                this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
+                return { redirectUrl: cleansedUrl };
+            }
         }
 
         if (requestRule && !requestRule.isWhitelist()) {
