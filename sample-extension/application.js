@@ -107,16 +107,14 @@ export class Application {
         }
 
         if (requestRule && !requestRule.isWhitelist()) {
-            if (requestType === AGUrlFilter.RequestType.Document) {
-                return { cancel: true };
-            }
-
             if (requestRule.isOptionEnabled(AGUrlFilter.NetworkRuleOption.Redirect)) {
                 const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
                 if (redirectUrl) {
                     return { redirectUrl };
                 }
             }
+
+            return { cancel: true };
         }
     }
 
