@@ -260,6 +260,23 @@ It contains the following properties:
     });
 ```
 
+#### RuleConverter
+
+Before saving downloaded text with rules it could be useful to run converter on it.
+The text will be processed line by line, converting each line from known external format to Adguard syntax.
+
+###### **convertRules**
+
+```
+    /**
+     * Converts rules text
+     *
+     * @param rulesText
+     */
+    public static convertRules(rulesText: string): string {
+```
+
+
 #### ContentFiltering
 
 Content filtering module, it applies html-filtering and $replace rules.
