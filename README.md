@@ -32,7 +32,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
 
 ### TODO
 
--   [ ] Basic filtering rules
+-   [x] Basic filtering rules
     -   [x] Core blocking syntax
     -   [x] Basic network engine
     -   [x] Basic rules validation (don't match everything, unexpected modifiers, etc)
@@ -44,8 +44,8 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [ ] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
     -   [ ] \$badfilter support for host-blocking network rules
 -   [ ] Memory optimization
--   [ ] Tech document
--   [ ] Cosmetic rules
+-   [x] Tech document
+-   [x] Cosmetic rules
     -   [x] Basic element hiding and CSS rules
         -   [x] Proper CSS rules validation
     -   [x] ExtCSS rules
@@ -59,7 +59,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
         -   [x] \$badfilter
     -   [x] Web extension example
 -   [x] HTML filtering rules
--   [ ] Advanced modifiers
+-   [x] Advanced modifiers
     -   [x] \$important
     -   [x] \$replace
     -   [x] \$csp
@@ -67,7 +67,7 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [x] \$redirect
     -   [x] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
     -   [x] \$stealth modifier
-    -   [ ] \$ping modifier (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1584)
+    -   [x] \$ping modifier (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1584)
     
 ### Chrome sample extension
 

@@ -335,6 +335,8 @@ export class Application {
                 return AGUrlFilter.RequestType.XmlHttpRequest;
             case 'websocket':
                 return AGUrlFilter.RequestType.Websocket;
+            case 'ping':
+                return AGUrlFilter.RequestType.Ping;
             default:
                 return AGUrlFilter.RequestType.Other;
         }
