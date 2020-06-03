@@ -99,24 +99,24 @@ export class Application {
         }
 
         // Strip tracking parameters
-        const cleansedUrl = this.stealthService.removeTrackersFromUrl(request);
-        if (cleansedUrl) {
-            console.debug(`Stealth stripped tracking parameters for url: ${details.url}`);
-            this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
-            return { redirectUrl: cleansedUrl };
+        if (!result.stealthRule) {
+            const cleansedUrl = this.stealthService.removeTrackersFromUrl(request);
+            if (cleansedUrl) {
+                console.debug(`Stealth stripped tracking parameters for url: ${details.url}`);
+                this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
+                return { redirectUrl: cleansedUrl };
+            }
         }
 
         if (requestRule && !requestRule.isWhitelist()) {
-            if (requestType === AGUrlFilter.RequestType.Document) {
-                return { cancel: true };
-            }
-
             if (requestRule.isOptionEnabled(AGUrlFilter.NetworkRuleOption.Redirect)) {
                 const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
                 if (redirectUrl) {
                     return { redirectUrl };
                 }
             }
+
+            return { cancel: true };
         }
     }
 
