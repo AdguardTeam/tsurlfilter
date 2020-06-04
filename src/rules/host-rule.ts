@@ -20,6 +20,8 @@ import * as rule from './rule';
  * * `example.org` -- "just domain" syntax
  */
 export class HostRule implements rule.IRule {
+    private static DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+
     private readonly ruleText: string;
 
     private readonly filterListId: number;
@@ -55,6 +57,7 @@ export class HostRule implements rule.IRule {
             this.ip = parts[0];
             this.hostnames = parts.slice(1).filter((x) => !!x);
         } else if (parts.length === 1 && HostRule.isDomainName(parts[0])) {
+            // throw new SyntaxError(`Invalid host rule: ${ruleText}`);
             this.hostnames = [parts[0]];
             this.ip = '0.0.0.0';
         } else {
@@ -102,9 +105,13 @@ export class HostRule implements rule.IRule {
     /**
      * Check if the string could be a domain name
      *
-     * @param line
+     * @param text
      */
-    private static isDomainName(line: string): boolean {
-        return !(!line.includes('.') || line.endsWith('.'));
+    private static isDomainName(text: string): boolean {
+        if (!text.includes('.') || text.endsWith('.')) {
+            return false;
+        }
+
+        return HostRule.DOMAIN_REGEX.test(text);
     }
 }

@@ -64,6 +64,21 @@ describe('Constructor', () => {
         expect(() => {
             rule = new HostRule(ruleText, 1);
         }).toThrowError(/Invalid host rule: invalid IP:.+/);
+
+        ruleText = '_prebid_';
+        expect(() => {
+            rule = new HostRule(ruleText, 1);
+        }).toThrowError(/Invalid host rule:.+/);
+
+        ruleText = '_728x90.';
+        expect(() => {
+            rule = new HostRule(ruleText, 1);
+        }).toThrowError(/Invalid host rule:.+/);
+
+        ruleText = '_prebid._';
+        expect(() => {
+            rule = new HostRule(ruleText, 1);
+        }).toThrowError(/Invalid host rule:.+/);
     });
 
     it('works when it matches rules', () => {
