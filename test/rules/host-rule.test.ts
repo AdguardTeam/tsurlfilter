@@ -59,6 +59,11 @@ describe('Constructor', () => {
         expect(() => {
             rule = new HostRule(ruleText, 1);
         }).toThrowError(/Invalid host rule:.+/);
+
+        ruleText = '999.1.1.1 host.com';
+        expect(() => {
+            rule = new HostRule(ruleText, 1);
+        }).toThrowError(/Invalid host rule: invalid IP:.+/);
     });
 
     it('works when it matches rules', () => {

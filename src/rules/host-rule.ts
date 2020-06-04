@@ -1,3 +1,4 @@
+import isIp from 'is-ip';
 import * as rule from './rule';
 
 /**
@@ -46,10 +47,12 @@ export class HostRule implements rule.IRule {
 
         const parts = stripped.trim().split(' ');
         if (parts.length >= 2) {
+            if (!isIp(parts[0])) {
+                throw new SyntaxError(`Invalid host rule: invalid IP: ${ruleText}`);
+            }
+
             // eslint-disable-next-line prefer-destructuring
             this.ip = parts[0];
-            // TODO: Add IP validation
-
             this.hostnames = parts.slice(1).filter((x) => !!x);
         } else if (parts.length === 1 && HostRule.isDomainName(parts[0])) {
             this.hostnames = [parts[0]];
