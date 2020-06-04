@@ -7,30 +7,43 @@ describe('Constructor', () => {
         expect(rule.getFilterListId()).toEqual(1);
         expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('127.0.0.1');
+        expect(rule.getHostnames()).toHaveLength(2);
+        expect(rule.getHostnames()).toContain('thishost.mydomain.org');
+        expect(rule.getHostnames()).toContain('thishost');
 
         ruleText = '209.237.226.90  www.opensource.org';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
         expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('209.237.226.90');
+        expect(rule.getHostnames()).toHaveLength(1);
+        expect(rule.getHostnames()).toContain('www.opensource.org');
 
         ruleText = '::1             localhost ip6-localhost ip6-loopback';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
         expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('::1');
+        expect(rule.getHostnames()).toHaveLength(3);
+        expect(rule.getHostnames()).toContain('localhost');
+        expect(rule.getHostnames()).toContain('ip6-localhost');
+        expect(rule.getHostnames()).toContain('ip6-loopback');
 
         ruleText = 'example.org';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
         expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('0.0.0.0');
+        expect(rule.getHostnames()).toHaveLength(1);
+        expect(rule.getHostnames()).toContain('example.org');
 
         ruleText = '0.0.0.0 www.ruclicks.com  #[clicksagent.com]';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
         expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('0.0.0.0');
+        expect(rule.getHostnames()).toHaveLength(1);
+        expect(rule.getHostnames()).toContain('www.ruclicks.com');
 
         ruleText = '#::1             localhost ip6-localhost ip6-loopback';
         expect(() => {

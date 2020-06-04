@@ -48,6 +48,8 @@ export class HostRule implements rule.IRule {
         if (parts.length >= 2) {
             // eslint-disable-next-line prefer-destructuring
             this.ip = parts[0];
+            // TODO: Add IP validation
+
             this.hostnames = parts.slice(1).filter((x) => !!x);
         } else if (parts.length === 1 && HostRule.isDomainName(parts[0])) {
             this.hostnames = [parts[0]];
@@ -81,10 +83,17 @@ export class HostRule implements rule.IRule {
     }
 
     /**
-     * Return ip address
+     * Returns ip address
      */
     getIp(): string {
         return this.ip;
+    }
+
+    /**
+     * Returns hostnames
+     */
+    getHostnames(): string[] {
+        return this.hostnames;
     }
 
     /**
