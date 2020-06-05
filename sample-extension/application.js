@@ -336,6 +336,7 @@ export class Application {
             case 'websocket':
                 return AGUrlFilter.RequestType.Websocket;
             case 'ping':
+            case 'beacon':
                 return AGUrlFilter.RequestType.Ping;
             default:
                 return AGUrlFilter.RequestType.Other;
