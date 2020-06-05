@@ -2,6 +2,9 @@ import { RuleStorage } from '../filterlist/rule-storage';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { fastHash } from '../utils/utils';
+import { NetworkEngine } from './network-engine';
+import { Request, RequestType } from '../request';
+import { DnsResult } from './dns-result';
 
 /**
  * DNSEngine combines host rules and network rules and is supposed to quickly find
@@ -26,6 +29,11 @@ export class DnsEngine {
     private readonly lookupTable: Map<number, number[]>;
 
     /**
+     * Network engine instance
+     */
+    private readonly networkEngine: NetworkEngine;
+
+    /**
      * Builds an instance of dns engine
      *
      * @param storage
@@ -35,6 +43,8 @@ export class DnsEngine {
         this.rulesCount = 0;
         this.lookupTable = new Map<number, number[]>();
 
+        this.networkEngine = new NetworkEngine(storage, true);
+
         const scanner = this.ruleStorage.createRuleStorageScanner();
 
         while (scanner.scan()) {
@@ -43,9 +53,8 @@ export class DnsEngine {
                 if (indexedRule.rule instanceof HostRule) {
                     this.addRule(indexedRule.rule, indexedRule.index);
                 } else if (indexedRule.rule instanceof NetworkRule
-                && DnsEngine.isHostLevelNetworkRule(indexedRule.rule)) {
-                    // TODO: Convert to HostRule
-                    // this.addRule(indexedRule.rule, indexedRule.index);
+                && indexedRule.rule.isHostLevelNetworkRule()) {
+                    this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
                 }
             }
         }
@@ -58,9 +67,19 @@ export class DnsEngine {
      * @param hostname to check
      * @return rules matching
      */
-    public match(hostname: string): HostRule[] {
-        const result: HostRule[] = [];
+    public match(hostname: string): DnsResult {
+        const result = new DnsResult();
         if (!hostname) {
+            return result;
+        }
+
+        // TODO: Extract method
+        const url = `http://${hostname}/`;
+        const request = new Request(url, url, RequestType.Document);
+        const networkRule = this.networkEngine.match(request);
+        if (networkRule) {
+            // Network rules always have higher priority
+            result.basicRule = networkRule;
             return result;
         }
 
@@ -68,10 +87,9 @@ export class DnsEngine {
         const rulesIndexes = this.lookupTable.get(hash);
         if (rulesIndexes) {
             rulesIndexes.forEach((ruleIdx) => {
-                // TODO: Retrieve rule, then if it's network rule - convert to hostrule
                 const rule = this.ruleStorage.retrieveHostRule(ruleIdx);
                 if (rule && rule.match(hostname)) {
-                    result.push(rule);
+                    result.hostRules.push(rule);
                 }
             });
         }
@@ -80,7 +98,7 @@ export class DnsEngine {
     }
 
     /**
-     * Adds rule to the network engine
+     * Adds rule to engine
      *
      * @param rule
      * @param storageIdx
@@ -100,12 +118,5 @@ export class DnsEngine {
         });
 
         this.rulesCount += 1;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private static isHostLevelNetworkRule(rule: NetworkRule): boolean {
-        // TODO: Implement isHostLevelNetworkRule
-
-        return false;
     }
 }

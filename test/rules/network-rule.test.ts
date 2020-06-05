@@ -502,3 +502,33 @@ describe('NetworkRule.isHigherPriority', () => {
             '||example.org$script,stylesheet,domain=~example.org', false);
     });
 });
+
+describe('Misc', () => {
+    it('checks isHostLevelNetworkRule', () => {
+        let rule;
+
+        rule = new NetworkRule('||example.org^$important', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeTruthy();
+
+        rule = new NetworkRule('||example.org^$important,badfilter', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeTruthy();
+
+        rule = new NetworkRule('||example.org^$badfilter', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeTruthy();
+
+        rule = new NetworkRule('||example.org^', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeTruthy();
+
+        rule = new NetworkRule('@@||example.org^', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeTruthy();
+
+        rule = new NetworkRule('||example.org^$~third-party', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$third-party', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$domain=example.com', 0);
+        expect(rule.isHostLevelNetworkRule()).toBeFalsy();
+    });
+});

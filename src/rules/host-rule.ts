@@ -57,7 +57,6 @@ export class HostRule implements rule.IRule {
             this.ip = parts[0];
             this.hostnames = parts.slice(1).filter((x) => !!x);
         } else if (parts.length === 1 && HostRule.isDomainName(parts[0])) {
-            // throw new SyntaxError(`Invalid host rule: ${ruleText}`);
             this.hostnames = [parts[0]];
             this.ip = '0.0.0.0';
         } else {

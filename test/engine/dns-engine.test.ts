@@ -19,13 +19,15 @@ describe('General', () => {
         const result = engine.match('example.org');
 
         expect(result).not.toBeNull();
-        expect(result).toHaveLength(0);
+        expect(result.basicRule).toBeNull();
+        expect(result.hostRules).toHaveLength(0);
     });
 
     it('checks engine match', () => {
         const engine = new DnsEngine(createTestRuleStorage(1, [
-            // '||example.org^',
-            // '||example2.org/*',
+            '||example.org^',
+            '||example2.org/*',
+            '@@||example3.org^',
             '0.0.0.0 v4.com',
             '127.0.0.1 v4.com',
             ':: v6.com',
@@ -37,32 +39,47 @@ describe('General', () => {
 
         let result;
 
-        // result = engine.match('example.org');
-        // expect(result).toHaveLength(1);
-        //
-        // result = engine.match('example.org');
-        // expect(result).toHaveLength(1);
+        result = engine.match('example.org');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getText()).toBe('||example.org^');
+        expect(result.hostRules).toHaveLength(0);
+
+        result = engine.match('example2.org');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getText()).toBe('||example2.org/*');
+        expect(result.hostRules).toHaveLength(0);
+
+        result = engine.match('example3.org');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getText()).toBe('@@||example3.org^');
+        expect(result.hostRules).toHaveLength(0);
 
         result = engine.match('v4.com');
-        expect(result).toHaveLength(2);
-        expect(result[0].getText()).toBe('0.0.0.0 v4.com');
-        expect(result[1].getText()).toBe('127.0.0.1 v4.com');
+        expect(result.basicRule).toBeNull();
+        expect(result.hostRules).toHaveLength(2);
+        expect(result.hostRules[0].getText()).toBe('0.0.0.0 v4.com');
+        expect(result.hostRules[1].getText()).toBe('127.0.0.1 v4.com');
 
         result = engine.match('v6.com');
-        expect(result).toHaveLength(1);
-        expect(result[0].getText()).toBe(':: v6.com');
+        expect(result.basicRule).toBeNull();
+        expect(result.hostRules).toHaveLength(1);
+        expect(result.hostRules[0].getText()).toBe(':: v6.com');
 
         result = engine.match('v4and6.com');
-        expect(result).toHaveLength(4);
-        expect(result[0].getText()).toBe('127.0.0.1 v4and6.com');
-        expect(result[1].getText()).toBe('127.0.0.2 v4and6.com');
-        expect(result[2].getText()).toBe('::1 v4and6.com');
-        expect(result[3].getText()).toBe('::2 v4and6.com');
+        expect(result.basicRule).toBeNull();
+        expect(result.hostRules).toHaveLength(4);
+        expect(result.hostRules[0].getText()).toBe('127.0.0.1 v4and6.com');
+        expect(result.hostRules[1].getText()).toBe('127.0.0.2 v4and6.com');
+        expect(result.hostRules[2].getText()).toBe('::1 v4and6.com');
+        expect(result.hostRules[3].getText()).toBe('::2 v4and6.com');
 
         result = engine.match('example.net');
-        expect(result).toHaveLength(0);
+        expect(result.basicRule).toBeNull();
+        expect(result.hostRules).toHaveLength(0);
     });
 });
+
+// TODO: Add more tests
 
 describe('Benchmark DnsEngine', () => {
     // TODO: Implement TestBenchDnsEngine
