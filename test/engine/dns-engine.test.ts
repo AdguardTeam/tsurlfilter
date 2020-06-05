@@ -77,9 +77,50 @@ describe('General', () => {
         expect(result.basicRule).toBeNull();
         expect(result.hostRules).toHaveLength(0);
     });
-});
 
-// TODO: Add more tests
+    it('checks match for host level network rule - protocol', () => {
+        const engine = new DnsEngine(createTestRuleStorage(1, [
+            '://example.org',
+        ]));
+
+        const result = engine.match('example.org');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.hostRules).toHaveLength(0);
+    });
+
+    it('checks match for host level network rule - regex', () => {
+        const engine = new DnsEngine(createTestRuleStorage(1, [
+            '/^stats?\\./',
+        ]));
+
+        const result = engine.match('stats.test.com');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.hostRules).toHaveLength(0);
+    });
+
+    it('checks match for host level network rule - regex whitelist', () => {
+        const engine = new DnsEngine(createTestRuleStorage(1, [
+            '||stats.test.com^',
+            '@@/stats?\\./',
+        ]));
+
+        const result = engine.match('stats.test.com');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.isWhitelist()).toBeTruthy();
+        expect(result.hostRules).toHaveLength(0);
+    });
+
+    it('checks match for badfilter rules', () => {
+        const engine = new DnsEngine(createTestRuleStorage(1, [
+            '||example.org^',
+            '||example.org^$badfilter',
+        ]));
+
+        const result = engine.match('example.org');
+        expect(result.basicRule).toBeNull();
+        expect(result.hostRules).toHaveLength(0);
+    });
+});
 
 describe('Benchmark DnsEngine', () => {
     // TODO: Implement TestBenchDnsEngine

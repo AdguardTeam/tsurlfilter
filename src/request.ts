@@ -102,6 +102,12 @@ export class Request {
     public readonly sourceDomain: string | null;
 
     /**
+     * the request is for a given Hostname, and not for a URL, and we don't really know what protocol it is.
+     * This can be true for DNS requests, or for HTTP CONNECT, or SNI matching.
+     */
+    public isHostnameRequest = false;
+
+    /**
      * Creates an instance of a Request
      *
      * @param url - request URL

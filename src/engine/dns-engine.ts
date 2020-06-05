@@ -73,9 +73,10 @@ export class DnsEngine {
             return result;
         }
 
-        // TODO: Extract method
         const url = `http://${hostname}/`;
         const request = new Request(url, url, RequestType.Document);
+        request.isHostnameRequest = true;
+
         const networkRule = this.networkEngine.match(request);
         if (networkRule) {
             // Network rules always have higher priority

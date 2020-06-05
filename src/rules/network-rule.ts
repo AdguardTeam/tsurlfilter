@@ -384,10 +384,36 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (this.regex) {
+            if (this.shouldMatchHostname(request)) {
+                return this.regex.test(request.hostname);
+            }
+
             return this.regex.test(request.url);
         }
 
         return false;
+    }
+
+    /**
+     * Checks if we should match hostnames and not the URL
+     * this is important for the cases when we use urlfilter for DNS-level blocking
+     * Note, that even though we may work on a DNS-level, we should still sometimes match full URL instead
+     *
+     * @param request
+     */
+    private shouldMatchHostname(request: Request): boolean {
+        if (!request.isHostnameRequest) {
+            return false;
+        }
+
+        if (this.pattern.startsWith(SimpleRegex.MASK_START_URL)
+            || this.pattern.startsWith('http://')
+            || this.pattern.startsWith('https:/')
+            || this.pattern.startsWith('://')) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
