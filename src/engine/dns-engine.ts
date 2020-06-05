@@ -61,11 +61,10 @@ export class DnsEngine {
     }
 
     /**
-     * Match searches over all filtering rules loaded to the engine
-     * It returns rule if a match was found alongside the matching rule
+     * Match searches over all filtering and host rules loaded to the engine
      *
      * @param hostname to check
-     * @return rules matching
+     * @return dns result object
      */
     public match(hostname: string): DnsResult {
         const result = new DnsResult();

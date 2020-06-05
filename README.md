@@ -260,6 +260,45 @@ It contains the following properties:
     });
 ```
 
+#### DNS Engine
+
+DNSEngine combines host rules and network rules and is supposed to quickly find matching rules for hostnames.
+
+###### **Constructor**
+```
+    /**
+     * Builds an instance of dns engine
+     *
+     * @param storage
+     */
+    constructor(storage: RuleStorage)
+```
+
+###### **match**
+```
+    /**
+     * Match searches over all filtering and host rules loaded to the engine
+     *
+     * @param hostname to check
+     * @return dns result object
+     */
+    public match(hostname: string): DnsResult
+```
+
+##### Matching hostname
+```
+    const dnsResult = dnsEngine.match(hostname);
+    if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
+        // blocking rule found
+        ..
+    }
+
+    if (dnsResult.hostRules.length > 0) {
+        // hosts rules found
+        ..
+    }
+```
+
 #### RuleConverter
 
 Before saving downloaded text with rules it could be useful to run converter on it.
