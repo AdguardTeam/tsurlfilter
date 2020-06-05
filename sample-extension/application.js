@@ -14,6 +14,11 @@ export class Application {
     engine;
 
     /**
+     * TS dns engine
+     */
+    dnsEngine;
+
+    /**
      * Filtering log
      */
     filteringLog = new FilteringLog();
@@ -69,6 +74,7 @@ export class Application {
         };
 
         this.engine = new AGUrlFilter.Engine(ruleStorage, config);
+        this.dnsEngine = new AGUrlFilter.DnsEngine(ruleStorage);
         this.contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
         this.stealthService = new AGUrlFilter.StealthService(stealthConfig);
         await this.redirectsService.init();
@@ -85,6 +91,18 @@ export class Application {
     onBeforeRequest(details) {
         console.debug('Processing request..');
         console.debug(details);
+
+        const { hostname } = new URL(details.url);
+        const dnsResult = this.dnsEngine.match(hostname);
+        if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
+            console.log(`Dns engine match: ${hostname}`);
+            return { cancel: true };
+        }
+
+        if (dnsResult.hostRules.length > 0) {
+            console.log(`Dns engine match: ${hostname}`);
+            return { cancel: true };
+        }
 
         const requestType = Application.transformRequestType(details.type);
         const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
