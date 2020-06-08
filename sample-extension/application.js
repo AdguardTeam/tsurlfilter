@@ -92,22 +92,21 @@ export class Application {
         console.debug('Processing request..');
         console.debug(details);
 
-        const { hostname } = new URL(details.url);
-        const dnsResult = this.dnsEngine.match(hostname);
+        const requestType = Application.transformRequestType(details.type);
+        const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
+
+        const dnsResult = this.dnsEngine.match(request.hostname);
         if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
-            console.log(`Dns engine match: ${hostname}`);
+            this.filteringLog.addDnsEvent(details.tabId, details.url, [dnsResult.basicRule]);
             return { cancel: true };
         }
 
         if (dnsResult.hostRules.length > 0) {
-            console.log(`Dns engine match: ${hostname}`);
+            this.filteringLog.addDnsEvent(details.tabId, details.url, dnsResult.hostRules);
             return { cancel: true };
         }
 
-        const requestType = Application.transformRequestType(details.type);
-        const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
         const result = this.engine.matchRequest(request);
-
         console.debug(result);
 
         const requestRule = result.getBasicResult();

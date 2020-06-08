@@ -162,6 +162,23 @@ export class FilteringLog {
     }
 
     /**
+     * Add dns event
+     *
+     * @param tabId
+     * @param frameUrl
+     * @param rules
+     */
+    addDnsEvent(tabId, frameUrl, rules) {
+        const filteringEvent = {
+            eventType: 'DNS',
+            frameUrl,
+            rules,
+        };
+
+        this.pushFilteringEvent(filteringEvent);
+    }
+
+    /**
      * Push event to listeners
      *
      * TODO: This is the place to notify UI
@@ -178,6 +195,10 @@ export class FilteringLog {
 
         if (event.eventType === 'STEALTH') {
             console.log(`[FILTERING-LOG] Request: ${event.frameUrl} Stealth action: ${event.action}`);
+        }
+
+        if (event.eventType === 'DNS') {
+            console.log(`[FILTERING-LOG] Request: ${event.frameUrl} Host level rules found: ${event.rules.length}`);
         }
 
         if (event.rule) {
