@@ -24,8 +24,10 @@ export enum RequestType {
     Font = 1 << 8,
     /** (a websocket connection) $websocket */
     Websocket = 1 << 9,
+    /** (navigator.sendBeacon()) $ping */
+    Ping = 1 << 10,
     /** any other request type */
-    Other = 1 << 10,
+    Other = 1 << 11,
 }
 
 /**

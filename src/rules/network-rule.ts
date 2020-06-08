@@ -64,8 +64,6 @@ export enum NetworkRuleOption {
     /** $badfilter modifier */
     Badfilter = 1 << 18,
 
-    // TODO: Add other modifiers
-
     // Groups (for validation)
 
     /** Blacklist-only modifiers */
@@ -782,6 +780,12 @@ export class NetworkRule implements rule.IRule {
                 break;
             case '~other':
                 this.setRequestType(RequestType.Other, false);
+                break;
+            case 'ping':
+                this.setRequestType(RequestType.Ping, true);
+                break;
+            case '~ping':
+                this.setRequestType(RequestType.Ping, false);
                 break;
 
             // Special modifiers

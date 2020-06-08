@@ -235,6 +235,9 @@ describe('NetworkRule constructor', () => {
 
         checkRequestType('other', RequestType.Other, true);
         checkRequestType('~other', RequestType.Other, false);
+
+        checkRequestType('ping', RequestType.Ping, true);
+        checkRequestType('~ping', RequestType.Ping, false);
     });
 
     function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
@@ -455,6 +458,11 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(false);
 
         request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+    });
+    it('works when content type ping is applied properly', () => {
+        const rule = new NetworkRule('||example.org^$ping', 0);
+        const request = new Request('https://example.org/', null, RequestType.Ping);
         expect(rule.match(request)).toEqual(true);
     });
 });
