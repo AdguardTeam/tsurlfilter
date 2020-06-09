@@ -9,6 +9,7 @@ import { CosmeticRule } from '../rules/cosmetic-rule';
 import { NetworkRule } from '../rules/network-rule';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { FilteringLog } from '../filtering-log';
+import { logger } from '../utils/logger';
 
 /**
  * Content filtering module
@@ -80,14 +81,14 @@ export class ContentFiltering {
                     // eslint-disable-next-line no-param-reassign
                     content = callback(content);
                 } catch (ex) {
-                    // console.error('Error while applying content filter to {0}. Error: {1}', requestUrl, ex);
+                    logger.error(`Error while applying content filter to ${request.url}. Error: ${ex}`);
                 }
 
                 contentFilter.write(content!);
             });
         } catch (e) {
             // eslint-disable-next-line max-len
-            // console.error('An error has occurred in content filter for request {0} to {1} - {2}. Error: {3}', requestId, requestUrl, requestType, e);
+            logger.error(`An error has occurred in content filter for request ${request.requestId} to ${request.url}. Error: ${e}`);
             callback('');
         }
     }
@@ -268,25 +269,21 @@ export class ContentFiltering {
         } = request;
 
         if (!requestId || !tabId) {
-            // console.debug('Skipping request {0} requestId|tabId not defined', requestUrl, statusCode);
             return;
         }
 
         if (statusCode !== 200) {
-            // console.debug('Skipping request {0} - {1} with status {2}', requestUrl, requestType, statusCode);
             return;
         }
 
         if (method !== 'GET' && method !== 'POST') {
-            // console.debug('Skipping request {0} - {1} with method {2}', requestUrl, requestType, method);
             return;
         }
 
         const charset = parseCharsetFromHeader(contentType);
         if (charset && SUPPORTED_CHARSETS.indexOf(charset) < 0) {
             // Charset is detected and it is not supported
-            // eslint-disable-next-line max-len
-            // console.warn('Skipping request {0} - {1} with Content-Type {2}', requestUrl, requestType, contentType);
+            logger.warn(`Skipping request ${request.requestId} with Content-Type ${contentType}`);
             return;
         }
 

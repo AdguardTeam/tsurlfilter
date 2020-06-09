@@ -3,6 +3,7 @@ import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
+import { logger } from '../utils/logger';
 
 /**
  * Rule builder class
@@ -34,7 +35,7 @@ export class RuleUtils {
 
             return new NetworkRule(line, filterListId);
         } catch (e) {
-            // TODO: Log error
+            logger.error(e);
         }
 
         return null;

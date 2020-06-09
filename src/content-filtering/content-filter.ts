@@ -4,6 +4,7 @@ import { RequestType } from '../request';
 import {
     DEFAULT_CHARSET, LATIN_1, SUPPORTED_CHARSETS, WIN_1252,
 } from './charsets';
+import { logger } from '../utils/logger';
 
 /**
  * Content Filter class
@@ -127,7 +128,7 @@ export class ContentFilter {
                         this.disconnect(event.data);
                     }
                 } catch (e) {
-                    // console.warn(e);
+                    logger.warn(e);
                     // on error we disconnect the filter from the request
                     this.disconnect(event.data);
                 }

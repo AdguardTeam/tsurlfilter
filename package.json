@@ -115,6 +115,7 @@
   },
   "dependencies": {
     "@rollup/plugin-typescript": "^2.1.0",
+    "consola": "^2.12.2",
     "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.3",
     "is-ip": "^3.1.0",
     "scriptlets": "https://github.com/AdguardTeam/Scriptlets.git#v1.2.1",
