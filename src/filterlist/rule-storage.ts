@@ -3,6 +3,7 @@ import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { IRule } from '../rules/rule';
 import { RuleScanner } from './scanner/rule-scanner';
 import { NetworkRule } from '../rules/network-rule';
+import { HostRule } from '../rules/host-rule';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -108,6 +109,25 @@ export class RuleStorage {
 
         if (rule instanceof NetworkRule) {
             return rule as NetworkRule;
+        }
+
+        return null;
+    }
+
+    /**
+     * RetrieveHostRule is a helper method that retrieves a host rule from the storage
+     *
+     * @param storageIdx
+     * @return the rule or nil in any other case (not found or error)
+     */
+    retrieveHostRule(storageIdx: number): HostRule | null {
+        const rule = this.retrieveRule(storageIdx);
+        if (!rule) {
+            return null;
+        }
+
+        if (rule instanceof HostRule) {
+            return rule as HostRule;
         }
 
         return null;

@@ -2,6 +2,7 @@ import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
+import { HostRule } from './host-rule';
 
 /**
  * Rule builder class
@@ -24,6 +25,11 @@ export class RuleUtils {
         try {
             if (RuleUtils.isCosmetic(line)) {
                 return new CosmeticRule(line, filterListId);
+            }
+
+            const hostRule = RuleUtils.createHostRule(line, filterListId);
+            if (hostRule) {
+                return hostRule;
             }
 
             return new NetworkRule(line, filterListId);
@@ -64,5 +70,21 @@ export class RuleUtils {
     public static isCosmetic(ruleText: string): boolean {
         const marker = findCosmeticRuleMarker(ruleText);
         return marker[0] !== -1;
+    }
+
+    /**
+     * Creates host rule from text
+     *
+     * @param ruleText
+     * @param filterListId
+     */
+    private static createHostRule(ruleText: string, filterListId: number): HostRule | null {
+        try {
+            return new HostRule(ruleText, filterListId);
+        } catch (e) {
+            // Ignore
+        }
+
+        return null;
     }
 }

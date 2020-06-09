@@ -71,6 +71,9 @@ export enum NetworkRuleOption {
 
     /** Whitelist-only modifiers */
     WhitelistOnly = Elemhide | Genericblock | Generichide | Jsinject | Urlblock | Content | Extension | Stealth,
+
+    /** Options supported by host-level network rules * */
+    OptionHostLevelRulesOnly = Important | Badfilter
 }
 
 /**
@@ -303,16 +306,16 @@ export class NetworkRule implements rule.IRule {
             return true;
         }
 
-        if (this.restrictedDomains != null && this.restrictedDomains.length > 0) {
-            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains)) {
+        if (this.hasRestrictedDomains()) {
+            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains!)) {
                 // Domain or host is restricted
                 // i.e. $domain=~example.org
                 return false;
             }
         }
 
-        if (this.permittedDomains != null && this.permittedDomains.length > 0) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains)) {
+        if (this.hasPermittedDomains()) {
+            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
                 // Domain is not among permitted
                 // i.e. $domain=example.org and we're checking example.com
                 return false;
@@ -320,6 +323,20 @@ export class NetworkRule implements rule.IRule {
         }
 
         return true;
+    }
+
+    /**
+     * Checks if rule has permitted domains
+     */
+    private hasPermittedDomains(): boolean {
+        return this.permittedDomains != null && this.permittedDomains.length > 0;
+    }
+
+    /**
+     * Checks if rule has restricted domains
+     */
+    private hasRestrictedDomains(): boolean {
+        return this.restrictedDomains != null && this.restrictedDomains.length > 0;
     }
 
     /**
@@ -365,10 +382,36 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (this.regex) {
+            if (this.shouldMatchHostname(request)) {
+                return this.regex.test(request.hostname);
+            }
+
             return this.regex.test(request.url);
         }
 
         return false;
+    }
+
+    /**
+     * Checks if we should match hostnames and not the URL
+     * this is important for the cases when we use urlfilter for DNS-level blocking
+     * Note, that even though we may work on a DNS-level, we should still sometimes match full URL instead
+     *
+     * @param request
+     */
+    private shouldMatchHostname(request: Request): boolean {
+        if (!request.isHostnameRequest) {
+            return false;
+        }
+
+        if (this.pattern.startsWith(SimpleRegex.MASK_START_URL)
+            || this.pattern.startsWith('http://')
+            || this.pattern.startsWith('https:/')
+            || this.pattern.startsWith('://')) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -401,7 +444,7 @@ export class NetworkRule implements rule.IRule {
         ) {
             // Except cookie rules, they have their own atmosphere
             if (!(this.advancedModifier instanceof CookieModifier)) {
-                if (this.permittedDomains === null || this.permittedDomains!.length === 0) {
+                if (!this.hasPermittedDomains()) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
                     // eslint-disable-next-line max-len
@@ -523,8 +566,7 @@ export class NetworkRule implements rule.IRule {
             + utils.countElementsInEnum(this.disabledOptions, NetworkRuleOption)
             + utils.countElementsInEnum(this.permittedRequestTypes, RequestType)
             + utils.countElementsInEnum(this.restrictedRequestTypes, RequestType);
-        if ((this.permittedDomains && this.permittedDomains.length > 0)
-            || (this.restrictedDomains && this.restrictedDomains.length > 0)) {
+        if (this.hasPermittedDomains() || this.hasRestrictedDomains()) {
             count += 1;
         }
 
@@ -532,8 +574,7 @@ export class NetworkRule implements rule.IRule {
             + utils.countElementsInEnum(r.disabledOptions, NetworkRuleOption)
             + utils.countElementsInEnum(r.permittedRequestTypes, RequestType)
             + utils.countElementsInEnum(r.restrictedRequestTypes, RequestType);
-        if ((r.permittedDomains && r.permittedDomains.length > 0)
-            || (r.restrictedDomains && r.restrictedDomains.length > 0)) {
+        if (r.hasPermittedDomains() || r.hasRestrictedDomains()) {
             rCount += 1;
         }
 
@@ -548,7 +589,7 @@ export class NetworkRule implements rule.IRule {
      * @return {boolean}
      */
     isGeneric(): boolean {
-        return !this.permittedDomains || this.permittedDomains.length === 0;
+        return !this.hasPermittedDomains();
     }
 
     /**
@@ -590,6 +631,32 @@ export class NetworkRule implements rule.IRule {
 
         if (!utils.stringArraysHaveIntersection(this.permittedDomains, specifiedRule.permittedDomains)) {
             return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if this rule can be used for hosts-level blocking
+     */
+    isHostLevelNetworkRule(): boolean {
+        if (this.hasPermittedDomains() || this.hasRestrictedDomains()) {
+            return false;
+        }
+
+        if (this.permittedRequestTypes !== 0 && this.restrictedRequestTypes !== 0) {
+            return false;
+        }
+
+        if (this.disabledOptions !== 0) {
+            return false;
+        }
+
+        if (this.enabledOptions !== 0) {
+            return ((this.enabledOptions
+                    & NetworkRuleOption.OptionHostLevelRulesOnly)
+                | (this.enabledOptions
+                    ^ NetworkRuleOption.OptionHostLevelRulesOnly)) === NetworkRuleOption.OptionHostLevelRulesOnly;
         }
 
         return true;

@@ -39,10 +39,10 @@ There is already set a `precommit` hook for formatting your code with Eslint :na
     -   [x] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
     -   [x] Domain semantics: AG-254
 -   [x] Benchmark basic rules matching
--   [ ] Hosts matching rules
-    -   [ ] /etc/hosts matching
-    -   [ ] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
-    -   [ ] \$badfilter support for host-blocking network rules
+-   [x] Hosts matching rules
+    -   [x] /etc/hosts matching
+    -   [x] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
+    -   [x] \$badfilter support for host-blocking network rules
 -   [ ] Memory optimization
 -   [x] Tech document
 -   [x] Cosmetic rules
@@ -258,6 +258,45 @@ It contains the following properties:
     chrome.tabs.executeScript(tabId, {
         code: toExecute,
     });
+```
+
+#### DNS Engine
+
+DNSEngine combines host rules and network rules and is supposed to quickly find matching rules for hostnames.
+
+###### **Constructor**
+```
+    /**
+     * Builds an instance of dns engine
+     *
+     * @param storage
+     */
+    constructor(storage: RuleStorage)
+```
+
+###### **match**
+```
+    /**
+     * Match searches over all filtering and host rules loaded to the engine
+     *
+     * @param hostname to check
+     * @return dns result object
+     */
+    public match(hostname: string): DnsResult
+```
+
+##### Matching hostname
+```
+    const dnsResult = dnsEngine.match(hostname);
+    if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
+        // blocking rule found
+        ..
+    }
+
+    if (dnsResult.hostRules.length > 0) {
+        // hosts rules found
+        ..
+    }
 ```
 
 #### RuleConverter

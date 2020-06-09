@@ -55,14 +55,19 @@ export class NetworkEngine {
      * Builds an instance of the network engine
      *
      * @param storage
+     * @param skipStorageScan create an instance without storage scanning
      */
-    constructor(storage: RuleStorage) {
+    constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
         this.domainsLookupTable = new Map<number, number[]>();
         this.shortcutsLookupTable = new Map<number, number[]>();
         this.shortcutsHistogram = new Map<number, number>();
         this.otherRules = [];
+
+        if (skipStorageScan) {
+            return;
+        }
 
         const scanner = this.ruleStorage.createRuleStorageScanner();
 
@@ -113,6 +118,24 @@ export class NetworkEngine {
         });
 
         return result;
+    }
+
+    /**
+     * Adds rule to the network engine
+     *
+     * @param rule
+     * @param storageIdx
+     */
+    public addRule(rule: NetworkRule, storageIdx: number): void {
+        if (!this.addRuleToShortcutsTable(rule, storageIdx)) {
+            if (!this.addRuleToDomainsTable(rule, storageIdx)) {
+                if (!this.otherRules.includes(rule)) {
+                    this.otherRules.push(rule);
+                }
+            }
+        }
+
+        this.rulesCount += 1;
     }
 
     /**
@@ -173,24 +196,6 @@ export class NetworkEngine {
         });
 
         return result;
-    }
-
-    /**
-     * Adds rule to the network engine
-     *
-     * @param rule
-     * @param storageIdx
-     */
-    private addRule(rule: NetworkRule, storageIdx: number): void {
-        if (!this.addRuleToShortcutsTable(rule, storageIdx)) {
-            if (!this.addRuleToDomainsTable(rule, storageIdx)) {
-                if (!this.otherRules.includes(rule)) {
-                    this.otherRules.push(rule);
-                }
-            }
-        }
-
-        this.rulesCount += 1;
     }
 
     /**

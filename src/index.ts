@@ -6,6 +6,8 @@ export * from './engine/engine';
 export * from './filterlist/rule-list';
 export * from './filterlist/rule-storage';
 export * from './engine/matching-result';
+export * from './engine/dns-engine';
+export * from './engine/dns-result';
 export * from './configuration';
 export * from './content-filtering/content-filtering';
 export * from './filtering-log';

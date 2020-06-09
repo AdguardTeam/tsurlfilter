@@ -1,4 +1,7 @@
 import { RuleUtils } from '../../src/rules/rule-utils';
+import { CosmeticRule } from '../../src/rules/cosmetic-rule';
+import { NetworkRule } from '../../src/rules/network-rule';
+import { HostRule } from '../../src/rules/host-rule';
 
 describe('Rule Utils Builder Test', () => {
     it('works if builder creates correct rules', () => {
@@ -17,11 +20,19 @@ describe('Rule Utils Builder Test', () => {
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('##.banner');
         expect(rule!.getFilterListId()).toBe(1);
+        expect(rule!).toBeInstanceOf(CosmeticRule);
 
         rule = RuleUtils.createRule('||example.org^', 1);
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('||example.org^');
         expect(rule!.getFilterListId()).toBe(1);
+        expect(rule!).toBeInstanceOf(NetworkRule);
+
+        rule = RuleUtils.createRule('127.0.0.1 localhost', 1);
+        expect(rule).toBeTruthy();
+        expect(rule!.getText()).toBe('127.0.0.1 localhost');
+        expect(rule!.getFilterListId()).toBe(1);
+        expect(rule!).toBeInstanceOf(HostRule);
     });
 });
 
