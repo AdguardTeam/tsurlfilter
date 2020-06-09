@@ -1,9 +1,9 @@
-import consola, { LogLevel } from 'consola';
+import consola from 'consola';
 
 /**
  * Logger implementation
  */
 export const logger = consola.withDefaults({
-    level: LogLevel.Warn,
+    level: 1,
     tag: 'AG-tsurlfilter',
 });
