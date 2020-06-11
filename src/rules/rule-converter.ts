@@ -1,4 +1,5 @@
 import Scriptlets from 'scriptlets';
+import { logger } from '../utils/logger';
 
 /**
  * Rule converter class
@@ -119,7 +120,7 @@ export class RuleConverter {
 
             return [converted];
         } catch (e) {
-            // TODO: Log error
+            logger.error(e);
         }
 
         return [rule];
