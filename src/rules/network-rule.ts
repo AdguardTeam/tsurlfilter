@@ -9,6 +9,7 @@ import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -63,6 +64,8 @@ export enum NetworkRuleOption {
     Redirect = 1 << 17,
     /** $badfilter modifier */
     Badfilter = 1 << 18,
+    /** $removeparam modifier */
+    RemoveParam = 1 << 19,
 
     // Groups (for validation)
 
@@ -443,7 +446,8 @@ export class NetworkRule implements rule.IRule {
             || this.pattern.length < 3
         ) {
             // Except cookie rules, they have their own atmosphere
-            if (!(this.advancedModifier instanceof CookieModifier)) {
+            if (!(this.advancedModifier instanceof CookieModifier)
+                && !(this.advancedModifier instanceof RemoveParamModifier)) {
                 if (!this.hasPermittedDomains()) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
@@ -878,6 +882,11 @@ export class NetworkRule implements rule.IRule {
             case 'redirect':
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
                 this.advancedModifier = new RedirectModifier(optionValue, this.ruleText);
+                break;
+
+            case 'removeparam':
+                this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
+                this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
                 break;
 
             default:

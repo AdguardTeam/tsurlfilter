@@ -219,6 +219,12 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp): string {
 
     urlPieces[1] = urlPieces[1].replace(regExp, '');
 
+    // Cleanup empty params (p0=0&=2&=3)
+    urlPieces[1] = urlPieces[1]
+        .split('&')
+        .filter((x) => x && !x.startsWith('='))
+        .join('&');
+
     // If we've collapsed the URL to the point where there's an '&' against the '?'
     // then we need to get rid of that.
     while (urlPieces[1].charAt(0) === '&') {

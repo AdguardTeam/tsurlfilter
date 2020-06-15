@@ -4,6 +4,7 @@ import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
 import { RedirectModifier } from '../../src/modifiers/redirect-modifier';
+import { RemoveParamModifier } from '../../src/modifiers/remove-param-modifier';
 
 describe('NetworkRule - csp rules', () => {
     it('works if csp modifier is correctly parsed', () => {
@@ -255,5 +256,47 @@ describe('NetworkRule - redirect rules', () => {
         expect(() => {
             new NetworkRule('example.org/ads.js$script,redirect=space', 0);
         }).toThrowError(/Rule redirect modifier is invalid:*/);
+    });
+});
+
+describe('NetworkRule - removeparam rules', () => {
+    it('works if removeparam modifier is correctly parsed', () => {
+        let rule = new NetworkRule('$removeparam=param', 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);
+        expect(rule.getAdvancedModifierValue()).toBe('param');
+
+        rule = new NetworkRule('$removeparam=p1|p2|', 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);
+        expect(rule.getAdvancedModifierValue()).toBe('p1|p2|');
+
+        rule = new NetworkRule('$removeparam=p1|/p2/i|/p3/|p4', 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);
+        expect(rule.getAdvancedModifierValue()).toBe('p1|/p2/i|/p3/|p4');
+
+        expect(() => {
+            new NetworkRule('example.org$removeparam', 0);
+        }).toThrowError(/Rule removeparam modifier is invalid:*/);
+    });
+
+    it('works if query parameters are correctly filtered', () => {
+        const rule = new NetworkRule('$removeparam=p1|p2', 0);
+        const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+
+        const comPage = 'http://example.com/page';
+        expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1&p2=2&p3=3`)).toBe(`${comPage}?p0=0&p3=3`);
+    });
+
+    it('works if query parameters are correctly filtered with regexp', () => {
+        const rule = new NetworkRule('$removeparam=p1|/p2/i|/p3/', 0);
+        const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+
+        const comPage = 'http://example.com/page';
+        expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1&p2=2&p3=3`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1&P2=2&p3=3`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1&P2=2&P3=3`)).toBe(`${comPage}?p0=0&P3=3`);
     });
 });
