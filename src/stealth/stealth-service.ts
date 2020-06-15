@@ -1,3 +1,4 @@
+import * as utils from '../utils/utils';
 import { Request, RequestType } from '../request';
 import { NetworkRule } from '../rules/network-rule';
 
@@ -69,29 +70,13 @@ export class StealthService {
             return null;
         }
 
-        const urlPieces = url.split('?');
-
-        // If no params, nothing to modify
-        if (urlPieces.length === 1) {
-            return null;
-        }
-
         const trackingParameters = this.config.trackingParameters
             .trim()
             .split(',')
             .map((x) => x.replace('=', '').replace(/\*/g, '[^&#=]*').trim())
             .filter((x) => x);
 
-        const trackingParametersRegExp = new RegExp(`((^|&)(${trackingParameters.join('|')})=[^&#]*)`, 'ig');
-        urlPieces[1] = urlPieces[1].replace(trackingParametersRegExp, '');
-
-        // If we've collapsed the URL to the point where there's an '&' against the '?'
-        // then we need to get rid of that.
-        while (urlPieces[1].charAt(0) === '&') {
-            urlPieces[1] = urlPieces[1].substr(1);
-        }
-
-        const result = urlPieces[1] ? urlPieces.join('?') : urlPieces[0];
+        const result = utils.cleanUrlParam(url, trackingParameters);
 
         if (result !== url) {
             return result;
