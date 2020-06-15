@@ -40,10 +40,16 @@ export class MatchingResult {
     public readonly cookieRules: NetworkRule[] | null;
 
     /**
-     * ReplaceRules -- a set of rules modifying the response's content
+     * ReplaceRules - a set of rules modifying the response's content
      * See $replace modifier
      */
     public readonly replaceRules: NetworkRule[] | null;
+
+    /**
+     * RemoveParam rules - a set of rules modifying url query parameters
+     * See $removeparam modifier
+     */
+    public readonly removeParamRules: NetworkRule[] | null;
 
     /**
      * StealthRule - this is a whitelist rule that negates stealth mode features
@@ -64,6 +70,7 @@ export class MatchingResult {
         this.cspRules = null;
         this.cookieRules = null;
         this.replaceRules = null;
+        this.removeParamRules = null;
         this.cspRules = null;
         this.stealthRule = null;
 
@@ -117,6 +124,13 @@ export class MatchingResult {
                     this.replaceRules = [];
                 }
                 this.replaceRules.push(rule);
+                continue;
+            }
+            if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+                if (!this.removeParamRules) {
+                    this.removeParamRules = [];
+                }
+                this.removeParamRules.push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
@@ -346,6 +360,18 @@ export class MatchingResult {
 
         return MatchingResult.filterAdvancedModifierRules(this.cookieRules,
             whitelistPredicate);
+    }
+
+    /**
+     * Returns an array of removeparam rules
+     */
+    getRemoveParamRules(): NetworkRule[] {
+        if (!this.removeParamRules) {
+            return [];
+        }
+
+        return MatchingResult.filterAdvancedModifierRules(this.removeParamRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
     }
 
     /**

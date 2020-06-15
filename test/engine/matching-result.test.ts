@@ -454,3 +454,44 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(resultRule!.getText()).toBe('||8s8.eu^*fa.js$script,redirect=noopjs');
     });
 });
+
+describe('TestNewMatchingResult - removeparam rules', () => {
+    it('works if removeparam rules are found', () => {
+        const rules = [
+            new NetworkRule('||example.org^$removeparam=p1|p2', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(rules.length);
+    });
+
+    it('works if whitelisted removeparam filter with same option is omitted', () => {
+        const expectedRuleText = '||example.org^$removeparam=p0';
+
+        const ruleTexts = [
+            expectedRuleText,
+            '||example.org^$removeparam=p1|p2',
+            '@@||example.org^$removeparam=p1|p2',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(2);
+    });
+
+    it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {
+        const ruleTexts = [
+            '||example.org^$removeparam=p1|p2',
+            '@@||example.org^$removeparam',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const result = new MatchingResult(rules, null);
+
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(1);
+    });
+});
