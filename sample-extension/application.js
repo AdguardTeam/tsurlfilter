@@ -125,6 +125,22 @@ export class Application {
             }
         }
 
+        if (!requestRule || !requestRule.isWhitelist()) {
+            let cleansedUrl = details.url;
+            result.getRemoveParamRules().forEach((r) => {
+                if (!r.isWhitelist()) {
+                    cleansedUrl = r.getAdvancedModifier().removeParameters(cleansedUrl);
+                }
+            });
+
+            if (cleansedUrl !== details.url) {
+                console.debug(`Removeparam stripped tracking parameters for url: ${details.url}`);
+                this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
+
+                return { redirectUrl: cleansedUrl };
+            }
+        }
+
         if (requestRule && !requestRule.isWhitelist()) {
             if (requestRule.isOptionEnabled(AGUrlFilter.NetworkRuleOption.Redirect)) {
                 const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
