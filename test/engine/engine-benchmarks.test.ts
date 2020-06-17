@@ -6,6 +6,7 @@ import { Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { DnsEngine } from '../../src/engine/dns-engine';
+import { setLogger } from '../../src/utils/logger';
 
 /**
  * Resources file paths
@@ -135,6 +136,25 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
 }
 
 describe('Benchmarks', () => {
+    beforeAll(() => {
+        /* eslint-disable @typescript-eslint/no-unused-vars */
+        setLogger({
+            error(message?: string): void {
+            },
+            info(message?: string): void {
+            },
+            log(message?: string): void {
+            },
+            warn(message?: string): void {
+            },
+        });
+        /* eslint-disable @typescript-eslint/no-unused-vars */
+    });
+
+    afterAll(() => {
+        setLogger(console);
+    });
+
     it('runs network-engine', async () => {
         const rulesFilePath = './test/resources/easylist.txt';
 
