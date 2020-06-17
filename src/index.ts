@@ -13,3 +13,4 @@ export * from './content-filtering/content-filtering';
 export * from './filtering-log';
 export * from './engine/cosmetic-option';
 export * from './stealth/stealth-service';
+export * from './utils/logger';
