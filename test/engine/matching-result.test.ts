@@ -1,6 +1,6 @@
-import {MatchingResult} from '../../src/engine/matching-result';
-import {NetworkRule} from '../../src';
-import {CosmeticOption} from '../../src/engine/cosmetic-option';
+import { MatchingResult } from '../../src/engine/matching-result';
+import { NetworkRule } from '../../src';
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
 
 describe('TestNewMatchingResult', () => {
     it('works if basic rule is found', () => {
