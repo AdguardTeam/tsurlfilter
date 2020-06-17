@@ -445,7 +445,7 @@ export class NetworkRule implements rule.IRule {
             || this.pattern === ''
             || this.pattern.length < 3
         ) {
-            // Except cookie rules, they have their own atmosphere
+            // Except cookie and removeparam rules, they have their own atmosphere
             if (!(this.advancedModifier instanceof CookieModifier)
                 && !(this.advancedModifier instanceof RemoveParamModifier)) {
                 if (!this.hasPermittedDomains()) {

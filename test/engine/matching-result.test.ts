@@ -1,6 +1,6 @@
-import { MatchingResult } from '../../src/engine/matching-result';
-import { NetworkRule } from '../../src';
-import { CosmeticOption } from '../../src/engine/cosmetic-option';
+import {MatchingResult} from '../../src/engine/matching-result';
+import {NetworkRule} from '../../src';
+import {CosmeticOption} from '../../src/engine/cosmetic-option';
 
 describe('TestNewMatchingResult', () => {
     it('works if basic rule is found', () => {
@@ -467,10 +467,8 @@ describe('TestNewMatchingResult - removeparam rules', () => {
     });
 
     it('works if whitelisted removeparam filter with same option is omitted', () => {
-        const expectedRuleText = '||example.org^$removeparam=p0';
-
         const ruleTexts = [
-            expectedRuleText,
+            '||example.org^$removeparam=p0',
             '||example.org^$removeparam=p1|p2',
             '@@||example.org^$removeparam=p1|p2',
         ];
@@ -483,9 +481,10 @@ describe('TestNewMatchingResult - removeparam rules', () => {
     });
 
     it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {
+        const whitelistRule = '@@||example.org^$removeparam';
         const ruleTexts = [
             '||example.org^$removeparam=p1|p2',
-            '@@||example.org^$removeparam',
+            whitelistRule,
         ];
 
         const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
@@ -493,5 +492,6 @@ describe('TestNewMatchingResult - removeparam rules', () => {
 
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(1);
+        expect(found[0].getText()).toBe(whitelistRule);
     });
 });

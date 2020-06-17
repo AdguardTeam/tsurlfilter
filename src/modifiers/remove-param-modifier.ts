@@ -42,7 +42,7 @@ export class RemoveParamModifier implements IAdvancedModifier {
         const parts = utils.splitByDelimiterWithEscapeCharacter(this.value, '|', '\\', true);
 
         const plainParams = parts.filter((x) => !x.startsWith('/'));
-        const regexpParams = parts.filter((x) => x.startsWith('/')).map((x) => SimpleRegex.patternFromString(x));
+        const regexpParams = parts.filter((x) => x.startsWith('/')).map(SimpleRegex.patternFromString);
 
         let result = utils.cleanUrlParam(url, plainParams);
 
