@@ -331,9 +331,8 @@ export class CosmeticRule implements rule.IRule {
                 throw new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`);
             }
 
-            // Prohibit "\" character in CSS injection rules
-            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1444
-            if (this.content.indexOf('\\') > -1) {
+            // Prohibit "\" character in style of CSS injection rules
+            if (this.content.indexOf('\\', this.content.indexOf('{')) > -1) {
                 throw new SyntaxError(`CSS injection rule with '\\' was omitted: ${ruleText}`);
             }
         }
