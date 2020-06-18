@@ -41,6 +41,10 @@ describe('Element hiding rules constructor', () => {
         expect(() => {
             new CosmeticRule('example.org## ', 0);
         }).toThrowError(/Empty rule content/);
+
+        expect(() => {
+            new CosmeticRule('example.org##body { background: red!important; }', 0);
+        }).toThrowError(/Invalid elemhide rule+/);
     });
 
     it('throws error if marker is not supported yet', () => {

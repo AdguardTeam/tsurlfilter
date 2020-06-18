@@ -299,7 +299,6 @@ export class CosmeticRule implements rule.IRule {
                 this.whitelist = true;
                 break;
             default:
-                // TODO: Start supporting other types
                 throw new SyntaxError('Unsupported rule type');
         }
 
@@ -311,6 +310,13 @@ export class CosmeticRule implements rule.IRule {
                 if (this.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
                     throw new SyntaxError(`Unknown pseudo class: ${this.content}`);
                 }
+            }
+        }
+
+        if (this.type === CosmeticRuleType.ElementHiding) {
+            // Simple validation for elemhide rules
+            if (/{.+}/.test(this.content)) {
+                throw new SyntaxError(`Invalid elemhide rule, style presented: ${ruleText}`);
             }
         }
 
