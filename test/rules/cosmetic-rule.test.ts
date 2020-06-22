@@ -45,7 +45,37 @@ describe('Element hiding rules constructor', () => {
 
         expect(() => {
             new CosmeticRule('example.org##body { background: red!important; }', 0);
-        }).toThrowError(/Invalid elemhide rule+/);
+        }).toThrowError(/Invalid cosmetic rule+/);
+    });
+
+    it('checks elemhide rules validation', () => {
+        const checkRuleIsValid = (ruleText: string): void => {
+            expect(new CosmeticRule(ruleText, 0)).toBeDefined();
+        };
+
+        const checkRuleIsInvalid = (ruleText: string): void => {
+            expect(() => {
+                new CosmeticRule(ruleText, 0);
+            }).toThrow();
+        };
+
+        checkRuleIsValid('example.org##img[title|="{"]');
+        checkRuleIsValid('vsetor.org##body > a[rel="nofollow"][target="_blank"]');
+        checkRuleIsValid("example.org##a[title='{']");
+        checkRuleIsValid('123movies.domains##.jw-logo-top-left[style^="background-image: url(\\"https://123movies.domains/addons/img/"]');
+        checkRuleIsValid('testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)');
+
+        checkRuleIsInvalid('example.org##img[title|={]');
+        checkRuleIsInvalid('example.org##body { background: red!important; }');
+        checkRuleIsInvalid('example.org#@#body { background: red!important; }');
+        checkRuleIsInvalid('example.org##a[title="\\""]{background:url()}');
+        checkRuleIsInvalid('example.org##body\\{\\}, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
+        checkRuleIsInvalid('example.org##body /*({})*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
+        checkRuleIsInvalid('example.org##body /*({*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
+        checkRuleIsInvalid('example.org##\\\\/*[*/, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } ,\\/*]');
+        checkRuleIsInvalid('example.org##body:not(blabla/*[*/) { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } /*]*\\/');
+        checkRuleIsInvalid('example.org##.generic1 /*comment*/');
+        checkRuleIsInvalid('example.org##a //');
     });
 
     it('throws error if marker is not supported yet', () => {

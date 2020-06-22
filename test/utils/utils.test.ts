@@ -27,6 +27,14 @@ describe('startsAtIndexWith', () => {
     });
 });
 
+describe('hasUnquotedSubstring', () => {
+    it('works if it can check simple strings', () => {
+        expect(utils.hasUnquotedSubstring('example', 'ex')).toEqual(true);
+        expect(utils.hasUnquotedSubstring('"example"', 'ex')).toEqual(false);
+        expect(utils.hasUnquotedSubstring('\\"example\\"', 'ex')).toEqual(true);
+    });
+});
+
 describe('replaceAll', () => {
     it('works if it can replace simple strings', () => {
         expect(utils.replaceAll('example_example', 'ex', 'EX')).toEqual('EXample_EXample');

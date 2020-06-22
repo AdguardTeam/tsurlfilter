@@ -1,7 +1,7 @@
 import * as rule from './rule';
 import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
-import { indexOfAny } from '../utils/utils';
+import * as utils from '../utils/utils';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -84,7 +84,7 @@ export class CosmeticRule implements rule.IRule {
      * <p>
      * One more problem with pseudo-classes is that they are actively used in uBlock, hence it may mess AG styles.
      */
-    private readonly SUPPORTED_PSEUDO_CLASSES = [':active',
+    private static readonly SUPPORTED_PSEUDO_CLASSES = [':active',
         ':checked', ':contains', ':disabled', ':empty', ':enabled', ':first-child', ':first-of-type',
         ':focus', ':has', ':has-text', ':hover', ':if', ':if-not', ':in-range', ':invalid', ':lang',
         ':last-child', ':last-of-type', ':link', ':matches-css', ':matches-css-before', ':matches-css-after',
@@ -148,7 +148,7 @@ export class CosmeticRule implements rule.IRule {
             }
         }
 
-        let nameEndIndex = indexOfAny(
+        let nameEndIndex = utils.indexOfAny(
             selector,
             [' ', '\t', '>', '(', '[', '.', '#', ':', '+', '~', '"', '\''],
             nameStartIndex + 1,
@@ -265,77 +265,8 @@ export class CosmeticRule implements rule.IRule {
             throw new SyntaxError('Empty rule content');
         }
 
-        switch (marker) {
-            case CosmeticRuleMarker.ElementHiding:
-            case CosmeticRuleMarker.ElementHidingExtCSS:
-                this.type = CosmeticRuleType.ElementHiding;
-                break;
-            case CosmeticRuleMarker.ElementHidingException:
-            case CosmeticRuleMarker.ElementHidingExtCSSException:
-                this.type = CosmeticRuleType.ElementHiding;
-                this.whitelist = true;
-                break;
-            case CosmeticRuleMarker.Css:
-            case CosmeticRuleMarker.CssExtCSS:
-                this.type = CosmeticRuleType.Css;
-                break;
-            case CosmeticRuleMarker.CssException:
-            case CosmeticRuleMarker.CssExtCSSException:
-                this.type = CosmeticRuleType.Css;
-                this.whitelist = true;
-                break;
-            case CosmeticRuleMarker.Js:
-                this.type = CosmeticRuleType.Js;
-                break;
-            case CosmeticRuleMarker.JsException:
-                this.type = CosmeticRuleType.Js;
-                this.whitelist = true;
-                break;
-            case CosmeticRuleMarker.Html:
-                this.type = CosmeticRuleType.Html;
-                break;
-            case CosmeticRuleMarker.HtmlException:
-                this.type = CosmeticRuleType.Html;
-                this.whitelist = true;
-                break;
-            default:
-                throw new SyntaxError('Unsupported rule type');
-        }
-
-        // validate pseudo class for non CSS type
-        if (this.type !== CosmeticRuleType.Css) {
-            // We need to validate pseudo-classes
-            const pseudoClass = CosmeticRule.parsePseudoClass(this.content);
-            if (pseudoClass !== null) {
-                if (this.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
-                    throw new SyntaxError(`Unknown pseudo class: ${this.content}`);
-                }
-            }
-        }
-
-        if (this.type === CosmeticRuleType.ElementHiding) {
-            // Simple validation for elemhide rules
-            if (/{.+}/.test(this.content)) {
-                throw new SyntaxError(`Invalid elemhide rule, style presented: ${ruleText}`);
-            }
-        }
-
-        if (this.type === CosmeticRuleType.Css) {
-            // Simple validation for css injection rules
-            if (!/{.+}/.test(this.content)) {
-                throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
-            }
-            // discard css inject rules containing "url"
-            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196
-            if (/url\(.*\)/gi.test(this.content)) {
-                throw new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`);
-            }
-
-            // Prohibit "\" character in style of CSS injection rules
-            if (this.content.indexOf('\\', this.content.indexOf('{')) > -1) {
-                throw new SyntaxError(`CSS injection rule with '\\' was omitted: ${ruleText}`);
-            }
-        }
+        this.type = this.parseTypeAndWhitelist(marker);
+        this.validate();
 
         this.extendedCss = isExtCssMarker(marker);
         if (!this.extendedCss) {
@@ -376,5 +307,111 @@ export class CosmeticRule implements rule.IRule {
         }
 
         return true;
+    }
+
+    private parseTypeAndWhitelist(marker: string): CosmeticRuleType {
+        switch (marker) {
+            case CosmeticRuleMarker.ElementHiding:
+            case CosmeticRuleMarker.ElementHidingExtCSS:
+                return CosmeticRuleType.ElementHiding;
+            case CosmeticRuleMarker.ElementHidingException:
+            case CosmeticRuleMarker.ElementHidingExtCSSException:
+                this.whitelist = true;
+                return CosmeticRuleType.ElementHiding;
+            case CosmeticRuleMarker.Css:
+            case CosmeticRuleMarker.CssExtCSS:
+                return CosmeticRuleType.Css;
+            case CosmeticRuleMarker.CssException:
+            case CosmeticRuleMarker.CssExtCSSException:
+                this.whitelist = true;
+                return CosmeticRuleType.Css;
+            case CosmeticRuleMarker.Js:
+                return CosmeticRuleType.Js;
+            case CosmeticRuleMarker.JsException:
+                this.whitelist = true;
+                return CosmeticRuleType.Js;
+            case CosmeticRuleMarker.Html:
+                return CosmeticRuleType.Html;
+            case CosmeticRuleMarker.HtmlException:
+                this.whitelist = true;
+                return CosmeticRuleType.Html;
+            default:
+                throw new SyntaxError('Unsupported rule type');
+        }
+    }
+
+    private validate(): void {
+        if (this.type !== CosmeticRuleType.Css) {
+            CosmeticRule.validatePseudoClasses(this.content);
+
+            if (utils.hasUnquotedSubstring(this.content, '{')) {
+                throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${this.ruleText}`);
+            }
+        }
+
+        if (this.type === CosmeticRuleType.ElementHiding) {
+            CosmeticRule.validateElemhideRule(this.content, this.ruleText);
+        }
+
+        if (this.type === CosmeticRuleType.Css) {
+            CosmeticRule.validateCssRules(this.content, this.ruleText);
+        }
+
+        if (utils.hasUnquotedSubstring(this.content, '/*')
+            || utils.hasUnquotedSubstring(this.content, ' //')) {
+            throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${this.ruleText}`);
+        }
+    }
+
+    /**
+     * Validate pseudo-classes
+     *
+     * @param ruleContent
+     * @throws SyntaxError
+     */
+    private static validatePseudoClasses(ruleContent: string): void {
+        const pseudoClass = CosmeticRule.parsePseudoClass(ruleContent);
+        if (pseudoClass !== null) {
+            if (CosmeticRule.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
+                throw new SyntaxError(`Unknown pseudo class: ${ruleContent}`);
+            }
+        }
+    }
+
+    /**
+     * Simple validation for elemhide rules
+     *
+     * @param ruleContent
+     * @param ruleText
+     * @throws SyntaxError
+     */
+    private static validateElemhideRule(ruleContent: string, ruleText: string): void {
+        if (/ {.+}/.test(ruleContent)) {
+            throw new SyntaxError(`Invalid elemhide rule, style presented: ${ruleText}`);
+        }
+    }
+
+    /**
+     * Validates css injection rules
+     *
+     * @param ruleContent
+     * @param ruleText
+     * @throws SyntaxError
+     */
+    private static validateCssRules(ruleContent: string, ruleText: string): void {
+        // Simple validation for css injection rules
+        if (!/ {.+}/.test(ruleContent)) {
+            throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
+        }
+        // discard css inject rules containing "url"
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196
+        if (/url\(.*\)/gi.test(ruleContent)) {
+            throw new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`);
+        }
+
+        // Prohibit "\" character in style of CSS injection rules
+        if (ruleContent.indexOf('\\', ruleContent.indexOf('{')) > -1) {
+            throw new SyntaxError(`CSS injection rule with '\\' was omitted: ${ruleText}`);
+        }
     }
 }
