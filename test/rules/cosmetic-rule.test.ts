@@ -1,4 +1,5 @@
-import { CosmeticRuleType, CosmeticRule } from '../../src/rules/cosmetic-rule';
+/* eslint-disable max-len */
+import { CosmeticRule, CosmeticRuleType } from '../../src/rules/cosmetic-rule';
 
 describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
@@ -41,6 +42,40 @@ describe('Element hiding rules constructor', () => {
         expect(() => {
             new CosmeticRule('example.org## ', 0);
         }).toThrowError(/Empty rule content/);
+
+        expect(() => {
+            new CosmeticRule('example.org##body { background: red!important; }', 0);
+        }).toThrowError(/Invalid cosmetic rule+/);
+    });
+
+    it('checks elemhide rules validation', () => {
+        const checkRuleIsValid = (ruleText: string): void => {
+            expect(new CosmeticRule(ruleText, 0)).toBeDefined();
+        };
+
+        const checkRuleIsInvalid = (ruleText: string): void => {
+            expect(() => {
+                new CosmeticRule(ruleText, 0);
+            }).toThrow();
+        };
+
+        checkRuleIsValid('example.org##img[title|="{"]');
+        checkRuleIsValid('vsetor.org##body > a[rel="nofollow"][target="_blank"]');
+        checkRuleIsValid("example.org##a[title='{']");
+        checkRuleIsValid('123movies.domains##.jw-logo-top-left[style^="background-image: url(\\"https://123movies.domains/addons/img/"]');
+        checkRuleIsValid('testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)');
+
+        checkRuleIsInvalid('example.org##img[title|={]');
+        checkRuleIsInvalid('example.org##body { background: red!important; }');
+        checkRuleIsInvalid('example.org#@#body { background: red!important; }');
+        checkRuleIsInvalid('example.org##a[title="\\""]{background:url()}');
+        checkRuleIsInvalid('example.org##body\\{\\}, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
+        checkRuleIsInvalid('example.org##body /*({})*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
+        checkRuleIsInvalid('example.org##body /*({*/ { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; }');
+        checkRuleIsInvalid('example.org##\\\\/*[*/, body { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } ,\\/*]');
+        checkRuleIsInvalid('example.org##body:not(blabla/*[*/) { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } /*]*\\/');
+        checkRuleIsInvalid('example.org##.generic1 /*comment*/');
+        checkRuleIsInvalid('example.org##a //');
     });
 
     it('throws error if marker is not supported yet', () => {
@@ -229,22 +264,32 @@ describe('CosmeticRule.CSS', () => {
     });
 
     it('throws error when cosmetic rule contains url', () => {
-        const ruleText = 'example.com#$#body { background: url(http://example.org/empty.gif) }';
-        expect(() => {
-            new CosmeticRule(ruleText, 0);
-        }).toThrow(new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`));
+        const checkRuleIsInvalid = (ruleText: string): void => {
+            expect(() => {
+                new CosmeticRule(ruleText, 0);
+            }).toThrow(/CSS modifying rule with 'url' was omitted+/);
+        };
+
+        checkRuleIsInvalid('example.com#$#body { background: url(http://example.org/empty.gif) }');
+        checkRuleIsInvalid('example.org#$#body { background:url("http://example.org/image.png"); }');
     });
 
-    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1444
-    it('throws error when cosmetic rule contains backslash', () => {
-        const invalidRuleText = 'example.com#$#body { background: \\75 rl(http://example.org/empty.gif) }';
-        const validRuleText = 'example.com#$#body { background: black; }';
-        expect(() => {
-            new CosmeticRule(invalidRuleText, 0);
-        }).toThrow(new SyntaxError(`CSS injection rule with '\\' was omitted: ${invalidRuleText}`));
+    it('checks backslash in cosmetic rules content', () => {
+        const backslashInElemhideRules = new CosmeticRule('example.org###Meebo\\:AdElement\\.Root', 0);
+        expect(backslashInElemhideRules).toBeDefined();
 
-        const validRule = new CosmeticRule(validRuleText, 0);
-        expect(validRule).toBeDefined();
+        const backslashInCssRulesSelector = new CosmeticRule('example.org#$?#div:matches-css(width: /\\d+/) { background-color: red!important; }', 0);
+        expect(backslashInCssRulesSelector).toBeDefined();
+
+        const checkRuleIsInvalid = (ruleText: string): void => {
+            expect(() => {
+                new CosmeticRule(ruleText, 0);
+            }).toThrow(/CSS injection rule with '\\' was omitted+/);
+        };
+
+        checkRuleIsInvalid('example.com#$#body { background: \\75 rl(http://example.org/empty.gif) }');
+        checkRuleIsInvalid('example.org#$#body { background:\\x75rl("http://example.org/image.png"); }');
+        checkRuleIsInvalid('example.org#$#body { background:u\\114\\0154("http://example.org/image.png"); }');
     });
 });
 

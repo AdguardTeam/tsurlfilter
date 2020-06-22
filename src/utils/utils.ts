@@ -68,6 +68,40 @@ export function startsAtIndexWith(str: string, startIndex: number, substr: strin
 }
 
 /**
+ * Checks if str has unquoted substr
+ *
+ * @param str
+ * @param substr
+ */
+export function hasUnquotedSubstring(str: string, substr: string): boolean {
+    const quotes = ['"', "'", '/'];
+
+    const stack: string[] = [];
+    for (let i = 0; i < str.length; i += 1) {
+        const cursor = str[i];
+
+        if (stack.length === 0) {
+            if (startsAtIndexWith(str, i, substr)) {
+                return true;
+            }
+        }
+
+        if (quotes.indexOf(cursor) >= 0
+            && (i === 0 || str[i - 1] !== '\\')) {
+            const last = stack.pop();
+            if (!last) {
+                stack.push(cursor);
+            } else if (last !== cursor) {
+                stack.push(last);
+                stack.push(cursor);
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * djb2 hash algorithm
  *
  * @param str string to get hash
