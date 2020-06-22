@@ -1,4 +1,4 @@
-import { replaceAll } from '../utils/utils';
+import * as utils from '../utils/utils';
 
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/regexp
 // should be escaped . * + ? ^ $ { } ( ) | [ ] / \
@@ -191,7 +191,7 @@ export class SimpleRegex {
         // Now escape "|" characters but avoid escaping them in the special places
         if (regex.startsWith(this.MASK_START_URL)) {
             regex = regex.substring(0, this.MASK_START_URL.length)
-                + replaceAll(
+                + utils.replaceAll(
                     regex.substring(this.MASK_START_URL.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
@@ -199,7 +199,7 @@ export class SimpleRegex {
                 + regex.substring(regex.length - this.MASK_PIPE.length);
         } else {
             regex = regex.substring(0, this.MASK_PIPE.length)
-                + replaceAll(
+                + utils.replaceAll(
                     regex.substring(this.MASK_PIPE.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
@@ -208,8 +208,8 @@ export class SimpleRegex {
         }
 
         // Replace special URL masks
-        regex = replaceAll(regex, this.MASK_ANY_CHARACTER, this.REGEX_ANY_CHARACTER);
-        regex = replaceAll(regex, this.MASK_SEPARATOR, this.REGEX_SEPARATOR);
+        regex = utils.replaceAll(regex, this.MASK_ANY_CHARACTER, this.REGEX_ANY_CHARACTER);
+        regex = utils.replaceAll(regex, this.MASK_SEPARATOR, this.REGEX_SEPARATOR);
 
         // Replace start URL and pipes
         if (regex.startsWith(this.MASK_START_URL)) {
@@ -223,5 +223,20 @@ export class SimpleRegex {
         }
 
         return regex;
+    }
+
+    /**
+     * Creates RegExp object from string in '/reg_exp/gi' format
+     *
+     * @param str
+     */
+    public static patternFromString(str: string): RegExp {
+        const parts = utils.splitByDelimiterWithEscapeCharacter(str, '/', '\\', true);
+        let modifiers = (parts[1] || '');
+        if (modifiers.indexOf('g') < 0) {
+            modifiers += 'g';
+        }
+
+        return new RegExp(parts[0], modifiers);
     }
 }

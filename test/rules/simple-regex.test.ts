@@ -61,3 +61,10 @@ describe('SimpleRegex.extractShortcut', () => {
         expect(shortcut).toEqual('');
     });
 });
+
+describe('SimpleRegex.patternFromString', () => {
+    it('works if it is able to creates basic regexp', () => {
+        expect(SimpleRegex.patternFromString('/test/').source).toBe('test');
+        expect(SimpleRegex.patternFromString('/test/gi').source).toBe('test');
+    });
+});
