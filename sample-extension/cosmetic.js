@@ -48,6 +48,28 @@ const createRuleStyle = (rule, addMarker) => {
 };
 
 /**
+ * Creates rules style string
+ *
+ * @param rule
+ * @param addMarker
+ * @return {string}
+ */
+const createInjectRuleStyle = (rule, addMarker) => {
+    let contentMarker = '';
+    if (addMarker) {
+        // eslint-disable-next-line max-len
+        contentMarker = ` content: 'adguard${rule.getFilterListId()}${encodeURIComponent(';')}${escapeRule(rule.getText())}' !important;`;
+    }
+
+    const content = rule.getContent().trim();
+    if (content.endsWith('}')) {
+        return `${content.substr(0, content.length - 1)}${contentMarker}}`;
+    }
+
+    return content;
+};
+
+/**
  * Applies css from cosmetic result
  *
  * Patches rule selector adding adguard mark rule info in the content attribute
@@ -60,15 +82,25 @@ const createRuleStyle = (rule, addMarker) => {
 export const applyCss = (tabId, cosmeticResult) => {
     const ADD_CSS_HITS_MARKER = true;
 
-    const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
+    const elemhideCss = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
         .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER));
 
-    const extendedCssStylesheets = [
+    const injectCss = [...cosmeticResult.CSS.generic, ...cosmeticResult.CSS.specific]
+        .map((x) => createInjectRuleStyle(x, ADD_CSS_HITS_MARKER));
+
+    const elemhideExtendedCssStylesheets = [
         ...cosmeticResult.elementHiding.genericExtCss,
         ...cosmeticResult.elementHiding.specificExtCss,
     ]
-        .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER))
-        .join('\n');
+        .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER));
+
+    const injectExtendedCssStylesheets = [
+        ...cosmeticResult.elementHiding.genericExtCss,
+        ...cosmeticResult.elementHiding.specificExtCss,
+    ]
+        .map((x) => createInjectRuleStyle(x, ADD_CSS_HITS_MARKER));
+
+    const extendedCssStylesheets = [...elemhideExtendedCssStylesheets, ...injectExtendedCssStylesheets].join('\n');
 
     chrome.tabs.executeScript(tabId, {
         code: `
@@ -101,7 +133,7 @@ export const applyCss = (tabId, cosmeticResult) => {
     });
 
     // Apply css
-    const styleText = css.join('\n');
+    const styleText = [...elemhideCss, ...injectCss].join('\n');
     const injectDetails = {
         code: styleText,
         runAt: 'document_start',
