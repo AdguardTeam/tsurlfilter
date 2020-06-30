@@ -17,6 +17,11 @@ export class CosmeticEngine {
     private ruleStorage: RuleStorage;
 
     /**
+     * Count of rules added to the engine
+     */
+    public rulesCount: number;
+
+    /**
      * Lookup table for elemhide rules
      */
     private elementHidingLookupTable: CosmeticLookupTable;
@@ -43,6 +48,7 @@ export class CosmeticEngine {
      */
     constructor(ruleStorage: RuleStorage) {
         this.ruleStorage = ruleStorage;
+        this.rulesCount = 0;
 
         this.elementHidingLookupTable = new CosmeticLookupTable();
         this.cssLookupTable = new CosmeticLookupTable();
@@ -86,6 +92,8 @@ export class CosmeticEngine {
                 break;
             }
         }
+
+        this.rulesCount += 1;
     }
 
     /**

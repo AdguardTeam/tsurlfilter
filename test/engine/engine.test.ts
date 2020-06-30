@@ -11,6 +11,8 @@ describe('TestEngineMatchRequest', () => {
         const list = new StringRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
+        expect(engine.getRulesCount()).toBe(1);
+
         let request = new Request('https://example.org', '', RequestType.Document);
         let result = engine.matchRequest(request);
 
