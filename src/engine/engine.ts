@@ -70,4 +70,11 @@ export class Engine {
     getCosmeticResult(hostname: string, option: CosmeticOption): CosmeticResult {
         return this.cosmeticEngine.match(hostname, option);
     }
+
+    /**
+     * Gets rules count
+     */
+    getRulesCount() {
+        return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
+    }
 }
