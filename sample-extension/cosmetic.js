@@ -95,8 +95,8 @@ export const applyCss = (tabId, cosmeticResult) => {
         .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER));
 
     const injectExtendedCssStylesheets = [
-        ...cosmeticResult.elementHiding.genericExtCss,
-        ...cosmeticResult.elementHiding.specificExtCss,
+        ...cosmeticResult.CSS.genericExtCss,
+        ...cosmeticResult.CSS.specificExtCss,
     ]
         .map((x) => createInjectRuleStyle(x, ADD_CSS_HITS_MARKER));
 
