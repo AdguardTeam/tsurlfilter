@@ -78,7 +78,7 @@ export default class CssHitsCounter {
             || document.readyState === 'interactive') {
             this.countCssHits();
         } else {
-            document.addEventListener('readystatechange', this.startCounter);
+            document.addEventListener('readystatechange', this.startCounter.bind(this));
         }
     }
 
