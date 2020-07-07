@@ -341,7 +341,8 @@ export class CosmeticRule implements rule.IRule {
     }
 
     private validate(): void {
-        if (this.type !== CosmeticRuleType.Css) {
+        if (this.type !== CosmeticRuleType.Css
+            && this.type !== CosmeticRuleType.Js) {
             CosmeticRule.validatePseudoClasses(this.content);
 
             if (utils.hasUnquotedSubstring(this.content, '{')) {
