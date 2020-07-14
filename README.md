@@ -456,11 +456,11 @@ This class applies cookie rules in page context
     cookieController.apply(rulesData);
 ```
 
-### <a id="sample-extension"></a> Chrome sample extension
+### <a id="sample-extension"></a> Sample extension
 
 Source code of the sample extension is located in the directory `./sample-extension`
 
-To build sample extension run in root directory
+To build sample extension run in the root directory
 ```
 npm run build-extension
 ```
@@ -496,42 +496,3 @@ Good news: the setup is here for you, you must only include the dependency name 
 ### <a id="git-hooks"></a> Git Hooks
 
 There is already set a `precommit` hook for formatting your code with Eslint :nail_care:
-
-### <a id="todo"></a> TODO
-
--   [x] Basic filtering rules
-    -   [x] Core blocking syntax
-    -   [x] Basic network engine
-    -   [x] Basic rules validation (don't match everything, unexpected modifiers, etc)
-    -   [x] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
-    -   [x] Domain semantics: AG-254
--   [x] Benchmark basic rules matching
--   [x] Hosts matching rules
-    -   [x] /etc/hosts matching
-    -   [x] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
-    -   [x] \$badfilter support for host-blocking network rules
--   [ ] Memory optimization
--   [x] Tech document
--   [x] Cosmetic rules
-    -   [x] Basic element hiding and CSS rules
-        -   [x] Proper CSS rules validation
-    -   [x] ExtCSS rules
-        -   [x] ExtCSS rules validation
-    -   [x] Scriptlet rules
-    -   [x] JS rules
--   [x] Basic filtering engine implementation
-    -   [x] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
-    -   [x] Advanced modifiers part 1
-        -   [x] \$important
-        -   [x] \$badfilter
-    -   [x] Web extension example
--   [x] HTML filtering rules
--   [x] Advanced modifiers
-    -   [x] \$important
-    -   [x] \$replace
-    -   [x] \$csp
-    -   [x] \$cookie
-    -   [x] \$redirect
-    -   [x] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
-    -   [x] \$stealth modifier
-    -   [x] \$ping modifier (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1584)
