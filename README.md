@@ -1,99 +1,54 @@
-# tsurlfilter
+# TSUrlFilter
 
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
+*   [Idea](#idea)
+*   [Usage](#usage)
+    *   [API description](#api-description)
+        *   [Public classes](#public-classes)
+            *   [Engine](#engine)
+            *   [MatchingResult](#matching-result)
+            *   [CosmeticResult](#cosmetic-result)
+            *   [DnsEngine](#dns-engine)
+            *   [RuleConverter](#rule-converter)
+            *   [ContentFiltering](#content-filtering)
+            *   [StealthService](#stealth-service)
+            *   [RedirectsService](#redirect-service)
+            *   [CookieFiltering](#cookie-filtering)
+        *   [Content script classes](#content-script-classes)
+            *   [CssHitsCounter](#css-hits-counter)
+            *   [CookieController](#cookie-controller)
+    *   [Sample extension](#sample-extension)
+*   [Development](#development)
+    *   [NPM scripts](#npm-scripts)
+    *   [Excluding peer dependencies](#excluding-peer-dependencies)
+    *   [Git hooks](#git-hooks)
+    *   [TODO](#todo)
+
+## <a id="idea"></a> Idea
 The idea is to have a single library that we can reuse for the following tasks:
 
 -   Doing content blocking in our Chrome and Firefox extensions (obviously)
 -   Using this library for parsing rules and converting to Safari-compatible content blocking lists (see [AdGuard for Safari](https://github.com/AdguardTeam/AdguardForSafari), [AdGuard for iOS](https://github.com/AdguardTeam/AdguardForiOS))
 -   Using this library for validating and linting filter lists (see [FiltersRegistry](https://github.com/AdguardTeam/FiltersRegistry), [AdguardFilters](https://github.com/AdguardTeam/AdguardFilters))
--   It could also be used as a basis for the [VS code extension](https://github.com/ameshkov/VscodeAdblockSyntax/).
+-   It could also be used as a basis for the [VS code extension](https://github.com/ameshkov/VscodeAdblockSyntax/)
 
-### NPM scripts
+## <a id="usage"></a> Usage
 
--   `npm t`: Run test suite
--   `npm start`: Run `npm run build` in watch mode
--   `npm run test:watch`: Run test suite in [interactive watch mode](http://facebook.github.io/jest/docs/cli.html#watch)
--   `npm run test:prod`: Run linting and generate coverage
--   `npm run build`: Generate bundles and typings, create docs
--   `npm run lint`: Lints code
--   `npm run commit`: Commit using conventional commit style ([husky](https://github.com/typicode/husky) will tell you to use it if you haven't :wink:)
--   `npm run build-extension`: Build sample chrome extension
-
-### Excluding peerDependencies
-
-On library development, one might want to set some peer dependencies, and thus remove those from the final bundle. You can see in [Rollup docs](https://rollupjs.org/#peer-dependencies) how to do that.
-
-Good news: the setup is here for you, you must only include the dependency name in `external` property within `rollup.config.js`. For example, if you want to exclude `lodash`, just write there `external: ['lodash']`.
-
-### Git Hooks
-
-There is already set a `precommit` hook for formatting your code with Eslint :nail_care:
-
-### TODO
-
--   [x] Basic filtering rules
-    -   [x] Core blocking syntax
-    -   [x] Basic network engine
-    -   [x] Basic rules validation (don't match everything, unexpected modifiers, etc)
-    -   [x] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
-    -   [x] Domain semantics: AG-254
--   [x] Benchmark basic rules matching
--   [x] Hosts matching rules
-    -   [x] /etc/hosts matching
-    -   [x] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
-    -   [x] \$badfilter support for host-blocking network rules
--   [ ] Memory optimization
--   [x] Tech document
--   [x] Cosmetic rules
-    -   [x] Basic element hiding and CSS rules
-        -   [x] Proper CSS rules validation
-    -   [x] ExtCSS rules
-        -   [x] ExtCSS rules validation
-    -   [x] Scriptlet rules
-    -   [x] JS rules
--   [x] Basic filtering engine implementation
-    -   [x] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
-    -   [x] Advanced modifiers part 1
-        -   [x] \$important
-        -   [x] \$badfilter
-    -   [x] Web extension example
--   [x] HTML filtering rules
--   [x] Advanced modifiers
-    -   [x] \$important
-    -   [x] \$replace
-    -   [x] \$csp
-    -   [x] \$cookie
-    -   [x] \$redirect
-    -   [x] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
-    -   [x] \$stealth modifier
-    -   [x] \$ping modifier (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1584)
-    
-### Chrome sample extension
-
+Install the tsurlfilter:
 ```
-./sample-extension
+npm install @adguard/tsurlfilter
 ```
 
-There is a sample unpacked extension with an engine built from sources.
-Test pages: 
-http://testcases.adguard.com/Filters/simple-rules/test-simple-rules.html
-http://testcases.adguard.com/Filters/script-rules/test-script-rules.html
-http://testcases.adguard.com/Filters/csp-rules/test-csp-rules.html
+### <a id="api-description"></a> API description
 
-```
-npm run build-extension
-```
+#### <a id="public-classes"></a> Public classes
 
-Builds extension to `./dist-extension`. After that it's ready to be added to chrome using "Load unpacked".
-
-### Public classes
-
-#### Engine
+#### <a id="engine"></a> Engine
 
 Engine is a main class of this library. It represents the filtering functionality for loaded rules
 
-###### **Constructor**
+##### **Constructor**
 ```
     /**
      * Creates an instance of Engine
@@ -107,7 +62,7 @@ Engine is a main class of this library. It represents the filtering functionalit
     constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined)
 ```
 
-###### **matchRequest**
+##### **matchRequest**
 ```
     /**
      * Matches the specified request against the filtering engine and returns the matching result.
@@ -118,7 +73,7 @@ Engine is a main class of this library. It represents the filtering functionalit
     matchRequest(request: Request): MatchingResult
 ```
 
-###### **getCosmeticResult**
+##### **getCosmeticResult**
 ```
     /**
      * Gets cosmetic result for the specified hostname and cosmetic options
@@ -155,7 +110,7 @@ Engine is a main class of this library. It represents the filtering functionalit
     const cosmeticResult = engine.getCosmeticResult(hostname, CosmeticOption.CosmeticOptionAll);
 ```
 
-#### MatchingResult
+#### <a id="matching-result"></a> MatchingResult
 
 MatchingResult contains all the rules matching a web request, and provides methods that define how a web request should be processed
 
@@ -192,7 +147,7 @@ This flag should be used for `getCosmeticResult(hostname: string, option: Cosmet
      * Return an array of replace rules
      */
     getReplaceRules(): NetworkRule[]
-    
+
     /**
      * Returns an array of csp rules
      */
@@ -204,7 +159,7 @@ This flag should be used for `getCosmeticResult(hostname: string, option: Cosmet
     getCookieRules(): NetworkRule[]
 ```
 
-#### CosmeticResult
+#### <a id="cosmetic-result"></a> CosmeticResult
 
 Cosmetic result is the representation of matching cosmetic rules.
 It contains the following properties:
@@ -239,14 +194,14 @@ It contains the following properties:
 ```
    const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
            .map((rule) => `${rule.getContent()} { display: none!important; }`);
-    
+
     const styleText = css.join('\n');
     const injectDetails = {
         code: styleText,
         runAt: 'document_start',
     };
 
-    chrome.tabs.insertCSS(tabId, injectDetails); 
+    chrome.tabs.insertCSS(tabId, injectDetails);
 ```
 
 ##### Applying cosmetic result - scripts
@@ -260,11 +215,11 @@ It contains the following properties:
     });
 ```
 
-#### DNS Engine
+#### <a id="dns-engine"></a> DnsEngine
 
 DNSEngine combines host rules and network rules and is supposed to quickly find matching rules for hostnames.
 
-###### **Constructor**
+##### **Constructor**
 ```
     /**
      * Builds an instance of dns engine
@@ -274,7 +229,7 @@ DNSEngine combines host rules and network rules and is supposed to quickly find 
     constructor(storage: RuleStorage)
 ```
 
-###### **match**
+##### **match**
 ```
     /**
      * Match searches over all filtering and host rules loaded to the engine
@@ -299,12 +254,12 @@ DNSEngine combines host rules and network rules and is supposed to quickly find 
     }
 ```
 
-#### RuleConverter
+#### <a id="rule-converter"></a> RuleConverter
 
 Before saving downloaded text with rules it could be useful to run converter on it.
 The text will be processed line by line, converting each line from known external format to Adguard syntax.
 
-###### **convertRules**
+##### **convertRules**
 
 ```
     /**
@@ -315,13 +270,12 @@ The text will be processed line by line, converting each line from known externa
     public static convertRules(rulesText: string): string {
 ```
 
-
-#### ContentFiltering
+#### <a id="content-filtering"></a> ContentFiltering
 
 Content filtering module, it applies html-filtering and $replace rules.
-The rules could be retrieved with parsing the result of `engine.matchRequest`. 
+The rules could be retrieved with parsing the result of `engine.matchRequest`.
 
-###### **Constructor**
+##### **Constructor**
 ```
     /**
      * Creates an instance of content filtering module
@@ -348,7 +302,7 @@ The rules could be retrieved with parsing the result of `engine.matchRequest`.
         contentType: string,
         replaceRules: NetworkRule[],
         htmlRules: CosmeticRule[],
-    ): void 
+    ): void
 ```
 
 ##### Applying content-filtering rules
@@ -368,13 +322,12 @@ The rules could be retrieved with parsing the result of `engine.matchRequest`.
     );
 ```
 
+#### <a id="stealth-service"></a> StealthService
 
-#### StealthService
-
-Stealth service module, it provides some special functionality 
+Stealth service module, it provides some special functionality
 like removing tracking parameters and cookie modifications
 
-###### **Constructor**
+##### **Constructor**
 ```
     /**
      * Constructor
@@ -415,7 +368,7 @@ like removing tracking parameters and cookie modifications
     public getCookieRules(request: Request): NetworkRule[]
 ```
 
-#### RedirectsService
+#### <a id="redirect-service"></a> RedirectsService
 Redirects service module applies `$redirect` rules.
 More details on sample extension.
 
@@ -435,9 +388,9 @@ More details on sample extension.
     }
 ```
 
-#### CookieFiltering
+#### <a id="cookie-filtering"></a> CookieFiltering
 Cookie filtering module applies `$cookie` rules.
-Adds a listener for `CookieApi.setOnChangedListener(..)` then applies rules from `RulesFinder` to event cookie. 
+Adds a listener for `CookieApi.setOnChangedListener(..)` then applies rules from `RulesFinder` to event cookie.
 
 ##### **Constructor**
 Check `CookieApi` and `RulesFinder` interfaces
@@ -471,20 +424,20 @@ Check `CookieApi` and `RulesFinder` interfaces
     getBlockingRules(rules: NetworkRule[]): NetworkRule[];
 ```
 
-### Content script classes
-Classes provided for page context.
+#### <a id="content-script-classes"></a> Content script classes
+Classes provided for page context:
 
-#### CssHitsCounter
+#### <a id="css-hits-counter"></a> CssHitsCounter
 Class represents collecting css style hits process.
 
-##### Initialization: 
+##### Initialization:
 ```
     const cssHitsCounter = new CssHitsCounter((stats) => {
         chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
     });
 ```
 
-#### CookieController
+#### <a id="cookie-controller"></a> CookieController
 This class applies cookie rules in page context
 
 ##### Usage:
@@ -499,6 +452,86 @@ This class applies cookie rules in page context
     const cookieController = new CookieController((rule) => {
         console.debug('On cookie rule applied');
     });
-    
-    cookieController.apply(rulesData);      
+
+    cookieController.apply(rulesData);
 ```
+
+### <a id="sample-extension"></a> Chrome sample extension
+
+Source code of the sample extension is located in the directory `./sample-extension`
+
+To build sample extension run in root directory
+```
+npm run build-extension
+```
+
+This command builds extension to `./dist-extension` directory. After that it's ready to be added to Chrome using "Load unpacked" in developer mode.
+
+To test if this extension works correctly you can use next test pages:
+
+Test pages:
+-   [Simple rules test](http://testcases.adguard.com/Filters/simple-rules/test-simple-rules.html)
+-   [Script rules test](http://testcases.adguard.com/Filters/script-rules/test-script-rules.html)
+-   [CSP rules test](http://testcases.adguard.com/Filters/csp-rules/test-csp-rules.html)
+
+## Development
+
+### <a id="npm-scripts"></a> NPM scripts
+
+-   `npm t`: Run test suite
+-   `npm start`: Run `npm run build` in watch mode
+-   `npm run test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
+-   `npm run test:prod`: Run linting and generate coverage
+-   `npm run build`: Generate bundles and typings, create docs
+-   `npm run lint`: Lints code
+-   `npm run commit`: Commit using conventional commit style ([husky](https://github.com/typicode/husky) will tell you to use it if you haven't :wink:)
+-   `npm run build-extension`: Build sample chrome extension
+
+### <a id="excluding-peer-dependencies"></a> Excluding peerDependencies
+
+On library development, one might want to set some peer dependencies, and thus remove those from the final bundle. You can see in [Rollup docs](https://rollupjs.org/#peer-dependencies) how to do that.
+
+Good news: the setup is here for you, you must only include the dependency name in `external` property within `rollup.config.js`. For example, if you want to exclude `lodash`, just write there `external: ['lodash']`.
+
+### <a id="git-hooks"></a> Git Hooks
+
+There is already set a `precommit` hook for formatting your code with Eslint :nail_care:
+
+### <a id="todo"></a> TODO
+
+-   [x] Basic filtering rules
+    -   [x] Core blocking syntax
+    -   [x] Basic network engine
+    -   [x] Basic rules validation (don't match everything, unexpected modifiers, etc)
+    -   [x] Domain semantics: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1474
+    -   [x] Domain semantics: AG-254
+-   [x] Benchmark basic rules matching
+-   [x] Hosts matching rules
+    -   [x] /etc/hosts matching
+    -   [x] Network host-level rules: https://github.com/AdguardTeam/urlfilter/blob/v0.7.0/rules/network_rule.go#L213
+    -   [x] \$badfilter support for host-blocking network rules
+-   [ ] Memory optimization
+-   [x] Tech document
+-   [x] Cosmetic rules
+    -   [x] Basic element hiding and CSS rules
+        -   [x] Proper CSS rules validation
+    -   [x] ExtCSS rules
+        -   [x] ExtCSS rules validation
+    -   [x] Scriptlet rules
+    -   [x] JS rules
+-   [x] Basic filtering engine implementation
+    -   [x] Handling cosmetic modifiers $elemhide, $generichide, \$jsinject
+    -   [x] Advanced modifiers part 1
+        -   [x] \$important
+        -   [x] \$badfilter
+    -   [x] Web extension example
+-   [x] HTML filtering rules
+-   [x] Advanced modifiers
+    -   [x] \$important
+    -   [x] \$replace
+    -   [x] \$csp
+    -   [x] \$cookie
+    -   [x] \$redirect
+    -   [x] \$badfilter (see this as well: https://github.com/AdguardTeam/CoreLibs/issues/1241)
+    -   [x] \$stealth modifier
+    -   [x] \$ping modifier (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1584)
