@@ -92,13 +92,13 @@ export const applyCss = (tabId, cosmeticResult) => {
         ...cosmeticResult.elementHiding.genericExtCss,
         ...cosmeticResult.elementHiding.specificExtCss,
     ]
-        .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER));
+        .map((x) => createRuleStyle(x, ADD_CSS_HITS_MARKER).replace('\\', '\\\\'));
 
     const injectExtendedCssStylesheets = [
-        ...cosmeticResult.elementHiding.genericExtCss,
-        ...cosmeticResult.elementHiding.specificExtCss,
+        ...cosmeticResult.CSS.genericExtCss,
+        ...cosmeticResult.CSS.specificExtCss,
     ]
-        .map((x) => createInjectRuleStyle(x, ADD_CSS_HITS_MARKER));
+        .map((x) => createInjectRuleStyle(x, ADD_CSS_HITS_MARKER).replace('\\', '\\\\'));
 
     const extendedCssStylesheets = [...elemhideExtendedCssStylesheets, ...injectExtendedCssStylesheets].join('\n');
 

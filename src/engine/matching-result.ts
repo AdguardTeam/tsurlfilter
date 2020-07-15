@@ -178,11 +178,18 @@ export class MatchingResult {
         // 2. Document-level exception rules with $content or $document modifiers do disable $replace rules
         //  for requests matching them.
         if (this.replaceRules) {
-            // TODO: implement the $replace selection algorithm
-            // 1. check that ReplaceRules aren't negated by themselves (for instance,
-            //  that there's no @@||example.org^$replace rule)
-            // 2. check that they aren't disabled by a document-level exception (check both DocumentRule and BasicRule)
-            // 3. return nil if that is so
+            const basic = this.basicRule || this.documentRule;
+            if (basic && basic.isWhitelist()) {
+                if (basic.isDocumentWhitelistRule()) {
+                    return basic;
+                }
+
+                if (basic.isOptionEnabled(NetworkRuleOption.Replace)
+                    || basic.isOptionEnabled(NetworkRuleOption.Content)) {
+                    return basic;
+                }
+            }
+
             return null;
         }
 
@@ -236,6 +243,8 @@ export class MatchingResult {
         if (!this.replaceRules) {
             return [];
         }
+
+        // TODO: Look up for whitelist $content rule
 
         return MatchingResult.filterAdvancedModifierRules(this.replaceRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));

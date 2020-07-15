@@ -1,6 +1,7 @@
 /**
  * Represents a filtering rule
  */
+// eslint-disable-next-line max-classes-per-file
 export interface IRule {
     /**
      * Rule's source text
@@ -34,6 +35,32 @@ export class IndexedRule {
      * @param index
      */
     constructor(rule: IRule, index: number) {
+        this.rule = rule;
+        this.index = index;
+    }
+}
+
+/**
+ * Rule with storage index
+ */
+export class IndexedStorageRule {
+    /**
+     * Rule
+     */
+    public rule: IRule;
+
+    /**
+     * Index
+     */
+    public index: bigint;
+
+    /**
+     * Constructor
+     *
+     * @param rule
+     * @param index
+     */
+    constructor(rule: IRule, index: bigint) {
         this.rule = rule;
         this.index = index;
     }

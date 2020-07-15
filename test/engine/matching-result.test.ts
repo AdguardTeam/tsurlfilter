@@ -266,6 +266,9 @@ describe('TestNewMatchingResult - replace rules', () => {
         expect(result).toBeTruthy();
         const replaceRules = result.getReplaceRules();
         expect(replaceRules.length).toBe(rules.length);
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeNull();
     });
 
     it('works if whitelisted replace filter with same option is omitted', () => {
@@ -284,6 +287,9 @@ describe('TestNewMatchingResult - replace rules', () => {
         expect(result).toBeTruthy();
         const replaceRules = result.getReplaceRules();
         expect(replaceRules.length).toBe(2);
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeNull();
     });
 
     it('work if @@||example.org^$replace will disable all $replace rules matching ||example.org^.', () => {
@@ -299,6 +305,28 @@ describe('TestNewMatchingResult - replace rules', () => {
         expect(result).toBeTruthy();
         const replaceRules = result.getReplaceRules();
         expect(replaceRules.length).toBe(1);
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeNull();
+    });
+
+    it('work if @@||example.org^$content will be found', () => {
+        const ruleTexts = [
+            '||example.org^$replace=/test1/test2/g',
+            '@@||example.org^$content',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const replaceRules = result.getReplaceRules();
+        expect(replaceRules.length).toBe(1);
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        expect(basicResult!.getText()).toEqual('@@||example.org^$content');
     });
 });
 
