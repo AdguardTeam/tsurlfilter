@@ -23,7 +23,6 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
     *   [NPM scripts](#npm-scripts)
     *   [Excluding peer dependencies](#excluding-peer-dependencies)
     *   [Git hooks](#git-hooks)
-    *   [TODO](#todo)
 
 ## <a id="idea"></a> Idea
 The idea is to have a single library that we can reuse for the following tasks:
