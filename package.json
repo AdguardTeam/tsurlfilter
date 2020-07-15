@@ -1,23 +1,26 @@
 {
-  "name": "tsurlfilter",
+  "name": "@adguard/tsurlfilter",
   "version": "0.1.0",
-  "description": "",
-  "keywords": [],
+  "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/tsurlfilter.es5.js",
   "typings": "dist/types/tsurlfilter.d.ts",
   "files": [
     "dist"
   ],
-  "author": "Andrey Meshkov",
+  "author": "AdGuard",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git"
   },
   "license": "GPL-3.0-only",
   "engines": {
     "node": ">=6.0.0"
   },
+  "bugs": {
+    "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+  },
+  "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
@@ -85,6 +88,7 @@
     "@rollup/plugin-commonjs": "^11.0.2",
     "@rollup/plugin-json": "^4.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
+    "@rollup/plugin-typescript": "^2.1.0",
     "@types/jest": "^23.3.14",
     "@types/lodash": "^4.14.149",
     "@types/node": "^10.17.14",
@@ -115,7 +119,6 @@
     "rollup-plugin-node-globals": "latest"
   },
   "dependencies": {
-    "@rollup/plugin-typescript": "^2.1.0",
     "consola": "^2.12.2",
     "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.8",
     "is-ip": "^3.1.0",

@@ -7,9 +7,9 @@ import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import pkg from './package.json';
 
-const libraryName = 'AGUrlFilter';
+const libraryName = 'TSUrlFilter';
 
-const contentScriptFilename = 'AGUrlFilterContentScript';
+const contentScriptFilename = 'TSUrlFilterContentScript';
 const contentScriptConfig = {
     input: 'src/content-script/index.ts',
     output: [

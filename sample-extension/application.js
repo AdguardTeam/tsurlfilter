@@ -1,5 +1,5 @@
 /* eslint-disable no-console, import/extensions, import/no-unresolved */
-import * as AGUrlFilter from './engine.js';
+import * as TSUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
 import { RedirectsService } from './redirects/redirects-service.js';
@@ -54,8 +54,8 @@ export class Application {
     async startEngine(rulesText) {
         console.log('Starting url filter engine');
 
-        const list = new AGUrlFilter.StringRuleList(1, rulesText, false);
-        const ruleStorage = new AGUrlFilter.RuleStorage([list]);
+        const list = new TSUrlFilter.StringRuleList(1, rulesText, false);
+        const ruleStorage = new TSUrlFilter.RuleStorage([list]);
 
         const config = {
             engine: 'extension',
@@ -73,10 +73,10 @@ export class Application {
             selfDestructFirstPartyCookiesTime: 1,
         };
 
-        this.engine = new AGUrlFilter.Engine(ruleStorage, config);
-        this.dnsEngine = new AGUrlFilter.DnsEngine(ruleStorage);
-        this.contentFiltering = new AGUrlFilter.ContentFiltering(this.filteringLog);
-        this.stealthService = new AGUrlFilter.StealthService(stealthConfig);
+        this.engine = new TSUrlFilter.Engine(ruleStorage, config);
+        this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
+        this.contentFiltering = new TSUrlFilter.ContentFiltering(this.filteringLog);
+        this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
         await this.redirectsService.init();
 
         console.log('Starting url filter engine..ok');
@@ -93,7 +93,7 @@ export class Application {
         console.debug(details);
 
         const requestType = Application.transformRequestType(details.type);
-        const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
+        const request = new TSUrlFilter.Request(details.url, details.initiator, requestType);
 
         const dnsResult = this.dnsEngine.match(request.hostname);
         if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
@@ -142,7 +142,7 @@ export class Application {
         }
 
         if (requestRule && !requestRule.isWhitelist()) {
-            if (requestRule.isOptionEnabled(AGUrlFilter.NetworkRuleOption.Redirect)) {
+            if (requestRule.isOptionEnabled(TSUrlFilter.NetworkRuleOption.Redirect)) {
                 const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
                 if (redirectUrl) {
                     return { redirectUrl };
@@ -165,7 +165,7 @@ export class Application {
 
         // This is a mock request, to do it properly we should pass main frame request with correct cosmetic option
         const { hostname } = new URL(url);
-        const cosmeticResult = this.engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionAll);
+        const cosmeticResult = this.engine.getCosmeticResult(hostname, TSUrlFilter.CosmeticOption.CosmeticOptionAll);
         console.debug(cosmeticResult);
 
         applyCss(tabId, cosmeticResult);
@@ -197,7 +197,7 @@ export class Application {
             const htmlRules = this.getHtmlRules(details);
 
             const requestType = Application.transformRequestType(details.type);
-            const request = new AGUrlFilter.Request(details.url, details.initiator, requestType);
+            const request = new TSUrlFilter.Request(details.url, details.initiator, requestType);
             request.requestId = details.requestId;
             request.tabId = details.tabId;
             request.statusCode = details.statusCode;
@@ -264,7 +264,7 @@ export class Application {
      * @return {NetworkRule[]}
      */
     getCookieRules(details) {
-        const request = new AGUrlFilter.Request(details.url, details.initiator, AGUrlFilter.RequestType.Document);
+        const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
         const result = this.engine.matchRequest(request);
 
         return result.getCookieRules();
@@ -298,7 +298,7 @@ export class Application {
      * @returns {{responseHeaders: *}} CSP headers
      */
     getCSPHeaders(details) {
-        const request = new AGUrlFilter.Request(details.url, details.initiator, AGUrlFilter.RequestType.Document);
+        const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
         const result = this.engine.matchRequest(request);
 
         const cspHeaders = [];
@@ -324,7 +324,7 @@ export class Application {
     getReplaceRules(details) {
         // TODO: Cache request - matching results
 
-        const request = new AGUrlFilter.Request(details.url, details.initiator, AGUrlFilter.RequestType.Document);
+        const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
         const result = this.engine.matchRequest(request);
 
         return result.getReplaceRules();
@@ -337,7 +337,7 @@ export class Application {
      */
     getHtmlRules(details) {
         const { hostname } = new URL(details.url);
-        const cosmeticResult = this.engine.getCosmeticResult(hostname, AGUrlFilter.CosmeticOption.CosmeticOptionHtml);
+        const cosmeticResult = this.engine.getCosmeticResult(hostname, TSUrlFilter.CosmeticOption.CosmeticOptionHtml);
 
         return cosmeticResult.Html.getRules();
     }
@@ -351,28 +351,28 @@ export class Application {
     static transformRequestType(requestType) {
         switch (requestType) {
             case 'main_frame':
-                return AGUrlFilter.RequestType.Document;
+                return TSUrlFilter.RequestType.Document;
             case 'document':
-                return AGUrlFilter.RequestType.Subdocument;
+                return TSUrlFilter.RequestType.Subdocument;
             case 'stylesheet':
-                return AGUrlFilter.RequestType.Stylesheet;
+                return TSUrlFilter.RequestType.Stylesheet;
             case 'font':
-                return AGUrlFilter.RequestType.Font;
+                return TSUrlFilter.RequestType.Font;
             case 'image':
-                return AGUrlFilter.RequestType.Image;
+                return TSUrlFilter.RequestType.Image;
             case 'media':
-                return AGUrlFilter.RequestType.Media;
+                return TSUrlFilter.RequestType.Media;
             case 'script':
-                return AGUrlFilter.RequestType.Script;
+                return TSUrlFilter.RequestType.Script;
             case 'xmlhttprequest':
-                return AGUrlFilter.RequestType.XmlHttpRequest;
+                return TSUrlFilter.RequestType.XmlHttpRequest;
             case 'websocket':
-                return AGUrlFilter.RequestType.Websocket;
+                return TSUrlFilter.RequestType.Websocket;
             case 'ping':
             case 'beacon':
-                return AGUrlFilter.RequestType.Ping;
+                return TSUrlFilter.RequestType.Ping;
             default:
-                return AGUrlFilter.RequestType.Other;
+                return TSUrlFilter.RequestType.Other;
         }
     }
 

@@ -106,7 +106,7 @@ export const applyCss = (tabId, cosmeticResult) => {
         code: `
                 (() => {
                     // Init css hits counter
-                    const { CssHitsCounter } = AGUrlFilter;
+                    const { CssHitsCounter } = TSUrlFilter;
                     const cssHitsCounter = new CssHitsCounter((stats) => {
                         console.debug('Css stats ready');
                         console.debug(stats);
@@ -117,7 +117,7 @@ export const applyCss = (tabId, cosmeticResult) => {
                     console.debug('CssHitsCounter initialized');
                     
                     // Apply extended css stylesheets
-                    const { ExtendedCss } = AGUrlFilter;
+                    const { ExtendedCss } = TSUrlFilter;
                     const extendedCssContent = \`${extendedCssStylesheets}\`;
                     const extendedCss = new ExtendedCss({
                         styleSheet: extendedCssContent,
