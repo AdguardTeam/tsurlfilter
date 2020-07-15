@@ -35,7 +35,8 @@
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
     "precommit": "lint-staged",
-    "travis-deploy-once": "travis-deploy-once"
+    "travis-deploy-once": "travis-deploy-once",
+    "prepublishOnly": "npm run build"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
