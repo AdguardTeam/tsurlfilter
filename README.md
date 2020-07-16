@@ -1,5 +1,7 @@
 # TSUrlFilter
 
+[![NPM](https://nodei.co/npm/@adguard/tsurlfilter.png?compact=true)](https://www.npmjs.com/package/@adguard/tsurlfilter/)
+
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
 *   [Idea](#idea)
