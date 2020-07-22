@@ -8,7 +8,7 @@ import { StreamFilter } from './stream-filter';
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { NetworkRule } from '../rules/network-rule';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
-import { FilteringLog } from '../filtering-log';
+import { ModificationsListener } from './modifications-listener';
 import { logger } from '../utils/logger';
 
 /**
@@ -19,15 +19,15 @@ export class ContentFiltering {
     /**
      * Filtering log
      */
-    private readonly filteringLog: FilteringLog;
+    private readonly modificationsListener: ModificationsListener;
 
     /**
      * Constructor
      *
-     * @param filteringLog
+     * @param modificationsListener
      */
-    constructor(filteringLog: FilteringLog) {
-        this.filteringLog = filteringLog;
+    constructor(modificationsListener: ModificationsListener) {
+        this.modificationsListener = modificationsListener;
     }
 
     /**
@@ -68,7 +68,7 @@ export class ContentFiltering {
      * @param charset
      * @param callback
      */
-    private static handleResponse(
+    private handleResponse(
         streamFilter: StreamFilter,
         request: Request,
         charset: string | null,
@@ -77,11 +77,15 @@ export class ContentFiltering {
         try {
             // eslint-disable-next-line max-len
             const contentFilter = new ContentFilter(streamFilter, request.requestId!, request.requestType, charset, (content) => {
+                this.modificationsListener.onModificationStarted(request.requestId!);
+
                 try {
                     // eslint-disable-next-line no-param-reassign
                     content = callback(content);
                 } catch (ex) {
                     logger.error(`Error while applying content filter to ${request.url}. Error: ${ex}`);
+                } finally {
+                    this.modificationsListener.onModificationFinished(request.requestId!);
                 }
 
                 contentFilter.write(content!);
@@ -116,7 +120,9 @@ export class ContentFiltering {
                     if (element.parentNode && deleted.indexOf(element) < 0) {
                         element.parentNode.removeChild(element);
 
-                        this.filteringLog.addHtmlEvent(request.tabId!, element.innerHTML, request.url, rule);
+                        this.modificationsListener.onHtmlRuleApplied(
+                            request.tabId!, request.requestId!, element.innerHTML, request.url, rule,
+                        );
                         deleted.push(element);
                     }
                 }
@@ -173,7 +179,8 @@ export class ContentFiltering {
         }
 
         if (appliedRules.length > 0) {
-            this.filteringLog.addReplaceRulesEvent(request.tabId!, request.url, appliedRules);
+            // eslint-disable-next-line max-len
+            this.modificationsListener.onReplaceRulesApplied(request.tabId!, request.requestId!, request.url, appliedRules);
         }
 
         return result;
@@ -301,7 +308,7 @@ export class ContentFiltering {
             return;
         }
 
-        ContentFiltering.handleResponse(
+        this.handleResponse(
             streamFilter,
             request,
             charset,

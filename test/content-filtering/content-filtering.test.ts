@@ -9,16 +9,30 @@ import {
 } from '../../src';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { DEFAULT_CHARSET, parseCharsetFromHeader, WIN_1251 } from '../../src/content-filtering/charsets';
-import { FilteringLog } from '../../src/filtering-log';
+import { ModificationsListener } from '../../src/content-filtering/modifications-listener';
 
-class MockFilteringLog implements FilteringLog {
+class MockFilteringLog implements ModificationsListener {
+    onHtmlRuleApplied = jest.fn(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (tabId: number, requestId: number, innerHTML: string, frameUrl: string | null, rule: IRule) => {
+            // Do nothing
+        },
+    );
+
+    onReplaceRulesApplied = jest.fn(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (tabId: number, requestId: number, frameUrl: string | null, appliedRules: IRule[]) => {
+            // Do nothing
+        },
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    addHtmlEvent = jest.fn((tabId: number, innerHTML: string, frameUrl: string | null, rule: IRule) => {
+    onModificationFinished = jest.fn((requestId: number) => {
         // Do nothing
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    addReplaceRulesEvent = jest.fn((tabId: number, frameUrl: string | null, appliedRules: IRule[]) => {
+    onModificationStarted = jest.fn((requestId: number) => {
         // Do nothing
     });
 }

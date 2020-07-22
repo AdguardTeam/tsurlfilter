@@ -1,9 +1,9 @@
-/**
- * Filtering log interface
- */
 import { CosmeticRule } from './rules/cosmetic-rule';
 import { NetworkRule } from './rules/network-rule';
 
+/**
+ * Filtering log interface
+ */
 export interface FilteringLog {
     /**
      * Add html rule event to log

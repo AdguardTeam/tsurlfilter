@@ -2,6 +2,7 @@
 import * as TSUrlFilter from './engine.js';
 import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
+import { ModificationsListener } from './filtering-log/content-modifications.js';
 import { RedirectsService } from './redirects/redirects-service.js';
 
 /**
@@ -75,7 +76,7 @@ export class Application {
 
         this.engine = new TSUrlFilter.Engine(ruleStorage, config);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
-        this.contentFiltering = new TSUrlFilter.ContentFiltering(this.filteringLog);
+        this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
         this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
         await this.redirectsService.init();
 
