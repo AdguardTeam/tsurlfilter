@@ -199,7 +199,11 @@ describe('Test cosmetic engine - JS rules', () => {
         expect(result.JS.generic).toHaveLength(1);
         expect(result.JS.generic[0].getContent()).toContain(jsRuleText);
 
-        expect(result.getScriptRules()).toHaveLength(2);
+        const scriptRules = result.getScriptRules();
+        expect(scriptRules).toHaveLength(2);
+
+        expect(scriptRules[0].getScript()).toBe(jsRuleText);
+        expect(scriptRules[0].getScript(true)).toBe(jsRuleText);
     });
 
     it('checks cosmetic JS exceptions', () => {

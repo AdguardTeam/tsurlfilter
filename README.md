@@ -208,7 +208,7 @@ It contains the following properties:
 ##### Applying cosmetic result - scripts
 ```
     const cosmeticRules = cosmeticResult.getScriptRules();
-    const scriptsCode = cosmeticRules.map((x) => x.script).join('\r\n');
+    const scriptsCode = cosmeticRules.map((x) => x.getScript()).join('\r\n');
     const toExecute = buildScriptText(scriptsCode);
 
     chrome.tabs.executeScript(tabId, {
