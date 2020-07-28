@@ -114,7 +114,7 @@ export class FilteringLog {
      * @param {Number} tabId - tab id
      * @param {String} elementString - element string presentation
      * @param {String} frameUrl - Frame url
-     * @param {Object} rule - cookie rule
+     * @param {Object} rule - html rule
      */
     addHtmlEvent(tabId, elementString, frameUrl, rule) {
         const filteringEvent = {
@@ -131,8 +131,9 @@ export class FilteringLog {
      * Add html rule event to log
      *
      * @param {Number} tabId - tab id
+     * @param {Number} requestId
      * @param {String} frameUrl - Frame url
-     * @param {Object} rules - cookie rule
+     * @param {Object} rules - replace rules
      */
     addReplaceRulesEvent(tabId, frameUrl, rules) {
         rules.forEach((r) => {
@@ -147,9 +148,9 @@ export class FilteringLog {
     /**
      * Add stealth event
      *
-     * @param tabId
-     * @param frameUrl
-     * @param action
+     * @param {Number} tabId
+     * @param {String}frameUrl
+     * @param {String} action
      */
     addStealthEvent(tabId, frameUrl, action) {
         const filteringEvent = {
