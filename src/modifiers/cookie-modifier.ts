@@ -42,7 +42,6 @@ export class CookieModifier implements IAdvancedModifier {
      */
     private readonly maxAge: number | null;
 
-
     /**
      * Constructor
      *

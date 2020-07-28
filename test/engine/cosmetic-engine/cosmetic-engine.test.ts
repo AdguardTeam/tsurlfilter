@@ -69,12 +69,10 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.specific).toHaveLength(0);
     });
 
-
     it('excludes generic css rules if necessary', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
         const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionCSS);
         expect(result).toBeDefined();
-
 
         expect(result.elementHiding.generic).toHaveLength(0);
         expect(result.elementHiding.specific).toHaveLength(1);
@@ -85,7 +83,6 @@ describe('Test cosmetic engine', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
         const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionGenericCSS);
         expect(result).toBeDefined();
-
 
         expect(result.elementHiding.generic.length).toBe(0);
         expect(result.elementHiding.specific.length).toBe(0);
