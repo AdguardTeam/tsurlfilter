@@ -80,7 +80,12 @@ export class RuleConverter {
 
         const lines = rulesText.split('\n');
         for (const line of lines) {
-            result.push(...RuleConverter.convertRule(line));
+            try {
+                result.push(...RuleConverter.convertRule(line));
+            } catch (e) {
+                // here we do nothing, error is already logged by convertRule function
+                // caught error can be used in compiler library to get excluded rules
+            }
         }
 
         return result.join('\n');
@@ -121,9 +126,8 @@ export class RuleConverter {
             return [converted];
         } catch (e) {
             logger.error(e);
+            throw e;
         }
-
-        return [rule];
     }
 
     /**
