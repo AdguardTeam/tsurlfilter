@@ -83,8 +83,7 @@ export class RuleConverter {
             try {
                 result.push(...RuleConverter.convertRule(line));
             } catch (e) {
-                // here we do nothing, error is already logged by convertRule function
-                // caught error can be used in compiler library to get excluded rules
+                logger.error(e);
             }
         }
 
@@ -97,37 +96,32 @@ export class RuleConverter {
      * @param {string} rule convert rule
      */
     public static convertRule(rule: string): string[] {
-        try {
-            const comment = RuleConverter.convertUboComments(rule);
-            if (comment) {
-                return [comment];
-            }
-
-            let converted = RuleConverter.convertCssInjection(rule);
-            converted = RuleConverter.convertRemoveRule(converted);
-            converted = RuleConverter.replaceOptions(converted);
-            converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
-
-            const scriptlet = Scriptlets.convertScriptletToAdg(converted);
-            if (scriptlet) {
-                return scriptlet;
-            }
-
-            const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
-            if (abpRedirectRule) {
-                return [abpRedirectRule];
-            }
-
-            const ruleWithConvertedOptions = RuleConverter.convertOptions(converted);
-            if (ruleWithConvertedOptions) {
-                return ruleWithConvertedOptions;
-            }
-
-            return [converted];
-        } catch (e) {
-            logger.error(e);
-            throw e;
+        const comment = RuleConverter.convertUboComments(rule);
+        if (comment) {
+            return [comment];
         }
+
+        let converted = RuleConverter.convertCssInjection(rule);
+        converted = RuleConverter.convertRemoveRule(converted);
+        converted = RuleConverter.replaceOptions(converted);
+        converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
+
+        const scriptlet = Scriptlets.convertScriptletToAdg(converted);
+        if (scriptlet) {
+            return scriptlet;
+        }
+
+        const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
+        if (abpRedirectRule) {
+            return [abpRedirectRule];
+        }
+
+        const ruleWithConvertedOptions = RuleConverter.convertOptions(converted);
+        if (ruleWithConvertedOptions) {
+            return ruleWithConvertedOptions;
+        }
+
+        return [converted];
     }
 
     /**
