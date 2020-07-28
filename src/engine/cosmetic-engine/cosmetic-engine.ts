@@ -163,7 +163,6 @@ export class CosmeticEngine {
         }
     }
 
-
     /**
      * Selects specific rules and appends rules content to cosmetic result
      * @param cosmeticResult

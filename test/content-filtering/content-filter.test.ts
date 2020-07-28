@@ -4,7 +4,6 @@ import { RequestType } from '../../src';
 import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '../../src/content-filtering/charsets';
 import { MockStreamFilter } from './mock-stream-filter';
 
-
 describe('Content filter', () => {
     const textEncoderUtf8 = new TextEncoder();
     const textDecoderUtf8 = new TextDecoder();

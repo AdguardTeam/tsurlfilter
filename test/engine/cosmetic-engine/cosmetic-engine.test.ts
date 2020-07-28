@@ -3,6 +3,9 @@ import { RuleStorage } from '../../../src/filterlist/rule-storage';
 import { StringRuleList } from '../../../src/filterlist/rule-list';
 import { CosmeticOption } from '../../../src';
 
+// mock logger to hide console.error output in the tests
+jest.mock('../../../src/utils/logger');
+
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
     const list = new StringRuleList(listId, rules.join('\n'), false);
     return new RuleStorage([list]);
@@ -66,12 +69,10 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.specific).toHaveLength(0);
     });
 
-
     it('excludes generic css rules if necessary', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
         const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionCSS);
         expect(result).toBeDefined();
-
 
         expect(result.elementHiding.generic).toHaveLength(0);
         expect(result.elementHiding.specific).toHaveLength(1);
@@ -82,7 +83,6 @@ describe('Test cosmetic engine', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
         const result = cosmeticEngine.match('example.org', CosmeticOption.CosmeticOptionGenericCSS);
         expect(result).toBeDefined();
-
 
         expect(result.elementHiding.generic.length).toBe(0);
         expect(result.elementHiding.specific.length).toBe(0);
