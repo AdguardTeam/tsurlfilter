@@ -54,7 +54,6 @@ export class StringRuleList implements IRuleList {
      */
     private readonly ignoreJS: boolean;
 
-
     /**
      * Constructor
      *

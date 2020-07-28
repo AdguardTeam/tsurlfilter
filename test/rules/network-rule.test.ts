@@ -408,7 +408,6 @@ describe('NetworkRule.match', () => {
         request = new Request('https://test.ru/', 'https://google.co.uk/', RequestType.Document);
         expect(rule.match(request)).toBeTruthy();
 
-
         // non-existent tld
         request = new Request('https://test.ru/', 'https://google.uk.eu/', RequestType.Document);
         expect(rule.match(request)).toBeFalsy();
