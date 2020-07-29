@@ -3,6 +3,7 @@ import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
+import { RuleValidator } from './rule-validator';
 
 /**
  * Rule builder class
