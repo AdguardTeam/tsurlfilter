@@ -119,7 +119,7 @@ export class StringRuleList implements IRuleList {
         try {
             return RuleUtils.createRule(line, this.id);
         } catch (e) {
-            logger.error(e);
+            logger.info(e.message);
             return null;
         }
     }

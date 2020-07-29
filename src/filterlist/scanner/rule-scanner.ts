@@ -79,7 +79,7 @@ export class RuleScanner {
                 try {
                     rule = RuleUtils.createRule(line, this.listId);
                 } catch (e) {
-                    logger.error(e);
+                    logger.info(e.message);
                 }
 
                 if (rule && !this.isIgnored(rule)) {

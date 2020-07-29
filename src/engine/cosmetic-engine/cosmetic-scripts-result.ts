@@ -59,7 +59,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
      * @param rule
      */
     private static setScriptCode(rule: CosmeticRule): void {
-        if (rule.script) {
+        if (rule.script && rule.scriptVerbose) {
             // Already done for this rule
             return;
         }
@@ -68,6 +68,8 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         if (!ruleContent.startsWith(CosmeticScriptsResult.ADG_SCRIPTLET_MASK)) {
             // eslint-disable-next-line no-param-reassign
             rule.script = ruleContent;
+            // eslint-disable-next-line no-param-reassign
+            rule.scriptVerbose = ruleContent;
             return;
         }
 
@@ -79,11 +81,15 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
             engine: config.engine ? config.engine : '',
             name: scriptletParams.name,
             ruleText: rule.getText(),
-            verbose: config.verbose,
+            verbose: false,
             version: config.version ? config.version : '',
         };
 
         // eslint-disable-next-line no-param-reassign
         rule.script = Scriptlets.invoke(params);
+
+        params.verbose = true;
+        // eslint-disable-next-line no-param-reassign
+        rule.scriptVerbose = Scriptlets.invoke(params);
     }
 }

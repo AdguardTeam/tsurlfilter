@@ -83,7 +83,7 @@ export class RuleConverter {
             try {
                 result.push(...RuleConverter.convertRule(line));
             } catch (e) {
-                logger.error(e);
+                logger.warn(e);
             }
         }
 
