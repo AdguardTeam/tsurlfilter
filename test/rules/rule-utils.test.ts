@@ -36,19 +36,6 @@ describe('Rule Utils Builder Test', () => {
     });
 });
 
-describe('RuleUtils isComment', () => {
-    it('works if it detects comments', () => {
-        expect(RuleUtils.isComment('! comment')).toEqual(true);
-        expect(RuleUtils.isComment('!! comment')).toEqual(true);
-        expect(RuleUtils.isComment('!+ comment')).toEqual(true);
-        expect(RuleUtils.isComment('#')).toEqual(true);
-        expect(RuleUtils.isComment('##.banner')).toEqual(false);
-
-        expect(RuleUtils.isComment('||example.org^')).toEqual(false);
-        expect(RuleUtils.isComment('$domain=example.org')).toEqual(false);
-    });
-});
-
 describe('RuleUtils isCosmetic', () => {
     it('works if it detects cosmetic rules', () => {
         expect(RuleUtils.isCosmetic('$$script')).toEqual(true);

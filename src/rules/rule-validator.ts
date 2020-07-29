@@ -72,7 +72,7 @@ export class RuleValidator {
 
         let type;
         try {
-            type = CosmeticRule.determineType(marker);
+            type = CosmeticRule.parseType(marker);
         } catch (e) {
             return this.createValidationResult(false, `Rule: ${rule} doesn't support marker: ${marker}`);
         }

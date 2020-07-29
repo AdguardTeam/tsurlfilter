@@ -278,8 +278,8 @@ export class CosmeticRule implements rule.IRule {
             throw new SyntaxError('Empty rule content');
         }
 
-        this.type = CosmeticRule.determineType(marker);
-        this.whitelist = CosmeticRule.isWhitelist(marker);
+        this.type = CosmeticRule.parseType(marker);
+        this.whitelist = CosmeticRule.parseWhitelist(marker);
         CosmeticRule.validate(ruleText, this.type, this.content);
 
         this.extendedCss = isExtCssMarker(marker);
@@ -323,7 +323,7 @@ export class CosmeticRule implements rule.IRule {
         return true;
     }
 
-    static determineType(marker: string): CosmeticRuleType {
+    static parseType(marker: string): CosmeticRuleType {
         switch (marker) {
             case CosmeticRuleMarker.ElementHiding:
             case CosmeticRuleMarker.ElementHidingExtCSS:
@@ -350,9 +350,16 @@ export class CosmeticRule implements rule.IRule {
         }
     }
 
-    private static isWhitelist(marker: string): boolean {
+    /**
+     * Determines if rule is whitelist rule
+     * @param marker
+     * @private
+     */
+    private static parseWhitelist(marker: string): boolean {
         switch (marker) {
+            case CosmeticRuleMarker.ElementHidingException:
             case CosmeticRuleMarker.ElementHidingExtCSSException:
+            case CosmeticRuleMarker.CssException:
             case CosmeticRuleMarker.CssExtCSSException:
             case CosmeticRuleMarker.JsException:
             case CosmeticRuleMarker.HtmlException:
