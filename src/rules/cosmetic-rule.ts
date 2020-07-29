@@ -278,8 +278,9 @@ export class CosmeticRule implements rule.IRule {
             throw new SyntaxError('Empty rule content');
         }
 
-        this.type = this.parseTypeAndWhitelist(marker);
-        this.validate();
+        this.type = CosmeticRule.determineType(marker);
+        this.whitelist = CosmeticRule.isWhitelist(marker);
+        CosmeticRule.validate(ruleText, this.type, this.content);
 
         this.extendedCss = isExtCssMarker(marker);
         if (!this.extendedCss) {
@@ -322,58 +323,66 @@ export class CosmeticRule implements rule.IRule {
         return true;
     }
 
-    private parseTypeAndWhitelist(marker: string): CosmeticRuleType {
+    static determineType(marker: string): CosmeticRuleType {
         switch (marker) {
             case CosmeticRuleMarker.ElementHiding:
             case CosmeticRuleMarker.ElementHidingExtCSS:
                 return CosmeticRuleType.ElementHiding;
             case CosmeticRuleMarker.ElementHidingException:
             case CosmeticRuleMarker.ElementHidingExtCSSException:
-                this.whitelist = true;
                 return CosmeticRuleType.ElementHiding;
             case CosmeticRuleMarker.Css:
             case CosmeticRuleMarker.CssExtCSS:
                 return CosmeticRuleType.Css;
             case CosmeticRuleMarker.CssException:
             case CosmeticRuleMarker.CssExtCSSException:
-                this.whitelist = true;
                 return CosmeticRuleType.Css;
             case CosmeticRuleMarker.Js:
                 return CosmeticRuleType.Js;
             case CosmeticRuleMarker.JsException:
-                this.whitelist = true;
                 return CosmeticRuleType.Js;
             case CosmeticRuleMarker.Html:
                 return CosmeticRuleType.Html;
             case CosmeticRuleMarker.HtmlException:
-                this.whitelist = true;
                 return CosmeticRuleType.Html;
             default:
                 throw new SyntaxError('Unsupported rule type');
         }
     }
 
-    private validate(): void {
-        if (this.type !== CosmeticRuleType.Css
-            && this.type !== CosmeticRuleType.Js) {
-            CosmeticRule.validatePseudoClasses(this.content);
+    private static isWhitelist(marker: string): boolean {
+        switch (marker) {
+            case CosmeticRuleMarker.ElementHidingExtCSSException:
+            case CosmeticRuleMarker.CssExtCSSException:
+            case CosmeticRuleMarker.JsException:
+            case CosmeticRuleMarker.HtmlException:
+                return true;
+            default:
+                return false;
+        }
+    }
 
-            if (utils.hasUnquotedSubstring(this.content, '{')) {
-                throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${this.ruleText}`);
+    public static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
+        if (type !== CosmeticRuleType.Css
+            && type !== CosmeticRuleType.Js) {
+            CosmeticRule.validatePseudoClasses(content);
+
+            if (utils.hasUnquotedSubstring(content, '{')) {
+                throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${ruleText}`);
             }
         }
 
-        if (this.type === CosmeticRuleType.ElementHiding) {
-            CosmeticRule.validateElemhideRule(this.content, this.ruleText);
+        if (type === CosmeticRuleType.ElementHiding) {
+            CosmeticRule.validateElemhideRule(content, ruleText);
         }
 
-        if (this.type === CosmeticRuleType.Css) {
-            CosmeticRule.validateCssRules(this.content, this.ruleText);
+        if (type === CosmeticRuleType.Css) {
+            CosmeticRule.validateCssRules(content, ruleText);
         }
 
-        if (utils.hasUnquotedSubstring(this.content, '/*')
-            || utils.hasUnquotedSubstring(this.content, ' //')) {
-            throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${this.ruleText}`);
+        if (utils.hasUnquotedSubstring(content, '/*')
+            || utils.hasUnquotedSubstring(content, ' //')) {
+            throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${ruleText}`);
         }
     }
 

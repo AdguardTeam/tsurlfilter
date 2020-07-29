@@ -18,11 +18,11 @@ export class RuleUtils {
      * @return IRule object or null
      */
     public static createRule(text: string, filterListId: number): IRule | null {
-        if (!text || RuleUtils.isComment(text)) {
+        if (!text || RuleValidator.isComment(text)) {
             return null;
         }
 
-        if (RuleUtils.isShort(text)) {
+        if (RuleValidator.isShort(text)) {
             throw new SyntaxError(`The rule is too short: ${text}`);
         }
 
@@ -38,35 +38,6 @@ export class RuleUtils {
         }
 
         return new NetworkRule(line, filterListId);
-    }
-
-    /**
-     * If text is comment
-     *
-     * @param text
-     */
-    public static isComment(text: string): boolean {
-        if (text.charAt(0) === '!') {
-            return true;
-        }
-
-        if (text.charAt(0) === '#') {
-            if (text.length === 1) {
-                return true;
-            }
-
-            // Now we should check that this is not a cosmetic rule
-            return !RuleUtils.isCosmetic(text);
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if rule is short
-     */
-    private static isShort(ruleText: string): boolean {
-        return !!(ruleText && ruleText.length <= 3);
     }
 
     /**
