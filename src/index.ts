@@ -1,6 +1,7 @@
 export * from './request';
 export * from './rules/rule';
 export * from './rules/network-rule';
+export * from './rules/cosmetic-rule';
 export * from './rules/rule-converter';
 export * from './engine/engine';
 export * from './filterlist/rule-list';
@@ -14,3 +15,4 @@ export * from './filtering-log';
 export * from './engine/cosmetic-option';
 export * from './stealth/stealth-service';
 export * from './utils/logger';
+export * from './rules/rule-utils';

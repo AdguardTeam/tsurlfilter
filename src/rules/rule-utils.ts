@@ -3,7 +3,6 @@ import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
-import { logger } from '../utils/logger';
 
 /**
  * Rule builder class
@@ -22,23 +21,22 @@ export class RuleUtils {
             return null;
         }
 
-        const line = text.trim();
-        try {
-            if (RuleUtils.isCosmetic(line)) {
-                return new CosmeticRule(line, filterListId);
-            }
-
-            const hostRule = RuleUtils.createHostRule(line, filterListId);
-            if (hostRule) {
-                return hostRule;
-            }
-
-            return new NetworkRule(line, filterListId);
-        } catch (e) {
-            logger.error(e);
+        if (RuleUtils.isShort(text)) {
+            throw new SyntaxError(`The rule is too short: ${text}`);
         }
 
-        return null;
+        const line = text.trim();
+
+        if (RuleUtils.isCosmetic(line)) {
+            return new CosmeticRule(line, filterListId);
+        }
+
+        const hostRule = RuleUtils.createHostRule(line, filterListId);
+        if (hostRule) {
+            return hostRule;
+        }
+
+        return new NetworkRule(line, filterListId);
     }
 
     /**
@@ -61,6 +59,13 @@ export class RuleUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Checks if rule is short
+     */
+    private static isShort(ruleText: string): boolean {
+        return !!(ruleText && ruleText.length <= 3);
     }
 
     /**

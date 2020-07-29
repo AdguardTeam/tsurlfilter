@@ -105,7 +105,6 @@
     "fs-extra": "^8.1.0",
     "husky": "^4.2.1",
     "jest": "^25.5.4",
-    "jsdom": "^16.2.2",
     "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",
     "rimraf": "^3.0.1",
@@ -120,6 +119,7 @@
     "rollup-plugin-node-globals": "latest"
   },
   "dependencies": {
+    "jsdom": "^16.2.2",
     "consola": "^2.12.2",
     "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.8",
     "is-ip": "^3.1.0",

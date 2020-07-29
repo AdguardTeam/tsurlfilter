@@ -2,6 +2,7 @@ import { RuleScanner } from './scanner/rule-scanner';
 import { IRule } from '../rules/rule';
 import { StringLineReader } from './reader/string-line-reader';
 import { RuleUtils } from '../rules/rule-utils';
+import { logger } from '..';
 
 /**
  * RuleList represents a set of filtering rules
@@ -115,6 +116,11 @@ export class StringRuleList implements IRuleList {
             return null;
         }
 
-        return RuleUtils.createRule(line, this.id);
+        try {
+            return RuleUtils.createRule(line, this.id);
+        } catch (e) {
+            logger.error(e);
+            return null;
+        }
     }
 }

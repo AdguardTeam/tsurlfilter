@@ -2,6 +2,7 @@ import { IndexedRule, IRule } from '../../rules/rule';
 import { RuleUtils } from '../../rules/rule-utils';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
+import { logger } from '../..';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
@@ -73,7 +74,14 @@ export class RuleScanner {
             }
 
             if (line) {
-                const rule = RuleUtils.createRule(line, this.listId);
+                let rule;
+
+                try {
+                    rule = RuleUtils.createRule(line, this.listId);
+                } catch (e) {
+                    logger.error(e);
+                }
+
                 if (rule && !this.isIgnored(rule)) {
                     this.currentRule = rule;
                     this.currentRuleIndex = lineIndex;
