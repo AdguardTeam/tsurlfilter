@@ -35,7 +35,7 @@ export class RuleUtils {
 
             return new NetworkRule(line, filterListId);
         } catch (e) {
-            logger.error(e);
+            logger.info(e.message);
         }
 
         return null;

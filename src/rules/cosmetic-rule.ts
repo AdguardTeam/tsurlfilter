@@ -79,6 +79,11 @@ export class CosmeticRule implements rule.IRule {
     public script: string | null = null;
 
     /**
+     * Js script to execute - debug
+     */
+    public scriptVerbose: string | null = null;
+
+    /**
      * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
      * which contains a lot more selectors. So, if CSS selector contains a pseudo-class, we should try to validate it.
      * <p>
@@ -91,7 +96,7 @@ export class CosmeticRule implements rule.IRule {
         ':not', ':nth-child', ':nth-last-child', ':nth-last-of-type', ':nth-of-type',
         ':only-child', ':only-of-type', ':optional', ':out-of-range', ':read-only',
         ':read-write', ':required', ':root', ':target', ':valid', ':visited',
-        ':-abp-has', ':-abp-contains'];
+        ':-abp-has', ':-abp-contains', ':-abp-properties', ':xpath', ':nth-ancestor', ':upward'];
 
     /**
      * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
@@ -100,7 +105,7 @@ export class CosmeticRule implements rule.IRule {
     private readonly EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
         '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
         ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
-        ':if(', ':if-not('];
+        ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward('];
 
     /**
      * Parses first pseudo class from the specified CSS selector
@@ -197,6 +202,14 @@ export class CosmeticRule implements rule.IRule {
      */
     getContent(): string {
         return this.content;
+    }
+
+    /**
+     * Get rule script string
+     * @param debug
+     */
+    getScript(debug = false): string | null {
+        return debug ? this.scriptVerbose : this.script;
     }
 
     /**

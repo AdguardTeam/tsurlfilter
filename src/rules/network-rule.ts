@@ -677,11 +677,15 @@ export class NetworkRule implements rule.IRule {
      */
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean): void {
         if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
-            throw new SyntaxError(`modifier ${NetworkRuleOption[option]} cannot be used in a whitelist rule`);
+            throw new SyntaxError(
+                `modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule ${this.ruleText}`,
+            );
         }
 
         if (!this.whitelist && (option & NetworkRuleOption.WhitelistOnly) === option) {
-            throw new SyntaxError(`modifier ${NetworkRuleOption[option]} cannot be used in a blacklist rule`);
+            throw new SyntaxError(
+                `modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule ${this.ruleText}`,
+            );
         }
 
         if (enabled) {
@@ -890,7 +894,7 @@ export class NetworkRule implements rule.IRule {
                 break;
 
             default:
-                throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue}`);
+                throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue} in rule ${this.ruleText}`);
         }
     }
 
