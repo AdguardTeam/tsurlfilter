@@ -1,5 +1,6 @@
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
-import { CosmeticRule } from './cosmetic-rule';
+import { CosmeticRule, CosmeticRuleType } from './cosmetic-rule';
+import { ExtendedCssValidator } from './extended-css-validator';
 
 interface ValidationResult {
     result: boolean;
@@ -88,6 +89,17 @@ export class RuleValidator {
             return this.createValidationResult(false, e.message);
         }
 
+        return this.createValidationResult(true);
+    }
+
+    public static validateExtCss(rule: CosmeticRule): ValidationResult {
+        if (rule.getType() === CosmeticRuleType.ElementHiding) {
+            try {
+                ExtendedCssValidator.validateCssSelector(rule.getContent());
+            } catch (e) {
+                return this.createValidationResult(false, `${e.message}, rule: ${rule}`);
+            }
+        }
         return this.createValidationResult(true);
     }
 

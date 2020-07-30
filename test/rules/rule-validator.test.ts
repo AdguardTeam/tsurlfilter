@@ -1,5 +1,4 @@
 import { RuleValidator } from '../../src/rules/rule-validator';
-import { RuleUtils } from '../../src';
 
 describe('RuleValidator', () => {
     it('considers comments as valid rules', () => {
