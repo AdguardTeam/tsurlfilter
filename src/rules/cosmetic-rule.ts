@@ -398,6 +398,9 @@ export class CosmeticRule implements rule.IRule {
      * @throws SyntaxError
      */
     private static validateElemhideRule(ruleText: string, ruleContent: string): void {
+        if (ruleText.startsWith('||')) {
+            throw new SyntaxError(`Element hiding rule shouldn't start with "||": ${ruleText}`);
+        }
         if (/ {.+}/.test(ruleContent)) {
             throw new SyntaxError(`Invalid elemhide rule, style presented: ${ruleText}`);
         }

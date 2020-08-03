@@ -2,26 +2,25 @@ import { CosmeticRule } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
 import { NetworkRule } from './network-rule';
 import { HostRule } from './host-rule';
-import { hostname } from 'os';
 
 interface ValidationResult {
-    result: boolean;
+    valid: boolean;
     error: string | null;
 }
 
 export class RuleValidator {
     /**
      * Creates validation result
-     * @param result
+     * @param valid
      * @param error
      * @private
      */
-    public static createValidationResult(result: boolean, error?: string): ValidationResult {
+    public static createValidationResult(valid: boolean, error?: string): ValidationResult {
         if (error) {
-            return { result, error };
+            return { valid, error };
         }
 
-        return { result, error: null };
+        return { valid, error: null };
     }
 
     /**
@@ -48,16 +47,7 @@ export class RuleValidator {
             }
         }
 
-        let hostRule;
-        try {
-            hostRule = new HostRule(rule, 0);
-        } catch (e) {
-            return RuleValidator.createValidationResult(false, e.message);
-        }
-
-        if (hostRule) {
-            return RuleValidator.createValidationResult(true);
-        }
+        // TODO validate host rules
 
         try {
             new NetworkRule(rule, 0);
