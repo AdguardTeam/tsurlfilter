@@ -1,6 +1,8 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
 import { NetworkRule } from './network-rule';
+import { HostRule } from './host-rule';
+import { hostname } from 'os';
 
 interface ValidationResult {
     result: boolean;
@@ -44,6 +46,17 @@ export class RuleValidator {
             } catch (e) {
                 return RuleValidator.createValidationResult(false, e.message);
             }
+        }
+
+        let hostRule;
+        try {
+            hostRule = new HostRule(rule, 0);
+        } catch (e) {
+            return RuleValidator.createValidationResult(false, e.message);
+        }
+
+        if (hostRule) {
+            return RuleValidator.createValidationResult(true);
         }
 
         try {
