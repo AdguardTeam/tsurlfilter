@@ -1,5 +1,4 @@
-import { CosmeticRule, CosmeticRuleType } from './cosmetic-rule';
-import { ExtendedCssValidator } from './extended-css-validator';
+import { CosmeticRule } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
 import { NetworkRule } from './network-rule';
 
@@ -23,17 +22,6 @@ export class RuleValidator {
         return { result, error: null };
     }
 
-    public static validateExtCss(rule: CosmeticRule): ValidationResult {
-        if (rule.getType() === CosmeticRuleType.ElementHiding) {
-            try {
-                ExtendedCssValidator.validateCssSelector(rule.getContent());
-            } catch (e) {
-                return this.createValidationResult(false, `${e.message}, rule: ${rule.getText()}`);
-            }
-        }
-        return this.createValidationResult(true);
-    }
-
     /**
      * Validates raw rule string
      * @param rawRule
@@ -51,8 +39,7 @@ export class RuleValidator {
 
         if (RuleFactory.isCosmetic(rule)) {
             try {
-                const cosmeticRule = new CosmeticRule(rule, 0);
-                RuleValidator.validateExtCss(cosmeticRule);
+                new CosmeticRule(rule, 0);
                 return RuleValidator.createValidationResult(true);
             } catch (e) {
                 return RuleValidator.createValidationResult(false, e.message);

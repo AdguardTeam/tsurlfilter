@@ -123,7 +123,6 @@
     "consola": "^2.12.2",
     "extended-css": "https://github.com/AdguardTeam/ExtendedCss.git#v1.2.11",
     "is-ip": "^3.1.0",
-    "jsdom": "^16.2.2",
     "scriptlets": "https://github.com/AdguardTeam/Scriptlets.git#v1.2.4",
     "text-encoding": "https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.3"
