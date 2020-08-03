@@ -192,7 +192,10 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        return this.isOptionEnabled(NetworkRuleOption.Urlblock) || this.isOptionEnabled(NetworkRuleOption.Genericblock);
+        return this.isOptionEnabled(NetworkRuleOption.Urlblock)
+            && this.isOptionEnabled(NetworkRuleOption.Elemhide)
+            && this.isOptionEnabled(NetworkRuleOption.Jsinject)
+            && this.isOptionEnabled(NetworkRuleOption.Content);
     }
 
     /**
