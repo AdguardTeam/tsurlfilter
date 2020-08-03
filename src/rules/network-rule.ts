@@ -70,10 +70,10 @@ export enum NetworkRuleOption {
     // Groups (for validation)
 
     /** Blacklist-only modifiers */
-    BlacklistOnly = Popup | Empty | Mp4,
+    BlacklistOnly = Empty | Mp4,
 
     /** Whitelist-only modifiers */
-    WhitelistOnly = Elemhide | Genericblock | Generichide | Jsinject | Urlblock | Content | Extension | Stealth,
+    WhitelistOnly = Genericblock | Generichide | Extension | Stealth,
 
     /** Options supported by host-level network rules * */
     OptionHostLevelRulesOnly = Important | Badfilter

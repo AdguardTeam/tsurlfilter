@@ -100,13 +100,13 @@ describe('NetworkRule constructor', () => {
 
     it('works when it handles whitelist-only modifiers properly', () => {
         expect(() => {
-            new NetworkRule('||example.org^$elemhide', 0);
+            new NetworkRule('||example.org^$generichide', 0);
         }).toThrowError(/.* cannot be used in blacklist rule.+/);
     });
 
     it('works when it handles blacklist-only modifiers properly', () => {
         expect(() => {
-            new NetworkRule('@@||example.org^$popup', 0);
+            new NetworkRule('@@||example.org^$empty', 0);
         }).toThrowError(/.* cannot be used in whitelist rule.+/);
     });
 
