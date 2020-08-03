@@ -261,8 +261,21 @@ export class CosmeticRule implements rule.IRule {
         const [index, marker] = findCosmeticRuleMarker(ruleText);
 
         if (index < 0 || marker === null) {
-            throw new SyntaxError('This is not a cosmetic rule');
+            throw new SyntaxError(`Not a cosmetic rule: ${ruleText}`);
         }
+
+        this.content = ruleText.substring(index + marker.length).trim();
+        if (!this.content) {
+            throw new SyntaxError(`Rule content is empty: ${ruleText}`);
+        }
+
+        try {
+            this.type = CosmeticRule.parseType(marker);
+        } catch (e) {
+            throw new SyntaxError(`${e.message}, rule: ${ruleText}`);
+        }
+
+        CosmeticRule.validate(ruleText, this.type, this.content);
 
         if (index > 0) {
             // This means that the marker is preceded by the list of domains
@@ -273,15 +286,7 @@ export class CosmeticRule implements rule.IRule {
             this.restrictedDomains = domainModifier.restrictedDomains;
         }
 
-        this.content = ruleText.substring(index + marker.length).trim();
-        if (!this.content) {
-            throw new SyntaxError('Empty rule content');
-        }
-
-        this.type = CosmeticRule.parseType(marker);
         this.whitelist = CosmeticRule.parseWhitelist(marker);
-        CosmeticRule.validate(ruleText, this.type, this.content);
-
         this.extendedCss = isExtCssMarker(marker);
         if (!this.extendedCss) {
             // additional check if rule is extended css rule by pseudo class indicators
@@ -369,41 +374,18 @@ export class CosmeticRule implements rule.IRule {
         }
     }
 
-    public static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
-        if (type !== CosmeticRuleType.Css
-            && type !== CosmeticRuleType.Js) {
-            CosmeticRule.validatePseudoClasses(content);
-
-            if (utils.hasUnquotedSubstring(content, '{')) {
-                throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${ruleText}`);
-            }
-        }
-
-        if (type === CosmeticRuleType.ElementHiding) {
-            CosmeticRule.validateElemhideRule(content, ruleText);
-        }
-
-        if (type === CosmeticRuleType.Css) {
-            CosmeticRule.validateCssRules(content, ruleText);
-        }
-
-        if (utils.hasUnquotedSubstring(content, '/*')
-            || utils.hasUnquotedSubstring(content, ' //')) {
-            throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${ruleText}`);
-        }
-    }
-
     /**
      * Validate pseudo-classes
      *
+     * @param ruleText
      * @param ruleContent
      * @throws SyntaxError
      */
-    private static validatePseudoClasses(ruleContent: string): void {
+    private static validatePseudoClasses(ruleText: string, ruleContent: string): void {
         const pseudoClass = CosmeticRule.parsePseudoClass(ruleContent);
         if (pseudoClass !== null) {
             if (CosmeticRule.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
-                throw new SyntaxError(`Unknown pseudo class: ${ruleContent}`);
+                throw new SyntaxError(`Unknown pseudo class: ${ruleContent} in the rule: ${ruleText}`);
             }
         }
     }
@@ -411,11 +393,11 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Simple validation for elemhide rules
      *
-     * @param ruleContent
      * @param ruleText
+     * @param ruleContent
      * @throws SyntaxError
      */
-    private static validateElemhideRule(ruleContent: string, ruleText: string): void {
+    private static validateElemhideRule(ruleText: string, ruleContent: string): void {
         if (/ {.+}/.test(ruleContent)) {
             throw new SyntaxError(`Invalid elemhide rule, style presented: ${ruleText}`);
         }
@@ -424,11 +406,11 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Validates css injection rules
      *
-     * @param ruleContent
      * @param ruleText
+     * @param ruleContent
      * @throws SyntaxError
      */
-    private static validateCssRules(ruleContent: string, ruleText: string): void {
+    private static validateCssRules(ruleText: string, ruleContent: string): void {
         // Simple validation for css injection rules
         if (!/ {.+}/.test(ruleContent)) {
             throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
@@ -442,6 +424,30 @@ export class CosmeticRule implements rule.IRule {
         // Prohibit "\" character in style of CSS injection rules
         if (ruleContent.indexOf('\\', ruleContent.indexOf('{')) > -1) {
             throw new SyntaxError(`CSS injection rule with '\\' was omitted: ${ruleText}`);
+        }
+    }
+
+    public static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
+        if (type !== CosmeticRuleType.Css
+            && type !== CosmeticRuleType.Js) {
+            CosmeticRule.validatePseudoClasses(ruleText, content);
+
+            if (utils.hasUnquotedSubstring(content, '{')) {
+                throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${ruleText}`);
+            }
+        }
+
+        if (type === CosmeticRuleType.ElementHiding) {
+            CosmeticRule.validateElemhideRule(ruleText, content);
+        }
+
+        if (type === CosmeticRuleType.Css) {
+            CosmeticRule.validateCssRules(ruleText, content);
+        }
+
+        if (utils.hasUnquotedSubstring(content, '/*')
+            || utils.hasUnquotedSubstring(content, ' //')) {
+            throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${ruleText}`);
         }
     }
 }

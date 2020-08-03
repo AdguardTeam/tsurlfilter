@@ -37,15 +37,15 @@ describe('Element hiding rules constructor', () => {
     it('works if it verifies rules properly', () => {
         expect(() => {
             new CosmeticRule('||example.org^', 0);
-        }).toThrowError(/This is not a cosmetic rule/);
+        }).toThrowError(/Not a cosmetic rule:/);
 
         expect(() => {
             new CosmeticRule('example.org## ', 0);
-        }).toThrowError(/Empty rule content/);
+        }).toThrowError(/Rule content is empty:/);
 
         expect(() => {
             new CosmeticRule('example.org##body { background: red!important; }', 0);
-        }).toThrowError(/Invalid cosmetic rule+/);
+        }).toThrowError(/Invalid cosmetic rule/);
     });
 
     it('checks elemhide rules validation', () => {
@@ -81,7 +81,7 @@ describe('Element hiding rules constructor', () => {
     it('throws error if marker is not supported yet', () => {
         expect(() => {
             new CosmeticRule('example.org$@@$script[data-src="banner"]', 0);
-        }).toThrow(new SyntaxError('This is not a cosmetic rule'));
+        }).toThrow(/Not a cosmetic rule:/);
     });
 });
 
@@ -224,7 +224,7 @@ describe('CosmeticRule.CSS', () => {
         const ruleText = `example.org##${selector}`;
         expect(() => {
             new CosmeticRule(ruleText, 0);
-        }).toThrow(new SyntaxError(`Unknown pseudo class: ${selector}`));
+        }).toThrow(new SyntaxError(`Unknown pseudo class: ${selector} in the rule: ${ruleText}`));
     });
 
     it('respects escaped colons when validates pseudo classes', () => {

@@ -1,5 +1,5 @@
 import { IndexedRule, IRule } from '../../rules/rule';
-import { RuleUtils } from '../../rules/rule-utils';
+import { RuleFactory } from '../../rules/rule-factory';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { logger } from '../..';
@@ -77,7 +77,7 @@ export class RuleScanner {
                 let rule;
 
                 try {
-                    rule = RuleUtils.createRule(line, this.listId);
+                    rule = RuleFactory.createRule(line, this.listId);
                 } catch (e) {
                     logger.info(e.message);
                 }

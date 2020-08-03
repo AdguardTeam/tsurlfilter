@@ -452,7 +452,7 @@ export class NetworkRule implements rule.IRule {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
                     // eslint-disable-next-line max-len
-                    throw new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific');
+                    throw new SyntaxError(`The rule is too wide, add domain restriction or make the pattern more specific: ${ruleText}`);
                 }
             }
         }

@@ -1,6 +1,7 @@
-import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { CosmeticRule, CosmeticRuleType } from './cosmetic-rule';
 import { ExtendedCssValidator } from './extended-css-validator';
+import { RuleFactory } from './rule-factory';
+import { NetworkRule } from './network-rule';
 
 interface ValidationResult {
     result: boolean;
@@ -8,43 +9,6 @@ interface ValidationResult {
 }
 
 export class RuleValidator {
-    /**
-     * Checks if rule is short
-     */
-    public static isShort(rule: string): boolean {
-        return !!(rule && rule.length <= 3);
-    }
-
-    /**
-     * Checks if the rule is cosmetic or not.
-     * @param ruleText - rule text to check.
-     */
-    public static isCosmetic(ruleText: string): boolean {
-        const marker = findCosmeticRuleMarker(ruleText);
-        return marker[0] !== -1;
-    }
-
-    /**
-     * If text is comment
-     * @param text
-     */
-    public static isComment(text: string): boolean {
-        if (text.charAt(0) === '!') {
-            return true;
-        }
-
-        if (text.charAt(0) === '#') {
-            if (text.length === 1) {
-                return true;
-            }
-
-            // Now we should check that this is not a cosmetic rule
-            return !RuleValidator.isCosmetic(text);
-        }
-
-        return false;
-    }
-
     /**
      * Creates validation result
      * @param result
@@ -59,45 +23,12 @@ export class RuleValidator {
         return { result, error: null };
     }
 
-    /**
-     * Validates raw cosmetic rule string
-     * @param rule
-     * @private
-     */
-    private static validateCosmeticRule(rule: string): ValidationResult {
-        const [index, marker] = findCosmeticRuleMarker(rule);
-
-        if (index < 0 || marker === null) {
-            return this.createValidationResult(false, `Rule is not a cosmetic rule: ${rule}`);
-        }
-
-        let type;
-        try {
-            type = CosmeticRule.parseType(marker);
-        } catch (e) {
-            return this.createValidationResult(false, `Rule: ${rule} doesn't support marker: ${marker}`);
-        }
-
-        const content = rule.substring(index + marker.length).trim();
-        if (!content) {
-            return this.createValidationResult(false, `Rule content is empty: ${rule}`);
-        }
-
-        try {
-            CosmeticRule.validate(rule, type, content);
-        } catch (e) {
-            return this.createValidationResult(false, e.message);
-        }
-
-        return this.createValidationResult(true);
-    }
-
     public static validateExtCss(rule: CosmeticRule): ValidationResult {
         if (rule.getType() === CosmeticRuleType.ElementHiding) {
             try {
                 ExtendedCssValidator.validateCssSelector(rule.getContent());
             } catch (e) {
-                return this.createValidationResult(false, `${e.message}, rule: ${rule}`);
+                return this.createValidationResult(false, `${e.message}, rule: ${rule.getText()}`);
             }
         }
         return this.createValidationResult(true);
@@ -110,17 +41,28 @@ export class RuleValidator {
     public static validate(rawRule: string): ValidationResult {
         const rule = rawRule.trim();
 
-        if (RuleValidator.isShort(rule)) {
+        if (RuleFactory.isShort(rule)) {
             return RuleValidator.createValidationResult(false, `Rule is too short: ${rule}`);
         }
 
-        if (RuleValidator.isComment(rule)) {
+        if (RuleFactory.isComment(rule)) {
             return RuleValidator.createValidationResult(true);
         }
 
-        if (RuleValidator.isCosmetic(rule)) {
-            // TODO add tests for this part
-            return RuleValidator.validateCosmeticRule(rule);
+        if (RuleFactory.isCosmetic(rule)) {
+            try {
+                const cosmeticRule = new CosmeticRule(rule, 0);
+                RuleValidator.validateExtCss(cosmeticRule);
+                return RuleValidator.createValidationResult(true);
+            } catch (e) {
+                return RuleValidator.createValidationResult(false, e.message);
+            }
+        }
+
+        try {
+            new NetworkRule(rule, 0);
+        } catch (e) {
+            return RuleValidator.createValidationResult(false, e.message);
         }
 
         return RuleValidator.createValidationResult(true);
