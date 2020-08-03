@@ -1,7 +1,6 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
 import { NetworkRule } from './network-rule';
-import { HostRule } from './host-rule';
 
 interface ValidationResult {
     valid: boolean;
