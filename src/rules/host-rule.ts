@@ -26,9 +26,11 @@ export class HostRule implements rule.IRule {
 
     private readonly filterListId: number;
 
-    private readonly hostnames: string[];
+    private readonly hostnames: string[] = [];
 
-    private readonly ip: string;
+    private readonly ip: string = '';
+
+    private readonly invalid: boolean = false;
 
     /**
      * Constructor
@@ -50,7 +52,8 @@ export class HostRule implements rule.IRule {
         const parts = stripped.trim().split(' ');
         if (parts.length >= 2) {
             if (!isIp(parts[0])) {
-                throw new SyntaxError(`Invalid host rule: invalid IP: ${ruleText}`);
+                this.invalid = true;
+                return;
             }
 
             // eslint-disable-next-line prefer-destructuring
@@ -60,7 +63,7 @@ export class HostRule implements rule.IRule {
             this.hostnames = [parts[0]];
             this.ip = '0.0.0.0';
         } else {
-            throw new SyntaxError(`Invalid host rule: ${ruleText}`);
+            this.invalid = true;
         }
     }
 
@@ -99,6 +102,13 @@ export class HostRule implements rule.IRule {
      */
     getHostnames(): string[] {
         return this.hostnames;
+    }
+
+    /**
+     * Is invalid rule
+     */
+    isInvalid(): boolean {
+        return this.invalid;
     }
 
     /**

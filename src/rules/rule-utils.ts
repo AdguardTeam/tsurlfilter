@@ -80,12 +80,7 @@ export class RuleUtils {
      * @param filterListId
      */
     private static createHostRule(ruleText: string, filterListId: number): HostRule | null {
-        try {
-            return new HostRule(ruleText, filterListId);
-        } catch (e) {
-            // Ignore
-        }
-
-        return null;
+        const rule = new HostRule(ruleText, filterListId);
+        return rule.isInvalid() ? null : rule;
     }
 }
