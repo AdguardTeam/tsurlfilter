@@ -104,6 +104,12 @@ describe('NetworkRule constructor', () => {
         }).toThrowError(/.* cannot be used in blacklist rule.+/);
     });
 
+    it('works when it handles whitelist-only modifiers properly', () => {
+        expect(() => {
+            new NetworkRule('||example.org^$elemhide', 0);
+        }).toThrowError(/.* cannot be used in blacklist rule.+/);
+    });
+
     it('works when it handles blacklist-only modifiers properly', () => {
         expect(() => {
             new NetworkRule('@@||example.org^$empty', 0);
@@ -146,9 +152,9 @@ describe('NetworkRule constructor', () => {
         expect(rule.getText()).toEqual('$domain=ya.ru');
     });
 
-    function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean): void {
+    function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, whitelist = false): void {
         let ruleText = `||example.org^$${name}`;
-        if ((option & NetworkRuleOption.WhitelistOnly) === option) {
+        if (whitelist || (option & NetworkRuleOption.WhitelistOnly) === option) {
             ruleText = `@@${ruleText}`;
         }
 
@@ -183,10 +189,16 @@ describe('NetworkRule constructor', () => {
         checkModifier('document', NetworkRuleOption.Urlblock, true);
         checkModifier('document', NetworkRuleOption.Content, true);
 
+        checkModifier('document', NetworkRuleOption.Elemhide, true, true);
+        checkModifier('document', NetworkRuleOption.Jsinject, true, true);
+        checkModifier('document', NetworkRuleOption.Urlblock, true, true);
+        checkModifier('document', NetworkRuleOption.Content, true, true);
+
         checkModifier('stealth', NetworkRuleOption.Stealth, true);
         checkModifier('badfilter', NetworkRuleOption.Badfilter, true);
 
         checkModifier('popup', NetworkRuleOption.Popup, true);
+        checkModifier('popup', NetworkRuleOption.Popup, true, true);
         checkModifier('empty', NetworkRuleOption.Empty, true);
         checkModifier('mp4', NetworkRuleOption.Mp4, true);
     });
