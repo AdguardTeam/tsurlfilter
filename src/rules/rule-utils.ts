@@ -15,9 +15,14 @@ export class RuleUtils {
      *
      * @param text rule string
      * @param filterListId list id
+     * @param ignoreNetwork do not create network rules
+     * @param ignoreCosmetic do not create cosmetic rules
+     * @param ignoreHost do not create host rules
      * @return IRule object or null
      */
-    public static createRule(text: string, filterListId: number): IRule | null {
+    public static createRule(
+        text: string, filterListId: number, ignoreNetwork = false, ignoreCosmetic = false, ignoreHost = false,
+    ): IRule | null {
         if (!text || RuleUtils.isComment(text)) {
             return null;
         }
@@ -25,15 +30,23 @@ export class RuleUtils {
         const line = text.trim();
         try {
             if (RuleUtils.isCosmetic(line)) {
+                if (ignoreCosmetic) {
+                    return null;
+                }
+
                 return new CosmeticRule(line, filterListId);
             }
 
-            const hostRule = RuleUtils.createHostRule(line, filterListId);
-            if (hostRule) {
-                return hostRule;
+            if (!ignoreHost) {
+                const hostRule = RuleUtils.createHostRule(line, filterListId);
+                if (hostRule) {
+                    return hostRule;
+                }
             }
 
-            return new NetworkRule(line, filterListId);
+            if (!ignoreNetwork) {
+                return new NetworkRule(line, filterListId);
+            }
         } catch (e) {
             logger.info(e.message);
         }

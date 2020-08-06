@@ -1,6 +1,7 @@
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { NetworkRule } from '../../src';
+import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 
 describe('Test RuleStorage', () => {
     const list1 = new StringRuleList(1, '||example.org\n! test\n##banner', false);
@@ -10,7 +11,7 @@ describe('Test RuleStorage', () => {
     // Create storage from two lists
     const storage = new RuleStorage([list1, list2, list3]);
     // Create a scanner instance
-    const scanner = storage.createRuleStorageScanner();
+    const scanner = storage.createRuleStorageScanner(ScannerType.All);
 
     it('checks simple storage methods', () => {
         expect(storage).toBeTruthy();

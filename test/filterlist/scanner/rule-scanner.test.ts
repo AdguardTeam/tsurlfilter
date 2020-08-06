@@ -1,13 +1,14 @@
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 import { FileLineReader } from '../../../src/filterlist/reader/file-line-reader';
+import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 
 describe('TestRuleScannerOfStringReader', () => {
     it('works if scanner is fine with string reader', () => {
         const filterList = '||example.org\n! test\n##banner';
 
         const reader = new StringLineReader(filterList);
-        const scanner = new RuleScanner(reader, 1, false);
+        const scanner = new RuleScanner(reader, 1, ScannerType.All, false);
 
         expect(scanner.getRule()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();
@@ -43,7 +44,7 @@ describe('TestRuleScannerOfFileReader', () => {
 
         const reader = new FileLineReader(hostsPath);
 
-        const scanner = new RuleScanner(reader, 1, true);
+        const scanner = new RuleScanner(reader, 1, ScannerType.All, true);
 
         let rulesCount = 0;
         while (scanner.scan()) {

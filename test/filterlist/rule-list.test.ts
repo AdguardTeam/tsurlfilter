@@ -1,4 +1,5 @@
 import { StringRuleList } from '../../src/filterlist/rule-list';
+import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 
 describe('TestStringRuleListScanner', () => {
     const ruleList = new StringRuleList(1, '||example.org\n! test\n##banner', false);
@@ -7,7 +8,7 @@ describe('TestStringRuleListScanner', () => {
         expect(ruleList.getId()).toBe(1);
     });
 
-    const scanner = ruleList.newScanner();
+    const scanner = ruleList.newScanner(ScannerType.All);
 
     it('checks scanner', () => {
         expect(scanner).toBeTruthy();

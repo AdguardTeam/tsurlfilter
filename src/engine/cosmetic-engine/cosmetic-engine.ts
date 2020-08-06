@@ -4,6 +4,7 @@ import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
 import { CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
+import { ScannerType } from '../../filterlist/scanner/scanner-type';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -55,7 +56,7 @@ export class CosmeticEngine {
         this.jsLookupTable = new CosmeticLookupTable();
         this.htmlLookupTable = new CosmeticLookupTable();
 
-        const scanner = this.ruleStorage.createRuleStorageScanner();
+        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.CosmeticRules);
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();

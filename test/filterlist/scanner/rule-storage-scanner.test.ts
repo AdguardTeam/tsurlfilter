@@ -1,6 +1,7 @@
 import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
+import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 
 describe('Empty Scanners Test', () => {
     const storageScanner = new RuleStorageScanner([]);
@@ -14,11 +15,11 @@ describe('RuleStorageScanner Test', () => {
     // Create two filter lists
     const filterList1 = '||example.org\n! test\n##banner';
     const r1 = new StringLineReader(filterList1);
-    const scanner1 = new RuleScanner(r1, 1, false);
+    const scanner1 = new RuleScanner(r1, 1, ScannerType.All, false);
 
     const filterList2 = '||example.com\n! test\n##advert';
     const r2 = new StringLineReader(filterList2);
-    const scanner2 = new RuleScanner(r2, 2, false);
+    const scanner2 = new RuleScanner(r2, 2, ScannerType.All, false);
 
     // Now create the storage scanner
     const storageScanner = new RuleStorageScanner([scanner1, scanner2]);

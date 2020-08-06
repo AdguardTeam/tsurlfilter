@@ -2,6 +2,7 @@ import { RuleScanner } from './scanner/rule-scanner';
 import { IRule } from '../rules/rule';
 import { StringLineReader } from './reader/string-line-reader';
 import { RuleUtils } from '../rules/rule-utils';
+import { ScannerType } from './scanner/scanner-type';
 
 /**
  * RuleList represents a set of filtering rules
@@ -15,7 +16,7 @@ export interface IRuleList {
     /**
      * Creates a new scanner that reads the list contents
      */
-    newScanner(): RuleScanner;
+    newScanner(scannerType: ScannerType): RuleScanner;
 
     /**
      * Retrieves a rule by its index
@@ -88,9 +89,9 @@ export class StringRuleList implements IRuleList {
      * Creates a new rules scanner that reads the list contents
      * @return scanner object
      */
-    newScanner(): RuleScanner {
+    newScanner(scannerType: ScannerType): RuleScanner {
         const reader = new StringLineReader(this.rulesText);
-        return new RuleScanner(reader, this.id, this.ignoreCosmetic, this.ignoreJS);
+        return new RuleScanner(reader, this.id, scannerType, this.ignoreCosmetic, this.ignoreJS);
     }
 
     /**
