@@ -70,7 +70,7 @@ export enum NetworkRuleOption {
     // Groups (for validation)
 
     /** Blacklist-only modifiers */
-    BlacklistOnly = Popup | Empty | Mp4,
+    BlacklistOnly = Empty | Mp4,
 
     /** Whitelist-only modifiers */
     WhitelistOnly = Elemhide | Genericblock | Generichide | Jsinject | Urlblock | Content | Extension | Stealth,
@@ -674,21 +674,24 @@ export class NetworkRule implements rule.IRule {
      *
      * @param option - option to enable or disable.
      * @param enabled - true to enable, false to disable.
+     * @param skipRestrictions - skip options whitelist/blacklist restrictions
      *
      * @throws an error if the option we're trying to enable cannot be.
      * For instance, you cannot enable $elemhide for blacklist rules.
      */
-    private setOptionEnabled(option: NetworkRuleOption, enabled: boolean): void {
-        if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
-            throw new SyntaxError(
-                `modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule ${this.ruleText}`,
-            );
-        }
+    private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
+        if (!skipRestrictions) {
+            if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
+                throw new SyntaxError(
+                    `modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule ${this.ruleText}`,
+                );
+            }
 
-        if (!this.whitelist && (option & NetworkRuleOption.WhitelistOnly) === option) {
-            throw new SyntaxError(
-                `modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule ${this.ruleText}`,
-            );
+            if (!this.whitelist && (option & NetworkRuleOption.WhitelistOnly) === option) {
+                throw new SyntaxError(
+                    `modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule ${this.ruleText}`,
+                );
+            }
         }
 
         if (enabled) {
@@ -773,10 +776,10 @@ export class NetworkRule implements rule.IRule {
 
             // $document
             case 'document':
-                this.setOptionEnabled(NetworkRuleOption.Elemhide, true);
-                this.setOptionEnabled(NetworkRuleOption.Jsinject, true);
-                this.setOptionEnabled(NetworkRuleOption.Urlblock, true);
-                this.setOptionEnabled(NetworkRuleOption.Content, true);
+                this.setOptionEnabled(NetworkRuleOption.Elemhide, true, true);
+                this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
+                this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
+                this.setOptionEnabled(NetworkRuleOption.Content, true, true);
                 break;
 
             // Stealth mode

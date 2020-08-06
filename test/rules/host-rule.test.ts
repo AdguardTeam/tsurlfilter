@@ -46,39 +46,32 @@ describe('Constructor', () => {
         expect(rule.getHostnames()).toContain('www.ruclicks.com');
 
         ruleText = '#::1             localhost ip6-localhost ip6-loopback';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
 
         ruleText = '';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
 
         ruleText = 'invalidhost.';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
 
         ruleText = '999.1.1.1 host.com';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule: invalid IP:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
 
         ruleText = '_prebid_';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
 
         ruleText = '_728x90.';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
 
         ruleText = '_prebid._';
-        expect(() => {
-            rule = new HostRule(ruleText, 1);
-        }).toThrowError(/Invalid host rule:.+/);
+        rule = new HostRule(ruleText, 1);
+        expect(rule.isInvalid()).toBeTruthy();
     });
 
     it('works when it matches rules', () => {
