@@ -5,6 +5,7 @@ import { fastHash } from '../utils/utils';
 import { NetworkEngine } from './network-engine';
 import { Request, RequestType } from '../request';
 import { DnsResult } from './dns-result';
+import { ScannerType } from '../filterlist/scanner/scanner-type';
 
 /**
  * DNSEngine combines host rules and network rules and is supposed to quickly find
@@ -45,7 +46,7 @@ export class DnsEngine {
 
         this.networkEngine = new NetworkEngine(storage, true);
 
-        const scanner = this.ruleStorage.createRuleStorageScanner();
+        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();

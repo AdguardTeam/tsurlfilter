@@ -76,6 +76,15 @@ export function startsAtIndexWith(str: string, startIndex: number, substr: strin
 export function hasUnquotedSubstring(str: string, substr: string): boolean {
     const quotes = ['"', "'", '/'];
 
+    if (!str.includes(substr)) {
+        return false;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    if (indexOfAny(str, quotes) === -1) {
+        return true;
+    }
+
     const stack: string[] = [];
     for (let i = 0; i < str.length; i += 1) {
         const cursor = str[i];

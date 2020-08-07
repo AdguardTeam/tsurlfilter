@@ -4,6 +4,7 @@ import { MatchingResult } from './matching-result';
 import { fastHash, fastHashBetween } from '../utils/utils';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { DomainModifier } from '../modifiers/domain-modifier';
+import { ScannerType } from '../filterlist/scanner/scanner-type';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules
@@ -69,7 +70,7 @@ export class NetworkEngine {
             return;
         }
 
-        const scanner = this.ruleStorage.createRuleStorageScanner();
+        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules);
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
