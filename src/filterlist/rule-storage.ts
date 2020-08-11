@@ -4,6 +4,7 @@ import { IRule } from '../rules/rule';
 import { RuleScanner } from './scanner/rule-scanner';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
+import { ScannerType } from './scanner/scanner-type';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -63,8 +64,8 @@ export class RuleStorage {
      *
      * @return scanner instance
      */
-    createRuleStorageScanner(): RuleStorageScanner {
-        const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner());
+    createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
+        const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner(scannerType));
         return new RuleStorageScanner(scanners);
     }
 

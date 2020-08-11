@@ -3,6 +3,7 @@ import { RuleFactory } from '../../rules/rule-factory';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { logger } from '../../utils/logger';
+import { ScannerType } from './scanner-type';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
@@ -22,6 +23,16 @@ export class RuleScanner {
      * True if we should ignore javascript cosmetic rules
      */
     private readonly ignoreJS: boolean;
+
+    /**
+     * True if we should ignore network rules
+     */
+    private ignoreNetwork: boolean;
+
+    /**
+     * True if we should ignore host rules
+     */
+    private ignoreHost: boolean;
 
     /**
      * Reader object
@@ -48,13 +59,22 @@ export class RuleScanner {
      *
      * @param reader source of the filtering rules
      * @param listId filter list ID
+     * @param scannerType scanner type
      * @param ignoreCosmetic if true, cosmetic rules will be ignored
      * @param ignoreJS if true, javascript cosmetic rules will be ignored
      */
-    constructor(reader: ILineReader, listId: number, ignoreCosmetic?: boolean, ignoreJS?: boolean) {
+
+    constructor(
+        reader: ILineReader, listId: number, scannerType: ScannerType, ignoreCosmetic?: boolean, ignoreJS?: boolean,
+    ) {
         this.reader = reader;
         this.listId = listId;
-        this.ignoreCosmetic = !!ignoreCosmetic;
+
+        this.ignoreCosmetic = !!ignoreCosmetic
+            || ((scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules);
+        this.ignoreNetwork = (scannerType & ScannerType.NetworkRules) !== ScannerType.NetworkRules;
+        this.ignoreHost = (scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
+
         this.ignoreJS = !!ignoreJS;
     }
 
@@ -75,9 +95,10 @@ export class RuleScanner {
 
             if (line) {
                 let rule;
-
                 try {
-                    rule = RuleFactory.createRule(line, this.listId);
+                    rule = RuleFactory.createRule(
+                        line, this.listId, this.ignoreNetwork, this.ignoreCosmetic, this.ignoreHost,
+                    );
                 } catch (e) {
                     logger.info(e.message);
                 }

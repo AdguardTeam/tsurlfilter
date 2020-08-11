@@ -14,9 +14,14 @@ export class RuleFactory {
      *
      * @param text rule string
      * @param filterListId list id
+     * @param ignoreNetwork do not create network rules
+     * @param ignoreCosmetic do not create cosmetic rules
+     * @param ignoreHost do not create host rules
      * @return IRule object or null
      */
-    public static createRule(text: string, filterListId: number): IRule | null {
+    public static createRule(
+        text: string, filterListId: number, ignoreNetwork = false, ignoreCosmetic = false, ignoreHost = false,
+    ): IRule | null {
         if (!text || RuleFactory.isComment(text)) {
             return null;
         }
@@ -26,17 +31,26 @@ export class RuleFactory {
         }
 
         const line = text.trim();
-
         if (RuleFactory.isCosmetic(line)) {
+            if (ignoreCosmetic) {
+                return null;
+            }
+
             return new CosmeticRule(line, filterListId);
         }
 
-        const hostRule = RuleFactory.createHostRule(line, filterListId);
-        if (hostRule) {
-            return hostRule;
+        if (!ignoreHost) {
+            const hostRule = RuleFactory.createHostRule(line, filterListId);
+            if (hostRule) {
+                return hostRule;
+            }
         }
 
-        return new NetworkRule(line, filterListId);
+        if (!ignoreNetwork) {
+            return new NetworkRule(line, filterListId);
+        }
+
+        return null;
     }
 
     /**
@@ -46,13 +60,8 @@ export class RuleFactory {
      * @param filterListId
      */
     private static createHostRule(ruleText: string, filterListId: number): HostRule | null {
-        try {
-            return new HostRule(ruleText, filterListId);
-        } catch (e) {
-            // Ignore
-        }
-
-        return null;
+        const rule = new HostRule(ruleText, filterListId);
+        return rule.isInvalid() ? null : rule;
     }
 
     /**
@@ -73,6 +82,7 @@ export class RuleFactory {
 
     /**
      * If text is comment
+     *
      * @param text
      */
     public static isComment(text: string): boolean {
