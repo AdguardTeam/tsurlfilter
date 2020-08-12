@@ -2,7 +2,7 @@ import fs from 'fs';
 import zlib from 'zlib';
 import console from 'console';
 import { NetworkEngine } from '../../src/engine/network-engine';
-import { Engine, Request, RequestType} from '../../src';
+import { Engine, Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { DnsEngine } from '../../src/engine/dns-engine';
