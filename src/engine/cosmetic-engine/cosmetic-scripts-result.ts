@@ -3,17 +3,13 @@ import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScriptletParser } from './scriptlet-parser';
 import { config } from '../../configuration';
 import { CosmeticContentResult } from './cosmetic-content-result';
+import { ADG_SCRIPTLET_MASK } from './cosmetic-constants';
 
 /**
  * This class stores found script rules content in the appropriate collections
  * It is primarily used by the {@see CosmeticResult}
  */
 export class CosmeticScriptsResult implements CosmeticContentResult {
-    /**
-     * AdGuard scriptlet rule mask
-     */
-    private static ADG_SCRIPTLET_MASK = '//scriptlet';
-
     /**
      * Collection of generic (domain insensitive) rules
      */
@@ -65,7 +61,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         }
 
         const ruleContent = rule.getContent();
-        if (!ruleContent.startsWith(CosmeticScriptsResult.ADG_SCRIPTLET_MASK)) {
+        if (!ruleContent.startsWith(ADG_SCRIPTLET_MASK)) {
             // eslint-disable-next-line no-param-reassign
             rule.script = ruleContent;
             // eslint-disable-next-line no-param-reassign
@@ -73,7 +69,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
             return;
         }
 
-        const scriptletContent = ruleContent.substr(CosmeticScriptsResult.ADG_SCRIPTLET_MASK.length);
+        const scriptletContent = ruleContent.substr(ADG_SCRIPTLET_MASK.length);
         const scriptletParams = ScriptletParser.parseRule(scriptletContent);
 
         const params: Scriptlets.IConfiguration = {

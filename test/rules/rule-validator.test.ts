@@ -5,4 +5,16 @@ describe('RuleValidator', () => {
         const rule = '# this is comment';
         expect(RuleValidator.validate(rule)).toEqual(RuleValidator.createValidationResult(true));
     });
+
+    it('detects invalid scriptlets rules', () => {
+        const invalidScriptletName = 'ubo-abort-current-inline-scripts.js';
+        const validScriptletName = 'ubo-abort-current-inline-script.js';
+        const getRule = (name: string): string => `test.com#%#//scriptlet("${name}", "Math.random", "adbDetect")`;
+
+        const invalidRule = getRule(invalidScriptletName);
+        expect(RuleValidator.validate(invalidRule).valid).toBeFalsy();
+
+        const validRule = getRule(validScriptletName);
+        expect(RuleValidator.validate(validRule).valid).toBeTruthy();
+    });
 });

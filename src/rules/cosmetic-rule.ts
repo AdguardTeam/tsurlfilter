@@ -1,7 +1,9 @@
+import Scriptlets from 'scriptlets';
 import * as rule from './rule';
 import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
+import { ADG_SCRIPTLET_MASK } from '../engine/cosmetic-engine/cosmetic-constants';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -406,6 +408,14 @@ export class CosmeticRule implements rule.IRule {
         }
     }
 
+    private static validateJsRules(ruleText: string, ruleContent: string): void {
+        if (ruleContent.startsWith(ADG_SCRIPTLET_MASK)) {
+            if (!Scriptlets.isValidScriptletRule(ruleText)) {
+                throw new SyntaxError(`Invalid scriptlet rule: "${ruleText}"`);
+            }
+        }
+    }
+
     /**
      * Validates css injection rules
      *
@@ -446,6 +456,10 @@ export class CosmeticRule implements rule.IRule {
 
         if (type === CosmeticRuleType.Css) {
             CosmeticRule.validateCssRules(ruleText, content);
+        }
+
+        if (type === CosmeticRuleType.Js) {
+            CosmeticRule.validateJsRules(ruleText, content);
         }
 
         if (utils.hasUnquotedSubstring(content, '/*')
