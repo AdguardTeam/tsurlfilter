@@ -67,6 +67,12 @@ export enum NetworkRuleOption {
     /** $removeparam modifier */
     RemoveParam = 1 << 19,
 
+    // Compatibility dependent
+    /** $app modifier */
+    App = 1 << 20,
+    /** $network modifier */
+    Network = 1 << 21,
+
     // Groups (for validation)
 
     /** Blacklist-only modifiers */
@@ -909,6 +915,16 @@ export class NetworkRule implements rule.IRule {
             case 'removeparam':
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
                 this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
+                break;
+
+            // modificator supported by corelibs
+            case 'app':
+                this.setOptionEnabled(NetworkRuleOption.App, true);
+                break;
+
+            // modificator supported by corelibs
+            case 'network':
+                this.setOptionEnabled(NetworkRuleOption.App, true);
                 break;
 
             default:

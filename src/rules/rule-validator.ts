@@ -1,6 +1,7 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
-import { NetworkRule } from './network-rule';
+import { NetworkRule, NetworkRuleOption } from './network-rule';
+import { Compatibility, config } from '../configuration';
 
 interface ValidationResult {
     valid: boolean;
@@ -22,38 +23,49 @@ export class RuleValidator {
         return { valid, error: null };
     }
 
+    private static validateRuleCompatibility(rule: NetworkRule): void {
+        if (config.compatibility === Compatibility.extension) {
+            if (rule.isOptionEnabled(NetworkRuleOption.Network)
+                || rule.isOptionEnabled(NetworkRuleOption.App)) {
+                // eslint-disable-next-line max-len
+                throw new SyntaxError(`Rule modificator is not supported: "${rule.getText()}", compatibility: "${config.compatibility}"`);
+            }
+        }
+    }
+
     /**
      * Validates raw rule string
      * @param rawRule
      */
     public static validate(rawRule: string): ValidationResult {
-        const rule = rawRule.trim();
+        const ruleText = rawRule.trim();
 
-        if (RuleFactory.isShort(rule)) {
-            return RuleValidator.createValidationResult(false, `Rule is too short: ${rule}`);
+        if (RuleFactory.isShort(ruleText)) {
+            return RuleValidator.createValidationResult(false, `Rule is too short: ${ruleText}`);
         }
 
-        if (RuleFactory.isComment(rule)) {
+        if (RuleFactory.isComment(ruleText)) {
             return RuleValidator.createValidationResult(true);
         }
 
-        if (RuleFactory.isCosmetic(rule)) {
+        if (RuleFactory.isCosmetic(ruleText)) {
             try {
-                new CosmeticRule(rule, 0);
+                new CosmeticRule(ruleText, 0);
                 return RuleValidator.createValidationResult(true);
             } catch (e) {
                 return RuleValidator.createValidationResult(false, e.message);
             }
         }
 
-        // TODO validate host rules
-
         try {
-            new NetworkRule(rule, 0);
+            const rule = new NetworkRule(ruleText, 0);
+            this.validateRuleCompatibility(rule);
         } catch (e) {
             return RuleValidator.createValidationResult(false, e.message);
         }
 
         return RuleValidator.createValidationResult(true);
+
+        // TODO validate host rules
     }
 }

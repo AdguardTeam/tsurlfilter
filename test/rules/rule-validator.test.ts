@@ -1,4 +1,5 @@
 import { RuleValidator } from '../../src/rules/rule-validator';
+import { Compatibility, setConfiguration } from '../../src';
 
 describe('RuleValidator', () => {
     it('considers comments as valid rules', () => {
@@ -26,5 +27,15 @@ describe('RuleValidator', () => {
         // eslint-disable-next-line no-useless-escape
         const validRuleText = '/^https:\/\/([a-z]+\.)?sythe\.org\/\[=%#@$&!^].*[\w\W]{20,}/$image';
         expect(RuleValidator.validate(validRuleText).valid).toBeTruthy();
+    });
+
+    it('validates by compatibility', () => {
+        setConfiguration({ compatibility: Compatibility.extension });
+        const invalidExtensionRule = '@@||test.com^$generichide,app=iexplore.exe';
+        expect((RuleValidator.validate(invalidExtensionRule).valid)).toBeFalsy();
+
+        setConfiguration({ compatibility: Compatibility.compiler });
+        const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
+        expect((RuleValidator.validate(validCompilerRule).valid)).toBeTruthy();
     });
 });
