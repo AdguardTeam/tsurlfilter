@@ -53,40 +53,16 @@ export class Engine {
 
     /**
      * Loads rules to engine
-     */
-    loadRules(): void {
-        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
-
-        while (scanner.scan()) {
-            this.addRule(scanner.getRule());
-        }
-    }
-
-    /**
-     * Async loads rules to engine
      *
      * @param chunkSize size of rules chunk to load at a time
      */
-    async loadRulesAsync(chunkSize: number): Promise<void> {
-        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
+    async loadRules(chunkSize = 0): Promise<void> {
+        const scanner = this.ruleStorage.createRuleStorageAsyncScanner(
+            ScannerType.NetworkRules | ScannerType.CosmeticRules, chunkSize,
+        );
 
-        let counter = 0;
-        while (scanner.scan()) {
-            counter += 1;
-
-            if (counter >= chunkSize) {
-                counter = 0;
-
-                /**
-                 * In some cases UI thread becomes blocked while adding rules to engine,
-                 * that't why we create filter rules using chunks of the specified length
-                 * Rules creation is rather slow operation so we should
-                 * use setTimeout calls to give UI thread some time.
-                 */
-                // eslint-disable-next-line no-await-in-loop
-                await new Promise((resolve) => setTimeout(resolve, 1));
-            }
-
+        // eslint-disable-next-line no-await-in-loop
+        while (await scanner.scanAsync()) {
             this.addRule(scanner.getRule());
         }
     }
