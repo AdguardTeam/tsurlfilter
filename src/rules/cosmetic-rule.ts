@@ -430,7 +430,7 @@ export class CosmeticRule implements rule.IRule {
         }
         // discard css inject rules containing "url"
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196
-        if (/url\(.*\)/gi.test(ruleContent)) {
+        if (/{.*url\(.*\)/gi.test(ruleContent)) {
             throw new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`);
         }
 

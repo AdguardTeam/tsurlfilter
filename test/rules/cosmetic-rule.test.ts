@@ -274,6 +274,12 @@ describe('CosmeticRule.CSS', () => {
         checkRuleIsInvalid('example.org#$#body { background:url("http://example.org/image.png"); }');
     });
 
+    it('doesnt throw error if cosmetic rule contains url in selector', () => {
+        const validRule = 'example.com#$#body[style*="background-image: url()"] { margin-top: 45px !important; }';
+        const rule = new CosmeticRule(validRule, 0);
+        expect(rule).toBeTruthy();
+    });
+
     it('checks backslash in cosmetic rules content', () => {
         const backslashInElemhideRules = new CosmeticRule('example.org###Meebo\\:AdElement\\.Root', 0);
         expect(backslashInElemhideRules).toBeDefined();
