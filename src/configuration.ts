@@ -3,7 +3,7 @@
  */
 export enum Compatibility {
     extension = 1 << 0,
-    compiler = 1 << 1,
+    corelibs = 1 << 1,
 }
 
 /**

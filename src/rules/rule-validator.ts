@@ -1,7 +1,6 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
-import { NetworkRule, NetworkRuleOption } from './network-rule';
-import { Compatibility, config } from '../configuration';
+import { NetworkRule } from './network-rule';
 
 interface ValidationResult {
     valid: boolean;
@@ -21,16 +20,6 @@ export class RuleValidator {
         }
 
         return { valid, error: null };
-    }
-
-    private static validateRuleCompatibility(rule: NetworkRule): void {
-        if (config.compatibility === Compatibility.extension) {
-            if (rule.isOptionEnabled(NetworkRuleOption.Network)
-                || rule.isOptionEnabled(NetworkRuleOption.App)) {
-                // eslint-disable-next-line max-len
-                throw new SyntaxError(`Rule modificator is not supported: "${rule.getText()}", compatibility: "${config.compatibility}"`);
-            }
-        }
     }
 
     /**
@@ -58,8 +47,7 @@ export class RuleValidator {
         }
 
         try {
-            const rule = new NetworkRule(ruleText, 0);
-            this.validateRuleCompatibility(rule);
+            new NetworkRule(ruleText, 0);
         } catch (e) {
             return RuleValidator.createValidationResult(false, e.message);
         }

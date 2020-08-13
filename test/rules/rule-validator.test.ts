@@ -34,7 +34,7 @@ describe('RuleValidator', () => {
         const invalidExtensionRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(invalidExtensionRule).valid)).toBeFalsy();
 
-        setConfiguration({ compatibility: Compatibility.compiler });
+        setConfiguration({ compatibility: Compatibility.corelibs });
         const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(validCompilerRule).valid)).toBeTruthy();
     });
