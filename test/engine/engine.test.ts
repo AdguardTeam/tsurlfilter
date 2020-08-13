@@ -40,12 +40,22 @@ describe('TestEngine - postponed load rules', () => {
     const list = new StringRuleList(1, rules.join('\n'), false);
     const ruleStorage = new RuleStorage([list]);
 
-    it('works rules are loaded', async () => {
+    it('works rules are loaded', () => {
         const engine = new Engine(ruleStorage, undefined, true);
 
         expect(engine.getRulesCount()).toBe(0);
 
-        await engine.loadRules(1);
+        engine.loadRules();
+
+        expect(engine.getRulesCount()).toBe(2);
+    });
+
+    it('works rules are loaded async', async () => {
+        const engine = new Engine(ruleStorage, undefined, true);
+
+        expect(engine.getRulesCount()).toBe(0);
+
+        await engine.loadRulesAsync(1);
 
         expect(engine.getRulesCount()).toBe(2);
     });

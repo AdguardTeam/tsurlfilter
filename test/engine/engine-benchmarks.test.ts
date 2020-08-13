@@ -212,7 +212,7 @@ describe('Benchmarks', () => {
         const engine = new Engine(ruleStorage, undefined, true);
         expect(engine).toBeTruthy();
 
-        await engine.loadRules(2000);
+        await engine.loadRulesAsync(1000);
 
         console.log(`Loaded rules: ${engine.getRulesCount()}`);
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);

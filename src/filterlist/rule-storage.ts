@@ -5,7 +5,6 @@ import { RuleScanner } from './scanner/rule-scanner';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { ScannerType } from './scanner/scanner-type';
-import { RuleStorageAsyncScanner } from './scanner/rule-storage-async-scanner';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -62,23 +61,12 @@ export class RuleStorage {
     /**
      * Creates a new instance of RuleStorageScanner.
      * It can be used to read and parse all the storage contents.
-     * @param scannerType
+     *
      * @return scanner instance
      */
     createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
         const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner(scannerType));
         return new RuleStorageScanner(scanners);
-    }
-
-    /**
-     * Creates a new instance of RuleStorageAsyncScanner.
-     *
-     * @param scannerType
-     * @param chunkSize
-     */
-    createRuleStorageAsyncScanner(scannerType: ScannerType, chunkSize = 0): RuleStorageAsyncScanner {
-        const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner(scannerType));
-        return new RuleStorageAsyncScanner(scanners, chunkSize);
     }
 
     /**
