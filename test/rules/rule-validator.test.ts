@@ -17,4 +17,14 @@ describe('RuleValidator', () => {
         const validRule = getRule(validScriptletName);
         expect(RuleValidator.validate(validRule).valid).toBeTruthy();
     });
+
+    it('validates regexp rules', () => {
+        // eslint-disable-next-line no-useless-escape
+        const invalidRuleText = '/ex[[ampl[[e\.com\///.*\/banner/$script';
+        expect(RuleValidator.validate(invalidRuleText).valid).toBeFalsy();
+
+        // eslint-disable-next-line no-useless-escape
+        const validRuleText = '/^https:\/\/([a-z]+\.)?sythe\.org\/\[=%#@$&!^].*[\w\W]{20,}/$image';
+        expect(RuleValidator.validate(validRuleText).valid).toBeTruthy();
+    });
 });

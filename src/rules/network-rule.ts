@@ -303,6 +303,16 @@ export class NetworkRule implements rule.IRule {
         return request.urlLowercase.includes(this.shortcut);
     }
 
+    private static validateRegexp(pattern: string, ruleText: string): void {
+        if (pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)) {
+            try {
+                new RegExp(pattern);
+            } catch (e) {
+                throw new SyntaxError(`Rule has invalid regex pattern: "${ruleText}"`);
+            }
+        }
+    }
+
     /**
      * matchDomain checks if the filtering rule is allowed on this domain.
      * @param domain - domain to check.
@@ -459,6 +469,8 @@ export class NetworkRule implements rule.IRule {
                 }
             }
         }
+
+        NetworkRule.validateRegexp(this.pattern, this.ruleText);
 
         this.shortcut = SimpleRegex.extractShortcut(this.pattern);
     }
