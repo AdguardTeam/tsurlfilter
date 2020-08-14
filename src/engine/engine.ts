@@ -35,17 +35,10 @@ export class Engine {
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
-     * @param configuration optional configuration
      * @param skipStorageScan create an instance without storage scanning
      * @throws
      */
-    constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined, skipStorageScan = false) {
-        if (configuration) {
-            config.engine = configuration.engine;
-            config.version = configuration.version;
-            config.verbose = configuration.verbose;
-        }
-
+    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);

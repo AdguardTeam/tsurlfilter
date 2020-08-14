@@ -97,7 +97,9 @@ Engine is a main class of this library. It represents the filtering functionalit
         verbose: true,
     };
 
-    const engine = new Engine(ruleStorage, config);
+    setConfiguration(config)
+
+    const engine = new Engine(ruleStorage);
 ```
 
 ##### Matching requests
