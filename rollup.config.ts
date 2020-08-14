@@ -39,7 +39,12 @@ export default [
             {
                 file: pkg.main, name: camelCase(libraryName), format: 'umd', sourcemap: true,
             },
-            { file: pkg.module, format: 'es', sourcemap: true },
+            {
+                file: pkg.module, format: 'es', sourcemap: true,
+            },
+            {
+                file: pkg.iife, name: libraryName, format: 'iife', sourcemap: false,
+            },
         ],
         // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
         external: [],

@@ -1,6 +1,7 @@
 export * from './request';
 export * from './rules/rule';
 export * from './rules/network-rule';
+export * from './rules/cosmetic-rule';
 export * from './rules/rule-converter';
 export * from './engine/engine';
 export * from './filterlist/rule-list';
