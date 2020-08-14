@@ -2,7 +2,7 @@ import fs from 'fs';
 import zlib from 'zlib';
 import console from 'console';
 import { NetworkEngine } from '../../src/engine/network-engine';
-import { Request, RequestType } from '../../src';
+import { Engine, Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { DnsEngine } from '../../src/engine/dns-engine';
@@ -184,6 +184,47 @@ describe('Benchmarks', () => {
         const totalMatches = runEngine(requests, (request) => {
             const rule = engine.match(request);
             return !!(rule && !rule.isWhitelist());
+        });
+
+        expect(totalMatches).toBe(expectedMatchesCount);
+
+        const afterMatch = getRSS();
+        console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);
+    });
+
+    it('runs engine - async load', async () => {
+        const rulesFilePath = './test/resources/easylist.txt';
+
+        /**
+         * Expected matches for specified requests and rules
+         */
+        const expectedMatchesCount = 586;
+
+        const requests = await parseRequests();
+
+        const start = getRSS();
+        console.log(`RSS before loading rules - ${start / 1024} kB`);
+
+        const startParse = Date.now();
+        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
+        const ruleStorage = new RuleStorage([list]);
+
+        const engine = new Engine(ruleStorage, undefined, true);
+        expect(engine).toBeTruthy();
+
+        await engine.loadRulesAsync(1000);
+
+        console.log(`Loaded rules: ${engine.getRulesCount()}`);
+        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
+
+        const afterLoad = getRSS();
+        console.log(`RSS after loading rules - ${afterLoad / 1024} kB (${(afterLoad - start) / 1024} kB diff)`);
+
+        const totalMatches = runEngine(requests, (request) => {
+            const matchingResult = engine.matchRequest(request);
+            return !!(matchingResult
+                && matchingResult.basicRule
+                && matchingResult.basicRule!.isWhitelist());
         });
 
         expect(totalMatches).toBe(expectedMatchesCount);
