@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
-  "module": "dist/tsurlfilter.es5.js",
+  "module": "dist/tsurlfilter.esm.js",
   "typings": "dist/types/tsurlfilter.d.ts",
   "files": [
     "dist"
