@@ -46,8 +46,9 @@ export class CosmeticEngine {
      * Builds instance of cosmetic engine
      *
      * @param ruleStorage
+     * @param skipStorageScan create an instance without storage scanning
      */
-    constructor(ruleStorage: RuleStorage) {
+    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.rulesCount = 0;
 
@@ -55,6 +56,10 @@ export class CosmeticEngine {
         this.cssLookupTable = new CosmeticLookupTable();
         this.jsLookupTable = new CosmeticLookupTable();
         this.htmlLookupTable = new CosmeticLookupTable();
+
+        if (skipStorageScan) {
+            return;
+        }
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.CosmeticRules);
 
@@ -71,7 +76,7 @@ export class CosmeticEngine {
      * Adds rules into appropriate tables
      * @param rule
      */
-    private addRule(rule: CosmeticRule): void {
+    public addRule(rule: CosmeticRule): void {
         switch (rule.getType()) {
             case CosmeticRuleType.ElementHiding: {
                 this.elementHidingLookupTable.addRule(rule);
