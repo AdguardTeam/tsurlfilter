@@ -42,4 +42,20 @@ describe('RuleValidator', () => {
         const validCompilerRule2 = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(validCompilerRule2).valid)).toBeFalsy();
     });
+
+    it('validates regexp\'s', () => {
+        const invalidRules = [
+            // eslint-disable-next-line no-useless-escape
+            '/ex[[ampl[[e\.com\///.*\/banner/$script',
+            // eslint-disable-next-line no-useless-escape
+            '/^htt[[[ps?:\/\/.*(bitly|bit)\.(com|ly)\//$domain=1337x.to',
+            // eslint-disable-next-line no-useless-escape
+            '/\.sharesix\.com/.*[a-zA-Z0-9]({4}/$script',
+        ];
+
+        for (let i = 0; i < invalidRules.length; i += 1) {
+            const invalidRule = invalidRules[i];
+            expect((RuleValidator.validate(invalidRule).valid)).toBeFalsy();
+        }
+    });
 });

@@ -1,6 +1,7 @@
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { RuleFactory } from '../rules/rule-factory';
 import { NetworkRule } from '../rules/network-rule';
+import { SimpleRegex } from '../rules/simple-regex';
 
 interface ValidationResult {
     valid: boolean;
@@ -23,6 +24,16 @@ export class RuleValidator {
         }
 
         return { valid, error: null };
+    }
+
+    private static validateRegexp(pattern: string, ruleText: string): void {
+        if (pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)) {
+            try {
+                new RegExp(pattern);
+            } catch (e) {
+                throw new SyntaxError(`Rule has invalid regex pattern: "${ruleText}"`);
+            }
+        }
     }
 
     /**
@@ -50,7 +61,8 @@ export class RuleValidator {
         }
 
         try {
-            new NetworkRule(ruleText, 0);
+            const rule = new NetworkRule(ruleText, 0);
+            RuleValidator.validateRegexp(rule.getPattern(), rule.getText());
         } catch (e) {
             return RuleValidator.createValidationResult(false, e.message);
         }

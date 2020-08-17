@@ -180,6 +180,10 @@ export class NetworkRule implements rule.IRule {
         return this.filterListId;
     }
 
+    getPattern(): string {
+        return this.pattern;
+    }
+
     /**
      * Returns `true` if the rule is "whitelist", e.g. if it disables other
      * rules when the pattern matches the request.
@@ -308,16 +312,6 @@ export class NetworkRule implements rule.IRule {
      */
     private matchShortcut(request: Request): boolean {
         return request.urlLowercase.includes(this.shortcut);
-    }
-
-    private static validateRegexp(pattern: string, ruleText: string): void {
-        if (pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)) {
-            try {
-                new RegExp(pattern);
-            } catch (e) {
-                throw new SyntaxError(`Rule has invalid regex pattern: "${ruleText}"`);
-            }
-        }
     }
 
     /**
@@ -476,8 +470,6 @@ export class NetworkRule implements rule.IRule {
                 }
             }
         }
-
-        NetworkRule.validateRegexp(this.pattern, this.ruleText);
 
         this.shortcut = SimpleRegex.extractShortcut(this.pattern);
     }
