@@ -444,7 +444,14 @@ export class CosmeticRule implements rule.IRule {
         }
     }
 
-    public static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
+    /**
+     * Validates cosmetic rule text
+     * @param ruleText
+     * @param type
+     * @param content
+     * @private
+     */
+    private static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
         if (type !== CosmeticRuleType.Css
             && type !== CosmeticRuleType.Js) {
             CosmeticRule.validatePseudoClasses(ruleText, content);
