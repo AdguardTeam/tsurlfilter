@@ -427,6 +427,28 @@ Check `CookieApi` and `RulesFinder` interfaces
     getBlockingRules(rules: NetworkRule[]): NetworkRule[];
 ```
 
+#### <a id="cookie-filtering"></a> RuleValidator
+This module is not used in the engine directly, but it can be used to validate filter rules in other libraries or tools
+
+##### Public methods
+```
+    /**
+     * Validates raw rule string
+     * @param rawRule
+     */
+    public static validate(rawRule: string): ValidationResult
+```
+```
+    /**
+    * Valid true - means that the rule is valid, otherwise rule is not valid
+    * If rule is not valid, reason is returned in the error field
+    */
+    interface ValidationResult {
+        valid: boolean;
+        error: string | null;
+    }
+```
+
 #### <a id="content-script-classes"></a> Content script classes
 Classes provided for page context:
 

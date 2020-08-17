@@ -1,10 +1,10 @@
-import { RuleValidator } from '../../src/rules/rule-validator';
+import { RuleValidator } from '../../src/utils/rule-validator';
 import { Compatibility, setConfiguration } from '../../src';
 
 describe('RuleValidator', () => {
     it('considers comments as valid rules', () => {
         const rule = '# this is comment';
-        expect(RuleValidator.validate(rule)).toEqual(RuleValidator.createValidationResult(true));
+        expect(RuleValidator.validate(rule).valid).toBeTruthy();
     });
 
     it('detects invalid scriptlets rules', () => {

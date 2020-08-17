@@ -1,12 +1,15 @@
-import { CosmeticRule } from './cosmetic-rule';
-import { RuleFactory } from './rule-factory';
-import { NetworkRule } from './network-rule';
+import { CosmeticRule } from '../rules/cosmetic-rule';
+import { RuleFactory } from '../rules/rule-factory';
+import { NetworkRule } from '../rules/network-rule';
 
 interface ValidationResult {
     valid: boolean;
     error: string | null;
 }
 
+/**
+ * Module, which can be used to validate filter rules in other libraries
+ */
 export class RuleValidator {
     /**
      * Creates validation result
@@ -14,7 +17,7 @@ export class RuleValidator {
      * @param error
      * @private
      */
-    public static createValidationResult(valid: boolean, error?: string): ValidationResult {
+    private static createValidationResult(valid: boolean, error?: string): ValidationResult {
         if (error) {
             return { valid, error };
         }
