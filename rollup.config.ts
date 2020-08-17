@@ -47,6 +47,12 @@ export default [
                 format: 'esm',
                 sourcemap: true,
             },
+            {
+                file: pkg.iife,
+                name: libraryName,
+                format: 'iife',
+                sourcemap: false,
+            },
         ],
         // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
         external: [],
