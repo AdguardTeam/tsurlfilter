@@ -920,7 +920,7 @@ export class NetworkRule implements rule.IRule {
 
             // modificator supported by corelibs
             case 'app':
-                if (config.compatibility === Compatibility.extension) {
+                if (NetworkRule.compatibilityIncludes(Compatibility.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
                 }
                 this.setOptionEnabled(NetworkRuleOption.App, true);
@@ -928,7 +928,7 @@ export class NetworkRule implements rule.IRule {
 
             // modificator supported by corelibs
             case 'network':
-                if (config.compatibility === Compatibility.extension) {
+                if (NetworkRule.compatibilityIncludes(Compatibility.extension)) {
                     throw new SyntaxError(`Extension doesn't support $network modifier in rule "${this.ruleText}"`);
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
@@ -937,6 +937,18 @@ export class NetworkRule implements rule.IRule {
             default:
                 throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue} in rule ${this.ruleText}`);
         }
+    }
+
+    /**
+     * Checks compatibility
+     * @param compatibilityLevel
+     * @private
+     */
+    private static compatibilityIncludes(compatibilityLevel: Compatibility): boolean {
+        if (config.compatibility === null) {
+            return false;
+        }
+        return (config.compatibility & compatibilityLevel) === compatibilityLevel;
     }
 
     /**

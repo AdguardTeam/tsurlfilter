@@ -37,5 +37,9 @@ describe('RuleValidator', () => {
         setConfiguration({ compatibility: Compatibility.corelibs });
         const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(validCompilerRule).valid)).toBeTruthy();
+
+        setConfiguration({ compatibility: Compatibility.corelibs | Compatibility.extension });
+        const validCompilerRule2 = '@@||test.com^$generichide,app=iexplore.exe';
+        expect((RuleValidator.validate(validCompilerRule2).valid)).toBeFalsy();
     });
 });
