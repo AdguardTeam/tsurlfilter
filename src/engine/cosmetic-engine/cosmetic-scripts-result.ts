@@ -3,7 +3,7 @@ import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScriptletParser } from './scriptlet-parser';
 import { config } from '../../configuration';
 import { CosmeticContentResult } from './cosmetic-content-result';
-import { ADG_SCRIPTLET_MASK } from './cosmetic-constants';
+import { ADG_SCRIPTLET_MASK } from '../../rules/cosmetic-rule-marker';
 
 /**
  * This class stores found script rules content in the appropriate collections

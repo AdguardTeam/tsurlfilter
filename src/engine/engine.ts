@@ -115,7 +115,7 @@ export class Engine {
     /**
      * Gets rules count
      */
-    getRulesCount() {
+    getRulesCount(): number {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 

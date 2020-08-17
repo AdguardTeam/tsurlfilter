@@ -1,9 +1,13 @@
 import Scriptlets from 'scriptlets';
 import * as rule from './rule';
-import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
+import {
+    CosmeticRuleMarker,
+    findCosmeticRuleMarker,
+    isExtCssMarker,
+    ADG_SCRIPTLET_MASK,
+} from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
-import { ADG_SCRIPTLET_MASK } from '../engine/cosmetic-engine/cosmetic-constants';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
