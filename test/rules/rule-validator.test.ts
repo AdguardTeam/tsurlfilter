@@ -1,5 +1,5 @@
 import { RuleValidator } from '../../src/utils/rule-validator';
-import { Compatibility, setConfiguration } from '../../src';
+import { CompatibilityTypes, setConfiguration } from '../../src';
 
 describe('RuleValidator', () => {
     it('considers comments as valid rules', () => {
@@ -30,15 +30,15 @@ describe('RuleValidator', () => {
     });
 
     it('validates by compatibility', () => {
-        setConfiguration({ compatibility: Compatibility.extension });
+        setConfiguration({ compatibility: CompatibilityTypes.extension });
         const invalidExtensionRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(invalidExtensionRule).valid)).toBeFalsy();
 
-        setConfiguration({ compatibility: Compatibility.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
         const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(validCompilerRule).valid)).toBeTruthy();
 
-        setConfiguration({ compatibility: Compatibility.corelibs | Compatibility.extension });
+        setConfiguration({ compatibility: CompatibilityTypes.corelibs | CompatibilityTypes.extension });
         const validCompilerRule2 = '@@||test.com^$generichide,app=iexplore.exe';
         expect((RuleValidator.validate(validCompilerRule2).valid)).toBeFalsy();
     });

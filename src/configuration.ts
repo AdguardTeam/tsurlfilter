@@ -1,7 +1,10 @@
 /**
- * Compatibility types
+ * Compatibility types are used to configure engine for better support of different libraries
+ * For example:
+ *  extension doesnt support $app modifier. So if we set in configuration CompatibilityTypes.extension,
+ *  engine would ignore rules with $app modifier
  */
-export enum Compatibility {
+export enum CompatibilityTypes {
     extension = 1 << 0,
     corelibs = 1 << 1,
 }
@@ -28,7 +31,7 @@ export interface IConfiguration {
     /**
      * Compatibility type
      */
-    compatibility: Compatibility | null;
+    compatibility: CompatibilityTypes | null;
 }
 
 /**
@@ -60,7 +63,7 @@ class Configuration implements IConfiguration {
     /**
      * compatibility flag
      */
-    public compatibility: Compatibility | null = Compatibility.extension;
+    public compatibility: CompatibilityTypes | null = CompatibilityTypes.extension;
 
     constructor(inputConfig?: Partial<IConfiguration>) {
         const config = { ...this.defaultConfig, ...inputConfig };
@@ -83,7 +86,7 @@ export let config = new Configuration();
  * @param compatibilityLevel
  * @private
  */
-export function isCompatibleWith(compatibilityLevel: Compatibility): boolean {
+export function isCompatibleWith(compatibilityLevel: CompatibilityTypes): boolean {
     if (config.compatibility === null) {
         return false;
     }

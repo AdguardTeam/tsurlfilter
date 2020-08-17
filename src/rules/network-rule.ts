@@ -10,7 +10,7 @@ import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
-import { Compatibility, isCompatibleWith } from '../configuration';
+import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -912,7 +912,7 @@ export class NetworkRule implements rule.IRule {
 
             // modifier supported by corelibs
             case 'app':
-                if (isCompatibleWith(Compatibility.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
                 }
                 this.setOptionEnabled(NetworkRuleOption.App, true);
@@ -920,7 +920,7 @@ export class NetworkRule implements rule.IRule {
 
             // modifier supported by corelibs
             case 'network':
-                if (isCompatibleWith(Compatibility.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError(`Extension doesn't support $network modifier in rule "${this.ruleText}"`);
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
