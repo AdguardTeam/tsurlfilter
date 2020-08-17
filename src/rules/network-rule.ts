@@ -918,7 +918,7 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
                 break;
 
-            // modificator supported by corelibs
+            // modifier supported by corelibs
             case 'app':
                 if (isCompatibleWith(Compatibility.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
@@ -926,7 +926,7 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.App, true);
                 break;
 
-            // modificator supported by corelibs
+            // modifier supported by corelibs
             case 'network':
                 if (isCompatibleWith(Compatibility.extension)) {
                     throw new SyntaxError(`Extension doesn't support $network modifier in rule "${this.ruleText}"`);
