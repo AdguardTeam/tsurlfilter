@@ -10,7 +10,7 @@ import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
-import { Compatibility, config } from '../configuration';
+import { Compatibility, isCompatibleWith } from '../configuration';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -920,7 +920,7 @@ export class NetworkRule implements rule.IRule {
 
             // modificator supported by corelibs
             case 'app':
-                if (NetworkRule.compatibilityIncludes(Compatibility.extension)) {
+                if (isCompatibleWith(Compatibility.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
                 }
                 this.setOptionEnabled(NetworkRuleOption.App, true);
@@ -928,7 +928,7 @@ export class NetworkRule implements rule.IRule {
 
             // modificator supported by corelibs
             case 'network':
-                if (NetworkRule.compatibilityIncludes(Compatibility.extension)) {
+                if (isCompatibleWith(Compatibility.extension)) {
                     throw new SyntaxError(`Extension doesn't support $network modifier in rule "${this.ruleText}"`);
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
@@ -937,18 +937,6 @@ export class NetworkRule implements rule.IRule {
             default:
                 throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue} in rule ${this.ruleText}`);
         }
-    }
-
-    /**
-     * Checks compatibility
-     * @param compatibilityLevel
-     * @private
-     */
-    private static compatibilityIncludes(compatibilityLevel: Compatibility): boolean {
-        if (config.compatibility === null) {
-            return false;
-        }
-        return (config.compatibility & compatibilityLevel) === compatibilityLevel;
     }
 
     /**

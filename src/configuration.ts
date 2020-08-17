@@ -78,6 +78,18 @@ type Partial<T> = {
 // eslint-disable-next-line import/no-mutable-exports
 export let config = new Configuration();
 
+/**
+ * Checks config is compatible with input level
+ * @param compatibilityLevel
+ * @private
+ */
+export function isCompatibleWith(compatibilityLevel: Compatibility): boolean {
+    if (config.compatibility === null) {
+        return false;
+    }
+    return (config.compatibility & compatibilityLevel) === compatibilityLevel;
+}
+
 export const setConfiguration = (outerConfig: Partial<IConfiguration>): void => {
     config = new Configuration(outerConfig);
 };
