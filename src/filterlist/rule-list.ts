@@ -2,7 +2,6 @@ import { RuleScanner } from './scanner/rule-scanner';
 import { IRule } from '../rules/rule';
 import { StringLineReader } from './reader/string-line-reader';
 import { RuleFactory } from '../rules/rule-factory';
-import { logger } from '../utils/logger';
 import { ScannerType } from './scanner/scanner-type';
 
 /**
@@ -117,11 +116,6 @@ export class StringRuleList implements IRuleList {
             return null;
         }
 
-        try {
-            return RuleFactory.createRule(line, this.id);
-        } catch (e) {
-            logger.info(e.message);
-            return null;
-        }
+        return RuleFactory.createRule(line, this.id);
     }
 }

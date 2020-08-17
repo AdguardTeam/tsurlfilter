@@ -2,7 +2,6 @@ import { IndexedRule, IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
-import { logger } from '../../utils/logger';
 import { ScannerType } from './scanner-type';
 
 /**
@@ -94,14 +93,9 @@ export class RuleScanner {
             }
 
             if (line) {
-                let rule;
-                try {
-                    rule = RuleFactory.createRule(
-                        line, this.listId, this.ignoreNetwork, this.ignoreCosmetic, this.ignoreHost,
-                    );
-                } catch (e) {
-                    logger.info(e.message);
-                }
+                const rule = RuleFactory.createRule(
+                    line, this.listId, this.ignoreNetwork, this.ignoreCosmetic, this.ignoreHost,
+                );
 
                 if (rule && !this.isIgnored(rule)) {
                     this.currentRule = rule;
