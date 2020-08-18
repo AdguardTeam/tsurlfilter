@@ -68,4 +68,9 @@ describe('RuleValidator', () => {
         const ruleText = '/show?*&refer=$popup';
         expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
     });
+
+    it('validates webrtc rules', () => {
+        const ruleText = '$webrtc,domain=browserleaks.com';
+        expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+    });
 });

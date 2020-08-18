@@ -879,6 +879,12 @@ export class NetworkRule implements rule.IRule {
             case '~ping':
                 this.setRequestType(RequestType.Ping, false);
                 break;
+            case 'webrtc':
+                this.setRequestType(RequestType.Webrtc, true);
+                break;
+            case '~webrtc':
+                this.setRequestType(RequestType.Webrtc, false);
+                break;
 
             // Special modifiers
             case 'badfilter':
