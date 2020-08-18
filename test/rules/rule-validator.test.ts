@@ -58,4 +58,9 @@ describe('RuleValidator', () => {
             expect((RuleValidator.validate(invalidRule).valid)).toBeFalsy();
         }
     });
+
+    it('validates style presence in css modifying rules', () => {
+        const ruleText = 'iwantgames.ru#$#.article{ margin-top:0px!important; }';
+        expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+    });
 });

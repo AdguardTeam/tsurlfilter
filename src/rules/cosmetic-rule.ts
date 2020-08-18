@@ -429,7 +429,7 @@ export class CosmeticRule implements rule.IRule {
      */
     private static validateCssRules(ruleText: string, ruleContent: string): void {
         // Simple validation for css injection rules
-        if (!/ {.+}/.test(ruleContent)) {
+        if (!/{.+}/.test(ruleContent)) {
             throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
         }
         // discard css inject rules containing "url"
