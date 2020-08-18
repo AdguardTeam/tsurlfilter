@@ -27,9 +27,10 @@ export class RuleValidator {
     }
 
     private static validateRegexp(pattern: string, ruleText: string): void {
-        if (pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)) {
+        if (pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)
+            && pattern.endsWith(SimpleRegex.MASK_REGEX_RULE)) {
             try {
-                new RegExp(pattern);
+                new RegExp(pattern.slice(1, -1));
             } catch (e) {
                 throw new SyntaxError(`Rule has invalid regex pattern: "${ruleText}"`);
             }

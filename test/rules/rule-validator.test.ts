@@ -63,4 +63,9 @@ describe('RuleValidator', () => {
         const ruleText = 'iwantgames.ru#$#.article{ margin-top:0px!important; }';
         expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
     });
+
+    it('doesnt confuse url rules with regexp rules', () => {
+        const ruleText = '/show?*&refer=$popup';
+        expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+    });
 });
