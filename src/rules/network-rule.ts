@@ -910,7 +910,6 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
                 break;
 
-            // modifier supported by corelibs
             case 'app':
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
@@ -918,7 +917,6 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.App, true);
                 break;
 
-            // modifier supported by corelibs
             case 'network':
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError(`Extension doesn't support $network modifier in rule "${this.ruleText}"`);
@@ -926,8 +924,23 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
 
-            default:
-                throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue} in rule ${this.ruleText}`);
+            case 'extension':
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError(`Extension doesn't support $extension modifier in rule "${this.ruleText}"`);
+                }
+                this.setOptionEnabled(NetworkRuleOption.Extension, true);
+                break;
+            case '~extension':
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError(`Extension doesn't support $extension modifier in rule "${this.ruleText}"`);
+                }
+                this.setOptionEnabled(NetworkRuleOption.Extension, false);
+                break;
+
+            default: {
+                const modifierView = [optionName, optionValue].join('=');
+                throw new SyntaxError(`Unknown modifier: ${modifierView} in rule ${this.ruleText}`);
+            }
         }
     }
 
