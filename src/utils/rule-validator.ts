@@ -44,12 +44,12 @@ export class RuleValidator {
     public static validate(rawRule: string): ValidationResult {
         const ruleText = rawRule.trim();
 
-        if (RuleFactory.isShort(ruleText)) {
-            return RuleValidator.createValidationResult(false, `Rule is too short: ${ruleText}`);
+        if (!ruleText || RuleFactory.isComment(ruleText)) {
+            return RuleValidator.createValidationResult(true);
         }
 
-        if (RuleFactory.isComment(ruleText)) {
-            return RuleValidator.createValidationResult(true);
+        if (RuleFactory.isShort(ruleText)) {
+            return RuleValidator.createValidationResult(false, `Rule is too short: ${ruleText}`);
         }
 
         if (RuleFactory.isCosmetic(ruleText)) {

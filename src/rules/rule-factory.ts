@@ -74,6 +74,9 @@ export class RuleFactory {
      * Checks if rule is short
      */
     public static isShort(rule: string): boolean {
+        if (!rule) {
+            return true;
+        }
         return !!(rule && rule.length <= 3);
     }
 
