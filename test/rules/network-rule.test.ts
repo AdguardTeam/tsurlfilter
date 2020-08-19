@@ -227,9 +227,6 @@ describe('NetworkRule constructor', () => {
         checkRequestType('object', RequestType.Object, true);
         checkRequestType('~object', RequestType.Object, false);
 
-        checkRequestType('object', RequestType.Object, true);
-        checkRequestType('~object', RequestType.Object, false);
-
         checkRequestType('image', RequestType.Image, true);
         checkRequestType('~image', RequestType.Image, false);
 

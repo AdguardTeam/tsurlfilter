@@ -32,15 +32,15 @@ describe('RuleValidator', () => {
     it('validates by compatibility', () => {
         setConfiguration({ compatibility: CompatibilityTypes.extension });
         const invalidExtensionRule = '@@||test.com^$generichide,app=iexplore.exe';
-        expect((RuleValidator.validate(invalidExtensionRule).valid)).toBeFalsy();
+        expect(RuleValidator.validate(invalidExtensionRule).valid).toBeFalsy();
 
         setConfiguration({ compatibility: CompatibilityTypes.corelibs });
         const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
-        expect((RuleValidator.validate(validCompilerRule).valid)).toBeTruthy();
+        expect(RuleValidator.validate(validCompilerRule).valid).toBeTruthy();
 
         setConfiguration({ compatibility: CompatibilityTypes.corelibs | CompatibilityTypes.extension });
         const validCompilerRule2 = '@@||test.com^$generichide,app=iexplore.exe';
-        expect((RuleValidator.validate(validCompilerRule2).valid)).toBeFalsy();
+        expect(RuleValidator.validate(validCompilerRule2).valid).toBeFalsy();
     });
 
     it('validates regexp\'s', () => {
@@ -55,27 +55,32 @@ describe('RuleValidator', () => {
 
         for (let i = 0; i < invalidRules.length; i += 1) {
             const invalidRule = invalidRules[i];
-            expect((RuleValidator.validate(invalidRule).valid)).toBeFalsy();
+            expect(RuleValidator.validate(invalidRule).valid).toBeFalsy();
         }
     });
 
     it('validates style presence in css modifying rules', () => {
         const ruleText = 'iwantgames.ru#$#.article{ margin-top:0px!important; }';
-        expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
     it('doesnt confuse url rules with regexp rules', () => {
         const ruleText = '/show?*&refer=$popup';
-        expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
     it('validates rules $webrtc modifier', () => {
         const ruleText = '$webrtc,domain=browserleaks.com';
-        expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
     it('invalidates rules with $protobuf modifier', () => {
         const ruleText = '||googleapis.com/youtubei/v1/browse?$important,protobuf=62887855|49413586|51621377';
-        expect((RuleValidator.validate(ruleText).valid)).toBeFalsy();
+        expect(RuleValidator.validate(ruleText).valid).toBeFalsy();
+    });
+
+    it('correctly validates html rules', () => {
+        const ruleText = 'animalog.biz$$script[tag-content="window["open"]("about:blank")"][max-length="4200"]';
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 });
