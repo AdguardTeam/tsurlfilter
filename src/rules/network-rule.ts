@@ -11,6 +11,7 @@ import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
+import { AppModifier } from '../modifiers/app-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -69,10 +70,8 @@ export enum NetworkRuleOption {
     RemoveParam = 1 << 19,
 
     // Compatibility dependent
-    /** $app modifier */
-    App = 1 << 20,
     /** $network modifier */
-    Network = 1 << 21,
+    Network = 1 << 20,
 
     // Groups (for validation)
 
@@ -155,6 +154,10 @@ export class NetworkRule implements rule.IRule {
 
     private restrictedDomains: string[] | null = null;
 
+    private permittedApps: string[] | null = null;
+
+    private restrictedApps: string[] | null = null;
+
     /** Flag with all enabled rule options */
     private enabledOptions: NetworkRuleOption = 0;
 
@@ -231,6 +234,22 @@ export class NetworkRule implements rule.IRule {
      */
     getRestrictedDomains(): string[] | null {
         return this.restrictedDomains;
+    }
+
+    /**
+     * Gets list of permitted domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+     */
+    getPermittedApps(): string[] | null {
+        return this.permittedApps;
+    }
+
+    /**
+     * Gets list of restricted domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+     */
+    getRestrictedApps(): string[] | null {
+        return this.restrictedApps;
     }
 
     /** Flag with all permitted request types. 0 means ALL. */
@@ -357,6 +376,13 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Checks if rule has permitted apps
+     */
+    private hasPermittedApps(): boolean {
+        return this.permittedApps !== null && this.permittedApps.length > 0;
+    }
+
+    /**
      * matchRequestType checks if the request's type matches the rule properties
      * @param requestType - request type to check.
      */
@@ -462,7 +488,7 @@ export class NetworkRule implements rule.IRule {
             // Except cookie and removeparam rules, they have their own atmosphere
             if (!(this.advancedModifier instanceof CookieModifier)
                 && !(this.advancedModifier instanceof RemoveParamModifier)) {
-                if (!this.hasPermittedDomains()) {
+                if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
                     // eslint-disable-next-line max-len
@@ -921,12 +947,20 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
                 break;
 
-            case 'app':
+            case 'app': {
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
                 }
-                this.setOptionEnabled(NetworkRuleOption.App, true);
+                let appModifier;
+                try {
+                    appModifier = new AppModifier(optionValue);
+                } catch (e) {
+                    throw new SyntaxError(`Error: "${e.message}" in the rule: "${this.ruleText}"`);
+                }
+                this.permittedApps = appModifier.permittedApps;
+                this.restrictedApps = appModifier.restrictedApps;
                 break;
+            }
 
             case 'network':
                 if (isCompatibleWith(CompatibilityTypes.extension)) {

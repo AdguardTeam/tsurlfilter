@@ -146,6 +146,23 @@ describe('NetworkRule constructor', () => {
         }).toThrowError(/The rule is too wide,.*/);
     });
 
+    it('doesnt consider rules with app modifier too wide', () => {
+        const rule = new NetworkRule('@@*$app=com.cinemark.mobile', 0);
+        expect(rule).toBeTruthy();
+    });
+
+    it('handles restricted apps', () => {
+        const rule = new NetworkRule('||baddomain.com^$app=org.good.app|~org.bad.app', 0);
+        expect(rule.getRestrictedApps()).toContain('org.bad.app');
+        expect(rule.getPermittedApps()).toContain('org.good.app');
+    });
+
+    it('throws error if app modifier is empty', () => {
+        expect(() => {
+            new NetworkRule('||baddomain.com^$app', 0);
+        }).toThrow('Apps cannot be empty');
+    });
+
     it('works when it handles wide rules with $domain properly', () => {
         const rule = new NetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);
