@@ -119,13 +119,13 @@ describe('NetworkRule constructor', () => {
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=', 0);
-        }).toThrowError(/domains cannot be empty/);
+        }).toThrow('Domains cannot be empty');
     });
 
     it('works when it handles empty domain inside a $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=example.com|', 0);
-        }).toThrowError(/empty domain specified.*/);
+        }).toThrow('Empty domain specified');
     });
 
     it('works when it handles too wide rules properly', () => {

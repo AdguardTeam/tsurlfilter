@@ -69,8 +69,13 @@ describe('RuleValidator', () => {
         expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
     });
 
-    it('validates webrtc rules', () => {
+    it('validates rules $webrtc modifier', () => {
         const ruleText = '$webrtc,domain=browserleaks.com';
         expect((RuleValidator.validate(ruleText).valid)).toBeTruthy();
+    });
+
+    it('invalidates rules with $protobuf modifier', () => {
+        const ruleText = '||googleapis.com/youtubei/v1/browse?$important,protobuf=62887855|49413586|51621377';
+        expect((RuleValidator.validate(ruleText).valid)).toBeFalsy();
     });
 });

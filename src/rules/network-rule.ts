@@ -760,7 +760,12 @@ export class NetworkRule implements rule.IRule {
 
             // $domain modifier
             case 'domain': {
-                const domainModifier = new DomainModifier(optionValue, '|');
+                let domainModifier;
+                try {
+                    domainModifier = new DomainModifier(optionValue, '|');
+                } catch (e) {
+                    throw new SyntaxError(`Error: "${e.message}" in the rule: "${this.ruleText}"`);
+                }
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
                 break;

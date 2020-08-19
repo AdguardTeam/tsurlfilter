@@ -287,7 +287,12 @@ export class CosmeticRule implements rule.IRule {
             // This means that the marker is preceded by the list of domains
             // Now it's a good time to parse them.
             const domains = ruleText.substring(0, index);
-            const domainModifier = new DomainModifier(domains, ',');
+            let domainModifier;
+            try {
+                domainModifier = new DomainModifier(domains, ',');
+            } catch (e) {
+                throw new SyntaxError(`Error: "${e.message}" in the rule: "${ruleText}"`);
+            }
             this.permittedDomains = domainModifier.permittedDomains;
             this.restrictedDomains = domainModifier.restrictedDomains;
         }
