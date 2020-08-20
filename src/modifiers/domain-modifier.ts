@@ -32,7 +32,7 @@ export class DomainModifier {
      */
     constructor(domains: string, sep: string) {
         if (!domains) {
-            throw new SyntaxError('Domains cannot be empty');
+            throw new SyntaxError('Modifier $domain cannot be empty');
         }
 
         const permittedDomains: string[] = [];

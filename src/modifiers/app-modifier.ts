@@ -33,7 +33,7 @@ export class AppModifier implements IAppModifier {
      */
     constructor(apps: string) {
         if (!apps) {
-            throw new SyntaxError('Apps cannot be empty');
+            throw new SyntaxError('$app modifier cannot be empty');
         }
 
         const permittedApps: string[] = [];

@@ -78,7 +78,7 @@ describe('NetworkRule.parseRuleText', () => {
     it('works when it handles incorrect rules properly', () => {
         expect(() => {
             NetworkRule.parseRuleText('@@');
-        }).toThrowError(/The rule is too short:.+/);
+        }).toThrow(new SyntaxError('Rule is too short'));
     });
 });
 
@@ -95,58 +95,55 @@ describe('NetworkRule constructor', () => {
         expect(rule.isGeneric()).toEqual(true);
     });
 
-    it('works when it handles unknown modifiers properly', () => {
+    it('handles unknown modifiers properly', () => {
+        const unknownModifier = 'unknown';
         expect(() => {
-            new NetworkRule('||example.org^$unknown', 0);
-        }).toThrowError(/Unknown modifier:.+/);
+            new NetworkRule(`||example.org^$${unknownModifier}`, 0);
+        }).toThrow(new SyntaxError(`Unknown modifier: ${unknownModifier}`));
     });
 
-    it('works when it handles whitelist-only modifiers properly', () => {
+    it('throws error if whitelist-only modifier used in blacklist rule - $generichide', () => {
         expect(() => {
             new NetworkRule('||example.org^$generichide', 0);
-        }).toThrowError(/.* cannot be used in blacklist rule.+/);
+        }).toThrow('cannot be used in blacklist rule');
     });
 
-    it('works when it handles whitelist-only modifiers properly', () => {
+    it('throws error if whitelist-only modifier used in blacklist rule - $elemhide', () => {
         expect(() => {
             new NetworkRule('||example.org^$elemhide', 0);
-        }).toThrowError(/.* cannot be used in blacklist rule.+/);
+        }).toThrowError('cannot be used in blacklist rule');
     });
 
-    it('works when it handles blacklist-only modifiers properly', () => {
+    it('throws error if blacklist-only modifiers used in whitelist rule - $empty', () => {
         expect(() => {
             new NetworkRule('@@||example.org^$empty', 0);
-        }).toThrowError(/.* cannot be used in whitelist rule.+/);
+        }).toThrowError('cannot be used in whitelist rule');
     });
 
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=', 0);
-        }).toThrow('Domains cannot be empty');
+        }).toThrow(new Error('Modifier $domain cannot be empty'));
     });
 
     it('works when it handles empty domain inside a $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=example.com|', 0);
-        }).toThrow('Empty domain specified');
+        }).toThrow('Empty domain specified in');
     });
 
     it('works when it handles too wide rules properly', () => {
         expect(() => {
             new NetworkRule('*$third-party', 0);
-        }).toThrowError(/The rule is too wide,.*/);
-    });
+        }).toThrow(new Error('The rule is too wide'));
 
-    it('works when it handles too wide rules properly', () => {
         expect(() => {
             new NetworkRule('$third-party', 0);
-        }).toThrowError(/The rule is too wide,.*/);
-    });
+        }).toThrowError('The rule is too wide');
 
-    it('works when it handles too wide rules properly', () => {
         expect(() => {
             new NetworkRule('ad$third-party', 0);
-        }).toThrowError(/The rule is too wide,.*/);
+        }).toThrowError('The rule is too wide');
     });
 
     it('doesnt consider rules with app modifier too wide', () => {
@@ -163,7 +160,7 @@ describe('NetworkRule constructor', () => {
     it('throws error if app modifier is empty', () => {
         expect(() => {
             new NetworkRule('||baddomain.com^$app', 0);
-        }).toThrow('Apps cannot be empty');
+        }).toThrow(new SyntaxError('$app modifier cannot be empty'));
     });
 
     it('works when it handles wide rules with $domain properly', () => {

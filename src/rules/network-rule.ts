@@ -507,7 +507,7 @@ export class NetworkRule implements rule.IRule {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
                     // eslint-disable-next-line max-len
-                    throw new SyntaxError(`The rule is too wide, add domain restriction or make the pattern more specific: ${ruleText}`);
+                    throw new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific');
                 }
             }
         }
@@ -735,13 +735,13 @@ export class NetworkRule implements rule.IRule {
         if (!skipRestrictions) {
             if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
                 throw new SyntaxError(
-                    `modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule ${this.ruleText}`,
+                    `Modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule`,
                 );
             }
 
             if (!this.whitelist && (option & NetworkRuleOption.WhitelistOnly) === option) {
                 throw new SyntaxError(
-                    `modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule ${this.ruleText}`,
+                    `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
                 );
             }
         }
@@ -801,12 +801,7 @@ export class NetworkRule implements rule.IRule {
 
             // $domain modifier
             case 'domain': {
-                let domainModifier;
-                try {
-                    domainModifier = new DomainModifier(optionValue, '|');
-                } catch (e) {
-                    throw new SyntaxError(`Error: "${e.message}" in the rule: "${this.ruleText}"`);
-                }
+                const domainModifier = new DomainModifier(optionValue, '|');
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
                 break;
@@ -964,39 +959,38 @@ export class NetworkRule implements rule.IRule {
 
             case 'app': {
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
-                    throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
+                    throw new SyntaxError('Extension doesn\'t support $app modifier');
                 }
-                try {
-                    this.appModifier = new AppModifier(optionValue);
-                } catch (e) {
-                    throw new SyntaxError(`Error: "${e.message}" in the rule: "${this.ruleText}"`);
-                }
+                this.appModifier = new AppModifier(optionValue);
                 break;
             }
 
             case 'network':
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
-                    throw new SyntaxError(`Extension doesn't support $network modifier in rule "${this.ruleText}"`);
+                    throw new SyntaxError('Extension doesn\'t support $network modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
 
             case 'extension':
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
-                    throw new SyntaxError(`Extension doesn't support $extension modifier in rule "${this.ruleText}"`);
+                    throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, true);
                 break;
             case '~extension':
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
-                    throw new SyntaxError(`Extension doesn't support $extension modifier in rule "${this.ruleText}"`);
+                    throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, false);
                 break;
 
             default: {
-                const modifierView = [optionName, optionValue].join('=');
-                throw new SyntaxError(`Unknown modifier: ${modifierView} in rule ${this.ruleText}`);
+                // clear empty values
+                const modifierView = [optionName, optionValue]
+                    .filter((i) => i)
+                    .join('=');
+                throw new SyntaxError(`Unknown modifier: ${modifierView}`);
             }
         }
     }
@@ -1019,7 +1013,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (ruleText.length <= startIndex) {
-            throw new SyntaxError(`The rule is too short: ${ruleText}`);
+            throw new SyntaxError('Rule is too short');
         }
 
         // Setting pattern to rule text (for the case of empty options)

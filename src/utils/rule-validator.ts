@@ -52,20 +52,19 @@ export class RuleValidator {
             return RuleValidator.createValidationResult(false, `Rule is too short: ${ruleText}`);
         }
 
-        if (RuleFactory.isCosmetic(ruleText)) {
-            try {
+        try {
+            // Validate cosmetic rules
+            if (RuleFactory.isCosmetic(ruleText)) {
                 new CosmeticRule(ruleText, 0);
                 return RuleValidator.createValidationResult(true);
-            } catch (e) {
-                return RuleValidator.createValidationResult(false, e.message);
             }
-        }
 
-        try {
+            // Validate network rules
             const rule = new NetworkRule(ruleText, 0);
             RuleValidator.validateRegexp(rule.getPattern(), rule.getText());
         } catch (e) {
-            return RuleValidator.createValidationResult(false, e.message);
+            const errorMessage = `Error: "${e.message}" in the rule: "${ruleText}"`;
+            return RuleValidator.createValidationResult(false, errorMessage);
         }
 
         return RuleValidator.createValidationResult(true);

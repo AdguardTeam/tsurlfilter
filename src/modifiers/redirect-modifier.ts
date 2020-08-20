@@ -37,12 +37,12 @@ export class RedirectModifier implements IAdvancedModifier {
      */
     private static validate(ruleText: string, redirectTitle: string): void {
         if (!redirectTitle) {
-            throw new Error(`Invalid $redirect rule: Redirect value must not be empty: ${ruleText}`);
+            throw new SyntaxError('Invalid $redirect rule, redirect value must not be empty');
         }
 
         const { redirects } = Scriptlets;
         if (!redirects.isAdgRedirectRule(ruleText) || !redirects.isValidAdgRedirectRule(ruleText)) {
-            throw new Error(`Rule redirect modifier is invalid: ${ruleText}`);
+            throw new SyntaxError('$redirect modifier is invalid');
         }
     }
 }
