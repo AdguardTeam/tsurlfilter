@@ -76,7 +76,7 @@ export class Application {
         };
 
         TSUrlFilter.setConfiguration(config);
-        this.engine = new TSUrlFilter.Engine(ruleStorage, config);
+        this.engine = new TSUrlFilter.Engine(ruleStorage);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
         this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
         this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
