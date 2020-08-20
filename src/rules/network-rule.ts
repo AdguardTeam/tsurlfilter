@@ -183,6 +183,10 @@ export class NetworkRule implements rule.IRule {
         return this.filterListId;
     }
 
+    /**
+     * Returns rule pattern,
+     * which currently is used only in the rule validator module
+     */
     getPattern(): string {
         return this.pattern;
     }

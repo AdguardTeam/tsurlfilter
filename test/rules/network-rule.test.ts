@@ -1,6 +1,9 @@
 /* eslint-disable max-len */
 import {
-    Request, RequestType, NetworkRuleOption, NetworkRule,
+    NetworkRule,
+    NetworkRuleOption,
+    Request,
+    RequestType,
 } from '../../src';
 
 describe('NetworkRule.parseRuleText', () => {
@@ -218,6 +221,11 @@ describe('NetworkRule constructor', () => {
         checkModifier('popup', NetworkRuleOption.Popup, true, true);
         checkModifier('empty', NetworkRuleOption.Empty, true);
         checkModifier('mp4', NetworkRuleOption.Mp4, true);
+
+        checkModifier('extension', NetworkRuleOption.Extension, true);
+        checkModifier('~extension', NetworkRuleOption.Extension, false);
+
+        checkModifier('network', NetworkRuleOption.Network, true);
     });
 
     function checkRequestType(name: string, requestType: RequestType, permitted: boolean): void {
@@ -264,6 +272,9 @@ describe('NetworkRule constructor', () => {
 
         checkRequestType('ping', RequestType.Ping, true);
         checkRequestType('~ping', RequestType.Ping, false);
+
+        checkRequestType('webrtc', RequestType.Webrtc, true);
+        checkRequestType('~webrtc', RequestType.Webrtc, false);
     });
 
     function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
