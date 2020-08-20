@@ -473,6 +473,16 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Checks if pattern has spaces
+     * Used in order to do not create network rules from host rules
+     * @param pattern
+     * @private
+     */
+    private static hasSpaces(pattern: string): boolean {
+        return pattern.indexOf(' ') > -1;
+    }
+
+    /**
      * Creates an instance of the {@link NetworkRule}.
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
@@ -489,6 +499,10 @@ export class NetworkRule implements rule.IRule {
         const ruleParts = NetworkRule.parseRuleText(ruleText);
         this.pattern = ruleParts.pattern!;
         this.whitelist = !!ruleParts.whitelist;
+
+        if (this.pattern && NetworkRule.hasSpaces(this.pattern)) {
+            throw new SyntaxError('Rule has spaces, seems to be an host rule');
+        }
 
         if (ruleParts.options) {
             this.loadOptions(ruleParts.options);

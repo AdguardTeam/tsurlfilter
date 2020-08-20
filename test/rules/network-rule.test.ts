@@ -132,18 +132,25 @@ describe('NetworkRule constructor', () => {
         }).toThrow('Empty domain specified in');
     });
 
+    it('throws error if host rule is provided', () => {
+        expect(() => {
+            const hostRule = '209.237.226.90  www.opensource.org';
+            new NetworkRule(hostRule, 0);
+        }).toThrow(new SyntaxError('Rule has spaces, seems to be an host rule'));
+    });
+
     it('works when it handles too wide rules properly', () => {
         expect(() => {
             new NetworkRule('*$third-party', 0);
-        }).toThrow(new Error('The rule is too wide'));
+        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
 
         expect(() => {
             new NetworkRule('$third-party', 0);
-        }).toThrowError('The rule is too wide');
+        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
 
         expect(() => {
             new NetworkRule('ad$third-party', 0);
-        }).toThrowError('The rule is too wide');
+        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
     });
 
     it('doesnt consider rules with app modifier too wide', () => {

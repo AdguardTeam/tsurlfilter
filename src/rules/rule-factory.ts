@@ -42,15 +42,11 @@ export class RuleFactory {
                 return new CosmeticRule(line, filterListId);
             }
 
-            const hostRule = RuleFactory.createHostRule(line, filterListId);
-            if (!ignoreHost && hostRule) {
-                return hostRule;
-            }
-
-            // Here host rule also serves as a check for creating network rules
-            // If we were able to create host rule, there is no need to create network rules
-            if (ignoreHost && hostRule) {
-                return null;
+            if (!ignoreHost) {
+                const hostRule = RuleFactory.createHostRule(line, filterListId);
+                if (hostRule) {
+                    return hostRule;
+                }
             }
 
             if (!ignoreNetwork) {
