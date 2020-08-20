@@ -34,6 +34,19 @@ describe('RuleFactory Builder Test', () => {
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(HostRule);
     });
+
+    it('respects ignore flags', () => {
+        let rule;
+
+        rule = RuleFactory.createRule('##.banner', 1, false, true);
+        expect(rule).toBeFalsy();
+
+        rule = RuleFactory.createRule('||example.org^', 1, true);
+        expect(rule).toBeFalsy();
+
+        rule = RuleFactory.createRule('127.0.0.1 localhost', 1, false, false, true);
+        expect(rule).toBeFalsy();
+    });
 });
 
 describe('RuleFactory isCosmetic', () => {
