@@ -1,3 +1,8 @@
+export interface IAppModifier {
+    permittedApps: string[] | null;
+    restrictedApps: string[] | null;
+}
+
 /**
  * This is a helper class that is used specifically to work with app restrictions.
  *
@@ -7,7 +12,7 @@
  * ||baddomain.com^$app=org.example.app
  * ||baddomain.com^$app=org.example.app1|org.example.app2
  */
-export class AppModifier {
+export class AppModifier implements IAppModifier {
     /** list of permitted apps or null */
     public readonly permittedApps: string[] | null;
 

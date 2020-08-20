@@ -11,7 +11,7 @@ import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
-import { AppModifier } from '../modifiers/app-modifier';
+import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -154,10 +154,6 @@ export class NetworkRule implements rule.IRule {
 
     private restrictedDomains: string[] | null = null;
 
-    private permittedApps: string[] | null = null;
-
-    private restrictedApps: string[] | null = null;
-
     /** Flag with all enabled rule options */
     private enabledOptions: NetworkRuleOption = 0;
 
@@ -174,6 +170,11 @@ export class NetworkRule implements rule.IRule {
      * Rule Advanced modifier
      */
     private advancedModifier: IAdvancedModifier | null = null;
+
+    /**
+     * Rule App modifier
+     */
+    private appModifier: IAppModifier | null = null;
 
     getText(): string {
         return this.ruleText;
@@ -245,7 +246,10 @@ export class NetworkRule implements rule.IRule {
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
      */
     getPermittedApps(): string[] | null {
-        return this.permittedApps;
+        if (this.appModifier) {
+            return this.appModifier.permittedApps;
+        }
+        return null;
     }
 
     /**
@@ -253,7 +257,10 @@ export class NetworkRule implements rule.IRule {
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
      */
     getRestrictedApps(): string[] | null {
-        return this.restrictedApps;
+        if (this.appModifier) {
+            return this.appModifier.restrictedApps;
+        }
+        return null;
     }
 
     /** Flag with all permitted request types. 0 means ALL. */
@@ -383,7 +390,11 @@ export class NetworkRule implements rule.IRule {
      * Checks if rule has permitted apps
      */
     private hasPermittedApps(): boolean {
-        return this.permittedApps !== null && this.permittedApps.length > 0;
+        if (!this.appModifier) {
+            return false;
+        }
+
+        return this.appModifier!.permittedApps !== null && this.appModifier!.permittedApps.length > 0;
     }
 
     /**
@@ -955,14 +966,11 @@ export class NetworkRule implements rule.IRule {
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError(`Extension doesn't support $app modifier in rule "${this.ruleText}"`);
                 }
-                let appModifier;
                 try {
-                    appModifier = new AppModifier(optionValue);
+                    this.appModifier = new AppModifier(optionValue);
                 } catch (e) {
                     throw new SyntaxError(`Error: "${e.message}" in the rule: "${this.ruleText}"`);
                 }
-                this.permittedApps = appModifier.permittedApps;
-                this.restrictedApps = appModifier.restrictedApps;
                 break;
             }
 
