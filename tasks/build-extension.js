@@ -1,7 +1,7 @@
 const fs = require('fs-extra');
 
 const EXTENSION_SRC = './sample-extension/';
-const TSURLFILTER_DIST = './dist/tsurlfilter.es5.js';
+const TSURLFILTER_DIST = './dist/tsurlfilter.esm.js';
 const TSURLFILTER_CONTENT_SCRIPT_DIST = './dist/TSUrlFilterContentScript.js';
 const EXTENSION_DIST = './dist-extension/';
 
