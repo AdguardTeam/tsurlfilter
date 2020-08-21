@@ -249,13 +249,13 @@ describe('NetworkRule - redirect rules', () => {
     it('works if it throws empty redirect rule', () => {
         expect(() => {
             new NetworkRule('example.org/ads.js$script,redirect', 0);
-        }).toThrowError(/Redirect value must not be empty:*/);
+        }).toThrow(new SyntaxError('Invalid $redirect rule, redirect value must not be empty'));
     });
 
     it('works if it throws incorrect rule', () => {
         expect(() => {
             new NetworkRule('example.org/ads.js$script,redirect=space', 0);
-        }).toThrowError(/Rule redirect modifier is invalid:*/);
+        }).toThrow(new SyntaxError('$redirect modifier is invalid'));
     });
 });
 

@@ -2,7 +2,7 @@ import { Engine } from '../../src/engine/engine';
 import { Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { config } from '../../src/configuration';
+import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
 
 describe('TestEngineMatchRequest', () => {
@@ -41,7 +41,7 @@ describe('TestEngine - postponed load rules', () => {
     const ruleStorage = new RuleStorage([list]);
 
     it('works rules are loaded', () => {
-        const engine = new Engine(ruleStorage, undefined, true);
+        const engine = new Engine(ruleStorage, true);
 
         expect(engine.getRulesCount()).toBe(0);
 
@@ -51,7 +51,7 @@ describe('TestEngine - postponed load rules', () => {
     });
 
     it('works rules are loaded async', async () => {
-        const engine = new Engine(ruleStorage, undefined, true);
+        const engine = new Engine(ruleStorage, true);
 
         expect(engine.getRulesCount()).toBe(0);
 
@@ -64,11 +64,13 @@ describe('TestEngine - postponed load rules', () => {
 describe('TestEngine - configuration', () => {
     const rules = ['||example.org^$third-party'];
     const list = new StringRuleList(1, rules.join('\n'), false);
-    new Engine(new RuleStorage([list]), {
+    setConfiguration({
         engine: 'test-engine',
         version: 'test-version',
         verbose: true,
     });
+
+    new Engine(new RuleStorage([list]));
 
     expect(config.engine).toBe('test-engine');
     expect(config.version).toBe('test-version');

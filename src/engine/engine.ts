@@ -5,7 +5,6 @@ import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
 import { RuleStorage } from '../filterlist/rule-storage';
 import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
-import { config, IConfiguration } from '../configuration';
 import { CosmeticOption } from './cosmetic-option';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { IndexedStorageRule } from '../rules/rule';
@@ -35,17 +34,10 @@ export class Engine {
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
-     * @param configuration optional configuration
      * @param skipStorageScan create an instance without storage scanning
      * @throws
      */
-    constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined, skipStorageScan = false) {
-        if (configuration) {
-            config.engine = configuration.engine;
-            config.version = configuration.version;
-            config.verbose = configuration.verbose;
-        }
-
+    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
@@ -123,7 +115,7 @@ export class Engine {
     /**
      * Gets rules count
      */
-    getRulesCount() {
+    getRulesCount(): number {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 

@@ -10,6 +10,8 @@ import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
+import { CompatibilityTypes, isCompatibleWith } from '../configuration';
+import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -66,6 +68,10 @@ export enum NetworkRuleOption {
     Badfilter = 1 << 18,
     /** $removeparam modifier */
     RemoveParam = 1 << 19,
+
+    // Compatibility dependent
+    /** $network modifier */
+    Network = 1 << 20,
 
     // Groups (for validation)
 
@@ -165,12 +171,25 @@ export class NetworkRule implements rule.IRule {
      */
     private advancedModifier: IAdvancedModifier | null = null;
 
+    /**
+     * Rule App modifier
+     */
+    private appModifier: IAppModifier | null = null;
+
     getText(): string {
         return this.ruleText;
     }
 
     getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns rule pattern,
+     * which currently is used only in the rule validator module
+     */
+    getPattern(): string {
+        return this.pattern;
     }
 
     /**
@@ -220,6 +239,28 @@ export class NetworkRule implements rule.IRule {
      */
     getRestrictedDomains(): string[] | null {
         return this.restrictedDomains;
+    }
+
+    /**
+     * Gets list of permitted domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+     */
+    getPermittedApps(): string[] | null {
+        if (this.appModifier) {
+            return this.appModifier.permittedApps;
+        }
+        return null;
+    }
+
+    /**
+     * Gets list of restricted domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+     */
+    getRestrictedApps(): string[] | null {
+        if (this.appModifier) {
+            return this.appModifier.restrictedApps;
+        }
+        return null;
     }
 
     /** Flag with all permitted request types. 0 means ALL. */
@@ -346,6 +387,17 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Checks if rule has permitted apps
+     */
+    private hasPermittedApps(): boolean {
+        if (!this.appModifier) {
+            return false;
+        }
+
+        return this.appModifier!.permittedApps !== null && this.appModifier!.permittedApps.length > 0;
+    }
+
+    /**
      * matchRequestType checks if the request's type matches the rule properties
      * @param requestType - request type to check.
      */
@@ -421,6 +473,16 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Checks if pattern has spaces
+     * Used in order to do not create network rules from host rules
+     * @param pattern
+     * @private
+     */
+    private static hasSpaces(pattern: string): boolean {
+        return pattern.indexOf(' ') > -1;
+    }
+
+    /**
      * Creates an instance of the {@link NetworkRule}.
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
@@ -438,6 +500,10 @@ export class NetworkRule implements rule.IRule {
         this.pattern = ruleParts.pattern!;
         this.whitelist = !!ruleParts.whitelist;
 
+        if (this.pattern && NetworkRule.hasSpaces(this.pattern)) {
+            throw new SyntaxError('Rule has spaces, seems to be an host rule');
+        }
+
         if (ruleParts.options) {
             this.loadOptions(ruleParts.options);
         }
@@ -451,7 +517,7 @@ export class NetworkRule implements rule.IRule {
             // Except cookie and removeparam rules, they have their own atmosphere
             if (!(this.advancedModifier instanceof CookieModifier)
                 && !(this.advancedModifier instanceof RemoveParamModifier)) {
-                if (!this.hasPermittedDomains()) {
+                if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
                     // eslint-disable-next-line max-len
@@ -683,13 +749,13 @@ export class NetworkRule implements rule.IRule {
         if (!skipRestrictions) {
             if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
                 throw new SyntaxError(
-                    `modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule ${this.ruleText}`,
+                    `Modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule`,
                 );
             }
 
             if (!this.whitelist && (option & NetworkRuleOption.WhitelistOnly) === option) {
                 throw new SyntaxError(
-                    `modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule ${this.ruleText}`,
+                    `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
                 );
             }
         }
@@ -868,6 +934,12 @@ export class NetworkRule implements rule.IRule {
             case '~ping':
                 this.setRequestType(RequestType.Ping, false);
                 break;
+            case 'webrtc':
+                this.setRequestType(RequestType.Webrtc, true);
+                break;
+            case '~webrtc':
+                this.setRequestType(RequestType.Webrtc, false);
+                break;
 
             // Special modifiers
             case 'badfilter':
@@ -899,8 +971,41 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
                 break;
 
-            default:
-                throw new SyntaxError(`Unknown modifier: ${optionName}=${optionValue} in rule ${this.ruleText}`);
+            case 'app': {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $app modifier');
+                }
+                this.appModifier = new AppModifier(optionValue);
+                break;
+            }
+
+            case 'network':
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $network modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Network, true);
+                break;
+
+            case 'extension':
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $extension modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Extension, true);
+                break;
+            case '~extension':
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $extension modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Extension, false);
+                break;
+
+            default: {
+                // clear empty values
+                const modifierView = [optionName, optionValue]
+                    .filter((i) => i)
+                    .join('=');
+                throw new SyntaxError(`Unknown modifier: ${modifierView}`);
+            }
         }
     }
 
@@ -922,7 +1027,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (ruleText.length <= startIndex) {
-            throw new SyntaxError(`The rule is too short: ${ruleText}`);
+            throw new SyntaxError('Rule is too short');
         }
 
         // Setting pattern to rule text (for the case of empty options)

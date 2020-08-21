@@ -17,6 +17,7 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
             *   [StealthService](#stealth-service)
             *   [RedirectsService](#redirect-service)
             *   [CookieFiltering](#cookie-filtering)
+            *   [RuleValidator](#rule-validator)
         *   [Content script classes](#content-script-classes)
             *   [CssHitsCounter](#css-hits-counter)
             *   [CookieController](#cookie-controller)
@@ -97,7 +98,9 @@ Engine is a main class of this library. It represents the filtering functionalit
         verbose: true,
     };
 
-    const engine = new Engine(ruleStorage, config);
+    setConfiguration(config)
+
+    const engine = new Engine(ruleStorage);
 ```
 
 ##### Matching requests
@@ -423,6 +426,28 @@ Check `CookieApi` and `RulesFinder` interfaces
      * @param rules
      */
     getBlockingRules(rules: NetworkRule[]): NetworkRule[];
+```
+
+#### <a id="rule-validator"></a> RuleValidator
+This module is not used in the engine directly, but it can be used to validate filter rules in other libraries or tools
+
+##### Public methods
+```
+    /**
+     * Validates raw rule string
+     * @param rawRule
+     */
+    public static validate(rawRule: string): ValidationResult
+```
+```
+    /**
+    * Valid true - means that the rule is valid, otherwise rule is not valid
+    * If rule is not valid, reason is returned in the error field
+    */
+    interface ValidationResult {
+        valid: boolean;
+        error: string | null;
+    }
 ```
 
 #### <a id="content-script-classes"></a> Content script classes

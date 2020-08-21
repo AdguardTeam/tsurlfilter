@@ -15,3 +15,5 @@ export * from './filtering-log';
 export * from './engine/cosmetic-option';
 export * from './stealth/stealth-service';
 export * from './utils/logger';
+export * from './rules/rule-factory';
+export * from './utils/rule-validator';

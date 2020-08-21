@@ -1,5 +1,11 @@
+import Scriptlets from 'scriptlets';
 import * as rule from './rule';
-import { CosmeticRuleMarker, findCosmeticRuleMarker, isExtCssMarker } from './cosmetic-rule-marker';
+import {
+    CosmeticRuleMarker,
+    findCosmeticRuleMarker,
+    isExtCssMarker,
+    ADG_SCRIPTLET_MASK,
+} from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
 
@@ -261,8 +267,17 @@ export class CosmeticRule implements rule.IRule {
         const [index, marker] = findCosmeticRuleMarker(ruleText);
 
         if (index < 0 || marker === null) {
-            throw new SyntaxError('This is not a cosmetic rule');
+            throw new SyntaxError('Not a cosmetic rule');
         }
+
+        this.content = ruleText.substring(index + marker.length).trim();
+        if (!this.content) {
+            throw new SyntaxError('Rule content is empty');
+        }
+
+        this.type = CosmeticRule.parseType(marker);
+
+        CosmeticRule.validate(ruleText, this.type, this.content);
 
         if (index > 0) {
             // This means that the marker is preceded by the list of domains
@@ -273,14 +288,7 @@ export class CosmeticRule implements rule.IRule {
             this.restrictedDomains = domainModifier.restrictedDomains;
         }
 
-        this.content = ruleText.substring(index + marker.length).trim();
-        if (!this.content) {
-            throw new SyntaxError('Empty rule content');
-        }
-
-        this.type = this.parseTypeAndWhitelist(marker);
-        this.validate();
-
+        this.whitelist = CosmeticRule.parseWhitelist(marker);
         this.extendedCss = isExtCssMarker(marker);
         if (!this.extendedCss) {
             // additional check if rule is extended css rule by pseudo class indicators
@@ -322,68 +330,60 @@ export class CosmeticRule implements rule.IRule {
         return true;
     }
 
-    private parseTypeAndWhitelist(marker: string): CosmeticRuleType {
+    static parseType(marker: string): CosmeticRuleType {
         switch (marker) {
             case CosmeticRuleMarker.ElementHiding:
             case CosmeticRuleMarker.ElementHidingExtCSS:
                 return CosmeticRuleType.ElementHiding;
             case CosmeticRuleMarker.ElementHidingException:
             case CosmeticRuleMarker.ElementHidingExtCSSException:
-                this.whitelist = true;
                 return CosmeticRuleType.ElementHiding;
             case CosmeticRuleMarker.Css:
             case CosmeticRuleMarker.CssExtCSS:
                 return CosmeticRuleType.Css;
             case CosmeticRuleMarker.CssException:
             case CosmeticRuleMarker.CssExtCSSException:
-                this.whitelist = true;
                 return CosmeticRuleType.Css;
             case CosmeticRuleMarker.Js:
                 return CosmeticRuleType.Js;
             case CosmeticRuleMarker.JsException:
-                this.whitelist = true;
                 return CosmeticRuleType.Js;
             case CosmeticRuleMarker.Html:
                 return CosmeticRuleType.Html;
             case CosmeticRuleMarker.HtmlException:
-                this.whitelist = true;
                 return CosmeticRuleType.Html;
             default:
                 throw new SyntaxError('Unsupported rule type');
         }
     }
 
-    private validate(): void {
-        if (this.type !== CosmeticRuleType.Css
-            && this.type !== CosmeticRuleType.Js) {
-            CosmeticRule.validatePseudoClasses(this.content);
-
-            if (utils.hasUnquotedSubstring(this.content, '{')) {
-                throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${this.ruleText}`);
-            }
-        }
-
-        if (this.type === CosmeticRuleType.ElementHiding) {
-            CosmeticRule.validateElemhideRule(this.content, this.ruleText);
-        }
-
-        if (this.type === CosmeticRuleType.Css) {
-            CosmeticRule.validateCssRules(this.content, this.ruleText);
-        }
-
-        if (utils.hasUnquotedSubstring(this.content, '/*')
-            || utils.hasUnquotedSubstring(this.content, ' //')) {
-            throw new SyntaxError(`Invalid cosmetic rule, wrong brackets: ${this.ruleText}`);
+    /**
+     * Determines if rule is whitelist rule
+     * @param marker
+     * @private
+     */
+    private static parseWhitelist(marker: string): boolean {
+        switch (marker) {
+            case CosmeticRuleMarker.ElementHidingException:
+            case CosmeticRuleMarker.ElementHidingExtCSSException:
+            case CosmeticRuleMarker.CssException:
+            case CosmeticRuleMarker.CssExtCSSException:
+            case CosmeticRuleMarker.JsException:
+            case CosmeticRuleMarker.HtmlException:
+                return true;
+            default:
+                return false;
         }
     }
 
     /**
      * Validate pseudo-classes
      *
+     * @param ruleText
      * @param ruleContent
      * @throws SyntaxError
      */
-    private static validatePseudoClasses(ruleContent: string): void {
+    private static validatePseudoClasses(ruleText: string, ruleContent: string): void {
         const pseudoClass = CosmeticRule.parsePseudoClass(ruleContent);
         if (pseudoClass !== null) {
             if (CosmeticRule.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
@@ -395,37 +395,84 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Simple validation for elemhide rules
      *
-     * @param ruleContent
      * @param ruleText
+     * @param ruleContent
      * @throws SyntaxError
      */
-    private static validateElemhideRule(ruleContent: string, ruleText: string): void {
+    private static validateElemhideRule(ruleText: string, ruleContent: string): void {
+        if (ruleText.startsWith('||')) {
+            throw new SyntaxError('Element hiding rule shouldn\'t start with "||"');
+        }
         if (/ {.+}/.test(ruleContent)) {
-            throw new SyntaxError(`Invalid elemhide rule, style presented: ${ruleText}`);
+            throw new SyntaxError('Invalid elemhide rule, style presented');
+        }
+    }
+
+    private static validateJsRules(ruleText: string, ruleContent: string): void {
+        if (ruleContent.startsWith(ADG_SCRIPTLET_MASK)) {
+            if (!Scriptlets.isValidScriptletRule(ruleText)) {
+                throw new SyntaxError('Invalid scriptlet');
+            }
         }
     }
 
     /**
      * Validates css injection rules
      *
-     * @param ruleContent
      * @param ruleText
+     * @param ruleContent
      * @throws SyntaxError
      */
-    private static validateCssRules(ruleContent: string, ruleText: string): void {
+    private static validateCssRules(ruleText: string, ruleContent: string): void {
         // Simple validation for css injection rules
-        if (!/ {.+}/.test(ruleContent)) {
-            throw new SyntaxError(`Invalid CSS modifying rule, no style presented: ${ruleText}`);
+        if (!/{.+}/.test(ruleContent)) {
+            throw new SyntaxError('Invalid CSS modifying rule, no style presented');
         }
         // discard css inject rules containing "url"
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196
-        if (/url\(.*\)/gi.test(ruleContent)) {
-            throw new SyntaxError(`CSS modifying rule with 'url' was omitted: ${ruleText}`);
+        if (/{.*url\(.*\)/gi.test(ruleContent)) {
+            throw new SyntaxError('CSS modifying rule with \'url\' was omitted');
         }
 
         // Prohibit "\" character in style of CSS injection rules
         if (ruleContent.indexOf('\\', ruleContent.indexOf('{')) > -1) {
-            throw new SyntaxError(`CSS injection rule with '\\' was omitted: ${ruleText}`);
+            throw new SyntaxError('CSS injection rule with \'\\\' was omitted');
+        }
+    }
+
+    /**
+     * Validates cosmetic rule text
+     * @param ruleText
+     * @param type
+     * @param content
+     * @private
+     */
+    private static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
+        if (type !== CosmeticRuleType.Css
+            && type !== CosmeticRuleType.Js
+            && type !== CosmeticRuleType.Html) {
+            CosmeticRule.validatePseudoClasses(ruleText, content);
+
+            if (utils.hasUnquotedSubstring(content, '{')) {
+                throw new SyntaxError('Invalid cosmetic rule, wrong brackets');
+            }
+        }
+
+        if (type === CosmeticRuleType.ElementHiding) {
+            CosmeticRule.validateElemhideRule(ruleText, content);
+        }
+
+        if (type === CosmeticRuleType.Css) {
+            CosmeticRule.validateCssRules(ruleText, content);
+        }
+
+        if (type === CosmeticRuleType.Js) {
+            CosmeticRule.validateJsRules(ruleText, content);
+        }
+
+        if (utils.hasUnquotedSubstring(content, '/*')
+            || utils.hasUnquotedSubstring(content, ' //')) {
+            throw new SyntaxError('Invalid cosmetic rule, wrong brackets');
         }
     }
 }

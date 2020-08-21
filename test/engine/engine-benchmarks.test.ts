@@ -209,7 +209,7 @@ describe('Benchmarks', () => {
         const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
         const ruleStorage = new RuleStorage([list]);
 
-        const engine = new Engine(ruleStorage, undefined, true);
+        const engine = new Engine(ruleStorage, true);
         expect(engine).toBeTruthy();
 
         await engine.loadRulesAsync(1000);

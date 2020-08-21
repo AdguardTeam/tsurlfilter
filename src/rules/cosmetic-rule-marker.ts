@@ -144,3 +144,8 @@ export function isExtCssMarker(marker: string): boolean {
 
     return EXTENDED_CSS_MARKERS.indexOf(marker as CosmeticRuleMarker) !== -1;
 }
+
+/**
+ * AdGuard scriptlet rule mask
+ */
+export const ADG_SCRIPTLET_MASK = '//scriptlet';

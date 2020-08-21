@@ -148,7 +148,7 @@ export class ScriptletParser {
         );
 
         if (state !== 'closed') {
-            throw new Error(`Invalid scriptlet rule ${ruleContent}`);
+            throw new Error(`Invalid scriptlet ${ruleContent}`);
         }
 
         const args = saver.getAll();

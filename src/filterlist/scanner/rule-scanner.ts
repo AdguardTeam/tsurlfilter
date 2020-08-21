@@ -1,5 +1,5 @@
 import { IndexedRule, IRule } from '../../rules/rule';
-import { RuleUtils } from '../../rules/rule-utils';
+import { RuleFactory } from '../../rules/rule-factory';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
@@ -52,6 +52,7 @@ export class RuleScanner {
      * Current position in the reader
      */
     private currentPos = 0;
+
     /**
      * NewRuleScanner returns a new RuleScanner to read from r.
      *
@@ -92,9 +93,10 @@ export class RuleScanner {
             }
 
             if (line) {
-                const rule = RuleUtils.createRule(
+                const rule = RuleFactory.createRule(
                     line, this.listId, this.ignoreNetwork, this.ignoreCosmetic, this.ignoreHost,
                 );
+
                 if (rule && !this.isIgnored(rule)) {
                     this.currentRule = rule;
                     this.currentRuleIndex = lineIndex;

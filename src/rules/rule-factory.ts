@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 /**
  * Rule builder class
  */
-export class RuleUtils {
+export class RuleFactory {
     /**
      * Creates rule of suitable class from text string
      * It returns null if the line is empty or if it is a comment
@@ -23,13 +23,18 @@ export class RuleUtils {
     public static createRule(
         text: string, filterListId: number, ignoreNetwork = false, ignoreCosmetic = false, ignoreHost = false,
     ): IRule | null {
-        if (!text || RuleUtils.isComment(text)) {
+        if (!text || RuleFactory.isComment(text)) {
             return null;
         }
 
+        if (RuleFactory.isShort(text)) {
+            logger.info(`The rule is too short: ${text}`);
+        }
+
         const line = text.trim();
+
         try {
-            if (RuleUtils.isCosmetic(line)) {
+            if (RuleFactory.isCosmetic(line)) {
                 if (ignoreCosmetic) {
                     return null;
                 }
@@ -38,7 +43,7 @@ export class RuleUtils {
             }
 
             if (!ignoreHost) {
-                const hostRule = RuleUtils.createHostRule(line, filterListId);
+                const hostRule = RuleFactory.createHostRule(line, filterListId);
                 if (hostRule) {
                     return hostRule;
                 }
@@ -48,10 +53,40 @@ export class RuleUtils {
                 return new NetworkRule(line, filterListId);
             }
         } catch (e) {
-            logger.info(e.message);
+            logger.info(`Error: "${e.message}" in the rule: "${line}"`);
         }
 
         return null;
+    }
+
+    /**
+     * Creates host rule from text
+     *
+     * @param ruleText
+     * @param filterListId
+     */
+    private static createHostRule(ruleText: string, filterListId: number): HostRule | null {
+        const rule = new HostRule(ruleText, filterListId);
+        return rule.isInvalid() ? null : rule;
+    }
+
+    /**
+     * Checks if rule is short
+     */
+    public static isShort(rule: string): boolean {
+        if (!rule) {
+            return true;
+        }
+        return !!(rule && rule.length <= 3);
+    }
+
+    /**
+     * Checks if the rule is cosmetic or not.
+     * @param ruleText - rule text to check.
+     */
+    public static isCosmetic(ruleText: string): boolean {
+        const marker = findCosmeticRuleMarker(ruleText);
+        return marker[0] !== -1;
     }
 
     /**
@@ -70,30 +105,9 @@ export class RuleUtils {
             }
 
             // Now we should check that this is not a cosmetic rule
-            return !RuleUtils.isCosmetic(text);
+            return !RuleFactory.isCosmetic(text);
         }
 
         return false;
-    }
-
-    /**
-     * Detects if the rule is cosmetic or not.
-     *
-     * @param ruleText - rule text to check.
-     */
-    public static isCosmetic(ruleText: string): boolean {
-        const marker = findCosmeticRuleMarker(ruleText);
-        return marker[0] !== -1;
-    }
-
-    /**
-     * Creates host rule from text
-     *
-     * @param ruleText
-     * @param filterListId
-     */
-    private static createHostRule(ruleText: string, filterListId: number): HostRule | null {
-        const rule = new HostRule(ruleText, filterListId);
-        return rule.isInvalid() ? null : rule;
     }
 }

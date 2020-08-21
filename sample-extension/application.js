@@ -63,6 +63,7 @@ export class Application {
             // eslint-disable-next-line no-undef
             version: chrome.runtime.getManifest().version,
             verbose: true,
+            compatibility: TSUrlFilter.CompatibilityTypes.extension,
         };
 
         const stealthConfig = {
@@ -74,7 +75,8 @@ export class Application {
             selfDestructFirstPartyCookiesTime: 1,
         };
 
-        this.engine = new TSUrlFilter.Engine(ruleStorage, config);
+        TSUrlFilter.setConfiguration(config);
+        this.engine = new TSUrlFilter.Engine(ruleStorage);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
         this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
         this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
