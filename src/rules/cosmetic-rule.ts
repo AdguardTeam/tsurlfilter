@@ -102,7 +102,8 @@ export class CosmeticRule implements rule.IRule {
         ':not', ':nth-child', ':nth-last-child', ':nth-last-of-type', ':nth-of-type',
         ':only-child', ':only-of-type', ':optional', ':out-of-range', ':read-only',
         ':read-write', ':required', ':root', ':target', ':valid', ':visited',
-        ':-abp-has', ':-abp-contains', ':-abp-properties', ':xpath', ':nth-ancestor', ':upward', ':remove'];
+        ':-abp-has', ':-abp-contains', ':-abp-properties', ':xpath', ':nth-ancestor', ':upward', ':remove',
+        ':matches-attr', ':matches-property'];
 
     /**
      * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
@@ -111,7 +112,8 @@ export class CosmeticRule implements rule.IRule {
     private readonly EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
         '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
         ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
-        ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove('];
+        ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
+        ':matches-attr(', ':matches-property('];
 
     /**
      * Parses first pseudo class from the specified CSS selector
