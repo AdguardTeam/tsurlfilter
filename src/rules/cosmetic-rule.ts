@@ -42,6 +42,16 @@ export enum CosmeticRuleType {
 }
 
 /**
+ * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
+ * have extended css marker
+ */
+export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
+    '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
+    ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
+    ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
+    ':matches-attr(', ':matches-property('];
+
+/**
  * Implements a basic cosmetic rule.
  *
  * Cosmetic rules syntax are almost similar and looks like this:
@@ -104,16 +114,6 @@ export class CosmeticRule implements rule.IRule {
         ':read-write', ':required', ':root', ':target', ':valid', ':visited',
         ':-abp-has', ':-abp-contains', ':-abp-properties', ':xpath', ':nth-ancestor', ':upward', ':remove',
         ':matches-attr', ':matches-property'];
-
-    /**
-     * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
-     * have extended css marker
-     */
-    private readonly EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
-        '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
-        ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
-        ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
-        ':matches-attr(', ':matches-property('];
 
     /**
      * Parses first pseudo class from the specified CSS selector
@@ -294,8 +294,8 @@ export class CosmeticRule implements rule.IRule {
         this.extendedCss = isExtCssMarker(marker);
         if (!this.extendedCss) {
             // additional check if rule is extended css rule by pseudo class indicators
-            for (let i = 0; i < this.EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
-                if (this.content.indexOf(this.EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
+            for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
+                if (this.content.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
                     this.extendedCss = true;
                     break;
                 }

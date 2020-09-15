@@ -1,5 +1,6 @@
 import Scriptlets from 'scriptlets';
 import { logger } from '../utils/logger';
+import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 
 /**
  * Rule converter class
@@ -329,6 +330,13 @@ export class RuleConverter {
         if (rule.includes(':style')) {
             let parts;
             let result = rule;
+            let isExtendedCss = false;
+            for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
+                isExtendedCss = rule.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1;
+                if (isExtendedCss) {
+                    break;
+                }
+            }
 
             if (rule.includes(RuleConverter.MASK_CSS_EXTENDED_CSS_RULE)) {
                 parts = rule.split(RuleConverter.MASK_CSS_EXTENDED_CSS_RULE, 2);
@@ -344,11 +352,21 @@ export class RuleConverter {
                     RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE,
                 );
             } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING)) {
-                parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
-                result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS);
+                if (!!isExtendedCss) {
+                    parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
+                    result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE);
+                } else {
+                    parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
+                    result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS);
+                }
             } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION)) {
-                parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION, 2);
-                result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS_EXCEPTION);
+                if (!!isExtendedCss) {
+                    parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION, 2);
+                    result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE);
+                } else {
+                    parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION, 2);
+                    result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS_EXCEPTION);    
+                }
             }
 
             return result;
