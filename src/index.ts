@@ -17,3 +17,4 @@ export * from './stealth/stealth-service';
 export * from './utils/logger';
 export * from './rules/rule-factory';
 export * from './utils/rule-validator';
+export * from './engine/cosmetic-engine/cosmetic-result';

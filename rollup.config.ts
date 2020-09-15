@@ -15,9 +15,8 @@ const contentScriptConfig = {
     output: [
         {
             file: `dist/${contentScriptFilename}.js`,
-            name: libraryName,
-            format: 'iife',
-            sourcemap: true,
+            format: 'cjs',
+            sourcemap: false,
         },
     ],
     watch: {
@@ -40,12 +39,12 @@ export default [
                 file: pkg.main,
                 name: camelCase(libraryName),
                 format: 'umd',
-                sourcemap: true,
+                sourcemap: false,
             },
             {
                 file: pkg.module,
                 format: 'esm',
-                sourcemap: true,
+                sourcemap: false,
             },
             {
                 file: pkg.iife,
