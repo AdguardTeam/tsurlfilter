@@ -1,5 +1,6 @@
 import Scriptlets from 'scriptlets';
 import { logger } from '../utils/logger';
+import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 
 interface ConversionOptions {
     ignoreAll?: boolean;
@@ -387,32 +388,45 @@ export class RuleConverter {
     private static convertCssInjection(rule: string): string {
         if (rule.includes(':style')) {
             let parts;
-            let result = rule;
+            let resultMask;
+            let resultRule = rule;
+            let isExtendedCss = false;
+            for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
+                isExtendedCss = rule.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1;
+                if (isExtendedCss) {
+                    break;
+                }
+            }
 
             if (rule.includes(RuleConverter.MASK_CSS_EXTENDED_CSS_RULE)) {
                 parts = rule.split(RuleConverter.MASK_CSS_EXTENDED_CSS_RULE, 2);
-                result = RuleConverter.executeConversion(
-                    rule,
-                    parts,
-                    RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE,
-                );
+                resultMask = RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE;
             } else if (rule.includes(RuleConverter.MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE)) {
                 parts = rule.split(RuleConverter.MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE, 2);
-                result = RuleConverter.executeConversion(
-                    rule, parts,
-                    RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE,
-                );
-            // firstly we check for exception rule in order not to confuse with id selectors
-            // e.g. yourconroenews.com#@##siteNav:style(transform: none !important;)
+                resultMask = RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE;
+                // firstly we check for exception rule in order not to confuse with id selectors
+                // e.g. yourconroenews.com#@##siteNav:style(transform: none !important;)
             } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION)) {
                 parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION, 2);
-                result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS_EXCEPTION);
+                if (isExtendedCss) {
+                    resultMask = RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE;
+                } else {
+                    resultMask = RuleConverter.MASK_CSS_EXCEPTION;
+                }
             } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING)) {
                 parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
-                result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS);
+                if (isExtendedCss) {
+                    resultMask = RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE;
+                } else {
+                    resultMask = RuleConverter.MASK_CSS;
+                }
             }
 
-            return result;
+            if (parts && resultMask) {
+                resultRule = RuleConverter.executeConversion(rule, parts, resultMask);
+            }
+
+            return resultRule;
         }
 
         return rule;
