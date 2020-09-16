@@ -80,6 +80,61 @@ describe('General', () => {
     });
 });
 
+describe('Converts pseudo elements', () => {
+    it('converts hiding :before', () => {
+        const rule = 'hotline.ua##.reset-scroll:before';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::before');
+    });
+
+    it('does not add redundant colons', () => {
+        const rule = 'hotline.ua##.reset-scroll::before';
+        expect(RuleConverter.convertRule(rule)[0]).toBe(rule);
+
+        const rule2 = 'hotline.ua##.reset-scroll::after';
+        expect(RuleConverter.convertRule(rule2)[0]).toBe(rule2);
+
+        const rule3 = 'hotline.ua##.reset-scroll::before, .class::before';
+        expect(RuleConverter.convertRule(rule3)[0]).toBe(rule3);
+    });
+
+    it('converts hiding :after', () => {
+        const rule = 'hotline.ua##.reset-scroll:after';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::after');
+    });
+
+    it('converts hiding multiple :before', () => {
+        const rule = 'hotline.ua##.reset-scroll:before, .class:before';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::before, .class::before');
+    });
+
+    it('converts hiding multiple :before', () => {
+        const rule = 'hotline.ua##.reset-scroll:after, .class:after';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::after, .class::after');
+    });
+
+    it('converts cosmetic :before', () => {
+        const rule = 'militaria.pl#$##layout-wrapper:before { height:0!important }';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('militaria.pl#$##layout-wrapper::before { height:0!important }');
+    });
+
+    it('converts cosmetic :after', () => {
+        const rule = 'militaria.pl#$##layout-wrapper:after { height:0!important }';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('militaria.pl#$##layout-wrapper::after { height:0!important }');
+    });
+});
+
 describe('Options', () => {
     const checkConversionResult = (rule: string, expected: string): void => {
         const actual = RuleConverter.convertRule(rule);

@@ -108,6 +108,7 @@ export class RuleConverter {
         }
 
         let converted = RuleConverter.convertCssInjection(rule);
+        converted = RuleConverter.convertPseudoElements(converted);
         converted = RuleConverter.convertRemoveRule(converted);
         converted = RuleConverter.replaceOptions(converted);
         converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
@@ -321,6 +322,52 @@ export class RuleConverter {
         }
 
         return result;
+    }
+
+    /**
+     * Adds colon to the pseudo elements written with one colon (:before, :after);
+     * e.g.
+     *  "hotline.ua##.reset-scroll:before" -> "hotline.ua##.reset-scroll::before"
+     * @param rule
+     * @private
+     */
+    private static convertPseudoElements(rule: string): string {
+        const BEFORE = 'before';
+        const AFTER = 'after';
+        const SINGLE_COLON = ':';
+
+        // does not have parts to convert
+        if (!(rule.includes(SINGLE_COLON + BEFORE) || rule.includes(SINGLE_COLON + AFTER))) {
+            return rule;
+        }
+
+        // not an css rule
+        if (!(rule.includes(RuleConverter.MASK_ELEMENT_HIDING)
+            || rule.includes(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION)
+            || rule.includes(RuleConverter.MASK_CSS)
+            || rule.includes(RuleConverter.MASK_CSS_EXCEPTION))) {
+            return rule;
+        }
+
+        let modifiedRule = '';
+
+        for (let i = 0; i < rule.length; i += 1) {
+            if (rule[i] !== SINGLE_COLON) {
+                modifiedRule += rule[i];
+                continue;
+            }
+
+            if ((rule.indexOf(BEFORE, i) === i + 1 || rule.indexOf(AFTER, i) === i + 1)
+                    && rule[i - 1] !== SINGLE_COLON) {
+                modifiedRule += SINGLE_COLON;
+                modifiedRule += rule[i];
+                continue;
+            }
+
+            modifiedRule += rule[i];
+        }
+
+        return modifiedRule;
     }
 
     /**
