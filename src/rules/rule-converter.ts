@@ -355,12 +355,14 @@ export class RuleConverter {
                     rule, parts,
                     RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE,
                 );
-            } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING)) {
-                parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
-                result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS);
+            // firstly we check for exception rule in order not to confuse with id selectors
+            // e.g. yourconroenews.com#@##siteNav:style(transform: none !important;)
             } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION)) {
                 parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION, 2);
                 result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS_EXCEPTION);
+            } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING)) {
+                parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
+                result = RuleConverter.executeConversion(rule, parts, RuleConverter.MASK_CSS);
             }
 
             return result;

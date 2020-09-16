@@ -62,6 +62,13 @@ describe('General', () => {
         expect(result).toContain('example.com#@$#h1 { background-color: blue !important }');
     });
 
+    it('converts style into injection rule for selectors with id', () => {
+        const rule = 'yourconroenews.com#@##siteNav:style(transform: none !important;)';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('yourconroenews.com#@$##siteNav { transform: none !important; }');
+    });
+
     it('checks :remove() rules conversion', () => {
         let result = RuleConverter.convertRule('ekoteka.pl###popUpModal:remove()');
         expect(result).toHaveLength(1);
