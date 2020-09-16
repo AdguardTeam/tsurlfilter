@@ -3,7 +3,10 @@ import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 
 interface ConversionOptions {
-    ignoreAll?: boolean;
+    /**
+     * If converter should convert rules with all modifier
+     */
+    ignoreAllModifier?: boolean;
 }
 
 /**
@@ -244,7 +247,7 @@ export class RuleConverter {
         // options without all modifier
         const hasAllOption = updatedOptionsParts.indexOf('all') > -1;
 
-        if (hasAllOption && !conversionOptions.ignoreAll) {
+        if (hasAllOption && !conversionOptions.ignoreAllModifier) {
             // $all modifier should be converted in 4 rules
             // ||example.org^$document,popup
             // ||example.org^
