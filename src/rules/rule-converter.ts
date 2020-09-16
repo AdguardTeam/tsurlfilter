@@ -1,6 +1,10 @@
 import Scriptlets from 'scriptlets';
 import { logger } from '../utils/logger';
 
+interface ConversionOptions {
+    ignoreAll?: boolean;
+}
+
 /**
  * Rule converter class
  */
@@ -74,14 +78,15 @@ export class RuleConverter {
      * Converts rules text
      *
      * @param rulesText
+     * @param conversionOptions
      */
-    public static convertRules(rulesText: string): string {
+    public static convertRules(rulesText: string, conversionOptions = {} as ConversionOptions): string {
         const result = [];
 
         const lines = rulesText.split('\n');
         for (const line of lines) {
             try {
-                result.push(...RuleConverter.convertRule(line));
+                result.push(...RuleConverter.convertRule(line, conversionOptions));
             } catch (e) {
                 logger.warn(e);
             }
@@ -93,9 +98,10 @@ export class RuleConverter {
     /**
      * Convert external scriptlet rule to AdGuard scriptlet syntax
      *
-     * @param {string} rule convert rule
+     * @param rule
+     * @param conversionOptions
      */
-    public static convertRule(rule: string): string[] {
+    public static convertRule(rule: string, conversionOptions = {} as ConversionOptions): string[] {
         const comment = RuleConverter.convertUboComments(rule);
         if (comment) {
             return [comment];
@@ -116,7 +122,7 @@ export class RuleConverter {
             return [abpRedirectRule];
         }
 
-        const ruleWithConvertedOptions = RuleConverter.convertOptions(converted);
+        const ruleWithConvertedOptions = RuleConverter.convertOptions(converted, conversionOptions);
         if (ruleWithConvertedOptions) {
             return ruleWithConvertedOptions;
         }
@@ -155,7 +161,13 @@ export class RuleConverter {
         return null;
     }
 
-    private static convertOptions(rule: string): string[] | null {
+    /**
+     * Converts rule options
+     * @param rule
+     * @param conversionOptions
+     * @private
+     */
+    private static convertOptions(rule: string, conversionOptions = {} as ConversionOptions): string[] | null {
         const OPTIONS_DELIMITER = '$';
         const ESCAPE_CHARACTER = '\\';
         const NAME_VALUE_SPLITTER = '=';
@@ -230,7 +242,7 @@ export class RuleConverter {
         // options without all modifier
         const hasAllOption = updatedOptionsParts.indexOf('all') > -1;
 
-        if (hasAllOption) {
+        if (hasAllOption && !conversionOptions.ignoreAll) {
             // $all modifier should be converted in 4 rules
             // ||example.org^$document,popup
             // ||example.org^

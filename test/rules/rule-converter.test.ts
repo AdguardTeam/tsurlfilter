@@ -136,6 +136,14 @@ describe('Options', () => {
         expect(actual).toContain(exp3);
         expect(actual).toContain(exp4);
     });
+
+    it('does not covert rules with $all modifier if ignoreAll parameter used', () => {
+        const rule = '||example.org^$all';
+        const actual = RuleConverter.convertRule(rule, { ignoreAll: true });
+
+        expect(actual).toHaveLength(1);
+        expect(actual).toContain(rule);
+    });
 });
 
 describe('Scriptlets', () => {
