@@ -66,6 +66,13 @@ describe('General', () => {
         expect(result).toContain('example.org#$?#p:has-text(/[\\w\\W]{30,}/) { background: #ff0033 !important; }');
     });
 
+    it('converts style into injection rule for selectors with id', () => {
+        const rule = 'yourconroenews.com#@##siteNav:style(transform: none !important;)';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('yourconroenews.com#@$##siteNav { transform: none !important; }');
+    });
+
     it('checks :remove() rules conversion', () => {
         let result = RuleConverter.convertRule('ekoteka.pl###popUpModal:remove()');
         expect(result).toHaveLength(1);
@@ -74,6 +81,61 @@ describe('General', () => {
         result = RuleConverter.convertRule('aftonbladet.se##.jwplayer:has(.svp-sponsor-label):remove()');
         expect(result).toHaveLength(1);
         expect(result).toContain('aftonbladet.se#$?#.jwplayer:has(.svp-sponsor-label) { remove: true; }');
+    });
+});
+
+describe('Converts pseudo elements', () => {
+    it('converts hiding :before', () => {
+        const rule = 'hotline.ua##.reset-scroll:before';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::before');
+    });
+
+    it('does not add redundant colons', () => {
+        const rule = 'hotline.ua##.reset-scroll::before';
+        expect(RuleConverter.convertRule(rule)[0]).toBe(rule);
+
+        const rule2 = 'hotline.ua##.reset-scroll::after';
+        expect(RuleConverter.convertRule(rule2)[0]).toBe(rule2);
+
+        const rule3 = 'hotline.ua##.reset-scroll::before, .class::before';
+        expect(RuleConverter.convertRule(rule3)[0]).toBe(rule3);
+    });
+
+    it('converts hiding :after', () => {
+        const rule = 'hotline.ua##.reset-scroll:after';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::after');
+    });
+
+    it('converts hiding multiple :before', () => {
+        const rule = 'hotline.ua##.reset-scroll:before, .class:before';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::before, .class::before');
+    });
+
+    it('converts hiding multiple :before', () => {
+        const rule = 'hotline.ua##.reset-scroll:after, .class:after';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('hotline.ua##.reset-scroll::after, .class::after');
+    });
+
+    it('converts cosmetic :before', () => {
+        const rule = 'militaria.pl#$##layout-wrapper:before { height:0!important }';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('militaria.pl#$##layout-wrapper::before { height:0!important }');
+    });
+
+    it('converts cosmetic :after', () => {
+        const rule = 'militaria.pl#$##layout-wrapper:after { height:0!important }';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('militaria.pl#$##layout-wrapper::after { height:0!important }');
     });
 });
 
@@ -139,6 +201,14 @@ describe('Options', () => {
         expect(actual).toContain(exp2);
         expect(actual).toContain(exp3);
         expect(actual).toContain(exp4);
+    });
+
+    it('does not covert rules with $all modifier if ignoreAllModifier parameter used', () => {
+        const rule = '||example.org^$all';
+        const actual = RuleConverter.convertRule(rule, { ignoreAllModifier: true });
+
+        expect(actual).toHaveLength(1);
+        expect(actual).toContain(rule);
     });
 });
 

@@ -2,6 +2,13 @@ import Scriptlets from 'scriptlets';
 import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 
+interface ConversionOptions {
+    /**
+     * If converter should convert rules with all modifier
+     */
+    ignoreAllModifier?: boolean;
+}
+
 /**
  * Rule converter class
  */
@@ -75,14 +82,15 @@ export class RuleConverter {
      * Converts rules text
      *
      * @param rulesText
+     * @param conversionOptions
      */
-    public static convertRules(rulesText: string): string {
+    public static convertRules(rulesText: string, conversionOptions = {} as ConversionOptions): string {
         const result = [];
 
         const lines = rulesText.split('\n');
         for (const line of lines) {
             try {
-                result.push(...RuleConverter.convertRule(line));
+                result.push(...RuleConverter.convertRule(line, conversionOptions));
             } catch (e) {
                 logger.warn(e);
             }
@@ -94,15 +102,17 @@ export class RuleConverter {
     /**
      * Convert external scriptlet rule to AdGuard scriptlet syntax
      *
-     * @param {string} rule convert rule
+     * @param rule
+     * @param conversionOptions
      */
-    public static convertRule(rule: string): string[] {
+    public static convertRule(rule: string, conversionOptions = {} as ConversionOptions): string[] {
         const comment = RuleConverter.convertUboComments(rule);
         if (comment) {
             return [comment];
         }
 
         let converted = RuleConverter.convertCssInjection(rule);
+        converted = RuleConverter.convertPseudoElements(converted);
         converted = RuleConverter.convertRemoveRule(converted);
         converted = RuleConverter.replaceOptions(converted);
         converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
@@ -117,7 +127,7 @@ export class RuleConverter {
             return [abpRedirectRule];
         }
 
-        const ruleWithConvertedOptions = RuleConverter.convertOptions(converted);
+        const ruleWithConvertedOptions = RuleConverter.convertOptions(converted, conversionOptions);
         if (ruleWithConvertedOptions) {
             return ruleWithConvertedOptions;
         }
@@ -156,7 +166,13 @@ export class RuleConverter {
         return null;
     }
 
-    private static convertOptions(rule: string): string[] | null {
+    /**
+     * Converts rule options
+     * @param rule
+     * @param conversionOptions
+     * @private
+     */
+    private static convertOptions(rule: string, conversionOptions = {} as ConversionOptions): string[] | null {
         const OPTIONS_DELIMITER = '$';
         const ESCAPE_CHARACTER = '\\';
         const NAME_VALUE_SPLITTER = '=';
@@ -231,7 +247,7 @@ export class RuleConverter {
         // options without all modifier
         const hasAllOption = updatedOptionsParts.indexOf('all') > -1;
 
-        if (hasAllOption) {
+        if (hasAllOption && !conversionOptions.ignoreAllModifier) {
             // $all modifier should be converted in 4 rules
             // ||example.org^$document,popup
             // ||example.org^
@@ -313,6 +329,52 @@ export class RuleConverter {
     }
 
     /**
+     * Adds colon to the pseudo elements written with one colon (:before, :after);
+     * e.g.
+     *  "hotline.ua##.reset-scroll:before" -> "hotline.ua##.reset-scroll::before"
+     * @param rule
+     * @private
+     */
+    private static convertPseudoElements(rule: string): string {
+        const BEFORE = 'before';
+        const AFTER = 'after';
+        const SINGLE_COLON = ':';
+
+        // does not have parts to convert
+        if (!(rule.includes(SINGLE_COLON + BEFORE) || rule.includes(SINGLE_COLON + AFTER))) {
+            return rule;
+        }
+
+        // not an css rule
+        if (!(rule.includes(RuleConverter.MASK_ELEMENT_HIDING)
+            || rule.includes(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION)
+            || rule.includes(RuleConverter.MASK_CSS)
+            || rule.includes(RuleConverter.MASK_CSS_EXCEPTION))) {
+            return rule;
+        }
+
+        let modifiedRule = '';
+
+        for (let i = 0; i < rule.length; i += 1) {
+            if (rule[i] !== SINGLE_COLON) {
+                modifiedRule += rule[i];
+                continue;
+            }
+
+            if ((rule.indexOf(BEFORE, i) === i + 1 || rule.indexOf(AFTER, i) === i + 1)
+                    && rule[i - 1] !== SINGLE_COLON) {
+                modifiedRule += SINGLE_COLON;
+                modifiedRule += rule[i];
+                continue;
+            }
+
+            modifiedRule += rule[i];
+        }
+
+        return modifiedRule;
+    }
+
+    /**
      * Converts CSS injection
      * example.com##h1:style(background-color: blue !important)
      * into
@@ -345,19 +407,21 @@ export class RuleConverter {
             } else if (rule.includes(RuleConverter.MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE)) {
                 parts = rule.split(RuleConverter.MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE, 2);
                 resultMask = RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE;
-            } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING)) {
-                parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
-                if (isExtendedCss) {
-                    resultMask = RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE;
-                } else {
-                    resultMask = RuleConverter.MASK_CSS;
-                }
+                // firstly we check for exception rule in order not to confuse with id selectors
+                // e.g. yourconroenews.com#@##siteNav:style(transform: none !important;)
             } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION)) {
                 parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING_EXCEPTION, 2);
                 if (isExtendedCss) {
                     resultMask = RuleConverter.MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE;
                 } else {
                     resultMask = RuleConverter.MASK_CSS_EXCEPTION;
+                }
+            } else if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING)) {
+                parts = rule.split(RuleConverter.MASK_ELEMENT_HIDING, 2);
+                if (isExtendedCss) {
+                    resultMask = RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE;
+                } else {
+                    resultMask = RuleConverter.MASK_CSS;
                 }
             }
 
