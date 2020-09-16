@@ -63,7 +63,7 @@ describe('General', () => {
 
         result = RuleConverter.convertRule('example.org##p:has-text(/[\\w\\W]{30,}/):style(background: #ff0033 !important;)');
         expect(result).toHaveLength(1);
-        expect(result).toContain('example.com#$?#p:has-text(/[\\w\\W]{30,}/) { background: #ff0033 !important; }');
+        expect(result).toContain('example.org#$?#p:has-text(/[\\w\\W]{30,}/) { background: #ff0033 !important; }');
     });
 
     it('checks :remove() rules conversion', () => {
