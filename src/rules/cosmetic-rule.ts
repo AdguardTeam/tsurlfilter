@@ -163,7 +163,7 @@ export class CosmeticRule implements rule.IRule {
 
         let nameEndIndex = utils.indexOfAny(
             selector,
-            [' ', '\t', '>', '(', '[', '.', '#', ':', '+', '~', '"', '\''],
+            [' ', ',', '\t', '>', '(', '[', '.', '#', ':', '+', '~', '"', '\''],
             nameStartIndex + 1,
         );
 
