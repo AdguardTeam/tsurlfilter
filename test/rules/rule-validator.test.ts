@@ -86,7 +86,7 @@ describe('RuleValidator', () => {
 
     it('correctly validates pseudo-class with comma after it', () => {
         // eslint-disable-next-line max-len
-        const ruleText = 'nczas.com##A[target="_self"] > .vc_single_image-img:last-child, div[id*="970x250"], .checkvisc';
+        const ruleText = '.vc_single_image-img:last-child, .checkvisc';
         const validationResult = RuleValidator.validate(ruleText);
         expect(validationResult.valid).toBeTruthy();
     });
