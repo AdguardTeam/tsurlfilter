@@ -95,17 +95,24 @@ export class RuleFactory {
      * @param text
      */
     public static isComment(text: string): boolean {
-        if (text.charAt(0) === '!') {
+        const trimmedText = text.trim();
+
+        if (trimmedText.charAt(0) === '!') {
             return true;
         }
 
-        if (text.charAt(0) === '#') {
-            if (text.length === 1) {
+        // ABP metadata
+        if (trimmedText.charAt(0) === '[') {
+            return true;
+        }
+
+        if (trimmedText.charAt(0) === '#') {
+            if (trimmedText.length === 1) {
                 return true;
             }
 
             // Now we should check that this is not a cosmetic rule
-            return !RuleFactory.isCosmetic(text);
+            return !RuleFactory.isCosmetic(trimmedText);
         }
 
         return false;
