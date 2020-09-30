@@ -437,7 +437,8 @@ export class CosmeticRule implements rule.IRule {
         }
 
         // Prohibit "\" character in style of CSS injection rules
-        if (ruleContent.indexOf('\\', ruleContent.indexOf('{')) > -1) {
+        // Check slash character only after the index of last opening curly brackets
+        if (ruleContent.indexOf('\\', ruleContent.lastIndexOf('{')) > -1) {
             throw new SyntaxError('CSS injection rule with \'\\\' was omitted');
         }
     }

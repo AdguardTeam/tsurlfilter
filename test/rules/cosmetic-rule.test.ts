@@ -284,6 +284,9 @@ describe('CosmeticRule.CSS', () => {
         const backslashInCssRulesSelector = new CosmeticRule('example.org#$?#div:matches-css(width: /\\d+/) { background-color: red!important; }', 0);
         expect(backslashInCssRulesSelector).toBeDefined();
 
+        const backslashInCssRulesSelector2 = new CosmeticRule('example.org#$?##p:has-text(/[\\w\\W]{337}/):has-text(/Dołącz \\./) { font-size: 0 !important; }', 0);
+        expect(backslashInCssRulesSelector2).toBeDefined();
+
         const checkRuleIsInvalid = (ruleText: string): void => {
             expect(() => {
                 new CosmeticRule(ruleText, 0);
