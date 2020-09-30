@@ -83,4 +83,11 @@ describe('RuleValidator', () => {
         const ruleText = 'animalog.biz$$script[tag-content="window["open"]("about:blank")"][max-length="4200"]';
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
+
+    it('correctly validates pseudo-class with comma after it', () => {
+        // eslint-disable-next-line max-len
+        const ruleText = 'nczas.com##.vc_single_image-img:last-child, .checkvisc';
+        const validationResult = RuleValidator.validate(ruleText);
+        expect(validationResult.valid).toBeTruthy();
+    });
 });
