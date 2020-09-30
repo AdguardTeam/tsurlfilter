@@ -90,11 +90,4 @@ describe('RuleValidator', () => {
         const validationResult = RuleValidator.validate(ruleText);
         expect(validationResult.valid).toBeTruthy();
     });
-
-    it('considers ABP metadata as valid', () => {
-        // eslint-disable-next-line max-len
-        const ruleText = '[Adblock Plus 2.0]';
-        const validationResult = RuleValidator.validate(ruleText);
-        expect(validationResult.valid).toBeTruthy();
-    });
 });
