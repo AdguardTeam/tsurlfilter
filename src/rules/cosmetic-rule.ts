@@ -292,7 +292,9 @@ export class CosmeticRule implements rule.IRule {
 
         this.whitelist = CosmeticRule.parseWhitelist(marker);
         this.extendedCss = isExtCssMarker(marker);
-        if (!this.extendedCss) {
+        if (!this.extendedCss
+            && (this.type === CosmeticRuleType.ElementHiding
+                || this.type === CosmeticRuleType.Css)) {
             // additional check if rule is extended css rule by pseudo class indicators
             for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
                 if (this.content.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
