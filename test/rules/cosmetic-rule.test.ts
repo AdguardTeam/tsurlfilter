@@ -329,6 +329,13 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('div { background-color: #333!important; }');
+
+    it('does not confuses extended css rules with script rules', () => {
+        // eslint-disable-next-line max-len
+        ruleText = '#%#var AG_defineProperty=function(){return a={get:function(){var a=i.f;a&&a.beforeGet&&a.beforeGet.call(this,i.a.b);e:if(a=i.g)a=A(a)?a.value:a.get?a.get.call(this):void 0;else{if(a=i.a.b,i.i in a&&null!==(a=B(a))){var t=C.call(a,i.i);a=t?t.call(this):a[i.i];break e}a=void 0}return(this===i.a.b||D.call(i.a.b,this))&&E(e,a,i.c),a}},d&&J(d,a,K),a;var e,i,a}();';
+        rule = new CosmeticRule(ruleText, 0);
+        expect(rule.isExtendedCss()).toBeFalsy();
+    });
 });
 
 describe('Javascript rules', () => {
