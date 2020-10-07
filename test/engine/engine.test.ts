@@ -221,7 +221,6 @@ describe('TestEngineCosmeticResult - js', () => {
     const genericJsRule = `#%#${jsRuleText}`;
 
     const rules = [
-        jsRuleText,
         specificJsRule,
         genericJsRule,
     ];
@@ -242,7 +241,7 @@ describe('TestEngineCosmeticResult - js', () => {
 
         result = engine.getCosmeticResult('example.org', CosmeticOption.CosmeticOptionJS);
 
-        expect(result.JS.generic.length).toEqual(0);
+        expect(result.JS.generic.length).toEqual(1);
         expect(result.JS.specific.length).toEqual(1);
     });
 
