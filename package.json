@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/tsurlfilter.esm.js",
@@ -122,9 +122,9 @@
   },
   "dependencies": {
     "consola": "^2.12.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.1",
+    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.2",
     "is-ip": "^3.1.0",
-    "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.4",
+    "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.5",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.45"
   }

@@ -66,6 +66,41 @@ describe('General', () => {
         expect(result).toContain('example.org#$?#p:has-text(/[\\w\\W]{30,}/) { background: #ff0033 !important; }');
     });
 
+    it('converts "css" substring into "stylesheet" only if it is rule option', () => {
+        let rule;
+        let result;
+
+        rule = 'csoonline.com,csswizardry.com##.ad';
+        result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe(rule);
+
+        rule = '$image,css,domain=salefiles.com';
+        result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('$image,stylesheet,domain=salefiles.com');
+
+        rule = '$css,domain=salefiles.com';
+        result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('$stylesheet,domain=salefiles.com');
+
+        rule = '-ad-manager/$~css';
+        result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('-ad-manager/$~stylesheet');
+
+        rule = '-ad-manager/$css,script';
+        result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('-ad-manager/$stylesheet,script');
+
+        rule = 'example.org$script,css';
+        result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBe('example.org$script,stylesheet');
+    });
+
     it('converts style into injection rule for selectors with id', () => {
         const rule = 'yourconroenews.com#@##siteNav:style(transform: none !important;)';
         const result = RuleConverter.convertRule(rule);
@@ -321,5 +356,11 @@ describe('Redirects', () => {
 
         expect(res).toHaveLength(1);
         expect(res[0]).toBe(exp);
+    });
+
+    it('does not add unnecessary symbols while converting redirects', () => {
+        const rule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
+        const actual = RuleConverter.convertRule(rule);
+        expect(actual[0]).toBe(rule);
     });
 });
