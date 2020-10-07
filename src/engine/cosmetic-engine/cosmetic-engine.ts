@@ -134,9 +134,7 @@ export class CosmeticEngine {
         }
 
         if (includeJs) {
-            if (includeGeneric) {
-                CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, hostname);
-            }
+            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, hostname);
             CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, hostname);
         }
 
