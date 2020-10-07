@@ -23,9 +23,9 @@ export class RuleConverter {
 
     private static XHR_REPLACEMENT = '$1xmlhttprequest';
 
-    private static CSS_REGEX = /([$,])css/i;
+    private static CSS_REGEX = /([$,]~*)(css)(,|\W|$)/i;
 
-    private static CSS_REPLACEMENT = '$1stylesheet';
+    private static CSS_REPLACEMENT = '$1stylesheet$3';
 
     private static FRAME_REGEX = /([$,])frame/i;
 

@@ -15,7 +15,7 @@ const contentScriptConfig = {
     output: [
         {
             file: `dist/${contentScriptFilename}.js`,
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
