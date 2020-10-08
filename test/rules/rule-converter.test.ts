@@ -245,6 +245,18 @@ describe('Options', () => {
         expect(actual).toHaveLength(1);
         expect(actual).toContain(rule);
     });
+
+    it('does not add unnecessary symbols while converting redirects', () => {
+        const rule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
+        const actual = RuleConverter.convertRule(rule);
+        expect(actual[0]).toBe(rule);
+    });
+
+    it('does not converts options in the cosmetic rules', () => {
+        const rule = 'bitly.com,framestr.com,nytimes.com#@#.share-btn';
+        const actual = RuleConverter.convertRule(rule);
+        expect(actual[0]).toBe(rule);
+    });
 });
 
 describe('Scriptlets', () => {
@@ -356,11 +368,5 @@ describe('Redirects', () => {
 
         expect(res).toHaveLength(1);
         expect(res[0]).toBe(exp);
-    });
-
-    it('does not add unnecessary symbols while converting redirects', () => {
-        const rule = 'intermarche.pl#%#document.cookie = "interapp_redirect=false; path=/;";';
-        const actual = RuleConverter.convertRule(rule);
-        expect(actual[0]).toBe(rule);
     });
 });

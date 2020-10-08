@@ -1,6 +1,7 @@
 import Scriptlets from 'scriptlets';
 import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
+import { RuleFactory } from './rule-factory';
 
 interface ConversionOptions {
     /**
@@ -466,14 +467,17 @@ export class RuleConverter {
      * @return {string} convertedRule
      */
     private static replaceOptions(rule: string): string {
-        if (!rule.startsWith(RuleConverter.MASK_COMMENT)
-            && (RuleConverter.FIRST_PARTY_REGEX.test(rule)
-                || RuleConverter.XHR_REGEX.test(rule)
-                || RuleConverter.CSS_REGEX.test(rule)
-                || RuleConverter.FRAME_REGEX.test(rule)
-                || RuleConverter.THIRD_PARTY_1P_3P_REGEX.test(rule)
-                || RuleConverter.GHIDE_REGEX.test(rule)
-                || RuleConverter.EHIDE_REGEX.test(rule))) {
+        if (rule.startsWith(RuleConverter.MASK_COMMENT) || RuleFactory.isCosmetic(rule)) {
+            return rule;
+        }
+
+        if (RuleConverter.FIRST_PARTY_REGEX.test(rule)
+            || RuleConverter.XHR_REGEX.test(rule)
+            || RuleConverter.CSS_REGEX.test(rule)
+            || RuleConverter.FRAME_REGEX.test(rule)
+            || RuleConverter.THIRD_PARTY_1P_3P_REGEX.test(rule)
+            || RuleConverter.GHIDE_REGEX.test(rule)
+            || RuleConverter.EHIDE_REGEX.test(rule)) {
             return rule
                 .replace(RuleConverter.FIRST_PARTY_REGEX, RuleConverter.FIRST_PARTY_REPLACEMENT)
                 .replace(RuleConverter.XHR_REGEX, RuleConverter.XHR_REPLACEMENT)
