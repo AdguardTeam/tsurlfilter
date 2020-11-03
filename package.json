@@ -30,7 +30,7 @@
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "npm run lint && npm run test -- --no-cache",
-    "test:benchmarks": "node --inspect node_modules/.bin/jest --watch --runInBand /test/engine/start-engine-benchmark.test.ts",
+    "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "build-extension": "npm run build && node ./tasks/build-extension.js",
     "prebuild-extension": "rimraf dist-extension",
     "deploy-docs": "ts-node tools/gh-pages-publish",

@@ -84,14 +84,14 @@ export class RuleStorageScanner {
 
     /**
      * ruleListIdxToStorageIdx converts pair of listID and rule list index
-     * to a single int64 "storage index"
+     * to "storage index" string
      *
      * @param listId
      * @param ruleIdx
      */
-    private static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): bigint {
+    private static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): string {
         // eslint-disable-next-line no-mixed-operators
-        return BigInt.asUintN(64, BigInt(listId) << BigInt(32) | BigInt(ruleIdx));
+        return `${listId}-${ruleIdx}`;
     }
 
     /**
@@ -102,7 +102,11 @@ export class RuleStorageScanner {
      * @param storageIdx
      * @return [listId, ruleIdx]
      */
-    public static storageIdxToRuleListIdx(storageIdx: bigint): [number, number] {
-        return [Number(storageIdx >> BigInt(32)), Number(storageIdx & BigInt(0xFFFFFF))];
+    public static storageIdxToRuleListIdx(storageIdx: string): [number, number] {
+        const separatorIndex = storageIdx.indexOf('-');
+        const list = Number(storageIdx.substring(0, separatorIndex));
+        const ruleId = Number(storageIdx.substring(separatorIndex + 1));
+
+        return [list, ruleId];
     }
 }

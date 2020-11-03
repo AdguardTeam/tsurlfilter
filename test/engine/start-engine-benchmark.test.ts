@@ -30,8 +30,10 @@ describe('Start Engine Benchmark', () => {
         console.log('Starting engine..');
         const startParse = Date.now();
 
+        // 20 times in 10674ms
+
         let count = 0;
-        while (count < 10) {
+        while (count < 20) {
             count += 1;
 
             const list = new StringRuleList(1, ruleText, false);

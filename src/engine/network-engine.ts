@@ -35,12 +35,12 @@ export class NetworkEngine {
     /**
      * Domain lookup table. Key is the domain name hash.
      */
-    private readonly domainsLookupTable: Map<number, bigint[]>;
+    private readonly domainsLookupTable: Map<number, string[]>;
 
     /**
      * Shortcuts lookup table. Key is the shortcut hash.
      */
-    private readonly shortcutsLookupTable: Map<number, bigint[]>;
+    private readonly shortcutsLookupTable: Map<number, string[]>;
 
     /**
      * Shortcuts histogram helps us choose the best shortcut for the shortcuts lookup table.
@@ -61,8 +61,8 @@ export class NetworkEngine {
     constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
-        this.domainsLookupTable = new Map<number, bigint[]>();
-        this.shortcutsLookupTable = new Map<number, bigint[]>();
+        this.domainsLookupTable = new Map<number, string[]>();
+        this.shortcutsLookupTable = new Map<number, string[]>();
         this.shortcutsHistogram = new Map<number, number>();
         this.otherRules = [];
 
@@ -127,7 +127,7 @@ export class NetworkEngine {
      * @param rule
      * @param storageIdx
      */
-    public addRule(rule: NetworkRule, storageIdx: bigint): void {
+    public addRule(rule: NetworkRule, storageIdx: string): void {
         if (!this.addRuleToShortcutsTable(rule, storageIdx)) {
             if (!this.addRuleToDomainsTable(rule, storageIdx)) {
                 if (!this.otherRules.includes(rule)) {
@@ -207,7 +207,7 @@ export class NetworkEngine {
      * @param storageIdx index
      * @return {boolean} true if the rule been added
      */
-    private addRuleToShortcutsTable(rule: NetworkRule, storageIdx: bigint): boolean {
+    private addRuleToShortcutsTable(rule: NetworkRule, storageIdx: string): boolean {
         const shortcuts = NetworkEngine.getRuleShortcuts(rule);
         if (!shortcuts || shortcuts.length === 0) {
             return false;
@@ -305,7 +305,7 @@ export class NetworkEngine {
      * @param storageIdx index
      * @return {boolean} true if the rule been added
      */
-    private addRuleToDomainsTable(rule: NetworkRule, storageIdx: bigint): boolean {
+    private addRuleToDomainsTable(rule: NetworkRule, storageIdx: string): boolean {
         const permittedDomains = rule.getPermittedDomains();
         if (!permittedDomains || permittedDomains.length === 0) {
             return false;

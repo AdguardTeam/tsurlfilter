@@ -34,7 +34,7 @@ export class RuleStorage {
     /**
      * cache with the rules which were retrieved.
      */
-    private readonly cache: Map<bigint, IRule>;
+    private readonly cache: Map<string, IRule>;
 
     /**
      * Constructor
@@ -46,7 +46,7 @@ export class RuleStorage {
     constructor(lists: IRuleList[]) {
         this.lists = lists;
         this.listsMap = new Map<number, IRuleList>();
-        this.cache = new Map<bigint, IRule>();
+        this.cache = new Map<string, IRule>();
 
         this.lists.forEach((list) => {
             const filterListId = list.getId();
@@ -74,7 +74,7 @@ export class RuleStorage {
      *
      * @param storageIdx the lookup index that you can get from the rule storage scanner
      */
-    retrieveRule(storageIdx: bigint): IRule | null {
+    retrieveRule(storageIdx: string): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -102,7 +102,7 @@ export class RuleStorage {
      * @param storageIdx
      * @return the rule or nil in any other case (not found or error)
      */
-    retrieveNetworkRule(storageIdx: bigint): NetworkRule | null {
+    retrieveNetworkRule(storageIdx: string): NetworkRule | null {
         const rule = this.retrieveRule(storageIdx);
         if (!rule) {
             return null;
@@ -121,7 +121,7 @@ export class RuleStorage {
      * @param storageIdx
      * @return the rule or nil in any other case (not found or error)
      */
-    retrieveHostRule(storageIdx: bigint): HostRule | null {
+    retrieveHostRule(storageIdx: string): HostRule | null {
         const rule = this.retrieveRule(storageIdx);
         if (!rule) {
             return null;
