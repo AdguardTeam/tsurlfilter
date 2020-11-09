@@ -125,12 +125,12 @@ export class RuleScanner {
     private readNextLine(): string | null {
         const line = this.reader.readLine();
 
-        if (line) {
+        if (line != null) {
             this.currentPos += line.length + 1;
             return line.trim();
         }
 
-        return line;
+        return null;
     }
 
     /**
