@@ -126,7 +126,7 @@ export class RuleScanner {
         const line = this.reader.readLine();
 
         if (line) {
-            this.currentPos += line.length;
+            this.currentPos += line.length + 1;
             return line.trim();
         }
 

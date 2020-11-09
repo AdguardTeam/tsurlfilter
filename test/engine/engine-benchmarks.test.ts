@@ -8,6 +8,11 @@ import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { DnsEngine } from '../../src/engine/dns-engine';
 import { setLogger } from '../../src/utils/logger';
 
+// Benchmarks
+//     ✓ runs network-engine (1567ms)
+//     ✓ runs engine - async load (1875ms)
+//     ✓ runs dns-engine (956ms)
+
 /**
  * Resources file paths
  */

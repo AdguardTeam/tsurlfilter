@@ -2,18 +2,17 @@ import { ILineReader } from './line-reader';
 
 /**
  * Reads string line by line
- * TODO: This is kind of test implementation
  */
 export class StringLineReader implements ILineReader {
     /**
-     * Full string
+     * Lines array
      */
-    private readonly text: string;
+    private readonly lines: string[];
 
     /**
-     * Current position
+     * Current line index
      */
-    private currentIndex = 0;
+    private currentLineIndex = 0;
 
     /**
      * Constructor
@@ -21,7 +20,7 @@ export class StringLineReader implements ILineReader {
      * @param text
      */
     constructor(text: string) {
-        this.text = text;
+        this.lines = text.split('\n');
     }
 
     /**
@@ -30,21 +29,12 @@ export class StringLineReader implements ILineReader {
      * @return text or null on end
      */
     public readLine(): string | null {
-        // eslint-disable-next-line prefer-destructuring
-        const length = this.text.length;
-        let line = null;
-        while (this.currentIndex < length) {
-            const currentChar = this.text.charAt(this.currentIndex);
-            this.currentIndex += 1;
-            if (!line) {
-                line = '';
-            }
-
-            line += currentChar;
-            if (currentChar === '\n') {
-                return line;
-            }
+        if (this.currentLineIndex > this.lines.length) {
+            return null;
         }
+
+        const line = this.lines[this.currentLineIndex];
+        this.currentLineIndex += 1;
 
         return line;
     }

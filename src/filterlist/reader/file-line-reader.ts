@@ -4,7 +4,6 @@ import { StringLineReader } from './string-line-reader';
 
 /**
  * Reads file line by line
- * TODO: Proper implementation
  */
 export class FileLineReader implements ILineReader {
     /**
