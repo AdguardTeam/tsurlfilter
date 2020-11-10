@@ -5,14 +5,14 @@ import { ILineReader } from './line-reader';
  */
 export class StringLineReader implements ILineReader {
     /**
-     * Lines array
+     * Full string
      */
-    private readonly lines: string[];
+    private readonly text: string;
 
     /**
-     * Current line index
+     * Current position
      */
-    private currentLineIndex = 0;
+    private currentIndex = 0;
 
     /**
      * Constructor
@@ -20,7 +20,7 @@ export class StringLineReader implements ILineReader {
      * @param text
      */
     constructor(text: string) {
-        this.lines = text.split('\n');
+        this.text = text;
     }
 
     /**
@@ -29,13 +29,16 @@ export class StringLineReader implements ILineReader {
      * @return text or null on end
      */
     public readLine(): string | null {
-        if (this.currentLineIndex > this.lines.length) {
+        if (this.currentIndex === -1) {
             return null;
         }
 
-        const line = this.lines[this.currentLineIndex];
-        this.currentLineIndex += 1;
+        const startIndex = this.currentIndex === 0 ? 0 : this.currentIndex + 1;
+        this.currentIndex = this.text.indexOf('\n', startIndex);
+        if (this.currentIndex === -1) {
+            return this.text.substring(startIndex);
+        }
 
-        return line;
+        return this.text.substring(startIndex, this.currentIndex);
     }
 }

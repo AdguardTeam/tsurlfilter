@@ -31,7 +31,7 @@ describe('Start Engine Benchmark', () => {
         const startParse = Date.now();
 
         // Start Engine Benchmark 20 times
-        // ✓ starts network-engine (7700ms)
+        // ✓ starts network-engine (7100ms)
 
         let count = 0;
         while (count < 20) {
