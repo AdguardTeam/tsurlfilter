@@ -32,7 +32,7 @@ describe('splitByDelimiterWithEscapeCharacter', () => {
         // 200000 iterations in 12774ms
 
         let count = 0;
-        while (count < 200000) {
+        while (count < 2000) {
             count += 1;
 
             let parts = utils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', false);
