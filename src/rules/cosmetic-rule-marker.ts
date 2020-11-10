@@ -72,10 +72,11 @@ const markers: CosmeticRuleMarker[] = [
 ];
 
 /**
- * First characters of the cosmetic rules markers.
+ * Map first characters to the cosmetic rules markers.
  * Necessary for {@link findCosmeticRuleMarker} to work properly.
  */
-const markersFirstChars: string[] = [];
+const markersFirstCharsMap: Map<string, CosmeticRuleMarker[]> = new Map<string, CosmeticRuleMarker[]>();
+let markersFirstCharsKeys: string[] = [];
 
 /** Initializes helper structures */
 function init(): void {
@@ -84,10 +85,15 @@ function init(): void {
 
     markers.forEach((marker) => {
         const c = marker.charAt(0);
-        if (!markersFirstChars.includes(c)) {
-            markersFirstChars.push(c);
+        const current = markersFirstCharsMap.get(c);
+        if (current) {
+            current.push(marker);
+        } else {
+            markersFirstCharsMap.set(c, [marker]);
         }
     });
+
+    markersFirstCharsKeys = Array.from(markersFirstCharsMap.keys());
 }
 
 init();
@@ -106,7 +112,7 @@ init();
  * @param ruleText - rule text to scan.
  */
 export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleMarker | null] {
-    for (const firstMarkerChar of markersFirstChars) {
+    for (const firstMarkerChar of markersFirstCharsKeys) {
         const startIndex = ruleText.indexOf(firstMarkerChar);
         if (startIndex === -1) {
             continue;
@@ -120,7 +126,12 @@ export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleM
             continue;
         }
 
-        for (const marker of markers) {
+        const firstCharMarkers = markersFirstCharsMap.get(firstMarkerChar);
+        if (!firstCharMarkers) {
+            continue;
+        }
+
+        for (const marker of firstCharMarkers) {
             if (utils.startsAtIndexWith(ruleText, startIndex, marker)) {
                 return [startIndex, marker];
             }
