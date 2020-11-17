@@ -215,6 +215,11 @@ describe('Options', () => {
         checkConversionResult('@@||example.com^$queryprune=test,jsinject', '@@||example.com^$removeparam=test,jsinject');
     });
 
+    it('converts doc options', () => {
+        checkConversionResult('@@||example.com^$doc', '@@||example.com^$document');
+        checkConversionResult('@@||example.com^$doc,jsinject', '@@||example.com^$document,jsinject');
+    });
+
     it('converts rules with $all modifier into few rules', () => {
         let rule = '||example.org^$all';
         let actual = RuleConverter.convertRule(rule);

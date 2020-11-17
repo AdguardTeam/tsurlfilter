@@ -58,6 +58,10 @@ export class RuleConverter {
 
     private static REMOVE_PARAM_REPLACEMENT = '$1removeparam$3';
 
+    private static DOC_REGEX = /(.+[^#]\$.*)(doc)($|,.+)/i;
+
+    private static DOC_REPLACEMENT = '$1document$3';
+
     /**
      * Rule masks
      */
@@ -480,6 +484,7 @@ export class RuleConverter {
             || RuleConverter.CSS_REGEX.test(rule)
             || RuleConverter.FRAME_REGEX.test(rule)
             || RuleConverter.QUERY_PRUNE_REGEX.test(rule)
+            || RuleConverter.DOC_REGEX.test(rule)
             || RuleConverter.THIRD_PARTY_1P_3P_REGEX.test(rule)
             || RuleConverter.GHIDE_REGEX.test(rule)
             || RuleConverter.EHIDE_REGEX.test(rule)) {
@@ -489,6 +494,7 @@ export class RuleConverter {
                 .replace(RuleConverter.CSS_REGEX, RuleConverter.CSS_REPLACEMENT)
                 .replace(RuleConverter.FRAME_REGEX, RuleConverter.FRAME_REPLACEMENT)
                 .replace(RuleConverter.QUERY_PRUNE_REGEX, RuleConverter.REMOVE_PARAM_REPLACEMENT)
+                .replace(RuleConverter.DOC_REGEX, RuleConverter.DOC_REPLACEMENT)
                 .replace(RuleConverter.THIRD_PARTY_1P, RuleConverter.THIRD_PARTY_1P_REPLACEMENT)
                 .replace(RuleConverter.THIRD_PARTY_3P, RuleConverter.THIRD_PARTY_3P_REPLACEMENT)
                 .replace(RuleConverter.GHIDE_REGEX, `$1${RuleConverter.GENERICHIDE}$3`)
