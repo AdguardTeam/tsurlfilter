@@ -209,6 +209,12 @@ describe('Options', () => {
         checkConversionResult('@@||example.com^$ehide,jsinject', '@@||example.com^$elemhide,jsinject');
     });
 
+    it('converts queryprune options', () => {
+        checkConversionResult('@@||example.com^$queryprune', '@@||example.com^$removeparam');
+        checkConversionResult('@@||example.com^$queryprune,jsinject', '@@||example.com^$removeparam,jsinject');
+        checkConversionResult('@@||example.com^$queryprune=test,jsinject', '@@||example.com^$removeparam=test,jsinject');
+    });
+
     it('converts rules with $all modifier into few rules', () => {
         let rule = '||example.org^$all';
         let actual = RuleConverter.convertRule(rule);
