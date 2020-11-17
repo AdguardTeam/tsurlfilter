@@ -16,8 +16,8 @@ describe('FileLineReader Test', () => {
         reader = new FileLineReader('./test/resources/hosts');
         expect(reader).toBeTruthy();
         line = reader.readLine();
-        expect(line).toBe('# This hosts file is a merged collection of hosts from reputable sources,\n');
+        expect(line).toBe('# This hosts file is a merged collection of hosts from reputable sources,');
         line = reader.readLine();
-        expect(line).toBe('# with a dash of crowd sourcing via Github\n');
+        expect(line).toBe('# with a dash of crowd sourcing via Github');
     });
 });

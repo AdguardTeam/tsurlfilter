@@ -2,7 +2,6 @@ import { ILineReader } from './line-reader';
 
 /**
  * Reads string line by line
- * TODO: This is kind of test implementation
  */
 export class StringLineReader implements ILineReader {
     /**
@@ -30,22 +29,16 @@ export class StringLineReader implements ILineReader {
      * @return text or null on end
      */
     public readLine(): string | null {
-        // eslint-disable-next-line prefer-destructuring
-        const length = this.text.length;
-        let line = null;
-        while (this.currentIndex < length) {
-            const currentChar = this.text.charAt(this.currentIndex);
-            this.currentIndex += 1;
-            if (!line) {
-                line = '';
-            }
-
-            line += currentChar;
-            if (currentChar === '\n') {
-                return line;
-            }
+        if (this.currentIndex === -1) {
+            return null;
         }
 
-        return line;
+        const startIndex = this.currentIndex === 0 ? 0 : this.currentIndex + 1;
+        this.currentIndex = this.text.indexOf('\n', startIndex);
+        if (this.currentIndex === -1) {
+            return this.text.substring(startIndex);
+        }
+
+        return this.text.substring(startIndex, this.currentIndex);
     }
 }

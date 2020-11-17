@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/tsurlfilter.esm.js",
@@ -30,6 +30,7 @@
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "npm run lint && npm run test -- --no-cache",
+    "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "build-extension": "npm run build && node ./tasks/build-extension.js",
     "prebuild-extension": "rimraf dist-extension",
     "deploy-docs": "ts-node tools/gh-pages-publish",

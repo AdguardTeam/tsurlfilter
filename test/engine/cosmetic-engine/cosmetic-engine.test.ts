@@ -3,9 +3,6 @@ import { RuleStorage } from '../../../src/filterlist/rule-storage';
 import { StringRuleList } from '../../../src/filterlist/rule-list';
 import { CosmeticOption } from '../../../src';
 
-// mock logger to hide console.error output in the tests
-jest.mock('../../../src/utils/logger');
-
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
     const list = new StringRuleList(listId, rules.join('\n'), false);
     return new RuleStorage([list]);

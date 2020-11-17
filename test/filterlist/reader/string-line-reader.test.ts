@@ -19,14 +19,14 @@ describe('StringLineReader Test', () => {
         reader = new StringLineReader('one line\n');
         expect(reader).toBeTruthy();
         line = reader.readLine();
-        expect(line).toBe('one line\n');
+        expect(line).toBe('one line');
         expect(reader.readLine()).toBeFalsy();
         expect(reader.readLine()).toBeFalsy();
 
         reader = new StringLineReader('one line\ntwo lines');
         expect(reader).toBeTruthy();
         line = reader.readLine();
-        expect(line).toBe('one line\n');
+        expect(line).toBe('one line');
         line = reader.readLine();
         expect(line).toBe('two lines');
         expect(reader.readLine()).toBeFalsy();

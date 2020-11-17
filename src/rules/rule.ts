@@ -52,7 +52,7 @@ export class IndexedStorageRule {
     /**
      * Index
      */
-    public index: bigint;
+    public index: string;
 
     /**
      * Constructor
@@ -60,7 +60,7 @@ export class IndexedStorageRule {
      * @param rule
      * @param index
      */
-    constructor(rule: IRule, index: bigint) {
+    constructor(rule: IRule, index: string) {
         this.rule = rule;
         this.index = index;
     }

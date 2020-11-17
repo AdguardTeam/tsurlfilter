@@ -27,7 +27,7 @@ export class DnsEngine {
     /**
      * Lookup table. Key is the hostname hash.
      */
-    private readonly lookupTable: Map<number, bigint[]>;
+    private readonly lookupTable: Map<number, string[]>;
 
     /**
      * Network engine instance
@@ -42,7 +42,7 @@ export class DnsEngine {
     constructor(storage: RuleStorage) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
-        this.lookupTable = new Map<number, bigint[]>();
+        this.lookupTable = new Map<number, string[]>();
 
         this.networkEngine = new NetworkEngine(storage, true);
 
@@ -104,7 +104,7 @@ export class DnsEngine {
      * @param rule
      * @param storageIdx
      */
-    private addRule(rule: HostRule, storageIdx: bigint): void {
+    private addRule(rule: HostRule, storageIdx: string): void {
         rule.getHostnames().forEach((hostname) => {
             const hash = fastHash(hostname);
 

@@ -1,4 +1,5 @@
 /* eslint-disable max-len */
+import console from 'console';
 import * as utils from '../../src/utils/utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
@@ -17,6 +18,31 @@ describe('splitByDelimiterWithEscapeCharacter', () => {
 
         parts = utils.splitByDelimiterWithEscapeCharacter(',example.org,example.com', ',', '\\', false);
         expect(parts.length).toEqual(2);
+
+        parts = utils.splitByDelimiterWithEscapeCharacter('/text-to-be-replaced/new-text/i', '/', '\\', true);
+        expect(parts.length).toEqual(3);
+
+        parts = utils.splitByDelimiterWithEscapeCharacter('/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/$1<\\/VAST>/', '/', '\\', true);
+        expect(parts.length).toEqual(3);
+    });
+
+    it('measures splitByDelimiterWithEscapeCharacter', async () => {
+        const startParse = Date.now();
+
+        // 200000 iterations in 12774ms
+
+        let count = 0;
+        while (count < 2000) {
+            count += 1;
+
+            let parts = utils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', false);
+            expect(parts.length).toEqual(2);
+
+            parts = utils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', true);
+            expect(parts.length).toEqual(4);
+        }
+
+        console.log(`Elapsed time: ${Date.now() - startParse}`);
     });
 });
 

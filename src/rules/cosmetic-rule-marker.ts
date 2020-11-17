@@ -1,5 +1,3 @@
-import * as utils from '../utils/utils';
-
 /**
  * Enumeration with the cosmetic rules markers.
  *
@@ -51,48 +49,6 @@ export const enum CosmeticRuleMarker {
 }
 
 /**
- * Contains all possible cosmetic rule markers.
- * We need this to make {@link findCosmeticRuleMarker} work.
- *
- * Please note, that it's sorted in the {@link init} function.
- */
-const markers: CosmeticRuleMarker[] = [
-    CosmeticRuleMarker.ElementHiding,
-    CosmeticRuleMarker.ElementHidingException,
-    CosmeticRuleMarker.ElementHidingExtCSS,
-    CosmeticRuleMarker.ElementHidingExtCSSException,
-    CosmeticRuleMarker.Css,
-    CosmeticRuleMarker.CssException,
-    CosmeticRuleMarker.CssExtCSS,
-    CosmeticRuleMarker.CssExtCSSException,
-    CosmeticRuleMarker.Js,
-    CosmeticRuleMarker.JsException,
-    CosmeticRuleMarker.Html,
-    CosmeticRuleMarker.HtmlException,
-];
-
-/**
- * First characters of the cosmetic rules markers.
- * Necessary for {@link findCosmeticRuleMarker} to work properly.
- */
-const markersFirstChars: string[] = [];
-
-/** Initializes helper structures */
-function init(): void {
-    // Sort by markers length in reverse order
-    markers.sort((left, right) => right.length - left.length);
-
-    markers.forEach((marker) => {
-        const c = marker.charAt(0);
-        if (!markersFirstChars.includes(c)) {
-            markersFirstChars.push(c);
-        }
-    });
-}
-
-init();
-
-/**
  * findCosmeticRuleMarker looks for a cosmetic rule marker in the rule text
  * and returns the start index of the marker and the marker found.
  * If nothing found, it returns -1 and null.
@@ -106,24 +62,89 @@ init();
  * @param ruleText - rule text to scan.
  */
 export function findCosmeticRuleMarker(ruleText: string): [number, CosmeticRuleMarker | null] {
-    for (const firstMarkerChar of markersFirstChars) {
-        const startIndex = ruleText.indexOf(firstMarkerChar);
-        if (startIndex === -1) {
-            continue;
-        }
+    const maxIndex = ruleText.length - 1;
+    for (let i = 0; i < maxIndex; i += 1) {
+        const char = ruleText.charAt(i);
+        switch (char) {
+            case '#':
+                if (i + 4 <= maxIndex) {
+                    if (ruleText.charAt(i + 1) === '@'
+                        && ruleText.charAt(i + 2) === '$'
+                        && ruleText.charAt(i + 3) === '?'
+                        && ruleText.charAt(i + 4) === '#') {
+                        return [i, CosmeticRuleMarker.CssExtCSSException];
+                    }
+                }
 
-        // Handling false positives while looking for cosmetic rules in host files.
-        //
-        // For instance, it could look like this:
-        // 127.0.0.1 localhost ## this is just a comment
-        if (startIndex > 0 && ruleText.charAt(startIndex - 1) === ' ') {
-            continue;
-        }
+                if (i + 3 <= maxIndex) {
+                    if (ruleText.charAt(i + 1) === '@'
+                        && ruleText.charAt(i + 2) === '?' && ruleText.charAt(i + 3) === '#') {
+                        return [i, CosmeticRuleMarker.ElementHidingExtCSSException];
+                    }
 
-        for (const marker of markers) {
-            if (utils.startsAtIndexWith(ruleText, startIndex, marker)) {
-                return [startIndex, marker];
-            }
+                    if (ruleText.charAt(i + 1) === '@'
+                        && ruleText.charAt(i + 2) === '$' && ruleText.charAt(i + 3) === '#') {
+                        return [i, CosmeticRuleMarker.CssException];
+                    }
+
+                    if (ruleText.charAt(i + 1) === '@'
+                        && ruleText.charAt(i + 2) === '%' && ruleText.charAt(i + 3) === '#') {
+                        return [i, CosmeticRuleMarker.JsException];
+                    }
+
+                    if (ruleText.charAt(i + 1) === '$'
+                        && ruleText.charAt(i + 2) === '?' && ruleText.charAt(i + 3) === '#') {
+                        return [i, CosmeticRuleMarker.CssExtCSS];
+                    }
+                }
+
+                if (i + 2 <= maxIndex) {
+                    if (ruleText.charAt(i + 1) === '@' && ruleText.charAt(i + 2) === '#') {
+                        return [i, CosmeticRuleMarker.ElementHidingException];
+                    }
+
+                    if (ruleText.charAt(i + 1) === '?' && ruleText.charAt(i + 2) === '#') {
+                        return [i, CosmeticRuleMarker.ElementHidingExtCSS];
+                    }
+
+                    if (ruleText.charAt(i + 1) === '%' && ruleText.charAt(i + 2) === '#') {
+                        return [i, CosmeticRuleMarker.Js];
+                    }
+
+                    if (ruleText.charAt(i + 1) === '$' && ruleText.charAt(i + 2) === '#') {
+                        return [i, CosmeticRuleMarker.Css];
+                    }
+                }
+
+                if (i + 1 <= maxIndex) {
+                    if (ruleText.charAt(i + 1) === '#') {
+                        // Handling false positives while looking for cosmetic rules in host files.
+                        //
+                        // For instance, it could look like this:
+                        // 127.0.0.1 localhost ## this is just a comment
+                        if (i > 0 && ruleText.charAt(i - 1) === ' ') {
+                            return [-1, null];
+                        }
+
+                        return [i, CosmeticRuleMarker.ElementHiding];
+                    }
+                }
+                break;
+            case '$':
+                if (i + 2 <= maxIndex) {
+                    if (ruleText.charAt(i + 1) === '@' && ruleText.charAt(i + 2) === '$') {
+                        return [i, CosmeticRuleMarker.HtmlException];
+                    }
+                }
+
+                if (i + 1 <= maxIndex) {
+                    if (ruleText.charAt(i + 1) === '$') {
+                        return [i, CosmeticRuleMarker.Html];
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
 
