@@ -123,7 +123,7 @@
   },
   "dependencies": {
     "consola": "^2.12.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.4",
+    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.5",
     "is-ip": "^3.1.0",
     "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.12",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
