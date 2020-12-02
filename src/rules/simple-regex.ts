@@ -70,6 +70,11 @@ export class SimpleRegex {
      */
     public static readonly MASK_REGEX_RULE: string = '/';
 
+    /**
+     * If string starts with exclamation mark "!" we consider it as comment
+     */
+    public static readonly MASK_COMMENT: '!';
+
     /** Regex with basic matching pattern special characters */
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 
