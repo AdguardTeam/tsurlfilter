@@ -2,6 +2,7 @@ import Scriptlets from 'scriptlets';
 import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';
+import { SimpleRegex } from './simple-regex';
 
 interface ConversionOptions {
     /**
@@ -73,8 +74,6 @@ export class RuleConverter {
 
     private static MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE= '#@$?#';
 
-    private static MASK_COMMENT= '!';
-
     private static REMOVE_RULE_PATTERN = ':remove()';
 
     private static REMOVE_RULE_REPLACER = ' { remove: true; }';
@@ -143,7 +142,7 @@ export class RuleConverter {
      * @returns {string} converted rule
      */
     private static convertScriptHasTextToScriptTagContent(ruleText: string): string {
-        if (!ruleText.startsWith(RuleConverter.MASK_COMMENT) && RuleConverter.SCRIPT_HAS_TEXT_REGEX.test(ruleText)) {
+        if (!ruleText.startsWith(SimpleRegex.MASK_COMMENT) && RuleConverter.SCRIPT_HAS_TEXT_REGEX.test(ruleText)) {
             return `${
                 ruleText.replace(RuleConverter.SCRIPT_HAS_TEXT_REGEX, RuleConverter.SCRIPT_HAS_TEXT_REPLACEMENT)
                     .slice(0, -1)
@@ -467,7 +466,7 @@ export class RuleConverter {
      * @return {string} convertedRule
      */
     private static replaceOptions(rule: string): string {
-        if (rule.startsWith(RuleConverter.MASK_COMMENT) || RuleFactory.isCosmetic(rule)) {
+        if (rule.startsWith(SimpleRegex.MASK_COMMENT) || RuleFactory.isCosmetic(rule)) {
             return rule;
         }
 
