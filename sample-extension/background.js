@@ -29,7 +29,7 @@ import * as TSUrlFilter from './engine.js';
     const rulesText = await loadRules();
 
     // This supposed to be done then rulesText is downloaded, before saving to local file
-    // Rules text will be splitted and processed line by line
+    // Rules text will be split and processed line by line
     const converted = TSUrlFilter.RuleConverter.convertRules(rulesText);
 
     // Start engine

@@ -124,6 +124,7 @@ export class RuleConverter {
         }
 
         const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
+        console.log(abpRedirectRule);
         if (abpRedirectRule) {
             return [abpRedirectRule];
         }
