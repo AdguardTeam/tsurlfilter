@@ -48,7 +48,7 @@ export enum CosmeticRuleType {
 export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
     '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
     ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
-    ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
+    ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
     ':matches-attr(', ':matches-property(', ':is('];
 
 /**
@@ -112,7 +112,7 @@ export class CosmeticRule implements rule.IRule {
         ':not', ':nth-child', ':nth-last-child', ':nth-last-of-type', ':nth-of-type',
         ':only-child', ':only-of-type', ':optional', ':out-of-range', ':read-only',
         ':read-write', ':required', ':root', ':target', ':valid', ':visited',
-        ':-abp-has', ':-abp-contains', ':-abp-properties', ':xpath', ':nth-ancestor', ':upward', ':remove',
+        ':-abp-has', ':-abp-contains', ':xpath', ':nth-ancestor', ':upward', ':remove',
         ':matches-attr', ':matches-property', ':is'];
 
     /**
