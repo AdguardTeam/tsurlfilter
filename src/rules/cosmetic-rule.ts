@@ -49,7 +49,7 @@ export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ex
     '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
     ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
     ':if(', ':if-not(', ':properties(', ':-abp-properties(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
-    ':matches-attr(', ':matches-property('];
+    ':matches-attr(', ':matches-property(', ':is('];
 
 /**
  * Implements a basic cosmetic rule.
@@ -113,7 +113,7 @@ export class CosmeticRule implements rule.IRule {
         ':only-child', ':only-of-type', ':optional', ':out-of-range', ':read-only',
         ':read-write', ':required', ':root', ':target', ':valid', ':visited',
         ':-abp-has', ':-abp-contains', ':-abp-properties', ':xpath', ':nth-ancestor', ':upward', ':remove',
-        ':matches-attr', ':matches-property'];
+        ':matches-attr', ':matches-property', ':is'];
 
     /**
      * Parses first pseudo class from the specified CSS selector
