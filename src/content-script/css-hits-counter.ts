@@ -262,6 +262,10 @@ export default class CssHitsCounter {
             return;
         }
 
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+
         let timeoutId: number | null = null;
         this.observer = new MutationObserver(((mutationRecords) => {
             // Collect probe elements, count them, then remove from their targets
