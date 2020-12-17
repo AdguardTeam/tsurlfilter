@@ -1,7 +1,5 @@
 import { RuleScanner } from './scanner/rule-scanner';
-import { IRule } from '../rules/rule';
 import { StringLineReader } from './reader/string-line-reader';
-import { RuleFactory } from '../rules/rule-factory';
 import { ScannerType } from './scanner/scanner-type';
 
 /**
@@ -19,11 +17,11 @@ export interface IRuleList {
     newScanner(scannerType: ScannerType): RuleScanner;
 
     /**
-     * Retrieves a rule by its index
+     * Retrieves rule text by its index
      *
      * @param ruleIdx
      */
-    retrieveRule(ruleIdx: number): IRule | null;
+    retrieveRuleText(ruleIdx: number): string | null;
 
     /**
      * Closes the rules list
@@ -95,13 +93,13 @@ export class StringRuleList implements IRuleList {
     }
 
     /**
-     * RetrieveRule finds and deserializes rule by its index.
+     * Finds rule text by its index.
      * If there's no rule by that index or rule is invalid, it will return null
      *
      * @param ruleIdx
-     * @return rule object
+     * @return rule text or null
      */
-    retrieveRule(ruleIdx: number): IRule | null {
+    retrieveRuleText(ruleIdx: number): string | null {
         if (ruleIdx < 0 || ruleIdx >= this.rulesText.length) {
             return null;
         }
@@ -116,6 +114,6 @@ export class StringRuleList implements IRuleList {
             return null;
         }
 
-        return RuleFactory.createRule(line, this.id);
+        return line;
     }
 }
