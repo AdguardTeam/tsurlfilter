@@ -148,6 +148,36 @@ describe('TestMatchSimplePattern', () => {
     });
 });
 
+describe('Test match simple domain rules', () => {
+    it('works if it finds rule with domain', () => {
+        const rule = '||example.org';
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+        const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
+        const sourceURL = 'https://www.test.com/';
+
+        const request = new Request(url, sourceURL, RequestType.XmlHttpRequest);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+    });
+
+    it('works if it finds rule with naked domain', () => {
+        const rule = 'example.org';
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+        const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
+        const sourceURL = 'https://www.test.com/';
+
+        const request = new Request(url, sourceURL, RequestType.XmlHttpRequest);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+    });
+});
+
 describe('Test Match Wildcard domain', () => {
     it('works if it finds rule matching wildcard domain', () => {
         const rule = '||*/te/^$domain=~negative.*|example.*,third-party';

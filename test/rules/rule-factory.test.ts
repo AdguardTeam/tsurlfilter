@@ -28,9 +28,25 @@ describe('RuleFactory Builder Test', () => {
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(NetworkRule);
 
-        rule = RuleFactory.createRule('127.0.0.1 localhost', 1);
+        rule = RuleFactory.createRule('127.0.0.1 localhost', 1, false, false, false);
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('127.0.0.1 localhost');
+        expect(rule!.getFilterListId()).toBe(1);
+        expect(rule!).toBeInstanceOf(HostRule);
+    });
+
+    it('check host and network rules recognition', () => {
+        let rule;
+
+        rule = RuleFactory.createRule('example.org', 1, false, false, true);
+        expect(rule).toBeTruthy();
+        expect(rule!.getText()).toBe('example.org');
+        expect(rule!.getFilterListId()).toBe(1);
+        expect(rule!).toBeInstanceOf(NetworkRule);
+
+        rule = RuleFactory.createRule('example.org', 1, false, false, false);
+        expect(rule).toBeTruthy();
+        expect(rule!.getText()).toBe('example.org');
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(HostRule);
     });

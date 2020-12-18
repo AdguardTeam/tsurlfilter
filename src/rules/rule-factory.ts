@@ -21,7 +21,7 @@ export class RuleFactory {
      * @return IRule object or null
      */
     public static createRule(
-        text: string, filterListId: number, ignoreNetwork = false, ignoreCosmetic = false, ignoreHost = false,
+        text: string, filterListId: number, ignoreNetwork = false, ignoreCosmetic = false, ignoreHost = true,
     ): IRule | null {
         if (!text || RuleFactory.isComment(text)) {
             return null;
