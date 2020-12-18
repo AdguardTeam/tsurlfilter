@@ -404,6 +404,11 @@ describe('NetworkRule.match', () => {
 
         request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestType.Script);
         expect(rule.match(request)).toEqual(false);
+    });
+
+    it('works when $domain modifier is applied properly - hostname', () => {
+        let rule: NetworkRule;
+        let request: Request;
 
         // Wide rule
         rule = new NetworkRule('$domain=example.org', 0);
@@ -424,6 +429,16 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('$domain=example.org', 0);
         request = new Request('https://example.org/', 'https://example.com/', RequestType.Image);
         expect(rule.match(request)).toEqual(false);
+
+        // Not matching domain specific patterns
+        rule = new NetworkRule('||example.org/path$domain=example.org', 0);
+        request = new Request('https://example.org/path', 'https://example.com/', RequestType.Document);
+        expect(rule.match(request)).toEqual(false);
+
+        // Match any domain pattern
+        rule = new NetworkRule('path$domain=example.org', 0);
+        request = new Request('https://example.org/path', 'https://example.com/', RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
     });
 
     it('works when $domain modifier is applied properly - wildcards', () => {

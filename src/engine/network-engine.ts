@@ -183,6 +183,8 @@ export class NetworkEngine {
         }
 
         const domains = NetworkEngine.getSubdomains(request.sourceHostname);
+        domains.push(...NetworkEngine.getSubdomains(request.hostname));
+
         domains.forEach((domain) => {
             const hash = fastHash(domain);
             const rulesIndexes = this.domainsLookupTable.get(hash);
