@@ -378,6 +378,14 @@ export class NetworkRule implements rule.IRule {
                 return false;
             }
 
+            /**
+             * Skipping patterns with domain specified
+             * https://github.com/AdguardTeam/CoreLibs/issues/1354#issuecomment-704226271
+             */
+            if (this.isPatternDomainSpecific()) {
+                return false;
+            }
+
             if (!this.matchDomain(request.hostname || '')) {
                 return false;
             }
@@ -512,14 +520,17 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.pattern.startsWith(SimpleRegex.MASK_START_URL)
+        return !this.isPatternDomainSpecific();
+    }
+
+    /**
+     * In case pattern starts with the following it targets some specific domain
+     */
+    private isPatternDomainSpecific(): boolean {
+        return this.pattern.startsWith(SimpleRegex.MASK_START_URL)
             || this.pattern.startsWith('http://')
             || this.pattern.startsWith('https:/')
-            || this.pattern.startsWith('://')) {
-            return false;
-        }
-
-        return true;
+            || this.pattern.startsWith('://');
     }
 
     /**
