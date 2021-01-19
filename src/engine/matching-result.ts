@@ -210,9 +210,10 @@ export class MatchingResult {
             return CosmeticOption.CosmeticOptionAll;
         }
 
-        if (this.basicRule.isDocumentWhitelistRule()) {
-            return CosmeticOption.CosmeticOptionNone;
-        }
+        // FIXME What is purpose of this line? Can it be removed?
+        // if (this.basicRule.isDocumentWhitelistRule()) {
+        //     return CosmeticOption.CosmeticOptionNone;
+        // }
 
         let option = CosmeticOption.CosmeticOptionAll;
 
