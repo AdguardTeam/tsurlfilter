@@ -84,7 +84,7 @@ export class MatchingResult {
         // First of all, find document-level whitelist rules
         if (sourceRules) {
             sourceRules.forEach((r) => {
-                if (r.isDocumentWhitelistRule()) {
+                if (r.isDocumentLevelWhitelistRule()) {
                     if (!this.documentRule || r.isHigherPriority(this.documentRule)) {
                         this.documentRule = r;
                     }
@@ -180,7 +180,7 @@ export class MatchingResult {
         if (this.replaceRules) {
             const basic = this.basicRule || this.documentRule;
             if (basic && basic.isWhitelist()) {
-                if (basic.isDocumentWhitelistRule()) {
+                if (basic.isDocumentLevelWhitelistRule()) {
                     return basic;
                 }
 
@@ -210,10 +210,9 @@ export class MatchingResult {
             return CosmeticOption.CosmeticOptionAll;
         }
 
-        // FIXME What is purpose of this line? Can it be removed?
-        // if (this.basicRule.isDocumentWhitelistRule()) {
-        //     return CosmeticOption.CosmeticOptionNone;
-        // }
+        if (this.basicRule.isDocumentWhitelistRule()) {
+            return CosmeticOption.CosmeticOptionNone;
+        }
 
         let option = CosmeticOption.CosmeticOptionAll;
 

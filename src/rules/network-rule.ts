@@ -256,7 +256,7 @@ export class NetworkRule implements rule.IRule {
      * of the page subrequests.
      * For instance, `@@||example.org^$urlblock` unblocks all sub-requests.
      */
-    isDocumentWhitelistRule(): boolean {
+    isDocumentLevelWhitelistRule(): boolean {
         if (!this.isWhitelist()) {
             return false;
         }
@@ -265,6 +265,23 @@ export class NetworkRule implements rule.IRule {
             || this.isOptionEnabled(NetworkRuleOption.Elemhide)
             || this.isOptionEnabled(NetworkRuleOption.Jsinject)
             || this.isOptionEnabled(NetworkRuleOption.Content);
+    }
+
+    /**
+     * Checks if the rule is a document whitelist rule
+     * For instance,
+     * "@@||example.org^$document"
+     * completely disables filtering on all pages at example.com and all subdomains.
+     */
+    isDocumentWhitelistRule(): boolean {
+        if (!this.isWhitelist()) {
+            return false;
+        }
+
+        return this.isOptionEnabled(NetworkRuleOption.Urlblock)
+            && this.isOptionEnabled(NetworkRuleOption.Elemhide)
+            && this.isOptionEnabled(NetworkRuleOption.Jsinject)
+            && this.isOptionEnabled(NetworkRuleOption.Content);
     }
 
     /**
