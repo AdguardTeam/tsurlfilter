@@ -268,11 +268,11 @@ describe('TestEngineCosmeticResult - js', () => {
 
 describe('$urlblock modifier', () => {
     it('should have higher priority than important', () => {
-        const important = '||example.org$important';
+        const important = '||example.com$important';
         const urlblock = '@@||example.org$urlblock';
         const list = new StringRuleList(1, [important, urlblock].join('\n'));
         const engine = new Engine(new RuleStorage([list]));
-        const request = new Request('http://example.org/image.png', 'http://example.org', RequestType.Image);
+        const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
         const result = engine.matchRequest(request).getBasicResult();
         expect(result).toBeTruthy();
         expect(result?.getText()).toEqual(urlblock);
