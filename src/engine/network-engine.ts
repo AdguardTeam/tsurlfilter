@@ -183,7 +183,9 @@ export class NetworkEngine {
         }
 
         const domains = NetworkEngine.getSubdomains(request.sourceHostname);
-        domains.push(...NetworkEngine.getSubdomains(request.hostname));
+        if (request.hostname !== request.sourceHostname) {
+            domains.push(...NetworkEngine.getSubdomains(request.hostname));
+        }
 
         domains.forEach((domain) => {
             const hash = fastHash(domain);
