@@ -84,7 +84,7 @@ export class MatchingResult {
         // First of all, find document-level whitelist rules
         if (sourceRules) {
             sourceRules.forEach((r) => {
-                if (r.isDocumentWhitelistRule()) {
+                if (r.isDocumentLevelWhitelistRule()) {
                     if (!this.documentRule || r.isHigherPriority(this.documentRule)) {
                         this.documentRule = r;
                     }
@@ -180,7 +180,7 @@ export class MatchingResult {
         if (this.replaceRules) {
             const basic = this.basicRule || this.documentRule;
             if (basic && basic.isWhitelist()) {
-                if (basic.isDocumentWhitelistRule()) {
+                if (basic.isDocumentLevelWhitelistRule()) {
                     return basic;
                 }
 

@@ -5,6 +5,7 @@ import { RuleScanner } from './scanner/rule-scanner';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { ScannerType } from './scanner/scanner-type';
+import { RuleFactory } from '../rules/rule-factory';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -73,8 +74,9 @@ export class RuleStorage {
      * Looks for the filtering rule in this storage
      *
      * @param storageIdx the lookup index that you can get from the rule storage scanner
+     * @param ignoreHost rules could be retrieved as host rules
      */
-    retrieveRule(storageIdx: string): IRule | null {
+    retrieveRule(storageIdx: string, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -88,7 +90,12 @@ export class RuleStorage {
             return null;
         }
 
-        const result = list.retrieveRule(ruleIdx);
+        const ruleText = list.retrieveRuleText(ruleIdx);
+        if (!ruleText) {
+            return null;
+        }
+
+        const result = RuleFactory.createRule(ruleText!, listId, false, false, ignoreHost);
         if (result) {
             this.cache.set(storageIdx, result);
         }
@@ -122,7 +129,7 @@ export class RuleStorage {
      * @return the rule or nil in any other case (not found or error)
      */
     retrieveHostRule(storageIdx: string): HostRule | null {
-        const rule = this.retrieveRule(storageIdx);
+        const rule = this.retrieveRule(storageIdx, false);
         if (!rule) {
             return null;
         }

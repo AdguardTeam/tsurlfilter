@@ -86,28 +86,6 @@ export enum NetworkRuleOption {
 }
 
 /**
- * A marker that is used in rules of exception.
- * To turn off filtering for a request, start your rule with this marker.
- */
-export const MASK_WHITE_LIST = '@@';
-
-/**
- * Separates the rule pattern from the list of modifiers.
- *
- * ```
- * rule = ["@@"] pattern [ "$" modifiers ]
- * modifiers = [modifier0, modifier1[, ...[, modifierN]]]
- * ```
- */
-export const OPTIONS_DELIMITER = '$';
-
-/** $replace modifier -- it might be necessary to know that it's in the rule */
-const replaceOption = 'replace';
-/** this character is used to escape special characters in modifiers values */
-const escapeCharacter = '\\';
-const reEscapedOptionsDelimiter = new RegExp(`${escapeCharacter}${OPTIONS_DELIMITER}`, 'g');
-
-/**
  * Helper class that is used for passing {@link NetworkRule.parseRuleText}
  * result to the caller. Should not be used outside of this file.
  */
@@ -176,6 +154,78 @@ export class NetworkRule implements rule.IRule {
      */
     private appModifier: IAppModifier | null = null;
 
+    /**
+     * Separates the rule pattern from the list of modifiers.
+     *
+     * ```
+     * rule = ["@@"] pattern [ "$" modifiers ]
+     * modifiers = [modifier0, modifier1[, ...[, modifierN]]]
+     * ```
+     */
+    public static readonly OPTIONS_DELIMITER = '$';
+
+    /**
+     * This character is used to escape special characters in modifiers values
+     */
+    private static ESCAPE_CHARACTER = '\\';
+
+    // eslint-disable-next-line max-len
+    private static RE_ESCAPED_OPTIONS_DELIMITER = new RegExp(`${NetworkRule.ESCAPE_CHARACTER}${NetworkRule.OPTIONS_DELIMITER}`, 'g');
+
+    /**
+     * A marker that is used in rules of exception.
+     * To turn off filtering for a request, start your rule with this marker.
+     */
+    public static readonly MASK_ALLOWLIST = '@@';
+
+    /**
+     * Mark that negates options
+     */
+    public static readonly NOT_MARK = '~';
+
+    /**
+     * Rule options
+     */
+    public static readonly OPTIONS = {
+        THIRD_PARTY: 'third-party',
+        FIRST_PARTY: 'first-party',
+        MATCH_CASE: 'match-case',
+        IMPORTANT: 'important',
+        DOMAIN: 'domain',
+        ELEMHIDE: 'elemhide',
+        GENERICHIDE: 'generichide',
+        GENERICBLOCK: 'genericblock',
+        JSINJECT: 'jsinject',
+        URLBLOCK: 'urlblock',
+        CONTENT: 'content',
+        DOCUMENT: 'document',
+        STEALTH: 'stealth',
+        POPUP: 'popup',
+        EMPTY: 'empty',
+        MP4: 'mp4',
+        SCRIPT: 'script',
+        STYLESHEET: 'stylesheet',
+        SUBDOCUMENT: 'subdocument',
+        OBJECT: 'object',
+        IMAGE: 'image',
+        XMLHTTPREQUEST: 'xmlhttprequest',
+        MEDIA: 'media',
+        FONT: 'font',
+        WEBSOCKET: 'websocket',
+        OTHER: 'other',
+        PING: 'ping',
+        WEBRTC: 'webrtc',
+        BADFILTER: 'badfilter',
+        CSP: 'csp',
+        REPLACE: 'replace',
+        COOKIE: 'cookie',
+        REDIRECT: 'redirect',
+        REMOVEPARAM: 'removeparam',
+        APP: 'app',
+        NETWORK: 'network',
+        EXTENSION: 'extension',
+    };
+
     getText(): string {
         return this.ruleText;
     }
@@ -205,6 +255,23 @@ export class NetworkRule implements rule.IRule {
      * This means that the rule is supposed to disable or modify blocking
      * of the page subrequests.
      * For instance, `@@||example.org^$urlblock` unblocks all sub-requests.
+     */
+    isDocumentLevelWhitelistRule(): boolean {
+        if (!this.isWhitelist()) {
+            return false;
+        }
+
+        return this.isOptionEnabled(NetworkRuleOption.Urlblock)
+            || this.isOptionEnabled(NetworkRuleOption.Elemhide)
+            || this.isOptionEnabled(NetworkRuleOption.Jsinject)
+            || this.isOptionEnabled(NetworkRuleOption.Content);
+    }
+
+    /**
+     * Checks if the rule is a document whitelist rule
+     * For instance,
+     * "@@||example.org^$document"
+     * completely disables filtering on all pages at example.com and all subdomains.
      */
     isDocumentWhitelistRule(): boolean {
         if (!this.isWhitelist()) {
@@ -325,6 +392,14 @@ export class NetworkRule implements rule.IRule {
              * as otherwise, you'd need to create an additional rule for each of these domains.
              */
             if (request.requestType !== RequestType.Document && request.requestType !== RequestType.Subdocument) {
+                return false;
+            }
+
+            /**
+             * Skipping patterns with domain specified
+             * https://github.com/AdguardTeam/CoreLibs/issues/1354#issuecomment-704226271
+             */
+            if (this.isPatternDomainSpecific()) {
                 return false;
             }
 
@@ -462,14 +537,17 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.pattern.startsWith(SimpleRegex.MASK_START_URL)
+        return !this.isPatternDomainSpecific();
+    }
+
+    /**
+     * In case pattern starts with the following it targets some specific domain
+     */
+    private isPatternDomainSpecific(): boolean {
+        return this.pattern.startsWith(SimpleRegex.MASK_START_URL)
             || this.pattern.startsWith('http://')
             || this.pattern.startsWith('https:/')
-            || this.pattern.startsWith('://')) {
-            return false;
-        }
-
-        return true;
+            || this.pattern.startsWith('://');
     }
 
     /**
@@ -793,185 +871,187 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if there is an unsupported modifier
      */
     private loadOption(optionName: string, optionValue: string): void {
+        const { OPTIONS, NOT_MARK } = NetworkRule;
+
         switch (optionName) {
             // General options
-            case 'third-party':
-            case '~first-party':
+            case OPTIONS.THIRD_PARTY:
+            case NOT_MARK + OPTIONS.FIRST_PARTY:
                 this.setOptionEnabled(NetworkRuleOption.ThirdParty, true);
                 break;
-            case '~third-party':
-            case 'first-party':
+            case NOT_MARK + OPTIONS.THIRD_PARTY:
+            case OPTIONS.FIRST_PARTY:
                 this.setOptionEnabled(NetworkRuleOption.ThirdParty, false);
                 break;
-            case 'match-case':
+            case OPTIONS.MATCH_CASE:
                 this.setOptionEnabled(NetworkRuleOption.MatchCase, true);
                 break;
-            case '~match-case':
+            case NOT_MARK + OPTIONS.MATCH_CASE:
                 this.setOptionEnabled(NetworkRuleOption.MatchCase, false);
                 break;
-            case 'important':
+            case OPTIONS.IMPORTANT:
                 this.setOptionEnabled(NetworkRuleOption.Important, true);
                 break;
 
             // $domain modifier
-            case 'domain': {
+            case OPTIONS.DOMAIN: {
                 const domainModifier = new DomainModifier(optionValue, '|');
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
                 break;
             }
             // Document-level whitelist rules
-            case 'elemhide':
+            case OPTIONS.ELEMHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Elemhide, true);
                 break;
-            case 'generichide':
+            case OPTIONS.GENERICHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Generichide, true);
                 break;
-            case 'genericblock':
+            case OPTIONS.GENERICBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Genericblock, true);
                 break;
-            case 'jsinject':
+            case OPTIONS.JSINJECT:
                 this.setOptionEnabled(NetworkRuleOption.Jsinject, true);
                 break;
-            case 'urlblock':
+            case OPTIONS.URLBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Urlblock, true);
                 break;
-            case 'content':
+            case OPTIONS.CONTENT:
                 this.setOptionEnabled(NetworkRuleOption.Content, true);
                 break;
 
             // $document
-            case 'document':
+            case OPTIONS.DOCUMENT:
                 this.setOptionEnabled(NetworkRuleOption.Elemhide, true, true);
                 this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
                 this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
                 this.setOptionEnabled(NetworkRuleOption.Content, true, true);
                 break;
 
-            // Stealth mode
-            case 'stealth':
+            // Stealth mode $stealth
+            case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
                 break;
 
             // $popup blocking option
-            case 'popup':
+            case OPTIONS.POPUP:
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
 
             // $empty and $mp4
             // Deprecated in favor of $redirect
-            case 'empty':
+            case OPTIONS.EMPTY:
                 this.setOptionEnabled(NetworkRuleOption.Empty, true);
                 break;
-            case 'mp4':
+            case OPTIONS.MP4:
                 this.setOptionEnabled(NetworkRuleOption.Mp4, true);
                 break;
 
             // Content type options
-            case 'script':
+            case OPTIONS.SCRIPT:
                 this.setRequestType(RequestType.Script, true);
                 break;
-            case '~script':
+            case NOT_MARK + OPTIONS.SCRIPT:
                 this.setRequestType(RequestType.Script, false);
                 break;
-            case 'stylesheet':
+            case OPTIONS.STYLESHEET:
                 this.setRequestType(RequestType.Stylesheet, true);
                 break;
-            case '~stylesheet':
+            case NOT_MARK + OPTIONS.STYLESHEET:
                 this.setRequestType(RequestType.Stylesheet, false);
                 break;
-            case 'subdocument':
+            case OPTIONS.SUBDOCUMENT:
                 this.setRequestType(RequestType.Subdocument, true);
                 break;
-            case '~subdocument':
+            case NOT_MARK + OPTIONS.SUBDOCUMENT:
                 this.setRequestType(RequestType.Subdocument, false);
                 break;
-            case 'object':
+            case OPTIONS.OBJECT:
                 this.setRequestType(RequestType.Object, true);
                 break;
-            case '~object':
+            case NOT_MARK + OPTIONS.OBJECT:
                 this.setRequestType(RequestType.Object, false);
                 break;
-            case 'image':
+            case OPTIONS.IMAGE:
                 this.setRequestType(RequestType.Image, true);
                 break;
-            case '~image':
+            case NOT_MARK + OPTIONS.IMAGE:
                 this.setRequestType(RequestType.Image, false);
                 break;
-            case 'xmlhttprequest':
+            case OPTIONS.XMLHTTPREQUEST:
                 this.setRequestType(RequestType.XmlHttpRequest, true);
                 break;
-            case '~xmlhttprequest':
+            case NOT_MARK + OPTIONS.XMLHTTPREQUEST:
                 this.setRequestType(RequestType.XmlHttpRequest, false);
                 break;
-            case 'media':
+            case OPTIONS.MEDIA:
                 this.setRequestType(RequestType.Media, true);
                 break;
-            case '~media':
+            case NOT_MARK + OPTIONS.MEDIA:
                 this.setRequestType(RequestType.Media, false);
                 break;
-            case 'font':
+            case OPTIONS.FONT:
                 this.setRequestType(RequestType.Font, true);
                 break;
-            case '~font':
+            case NOT_MARK + OPTIONS.FONT:
                 this.setRequestType(RequestType.Font, false);
                 break;
-            case 'websocket':
+            case OPTIONS.WEBSOCKET:
                 this.setRequestType(RequestType.Websocket, true);
                 break;
-            case '~websocket':
+            case NOT_MARK + OPTIONS.WEBSOCKET:
                 this.setRequestType(RequestType.Websocket, false);
                 break;
-            case 'other':
+            case OPTIONS.OTHER:
                 this.setRequestType(RequestType.Other, true);
                 break;
-            case '~other':
+            case NOT_MARK + OPTIONS.OTHER:
                 this.setRequestType(RequestType.Other, false);
                 break;
-            case 'ping':
+            case OPTIONS.PING:
                 this.setRequestType(RequestType.Ping, true);
                 break;
-            case '~ping':
+            case NOT_MARK + OPTIONS.PING:
                 this.setRequestType(RequestType.Ping, false);
                 break;
-            case 'webrtc':
+            case OPTIONS.WEBRTC:
                 this.setRequestType(RequestType.Webrtc, true);
                 break;
-            case '~webrtc':
+            case NOT_MARK + OPTIONS.WEBRTC:
                 this.setRequestType(RequestType.Webrtc, false);
                 break;
 
             // Special modifiers
-            case 'badfilter':
+            case OPTIONS.BADFILTER:
                 this.setOptionEnabled(NetworkRuleOption.Badfilter, true);
                 break;
 
-            case 'csp':
+            case OPTIONS.CSP:
                 this.setOptionEnabled(NetworkRuleOption.Csp, true);
                 this.advancedModifier = new CspModifier(optionValue, this.isWhitelist());
                 break;
 
-            case 'replace':
+            case OPTIONS.REPLACE:
                 this.setOptionEnabled(NetworkRuleOption.Replace, true);
                 this.advancedModifier = new ReplaceModifier(optionValue);
                 break;
 
-            case 'cookie':
+            case OPTIONS.COOKIE:
                 this.setOptionEnabled(NetworkRuleOption.Cookie, true);
                 this.advancedModifier = new CookieModifier(optionValue);
                 break;
 
-            case 'redirect':
+            case OPTIONS.REDIRECT:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
                 this.advancedModifier = new RedirectModifier(optionValue, this.ruleText);
                 break;
 
-            case 'removeparam':
+            case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
                 this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
                 break;
 
-            case 'app': {
+            case OPTIONS.APP: {
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError('Extension doesn\'t support $app modifier');
                 }
@@ -979,20 +1059,20 @@ export class NetworkRule implements rule.IRule {
                 break;
             }
 
-            case 'network':
+            case OPTIONS.NETWORK:
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError('Extension doesn\'t support $network modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
 
-            case 'extension':
+            case OPTIONS.EXTENSION:
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, true);
                 break;
-            case '~extension':
+            case NOT_MARK + OPTIONS.EXTENSION:
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
@@ -1021,9 +1101,9 @@ export class NetworkRule implements rule.IRule {
         ruleParts.whitelist = false;
 
         let startIndex = 0;
-        if (ruleText.startsWith(MASK_WHITE_LIST)) {
+        if (ruleText.startsWith(NetworkRule.MASK_ALLOWLIST)) {
             ruleParts.whitelist = true;
-            startIndex = MASK_WHITE_LIST.length;
+            startIndex = NetworkRule.MASK_ALLOWLIST.length;
         }
 
         if (ruleText.length <= startIndex) {
@@ -1036,7 +1116,7 @@ export class NetworkRule implements rule.IRule {
         // Avoid parsing options inside of a regex rule
         if (ruleParts.pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)
             && ruleParts.pattern.endsWith(SimpleRegex.MASK_REGEX_RULE)
-            && !ruleParts.pattern.includes(`${replaceOption}=`)
+            && !ruleParts.pattern.includes(`${NetworkRule.OPTIONS.REPLACE}=`)
         ) {
             return ruleParts;
         }
@@ -1045,8 +1125,8 @@ export class NetworkRule implements rule.IRule {
         for (let i = ruleText.length - 2; i >= startIndex; i -= 1) {
             const c = ruleText.charAt(i);
 
-            if (c === OPTIONS_DELIMITER) {
-                if (i > startIndex && ruleText.charAt(i - 1) === escapeCharacter) {
+            if (c === NetworkRule.OPTIONS_DELIMITER) {
+                if (i > startIndex && ruleText.charAt(i - 1) === NetworkRule.ESCAPE_CHARACTER) {
                     foundEscaped = true;
                 } else {
                     ruleParts.pattern = ruleText.substring(startIndex, i);
@@ -1054,9 +1134,12 @@ export class NetworkRule implements rule.IRule {
 
                     if (foundEscaped) {
                         // Find and replace escaped options delimiter
-                        ruleParts.options = ruleParts.options.replace(reEscapedOptionsDelimiter, OPTIONS_DELIMITER);
+                        ruleParts.options = ruleParts.options.replace(
+                            NetworkRule.RE_ESCAPED_OPTIONS_DELIMITER,
+                            NetworkRule.OPTIONS_DELIMITER,
+                        );
                         // Reset the regexp state
-                        reEscapedOptionsDelimiter.lastIndex = 0;
+                        NetworkRule.RE_ESCAPED_OPTIONS_DELIMITER.lastIndex = 0;
                     }
 
                     // Options delimiter was found, exiting loop
