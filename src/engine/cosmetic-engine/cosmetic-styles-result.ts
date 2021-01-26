@@ -53,4 +53,16 @@ export class CosmeticStylesResult implements CosmeticContentResult {
             this.specific.push(rule);
         }
     }
+
+    /**
+     * Returns all rules
+     */
+    getRules(): CosmeticRule[] {
+        return [
+            ...this.generic,
+            ...this.specific,
+            ...this.genericExtCss,
+            ...this.specificExtCss,
+        ];
+    }
 }

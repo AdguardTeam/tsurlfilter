@@ -365,6 +365,22 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Matches request with loosened set of checks
+     * Used to find custom user rules
+     * @param request
+     */
+    simpleMatch(request: Request): boolean {
+        const hostname = request.hostname || '';
+
+        if (this.hasPermittedDomains()
+            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Checks if this filtering rule matches the specified request.
      * @param request - request to check.
      */

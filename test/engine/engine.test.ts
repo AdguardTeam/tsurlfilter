@@ -35,6 +35,43 @@ describe('TestEngineMatchRequest', () => {
     });
 });
 
+describe('Finds user custom rules', () => {
+    it('Finds cosmetic rules', () => {
+        const filterListId = 0;
+        const rules = ['example.org##h1'];
+        const list = new StringRuleList(filterListId, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const result = engine.getAllRulesByFilterId(new Request(
+            'http://example.org',
+            'http:/example.org',
+            RequestType.Document,
+        ), filterListId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].getText()).toBe(rules[0]);
+    });
+
+    it('Finds rules simplified', () => {
+        const filterListId = 0;
+        const domainRule = '||example.org/favicon.ico^$domain=example.org';
+        const rules = [domainRule];
+        const list = new StringRuleList(filterListId, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        const result = engine.getAllRulesByFilterId(new Request(
+            'http://example.org',
+            'http:/example.org',
+            RequestType.Document,
+        ), filterListId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].getText()).toBe(domainRule);
+    });
+});
+
 describe('TestEngine - postponed load rules', () => {
     const rules = ['||example.org^$third-party', 'example.org##banner'];
     const list = new StringRuleList(1, rules.join('\n'), false);

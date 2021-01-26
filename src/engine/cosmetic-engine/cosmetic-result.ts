@@ -44,4 +44,16 @@ export class CosmeticResult {
     public getScriptRules(): CosmeticRule[] {
         return this.JS.getRules();
     }
+
+    /**
+     * Returns all matched cosmetic rules
+     */
+    public getRules(): CosmeticRule[] {
+        return [
+            ...this.JS.getRules(),
+            ...this.Html.getRules(),
+            ...this.CSS.getRules(),
+            ...this.elementHiding.getRules(),
+        ];
+    }
 }

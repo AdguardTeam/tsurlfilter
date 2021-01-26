@@ -122,6 +122,25 @@ export class NetworkEngine {
     }
 
     /**
+     * Matches request with simplified matcher
+     * @param request
+     */
+    matchAllSimplified(request: Request): NetworkRule[] {
+        // First check by shortcuts
+        const result = this.matchShortcutsLookupTable(request, true);
+        result.push(...this.matchDomainsLookupTable(request, true));
+
+        // Now check other rules
+        this.otherRules.forEach((r) => {
+            if (r.simpleMatch(request)) {
+                result.push(r);
+            }
+        });
+
+        return result;
+    }
+
+    /**
      * Adds rule to the network engine
      *
      * @param rule
@@ -143,9 +162,10 @@ export class NetworkEngine {
      * Finds all matching rules from the shortcuts lookup table
      *
      * @param request to check
+     * @param simpleMatch
      * @return array of matching rules
      */
-    private matchShortcutsLookupTable(request: Request): NetworkRule[] {
+    private matchShortcutsLookupTable(request: Request, simpleMatch?: boolean): NetworkRule[] {
         const result: NetworkRule[] = [];
 
         let urlLen = request.urlLowercase.length;
@@ -159,7 +179,14 @@ export class NetworkEngine {
             if (rulesIndexes) {
                 rulesIndexes.forEach((ruleIdx) => {
                     const rule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
-                    if (rule && rule.match(request)) {
+                    if (!rule) {
+                        return;
+                    }
+                    if (simpleMatch) {
+                        if (rule.simpleMatch(request)) {
+                            result.push(rule);
+                        }
+                    } else if (rule.match(request)) {
                         result.push(rule);
                     }
                 });
@@ -173,9 +200,10 @@ export class NetworkEngine {
      * Finds all matching rules from the domains lookup table
      *
      * @param request to check
+     * @param simpleMatch
      * @return array of matching rules
      */
-    private matchDomainsLookupTable(request: Request): NetworkRule[] {
+    private matchDomainsLookupTable(request: Request, simpleMatch?: boolean): NetworkRule[] {
         const result: NetworkRule[] = [];
 
         if (!request.sourceHostname) {
@@ -193,7 +221,14 @@ export class NetworkEngine {
             if (rulesIndexes) {
                 rulesIndexes.forEach((ruleIdx) => {
                     const rule = this.ruleStorage.retrieveNetworkRule(ruleIdx);
-                    if (rule && rule.match(request)) {
+                    if (!rule) {
+                        return;
+                    }
+                    if (simpleMatch) {
+                        if (rule.simpleMatch(request)) {
+                            result.push(rule);
+                        }
+                    } else if (rule.match(request)) {
                         result.push(rule);
                     }
                 });

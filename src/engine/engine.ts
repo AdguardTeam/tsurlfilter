@@ -102,6 +102,25 @@ export class Engine {
     }
 
     /**
+     * This function will be mainly used to search user custom rules,
+     * in order to make possible to remove them
+     * @param request
+     * @param filterId - here would be 0 as user filter id, but it is parameterized,
+     * because I suppose it may change in the future
+     */
+    getAllRulesByFilterId(request: Request, filterId: number): (NetworkRule|CosmeticRule)[] {
+        const cosmeticResult = this.cosmeticEngine.match(request.hostname, CosmeticOption.CosmeticOptionAll);
+
+        const cosmeticRules = cosmeticResult.getRules();
+        const filteredCosmeticRules = cosmeticRules.filter((rule) => rule.getFilterListId() === filterId);
+
+        const networkRules = this.networkEngine.matchAllSimplified(request);
+        const filteredNetworkRules = networkRules.filter((rule) => rule.getFilterListId() === filterId);
+
+        return [...filteredCosmeticRules, ...filteredNetworkRules];
+    }
+
+    /**
      * Gets cosmetic result for the specified hostname and cosmetic options
      *
      * @param hostname host to check
