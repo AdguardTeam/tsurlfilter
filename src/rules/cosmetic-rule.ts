@@ -446,6 +446,25 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
+     * Checks if rule has permitted domains
+     */
+    private hasPermittedDomains(): boolean {
+        return this.permittedDomains != null && this.permittedDomains.length > 0;
+    }
+
+    /**
+     * Checks if hostname matches permitted domains
+     * @param hostname
+     */
+    public matchesPermittedDomains(hostname: string): boolean {
+        if (this.hasPermittedDomains()
+            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Validates cosmetic rule text
      * @param ruleText
      * @param type

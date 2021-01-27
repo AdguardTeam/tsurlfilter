@@ -364,19 +364,11 @@ export class NetworkRule implements rule.IRule {
         );
     }
 
-    /**
-     * Matches request with loosened set of checks
-     * Used to find custom user rules
-     * @param request
-     */
-    simpleMatch(request: Request): boolean {
-        const hostname = request.hostname || '';
-
+    public matchesPermittedDomains(hostname: string): boolean {
         if (this.hasPermittedDomains()
             && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
             return true;
         }
-
         return false;
     }
 
