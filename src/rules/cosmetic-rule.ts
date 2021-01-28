@@ -315,7 +315,6 @@ export class CosmeticRule implements rule.IRule {
             return true;
         }
 
-
         if (this.restrictedDomains != null && this.restrictedDomains.length > 0) {
             if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains)) {
                 // Domain or host is restricted
