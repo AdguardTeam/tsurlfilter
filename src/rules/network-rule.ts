@@ -364,6 +364,14 @@ export class NetworkRule implements rule.IRule {
         );
     }
 
+    public matchesPermittedDomains(hostname: string): boolean {
+        if (this.hasPermittedDomains()
+            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Checks if this filtering rule matches the specified request.
      * @param request - request to check.

@@ -323,8 +323,8 @@ export class CosmeticRule implements rule.IRule {
             }
         }
 
-        if (this.permittedDomains != null && this.permittedDomains.length > 0) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains)) {
+        if (this.hasPermittedDomains()) {
+            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
                 // Domain is not among permitted
                 // i.e. example.org##rule and we're checking example.org
                 return false;
@@ -443,6 +443,25 @@ export class CosmeticRule implements rule.IRule {
         if (ruleContent.indexOf('\\', ruleContent.lastIndexOf('{')) > -1) {
             throw new SyntaxError('CSS injection rule with \'\\\' was omitted');
         }
+    }
+
+    /**
+     * Checks if rule has permitted domains
+     */
+    private hasPermittedDomains(): boolean {
+        return this.permittedDomains != null && this.permittedDomains.length > 0;
+    }
+
+    /**
+     * Checks if hostname matches permitted domains
+     * @param hostname
+     */
+    public matchesPermittedDomains(hostname: string): boolean {
+        if (this.hasPermittedDomains()
+            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
+            return true;
+        }
+        return false;
     }
 
     /**

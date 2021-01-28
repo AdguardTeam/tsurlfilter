@@ -20,3 +20,4 @@ export * from './stealth/stealth-service';
 export * from './utils/logger';
 export * from './utils/rule-validator';
 export { CosmeticRuleMarker } from './rules/cosmetic-rule-marker';
+export { RuleSyntaxUtils } from './utils/rule-syntax-utils';
