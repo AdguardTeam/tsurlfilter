@@ -18,6 +18,7 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
             *   [RedirectsService](#redirect-service)
             *   [CookieFiltering](#cookie-filtering)
             *   [RuleValidator](#rule-validator)
+            *   [RuleSyntaxUtils](#rule-syntax-utils)
         *   [Content script classes](#content-script-classes)
             *   [CssHitsCounter](#css-hits-counter)
             *   [CookieController](#cookie-controller)
@@ -448,6 +449,27 @@ This module is not used in the engine directly, but it can be used to validate f
         valid: boolean;
         error: string | null;
     }
+```
+
+#### <a id="rule-syntax-utils"></a> RuleSyntaxUtils
+This module is not used in the engine directly, but it can be used in other libraries
+
+##### Public methods
+```
+    /**
+     * Checks if rule can be matched by domain
+     * @param ruleText
+     * @param domain
+     */
+    public static isRuleForDomain(ruleText: string, domain: string): boolean {
+```
+```
+    /**
+     * Checks if rule can be matched by url
+     * @param ruleText
+     * @param url
+     */
+    public static isRuleForUrl(ruleText: string, url: string): boolean {
 ```
 
 #### <a id="content-script-classes"></a> Content script classes
