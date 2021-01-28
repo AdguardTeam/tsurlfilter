@@ -315,6 +315,7 @@ export class CosmeticRule implements rule.IRule {
             return true;
         }
 
+
         if (this.restrictedDomains != null && this.restrictedDomains.length > 0) {
             if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains)) {
                 // Domain or host is restricted
@@ -323,8 +324,8 @@ export class CosmeticRule implements rule.IRule {
             }
         }
 
-        if (this.permittedDomains != null && this.permittedDomains.length > 0) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains)) {
+        if (this.hasPermittedDomains()) {
+            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
                 // Domain is not among permitted
                 // i.e. example.org##rule and we're checking example.org
                 return false;
