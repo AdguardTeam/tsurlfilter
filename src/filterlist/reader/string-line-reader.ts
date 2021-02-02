@@ -33,12 +33,16 @@ export class StringLineReader implements ILineReader {
             return null;
         }
 
-        const startIndex = this.currentIndex === 0 ? 0 : this.currentIndex + 1;
+        const startIndex = this.currentIndex;
         this.currentIndex = this.text.indexOf('\n', startIndex);
+
         if (this.currentIndex === -1) {
             return this.text.substring(startIndex);
         }
 
-        return this.text.substring(startIndex, this.currentIndex);
+        this.currentIndex += 1;
+
+        // - 1 in order to exclude EOL
+        return this.text.substring(startIndex, this.currentIndex - 1);
     }
 }
