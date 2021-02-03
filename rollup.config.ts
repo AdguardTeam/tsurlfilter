@@ -18,6 +18,12 @@ const contentScriptConfig = {
             format: 'esm',
             sourcemap: false,
         },
+        {
+            file: `dist/${contentScriptFilename}.umd.js`,
+            name: libraryName,
+            format: 'umd',
+            sourcemap: false,
+        },
     ],
     watch: {
         include: 'src/**',
