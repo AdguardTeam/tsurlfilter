@@ -119,7 +119,8 @@
     "ts-jest": "^25.5.1",
     "ts-node": "^8.6.2",
     "typedoc": "^0.16.9",
-    "typescript": "^3.7.5"
+    "typescript": "^3.7.5",
+    "webextension-polyfill-ts": "^0.24.0"
   },
   "dependencies": {
     "consola": "^2.12.2",
