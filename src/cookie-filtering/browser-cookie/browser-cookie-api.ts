@@ -1,6 +1,5 @@
 /* eslint-disable class-methods-use-this */
 import { browser, Cookies } from 'webextension-polyfill-ts';
-import OnChangedCause = Cookies.OnChangedCause;
 import Cookie = Cookies.Cookie;
 
 /**
@@ -22,36 +21,6 @@ export interface IBrowserCookieApi {
      * @param url
      */
     modifyCookie(setCookie: Cookie, url: string): Promise<void>;
-
-    /**
-     * Fetch cookies
-     *
-     * @param url
-     */
-    getCookies(url: string): Promise<Cookie[]>;
-
-    /**
-     * Fetch all cookies for specified domain
-     *
-     * @param domain
-     */
-    getDomainCookies(domain: string): Promise<Cookie[]>;
-
-    /**
-     * Fired when a cookie is set or removed.
-     * As a special case, note that updating a cookie's properties is implemented as a two step process:
-     * the cookie to be updated is first removed entirely, generating a notification with "cause" of "overwrite" .
-     * Afterwards, a new cookie is written with the updated values,
-     * generating a second notification with "cause" "explicit".
-     * @param callback
-     */
-    setOnChangedListener(
-        callback: (changeInfo: {
-            removed: boolean;
-            cookie: Cookie;
-            cause: OnChangedCause;
-        }) => void
-    ): void;
 }
 
 /**
@@ -92,34 +61,5 @@ export class BrowserCookieApi implements IBrowserCookieApi {
         // delete update.maxAge;
 
         await browser.cookies.set(update);
-    }
-
-    /**
-     * Get cookies
-     *
-     * @param url
-     */
-    async getCookies(url: string): Promise<Cookie[]> {
-        return browser.cookies.getAll({ url });
-    }
-
-    /**
-     * Get domain cookies
-     *
-     * @param domain
-     * @return {Array<BrowserApiCookie>}
-     */
-    async getDomainCookies(domain: string): Promise<Cookie[]> {
-        return browser.cookies.getAll({ domain });
-    }
-
-    /**
-     * Sets onChanged event listener
-     * @param callback
-     */
-    setOnChangedListener(
-        callback: (changeInfo: { removed: boolean; cookie: Cookies.Cookie; cause: Cookies.OnChangedCause }) => void,
-    ): void {
-        browser.cookies.onChanged.addListener(callback);
     }
 }
