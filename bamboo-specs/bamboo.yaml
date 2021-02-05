@@ -17,7 +17,7 @@ stages:
 Build:
   key: BUILD
   docker:
-    image: ${bamboo.dockerNode}
+    image: "${bamboo.dockerNode}"
     volumes:
       ${bamboo.tmp.directory}/yarn: /usr/local/share/.cache/yarn/v6
     docker-run-arguments:
@@ -41,7 +41,7 @@ Build:
         interpreter: SHELL
         scripts:
           - |-
-            chown -R ${bamboo.hostUid}:${bamboo.hostGid} /usr/local/share/.cache/yarn/v6
+            chown -R "${bamboo.hostUid}":"${bamboo.hostGid}" /usr/local/share/.cache/yarn/v6
     - clean
   requirements:
     - adg-docker: 'true'
