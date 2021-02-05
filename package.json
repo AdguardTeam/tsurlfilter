@@ -29,16 +29,16 @@
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:prod": "npm run lint && npm run test -- --no-cache",
+    "test:prod": "yarn lint && yarn test --no-cache",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
-    "build-extension": "npm run build && node ./tasks/build-extension.js",
+    "build-extension": "yarn build && node ./tasks/build-extension.js",
     "prebuild-extension": "rimraf dist-extension",
     "deploy-docs": "ts-node tools/gh-pages-publish",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
     "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "yarn build"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
