@@ -1,6 +1,8 @@
 /* eslint-disable class-methods-use-this */
 import { browser, Cookies } from 'webextension-polyfill-ts';
-import Cookie = Cookies.Cookie;
+import ParsedCookie from '../parsed-cookie';
+import SetDetailsType = Cookies.SetDetailsType;
+import SameSiteStatus = Cookies.SameSiteStatus;
 
 /**
  * Cookie api interface
@@ -17,10 +19,9 @@ export interface IBrowserCookieApi {
     /**
      * Modifies cookie
      *
-     * @param setCookie
-     * @param url
+     * @param cookie
      */
-    modifyCookie(setCookie: Cookie, url: string): Promise<void>;
+    modifyCookie(cookie: ParsedCookie): Promise<void>;
 }
 
 /**
@@ -40,26 +41,89 @@ export class BrowserCookieApi implements IBrowserCookieApi {
     /**
      * Updates cookie
      *
-     * @param apiCookie Cookie for update
-     * @param {string} url Cookie url
+     * @param cookie Cookie for update
      */
-    async modifyCookie(apiCookie: Cookie, url: string): Promise<void> {
-        const update = { url, ...apiCookie };
+    async modifyCookie(cookie: ParsedCookie): Promise<void> {
+        const update = BrowserCookieApi.convertToSetDetailsType(cookie);
+        await browser.cookies.set(update);
+    }
 
-        /**
-         * Removes domain for host-only cookies:
-         * https://developer.chrome.com/extensions/cookies#method-set
-         * The domain of the cookie. If omitted, the cookie becomes a host-only cookie.
-         */
-        if (apiCookie.hostOnly) {
-            delete update.domain;
+    private static convertToSetDetailsType(cookie: ParsedCookie): SetDetailsType {
+        return {
+            /**
+             * The request-URI to associate with the setting of the cookie.
+             * This value can affect the default domain and path values of the created cookie.
+             * If host permissions for this URL are not specified in the manifest file, the API call will fail.
+             */
+            url: cookie.url,
+
+            /**
+             * The name of the cookie. Empty by default if omitted.
+             * Optional.
+             */
+            name: cookie.name,
+
+            /**
+             * The value of the cookie. Empty by default if omitted.
+             * Optional.
+             */
+            value: cookie.value,
+
+            /**
+             * The domain of the cookie. If omitted, the cookie becomes a host-only cookie.
+             * Optional.
+             */
+            domain: cookie.domain,
+
+            /**
+             * Whether the cookie should be marked as Secure. Defaults to false.
+             * Optional.
+             */
+            secure: cookie.secure,
+
+            /**
+             * Whether the cookie should be marked as HttpOnly. Defaults to false.
+             * Optional.
+             */
+            httpOnly: cookie.httpOnly,
+
+            /**
+             * The cookie's same-site status.
+             * Optional.
+             */
+            sameSite: BrowserCookieApi.getSameSiteStatus(cookie.sameSite),
+
+            /**
+             * The expiration date of the cookie as the number of seconds since the UNIX epoch.
+             * If omitted, the cookie becomes a session cookie.
+             * Optional.
+             */
+            expirationDate: cookie.expires ? cookie.expires.getTime() : undefined,
+
+            // /**
+            //  * The first-party domain of the cookie. This attribute is required if First-Party Isolation is enabled.
+            //  * Optional.
+            //  */
+            // firstPartyDomain?: string;
+        };
+    }
+
+    /**
+     * Returns same-site type
+     *
+     * @param sameSite
+     */
+    private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus {
+        if (sameSite) {
+            if (sameSite.toLowerCase() === 'lax') {
+                return 'lax';
+            }
+
+            if (sameSite.toLowerCase() === 'strict') {
+                return 'strict';
+            }
         }
 
-        // Unsupported properties
-        delete update.hostOnly;
-        delete update.session;
-        // delete update.maxAge;
-
-        await browser.cookies.set(update);
+        return 'no_restriction';
     }
 }

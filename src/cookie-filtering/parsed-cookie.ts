@@ -1,7 +1,13 @@
+import { parse } from 'tldts';
+
 /**
- * Cookie parsed from headers
+ * Synthetic Cookie-like object parsed from headers
  */
 export default class ParsedCookie {
+    url: string;
+
+    domain: string;
+
     name: string;
 
     value: string;
@@ -18,8 +24,12 @@ export default class ParsedCookie {
 
     thirdParty = false;
 
-    constructor(name: string, value: string) {
+    constructor(name: string, value: string, url: string) {
         this.name = name;
         this.value = value;
+
+        this.url = url;
+        const tldResult = parse(url);
+        this.domain = tldResult.domain!;
     }
 }

@@ -1,33 +1,16 @@
 import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 
-export default class CookieEngine {
-    /**
-     * Constructor
-     *
-     * @param rules
-     */
-    constructor(rules: NetworkRule[]) {
-        // TODO: Implement
-    }
-
-    /**
-     * Finds cookie rules for url
-     *
-     * @param url
-     */
-    getRules(url: string): NetworkRule[] {
-        return [];
-    }
-
+export default class CookieRulesFinder {
     /**
      * Filters blocking rules
      * Used in content scripts
      *
      * @param url
+     * @param rules
      */
     // eslint-disable-next-line class-methods-use-this
-    getBlockingRules(url: string): NetworkRule[] {
+    static getBlockingRules(url: string, rules: NetworkRule[]): NetworkRule[] {
         return [];
     }
 
@@ -46,12 +29,12 @@ export default class CookieEngine {
     ): NetworkRule | null {
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
-            if (!CookieEngine.matchThirdParty(rule, isThirdPartyCookie)) {
+            if (!CookieRulesFinder.matchThirdParty(rule, isThirdPartyCookie)) {
                 continue;
             }
 
             const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
-            if (cookieModifier.matches(cookieName) && !CookieEngine.isModifyingRule(rule)) {
+            if (cookieModifier.matches(cookieName) && !CookieRulesFinder.isModifyingRule(rule)) {
                 return rule;
             }
         }
@@ -76,7 +59,7 @@ export default class CookieEngine {
         if (rules && rules.length > 0) {
             for (let i = 0; i < rules.length; i += 1) {
                 const rule = rules[i];
-                if (!CookieEngine.matchThirdParty(rule, isThirdPartyCookie)) {
+                if (!CookieRulesFinder.matchThirdParty(rule, isThirdPartyCookie)) {
                     continue;
                 }
 
@@ -85,8 +68,7 @@ export default class CookieEngine {
                     continue;
                 }
 
-                // Blocking or whitelist rule exists
-                if (!CookieEngine.isModifyingRule(rule)) {
+                if (!CookieRulesFinder.isModifyingRule(rule)) {
                     return [];
                 }
 

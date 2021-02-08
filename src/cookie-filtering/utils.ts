@@ -1,20 +1,20 @@
-import {Cookies, WebRequest} from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill-ts';
 import ParsedCookie from './parsed-cookie';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 import HttpHeaders = WebRequest.HttpHeaders;
-import Cookie = Cookies.Cookie;
 
 /**
- * Utils
+ * Cookie Utils
  */
 export default class CookieUtils {
     /**
      * Parses set-cookie headers for cookie objects
      *
      * @param responseHeaders
+     * @param url
      * @returns array of parsed cookies
      */
-    static parseSetCookieHeaders(responseHeaders: HttpHeadersItemType[]): ParsedCookie[] {
+    static parseSetCookieHeaders(responseHeaders: HttpHeadersItemType[], url: string): ParsedCookie[] {
         const result = [];
         let iResponseHeaders = responseHeaders.length;
         while (iResponseHeaders > 0) {
@@ -28,7 +28,7 @@ export default class CookieUtils {
                 continue;
             }
 
-            const setCookie = CookieUtils.parseSetCookie(header.value);
+            const setCookie = CookieUtils.parseSetCookie(header.value, url);
             if (!setCookie) {
                 continue;
             }
@@ -47,12 +47,10 @@ export default class CookieUtils {
      * @returns header value
      */
     static findHeaderByName(headers: HttpHeaders, headerName: string): HttpHeadersItemType | null {
-        if (headers) {
-            for (let i = 0; i < headers.length; i += 1) {
-                const header = headers[i];
-                if (header.name.toLowerCase() === headerName.toLowerCase()) {
-                    return header;
-                }
+        for (let i = 0; i < headers.length; i += 1) {
+            const header = headers[i];
+            if (header.name.toLowerCase() === headerName.toLowerCase()) {
+                return header;
             }
         }
 
@@ -63,9 +61,10 @@ export default class CookieUtils {
      * Parse an HTTP Cookie header string and return an object with all cookie name-value pairs.
      *
      * @param cookieValue HTTP Cookie value
+     * @param url
      * @returns Array of cookie name-value pairs
      */
-    static parseCookies(cookieValue: string): ParsedCookie[] {
+    static parseCookies(cookieValue: string, url: string): ParsedCookie[] {
         const cookies = [];
 
         // Split Cookie values
@@ -83,7 +82,7 @@ export default class CookieUtils {
             const key = pair.substr(0, eqIdx).trim();
             const value = pair.substr(eqIdx + 1, pair.length).trim();
 
-            cookies.push(new ParsedCookie(key, value));
+            cookies.push(new ParsedCookie(key, value, url));
         }
 
         return cookies;
@@ -93,9 +92,10 @@ export default class CookieUtils {
      * Parses "Set-Cookie" header value and returns a cookie object with its properties
      *
      * @param setCookieValue "Set-Cookie" header value to parse
+     * @param url
      * @returns cookie object or null if it failed to parse the value
      */
-    static parseSetCookie(setCookieValue: string): ParsedCookie | null {
+    static parseSetCookie(setCookieValue: string, url: string): ParsedCookie | null {
         const parts = setCookieValue.split(';').filter((s) => !!s);
         const nameValuePart = parts.shift();
         if (!nameValuePart) {
@@ -106,7 +106,7 @@ export default class CookieUtils {
         const name = nameValue.shift();
         // everything after the first =, joined by a "=" if there was more than one part
         const value = nameValue.join('=');
-        const cookie = new ParsedCookie(name!, value);
+        const cookie = new ParsedCookie(name!, value, url);
 
         parts.forEach((part) => {
             const sides = part.split('=');
@@ -134,29 +134,26 @@ export default class CookieUtils {
     /**
      * Updates cookie maxAge value
      *
-     * @param browserCookie Cookie to modify
+     * @param cookie Cookie to modify
      * @param maxAge
      * @return if cookie was modified
      */
-    public static updateCookieMaxAge(browserCookie: Cookie, maxAge: number): boolean {
+    public static updateCookieMaxAge(cookie: ParsedCookie, maxAge: number): boolean {
         const currentTimeSec = Date.now() / 1000;
 
         let cookieExpiresTimeSec = null;
-        if (browserCookie.maxAge) {
-            cookieExpiresTimeSec = currentTimeSec + browserCookie.maxAge;
-        } else if (browserCookie.expires) {
-            cookieExpiresTimeSec = browserCookie.expires.getTime() / 1000;
+        if (cookie.maxAge) {
+            cookieExpiresTimeSec = currentTimeSec + cookie.maxAge;
+        } else if (cookie.expires) {
+            cookieExpiresTimeSec = cookie.expires.getTime() / 1000;
         }
 
         const newCookieExpiresTimeSec = currentTimeSec + maxAge;
         if (cookieExpiresTimeSec === null || cookieExpiresTimeSec > newCookieExpiresTimeSec) {
-            if (browserCookie.expires) {
-                // eslint-disable-next-line no-param-reassign
-                browserCookie.expires = new Date(newCookieExpiresTimeSec * 1000);
-            }
-
             // eslint-disable-next-line no-param-reassign
-            browserCookie.maxAge = maxAge;
+            cookie.expires = new Date(newCookieExpiresTimeSec * 1000);
+            // eslint-disable-next-line no-param-reassign
+            cookie.maxAge = maxAge;
 
             return true;
         }

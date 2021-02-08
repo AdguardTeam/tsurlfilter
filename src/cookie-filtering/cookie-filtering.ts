@@ -1,9 +1,10 @@
-import { Cookies, WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill-ts';
 import { NetworkRule } from '../rules/network-rule';
 import { FilteringLog } from '../filtering-log';
-import CookieEngine from './cookie-engine';
+import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
+// eslint-disable-next-line import/named
 import { BrowserCookieApi, IBrowserCookieApi } from './browser-cookie/browser-cookie-api';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RequestType } from '../request';
@@ -12,7 +13,6 @@ import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsTyp
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
 import OnCompletedDetailsType = WebRequest.OnCompletedDetailsType;
 import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
-import Cookie = Cookies.Cookie;
 
 /**
  * Cookie filtering
@@ -45,8 +45,6 @@ import Cookie = Cookies.Cookie;
  * - apply
  */
 export class CookieFiltering {
-    private cookieEngine: CookieEngine;
-
     private filteringLog: FilteringLog;
 
     private browserCookieApi: IBrowserCookieApi = new BrowserCookieApi();
@@ -64,17 +62,16 @@ export class CookieFiltering {
      * @param rules
      * @param filteringLog
      */
-    constructor(rules: NetworkRule[], filteringLog: FilteringLog) {
-        this.cookieEngine = new CookieEngine(rules);
+    constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
     }
 
     /**
      * Finds rules for request and saves it to context storage
      * @param details
+     * @param rules
      */
-    public onBeforeRequest(details: OnBeforeRequestDetailsType): void {
-        const rules = this.cookieEngine.getRules(details.url);
+    public onBeforeRequest(details: OnBeforeRequestDetailsType, rules: NetworkRule[]): void {
         this.requestContextStorage.set(details.requestId,
             {
                 rules,
@@ -89,12 +86,12 @@ export class CookieFiltering {
      * @param details
      */
     public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType): void {
-        const context = this.requestContextStorage.get(details.requestId);
-        if (!context) {
+        if (!details.requestHeaders) {
             return;
         }
 
-        if (!details.requestHeaders) {
+        const context = this.requestContextStorage.get(details.requestId);
+        if (!context) {
             return;
         }
 
@@ -103,7 +100,7 @@ export class CookieFiltering {
             return;
         }
 
-        const cookies = CookieUtils.parseCookies(cookieHeader.value!);
+        const cookies = CookieUtils.parseCookies(cookieHeader.value, context.url);
         if (cookies.length === 0) {
             return;
         }
@@ -123,17 +120,15 @@ export class CookieFiltering {
             return;
         }
 
-        if (!details.responseHeaders) {
-            return;
-        }
+        if (details.responseHeaders) {
+            const cookies = CookieUtils.parseSetCookieHeaders(details.responseHeaders, context.url);
+            const newCookies = cookies.filter((c) => !context.cookies.includes(c));
+            for (const cookie of newCookies) {
+                cookie.thirdParty = details.thirdParty;
+            }
 
-        const cookies = CookieUtils.parseSetCookieHeaders(details.responseHeaders);
-        const newCookies = cookies.filter((c) => !context.cookies.includes(c));
-        for (const cookie of newCookies) {
-            cookie.thirdParty = details.thirdParty;
+            context.cookies.push(...newCookies);
         }
-
-        context.cookies.push(...newCookies);
 
         await this.applyRules(details.requestId);
     }
@@ -162,9 +157,7 @@ export class CookieFiltering {
         }
 
         const promises = cookies.map(async (cookie) => {
-            // TODO: extend ParsedCookie from Cookies.Cookie
-            const converted = {};
-            await this.applyRulesToCookie(context.url, converted, cookie.thirdParty, rules, context.tabId);
+            await this.applyRulesToCookie(cookie, rules, context.tabId);
         });
 
         await Promise.all(promises);
@@ -173,24 +166,21 @@ export class CookieFiltering {
     /**
      * Applies rules to cookie
      *
-     * @param url
      * @param cookie
-     * @param isThirdPartyCookie
      * @param cookieRules
      * @param tabId
      */
     private async applyRulesToCookie(
-        url: string,
-        cookie: Cookie,
-        isThirdPartyCookie: boolean,
+        cookie: ParsedCookie,
         cookieRules: NetworkRule[],
         tabId: number,
     ): Promise<void> {
         const cookieName = cookie.name;
+        const isThirdPartyCookie = cookie.thirdParty;
 
-        const bRule = CookieEngine.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
+        const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
-            await this.browserCookieApi.removeCookie(cookie.name, url);
+            await this.browserCookieApi.removeCookie(cookie.name, cookie.url);
             this.filteringLog.addCookieEvent(
                 tabId,
                 cookie.name,
@@ -205,13 +195,24 @@ export class CookieFiltering {
             return;
         }
 
-        const mRules = CookieEngine.lookupModifyingRules(cookieName, cookieRules, isThirdPartyCookie);
+        const mRules = CookieRulesFinder.lookupModifyingRules(cookieName, cookieRules, isThirdPartyCookie);
         if (mRules.length > 0) {
             const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
             if (appliedRules.length > 0) {
-                await this.browserCookieApi.modifyCookie(cookie, url);
-                // TODO: Fill params
-                // this.filteringLog.addCookieEvent(tabId, cookie.name, appliedRules);
+                await this.browserCookieApi.modifyCookie(cookie);
+
+                appliedRules.forEach((r) => {
+                    this.filteringLog.addCookieEvent(
+                        tabId,
+                        cookie.name,
+                        cookie.value,
+                        cookie.domain,
+                        RequestType.Document, // TODO: Find request type
+                        r,
+                        true,
+                        isThirdPartyCookie,
+                    );
+                });
             }
         }
     }
@@ -224,7 +225,7 @@ export class CookieFiltering {
      * @return applied rules
      *
      */
-    private static applyRuleToBrowserCookie(cookie: Cookie, rules: NetworkRule[]): NetworkRule[] {
+    private static applyRuleToBrowserCookie(cookie: ParsedCookie, rules: NetworkRule[]): NetworkRule[] {
         const appliedRules = [];
 
         for (let i = 0; i < rules.length; i += 1) {
@@ -233,9 +234,9 @@ export class CookieFiltering {
 
             let modified = false;
 
-            // eslint-disable-next-line prefer-destructuring
             const sameSite = cookieModifier.getSameSite();
             if (sameSite && cookie.sameSite !== sameSite) {
+                // eslint-disable-next-line no-param-reassign
                 cookie.sameSite = sameSite;
                 modified = true;
             }
