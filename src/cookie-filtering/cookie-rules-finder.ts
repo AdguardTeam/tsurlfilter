@@ -92,7 +92,7 @@ export default class CookieRulesFinder {
             return true;
         }
 
-        return isThirdParty;
+        return isThirdParty === rule.isOptionEnabled(NetworkRuleOption.ThirdParty);
     }
 
     /**

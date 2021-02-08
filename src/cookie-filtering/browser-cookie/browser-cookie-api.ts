@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 /* eslint-disable class-methods-use-this */
 import { browser, Cookies } from 'webextension-polyfill-ts';
 import ParsedCookie from '../parsed-cookie';
@@ -5,29 +6,9 @@ import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
 
 /**
- * Cookie api interface
- */
-export interface IBrowserCookieApi {
-    /**
-     * Removes cookie
-     *
-     * @param name
-     * @param url
-     */
-    removeCookie(name: string, url: string): Promise<void>;
-
-    /**
-     * Modifies cookie
-     *
-     * @param cookie
-     */
-    modifyCookie(cookie: ParsedCookie): Promise<void>;
-}
-
-/**
  * Cookie api implementation
  */
-export class BrowserCookieApi implements IBrowserCookieApi {
+export default class BrowserCookieApi {
     /**
      * Removes cookie
      *

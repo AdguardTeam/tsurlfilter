@@ -4,8 +4,7 @@ import { FilteringLog } from '../filtering-log';
 import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
-// eslint-disable-next-line import/named
-import { BrowserCookieApi, IBrowserCookieApi } from './browser-cookie/browser-cookie-api';
+import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RequestType } from '../request';
 import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
@@ -47,7 +46,7 @@ import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
 export class CookieFiltering {
     private filteringLog: FilteringLog;
 
-    private browserCookieApi: IBrowserCookieApi = new BrowserCookieApi();
+    private browserCookieApi: BrowserCookieApi = new BrowserCookieApi();
 
     private requestContextStorage = new Map<string, {
         rules: NetworkRule[];
