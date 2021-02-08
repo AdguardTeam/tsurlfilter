@@ -99,12 +99,6 @@ export class BrowserCookieApi implements IBrowserCookieApi {
              * Optional.
              */
             expirationDate: cookie.expires ? cookie.expires.getTime() : undefined,
-
-            // /**
-            //  * The first-party domain of the cookie. This attribute is required if First-Party Isolation is enabled.
-            //  * Optional.
-            //  */
-            // firstPartyDomain?: string;
         };
     }
 

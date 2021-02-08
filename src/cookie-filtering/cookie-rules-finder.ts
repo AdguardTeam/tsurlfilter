@@ -1,6 +1,9 @@
 import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 
+/**
+ * Cookie rules manager class
+ */
 export default class CookieRulesFinder {
     /**
      * Filters blocking rules

@@ -138,7 +138,7 @@ export default class CookieUtils {
      * @param maxAge
      * @return if cookie was modified
      */
-    public static updateCookieMaxAge(cookie: ParsedCookie, maxAge: number): boolean {
+    static updateCookieMaxAge(cookie: ParsedCookie, maxAge: number): boolean {
         const currentTimeSec = Date.now() / 1000;
 
         let cookieExpiresTimeSec = null;
