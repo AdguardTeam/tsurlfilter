@@ -38,8 +38,7 @@ import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
  *
  * onCompleted
  * - apply rules via content script
- * In content-scripts:
- * - TODO: describe content-scripts logic
+ * In content-scripts (check /src/content-script/cookie-controller.ts):
  * - get matching cookie rules
  * - apply
  */
@@ -138,6 +137,20 @@ export class CookieFiltering {
 
     public onErrorOccurred(details: OnErrorOccurredDetailsType): void {
         this.requestContextStorage.delete(details.requestId);
+    }
+
+    /**
+     * Looks up blocking rules for content-script
+     *
+     * @param requestId
+     */
+    public getBlockingRules(requestId: string): NetworkRule[] {
+        const context = this.requestContextStorage.get(requestId);
+        if (!context) {
+            return [];
+        }
+
+        return CookieRulesFinder.getBlockingRules(context.url, context.rules);
     }
 
     /**

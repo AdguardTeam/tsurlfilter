@@ -12,9 +12,8 @@ export default class CookieRulesFinder {
      * @param url
      * @param rules
      */
-    // eslint-disable-next-line class-methods-use-this
     static getBlockingRules(url: string, rules: NetworkRule[]): NetworkRule[] {
-        return [];
+        return rules.filter((rule) => !CookieRulesFinder.isModifyingRule(rule));
     }
 
     /**

@@ -4,6 +4,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
 import { ModificationsListener } from './filtering-log/content-modifications.js';
 import { RedirectsService } from './redirects/redirects-service.js';
+import { applyCookieRules } from './cookie-helper';
 
 /**
  * Extension application class
@@ -261,11 +262,10 @@ export class Application {
      * @param details
      */
     onCompleted(details) {
-        this.cookieFiltering.onCompleted(details);
+        const blockingRules = this.cookieFiltering.getBlockingRules(details.requestId);
+        applyCookieRules(details.tabId, blockingRules);
 
-        // First-party cookie blocking rules
-        // const blockingRules = this.cookieFiltering.getBlockingRules(rules);
-        // applyCookieRules(details.tabId, blockingRules);
+        this.cookieFiltering.onCompleted(details);
     }
 
     /**
