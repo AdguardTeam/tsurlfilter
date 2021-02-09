@@ -19,5 +19,6 @@ export * from './rules/simple-regex';
 export * from './stealth/stealth-service';
 export * from './utils/logger';
 export * from './utils/rule-validator';
+export * from './cookie-filtering/cookie-filtering';
 export { CosmeticRuleMarker } from './rules/cosmetic-rule-marker';
 export { RuleSyntaxUtils } from './utils/rule-syntax-utils';

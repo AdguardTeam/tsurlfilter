@@ -48,6 +48,13 @@ export class Application {
     redirectsService = new RedirectsService();
 
     /**
+     * Cookie filtering service
+     *
+     * @type {CookieFiltering}
+     */
+    cookieFiltering = null;
+
+    /**
      * Initializes engine instance
      *
      * @param rulesText
@@ -79,6 +86,7 @@ export class Application {
         this.engine = new TSUrlFilter.Engine(ruleStorage);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
         this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
+        this.cookieFiltering = new TSUrlFilter.CookieFiltering(this.filteringLog);
         this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
         await this.redirectsService.init();
 
@@ -117,6 +125,8 @@ export class Application {
         if (details.type === 'main_frame') {
             this.filteringLog.addHttpRequestEvent(details.tabId, details.url, requestRule);
         }
+
+        this.cookieFiltering.onBeforeRequest(details, result.getCookieRules());
 
         // Strip tracking parameters
         if (!result.stealthRule) {
@@ -226,10 +236,7 @@ export class Application {
             }
         }
 
-        const cookieRules = this.getCookieRules(details);
-        if (this.processHeaders(details, responseHeaders, cookieRules)) {
-            responseHeadersModified = true;
-        }
+        this.cookieFiltering.onHeadersReceived(details);
 
         if (responseHeadersModified) {
             console.debug('Response headers modified');
@@ -245,53 +252,20 @@ export class Application {
      */
     // eslint-disable-next-line consistent-return
     onBeforeSendHeaders(details) {
-        const requestHeaders = details.requestHeaders || [];
-
-        let requestHeadersModified = false;
-
-        const cookieRules = this.getCookieRules(details);
-        if (this.processHeaders(details, requestHeaders, cookieRules)) {
-            requestHeadersModified = true;
-        }
-
-        if (requestHeadersModified) {
-            console.debug('Request headers modified');
-            return { requestHeaders };
-        }
+        this.cookieFiltering.onBeforeSendHeaders(details);
     }
 
     /**
-     * Returns cookie rules matching request details
+     * On completed listener
      *
      * @param details
-     * @return {NetworkRule[]}
      */
-    getCookieRules(details) {
-        const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
-        const result = this.engine.matchRequest(request);
+    onCompleted(details) {
+        this.cookieFiltering.onCompleted(details);
 
-        return result.getCookieRules();
-    }
-
-    /**
-     * Modifies cookie header
-     *
-     * @param details
-     * @param headers
-     * @param cookieRules
-     * @return {null}
-     */
-    processHeaders(details, headers, cookieRules) {
-        console.debug('Processing headers');
-        console.debug(headers);
-
-        cookieRules.forEach((r) => {
-            this.filteringLog.addCookieEvent(details.tabId, details.url, r);
-        });
-
-        // TODO: Modify cookie header
-
-        return null;
+        // First-party cookie blocking rules
+        // const blockingRules = this.cookieFiltering.getBlockingRules(rules);
+        // applyCookieRules(details.tabId, blockingRules);
     }
 
     /**
