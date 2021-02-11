@@ -5,9 +5,16 @@ const TEST_URL = 'https://test.com/url';
 
 describe('Cookie utils - Set-Cookie headers parsing', () => {
     it('checks parse simple', () => {
-        let cookies = CookieUtils.parseSetCookieHeaders([
-        ], TEST_URL);
+        let cookies = CookieUtils.parseSetCookieHeaders([], TEST_URL);
         expect(cookies).toHaveLength(0);
+
+        cookies = CookieUtils.parseSetCookieHeaders([
+            {
+                name: 'set-cookie',
+                value: 'ok',
+            },
+        ], TEST_URL);
+        expect(cookies).toHaveLength(1);
 
         cookies = CookieUtils.parseSetCookieHeaders([
             {
@@ -20,10 +27,18 @@ describe('Cookie utils - Set-Cookie headers parsing', () => {
         cookies = CookieUtils.parseSetCookieHeaders([
             {
                 name: 'set-cookie',
-                value: 'ok',
+                value: undefined,
             },
         ], TEST_URL);
-        expect(cookies).toHaveLength(1);
+        expect(cookies).toHaveLength(0);
+
+        cookies = CookieUtils.parseSetCookieHeaders([
+            {
+                name: 'set-cookie',
+                value: '',
+            },
+        ], TEST_URL);
+        expect(cookies).toHaveLength(0);
     });
 });
 

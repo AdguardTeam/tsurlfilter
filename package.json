@@ -78,6 +78,9 @@
       "src/*.{js,ts}",
       "src/*/*.{js,ts}",
       "src/*/*/*.{js,ts}"
+    ],
+    "setupFiles": [
+      "jest-webextension-mock"
     ]
   },
   "commitlint": {
@@ -107,6 +110,7 @@
     "fs-extra": "^8.1.0",
     "husky": "^4.2.1",
     "jest": "^25.5.4",
+    "jest-webextension-mock": "^3.7.8",
     "jsdom": "^16.2.2",
     "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",

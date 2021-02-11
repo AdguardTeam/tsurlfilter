@@ -54,6 +54,7 @@ describe('Cookie Controller Tests', () => {
     it('checks apply regexp rule', () => {
         const rules = [
             new NetworkRule('||example.org^$cookie=/user/', 1),
+            new NetworkRule('||example.org^$cookie=/not_match/', 1),
         ];
 
         const rulesData = rules.map((rule) => ({

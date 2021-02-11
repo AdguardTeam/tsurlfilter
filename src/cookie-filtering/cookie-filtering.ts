@@ -159,17 +159,13 @@ export class CookieFiltering {
      */
     private async applyRules(requestId: string): Promise<void> {
         const context = this.requestContextStorage.get(requestId);
-        if (!context) {
-            return;
-        }
-
-        const { rules, cookies } = context;
+        const { rules, cookies } = context!;
         if (!rules || !cookies) {
             return;
         }
 
         const promises = cookies.map(async (cookie) => {
-            await this.applyRulesToCookie(cookie, rules, context.tabId);
+            await this.applyRulesToCookie(cookie, rules, context!.tabId);
         });
 
         await Promise.all(promises);

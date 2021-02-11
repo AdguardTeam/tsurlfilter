@@ -1,11 +1,17 @@
 import CookieRulesFinder from '../../src/cookie-filtering/cookie-rules-finder';
 import { NetworkRule } from '../../src/rules/network-rule';
 
-// describe('Cookie rules - content script rules', () => {
-//     it('looks up rules', () => {
-//         // TODO: Implement
-//     });
-// });
+describe('Cookie rules - content script rules', () => {
+    it('looks up rules', () => {
+        const found = CookieRulesFinder.getBlockingRules('http://example.org', [
+            new NetworkRule('$cookie=all', 0),
+            new NetworkRule('example.org$cookie=test', 0),
+            new NetworkRule('example.org$cookie=test;maxAge=15;sameSite=lax', 0),
+        ]);
+
+        expect(found).toHaveLength(2);
+    });
+});
 
 describe('Cookie rules - lookup rules', () => {
     it('looks up blocking rules', () => {
@@ -24,6 +30,7 @@ describe('Cookie rules - lookup rules', () => {
             new NetworkRule('$cookie=test', 0),
         ], false);
         expect(rule).not.toBeNull();
+        expect(rule!.getText()).toBe('$cookie=test');
 
         rule = CookieRulesFinder.lookupNotModifyingRule('test', [
             new NetworkRule('$cookie=test;maxAge=15;sameSite=lax', 0),
