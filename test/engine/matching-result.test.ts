@@ -10,6 +10,10 @@ describe('TestNewMatchingResult', () => {
         const result = new MatchingResult(rules, []);
 
         expect(result).toBeTruthy();
+        expect(result.getCookieRules()).toHaveLength(0);
+        expect(result.getCspRules()).toHaveLength(0);
+        expect(result.getRemoveParamRules()).toHaveLength(0);
+        expect(result.getReplaceRules()).toHaveLength(0);
         expect(result.basicRule).toBeTruthy();
 
         const basicResult = result.getBasicResult();
