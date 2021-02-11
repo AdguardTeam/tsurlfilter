@@ -20,7 +20,7 @@ export default class CookieController {
      *
      * @param callback
      */
-    constructor(callback: (ruleText: string) => void) {
+    constructor(callback: (ruleText: string, cookieName: string) => void) {
         this.onRuleAppliedCallback = callback;
 
         this.isThirdPartyContext = this.isThirdPartyFrame();

@@ -30,7 +30,7 @@ describe('Cookie Controller Tests', () => {
         document.cookie = 'user_one=test';
 
         controller.apply(rulesData);
-        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie=user_one');
+        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie=user_one', 'user_one');
     });
 
     it('checks apply wildcard rule', () => {
@@ -48,7 +48,7 @@ describe('Cookie Controller Tests', () => {
         document.cookie = 'user_one=test';
         controller.apply(rulesData);
 
-        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie');
+        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie', 'user_one');
     });
 
     it('checks apply regexp rule', () => {
@@ -66,7 +66,7 @@ describe('Cookie Controller Tests', () => {
         document.cookie = 'user_one=test';
         controller.apply(rulesData);
 
-        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie=/user/');
+        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie=/user/', 'user_one');
     });
 
     it('check third-party rules are skipped for first-party cookies', () => {
