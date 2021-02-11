@@ -199,6 +199,12 @@ export class FilteringLog {
             console.log(`[FILTERING-LOG] Request: ${event.requestUrl}`);
         }
 
+        if (event.eventType === 'COOKIE') {
+            console.log(
+                `[FILTERING-LOG] Request: ${event.cookieDomain} Cookie rule applied: ${event.cookieRule.getText()}`,
+            );
+        }
+
         if (event.eventType === 'STEALTH') {
             console.log(`[FILTERING-LOG] Request: ${event.frameUrl} Stealth action: ${event.action}`);
         }

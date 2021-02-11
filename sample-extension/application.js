@@ -4,7 +4,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
 import { ModificationsListener } from './filtering-log/content-modifications.js';
 import { RedirectsService } from './redirects/redirects-service.js';
-import { applyCookieRules } from './cookie-helper';
+import { applyCookieRules } from './cookie-helper.js';
 
 /**
  * Extension application class
