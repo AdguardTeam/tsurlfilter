@@ -2,11 +2,8 @@ import { WebRequest } from 'webextension-polyfill-ts';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 import HttpHeaders = WebRequest.HttpHeaders;
 
-// TODO: Tests
-
 /**
  * Finds header object by header name (case insensitive)
- * TODO: Use in cookie service
  *
  * @param headers Headers collection
  * @param headerName Header name

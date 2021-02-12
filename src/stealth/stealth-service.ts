@@ -1,9 +1,8 @@
 import { WebRequest } from 'webextension-polyfill-ts';
-import * as utils from '../utils/utils';
 import { Request, RequestType } from '../request';
 import { NetworkRule } from '../rules/network-rule';
 import { findHeaderByName, removeHeader } from '../utils/headers';
-import { getHost, isThirdPartyRequest } from '../utils/url';
+import { getHost, isThirdPartyRequest, cleanUrlParam } from '../utils/url';
 import HttpHeaders = WebRequest.HttpHeaders;
 
 /**
@@ -144,7 +143,7 @@ export class StealthService {
             .map((x) => x.replace('=', '').replace(/\*/g, '[^&#=]*').trim())
             .filter((x) => x);
 
-        const result = utils.cleanUrlParam(url, params);
+        const result = cleanUrlParam(url, params);
 
         if (result !== url) {
             return result;

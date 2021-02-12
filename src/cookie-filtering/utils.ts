@@ -1,7 +1,6 @@
 import { WebRequest } from 'webextension-polyfill-ts';
 import ParsedCookie from './parsed-cookie';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
-import HttpHeaders = WebRequest.HttpHeaders;
 
 /**
  * Cookie Utils
@@ -37,24 +36,6 @@ export default class CookieUtils {
         }
 
         return result;
-    }
-
-    /**
-     * Finds header object by header name (case insensitive)
-     *
-     * @param headers Headers collection
-     * @param headerName Header name
-     * @returns header value
-     */
-    static findHeaderByName(headers: HttpHeaders, headerName: string): HttpHeadersItemType | null {
-        for (let i = 0; i < headers.length; i += 1) {
-            const header = headers[i];
-            if (header.name.toLowerCase() === headerName.toLowerCase()) {
-                return header;
-            }
-        }
-
-        return null;
     }
 
     /**

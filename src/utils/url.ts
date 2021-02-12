@@ -1,6 +1,46 @@
 import { parse } from 'tldts';
 
-// TODO: Tests
+/**
+ * Removes query params from url by regexp
+ *
+ * @param url
+ * @param regExp
+ */
+export function cleanUrlParamByRegExp(url: string, regExp: RegExp): string {
+    const urlPieces = url.split('?');
+
+    // If no params, nothing to modify
+    if (urlPieces.length === 1) {
+        return url;
+    }
+
+    urlPieces[1] = urlPieces[1].replace(regExp, '');
+
+    // Cleanup empty params (p0=0&=2&=3)
+    urlPieces[1] = urlPieces[1]
+        .split('&')
+        .filter((x) => x && !x.startsWith('='))
+        .join('&');
+
+    // If we've collapsed the URL to the point where there's an '&' against the '?'
+    // then we need to get rid of that.
+    while (urlPieces[1].charAt(0) === '&') {
+        urlPieces[1] = urlPieces[1].substr(1);
+    }
+
+    return urlPieces[1] ? urlPieces.join('?') : urlPieces[0];
+}
+
+/**
+ * Removes query params from url by array of params
+ *
+ * @param url
+ * @param params
+ */
+export function cleanUrlParam(url: string, params: string[]): string {
+    const trackingParametersRegExp = new RegExp(`((^|&)(${params.join('|')})=[^&#]*)`, 'ig');
+    return cleanUrlParamByRegExp(url, trackingParametersRegExp);
+}
 
 /**
  * Checks third party relation
