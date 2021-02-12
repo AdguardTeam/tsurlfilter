@@ -81,7 +81,7 @@ export class StealthService {
      * Headers
      */
     private static readonly HEADERS = {
-        REFERRER: 'Referer',
+        REFERRER: 'Referrer',
         X_CLIENT_DATA: 'X-Client-Data',
         DO_NOT_TRACK: 'DNT',
     };

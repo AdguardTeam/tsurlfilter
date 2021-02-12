@@ -14,6 +14,7 @@ describe('Url utils', () => {
         expect(utils.getHost('https://www.example.org')).toBe('www.example.org');
         expect(utils.getHost('https://www.example.org/path')).toBe('www.example.org');
         expect(utils.getHost('https://www.example.org/path?query')).toBe('www.example.org');
+        expect(utils.getHost('stun:example.org')).toBe('example.org');
     });
 });
 
