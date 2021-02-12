@@ -3,13 +3,18 @@ import { NetworkRule } from '../../src/rules/network-rule';
 
 describe('Cookie rules - content script rules', () => {
     it('looks up rules', () => {
+        const allCookieRule = new NetworkRule('$cookie=all', 0);
+        const blockingCookieRule = new NetworkRule('example.org$cookie=test', 0);
+        const modifyingCookieRule = new NetworkRule('example.org$cookie=test;maxAge=15;sameSite=lax', 0);
         const found = CookieRulesFinder.getBlockingRules('http://example.org', [
-            new NetworkRule('$cookie=all', 0),
-            new NetworkRule('example.org$cookie=test', 0),
-            new NetworkRule('example.org$cookie=test;maxAge=15;sameSite=lax', 0),
+            allCookieRule,
+            blockingCookieRule,
+            modifyingCookieRule,
         ]);
 
         expect(found).toHaveLength(2);
+        expect(found).toContain(allCookieRule);
+        expect(found).toContain(blockingCookieRule);
     });
 });
 
