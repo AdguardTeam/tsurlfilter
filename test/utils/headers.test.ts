@@ -37,7 +37,7 @@ describe('Headers utils', () => {
             },
         ], 'test_name')).toBeFalsy();
 
-        expect(removeHeader([
+        const headers = [
             {
                 name: 'test_name',
                 value: 'test_value',
@@ -46,6 +46,9 @@ describe('Headers utils', () => {
                 name: 'an_other_name',
                 value: 'an_other_value',
             },
-        ], 'test_name')).toBeTruthy();
+        ];
+        expect(removeHeader(headers, 'test_name')).toBeTruthy();
+        expect(headers).toHaveLength(1);
+        expect(headers.find((x) => x.name === 'test_name')).not.toBeDefined();
     });
 });

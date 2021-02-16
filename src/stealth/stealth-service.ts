@@ -260,12 +260,6 @@ export class StealthService {
      * @param url
      */
     private static isSearchEngine(url: string): boolean {
-        for (let i = 0; i < StealthService.SEARCH_ENGINES.length; i += 1) {
-            if (StealthService.SEARCH_ENGINES[i].test(url)) {
-                return true;
-            }
-        }
-
-        return false;
+        return StealthService.SEARCH_ENGINES.some((searchEngineRegex) => searchEngineRegex.test(url));
     }
 }
