@@ -26,7 +26,7 @@ export const applyCookieRules = (tabId, rules) => {
                 (() => {
                     const rulesData = JSON.parse('${JSON.stringify(rulesData)}');
                     
-                    const { CookieController } = TSUrlFilter;
+                    const { CookieController } = TSUrlFilterContentScript;
                     const cookieController = new CookieController((rule, cookieName) => {
                         console.debug('Cookie rule applied');
                         console.debug(rule);

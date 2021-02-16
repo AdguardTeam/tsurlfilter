@@ -8,6 +8,7 @@ import json from '@rollup/plugin-json';
 import pkg from './package.json';
 
 const libraryName = 'TSUrlFilter';
+const contentScriptLibraryName = 'TSUrlFilterContentScript';
 
 const contentScriptFilename = 'TSUrlFilterContentScript';
 const contentScriptConfig = {
@@ -20,7 +21,7 @@ const contentScriptConfig = {
         },
         {
             file: `dist/${contentScriptFilename}.umd.js`,
-            name: libraryName,
+            name: contentScriptLibraryName,
             format: 'umd',
             sourcemap: false,
         },
