@@ -1,4 +1,5 @@
-import * as utils from '../utils/utils';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/utils';
+import * as utils from '../utils/url';
 import { IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
@@ -39,7 +40,7 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * @param url
      */
     public removeParameters(url: string): string {
-        const parts = utils.splitByDelimiterWithEscapeCharacter(this.value, '|', '\\', true);
+        const parts = splitByDelimiterWithEscapeCharacter(this.value, '|', '\\', true);
 
         const plainParams = parts.filter((x) => !x.startsWith('/'));
         const regexpParams = parts.filter((x) => x.startsWith('/')).map(SimpleRegex.patternFromString);

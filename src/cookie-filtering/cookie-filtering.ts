@@ -7,6 +7,7 @@ import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RequestType } from '../request';
+import { findHeaderByName } from '../utils/headers';
 import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
@@ -93,7 +94,7 @@ export class CookieFiltering {
             return;
         }
 
-        const cookieHeader = CookieUtils.findHeaderByName(details.requestHeaders, 'Cookie');
+        const cookieHeader = findHeaderByName(details.requestHeaders, 'Cookie');
         if (!cookieHeader || !cookieHeader.value) {
             return;
         }
