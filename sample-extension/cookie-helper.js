@@ -18,6 +18,7 @@ export const applyCookieRules = (tabId, rules) => {
             ruleText: rule.getText(),
             match: rule.getAdvancedModifierValue(),
             isThirdParty: rule.isOptionEnabled(TSUrlFilter.NetworkRuleOption.ThirdParty),
+            filterId: rule.getFilterListId(),
         };
     });
 
@@ -27,9 +28,10 @@ export const applyCookieRules = (tabId, rules) => {
                     const rulesData = JSON.parse('${JSON.stringify(rulesData)}');
                     
                     const { CookieController } = TSUrlFilterContentScript;
-                    const cookieController = new CookieController((rule, cookieName) => {
+                    const cookieController = new CookieController((
+                            cookieName, cookieDomain, ruleText, thirdParty, filterId) => {
                         console.debug('Cookie rule applied');
-                        console.debug(rule);
+                        console.debug(ruleText);
                         console.debug(cookieName);
                     });
                     

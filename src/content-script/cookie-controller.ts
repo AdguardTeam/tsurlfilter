@@ -8,7 +8,11 @@ export default class CookieController {
     /**
      * On rule applied callback
      */
-    private readonly onRuleAppliedCallback: (ruleText: string, cookieName: string) => void;
+    private readonly onRuleAppliedCallback: (cookieName: string,
+        cookieDomain: string,
+        cookieRuleText: string,
+        thirdParty: boolean,
+        filterId: number) => void;
 
     /**
      * Is current context third-party
@@ -20,7 +24,11 @@ export default class CookieController {
      *
      * @param callback
      */
-    constructor(callback: (ruleText: string, cookieName: string) => void) {
+    constructor(callback: (cookieName: string,
+        cookieDomain: string,
+        cookieRuleText: string,
+        thirdParty: boolean,
+        filterId: number) => void) {
         this.onRuleAppliedCallback = callback;
 
         this.isThirdPartyContext = this.isThirdPartyFrame();
@@ -36,6 +44,7 @@ export default class CookieController {
             ruleText: string;
             match: string;
             isThirdParty: boolean;
+            filterId: number;
         }[],
     ): void {
         this.applyRules(rules);
@@ -103,6 +112,7 @@ export default class CookieController {
             ruleText: string;
             match: string;
             isThirdParty: boolean;
+            filterId: number;
         }[],
     ): void {
         document.cookie.split(';').forEach((cookieStr) => {
@@ -125,7 +135,7 @@ export default class CookieController {
      * @param cookieName
      */
     private applyRule(
-        rule: { ruleText: string; match: string; isThirdParty: boolean },
+        rule: { ruleText: string; match: string; isThirdParty: boolean; filterId: number },
         cookieName: string,
     ): void {
         if (this.isThirdPartyContext !== rule.isThirdParty) {
@@ -142,7 +152,13 @@ export default class CookieController {
             const hostName = hostParts.slice(i).join('.');
             if (hostName) {
                 CookieController.removeCookieFromHost(cookieName, hostName);
-                this.onRuleAppliedCallback(rule.ruleText, cookieName);
+                this.onRuleAppliedCallback(
+                    cookieName,
+                    hostName,
+                    rule.ruleText,
+                    rule.isThirdParty,
+                    rule.filterId,
+                );
             }
         }
     }

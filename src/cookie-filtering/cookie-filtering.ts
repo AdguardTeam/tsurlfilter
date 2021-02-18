@@ -58,7 +58,6 @@ export class CookieFiltering {
     /**
      * Constructor
      *
-     * @param rules
      * @param filteringLog
      */
     constructor(filteringLog: FilteringLog) {

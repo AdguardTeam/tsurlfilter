@@ -21,6 +21,7 @@ describe('Cookie Controller Tests', () => {
             ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
+            filterId: 1,
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -30,7 +31,7 @@ describe('Cookie Controller Tests', () => {
         document.cookie = 'user_one=test';
 
         controller.apply(rulesData);
-        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie=user_one', 'user_one');
+        expect(onAppliedCallback).toHaveBeenCalled();
     });
 
     it('checks apply wildcard rule', () => {
@@ -42,13 +43,14 @@ describe('Cookie Controller Tests', () => {
             ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
+            filterId: 1,
         }));
 
         const controller = new CookieController(onAppliedCallback);
         document.cookie = 'user_one=test';
         controller.apply(rulesData);
 
-        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie', 'user_one');
+        expect(onAppliedCallback).toHaveBeenCalled();
     });
 
     it('checks apply regexp rule', () => {
@@ -61,13 +63,14 @@ describe('Cookie Controller Tests', () => {
             ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
+            filterId: 1,
         }));
 
         const controller = new CookieController(onAppliedCallback);
         document.cookie = 'user_one=test';
         controller.apply(rulesData);
 
-        expect(onAppliedCallback).toHaveBeenLastCalledWith('||example.org^$cookie=/user/', 'user_one');
+        expect(onAppliedCallback).toHaveBeenCalled();
     });
 
     it('check third-party rules are skipped for first-party cookies', () => {
@@ -79,6 +82,7 @@ describe('Cookie Controller Tests', () => {
             ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
+            filterId: 1,
         }));
 
         const controller = new CookieController(onAppliedCallback);
