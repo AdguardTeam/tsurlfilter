@@ -19,7 +19,7 @@ Build:
   docker:
     image: "${bamboo.dockerJslBuilder}"
     volumes:
-      "${system.YARN_DIR}/cache": "${bamboo.yarnCache}"
+      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
     - checkout:
         force-clean-build: 'true'
