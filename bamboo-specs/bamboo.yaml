@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERSPECS
   name: tsurlfilter - test
 variables:
-  dockerNode: adguard/jsl-builder:15.8.0--1.22.5--1
+  dockerJslBuilder: adguard/jsl-builder:15.8.0--1.22.5--1
 
 stages:
   - Build:
@@ -17,7 +17,7 @@ stages:
 Build:
   key: BUILD
   docker:
-    image: "${bamboo.dockerNode}"
+    image: "${bamboo.dockerJslBuilder}"
     volumes:
       "${system.YARN_DIR}/cache": "${bamboo.yarnCache}"
   tasks:
