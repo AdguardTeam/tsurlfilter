@@ -19,15 +19,7 @@ Build:
   docker:
     image: "${bamboo.dockerNode}"
     volumes:
-      "${system.YARN_DIR}/cache": "/.cache/yarn"
-      "${system.YARN_DIR}/global": "/.yarn"
-    docker-run-arguments:
-      - "${system.DOCKER_ARGS_1}"
-      - "${system.DOCKER_ARGS_2}"
-      - "${system.DOCKER_ARGS_3}"
-      - "${system.DOCKER_ARGS_4}"
-      - "${system.DOCKER_ARGS_5}"
-
+      "${system.YARN_DIR}/cache": "${bamboo.yarnCache}"
   tasks:
     - checkout:
         force-clean-build: 'true'
