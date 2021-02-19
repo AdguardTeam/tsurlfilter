@@ -36,7 +36,7 @@ Build:
   final-tasks:
     - clean
   requirements:
-    - adg-docker-test: 'true'
+    - adg-docker: 'true'
 
 branches:
   create: for-pull-request
