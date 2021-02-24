@@ -3,6 +3,7 @@ import { WebRequest } from 'webextension-polyfill-ts';
 import { CookieFiltering } from '../../src/cookie-filtering/cookie-filtering';
 import { MockFilteringLog } from '../mock-filtering-log';
 import { NetworkRule } from '../../src';
+import BrowserCookieApi from '../../src/cookie-filtering/browser-cookie/browser-cookie-api';
 import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
@@ -11,6 +12,8 @@ import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
 import HttpHeaders = WebRequest.HttpHeaders;
 
 jest.mock('../../src/cookie-filtering/browser-cookie/browser-cookie-api');
+BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
+BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
 
 const createTestHeaders = (headers: {name: string;value: string}[]): {name: string;value: string}[] => [
     { name: 'Header One', value: 'Header Value One' },

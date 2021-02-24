@@ -2,6 +2,7 @@
 /* eslint-disable class-methods-use-this */
 import { browser, Cookies } from 'webextension-polyfill-ts';
 import ParsedCookie from '../parsed-cookie';
+import { logger } from '../../utils/logger';
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
 
@@ -15,8 +16,15 @@ export default class BrowserCookieApi {
      * @param name
      * @param url
      */
-    async removeCookie(name: string, url: string): Promise<void> {
-        await browser.cookies.remove({ name, url });
+    async removeCookie(name: string, url: string): Promise<boolean> {
+        try {
+            await browser.cookies.remove({ name, url });
+            return true;
+        } catch (e) {
+            logger.error(e);
+        }
+
+        return false;
     }
 
     /**
@@ -24,9 +32,17 @@ export default class BrowserCookieApi {
      *
      * @param cookie Cookie for update
      */
-    async modifyCookie(cookie: ParsedCookie): Promise<void> {
-        const update = BrowserCookieApi.convertToSetDetailsType(cookie);
-        await browser.cookies.set(update);
+    async modifyCookie(cookie: ParsedCookie): Promise<boolean> {
+        try {
+            const update = BrowserCookieApi.convertToSetDetailsType(cookie);
+            await browser.cookies.set(update);
+
+            return true;
+        } catch (e) {
+            logger.error(e);
+        }
+
+        return false;
     }
 
     private static convertToSetDetailsType(cookie: ParsedCookie): SetDetailsType {
@@ -88,7 +104,7 @@ export default class BrowserCookieApi {
      *
      * @param sameSite
      */
-    private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus {
+    private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus|undefined {
         if (sameSite) {
             if (sameSite.toLowerCase() === 'lax') {
                 return 'lax';
@@ -99,6 +115,6 @@ export default class BrowserCookieApi {
             }
         }
 
-        return 'no_restriction';
+        return undefined;
     }
 }

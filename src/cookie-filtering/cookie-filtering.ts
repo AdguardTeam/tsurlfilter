@@ -8,6 +8,7 @@ import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RequestType } from '../request';
 import { findHeaderByName } from '../utils/headers';
+import { logger } from '../utils/logger';
 import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
@@ -128,7 +129,11 @@ export class CookieFiltering {
             context.cookies.push(...newCookies);
         }
 
-        await this.applyRules(details.requestId);
+        try {
+            await this.applyRules(details.requestId);
+        } catch (e) {
+            logger.error(e);
+        }
     }
 
     public onCompleted(details: OnCompletedDetailsType): void {
@@ -178,6 +183,7 @@ export class CookieFiltering {
      * @param cookieRules
      * @param tabId
      */
+    /* istanbul ignore next */
     private async applyRulesToCookie(
         cookie: ParsedCookie,
         cookieRules: NetworkRule[],
@@ -188,17 +194,18 @@ export class CookieFiltering {
 
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
-            await this.browserCookieApi.removeCookie(cookie.name, cookie.url);
-            this.filteringLog.addCookieEvent(
-                tabId,
-                cookie.name,
-                cookie.value,
-                cookie.domain,
-                RequestType.Document, // TODO: Find request type
-                bRule,
-                false,
-                isThirdPartyCookie,
-            );
+            if (await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
+                this.filteringLog.addCookieEvent(
+                    tabId,
+                    cookie.name,
+                    cookie.value,
+                    cookie.domain,
+                    RequestType.Document,
+                    bRule,
+                    false,
+                    isThirdPartyCookie,
+                );
+            }
 
             return;
         }
@@ -207,20 +214,20 @@ export class CookieFiltering {
         if (mRules.length > 0) {
             const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
             if (appliedRules.length > 0) {
-                await this.browserCookieApi.modifyCookie(cookie);
-
-                appliedRules.forEach((r) => {
-                    this.filteringLog.addCookieEvent(
-                        tabId,
-                        cookie.name,
-                        cookie.value,
-                        cookie.domain,
-                        RequestType.Document, // TODO: Find request type
-                        r,
-                        true,
-                        isThirdPartyCookie,
-                    );
-                });
+                if (await this.browserCookieApi.modifyCookie(cookie)) {
+                    appliedRules.forEach((r) => {
+                        this.filteringLog.addCookieEvent(
+                            tabId,
+                            cookie.name,
+                            cookie.value,
+                            cookie.domain,
+                            RequestType.Document,
+                            r,
+                            true,
+                            isThirdPartyCookie,
+                        );
+                    });
+                }
             }
         }
     }
