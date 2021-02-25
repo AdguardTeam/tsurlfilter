@@ -240,7 +240,9 @@ export class StealthService {
      */
     private static generateRemoveRule(maxAgeMinutes: number): NetworkRule {
         const maxAgeOption = maxAgeMinutes > 0 ? `;maxAge=${maxAgeMinutes * 60}` : '';
-        return new NetworkRule(`$cookie=/.+/${maxAgeOption}`, 0);
+        const rule = new NetworkRule(`$cookie=/.+/${maxAgeOption}`, 0);
+        rule.isStealthModeRule = true;
+        return rule;
     }
 
     /**

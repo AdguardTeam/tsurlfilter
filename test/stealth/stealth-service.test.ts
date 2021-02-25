@@ -75,11 +75,13 @@ describe('Stealth service - cookies', () => {
         let cookieRules = service.getCookieRules(request);
         expect(cookieRules).toHaveLength(1);
         expect(cookieRules[0].getText()).toBe('$cookie=/.+/;maxAge=60');
+        expect(cookieRules[0].isStealthModeRule).toBeTruthy();
 
         request = new Request('https://example.org', '', RequestType.Image);
         cookieRules = service.getCookieRules(request);
         expect(cookieRules).toHaveLength(1);
         expect(cookieRules[0].getText()).toBe('$cookie=/.+/;maxAge=60');
+        expect(cookieRules[0].isStealthModeRule).toBeTruthy();
     });
 
     it('checks third-party cookies', () => {
@@ -94,6 +96,7 @@ describe('Stealth service - cookies', () => {
         let cookieRules = service.getCookieRules(request);
         expect(cookieRules).toHaveLength(1);
         expect(cookieRules[0].getText()).toBe('$cookie=/.+/');
+        expect(cookieRules[0].isStealthModeRule).toBeTruthy();
 
         request = new Request('https://example.org', 'https://source.com', RequestType.Document);
         cookieRules = service.getCookieRules(request);
