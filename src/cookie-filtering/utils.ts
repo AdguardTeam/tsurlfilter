@@ -63,7 +63,12 @@ export default class CookieUtils {
             const key = pair.substr(0, eqIdx).trim();
             const value = pair.substr(eqIdx + 1, pair.length).trim();
 
-            cookies.push(new ParsedCookie(key, value, url));
+            const parsedCookie = new ParsedCookie(key, value, url);
+            if (key.startsWith('__Secure-') || key.startsWith('__Host-')) {
+                parsedCookie.secure = true;
+            }
+
+            cookies.push(parsedCookie);
         }
 
         return cookies;

@@ -83,6 +83,17 @@ describe('Cookie utils - parsing cookies', () => {
         expect(cookies[0].domain).toBe('test.com');
     });
 
+    it('checks parse secure', () => {
+        // eslint-disable-next-line max-len
+        const cookies = CookieUtils.parseCookies('__Secure-first_name=first_value;skip;__Host-second_name=second_value;', TEST_URL);
+        expect(cookies).toHaveLength(2);
+        expect(cookies[0].name).toBe('__Secure-first_name');
+        expect(cookies[0]!.value).toBe('first_value');
+        expect(cookies[1]!.secure).toBe(true);
+        expect(cookies[0].url).toBe(TEST_URL);
+        expect(cookies[0].domain).toBe('test.com');
+    });
+
     it('checks parse invalid', () => {
         const cookies = CookieUtils.parseCookies('', TEST_URL);
         expect(cookies).toHaveLength(0);
