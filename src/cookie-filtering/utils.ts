@@ -64,6 +64,10 @@ export default class CookieUtils {
             const value = pair.substr(eqIdx + 1, pair.length).trim();
 
             const parsedCookie = new ParsedCookie(key, value, url);
+            /**
+             * Not obviously there are few special name prefixes
+             * https://developer.cdn.mozilla.net/pt-BR/docs/Web/HTTP/Headers/Set-Cookie
+             */
             if (key.startsWith('__Secure-') || key.startsWith('__Host-')) {
                 parsedCookie.secure = true;
             }
