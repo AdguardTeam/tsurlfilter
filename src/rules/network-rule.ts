@@ -229,6 +229,7 @@ export class NetworkRule implements rule.IRule {
         APP: 'app',
         NETWORK: 'network',
         EXTENSION: 'extension',
+        NOOP: '_',
     };
 
     getText(): string {
@@ -885,6 +886,17 @@ export class NetworkRule implements rule.IRule {
      */
     private loadOption(optionName: string, optionValue: string): void {
         const { OPTIONS, NOT_MARK } = NetworkRule;
+
+        if (optionName.startsWith(OPTIONS.NOOP)) {
+            /**
+             * A noop modifier does nothing and can be used to increase some rules readability.
+             * It consists of the sequence of underscore characters (_) of any length
+             * and can appear in a rule as many times as it's needed.
+             */
+            if (!optionName.split(OPTIONS.NOOP).some((s) => !!s)) {
+                return;
+            }
+        }
 
         switch (optionName) {
             // General options

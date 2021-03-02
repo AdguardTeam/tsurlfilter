@@ -310,6 +310,18 @@ describe('NetworkRule constructor', () => {
         assertBadfilterNegates('*$image,domain=example.com', '*$image,domain=example.org,badfilter', false);
         assertBadfilterNegates('*$image,domain=example.org|~example.com', '*$image,domain=example.org,badfilter', false);
     });
+
+    it('works if noop modifier works properly', () => {
+        let rule = new NetworkRule('||example.com$_', -1);
+        expect(rule).toBeTruthy();
+
+        rule = new NetworkRule('||example.com$_,replace=/bad/good/,____,image', -1);
+        expect(rule).toBeTruthy();
+
+        expect(() => {
+            new NetworkRule('||example.com$_invalid_,replace=/bad/good/,____,image', -1);
+        }).toThrow('Unknown modifier: _invalid_');
+    });
 });
 
 describe('NetworkRule.match', () => {
