@@ -4,6 +4,7 @@ import { applyCss, applyScripts } from './cosmetic.js';
 import { FilteringLog } from './filtering-log/filtering-log.js';
 import { ModificationsListener } from './filtering-log/content-modifications.js';
 import { RedirectsService } from './redirects/redirects-service.js';
+import { applyCookieRules } from './cookie-helper.js';
 
 /**
  * Extension application class
@@ -48,6 +49,13 @@ export class Application {
     redirectsService = new RedirectsService();
 
     /**
+     * Cookie filtering service
+     *
+     * @type {CookieFiltering}
+     */
+    cookieFiltering = null;
+
+    /**
      * Initializes engine instance
      *
      * @param rulesText
@@ -67,11 +75,15 @@ export class Application {
         };
 
         const stealthConfig = {
+            blockChromeClientData: false,
+            hideReferrer: false,
+            hideSearchQueries: false,
+            sendDoNotTrack: true,
             stripTrackingParameters: true,
             trackingParameters: 'utm_source,utm_medium,utm_term',
-            selfDestructThirdPartyCookies: true,
+            selfDestructThirdPartyCookies: false,
             selfDestructThirdPartyCookiesTime: 0,
-            selfDestructFirstPartyCookies: true,
+            selfDestructFirstPartyCookies: false,
             selfDestructFirstPartyCookiesTime: 1,
         };
 
@@ -79,6 +91,7 @@ export class Application {
         this.engine = new TSUrlFilter.Engine(ruleStorage);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
         this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
+        this.cookieFiltering = new TSUrlFilter.CookieFiltering(this.filteringLog);
         this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
         await this.redirectsService.init();
 
@@ -118,9 +131,11 @@ export class Application {
             this.filteringLog.addHttpRequestEvent(details.tabId, details.url, requestRule);
         }
 
+        this.cookieFiltering.onBeforeRequest(details, this.getCookieRules(request, result));
+
         // Strip tracking parameters
         if (!result.stealthRule) {
-            const cleansedUrl = this.stealthService.removeTrackersFromUrl(request);
+            const cleansedUrl = this.stealthService.removeTrackersFromUrl(details.url);
             if (cleansedUrl) {
                 console.debug(`Stealth stripped tracking parameters for url: ${details.url}`);
                 this.filteringLog.addStealthEvent(details.tabId, details.url, 'TRACKING_PARAMS');
@@ -226,10 +241,7 @@ export class Application {
             }
         }
 
-        const cookieRules = this.getCookieRules(details);
-        if (this.processHeaders(details, responseHeaders, cookieRules)) {
-            responseHeadersModified = true;
-        }
+        this.cookieFiltering.onHeadersReceived(details);
 
         if (responseHeadersModified) {
             console.debug('Response headers modified');
@@ -241,57 +253,23 @@ export class Application {
      * Called before request is sent to the remote endpoint.
      *
      * @param details Request details
-     * @returns {*} headers to send
      */
-    // eslint-disable-next-line consistent-return
     onBeforeSendHeaders(details) {
-        const requestHeaders = details.requestHeaders || [];
-
-        let requestHeadersModified = false;
-
-        const cookieRules = this.getCookieRules(details);
-        if (this.processHeaders(details, requestHeaders, cookieRules)) {
-            requestHeadersModified = true;
-        }
-
-        if (requestHeadersModified) {
-            console.debug('Request headers modified');
-            return { requestHeaders };
-        }
+        this.cookieFiltering.onBeforeSendHeaders(details);
+        // eslint-disable-next-line max-len
+        this.stealthService.processRequestHeaders(details.url, TSUrlFilter.RequestType.Document, details.requestHeaders);
     }
 
     /**
-     * Returns cookie rules matching request details
+     * On completed listener
      *
      * @param details
-     * @return {NetworkRule[]}
      */
-    getCookieRules(details) {
-        const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
-        const result = this.engine.matchRequest(request);
+    onCompleted(details) {
+        const blockingRules = this.cookieFiltering.getBlockingRules(details.requestId);
+        applyCookieRules(details.tabId, blockingRules);
 
-        return result.getCookieRules();
-    }
-
-    /**
-     * Modifies cookie header
-     *
-     * @param details
-     * @param headers
-     * @param cookieRules
-     * @return {null}
-     */
-    processHeaders(details, headers, cookieRules) {
-        console.debug('Processing headers');
-        console.debug(headers);
-
-        cookieRules.forEach((r) => {
-            this.filteringLog.addCookieEvent(details.tabId, details.url, r);
-        });
-
-        // TODO: Modify cookie header
-
-        return null;
+        this.cookieFiltering.onCompleted(details);
     }
 
     /**
@@ -343,6 +321,23 @@ export class Application {
         const cosmeticResult = this.engine.getCosmeticResult(hostname, TSUrlFilter.CosmeticOption.CosmeticOptionHtml);
 
         return cosmeticResult.Html.getRules();
+    }
+
+    /**
+     * Returns cookie rules for request
+     *
+     * @param request
+     * @param matchingResult
+     * @return {*|NetworkRule[]}
+     */
+    getCookieRules(request, matchingResult) {
+        const cookieRules = matchingResult.getCookieRules();
+        if (cookieRules.length > 0) {
+            return cookieRules;
+        }
+
+        // If cookie rules not found - apply stealth rules
+        return this.stealthService.getCookieRules(request);
     }
 
     /**
