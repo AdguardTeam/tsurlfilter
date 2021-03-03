@@ -1,6 +1,6 @@
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
-import { Request, RequestType } from '../request';
+import { Request } from '../request';
 import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
 import { RuleStorage } from '../filterlist/rule-storage';
@@ -9,6 +9,7 @@ import { CosmeticOption } from './cosmetic-option';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { IndexedStorageRule } from '../rules/rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
+import { RequestType } from '../request-type';
 
 /**
  * Engine represents the filtering engine with all the loaded rules

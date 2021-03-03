@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 import { StealthActions, StealthConfig, StealthService } from '../../src/stealth/stealth-service';
-import { Request, RequestType } from '../../src';
+import { Request } from '../../src';
+import { RequestType } from '../../src/request-type';
 
 describe('Stealth service - tracking parameters', () => {
     let config: StealthConfig;

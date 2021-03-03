@@ -1,13 +1,14 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
-  "module": "dist/tsurlfilter.esm.js",
+  "module": "dist/es/index.js",
   "iife": "dist/tsurlfilter.iife.js",
   "typings": "dist/types/tsurlfilter.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "AdGuard",
   "repository": {
@@ -98,6 +99,7 @@
     "@types/jest": "^23.3.14",
     "@types/lodash": "^4.14.149",
     "@types/node": "^10.17.28",
+    "@types/rollup-plugin-node-globals": "^1.4.0",
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
     "colors": "^1.4.0",

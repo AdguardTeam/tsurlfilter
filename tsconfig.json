@@ -12,6 +12,7 @@
     "emitDecoratorMetadata": true,
     "declarationDir": "dist/types",
     "outDir": "dist/lib",
+    "emitDeclarationOnly": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "typeRoots": [

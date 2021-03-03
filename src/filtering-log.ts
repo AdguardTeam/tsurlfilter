@@ -1,6 +1,6 @@
 import { CosmeticRule } from './rules/cosmetic-rule';
 import { NetworkRule } from './rules/network-rule';
-import { RequestType } from './request';
+import { RequestType } from './request-type';
 
 /**
  * Filtering log interface

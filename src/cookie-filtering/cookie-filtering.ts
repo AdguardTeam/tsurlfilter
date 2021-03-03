@@ -6,7 +6,7 @@ import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { CookieModifier } from '../modifiers/cookie-modifier';
-import { RequestType } from '../request';
+import { RequestType } from '../request-type';
 import { findHeaderByName } from '../utils/headers';
 import { logger } from '../utils/logger';
 import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;

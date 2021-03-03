@@ -1,4 +1,5 @@
-import { RequestType, Request } from '../src/request';
+import { Request } from '../src/request';
+import { RequestType } from '../src/request-type';
 
 describe('Creating request', () => {
     it('works if simple request is parsed properly', () => {

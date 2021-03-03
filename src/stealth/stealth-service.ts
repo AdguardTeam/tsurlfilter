@@ -1,8 +1,9 @@
 import { WebRequest } from 'webextension-polyfill-ts';
-import { Request, RequestType } from '../request';
+import { Request } from '../request';
 import { NetworkRule } from '../rules/network-rule';
 import { findHeaderByName, removeHeader } from '../utils/headers';
 import { getHost, isThirdPartyRequest, cleanUrlParam } from '../utils/url';
+import { RequestType } from '../request-type';
 import HttpHeaders = WebRequest.HttpHeaders;
 
 /**

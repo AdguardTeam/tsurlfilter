@@ -1,6 +1,6 @@
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { StreamFilter } from './stream-filter';
-import { RequestType } from '../request';
+import { RequestType } from '../request-type';
 import {
     DEFAULT_CHARSET, LATIN_1, SUPPORTED_CHARSETS, WIN_1252,
 } from './charsets';

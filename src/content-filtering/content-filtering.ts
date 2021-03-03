@@ -3,13 +3,14 @@ import { ContentFilter } from './content-filter';
 import { DocumentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
 import { HtmlRuleSelector } from './rule/html-rule-selector';
-import { Request, RequestType } from '../request';
+import { Request } from '../request';
 import { StreamFilter } from './stream-filter';
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { NetworkRule } from '../rules/network-rule';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { ModificationsListener } from './modifications-listener';
 import { logger } from '../utils/logger';
+import { RequestType } from '../request-type';
 
 /**
  * Content filtering module

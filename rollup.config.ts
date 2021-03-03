@@ -10,17 +10,16 @@ import pkg from './package.json';
 const libraryName = 'TSUrlFilter';
 const contentScriptLibraryName = 'TSUrlFilterContentScript';
 
-const contentScriptFilename = 'TSUrlFilterContentScript';
 const contentScriptConfig = {
     input: 'src/content-script/index.ts',
     output: [
         {
-            file: `dist/${contentScriptFilename}.js`,
+            file: `dist/${contentScriptLibraryName}.js`,
             format: 'esm',
             sourcemap: false,
         },
         {
-            file: `dist/${contentScriptFilename}.umd.js`,
+            file: `dist/${contentScriptLibraryName}.umd.js`,
             name: contentScriptLibraryName,
             format: 'umd',
             sourcemap: false,
@@ -37,8 +36,37 @@ const contentScriptConfig = {
     ],
 };
 
+const esmConfig = {
+    input: [
+        'src/index.ts',
+        'src/request-type.ts',
+        'src/rules/simple-regex.ts',
+        'src/rules/cosmetic-rule-marker.ts',
+        'src/rules/network-rule-options.ts',
+    ],
+    output: [
+        {
+            dir: 'dist/es',
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/**',
+    },
+    plugins: [
+        json(),
+        typescript(),
+        commonjs(),
+        globals(),
+        resolve({ preferBuiltins: false }),
+        sourceMaps(),
+    ],
+};
+
 export default [
     contentScriptConfig,
+    esmConfig,
     {
         input: 'src/index.ts',
         output: [
@@ -46,11 +74,6 @@ export default [
                 file: pkg.main,
                 name: camelCase(libraryName),
                 format: 'umd',
-                sourcemap: false,
-            },
-            {
-                file: pkg.module,
-                format: 'esm',
                 sourcemap: false,
             },
             {

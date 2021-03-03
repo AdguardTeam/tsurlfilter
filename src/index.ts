@@ -10,6 +10,7 @@ export * from './filtering-log';
 export * from './filterlist/rule-list';
 export * from './filterlist/rule-storage';
 export * from './request';
+export * from './request-type';
 export * from './rules/cosmetic-rule';
 export * from './rules/network-rule';
 export * from './rules/rule';
