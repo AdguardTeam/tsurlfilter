@@ -31,7 +31,7 @@
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:prod": "yarn lint && yarn test --no-cache",
+    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "build-extension": "yarn build && node ./tasks/build-extension.js",
     "prebuild-extension": "rimraf dist-extension",
