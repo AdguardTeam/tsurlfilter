@@ -64,9 +64,39 @@ const esmConfig = {
     ],
 };
 
+const browserConfig = {
+    input: 'src/index.browser.ts',
+    output: [
+        {
+            file: pkg.browser,
+            name: camelCase(libraryName),
+            format: 'umd',
+            sourcemap: false,
+        },
+        {
+            file: pkg.iife,
+            name: libraryName,
+            format: 'iife',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/**',
+    },
+    plugins: [
+        json(),
+        typescript(),
+        commonjs(),
+        globals(),
+        resolve({ preferBuiltins: false }),
+        sourceMaps(),
+    ],
+};
+
 export default [
     contentScriptConfig,
     esmConfig,
+    browserConfig,
     {
         input: 'src/index.ts',
         output: [
@@ -74,12 +104,6 @@ export default [
                 file: pkg.main,
                 name: camelCase(libraryName),
                 format: 'umd',
-                sourcemap: false,
-            },
-            {
-                file: pkg.iife,
-                name: libraryName,
-                format: 'iife',
                 sourcemap: false,
             },
         ],

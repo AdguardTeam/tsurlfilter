@@ -5,6 +5,7 @@
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
   "iife": "dist/tsurlfilter.iife.js",
+  "browser": "dist/tsurlfilter.browser.js",
   "typings": "dist/types/tsurlfilter.d.ts",
   "files": [
     "dist",
