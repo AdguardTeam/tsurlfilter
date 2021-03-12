@@ -76,10 +76,25 @@ export class CosmeticLookupTable {
      * @param hostname
      */
     findByHostname(hostname: string): CosmeticRule[] {
-        const rules = this.byHostname.get(hostname) || [] as CosmeticRule[];
-        rules.push(...this.wildcardRules.filter((r) => r.match(hostname)));
+        const result = [] as CosmeticRule[];
+        const parts = hostname.split('.');
+        if (parts.length === 0) {
+            return result;
+        }
 
-        return rules.filter((rule) => !rule.isWhitelist());
+        // Iterate over all sub-domains
+        let host = parts[parts.length - 1];
+        for (let i = parts.length - 2; i >= 0; i -= 1) {
+            host = `${parts[i]}.${host}`;
+            const rules = this.byHostname.get(host);
+            if (rules && rules.length > 0) {
+                result.push(...rules);
+            }
+        }
+
+        result.push(...this.wildcardRules.filter((r) => r.match(hostname)));
+
+        return result.filter((rule) => !rule.isWhitelist());
     }
 
     /**

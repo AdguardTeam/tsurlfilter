@@ -279,3 +279,28 @@ describe('$urlblock modifier', () => {
         expect(result?.getText()).toEqual(urlblock);
     });
 });
+
+describe('Match subdomains', () => {
+    it('should find css rules for subdomains', () => {
+        const specificHidingRule = 'example.org##div';
+        const specificHidingRuleSubDomain = 'sub.example.org##h1';
+        const rules = [
+            specificHidingRule,
+            specificHidingRuleSubDomain,
+        ];
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let res = engine.getCosmeticResult('www.example.org', CosmeticOption.CosmeticOptionAll);
+        expect(res).toBeDefined();
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+
+        res = engine.getCosmeticResult('sub.example.org', CosmeticOption.CosmeticOptionAll);
+        expect(res).toBeDefined();
+        expect(res.elementHiding.specific).toHaveLength(2);
+        expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRule))
+            .toBeTruthy();
+        expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRuleSubDomain))
+            .toBeTruthy();
+    });
+});
