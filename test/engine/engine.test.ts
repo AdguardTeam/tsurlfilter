@@ -278,3 +278,24 @@ describe('$urlblock modifier', () => {
         expect(result?.getText()).toEqual(urlblock);
     });
 });
+
+describe('Badfilter modifier', () => {
+    it('checks badfilter rule negates network rule', () => {
+        const rules = [
+            '$script,domain=example.com|example.org',
+            '$script,domain=example.com,badfilter',
+        ];
+        const list = new StringRuleList(1, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        expect(engine.getRulesCount()).toBe(2);
+
+        let request = new Request('https://example.com', 'https://example.com', RequestType.Script);
+        let result = engine.matchRequest(request);
+        expect(result.basicRule).toBeNull();
+
+        request = new Request('https://example.org', 'https://example.org', RequestType.Script);
+        result = engine.matchRequest(request);
+        expect(result.basicRule).not.toBeNull();
+    });
+});
