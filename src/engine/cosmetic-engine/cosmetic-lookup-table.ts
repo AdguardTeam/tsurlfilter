@@ -66,6 +66,8 @@ export class CosmeticLookupTable {
 
             for (const domain of domains) {
                 const tldResult = parse(domain);
+                // tldResult.domain equals to eTLD domain,
+                // e.g. sub.example.uk.org would result in example.uk.org
                 const parsedDomain = tldResult.domain || domain;
                 const rules = this.byHostname.get(parsedDomain) || [] as CosmeticRule[];
                 rules.push(rule);
