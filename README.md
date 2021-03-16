@@ -81,11 +81,11 @@ Engine is a main class of this library. It represents the filtering functionalit
     /**
      * Gets cosmetic result for the specified hostname and cosmetic options
      *
-     * @param hostname host to check
+     * @param request - request to check
      * @param option mask of enabled cosmetic types
      * @return cosmetic result
      */
-    getCosmeticResult(hostname: string, option: CosmeticOption): CosmeticResult
+    getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult
 ```
 
 ##### Starting engine
@@ -112,7 +112,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 
 ##### Retrieving cosmetic data
 ```
-    const cosmeticResult = engine.getCosmeticResult(hostname, CosmeticOption.CosmeticOptionAll);
+    const cosmeticResult = engine.getCosmeticResult(request, CosmeticOption.CosmeticOptionAll);
 ```
 
 #### <a id="matching-result"></a> MatchingResult
@@ -135,7 +135,7 @@ MatchingResult contains all the rules matching a web request, and provides metho
 
 ##### **getCosmeticOption**
 
-This flag should be used for `getCosmeticResult(hostname: string, option: CosmeticOption)`
+This flag should be used for `getCosmeticResult(request: Request, option: CosmeticOption)`
 
 ```
     /**

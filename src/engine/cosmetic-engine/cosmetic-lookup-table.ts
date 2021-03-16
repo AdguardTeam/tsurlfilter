@@ -1,3 +1,4 @@
+import { parse } from 'tldts';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 
@@ -64,9 +65,11 @@ export class CosmeticLookupTable {
             }
 
             for (const domain of domains) {
-                const rules = this.byHostname.get(domain) || [] as CosmeticRule[];
+                const tldResult = parse(domain);
+                const parsedDomain = tldResult.domain || domain;
+                const rules = this.byHostname.get(parsedDomain) || [] as CosmeticRule[];
                 rules.push(rule);
-                this.byHostname.set(domain, rules);
+                this.byHostname.set(parsedDomain, rules);
             }
         }
     }
@@ -74,23 +77,18 @@ export class CosmeticLookupTable {
     /**
      * Finds rules by hostname
      * @param hostname
+     * @param subdomains
      */
-    findByHostname(hostname: string): CosmeticRule[] {
+    findByHostname(hostname: string, subdomains: string[]): CosmeticRule[] {
         const result = [] as CosmeticRule[];
-        const parts = hostname.split('.');
-        if (parts.length === 0) {
-            return result;
-        }
 
         // Iterate over all sub-domains
-        let host = parts[parts.length - 1];
-        for (let i = parts.length - 2; i >= 0; i -= 1) {
-            host = `${parts[i]}.${host}`;
-            const rules = this.byHostname.get(host);
+        subdomains.forEach((subdomain) => {
+            const rules = this.byHostname.get(subdomain);
             if (rules && rules.length > 0) {
                 result.push(...rules);
             }
-        }
+        });
 
         result.push(...this.wildcardRules.filter((r) => r.match(hostname)));
 

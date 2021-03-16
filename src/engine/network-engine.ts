@@ -182,9 +182,9 @@ export class NetworkEngine {
             return result;
         }
 
-        const domains = NetworkEngine.getSubdomains(request.sourceHostname);
+        const domains = request.subdomains;
         if (request.hostname !== request.sourceHostname) {
-            domains.push(...NetworkEngine.getSubdomains(request.hostname));
+            domains.push(...request.sourceSubdomains);
         }
 
         domains.forEach((domain) => {
@@ -333,29 +333,5 @@ export class NetworkEngine {
         });
 
         return true;
-    }
-
-    /**
-     * Splits the specified hostname and returns all subdomains (including the hostname itself)
-     *
-     * @param hostname
-     * @return array of subdomains
-     */
-    private static getSubdomains(hostname: string): string[] {
-        const parts = hostname.split('.');
-        const subdomains = [];
-        let domain = '';
-
-        for (let i = parts.length - 1; i >= 0; i -= 1) {
-            if (domain === '') {
-                domain = parts[i];
-            } else {
-                domain = `${parts[i]}.${domain}`;
-            }
-
-            subdomains.push(domain);
-        }
-
-        return subdomains;
     }
 }
