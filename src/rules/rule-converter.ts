@@ -442,6 +442,11 @@ export class RuleConverter {
      * @return {string} rule or converted rule
      */
     private static convertRemoveRule(rule: string): string {
+        // if rule is already extended css, do not convert it
+        if (rule.includes(RuleConverter.MASK_CSS_EXTENDED_CSS_RULE)) {
+            return rule;
+        }
+
         if (rule.includes(RuleConverter.MASK_ELEMENT_HIDING) && rule.endsWith(RuleConverter.REMOVE_RULE_PATTERN)) {
             return rule
                 .replace(RuleConverter.MASK_ELEMENT_HIDING, RuleConverter.MASK_CSS_INJECT_EXTENDED_CSS_RULE)

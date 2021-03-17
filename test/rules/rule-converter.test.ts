@@ -116,6 +116,11 @@ describe('General', () => {
         result = RuleConverter.convertRule('aftonbladet.se##.jwplayer:has(.svp-sponsor-label):remove()');
         expect(result).toHaveLength(1);
         expect(result).toContain('aftonbladet.se#$?#.jwplayer:has(.svp-sponsor-label) { remove: true; }');
+
+        // ignores :remove() pseudo class in already extended css rules
+        result = RuleConverter.convertRule('example.org#?##case26:remove()');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.org#?##case26:remove()');
     });
 });
 
