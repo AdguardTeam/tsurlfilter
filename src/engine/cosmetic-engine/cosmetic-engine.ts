@@ -5,6 +5,7 @@ import { CosmeticResult } from './cosmetic-result';
 import { CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
+import { Request } from '../../request';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -103,13 +104,13 @@ export class CosmeticEngine {
     }
 
     /**
-     * Prepares cosmetic result by hostname
+     * Prepares cosmetic result by request
      *
-     * @param hostname domain to check
+     * @param request - request to match
      * @param option mask of enabled cosmetic types
      * @return CosmeticResult
      */
-    match(hostname: string, option: CosmeticOption): CosmeticResult {
+    match(request: Request, option: CosmeticOption): CosmeticResult {
         const includeCss = (option & CosmeticOption.CosmeticOptionCSS) === CosmeticOption.CosmeticOptionCSS;
         const includeGeneric = (option
             & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
@@ -124,25 +125,25 @@ export class CosmeticEngine {
                 CosmeticEngine.appendGenericRules(
                     cosmeticResult.elementHiding,
                     this.elementHidingLookupTable,
-                    hostname,
+                    request,
                 );
-                CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, hostname);
+                CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, request);
             }
 
-            CosmeticEngine.appendSpecificRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, hostname);
-            CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cssLookupTable, hostname);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cssLookupTable, request);
         }
 
         if (includeJs) {
-            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, hostname);
-            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, hostname);
+            CosmeticEngine.appendGenericRules(cosmeticResult.JS, this.jsLookupTable, request);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.JS, this.jsLookupTable, request);
         }
 
         if (includeHtml) {
             if (includeGeneric) {
-                CosmeticEngine.appendGenericRules(cosmeticResult.Html, this.htmlLookupTable, hostname);
+                CosmeticEngine.appendGenericRules(cosmeticResult.Html, this.htmlLookupTable, request);
             }
-            CosmeticEngine.appendSpecificRules(cosmeticResult.Html, this.htmlLookupTable, hostname);
+            CosmeticEngine.appendSpecificRules(cosmeticResult.Html, this.htmlLookupTable, request);
         }
 
         return cosmeticResult;
@@ -152,16 +153,16 @@ export class CosmeticEngine {
      * Selects generic rules and appends rules content to cosmetic result
      * @param cosmeticResult
      * @param lookupTable
-     * @param hostname
+     * @param request
      */
     private static appendGenericRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
-        hostname: string,
+        request: Request,
     ): void {
         for (const genericRule of lookupTable.genericRules) {
-            if (!lookupTable.isWhitelisted(hostname, genericRule)
-                && genericRule.match(hostname)) {
+            if (!lookupTable.isWhitelisted(request.hostname, genericRule)
+                && genericRule.match(request.hostname)) {
                 cosmeticResult.append(genericRule);
             }
         }
@@ -171,17 +172,17 @@ export class CosmeticEngine {
      * Selects specific rules and appends rules content to cosmetic result
      * @param cosmeticResult
      * @param lookupTable
-     * @param hostname
+     * @param request
      */
     private static appendSpecificRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
-        hostname: string,
+        request: Request,
     ): void {
-        const hostnameRules = lookupTable.findByHostname(hostname);
+        const hostnameRules = lookupTable.findByHostname(request.hostname, request.subdomains);
         if (hostnameRules.length > 0) {
             for (const rule of hostnameRules) {
-                if (!lookupTable.isWhitelisted(hostname, rule)) {
+                if (!lookupTable.isWhitelisted(request.hostname, rule)) {
                     cosmeticResult.append(rule);
                 }
             }

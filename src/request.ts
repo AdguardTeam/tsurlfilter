@@ -1,4 +1,6 @@
 import { parse } from 'tldts';
+import type { IResult } from 'tldts-core';
+
 import { RequestType } from './request-type';
 
 /**
@@ -81,6 +83,49 @@ export class Request {
     public isHostnameRequest = false;
 
     /**
+     * List of subdomains parsed from hostname
+     */
+    public subdomains: string[];
+
+    /**
+     * List of source subdomains parsed from source hostname
+     */
+    public sourceSubdomains: string[];
+
+    /**
+    * Splits subdomains and returns all subdomains (including the hostname itself)
+    *
+    * @param tldResult
+    * @returns array of subdomains
+    */
+    private getSubdomains = (tldResult: IResult): string[] => {
+        const { domain, hostname, subdomain } = tldResult;
+
+        if (!domain) {
+            if (hostname) {
+                return [hostname];
+            }
+            return [];
+        }
+
+        const subdomainsResult = [domain];
+
+        if (!subdomain) {
+            return subdomainsResult;
+        }
+
+        const parts = subdomain.split('.');
+
+        let incrementDomain = domain;
+        for (let i = parts.length - 1; i >= 0; i -= 1) {
+            incrementDomain = `${parts[i]}.${incrementDomain}`;
+            subdomainsResult.push(incrementDomain);
+        }
+
+        return subdomainsResult;
+    };
+
+    /**
      * Creates an instance of a Request
      *
      * @param url - request URL
@@ -98,14 +143,17 @@ export class Request {
         const tldResult = parse(url);
         this.hostname = tldResult.hostname!;
         this.domain = tldResult.domain!;
+        this.subdomains = this.getSubdomains(tldResult);
 
         if (sourceUrl) {
             const sourceTldResult = parse(sourceUrl);
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
+            this.sourceSubdomains = this.getSubdomains(sourceTldResult);
         } else {
             this.sourceHostname = null;
             this.sourceDomain = null;
+            this.sourceSubdomains = [];
         }
 
         if (this.sourceDomain) {

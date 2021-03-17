@@ -1,3 +1,4 @@
+import { parse } from 'tldts';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 
@@ -64,9 +65,13 @@ export class CosmeticLookupTable {
             }
 
             for (const domain of domains) {
-                const rules = this.byHostname.get(domain) || [] as CosmeticRule[];
+                const tldResult = parse(domain);
+                // tldResult.domain equals to eTLD domain,
+                // e.g. sub.example.uk.org would result in example.uk.org
+                const parsedDomain = tldResult.domain || domain;
+                const rules = this.byHostname.get(parsedDomain) || [] as CosmeticRule[];
                 rules.push(rule);
-                this.byHostname.set(domain, rules);
+                this.byHostname.set(parsedDomain, rules);
             }
         }
     }
@@ -74,12 +79,22 @@ export class CosmeticLookupTable {
     /**
      * Finds rules by hostname
      * @param hostname
+     * @param subdomains
      */
-    findByHostname(hostname: string): CosmeticRule[] {
-        const rules = this.byHostname.get(hostname) || [] as CosmeticRule[];
-        rules.push(...this.wildcardRules.filter((r) => r.match(hostname)));
+    findByHostname(hostname: string, subdomains: string[]): CosmeticRule[] {
+        const result = [] as CosmeticRule[];
 
-        return rules.filter((rule) => !rule.isWhitelist());
+        // Iterate over all sub-domains
+        subdomains.forEach((subdomain) => {
+            const rules = this.byHostname.get(subdomain);
+            if (rules && rules.length > 0) {
+                result.push(...rules);
+            }
+        });
+
+        result.push(...this.wildcardRules.filter((r) => r.match(hostname)));
+
+        return result.filter((rule) => !rule.isWhitelist());
     }
 
     /**

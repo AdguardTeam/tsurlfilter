@@ -105,12 +105,12 @@ export class Engine {
     /**
      * Gets cosmetic result for the specified hostname and cosmetic options
      *
-     * @param hostname host to check
+     * @param request host to check
      * @param option mask of enabled cosmetic types
      * @return cosmetic result
      */
-    getCosmeticResult(hostname: string, option: CosmeticOption): CosmeticResult {
-        return this.cosmeticEngine.match(hostname, option);
+    getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
+        return this.cosmeticEngine.match(request, option);
     }
 
     /**
