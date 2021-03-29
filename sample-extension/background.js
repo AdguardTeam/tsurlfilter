@@ -48,15 +48,16 @@ import * as TSUrlFilter from './engine.js';
     }, { urls: ['<all_urls>'] }, ['blocking']);
 
     /**
-     * Add listener on tab updated
+     * Add listener on before send headers
      */
-    chrome.webNavigation.onCommitted.addListener((details) => {
+    chrome.webRequest.onBeforeSendHeaders.addListener((details) => {
         if (!isHttpOrWsRequest(details.url)) {
             return;
         }
 
-        application.applyCosmetic(details);
-    });
+        // eslint-disable-next-line consistent-return
+        return application.onBeforeSendHeaders(details);
+    }, { urls: ['<all_urls>'] }, ['requestHeaders', 'blocking', 'extraHeaders']);
 
     /**
      * Add listener on headers received
@@ -68,17 +69,28 @@ import * as TSUrlFilter from './engine.js';
 
         // eslint-disable-next-line consistent-return
         return application.onResponseHeadersReceived(details);
-    }, { urls: ['<all_urls>'] }, ['responseHeaders', 'blocking']);
+    }, { urls: ['<all_urls>'] }, ['responseHeaders', 'blocking', 'extraHeaders']);
 
     /**
-     * Add listener on before send headers
+     * Add listener on completed
      */
-    chrome.webRequest.onBeforeSendHeaders.addListener((details) => {
+    chrome.webRequest.onCompleted.addListener((details) => {
         if (!isHttpOrWsRequest(details.url)) {
             return;
         }
 
         // eslint-disable-next-line consistent-return
-        return application.onBeforeSendHeaders(details);
-    }, { urls: ['<all_urls>'] }, ['requestHeaders', 'blocking']);
+        return application.onCompleted(details);
+    }, { urls: ['<all_urls>'] });
+
+    /**
+     * Add listener on tab updated
+     */
+    chrome.webNavigation.onCommitted.addListener((details) => {
+        if (!isHttpOrWsRequest(details.url)) {
+            return;
+        }
+
+        application.applyCosmetic(details);
+    });
 })();

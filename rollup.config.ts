@@ -8,14 +8,20 @@ import json from '@rollup/plugin-json';
 import pkg from './package.json';
 
 const libraryName = 'TSUrlFilter';
+const contentScriptLibraryName = 'TSUrlFilterContentScript';
 
-const contentScriptFilename = 'TSUrlFilterContentScript';
 const contentScriptConfig = {
     input: 'src/content-script/index.ts',
     output: [
         {
-            file: `dist/${contentScriptFilename}.js`,
+            file: `dist/${contentScriptLibraryName}.js`,
             format: 'esm',
+            sourcemap: false,
+        },
+        {
+            file: `dist/${contentScriptLibraryName}.umd.js`,
+            name: contentScriptLibraryName,
+            format: 'umd',
             sourcemap: false,
         },
     ],
@@ -30,8 +36,67 @@ const contentScriptConfig = {
     ],
 };
 
+const esmConfig = {
+    input: [
+        'src/index.ts',
+        'src/request-type.ts',
+        'src/rules/simple-regex.ts',
+        'src/rules/cosmetic-rule-marker.ts',
+        'src/rules/network-rule-options.ts',
+    ],
+    output: [
+        {
+            dir: 'dist/es',
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/**',
+    },
+    plugins: [
+        json(),
+        typescript(),
+        commonjs(),
+        globals(),
+        resolve({ preferBuiltins: false }),
+        sourceMaps(),
+    ],
+};
+
+const browserConfig = {
+    input: 'src/index.browser.ts',
+    output: [
+        {
+            file: pkg.browser,
+            name: camelCase(libraryName),
+            format: 'umd',
+            sourcemap: false,
+        },
+        {
+            file: pkg.iife,
+            name: libraryName,
+            format: 'iife',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/**',
+    },
+    plugins: [
+        json(),
+        typescript(),
+        commonjs(),
+        globals(),
+        resolve({ preferBuiltins: false }),
+        sourceMaps(),
+    ],
+};
+
 export default [
     contentScriptConfig,
+    esmConfig,
+    browserConfig,
     {
         input: 'src/index.ts',
         output: [
@@ -39,17 +104,6 @@ export default [
                 file: pkg.main,
                 name: camelCase(libraryName),
                 format: 'umd',
-                sourcemap: false,
-            },
-            {
-                file: pkg.module,
-                format: 'esm',
-                sourcemap: false,
-            },
-            {
-                file: pkg.iife,
-                name: libraryName,
-                format: 'iife',
                 sourcemap: false,
             },
         ],

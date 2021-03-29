@@ -33,7 +33,6 @@ export class FilteringLog {
         );
     }
 
-
     /**
      * Add request to log
      *
@@ -92,17 +91,23 @@ export class FilteringLog {
     }
 
     /**
-     * Add cookie event to log
+     * Add cookie rule event
      *
-     * @param {Number} tabId - tab id
-     * @param {String} frameUrl - Frame url
-     * @param {Object} rule - cookie rule
+     * @param tabId
+     * @param cookieName
+     * @param cookieValue
+     * @param cookieDomain
+     * @param requestType
+     * @param cookieRule
+     * @param isModifyingCookieRule
+     * @param thirdParty
      */
-    addCookieEvent(tabId, frameUrl, rule) {
+    addCookieEvent(
+        tabId, cookieName, cookieValue, cookieDomain, requestType, cookieRule, isModifyingCookieRule, thirdParty) {
         const filteringEvent = {
             eventType: 'COOKIE',
-            frameUrl,
-            rule,
+            cookieDomain,
+            cookieRule,
         };
 
         this.pushFilteringEvent(filteringEvent);
@@ -192,6 +197,12 @@ export class FilteringLog {
 
         if (event.eventType === 'REQUEST') {
             console.log(`[FILTERING-LOG] Request: ${event.requestUrl}`);
+        }
+
+        if (event.eventType === 'COOKIE') {
+            console.log(
+                `[FILTERING-LOG] Request: ${event.cookieDomain} Cookie rule applied: ${event.cookieRule.getText()}`,
+            );
         }
 
         if (event.eventType === 'STEALTH') {

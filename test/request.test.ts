@@ -1,4 +1,5 @@
-import { RequestType, Request } from '../src/request';
+import { Request } from '../src/request';
+import { RequestType } from '../src/request-type';
 
 describe('Creating request', () => {
     it('works if simple request is parsed properly', () => {
@@ -47,5 +48,25 @@ describe('Creating request', () => {
         expect(request.sourceDomain).toEqual('example.org');
         expect(request.requestType).toEqual(RequestType.Other);
         expect(request.thirdParty).toEqual(true);
+    });
+
+    it('parses subdomains', () => {
+        const request = new Request('http://sub.sub.example.org/part', 'http://sub.example.org', RequestType.Other);
+        expect(request.subdomains.sort()).toEqual(['sub.sub.example.org', 'sub.example.org', 'example.org'].sort());
+        expect(request.sourceSubdomains.sort()).toEqual(['sub.example.org', 'example.org'].sort());
+    });
+
+    it('parses subdomains with complex tld', () => {
+        const request = new Request('http://sub.sub.example.org.uk/part', 'http://sub.example.org', RequestType.Other);
+        expect(request.subdomains.sort())
+            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk'].sort());
+        expect(request.sourceSubdomains.sort())
+            .toEqual(['sub.example.org', 'example.org'].sort());
+    });
+
+    it('parses subdomains for localhost', () => {
+        const request = new Request('http://localhost', 'http://localhost.test', RequestType.Other);
+        expect(request.subdomains.sort()).toEqual(['localhost'].sort());
+        expect(request.sourceSubdomains.sort()).toEqual(['localhost.test'].sort());
     });
 });

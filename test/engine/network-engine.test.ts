@@ -1,7 +1,8 @@
 import { NetworkEngine } from '../../src/engine/network-engine';
-import { Request, RequestType } from '../../src';
+import { Request } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { RequestType } from '../../src/request-type';
 
 /**
  * Helper function creates rule storage

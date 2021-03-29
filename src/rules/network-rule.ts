@@ -1,7 +1,7 @@
 // eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
-import { Request, RequestType } from '../request';
+import { Request } from '../request';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
 import { IAdvancedModifier } from '../modifiers/advanced-modifier';
@@ -12,6 +12,14 @@ import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
+import {
+    NETWORK_RULE_OPTIONS,
+    OPTIONS_DELIMITER,
+    MASK_ALLOWLIST,
+    NOT_MARK,
+    ESCAPE_CHARACTER,
+} from './network-rule-options';
+import { RequestType } from '../request-type';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -155,6 +163,11 @@ export class NetworkRule implements rule.IRule {
     private appModifier: IAppModifier | null = null;
 
     /**
+     * Marks the rule as stealth mode generated one
+     */
+    public isStealthModeRule: boolean | undefined;
+
+    /**
      * Separates the rule pattern from the list of modifiers.
      *
      * ```
@@ -162,12 +175,12 @@ export class NetworkRule implements rule.IRule {
      * modifiers = [modifier0, modifier1[, ...[, modifierN]]]
      * ```
      */
-    public static readonly OPTIONS_DELIMITER = '$';
+    public static readonly OPTIONS_DELIMITER = OPTIONS_DELIMITER;
 
     /**
      * This character is used to escape special characters in modifiers values
      */
-    private static ESCAPE_CHARACTER = '\\';
+    private static ESCAPE_CHARACTER = ESCAPE_CHARACTER;
 
     // eslint-disable-next-line max-len
     private static RE_ESCAPED_OPTIONS_DELIMITER = new RegExp(`${NetworkRule.ESCAPE_CHARACTER}${NetworkRule.OPTIONS_DELIMITER}`, 'g');
@@ -176,55 +189,17 @@ export class NetworkRule implements rule.IRule {
      * A marker that is used in rules of exception.
      * To turn off filtering for a request, start your rule with this marker.
      */
-    public static readonly MASK_ALLOWLIST = '@@';
+    public static readonly MASK_ALLOWLIST = MASK_ALLOWLIST;
 
     /**
      * Mark that negates options
      */
-    public static readonly NOT_MARK = '~';
+    public static readonly NOT_MARK = NOT_MARK;
 
     /**
      * Rule options
      */
-    public static readonly OPTIONS = {
-        THIRD_PARTY: 'third-party',
-        FIRST_PARTY: 'first-party',
-        MATCH_CASE: 'match-case',
-        IMPORTANT: 'important',
-        DOMAIN: 'domain',
-        ELEMHIDE: 'elemhide',
-        GENERICHIDE: 'generichide',
-        GENERICBLOCK: 'genericblock',
-        JSINJECT: 'jsinject',
-        URLBLOCK: 'urlblock',
-        CONTENT: 'content',
-        DOCUMENT: 'document',
-        STEALTH: 'stealth',
-        POPUP: 'popup',
-        EMPTY: 'empty',
-        MP4: 'mp4',
-        SCRIPT: 'script',
-        STYLESHEET: 'stylesheet',
-        SUBDOCUMENT: 'subdocument',
-        OBJECT: 'object',
-        IMAGE: 'image',
-        XMLHTTPREQUEST: 'xmlhttprequest',
-        MEDIA: 'media',
-        FONT: 'font',
-        WEBSOCKET: 'websocket',
-        OTHER: 'other',
-        PING: 'ping',
-        WEBRTC: 'webrtc',
-        BADFILTER: 'badfilter',
-        CSP: 'csp',
-        REPLACE: 'replace',
-        COOKIE: 'cookie',
-        REDIRECT: 'redirect',
-        REMOVEPARAM: 'removeparam',
-        APP: 'app',
-        NETWORK: 'network',
-        EXTENSION: 'extension',
-    };
+    public static readonly OPTIONS = NETWORK_RULE_OPTIONS;
 
     getText(): string {
         return this.ruleText;
@@ -362,6 +337,14 @@ export class NetworkRule implements rule.IRule {
         return (
             this.pattern.startsWith(SimpleRegex.MASK_REGEX_RULE) && this.pattern.endsWith(SimpleRegex.MASK_REGEX_RULE)
         );
+    }
+
+    public matchesPermittedDomains(hostname: string): boolean {
+        if (this.hasPermittedDomains()
+            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -871,7 +854,18 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if there is an unsupported modifier
      */
     private loadOption(optionName: string, optionValue: string): void {
-        const { OPTIONS, NOT_MARK } = NetworkRule;
+        const { OPTIONS } = NetworkRule;
+
+        if (optionName.startsWith(OPTIONS.NOOP)) {
+            /**
+             * A noop modifier does nothing and can be used to increase some rules readability.
+             * It consists of the sequence of underscore characters (_) of any length
+             * and can appear in a rule as many times as it's needed.
+             */
+            if (!optionName.split(OPTIONS.NOOP).some((s) => !!s)) {
+                return;
+            }
+        }
 
         switch (optionName) {
             // General options

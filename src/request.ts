@@ -1,36 +1,7 @@
 import { parse } from 'tldts';
+import type { IResult } from 'tldts-core';
 
-/**
- * RequestType is the request types enumeration
- */
-export enum RequestType {
-    /** main frame */
-    Document = 1,
-    /** (iframe) $subdocument */
-    Subdocument = 1 << 1,
-    /** (javascript, etc) $script */
-    Script = 1 << 2,
-    /** (css) $stylesheet */
-    Stylesheet = 1 << 3,
-    /** (flash, etc) $object */
-    Object = 1 << 4,
-    /** (any image) $image */
-    Image = 1 << 5,
-    /** (ajax/fetch) $xmlhttprequest */
-    XmlHttpRequest = 1 << 6,
-    /** (video/music) $media */
-    Media = 1 << 7,
-    /** (any custom font) $font */
-    Font = 1 << 8,
-    /** (a websocket connection) $websocket */
-    Websocket = 1 << 9,
-    /** (navigator.sendBeacon()) $ping */
-    Ping = 1 << 10,
-    /** (webrtc, in extension works via wrappers) $webrtc */
-    Webrtc = 1 << 11,
-    /** any other request type */
-    Other = 1 << 12,
-}
+import { RequestType } from './request-type';
 
 /**
  * Request represents a web request with all it's necessary properties
@@ -112,6 +83,49 @@ export class Request {
     public isHostnameRequest = false;
 
     /**
+     * List of subdomains parsed from hostname
+     */
+    public subdomains: string[];
+
+    /**
+     * List of source subdomains parsed from source hostname
+     */
+    public sourceSubdomains: string[];
+
+    /**
+    * Splits subdomains and returns all subdomains (including the hostname itself)
+    *
+    * @param tldResult
+    * @returns array of subdomains
+    */
+    private getSubdomains = (tldResult: IResult): string[] => {
+        const { domain, hostname, subdomain } = tldResult;
+
+        if (!domain) {
+            if (hostname) {
+                return [hostname];
+            }
+            return [];
+        }
+
+        const subdomainsResult = [domain];
+
+        if (!subdomain) {
+            return subdomainsResult;
+        }
+
+        const parts = subdomain.split('.');
+
+        let incrementDomain = domain;
+        for (let i = parts.length - 1; i >= 0; i -= 1) {
+            incrementDomain = `${parts[i]}.${incrementDomain}`;
+            subdomainsResult.push(incrementDomain);
+        }
+
+        return subdomainsResult;
+    };
+
+    /**
      * Creates an instance of a Request
      *
      * @param url - request URL
@@ -129,14 +143,17 @@ export class Request {
         const tldResult = parse(url);
         this.hostname = tldResult.hostname!;
         this.domain = tldResult.domain!;
+        this.subdomains = this.getSubdomains(tldResult);
 
         if (sourceUrl) {
             const sourceTldResult = parse(sourceUrl);
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
+            this.sourceSubdomains = this.getSubdomains(sourceTldResult);
         } else {
             this.sourceHostname = null;
             this.sourceDomain = null;
+            this.sourceSubdomains = [];
         }
 
         if (this.sourceDomain) {

@@ -3,9 +3,10 @@ import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { fastHash } from '../utils/utils';
 import { NetworkEngine } from './network-engine';
-import { Request, RequestType } from '../request';
+import { Request } from '../request';
 import { DnsResult } from './dns-result';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
+import { RequestType } from '../request-type';
 
 /**
  * DNSEngine combines host rules and network rules and is supposed to quickly find

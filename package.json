@@ -1,13 +1,15 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.4.4",
+  "version": "0.4.13",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
-  "module": "dist/tsurlfilter.esm.js",
+  "module": "dist/es/index.js",
   "iife": "dist/tsurlfilter.iife.js",
+  "browser": "dist/tsurlfilter.browser.js",
   "typings": "dist/types/tsurlfilter.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "AdGuard",
   "repository": {
@@ -25,20 +27,20 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:prod": "npm run lint && npm run test -- --no-cache",
+    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
-    "build-extension": "npm run build && node ./tasks/build-extension.js",
+    "build-extension": "yarn build && node ./tasks/build-extension.js",
     "prebuild-extension": "rimraf dist-extension",
     "deploy-docs": "ts-node tools/gh-pages-publish",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
     "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "yarn build"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
@@ -78,6 +80,9 @@
       "src/*.{js,ts}",
       "src/*/*.{js,ts}",
       "src/*/*/*.{js,ts}"
+    ],
+    "setupFiles": [
+      "jest-webextension-mock"
     ]
   },
   "commitlint": {
@@ -95,6 +100,7 @@
     "@types/jest": "^23.3.14",
     "@types/lodash": "^4.14.149",
     "@types/node": "^10.17.28",
+    "@types/rollup-plugin-node-globals": "^1.4.0",
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
     "colors": "^1.4.0",
@@ -107,6 +113,7 @@
     "fs-extra": "^8.1.0",
     "husky": "^4.2.1",
     "jest": "^25.5.4",
+    "jest-webextension-mock": "^3.7.8",
     "jsdom": "^16.2.2",
     "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",
@@ -118,14 +125,15 @@
     "travis-deploy-once": "^5.0.11",
     "ts-jest": "^25.5.1",
     "ts-node": "^8.6.2",
-    "typedoc": "^0.16.9",
-    "typescript": "^3.7.5"
+    "typedoc": "^0.20.32",
+    "typescript": "3.9.9",
+    "webextension-polyfill-ts": "^0.24.0"
   },
   "dependencies": {
     "consola": "^2.12.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.8",
+    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.10",
     "is-ip": "^3.1.0",
-    "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.13",
+    "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.14",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.45"
   }
