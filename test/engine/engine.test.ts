@@ -326,4 +326,37 @@ describe('Match subdomains', () => {
         expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRuleSubDomain))
             .toBeTruthy();
     });
+
+    it('should find js rules for subdomains', () => {
+        const scriptletRule = 'example.org#%#//scriptlet("abort-on-property-read", "alert")';
+        const subDomainScriptletRule = 'sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
+        const otherSubDomainScriptletRule = 'other-sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
+
+        const rules = [
+            scriptletRule,
+            subDomainScriptletRule,
+            otherSubDomainScriptletRule,
+        ];
+
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        const resOne = engine.getCosmeticResult(
+            createRequest('https://example.org/test'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(resOne).toBeDefined();
+        expect(resOne.JS.specific[0].getText()).toBe(scriptletRule);
+
+        const resTwo = engine.getCosmeticResult(
+            createRequest('https://sub.example.org/test'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(resTwo).toBeDefined();
+        expect(resTwo.JS.specific).toHaveLength(2);
+        const rulesTexts = resTwo.JS.specific.map((rule) => rule.getText());
+        expect(rulesTexts.includes(scriptletRule)).toBeTruthy();
+        expect(rulesTexts.includes(subDomainScriptletRule)).toBeTruthy();
+        expect(rulesTexts.includes(otherSubDomainScriptletRule)).toBeFalsy();
+    });
 });
