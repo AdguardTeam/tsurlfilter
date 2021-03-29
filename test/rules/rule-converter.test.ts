@@ -218,13 +218,6 @@ describe('Options', () => {
         checkConversionResult('@@||example.com^$queryprune', '@@||example.com^$removeparam');
         checkConversionResult('@@||example.com^$queryprune,jsinject', '@@||example.com^$removeparam,jsinject');
         checkConversionResult('@@||example.com^$queryprune=test,jsinject', '@@||example.com^$removeparam=test,jsinject');
-        checkConversionResult('nr_email_referer=$queryprune=|nr_email_referer=', 'nr_email_referer=$removeparam=nr_email_referer');
-        checkConversionResult('||youtube.com^*kw=$doc,queryprune=|kw=', '||youtube.com^*kw=$document,removeparam=kw');
-        checkConversionResult('utm_$queryprune=|utm_[a-zA-Z]+=', 'utm_$removeparam=/^utm_[a-zA-Z]+\\$/');
-        checkConversionResult('ga_$queryprune=|(ga_source|ga_medium|ga_term)=', 'ga_$removeparam=/^(ga_source|ga_medium|ga_term)\\$/');
-
-        // Unsupported
-        // checkConversionResult('||bugzilla.mozilla.org^*hide_resolved=1$doc,queryprune=|hide_resolved=1|', '||bugzilla.mozilla.org^*hide_resolved=1$doc,removeparam=|hide_resolved=1|');
     });
 
     it('converts doc options', () => {
