@@ -1042,7 +1042,7 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
-                this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
+                this.advancedModifier = new RemoveParamModifier(optionValue);
                 break;
 
             case OPTIONS.APP: {

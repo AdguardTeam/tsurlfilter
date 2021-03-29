@@ -17,13 +17,8 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * Constructor
      *
      * @param value
-     * @param isWhitelist
      */
-    constructor(value: string, isWhitelist: boolean) {
-        if (!isWhitelist && !value) {
-            throw new Error('Rule removeparam modifier is invalid: removeparam directive must not be empty');
-        }
-
+    constructor(value: string) {
         this.value = value;
     }
 
@@ -40,7 +35,26 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * @param url
      */
     public removeParameters(url: string): string {
+        const sepIndex = url.indexOf('?');
+        if (sepIndex < 0) {
+            return url;
+        }
+
+        if (!this.value) {
+            return url.substring(0, sepIndex);
+        }
+
         const parts = splitByDelimiterWithEscapeCharacter(this.value, '|', '\\', true);
+
+        const invertedParams = parts.filter((x) => x.startsWith('~'));
+        if (invertedParams.length > 0) {
+            if (invertedParams.length !== 1) {
+                // Remove all query if more than one inverted param is presented
+                return url.substring(0, sepIndex);
+            }
+
+            return RemoveParamModifier.applyInvertedParam(url, invertedParams[0].substring(1));
+        }
 
         const plainParams = parts.filter((x) => !x.startsWith('/'));
         const regexpParams = parts.filter((x) => x.startsWith('/')).map(SimpleRegex.patternFromString);
@@ -52,5 +66,20 @@ export class RemoveParamModifier implements IAdvancedModifier {
         });
 
         return result;
+    }
+
+    /**
+     * Applies exclusion param to url
+     *
+     * @param url
+     * @param exc
+     */
+    private static applyInvertedParam(url: string, exc: string): string {
+        if (exc.startsWith('/')) {
+            const regExp = SimpleRegex.patternFromString(exc);
+            return utils.cleanUrlParamByRegExp(url, regExp, true);
+        }
+
+        return utils.cleanUrlParam(url, [exc], true);
     }
 }

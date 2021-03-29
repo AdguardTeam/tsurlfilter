@@ -5,8 +5,9 @@ import { parse } from 'tldts';
  *
  * @param url
  * @param regExp
+ * @param invert remove every parameter in url except the ones matched regexp
  */
-export function cleanUrlParamByRegExp(url: string, regExp: RegExp): string {
+export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = false): string {
     const urlPieces = url.split('?');
 
     // If no params, nothing to modify
@@ -14,7 +15,14 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp): string {
         return url;
     }
 
-    urlPieces[1] = urlPieces[1].replace(regExp, '');
+    if (invert) {
+        urlPieces[1] = urlPieces[1]
+            .split('&')
+            .filter((x) => x && x.match(regExp))
+            .join('&');
+    } else {
+        urlPieces[1] = urlPieces[1].replace(regExp, '');
+    }
 
     // Cleanup empty params (p0=0&=2&=3)
     urlPieces[1] = urlPieces[1]
@@ -36,10 +44,11 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp): string {
  *
  * @param url
  * @param params
+ * @param invert use params as exceptions
  */
-export function cleanUrlParam(url: string, params: string[]): string {
+export function cleanUrlParam(url: string, params: string[], invert = false): string {
     const trackingParametersRegExp = new RegExp(`((^|&)(${params.join('|')})=[^&#]*)`, 'ig');
-    return cleanUrlParamByRegExp(url, trackingParametersRegExp);
+    return cleanUrlParamByRegExp(url, trackingParametersRegExp, invert);
 }
 
 /**
