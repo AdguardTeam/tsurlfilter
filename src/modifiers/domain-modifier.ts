@@ -40,7 +40,7 @@ export class DomainModifier {
 
         const parts = domains.split(sep);
         for (let i = 0; i < parts.length; i += 1) {
-            let domain = parts[i];
+            let domain = DomainModifier.cropWww(parts[i]);
             let restricted = false;
             if (domain.startsWith('~')) {
                 restricted = true;
@@ -60,6 +60,18 @@ export class DomainModifier {
 
         this.restrictedDomains = restrictedDomains.length > 0 ? restrictedDomains : null;
         this.permittedDomains = permittedDomains.length > 0 ? permittedDomains : null;
+    }
+
+    /**
+     * Removes leading www. from domain
+     * We remove leading www. to be able to match with cropped domains
+     * @param domain
+     */
+    static cropWww(domain: string): string {
+        if (domain.startsWith('www.')) {
+            return domain.substring(4);
+        }
+        return domain;
     }
 
     /**
