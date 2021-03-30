@@ -39,11 +39,7 @@ export class RuleConverter {
 
     private static THIRD_PARTY_1P_3P_REGEX = /\$[^#]?(.*,)?(1p|3p)/;
 
-    private static THIRD_PARTY_1P = '1p';
-
     private static THIRD_PARTY_1P_REPLACEMENT = '~third-party';
-
-    private static THIRD_PARTY_3P = '3p';
 
     private static THIRD_PARTY_3P_REPLACEMENT = 'third-party';
 
@@ -465,7 +461,8 @@ export class RuleConverter {
     }
 
     /**
-     * Replaces the following options:
+     * Some options have aliases and will be replaced:
+     *
      * $first-party -> $~third-party
      * $xhr -> $xmlhttprequest
      * $css -> $stylesheet
@@ -474,6 +471,64 @@ export class RuleConverter {
      * $3p -> $third-party
      * ghide -> generichide
      * ehide -> elemhide
+     * doc -> document
+     * queryprune -> removeparam
+     */
+    private static OPTIONS_ALIASES = [
+        {
+            alias: 'first-party',
+            regex: RuleConverter.FIRST_PARTY_REGEX,
+            replacement: RuleConverter.FIRST_PARTY_REPLACEMENT,
+        },
+        {
+            alias: 'xhr',
+            regex: RuleConverter.XHR_REGEX,
+            replacement: RuleConverter.XHR_REPLACEMENT,
+        },
+        {
+            alias: 'css',
+            regex: RuleConverter.CSS_REGEX,
+            replacement: RuleConverter.CSS_REPLACEMENT,
+        },
+        {
+            alias: 'frame',
+            regex: RuleConverter.FRAME_REGEX,
+            replacement: RuleConverter.FRAME_REPLACEMENT,
+        },
+        {
+            alias: 'queryprune',
+            regex: RuleConverter.QUERY_PRUNE_REGEX,
+            replacement: RuleConverter.REMOVE_PARAM_REPLACEMENT,
+        },
+        {
+            alias: 'doc',
+            regex: RuleConverter.DOC_REGEX,
+            replacement: RuleConverter.DOC_REPLACEMENT,
+        },
+        {
+            alias: '1p',
+            regex: RuleConverter.THIRD_PARTY_1P_3P_REGEX,
+            replacement: RuleConverter.THIRD_PARTY_1P_REPLACEMENT,
+        },
+        {
+            alias: '3p',
+            regex: RuleConverter.THIRD_PARTY_1P_3P_REGEX,
+            replacement: RuleConverter.THIRD_PARTY_3P_REPLACEMENT,
+        },
+        {
+            alias: 'ghide',
+            regex: RuleConverter.GHIDE_REGEX,
+            replacement: `$1${RuleConverter.GENERICHIDE}$3`,
+        },
+        {
+            alias: 'ehide',
+            regex: RuleConverter.EHIDE_REGEX,
+            replacement: `$1${RuleConverter.ELEMHIDE}$3`,
+        },
+    ];
+
+    /**
+     * Replaces the options in aliases array
      *
      * @param {string} rule
      * @return {string} convertedRule
@@ -483,28 +538,13 @@ export class RuleConverter {
             return rule;
         }
 
-        if (RuleConverter.FIRST_PARTY_REGEX.test(rule)
-            || RuleConverter.XHR_REGEX.test(rule)
-            || RuleConverter.CSS_REGEX.test(rule)
-            || RuleConverter.FRAME_REGEX.test(rule)
-            || RuleConverter.QUERY_PRUNE_REGEX.test(rule)
-            || RuleConverter.DOC_REGEX.test(rule)
-            || RuleConverter.THIRD_PARTY_1P_3P_REGEX.test(rule)
-            || RuleConverter.GHIDE_REGEX.test(rule)
-            || RuleConverter.EHIDE_REGEX.test(rule)) {
-            return rule
-                .replace(RuleConverter.FIRST_PARTY_REGEX, RuleConverter.FIRST_PARTY_REPLACEMENT)
-                .replace(RuleConverter.XHR_REGEX, RuleConverter.XHR_REPLACEMENT)
-                .replace(RuleConverter.CSS_REGEX, RuleConverter.CSS_REPLACEMENT)
-                .replace(RuleConverter.FRAME_REGEX, RuleConverter.FRAME_REPLACEMENT)
-                .replace(RuleConverter.QUERY_PRUNE_REGEX, RuleConverter.REMOVE_PARAM_REPLACEMENT)
-                .replace(RuleConverter.DOC_REGEX, RuleConverter.DOC_REPLACEMENT)
-                .replace(RuleConverter.THIRD_PARTY_1P, RuleConverter.THIRD_PARTY_1P_REPLACEMENT)
-                .replace(RuleConverter.THIRD_PARTY_3P, RuleConverter.THIRD_PARTY_3P_REPLACEMENT)
-                .replace(RuleConverter.GHIDE_REGEX, `$1${RuleConverter.GENERICHIDE}$3`)
-                .replace(RuleConverter.EHIDE_REGEX, `$1${RuleConverter.ELEMHIDE}$3`);
-        }
+        let result = rule;
+        RuleConverter.OPTIONS_ALIASES.forEach((x) => {
+            if (result.includes(x.alias) && x.regex.test(result)) {
+                result = result.replace(x.regex, x.replacement);
+            }
+        });
 
-        return rule;
+        return result;
     }
 }
