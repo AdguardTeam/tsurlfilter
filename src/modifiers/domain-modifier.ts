@@ -1,4 +1,5 @@
 import { getPublicSuffix } from 'tldts';
+import { getCroppedDomain } from '../utils/url';
 
 /**
  * This is a helper class that is used specifically to work
@@ -40,7 +41,7 @@ export class DomainModifier {
 
         const parts = domains.split(sep);
         for (let i = 0; i < parts.length; i += 1) {
-            let domain = DomainModifier.cropWww(parts[i]);
+            let domain = getCroppedDomain(parts[i]);
             let restricted = false;
             if (domain.startsWith('~')) {
                 restricted = true;
@@ -60,18 +61,6 @@ export class DomainModifier {
 
         this.restrictedDomains = restrictedDomains.length > 0 ? restrictedDomains : null;
         this.permittedDomains = permittedDomains.length > 0 ? permittedDomains : null;
-    }
-
-    /**
-     * Removes leading www. from domain
-     * We remove leading www. to be able to match with cropped domains
-     * @param domain
-     */
-    static cropWww(domain: string): string {
-        if (domain.startsWith('www.')) {
-            return domain.substring(4);
-        }
-        return domain;
     }
 
     /**
