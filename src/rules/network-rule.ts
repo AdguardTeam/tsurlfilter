@@ -90,7 +90,13 @@ export enum NetworkRuleOption {
     WhitelistOnly = Elemhide | Genericblock | Generichide | Jsinject | Urlblock | Content | Extension | Stealth,
 
     /** Options supported by host-level network rules * */
-    OptionHostLevelRulesOnly = Important | Badfilter
+    OptionHostLevelRulesOnly = Important | Badfilter,
+
+    /**
+     * $removeparam rules are not compatible with any other modifiers except $domain,
+     * $third-party, $app, $important and $match-case.
+     */
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase
 }
 
 /**
@@ -567,6 +573,7 @@ export class NetworkRule implements rule.IRule {
 
         if (ruleParts.options) {
             this.loadOptions(ruleParts.options);
+            this.validateOptions();
         }
 
         if (
@@ -1079,6 +1086,19 @@ export class NetworkRule implements rule.IRule {
                     .filter((i) => i)
                     .join('=');
                 throw new SyntaxError(`Unknown modifier: ${modifierView}`);
+            }
+        }
+    }
+
+    /**
+     * Validates rule options
+     */
+    private validateOptions(): void {
+        if (this.advancedModifier instanceof RemoveParamModifier) {
+            if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
+                || (this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
+                !== NetworkRuleOption.RemoveParamCompatibleOptions) {
+                throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
             }
         }
     }
