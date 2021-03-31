@@ -306,10 +306,10 @@ describe('Badfilter modifier', () => {
 describe('Match subdomains', () => {
     it('should find css rules for subdomains', () => {
         const specificHidingRule = 'example.org##div';
-        const specificHidingRuleSubDomain = 'sub.example.org##h1';
+        const specificHidingRuleSubdomain = 'sub.example.org##h1';
         const rules = [
             specificHidingRule,
-            specificHidingRuleSubDomain,
+            specificHidingRuleSubdomain,
         ];
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
@@ -323,8 +323,21 @@ describe('Match subdomains', () => {
         expect(res.elementHiding.specific).toHaveLength(2);
         expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRule))
             .toBeTruthy();
-        expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRuleSubDomain))
+        expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRuleSubdomain))
             .toBeTruthy();
+    });
+
+    it('should find css rules with www for domains without www', () => {
+        const specificHidingRule = 'www.i.ua###Premium';
+        const rules = [specificHidingRule];
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+
+        res = engine.getCosmeticResult(createRequest('www.i.ua'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
     });
 
     it('should find js rules for subdomains', () => {
