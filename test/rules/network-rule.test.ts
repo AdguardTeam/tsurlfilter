@@ -63,6 +63,25 @@ describe('NetworkRule.parseRuleText', () => {
         expect(parts.whitelist).toEqual(false);
     });
 
+    it('works when it handles delimiter in $removeparam rules properly', () => {
+        let parts = NetworkRule.parseRuleText('||example.com$removeparam=/regex/');
+        expect(parts.pattern).toEqual('||example.com');
+        expect(parts.options).toEqual('removeparam=/regex/');
+
+        parts = NetworkRule.parseRuleText('||example.com$removeparam=/regex\\$/');
+        expect(parts.pattern).toEqual('||example.com');
+        expect(parts.options).toEqual('removeparam=/regex\\$/');
+
+        /*
+         It looks like '$/',
+         There is another slash character (/) to the left of it,
+         There is another unescaped $ character to the left of that slash character.
+        */
+        parts = NetworkRule.parseRuleText('||example.com$removeparam=/regex$/');
+        expect(parts.pattern).toEqual('||example.com');
+        expect(parts.options).toEqual('removeparam=/regex$/');
+    });
+
     it('works when it handles escaped delimiter properly', () => {
         let parts = NetworkRule.parseRuleText('||example.org\\$smth');
         expect(parts.pattern).toEqual('||example.org\\$smth');
