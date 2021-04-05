@@ -1135,8 +1135,11 @@ export class NetworkRule implements rule.IRule {
             return ruleParts;
         }
 
+        const removeParamIndex = ruleText.lastIndexOf(`${NetworkRule.OPTIONS.REMOVEPARAM}=`);
+        const endIndex = removeParamIndex >= 0 ? removeParamIndex : ruleText.length - 2;
+
         let foundEscaped = false;
-        for (let i = ruleText.length - 2; i >= startIndex; i -= 1) {
+        for (let i = endIndex; i >= startIndex; i -= 1) {
             const c = ruleText.charAt(i);
 
             if (c === NetworkRule.OPTIONS_DELIMITER) {
