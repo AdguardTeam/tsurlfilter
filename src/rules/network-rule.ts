@@ -144,7 +144,7 @@ export class NetworkRule implements rule.IRule {
      * Domains in denyallow modifier providing exceptions for permitted domains
      * https://github.com/AdguardTeam/CoreLibs/issues/1304
      */
-    private exceptionallyAllowedDomains: string[] | null = null;
+    private denyAllowDomains: string[] | null = null;
 
     /** Flag with all enabled rule options */
     private enabledOptions: NetworkRuleOption = 0;
@@ -397,7 +397,7 @@ export class NetworkRule implements rule.IRule {
             }
         }
 
-        if (!this.matchExceptionalDomains(request.hostname)) {
+        if (!this.matchDenyAllowDomains(request.hostname)) {
             return false;
         }
 
@@ -444,13 +444,13 @@ export class NetworkRule implements rule.IRule {
      * checks if the filtering rule is allowed on this domain.
      * @param domain
      */
-    private matchExceptionalDomains(domain: string): boolean {
-        if (!this.exceptionallyAllowedDomains) {
+    private matchDenyAllowDomains(domain: string): boolean {
+        if (!this.denyAllowDomains) {
             return true;
         }
 
-        if (this.exceptionallyAllowedDomains.length > 0) {
-            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.exceptionallyAllowedDomains!)) {
+        if (this.denyAllowDomains.length > 0) {
+            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.denyAllowDomains!)) {
                 return false;
             }
         }
@@ -878,12 +878,6 @@ export class NetworkRule implements rule.IRule {
      * @param optionValue
      */
     private setExceptionallyAllowedDomains(optionValue: string): void {
-        if (this.ruleText.startsWith(SimpleRegex.MASK_START_URL)) {
-            throw new SyntaxError(
-                'Invalid modifier: $denyallow rule pattern cannot target any domain',
-            );
-        }
-
         const domainModifier = new DomainModifier(optionValue, '|');
         if (domainModifier.restrictedDomains && domainModifier.restrictedDomains.length > 0) {
             throw new SyntaxError(
@@ -897,7 +891,7 @@ export class NetworkRule implements rule.IRule {
             );
         }
 
-        this.exceptionallyAllowedDomains = domainModifier.permittedDomains;
+        this.denyAllowDomains = domainModifier.permittedDomains;
     }
 
     /**

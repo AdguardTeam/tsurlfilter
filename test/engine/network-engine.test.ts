@@ -233,6 +233,18 @@ describe('Test match denyallow rules', () => {
             'https://www.a.com/',
             RequestType.Script,
         ))).toBeNull();
+
+        expect(engine.match(new Request(
+            'https://www.x.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ))).toBeNull();
+
+        expect(engine.match(new Request(
+            'https://sub.x.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ))).toBeNull();
     });
 
     it('works if it finds corresponding regex rule', () => {

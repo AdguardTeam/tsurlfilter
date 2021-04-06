@@ -327,11 +327,6 @@ describe('NetworkRule constructor', () => {
         const rule = new NetworkRule('/some.png$denyallow=example.ru|example.uk', -1);
         expect(rule).toBeTruthy();
 
-        // The rule's matching pattern cannot target any domain (e.g., it does not start with ||)
-        expect(() => {
-            new NetworkRule('||example.net$denyallow=example.com', -1);
-        }).toThrow('Invalid modifier: $denyallow rule pattern cannot target any domain');
-
         // Domains in the modifier's parameter cannot be negated ($denyallow=~x.com)
         expect(() => {
             new NetworkRule('/some$denyallow=example.com|~example.org,domain=example.com', -1);
