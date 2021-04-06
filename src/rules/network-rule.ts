@@ -93,8 +93,7 @@ export enum NetworkRuleOption {
     OptionHostLevelRulesOnly = Important | Badfilter,
 
     /**
-     * $removeparam rules are not compatible with any other modifiers except $domain,
-     * $third-party, $app, $important and $match-case.
+     * Removeparam compatible modifiers
      */
     RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase
 }
@@ -1095,11 +1094,19 @@ export class NetworkRule implements rule.IRule {
      */
     private validateOptions(): void {
         if (this.advancedModifier instanceof RemoveParamModifier) {
-            if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
-                || (this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
-                !== NetworkRuleOption.RemoveParamCompatibleOptions) {
-                throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
-            }
+            this.validateRemoveParamRule();
+        }
+    }
+
+    /**
+     * $removeparam rules are not compatible with any other modifiers except $domain,
+     * $third-party, $app, $important and $match-case.
+     */
+    private validateRemoveParamRule(): void {
+        if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
+            || (this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
+            !== NetworkRuleOption.RemoveParamCompatibleOptions) {
+            throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
         }
     }
 
