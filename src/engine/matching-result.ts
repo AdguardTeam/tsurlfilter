@@ -424,18 +424,15 @@ export class MatchingResult {
         }
 
         if (badfilterRules.length > 0) {
-            const filteredRules: NetworkRule[] = [];
-            for (const badfilter of badfilterRules) {
-                for (const rule of rules) {
-                    if (!rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
-                        if (!badfilter.negatesBadfilter(rule)) {
-                            filteredRules.push(rule);
-                        }
-                    }
+            return rules.filter((rule) => {
+                if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+                    return false;
                 }
-            }
 
-            return filteredRules;
+                const isRuleNegated = badfilterRules.some((badfilter) => badfilter.negatesBadfilter(rule));
+
+                return !isRuleNegated;
+            });
         }
 
         return rules;

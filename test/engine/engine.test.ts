@@ -106,6 +106,30 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         expect(result.removeParamRules && result.removeParamRules[0].getText()).toBe(removeParamRule);
         expect(result.stealthRule).toBeNull();
     });
+
+    it('it excludes whitelist rules, even if there are two badfilter rules', () => {
+        const redirectRule = '/fuckadblock.$script,redirect=prevent-fab-3.2.0';
+        const allowlistRule = '@@/fuckadblock.min.js$domain=example.org';
+        const allowlistBadfilterRule = '@@/fuckadblock.min.js$domain=example.org,badfilter';
+        const badfilterRule = '/fuckadblock.min.js$badfilter';
+
+        const baseRuleList = new StringRuleList(1, [
+            redirectRule,
+            allowlistRule,
+            badfilterRule,
+            allowlistBadfilterRule,
+        ].join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        const request = new Request(
+            'https://example.org/fuckadblock.min.js',
+            'https://example.org/url.html',
+            RequestType.Script,
+        );
+        const result = engine.matchRequest(request);
+
+        expect(result.getBasicResult()!.getText()).toBe(redirectRule);
+    });
 });
 
 describe('TestEngineCosmeticResult - elemhide', () => {
