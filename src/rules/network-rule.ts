@@ -140,6 +140,12 @@ export class NetworkRule implements rule.IRule {
 
     private restrictedDomains: string[] | null = null;
 
+    /**
+     * Domains in denyallow modifier providing exceptions for permitted domains
+     * https://github.com/AdguardTeam/CoreLibs/issues/1304
+     */
+    private exceptionallyAllowedDomains: string[] | null = null;
+
     /** Flag with all enabled rule options */
     private enabledOptions: NetworkRuleOption = 0;
 
@@ -391,6 +397,10 @@ export class NetworkRule implements rule.IRule {
             }
         }
 
+        if (!this.matchExceptionalDomains(request.hostname)) {
+            return false;
+        }
+
         return this.matchPattern(request);
     }
 
@@ -423,6 +433,24 @@ export class NetworkRule implements rule.IRule {
             if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
                 // Domain is not among permitted
                 // i.e. $domain=example.org and we're checking example.com
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * checks if the filtering rule is allowed on this domain.
+     * @param domain
+     */
+    private matchExceptionalDomains(domain: string): boolean {
+        if (!this.exceptionallyAllowedDomains) {
+            return true;
+        }
+
+        if (this.exceptionallyAllowedDomains.length > 0) {
+            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.exceptionallyAllowedDomains!)) {
                 return false;
             }
         }
@@ -845,6 +873,34 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Sets and validates exceptionally allowed domains presented in $denyallow modifier
+     *
+     * @param optionValue
+     */
+    private setExceptionallyAllowedDomains(optionValue: string): void {
+        if (this.ruleText.startsWith(SimpleRegex.MASK_START_URL)) {
+            throw new SyntaxError(
+                'Invalid modifier: $denyallow rule pattern cannot target any domain',
+            );
+        }
+
+        const domainModifier = new DomainModifier(optionValue, '|');
+        if (domainModifier.restrictedDomains && domainModifier.restrictedDomains.length > 0) {
+            throw new SyntaxError(
+                'Invalid modifier: $denyallow domains cannot be negated',
+            );
+        }
+
+        if (domainModifier.permittedDomains && domainModifier.permittedDomains.some((x) => x.includes('*'))) {
+            throw new SyntaxError(
+                'Invalid modifier: $denyallow domains wildcards are not supported',
+            );
+        }
+
+        this.exceptionallyAllowedDomains = domainModifier.permittedDomains;
+    }
+
+    /**
      * Loads the specified modifier:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers
      *
@@ -892,6 +948,10 @@ export class NetworkRule implements rule.IRule {
                 const domainModifier = new DomainModifier(optionValue, '|');
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
+                break;
+            }
+            case OPTIONS.DENYALLOW: {
+                this.setExceptionallyAllowedDomains(optionValue);
                 break;
             }
             // Document-level whitelist rules
