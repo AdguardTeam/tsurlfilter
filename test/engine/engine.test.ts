@@ -306,7 +306,7 @@ describe('$urlblock modifier', () => {
     });
 });
 
-describe('Badfilter modifier', () => {
+describe('$badfilter modifier', () => {
     it('checks badfilter rule negates network rule', () => {
         const rules = [
             '$script,domain=example.com|example.org',
@@ -324,6 +324,30 @@ describe('Badfilter modifier', () => {
         request = new Request('https://example.org', 'https://example.org', RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.basicRule).not.toBeNull();
+    });
+});
+
+describe('$genericblock modifier', () => {
+    it('disables network generic rules', () => {
+        const genericblockRule = '@@||domain.com^$genericblock';
+        const networkGenericRule = '||example.org^';
+        const networkNegatedGenericRule = '||domain.com^$domain=~example.com';
+
+        const list = new StringRuleList(1, [
+            networkGenericRule,
+            networkNegatedGenericRule,
+            genericblockRule,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([list]));
+        const result = engine.matchRequest(new Request(
+            'https://example.org',
+            'https://domain.com',
+            RequestType.Script,
+        ));
+
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule!.getText()).toBe(genericblockRule);
     });
 });
 
