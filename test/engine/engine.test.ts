@@ -340,7 +340,11 @@ describe('$genericblock modifier', () => {
         ].join('\n'));
 
         const engine = new Engine(new RuleStorage([list]));
-        const result = engine.matchRequest(new Request('https://example.org', 'https://domain.com', RequestType.Script));
+        const result = engine.matchRequest(new Request(
+            'https://example.org',
+            'https://domain.com',
+            RequestType.Script,
+        ));
 
         expect(result.basicRule).toBeNull();
         expect(result.documentRule!.getText()).toBe(genericblockRule);
