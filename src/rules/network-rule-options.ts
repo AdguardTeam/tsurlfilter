@@ -4,6 +4,7 @@ export const NETWORK_RULE_OPTIONS = {
     MATCH_CASE: 'match-case',
     IMPORTANT: 'important',
     DOMAIN: 'domain',
+    DENYALLOW: 'denyallow',
     ELEMHIDE: 'elemhide',
     GENERICHIDE: 'generichide',
     GENERICBLOCK: 'genericblock',
