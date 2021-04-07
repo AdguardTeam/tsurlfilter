@@ -877,7 +877,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @param optionValue
      */
-    private setExceptionallyAllowedDomains(optionValue: string): void {
+    private setDenyAllowDomains(optionValue: string): void {
         const domainModifier = new DomainModifier(optionValue, '|');
         if (domainModifier.restrictedDomains && domainModifier.restrictedDomains.length > 0) {
             throw new SyntaxError(
@@ -945,7 +945,7 @@ export class NetworkRule implements rule.IRule {
                 break;
             }
             case OPTIONS.DENYALLOW: {
-                this.setExceptionallyAllowedDomains(optionValue);
+                this.setDenyAllowDomains(optionValue);
                 break;
             }
             // Document-level whitelist rules
