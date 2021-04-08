@@ -207,3 +207,69 @@ describe('Test Match Wildcard domain', () => {
         expect(result && result.getText()).toEqual(rule);
     });
 });
+
+describe('Test match denyallow rules', () => {
+    it('works if it finds denyallow rule', () => {
+        const rule = '*$script,domain=a.com|b.com,denyallow=x.com|y.com';
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+        const result = engine.match(new Request(
+            'https://z.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ));
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+
+        expect(engine.match(new Request(
+            'https://z.com/',
+            'https://www.c.com/',
+            RequestType.Script,
+        ))).toBeNull();
+
+        expect(engine.match(new Request(
+            'https://x.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ))).toBeNull();
+
+        expect(engine.match(new Request(
+            'https://www.x.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ))).toBeNull();
+
+        expect(engine.match(new Request(
+            'https://sub.x.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ))).toBeNull();
+    });
+
+    it('works if it finds corresponding regex rule', () => {
+        const rule = '/^(?!.*(x.com|y.com)).*$/$script,domain=a.com|b.com';
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule]));
+
+        const result = engine.match(new Request(
+            'https://z.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ));
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+
+        expect(engine.match(new Request(
+            'https://z.com/',
+            'https://www.c.com/',
+            RequestType.Script,
+        ))).toBeNull();
+
+        expect(engine.match(new Request(
+            'https://x.com/',
+            'https://www.a.com/',
+            RequestType.Script,
+        ))).toBeNull();
+    });
+});

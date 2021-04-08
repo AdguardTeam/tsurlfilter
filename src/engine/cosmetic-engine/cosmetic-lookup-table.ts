@@ -88,7 +88,7 @@ export class CosmeticLookupTable {
         subdomains.forEach((subdomain) => {
             const rules = this.byHostname.get(subdomain);
             if (rules && rules.length > 0) {
-                result.push(...rules);
+                result.push(...rules.filter((r) => r.match(hostname)));
             }
         });
 

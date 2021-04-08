@@ -104,3 +104,14 @@ export function getHost(url: string): string|null {
 
     return host;
 }
+
+/**
+ * Removes leading www. from domain
+ * @param domain
+ */
+export const getCroppedDomain = (domain: string): string => {
+    if (domain.startsWith('www.')) {
+        return domain.substring(4);
+    }
+    return domain;
+};

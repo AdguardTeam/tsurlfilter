@@ -106,6 +106,30 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         expect(result.removeParamRules && result.removeParamRules[0].getText()).toBe(removeParamRule);
         expect(result.stealthRule).toBeNull();
     });
+
+    it('it excludes whitelist rules, even if there are two badfilter rules', () => {
+        const redirectRule = '/fuckadblock.$script,redirect=prevent-fab-3.2.0';
+        const allowlistRule = '@@/fuckadblock.min.js$domain=example.org';
+        const allowlistBadfilterRule = '@@/fuckadblock.min.js$domain=example.org,badfilter';
+        const badfilterRule = '/fuckadblock.min.js$badfilter';
+
+        const baseRuleList = new StringRuleList(1, [
+            redirectRule,
+            allowlistRule,
+            badfilterRule,
+            allowlistBadfilterRule,
+        ].join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        const request = new Request(
+            'https://example.org/fuckadblock.min.js',
+            'https://example.org/url.html',
+            RequestType.Script,
+        );
+        const result = engine.matchRequest(request);
+
+        expect(result.getBasicResult()!.getText()).toBe(redirectRule);
+    });
 });
 
 describe('TestEngineCosmeticResult - elemhide', () => {
@@ -282,7 +306,7 @@ describe('$urlblock modifier', () => {
     });
 });
 
-describe('Badfilter modifier', () => {
+describe('$badfilter modifier', () => {
     it('checks badfilter rule negates network rule', () => {
         const rules = [
             '$script,domain=example.com|example.org',
@@ -303,13 +327,37 @@ describe('Badfilter modifier', () => {
     });
 });
 
+describe('$genericblock modifier', () => {
+    it('disables network generic rules', () => {
+        const genericblockRule = '@@||domain.com^$genericblock';
+        const networkGenericRule = '||example.org^';
+        const networkNegatedGenericRule = '||domain.com^$domain=~example.com';
+
+        const list = new StringRuleList(1, [
+            networkGenericRule,
+            networkNegatedGenericRule,
+            genericblockRule,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([list]));
+        const result = engine.matchRequest(new Request(
+            'https://example.org',
+            'https://domain.com',
+            RequestType.Script,
+        ));
+
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule!.getText()).toBe(genericblockRule);
+    });
+});
+
 describe('Match subdomains', () => {
     it('should find css rules for subdomains', () => {
         const specificHidingRule = 'example.org##div';
-        const specificHidingRuleSubDomain = 'sub.example.org##h1';
+        const specificHidingRuleSubdomain = 'sub.example.org##h1';
         const rules = [
             specificHidingRule,
-            specificHidingRuleSubDomain,
+            specificHidingRuleSubdomain,
         ];
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
@@ -323,7 +371,53 @@ describe('Match subdomains', () => {
         expect(res.elementHiding.specific).toHaveLength(2);
         expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRule))
             .toBeTruthy();
-        expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRuleSubDomain))
+        expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRuleSubdomain))
             .toBeTruthy();
+    });
+
+    it('should find css rules with www for domains without www', () => {
+        const specificHidingRule = 'www.i.ua###Premium';
+        const rules = [specificHidingRule];
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+
+        res = engine.getCosmeticResult(createRequest('www.i.ua'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+    });
+
+    it('should find js rules for subdomains', () => {
+        const scriptletRule = 'example.org#%#//scriptlet("abort-on-property-read", "alert")';
+        const subDomainScriptletRule = 'sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
+        const otherSubDomainScriptletRule = 'other-sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
+
+        const rules = [
+            scriptletRule,
+            subDomainScriptletRule,
+            otherSubDomainScriptletRule,
+        ];
+
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        const resOne = engine.getCosmeticResult(
+            createRequest('https://example.org/test'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(resOne).toBeDefined();
+        expect(resOne.JS.specific[0].getText()).toBe(scriptletRule);
+
+        const resTwo = engine.getCosmeticResult(
+            createRequest('https://sub.example.org/test'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(resTwo).toBeDefined();
+        expect(resTwo.JS.specific).toHaveLength(2);
+        const rulesTexts = resTwo.JS.specific.map((rule) => rule.getText());
+        expect(rulesTexts.includes(scriptletRule)).toBeTruthy();
+        expect(rulesTexts.includes(subDomainScriptletRule)).toBeTruthy();
+        expect(rulesTexts.includes(otherSubDomainScriptletRule)).toBeFalsy();
     });
 });

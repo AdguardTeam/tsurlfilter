@@ -368,6 +368,21 @@ describe('NetworkRule constructor', () => {
             new NetworkRule('||example.com$_invalid_,replace=/bad/good/,____,image', -1);
         }).toThrow('Unknown modifier: _invalid_');
     });
+
+    it('works if denyallow modifier works properly', () => {
+        const rule = new NetworkRule('/some.png$denyallow=example.ru|example.uk', -1);
+        expect(rule).toBeTruthy();
+
+        // Domains in the modifier's parameter cannot be negated ($denyallow=~x.com)
+        expect(() => {
+            new NetworkRule('/some$denyallow=example.com|~example.org,domain=example.com', -1);
+        }).toThrow('Invalid modifier: $denyallow domains cannot be negated');
+
+        // or have a wildcard TLD ($denyallow=x.*)
+        expect(() => {
+            new NetworkRule('/some$denyallow=example.*,domain=example.com', -1);
+        }).toThrow('Invalid modifier: $denyallow domains wildcards are not supported');
+    });
 });
 
 describe('NetworkRule.match', () => {
@@ -461,6 +476,46 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(false);
 
         request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestType.Script);
+        expect(rule.match(request)).toEqual(false);
+    });
+
+    it('works when $denyallow modifier is applied properly', () => {
+        let rule: NetworkRule;
+        let request: Request;
+
+        rule = new NetworkRule('/some.png$denyallow=example.ru|example.uk', 0);
+        request = new Request('https://example.ru/some.png', 'https://example.com', RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.uk/some.png', 'https://example.org', RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.us/some.png', 'https://example.com', RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.ua/some.png', 'https://example.org', RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+
+        // with $domain modifier
+        rule = new NetworkRule('/some$domain=example.com|example.org,denyallow=example.ru|example.uk', 0);
+        request = new Request('https://example.ru/some', 'https://example.com', RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.uk/some', 'https://example.org', RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.us/some', 'https://example.com', RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.ua/some', 'https://example.org', RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+
+        // exception rule
+        rule = new NetworkRule('@@/some$domain=example.com,denyallow=example.org', 0);
+        request = new Request('https://example.net/some', 'https://example.com', RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/some', 'https://example.com', RequestType.Image);
         expect(rule.match(request)).toEqual(false);
     });
 
