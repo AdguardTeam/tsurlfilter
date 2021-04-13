@@ -526,4 +526,28 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         expect(found.length).toBe(1);
         expect(found[0].getText()).toBe(whitelistRule);
     });
+
+    it('works if inverted removeparam rule is found', () => {
+        const rules = [
+            new NetworkRule('||example.org^$removeparam=~p0', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(rules.length);
+    });
+
+    it('works if inverted whitelisted removeparam filter with same option is omitted', () => {
+        const ruleTexts = [
+            '||example.org^$removeparam=~p0',
+            '||example.org^$removeparam=~p1',
+            '@@||example.org^$removeparam=~p1',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(2);
+    });
 });
