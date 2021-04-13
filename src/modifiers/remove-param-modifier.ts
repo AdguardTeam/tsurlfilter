@@ -1,4 +1,3 @@
-import { splitByDelimiterWithEscapeCharacter } from '../utils/utils';
 import * as utils from '../utils/url';
 import { IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
@@ -44,28 +43,15 @@ export class RemoveParamModifier implements IAdvancedModifier {
             return url.substring(0, sepIndex);
         }
 
-        const parts = splitByDelimiterWithEscapeCharacter(this.value, '|', '\\', true);
-
-        const invertedParams = parts.filter((x) => x.startsWith('~'));
-        if (invertedParams.length > 0) {
-            if (invertedParams.length !== 1) {
-                // Remove all query if more than one inverted param is presented
-                return url.substring(0, sepIndex);
-            }
-
-            return RemoveParamModifier.applyInvertedParam(url, invertedParams[0].substring(1));
+        if (this.value.startsWith('~')) {
+            return RemoveParamModifier.applyInvertedParam(url, this.value.substring(1));
         }
 
-        const plainParams = parts.filter((x) => !x.startsWith('/'));
-        const regexpParams = parts.filter((x) => x.startsWith('/')).map(SimpleRegex.patternFromString);
+        if (this.value.startsWith('/')) {
+            return utils.cleanUrlParamByRegExp(url, SimpleRegex.patternFromString(this.value));
+        }
 
-        let result = utils.cleanUrlParam(url, plainParams);
-
-        regexpParams.forEach((x) => {
-            result = utils.cleanUrlParamByRegExp(result, x);
-        });
-
-        return result;
+        return utils.cleanUrlParam(url, [this.value]);
     }
 
     /**
