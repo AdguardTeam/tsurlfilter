@@ -33,6 +33,7 @@ export const NETWORK_RULE_OPTIONS = {
     REPLACE: 'replace',
     COOKIE: 'cookie',
     REDIRECT: 'redirect',
+    REDIRECTRULE: 'redirect-rule',
     REMOVEPARAM: 'removeparam',
     APP: 'app',
     NETWORK: 'network',

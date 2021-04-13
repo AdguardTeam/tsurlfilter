@@ -1,5 +1,6 @@
 import Scriptlets from 'scriptlets';
 import { IAdvancedModifier } from './advanced-modifier';
+import { NETWORK_RULE_OPTIONS } from '../rules/network-rule-options';
 
 /**
  * Redirect modifier class
@@ -41,7 +42,8 @@ export class RedirectModifier implements IAdvancedModifier {
         }
 
         const { redirects } = Scriptlets;
-        if (!redirects.isAdgRedirectRule(ruleText) || !redirects.isValidAdgRedirectRule(ruleText)) {
+        const ruleTextToValidate = ruleText.replace(NETWORK_RULE_OPTIONS.REDIRECTRULE, NETWORK_RULE_OPTIONS.REDIRECT);
+        if (!redirects.isAdgRedirectRule(ruleTextToValidate) || !redirects.isValidAdgRedirectRule(ruleTextToValidate)) {
             throw new SyntaxError('$redirect modifier is invalid');
         }
     }
