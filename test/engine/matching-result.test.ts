@@ -487,6 +487,23 @@ describe('TestNewMatchingResult - redirect rules', () => {
     });
 });
 
+describe('TestNewMatchingResult - redirect-rule rules', () => {
+    it('works if redirect-rule rule is found', () => {
+        const rules = [
+            new NetworkRule('*$script,redirect-rule=noopjs,domain=example.org', 0),
+            new NetworkRule('/pagead2', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBeTruthy();
+        expect(resultRule!.getText()).toBe('/pagead2');
+        const redirectRule = result.redirectRuleRule;
+        expect(redirectRule).toBeTruthy();
+        expect(redirectRule!.getText()).toBe('*$script,redirect-rule=noopjs,domain=example.org');
+    });
+});
+
 describe('TestNewMatchingResult - removeparam rules', () => {
     it('works if removeparam rules are found', () => {
         const rules = [
