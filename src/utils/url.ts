@@ -44,7 +44,7 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
  *
  * @param url
  * @param params
- * @param invert use params as exceptions
+ * @param invert use params as exceptions, then it removes all query parameters with the name different from param.
  */
 export function cleanUrlParam(url: string, params: string[], invert = false): string {
     const trackingParametersRegExp = new RegExp(`((^|&)(${params.join('|')})=[^&#]*)`, 'ig');

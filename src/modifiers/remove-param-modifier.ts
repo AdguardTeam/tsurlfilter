@@ -69,17 +69,19 @@ export class RemoveParamModifier implements IAdvancedModifier {
     }
 
     /**
-     * Applies exclusion param to url
+     * Applies exclusion param to url.
+     * It removes all query parameters with the name different from param or
+     * it removes all query parameters that do not match the regex regular expression.
      *
      * @param url
-     * @param exc
+     * @param param
      */
-    private static applyInvertedParam(url: string, exc: string): string {
-        if (exc.startsWith('/')) {
-            const regExp = SimpleRegex.patternFromString(exc);
+    private static applyInvertedParam(url: string, param: string): string {
+        if (param.startsWith('/')) {
+            const regExp = SimpleRegex.patternFromString(param);
             return utils.cleanUrlParamByRegExp(url, regExp, true);
         }
 
-        return utils.cleanUrlParam(url, [exc], true);
+        return utils.cleanUrlParam(url, [param], true);
     }
 }
