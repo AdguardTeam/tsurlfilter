@@ -485,6 +485,62 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(resultRule).toBeTruthy();
         expect(resultRule!.getText()).toBe('||8s8.eu^*fa.js$script,redirect=noopjs');
     });
+
+    it('works if whitelisted redirect rule with same option is omitted', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '@@||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=2x2-transparent.png,image',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBeTruthy();
+        expect(resultRule!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,image');
+    });
+
+    it('works if whitelist rule omit all resource types', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=1x1-transparent.gif',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()).toBeNull();
+    });
+
+    it('checks that unrelated exception does not exclude other blocking rules', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=2x2-transparent.png',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBeTruthy();
+        expect(resultRule!.getText()).toBe('||ya.ru$redirect=1x1-transparent.gif');
+    });
+
+    it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png',
+            '@@||ya.ru$redirect',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()).toBeNull();
+    });
 });
 
 describe('TestNewMatchingResult - removeparam rules', () => {
