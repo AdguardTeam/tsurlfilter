@@ -710,13 +710,6 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        const redirect = this.isOptionEnabled(NetworkRuleOption.Redirect);
-        const rRedirect = r.isOptionEnabled(NetworkRuleOption.Redirect);
-        if (redirect && !rRedirect) {
-            // $redirect rules have "slightly" higher priority than regular basic rules
-            return true;
-        }
-
         const generic = this.isGeneric();
         const rGeneric = r.isGeneric();
         if (!generic && rGeneric) {
@@ -1092,7 +1085,7 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.REDIRECT:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
-                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText);
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist());
                 break;
 
             case OPTIONS.REMOVEPARAM:

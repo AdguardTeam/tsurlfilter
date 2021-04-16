@@ -132,6 +132,118 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
     });
 });
 
+describe('TestEngineMatchRequest - redirect modifier', () => {
+    it('checks if with redirect modifier resource type is not ignored', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=1x1-transparent.gif',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        const request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Image,
+        );
+        const result = engine.matchRequest(request);
+
+        expect(result.getBasicResult()).toBeNull();
+    });
+
+    it('checks if with whitelist redirect modifier resource type is not ignored', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=1x1-transparent.gif,image',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Image,
+        );
+        expect(engine.matchRequest(request).getBasicResult()).toBeNull();
+
+        request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Media,
+        );
+        expect(engine.matchRequest(request).getBasicResult()).not.toBeNull();
+    });
+
+    it('checks that unrelated exception does not exclude other blocking rules', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=2x2-transparent.png',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        const request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Image,
+        );
+        const basicResult = engine.matchRequest(request).getBasicResult();
+        expect(basicResult).not.toBeNull();
+        expect(basicResult!.getText()).toBe('||ya.ru$redirect=1x1-transparent.gif');
+    });
+
+    it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png',
+            '@@||ya.ru$redirect',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Image,
+        );
+        expect(engine.matchRequest(request).getBasicResult()).toBeNull();
+
+        request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Media,
+        );
+        expect(engine.matchRequest(request).getBasicResult()).toBeNull();
+    });
+
+    it('checks that it is possible to exclude all redirects with `@@$redirect` rule - resource type', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png',
+            '@@||ya.ru$redirect,image',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Image,
+        );
+        expect(engine.matchRequest(request).getBasicResult()).toBeNull();
+
+        request = new Request(
+            'http://ya.ru/',
+            null,
+            RequestType.Media,
+        );
+        expect(engine.matchRequest(request).getBasicResult()).not.toBeNull();
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;
