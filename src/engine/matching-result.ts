@@ -55,7 +55,7 @@ export class MatchingResult {
      * RedirectRule rule - a rule redirecting blocked requests
      * See $redirect-rule modifier
      */
-    public readonly redirectRuleRule: NetworkRule | null;
+    private readonly redirectRuleRule: NetworkRule | null;
 
     /**
      * RemoveParam rules - a set of rules modifying url query parameters
@@ -222,6 +222,10 @@ export class MatchingResult {
         const redirectRule = this.getRedirectRule();
         if (redirectRule) {
             return redirectRule;
+        }
+
+        if (this.redirectRuleRule && this.basicRule && !this.basicRule.isWhitelist()) {
+            return this.redirectRuleRule;
         }
 
         if (!this.basicRule) {

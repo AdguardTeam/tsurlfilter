@@ -553,10 +553,7 @@ describe('TestNewMatchingResult - redirect-rule rules', () => {
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
-        expect(resultRule!.getText()).toBe('/pagead2');
-        const redirectRule = result.redirectRuleRule;
-        expect(redirectRule).toBeTruthy();
-        expect(redirectRule!.getText()).toBe('*$script,redirect-rule=noopjs,domain=example.org');
+        expect(resultRule!.getText()).toBe('*$script,redirect-rule=noopjs,domain=example.org');
     });
 });
 
