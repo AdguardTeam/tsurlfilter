@@ -90,7 +90,12 @@ export enum NetworkRuleOption {
     WhitelistOnly = Elemhide | Genericblock | Generichide | Jsinject | Urlblock | Content | Extension | Stealth,
 
     /** Options supported by host-level network rules * */
-    OptionHostLevelRulesOnly = Important | Badfilter
+    OptionHostLevelRulesOnly = Important | Badfilter,
+
+    /**
+     * Removeparam compatible modifiers
+     */
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase
 }
 
 /**
@@ -596,6 +601,7 @@ export class NetworkRule implements rule.IRule {
 
         if (ruleParts.options) {
             this.loadOptions(ruleParts.options);
+            this.validateOptions();
         }
 
         if (
@@ -1090,7 +1096,7 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
-                this.advancedModifier = new RemoveParamModifier(optionValue, this.isWhitelist());
+                this.advancedModifier = new RemoveParamModifier(optionValue);
                 break;
 
             case OPTIONS.APP: {
@@ -1132,6 +1138,27 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Validates rule options
+     */
+    private validateOptions(): void {
+        if (this.advancedModifier instanceof RemoveParamModifier) {
+            this.validateRemoveParamRule();
+        }
+    }
+
+    /**
+     * $removeparam rules are not compatible with any other modifiers except $domain,
+     * $third-party, $app, $important and $match-case.
+     */
+    private validateRemoveParamRule(): void {
+        if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
+            || (this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
+            !== NetworkRuleOption.RemoveParamCompatibleOptions) {
+            throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
+        }
+    }
+
+    /**
      * parseRuleText splits the rule text into multiple parts.
      * @param ruleText - original rule text
      * @returns basic rule parts
@@ -1163,8 +1190,11 @@ export class NetworkRule implements rule.IRule {
             return ruleParts;
         }
 
+        const removeParamIndex = ruleText.lastIndexOf(`${NetworkRule.OPTIONS.REMOVEPARAM}=`);
+        const endIndex = removeParamIndex >= 0 ? removeParamIndex : ruleText.length - 2;
+
         let foundEscaped = false;
-        for (let i = ruleText.length - 2; i >= startIndex; i -= 1) {
+        for (let i = endIndex; i >= startIndex; i -= 1) {
             const c = ruleText.charAt(i);
 
             if (c === NetworkRule.OPTIONS_DELIMITER) {
