@@ -46,16 +46,22 @@ export class MatchingResult {
     public readonly replaceRules: NetworkRule[] | null;
 
     /**
-     * RemoveParam rules - a set of rules modifying url query parameters
-     * See $removeparam modifier
+     * Redirect rules - a set of rules redirecting request
+     * See $redirect modifier
      */
-    public readonly removeParamRules: NetworkRule[] | null;
+    public readonly redirectRules: NetworkRule[] | null;
 
     /**
      * RedirectRule rule - a rule redirecting blocked requests
      * See $redirect-rule modifier
      */
     public readonly redirectRuleRule: NetworkRule | null;
+
+    /**
+     * RemoveParam rules - a set of rules modifying url query parameters
+     * See $removeparam modifier
+     */
+    public readonly removeParamRules: NetworkRule[] | null;
 
     /**
      * StealthRule - this is a whitelist rule that negates stealth mode features
@@ -77,6 +83,7 @@ export class MatchingResult {
         this.cookieRules = null;
         this.replaceRules = null;
         this.removeParamRules = null;
+        this.redirectRules = null;
         this.redirectRuleRule = null;
         this.cspRules = null;
         this.stealthRule = null;
@@ -138,6 +145,13 @@ export class MatchingResult {
                     this.removeParamRules = [];
                 }
                 this.removeParamRules.push(rule);
+                continue;
+            }
+            if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+                if (!this.redirectRules) {
+                    this.redirectRules = [];
+                }
+                this.redirectRules.push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.RedirectRule)) {
@@ -202,6 +216,12 @@ export class MatchingResult {
             }
 
             return null;
+        }
+
+        // Redirect rules have a high priority
+        const redirectRule = this.getRedirectRule();
+        if (redirectRule) {
+            return redirectRule;
         }
 
         if (!this.basicRule) {
@@ -350,6 +370,21 @@ export class MatchingResult {
         });
 
         return Array.from(rulesByDirective.values());
+    }
+
+    /**
+     * Returns a redirect rule
+     */
+    getRedirectRule(): NetworkRule | null {
+        if (!this.redirectRules) {
+            return null;
+        }
+
+        let result = MatchingResult.filterAdvancedModifierRules(this.redirectRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+
+        result = result.filter((r) => !r.isWhitelist());
+        return result.length > 0 ? result[0] : null;
     }
 
     /**

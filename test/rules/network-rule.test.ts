@@ -63,6 +63,25 @@ describe('NetworkRule.parseRuleText', () => {
         expect(parts.whitelist).toEqual(false);
     });
 
+    it('works when it handles delimiter in $removeparam rules properly', () => {
+        let parts = NetworkRule.parseRuleText('||example.com$removeparam=/regex/');
+        expect(parts.pattern).toEqual('||example.com');
+        expect(parts.options).toEqual('removeparam=/regex/');
+
+        parts = NetworkRule.parseRuleText('||example.com$removeparam=/regex\\$/');
+        expect(parts.pattern).toEqual('||example.com');
+        expect(parts.options).toEqual('removeparam=/regex\\$/');
+
+        /*
+         It looks like '$/',
+         There is another slash character (/) to the left of it,
+         There is another unescaped $ character to the left of that slash character.
+        */
+        parts = NetworkRule.parseRuleText('||example.com$removeparam=/regex$/');
+        expect(parts.pattern).toEqual('||example.com');
+        expect(parts.options).toEqual('removeparam=/regex$/');
+    });
+
     it('works when it handles escaped delimiter properly', () => {
         let parts = NetworkRule.parseRuleText('||example.org\\$smth');
         expect(parts.pattern).toEqual('||example.org\\$smth');
@@ -168,6 +187,33 @@ describe('NetworkRule constructor', () => {
         expect(() => {
             new NetworkRule('||baddomain.com^$app', 0);
         }).toThrow(new SyntaxError('$app modifier cannot be empty'));
+    });
+
+    it('checks removeparam modifier compatibility', () => {
+        let correct = new NetworkRule('||example.org^$removeparam=p,domain=test.com,third-party,match-case', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeparam=p,domain=test.com,third-party,important,match-case', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeparam', 0);
+        expect(correct).toBeTruthy();
+
+        expect(() => {
+            new NetworkRule('||example.org^$removeparam=p,domain=test.com,popup', 0);
+        }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
+
+        expect(() => {
+            new NetworkRule('||example.org^$removeparam=p,domain=test.com,mp4', 0);
+        }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
+
+        expect(() => {
+            new NetworkRule('||example.org^$removeparam=p,object', 0);
+        }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
+
+        expect(() => {
+            new NetworkRule('||example.org^$removeparam=p,~object', 0);
+        }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
     });
 
     it('works when it handles wide rules with $domain properly', () => {

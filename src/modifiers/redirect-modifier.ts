@@ -16,9 +16,10 @@ export class RedirectModifier implements IAdvancedModifier {
      *
      * @param value
      * @param ruleText
+     * @param isWhitelist
      */
-    constructor(value: string, ruleText: string) {
-        RedirectModifier.validate(ruleText, value);
+    constructor(value: string, ruleText: string, isWhitelist: boolean) {
+        RedirectModifier.validate(ruleText, value, isWhitelist);
 
         this.redirectTitle = value;
     }
@@ -35,8 +36,13 @@ export class RedirectModifier implements IAdvancedModifier {
      *
      * @param ruleText
      * @param redirectTitle
+     * @param isWhitelist
      */
-    private static validate(ruleText: string, redirectTitle: string): void {
+    private static validate(ruleText: string, redirectTitle: string, isWhitelist: boolean): void {
+        if (isWhitelist && !redirectTitle) {
+            return;
+        }
+
         if (!redirectTitle) {
             throw new SyntaxError('Invalid $redirect rule, redirect value must not be empty');
         }

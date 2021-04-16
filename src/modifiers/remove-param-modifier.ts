@@ -1,4 +1,3 @@
-import { splitByDelimiterWithEscapeCharacter } from '../utils/utils';
 import * as utils from '../utils/url';
 import { IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
@@ -17,13 +16,8 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * Constructor
      *
      * @param value
-     * @param isWhitelist
      */
-    constructor(value: string, isWhitelist: boolean) {
-        if (!isWhitelist && !value) {
-            throw new Error('Rule removeparam modifier is invalid: removeparam directive must not be empty');
-        }
-
+    constructor(value: string) {
         this.value = value;
     }
 
@@ -40,17 +34,40 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * @param url
      */
     public removeParameters(url: string): string {
-        const parts = splitByDelimiterWithEscapeCharacter(this.value, '|', '\\', true);
+        const sepIndex = url.indexOf('?');
+        if (sepIndex < 0) {
+            return url;
+        }
 
-        const plainParams = parts.filter((x) => !x.startsWith('/'));
-        const regexpParams = parts.filter((x) => x.startsWith('/')).map(SimpleRegex.patternFromString);
+        if (!this.value) {
+            return url.substring(0, sepIndex);
+        }
 
-        let result = utils.cleanUrlParam(url, plainParams);
+        if (this.value.startsWith('~')) {
+            return RemoveParamModifier.applyInvertedParam(url, this.value.substring(1));
+        }
 
-        regexpParams.forEach((x) => {
-            result = utils.cleanUrlParamByRegExp(result, x);
-        });
+        if (this.value.startsWith('/')) {
+            return utils.cleanUrlParamByRegExp(url, SimpleRegex.patternFromString(this.value));
+        }
 
-        return result;
+        return utils.cleanUrlParam(url, [this.value]);
+    }
+
+    /**
+     * Applies exclusion param to url.
+     * It removes all query parameters with the name different from param or
+     * it removes all query parameters that do not match the regex regular expression.
+     *
+     * @param url
+     * @param param
+     */
+    private static applyInvertedParam(url: string, param: string): string {
+        if (param.startsWith('/')) {
+            const regExp = SimpleRegex.patternFromString(param);
+            return utils.cleanUrlParamByRegExp(url, regExp, true);
+        }
+
+        return utils.cleanUrlParam(url, [param], true);
     }
 }

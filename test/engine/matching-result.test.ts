@@ -485,6 +485,62 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(resultRule).toBeTruthy();
         expect(resultRule!.getText()).toBe('||8s8.eu^*fa.js$script,redirect=noopjs');
     });
+
+    it('works if whitelisted redirect rule with same option is omitted', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '@@||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=2x2-transparent.png,image',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBeTruthy();
+        expect(resultRule!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,image');
+    });
+
+    it('works if whitelist rule omit all resource types', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=1x1-transparent.gif',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()).toBeNull();
+    });
+
+    it('checks that unrelated exception does not exclude other blocking rules', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '@@||ya.ru$redirect=2x2-transparent.png',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBeTruthy();
+        expect(resultRule!.getText()).toBe('||ya.ru$redirect=1x1-transparent.gif');
+    });
+
+    it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png',
+            '@@||ya.ru$redirect',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()).toBeNull();
+    });
 });
 
 describe('TestNewMatchingResult - redirect-rule rules', () => {
@@ -507,7 +563,7 @@ describe('TestNewMatchingResult - redirect-rule rules', () => {
 describe('TestNewMatchingResult - removeparam rules', () => {
     it('works if removeparam rules are found', () => {
         const rules = [
-            new NetworkRule('||example.org^$removeparam=p1|p2', 0),
+            new NetworkRule('||example.org^$removeparam=/p1|p2/', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -518,8 +574,8 @@ describe('TestNewMatchingResult - removeparam rules', () => {
     it('works if whitelisted removeparam filter with same option is omitted', () => {
         const ruleTexts = [
             '||example.org^$removeparam=p0',
-            '||example.org^$removeparam=p1|p2',
-            '@@||example.org^$removeparam=p1|p2',
+            '||example.org^$removeparam=p1',
+            '@@||example.org^$removeparam=p1',
         ];
 
         const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
@@ -532,7 +588,7 @@ describe('TestNewMatchingResult - removeparam rules', () => {
     it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {
         const whitelistRule = '@@||example.org^$removeparam';
         const ruleTexts = [
-            '||example.org^$removeparam=p1|p2',
+            '||example.org^$removeparam=/p1|p2/',
             whitelistRule,
         ];
 
@@ -542,5 +598,29 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(1);
         expect(found[0].getText()).toBe(whitelistRule);
+    });
+
+    it('works if inverted removeparam rule is found', () => {
+        const rules = [
+            new NetworkRule('||example.org^$removeparam=~p0', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(rules.length);
+    });
+
+    it('works if inverted whitelisted removeparam filter with same option is omitted', () => {
+        const ruleTexts = [
+            '||example.org^$removeparam=~p0',
+            '||example.org^$removeparam=~p1',
+            '@@||example.org^$removeparam=~p1',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(2);
     });
 });
