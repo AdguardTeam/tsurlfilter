@@ -532,4 +532,17 @@ describe('Match subdomains', () => {
         expect(rulesTexts.includes(subDomainScriptletRule)).toBeTruthy();
         expect(rulesTexts.includes(otherSubDomainScriptletRule)).toBeFalsy();
     });
+
+    it('should match rules with tld domain only', () => {
+        const hidingRule = 'org##body';
+        const rules = [hidingRule];
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let res = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
+
+        res = engine.getCosmeticResult(createRequest('www.example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
+    });
 });

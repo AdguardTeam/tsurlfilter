@@ -52,21 +52,25 @@ describe('Creating request', () => {
 
     it('parses subdomains', () => {
         const request = new Request('http://sub.sub.example.org/part', 'http://sub.example.org', RequestType.Other);
-        expect(request.subdomains.sort()).toEqual(['sub.sub.example.org', 'sub.example.org', 'example.org'].sort());
-        expect(request.sourceSubdomains.sort()).toEqual(['sub.example.org', 'example.org'].sort());
+        expect(request.subdomains.sort()).toEqual([
+            'sub.sub.example.org',
+            'sub.example.org',
+            'example.org',
+            'org'].sort());
+        expect(request.sourceSubdomains.sort()).toEqual(['sub.example.org', 'example.org', 'org'].sort());
     });
 
     it('parses subdomains with complex tld', () => {
         const request = new Request('http://sub.sub.example.org.uk/part', 'http://sub.example.org', RequestType.Other);
         expect(request.subdomains.sort())
-            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk'].sort());
+            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk'].sort());
         expect(request.sourceSubdomains.sort())
-            .toEqual(['sub.example.org', 'example.org'].sort());
+            .toEqual(['sub.example.org', 'example.org', 'org'].sort());
     });
 
     it('parses subdomains for localhost', () => {
         const request = new Request('http://localhost', 'http://localhost.test', RequestType.Other);
         expect(request.subdomains.sort()).toEqual(['localhost'].sort());
-        expect(request.sourceSubdomains.sort()).toEqual(['localhost.test'].sort());
+        expect(request.sourceSubdomains.sort()).toEqual(['localhost.test', 'test'].sort());
     });
 });
