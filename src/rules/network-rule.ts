@@ -41,45 +41,47 @@ export enum NetworkRuleOption {
     Elemhide = 1 << 3,
     /** $generichide modifier */
     Generichide = 1 << 4,
+    /** $specifichide modifier */
+    Specifichide = 1 << 5,
     /** $genericblock modifier */
-    Genericblock = 1 << 5,
+    Genericblock = 1 << 6,
     /** $jsinject modifier */
-    Jsinject = 1 << 6,
+    Jsinject = 1 << 7,
     /** $urlblock modifier */
-    Urlblock = 1 << 7,
+    Urlblock = 1 << 8,
     /** $content modifier */
-    Content = 1 << 8,
+    Content = 1 << 9,
     /** $extension modifier */
-    Extension = 1 << 9,
+    Extension = 1 << 10,
     /** $stealth modifier */
-    Stealth = 1 << 10,
+    Stealth = 1 << 11,
 
     // Content modifying
     // $empty modifier
-    Empty = 1 << 11,
+    Empty = 1 << 12,
     // $mp4 modifier
-    Mp4 = 1 << 12,
+    Mp4 = 1 << 13,
 
     // Other modifiers
 
     /** $popup modifier */
-    Popup = 1 << 13,
+    Popup = 1 << 14,
     /** $csp modifier */
-    Csp = 1 << 14,
+    Csp = 1 << 15,
     /** $replace modifier */
-    Replace = 1 << 15,
+    Replace = 1 << 16,
     /** $cookie modifier */
-    Cookie = 1 << 16,
+    Cookie = 1 << 17,
     /** $redirect modifier */
-    Redirect = 1 << 17,
+    Redirect = 1 << 18,
     /** $badfilter modifier */
-    Badfilter = 1 << 18,
+    Badfilter = 1 << 19,
     /** $removeparam modifier */
-    RemoveParam = 1 << 19,
+    RemoveParam = 1 << 20,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 20,
+    Network = 1 << 21,
 
     // Groups (for validation)
 
@@ -87,7 +89,15 @@ export enum NetworkRuleOption {
     BlacklistOnly = Empty | Mp4,
 
     /** Whitelist-only modifiers */
-    WhitelistOnly = Elemhide | Genericblock | Generichide | Jsinject | Urlblock | Content | Extension | Stealth,
+    WhitelistOnly = Elemhide
+        | Genericblock
+        | Generichide
+        | Specifichide
+        | Jsinject
+        | Urlblock
+        | Content
+        | Extension
+        | Stealth,
 
     /** Options supported by host-level network rules * */
     OptionHostLevelRulesOnly = Important | Badfilter,
@@ -954,6 +964,9 @@ export class NetworkRule implements rule.IRule {
                 break;
             case OPTIONS.GENERICHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Generichide, true);
+                break;
+            case OPTIONS.SPECIFICHIDE:
+                this.setOptionEnabled(NetworkRuleOption.Specifichide, true);
                 break;
             case OPTIONS.GENERICBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Genericblock, true);

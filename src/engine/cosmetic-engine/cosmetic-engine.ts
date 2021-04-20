@@ -104,6 +104,15 @@ export class CosmeticEngine {
     }
 
     /**
+     * Checks if bitwise mask matches option
+     * @param option
+     * @param targetOption
+     */
+    static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
+        return (option & targetOption) === targetOption;
+    }
+
+    /**
      * Prepares cosmetic result by request
      *
      * @param request - request to match
@@ -111,25 +120,20 @@ export class CosmeticEngine {
      * @return CosmeticResult
      */
     match(request: Request, option: CosmeticOption): CosmeticResult {
-        const includeCss = (option & CosmeticOption.CosmeticOptionCSS) === CosmeticOption.CosmeticOptionCSS;
-        const includeGeneric = (option
-            & CosmeticOption.CosmeticOptionGenericCSS) === CosmeticOption.CosmeticOptionGenericCSS;
+        const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
+        const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 
-        const includeJs = (option & CosmeticOption.CosmeticOptionJS) === CosmeticOption.CosmeticOptionJS;
-        const includeHtml = (option & CosmeticOption.CosmeticOptionHtml) === CosmeticOption.CosmeticOptionHtml;
+        const includeJs = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionJS);
+        const includeHtml = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionHtml);
 
         const cosmeticResult = new CosmeticResult();
 
-        if (includeCss) {
-            if (includeGeneric) {
-                CosmeticEngine.appendGenericRules(
-                    cosmeticResult.elementHiding,
-                    this.elementHidingLookupTable,
-                    request,
-                );
-                CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, request);
-            }
+        if (includeGeneric) {
+            CosmeticEngine.appendGenericRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
+            CosmeticEngine.appendGenericRules(cosmeticResult.CSS, this.cssLookupTable, request);
+        }
 
+        if (includeSpecific) {
             CosmeticEngine.appendSpecificRules(cosmeticResult.elementHiding, this.elementHidingLookupTable, request);
             CosmeticEngine.appendSpecificRules(cosmeticResult.CSS, this.cssLookupTable, request);
         }

@@ -47,6 +47,10 @@ export class RuleConverter {
 
     private static GENERICHIDE = 'generichide';
 
+    private static SHIDE_REGEX = /(.+[^#]\$.*)(shide)($|,.+)/i;
+
+    private static SPECIFICHIDE = 'specifichide';
+
     private static EHIDE_REGEX = /(.+[^#]\$.*)(ehide)($|,.+)/i;
 
     private static ELEMHIDE = 'elemhide';
@@ -524,6 +528,11 @@ export class RuleConverter {
             alias: 'ehide',
             regex: RuleConverter.EHIDE_REGEX,
             replacement: `$1${RuleConverter.ELEMHIDE}$3`,
+        },
+        {
+            alias: 'shide',
+            regex: RuleConverter.SHIDE_REGEX,
+            replacement: `$1${RuleConverter.SPECIFICHIDE}$3`,
         },
     ];
 

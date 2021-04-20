@@ -237,12 +237,16 @@ export class MatchingResult {
         let option = CosmeticOption.CosmeticOptionAll;
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Elemhide)) {
-            option ^= CosmeticOption.CosmeticOptionCSS;
             option ^= CosmeticOption.CosmeticOptionGenericCSS;
+            option ^= CosmeticOption.CosmeticOptionSpecificCSS;
         }
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Generichide)) {
             option ^= CosmeticOption.CosmeticOptionGenericCSS;
+        }
+
+        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Specifichide)) {
+            option ^= CosmeticOption.CosmeticOptionSpecificCSS;
         }
 
         if (this.basicRule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
