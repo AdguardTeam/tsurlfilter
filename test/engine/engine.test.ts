@@ -498,17 +498,25 @@ describe('Match subdomains', () => {
             .toBeTruthy();
     });
 
-    it('should find css rules with www for domains without www', () => {
-        const specificHidingRule = 'www.i.ua###Premium';
-        const rules = [specificHidingRule];
+    it('should find css rules with www only for domains with www', () => {
+        const specificHidingRuleWithWww = 'www.i.ua###Premium';
+        const specificHidingRuleWithoutWww = 'i.ua###Premium';
+        const rules = [
+            specificHidingRuleWithWww,
+            specificHidingRuleWithoutWww,
+        ];
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
         let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
-        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
 
+        res = engine.getCosmeticResult(createRequest('mail.i.ua'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
+
+        // both rules match
         res = engine.getCosmeticResult(createRequest('www.i.ua'), CosmeticOption.CosmeticOptionAll);
-        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+        expect(res.elementHiding.specific).toHaveLength(2);
     });
 
     it('should find js rules for subdomains', () => {
