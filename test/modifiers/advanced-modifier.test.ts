@@ -264,7 +264,7 @@ describe('NetworkRule - redirect-rule rules', () => {
         const redirectValue = 'noopjs';
         const rule = new NetworkRule(`||example.org/script.js$script,redirect-rule=${redirectValue}`, 0);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.RedirectRule));
+        expect(rule.isOptionEnabled(NetworkRuleOption.Redirect));
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
         expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
     });
@@ -273,7 +273,7 @@ describe('NetworkRule - redirect-rule rules', () => {
         const redirectValue = 'noopmp4-1s';
         const rule = new NetworkRule(`||example.org/test.mp4$media,redirect-rule=${redirectValue}`, 0);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.RedirectRule));
+        expect(rule.isOptionEnabled(NetworkRuleOption.Redirect));
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
         expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
     });

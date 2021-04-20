@@ -244,6 +244,70 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 });
 
+describe('TestEngineMatchRequest - redirect-rule modifier', () => {
+    it('checks if redirect-rule is found for blocked requests only', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||example.org/script.js',
+            '||example.org^$redirect-rule=noopjs',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request(
+            'https://example.org/script.js',
+            null,
+            RequestType.Script,
+        );
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe('||example.org^$redirect-rule=noopjs');
+
+        request = new Request(
+            'https://example.org/index.js',
+            null,
+            RequestType.Script,
+        );
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).toBeNull();
+    });
+
+    it('checks if redirect-rule is negated by whitelist $redirect rule', () => {
+        const baseRuleList = new StringRuleList(1, [
+            '||example.org/script.js',
+            '||example.org^$redirect-rule=noopjs',
+            '@@||example.org/script.js?unblock$redirect',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request(
+            'https://example.org/script.js',
+            null,
+            RequestType.Script,
+        );
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe('||example.org^$redirect-rule=noopjs');
+
+        request = new Request(
+            'https://example.org/index.js',
+            null,
+            RequestType.Script,
+        );
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).toBeNull();
+
+        request = new Request(
+            'https://example.org/script.js?unblock',
+            null,
+            RequestType.Script,
+        );
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe('||example.org/script.js');
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;

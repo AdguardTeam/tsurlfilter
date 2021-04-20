@@ -1,6 +1,7 @@
 import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { CosmeticOption } from './cosmetic-option';
+import { RedirectModifier } from '../modifiers/redirect-modifier';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
@@ -52,12 +53,6 @@ export class MatchingResult {
     public readonly redirectRules: NetworkRule[] | null;
 
     /**
-     * RedirectRule rule - a rule redirecting blocked requests
-     * See $redirect-rule modifier
-     */
-    private readonly redirectRuleRule: NetworkRule | null;
-
-    /**
      * RemoveParam rules - a set of rules modifying url query parameters
      * See $removeparam modifier
      */
@@ -84,7 +79,6 @@ export class MatchingResult {
         this.replaceRules = null;
         this.removeParamRules = null;
         this.redirectRules = null;
-        this.redirectRuleRule = null;
         this.cspRules = null;
         this.stealthRule = null;
 
@@ -154,10 +148,6 @@ export class MatchingResult {
                 this.redirectRules.push(rule);
                 continue;
             }
-            if (rule.isOptionEnabled(NetworkRuleOption.RedirectRule)) {
-                this.redirectRuleRule = rule;
-                continue;
-            }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
                 if (!this.cspRules) {
                     this.cspRules = [];
@@ -222,10 +212,6 @@ export class MatchingResult {
         const redirectRule = this.getRedirectRule();
         if (redirectRule) {
             return redirectRule;
-        }
-
-        if (this.redirectRuleRule && this.basicRule && !this.basicRule.isWhitelist()) {
-            return this.redirectRuleRule;
         }
 
         if (!this.basicRule) {
@@ -388,7 +374,20 @@ export class MatchingResult {
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
 
         result = result.filter((r) => !r.isWhitelist());
-        return result.length > 0 ? result[0] : null;
+
+        const resultRule = result.length > 0 ? result[0] : null;
+        if (!resultRule) {
+            return null;
+        }
+
+        const redirectModifier = resultRule.getAdvancedModifier() as RedirectModifier;
+        if (redirectModifier && redirectModifier.isRedirectingOnlyBlocked) {
+            if (!(this.basicRule && !this.basicRule.isWhitelist())) {
+                return null;
+            }
+        }
+
+        return resultRule;
     }
 
     /**

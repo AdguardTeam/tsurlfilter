@@ -72,16 +72,14 @@ export enum NetworkRuleOption {
     Cookie = 1 << 16,
     /** $redirect modifier */
     Redirect = 1 << 17,
-    /** $redirect-rule modifier */
-    RedirectRule = 1 << 18,
     /** $badfilter modifier */
-    Badfilter = 1 << 19,
+    Badfilter = 1 << 18,
     /** $removeparam modifier */
-    RemoveParam = 1 << 20,
+    RemoveParam = 1 << 19,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 21,
+    Network = 1 << 20,
 
     // Groups (for validation)
 
@@ -1097,8 +1095,8 @@ export class NetworkRule implements rule.IRule {
                 break;
 
             case OPTIONS.REDIRECTRULE:
-                this.setOptionEnabled(NetworkRuleOption.RedirectRule, true);
-                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist());
+                this.setOptionEnabled(NetworkRuleOption.Redirect, true);
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist(), true);
                 break;
 
             case OPTIONS.REMOVEPARAM:

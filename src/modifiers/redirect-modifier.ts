@@ -12,16 +12,24 @@ export class RedirectModifier implements IAdvancedModifier {
     private readonly redirectTitle: string;
 
     /**
+     * Is redirecting only blocked requests
+     * See $redirect-rule options
+     */
+    readonly isRedirectingOnlyBlocked: boolean = false;
+
+    /**
      * Constructor
      *
      * @param value
      * @param ruleText
      * @param isWhitelist
+     * @param isRedirectingOnlyBlocked is redirect-rule modifier
      */
-    constructor(value: string, ruleText: string, isWhitelist: boolean) {
+    constructor(value: string, ruleText: string, isWhitelist: boolean, isRedirectingOnlyBlocked = false) {
         RedirectModifier.validate(ruleText, value, isWhitelist);
 
         this.redirectTitle = value;
+        this.isRedirectingOnlyBlocked = isRedirectingOnlyBlocked;
     }
 
     /**
