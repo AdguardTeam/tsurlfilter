@@ -99,16 +99,28 @@ export class Request {
     * @returns array of subdomains
     */
     private getSubdomains = (tldResult: IResult): string[] => {
-        const { domain, hostname, subdomain } = tldResult;
+        const {
+            domain,
+            hostname,
+            subdomain,
+            publicSuffix,
+        } = tldResult;
+
+        const subdomainsResult = [];
 
         if (!domain) {
             if (hostname) {
-                return [hostname];
+                subdomainsResult.push(hostname);
+                return subdomainsResult;
             }
             return [];
         }
 
-        const subdomainsResult = [domain];
+        if (publicSuffix) {
+            subdomainsResult.push(publicSuffix);
+        }
+
+        subdomainsResult.push(domain);
 
         if (!subdomain) {
             return subdomainsResult;
