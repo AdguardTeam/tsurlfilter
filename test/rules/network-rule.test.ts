@@ -127,6 +127,12 @@ describe('NetworkRule constructor', () => {
         }).toThrow('cannot be used in blacklist rule');
     });
 
+    it('throws error if whitelist-only modifier used in blacklist rule - $specifichide', () => {
+        expect(() => {
+            new NetworkRule('||example.org^$specifichide', 0);
+        }).toThrow('cannot be used in blacklist rule');
+    });
+
     it('throws error if whitelist-only modifier used in blacklist rule - $elemhide', () => {
         expect(() => {
             new NetworkRule('||example.org^$elemhide', 0);

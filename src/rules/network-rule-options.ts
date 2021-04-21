@@ -7,6 +7,7 @@ export const NETWORK_RULE_OPTIONS = {
     DENYALLOW: 'denyallow',
     ELEMHIDE: 'elemhide',
     GENERICHIDE: 'generichide',
+    SPECIFICHIDE: 'specifichide',
     GENERICBLOCK: 'genericblock',
     JSINJECT: 'jsinject',
     URLBLOCK: 'urlblock',

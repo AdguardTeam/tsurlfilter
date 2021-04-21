@@ -1,5 +1,4 @@
 import { getPublicSuffix } from 'tldts';
-import { getCroppedDomain } from '../utils/url';
 
 /**
  * This is a helper class that is used specifically to work
@@ -41,7 +40,7 @@ export class DomainModifier {
 
         const parts = domains.split(sep);
         for (let i = 0; i < parts.length; i += 1) {
-            let domain = getCroppedDomain(parts[i]);
+            let domain = parts[i];
             let restricted = false;
             if (domain.startsWith('~')) {
                 restricted = true;

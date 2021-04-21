@@ -351,15 +351,21 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         expect(result.elementHiding.genericExtCss.length).toBe(1);
         expect(result.elementHiding.specificExtCss.length).toBe(1);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionCSS);
+        result = engine.getCosmeticResult(
+            createRequest('example.org'),
+            CosmeticOption.CosmeticOptionGenericCSS & CosmeticOption.CosmeticOptionSpecificCSS,
+        );
 
         expect(result.elementHiding.generic.length).toEqual(0);
-        expect(result.elementHiding.specific.length).toEqual(1);
+        expect(result.elementHiding.specific.length).toEqual(0);
         expect(result.elementHiding.genericExtCss.length).toBe(0);
-        expect(result.elementHiding.specificExtCss.length).toBe(1);
+        expect(result.elementHiding.specificExtCss.length).toBe(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'),
-            CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionGenericCSS);
+        result = engine.getCosmeticResult(
+            createRequest('example.org'),
+            CosmeticOption.CosmeticOptionGenericCSS
+            | CosmeticOption.CosmeticOptionSpecificCSS,
+        );
 
         expect(result.elementHiding.generic.length).toEqual(1);
         expect(result.elementHiding.specific.length).toEqual(1);
@@ -401,15 +407,20 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         expect(result.CSS.genericExtCss.length).toBe(1);
         expect(result.CSS.specificExtCss.length).toBe(1);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionCSS);
+        result = engine.getCosmeticResult(
+            createRequest('example.org'),
+            CosmeticOption.CosmeticOptionSpecificCSS & CosmeticOption.CosmeticOptionGenericCSS,
+        );
 
         expect(result.CSS.generic.length).toEqual(0);
-        expect(result.CSS.specific.length).toEqual(1);
+        expect(result.CSS.specific.length).toEqual(0);
         expect(result.CSS.genericExtCss.length).toBe(0);
-        expect(result.CSS.specificExtCss.length).toBe(1);
+        expect(result.CSS.specificExtCss.length).toBe(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'),
-            CosmeticOption.CosmeticOptionCSS | CosmeticOption.CosmeticOptionGenericCSS);
+        result = engine.getCosmeticResult(
+            createRequest('example.org'),
+            CosmeticOption.CosmeticOptionGenericCSS | CosmeticOption.CosmeticOptionSpecificCSS,
+        );
 
         expect(result.CSS.generic.length).toEqual(1);
         expect(result.CSS.specific.length).toEqual(1);
@@ -551,17 +562,25 @@ describe('Match subdomains', () => {
             .toBeTruthy();
     });
 
-    it('should find css rules with www for domains without www', () => {
-        const specificHidingRule = 'www.i.ua###Premium';
-        const rules = [specificHidingRule];
+    it('should find css rules with www only for domains with www', () => {
+        const specificHidingRuleWithWww = 'www.i.ua###Premium';
+        const specificHidingRuleWithoutWww = 'i.ua###Premium';
+        const rules = [
+            specificHidingRuleWithWww,
+            specificHidingRuleWithoutWww,
+        ];
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
         let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
-        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
 
+        res = engine.getCosmeticResult(createRequest('mail.i.ua'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
+
+        // both rules match
         res = engine.getCosmeticResult(createRequest('www.i.ua'), CosmeticOption.CosmeticOptionAll);
-        expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
+        expect(res.elementHiding.specific).toHaveLength(2);
     });
 
     it('should find js rules for subdomains', () => {
@@ -595,5 +614,51 @@ describe('Match subdomains', () => {
         expect(rulesTexts.includes(scriptletRule)).toBeTruthy();
         expect(rulesTexts.includes(subDomainScriptletRule)).toBeTruthy();
         expect(rulesTexts.includes(otherSubDomainScriptletRule)).toBeFalsy();
+    });
+
+    it('should match rules with tld domain only', () => {
+        const hidingRule = 'org##body';
+        const rules = [hidingRule];
+        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        let res = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
+
+        res = engine.getCosmeticResult(createRequest('www.example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
+    });
+});
+
+describe('$specifichide modifier', () => {
+    it('should not allowlist generic rules', () => {
+        const elemhideRule = 'example.org##div';
+        const cosmeticRule = 'example.org#$#div { display: none !important; }';
+        const genericCosmeticRule = '#$#div { display: none !important; }';
+        const genericElemhideRule = '##div';
+        const genericCssRuleWithExclusion = '~google.com#$#div { display: none !important }';
+        const specifichideRule = '@@||example.org^$specifichide';
+        const list = new StringRuleList(1, [
+            elemhideRule,
+            cosmeticRule,
+            genericCosmeticRule,
+            genericElemhideRule,
+            genericCssRuleWithExclusion,
+            specifichideRule,
+        ].join('\n'));
+        const engine = new Engine(new RuleStorage([list]));
+        const request = new Request('http://example.org', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+        const cosmeticResult = engine.getCosmeticResult(createRequest('example.org'), result.getCosmeticOption());
+        expect(cosmeticResult).toBeTruthy();
+        expect(cosmeticResult.elementHiding.specific).toHaveLength(0);
+        expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
+        expect(cosmeticResult.elementHiding.generic[0].getText()).toBe(genericElemhideRule);
+        expect(cosmeticResult.CSS.specific).toHaveLength(0);
+        expect(cosmeticResult.CSS.generic).toHaveLength(2);
+
+        const cssGenericRules = cosmeticResult.CSS.generic;
+        expect(cssGenericRules.some((rule) => rule.getText() === genericCssRuleWithExclusion)).toBeTruthy();
+        expect(cssGenericRules.some((rule) => rule.getText() === genericCosmeticRule)).toBeTruthy();
     });
 });

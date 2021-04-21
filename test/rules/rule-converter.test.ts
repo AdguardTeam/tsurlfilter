@@ -208,8 +208,9 @@ describe('Options', () => {
         checkConversionResult('||vcrypt.net^$inline-font,domain=example.org', '||vcrypt.net^$csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:,domain=example.org');
     });
 
-    it('converts ghide, ehide options', () => {
+    it('converts ghide, ehide, shide options', () => {
         checkConversionResult('@@||example.com^$ghide', '@@||example.com^$generichide');
+        checkConversionResult('@@||example.com^$shide', '@@||example.com^$specifichide');
         checkConversionResult('@@||example.com^$ehide', '@@||example.com^$elemhide');
         checkConversionResult('@@||example.com^$ehide,jsinject', '@@||example.com^$elemhide,jsinject');
     });

@@ -5,14 +5,16 @@
 export enum CosmeticOption {
     /**
      * if generic elemhide and CSS rules are enabled
-     * Could be disabled by a $generichide rule.
+     * Could be disabled by a $generichide rule and $elemhide rule.
      */
     CosmeticOptionGenericCSS = 1 << 1,
+
     /**
-     * if elemhide and CSS rules are enabled
-     * Could be disabled by an $elemhide rule.
+     * if specific elemhide and CSS rules are enabled
+     * Could be disabled by a $specifichide rule and $elemhide rule.
      */
-    CosmeticOptionCSS = 1 << 2,
+    CosmeticOptionSpecificCSS = 1 << 2,
+
     /**
      * if JS rules and scriptlets are enabled
      * Could be disabled by a $jsinject rule.
@@ -37,7 +39,10 @@ export enum CosmeticOption {
     /**
      * everything is enabled
      */
-    CosmeticOptionAll = CosmeticOptionGenericCSS | CosmeticOptionCSS | CosmeticOptionJS | CosmeticOptionHtml,
+    CosmeticOptionAll = CosmeticOptionGenericCSS
+        | CosmeticOptionSpecificCSS
+        | CosmeticOptionJS
+        | CosmeticOptionHtml,
 
     /**
      * everything is disabled
