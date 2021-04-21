@@ -83,6 +83,32 @@ describe('Element hiding rules constructor', () => {
             new CosmeticRule('example.org$@@$script[data-src="banner"]', 0);
         }).toThrow(new SyntaxError('Not a cosmetic rule'));
     });
+
+    it('works if it parses domain wildcard properly', () => {
+        let rule = new CosmeticRule('###banner', 0);
+        expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
+        expect(rule.getContent()).toEqual('#banner');
+        expect(rule.isWhitelist()).toBeFalsy();
+
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
+
+        rule = new CosmeticRule('*###banner', 0);
+        expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
+        expect(rule.getContent()).toEqual('#banner');
+        expect(rule.isWhitelist()).toBeFalsy();
+
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
+
+        rule = new CosmeticRule('*#@#.banner', 0);
+        expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
+        expect(rule.getContent()).toEqual('.banner');
+        expect(rule.isWhitelist()).toBeTruthy();
+
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
+    });
 });
 
 describe('CosmeticRule match', () => {
@@ -121,6 +147,12 @@ describe('CosmeticRule match', () => {
         expect(rule.match('yandex.com')).toEqual(false);
         expect(rule.match('www.yandex.ru')).toEqual(false);
         expect(rule.match('www.adguard.com')).toEqual(false);
+    });
+
+    it('works if it matches wildcard rule', () => {
+        const rule = new CosmeticRule('*##banner', 0);
+        expect(rule.match('example.org')).toEqual(true);
+        expect(rule.match('test.com')).toEqual(true);
     });
 });
 
