@@ -379,11 +379,21 @@ export class MatchingResult {
 
         result = result.filter((r) => !r.isWhitelist());
 
-        const resultRule = result.length > 0 ? result[0] : null;
-        if (!resultRule) {
+        const conditionalRedirectRules = result.filter((x) => {
+            const redirectModifier = x.getAdvancedModifier() as RedirectModifier;
+            return redirectModifier.isRedirectingOnlyBlocked;
+        });
+        const allWeatherRedirectRules = result.filter((x) => !conditionalRedirectRules.includes(x));
+
+        if (allWeatherRedirectRules.length > 0) {
+            return allWeatherRedirectRules[0];
+        }
+
+        if (conditionalRedirectRules.length === 0) {
             return null;
         }
 
+        const resultRule = conditionalRedirectRules[0];
         const redirectModifier = resultRule.getAdvancedModifier() as RedirectModifier;
         if (redirectModifier && redirectModifier.isRedirectingOnlyBlocked) {
             if (!(this.basicRule && !this.basicRule.isWhitelist())) {

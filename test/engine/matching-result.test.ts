@@ -572,6 +572,20 @@ describe('TestNewMatchingResult - redirect-rule rules', () => {
         expect(resultRule).toBeTruthy();
         expect(resultRule!.getText()).toBe('*$script,redirect-rule=noopjs,domain=example.org');
     });
+
+    it('checks if redirect and redirect-rule modifiers are ok together', () => {
+        const ruleTexts = [
+            '||example.org^$redirect-rule=noopjs',
+            '||example.org^$redirect=noopjs',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getBasicResult();
+        expect(found).not.toBeNull();
+        expect(found!.getText()).toBe('||example.org^$redirect=noopjs');
+    });
 });
 
 describe('TestNewMatchingResult - removeparam rules', () => {
