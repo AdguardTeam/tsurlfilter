@@ -186,6 +186,8 @@ export class MatchingResult {
      * @return {NetworkRule | null} basic result rule
      */
     getBasicResult(): NetworkRule | null {
+        const basic = this.basicRule || this.documentRule;
+
         // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#replace-modifier
         // 1. $replace rules have a higher priority than other basic rules (including exception rules).
         //  So if a request corresponds to two different rules one of which has the $replace modifier,
@@ -193,7 +195,6 @@ export class MatchingResult {
         // 2. Document-level exception rules with $content or $document modifiers do disable $replace rules
         //  for requests matching them.
         if (this.replaceRules) {
-            const basic = this.basicRule || this.documentRule;
             if (basic && basic.isWhitelist()) {
                 if (basic.isDocumentLevelWhitelistRule()) {
                     return basic;
@@ -208,17 +209,16 @@ export class MatchingResult {
             return null;
         }
 
+        // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#redirect-modifier
         // Redirect rules have a high priority
         const redirectRule = this.getRedirectRule();
         if (redirectRule) {
-            return redirectRule;
+            if (!basic || redirectRule.isHigherPriority(basic)) {
+                return redirectRule;
+            }
         }
 
-        if (!this.basicRule) {
-            return this.documentRule;
-        }
-
-        return this.basicRule;
+        return basic;
     }
 
     /**
@@ -386,14 +386,20 @@ export class MatchingResult {
         const allWeatherRedirectRules = result.filter((x) => !conditionalRedirectRules.includes(x));
 
         if (allWeatherRedirectRules.length > 0) {
-            return allWeatherRedirectRules[0];
+            return allWeatherRedirectRules.sort(
+                (a, b) => (b.isOptionEnabled(NetworkRuleOption.Important)
+                        && !a.isOptionEnabled(NetworkRuleOption.Important) ? 1 : -1),
+            )[0];
         }
 
         if (conditionalRedirectRules.length === 0) {
             return null;
         }
 
-        const resultRule = conditionalRedirectRules[0];
+        const resultRule = conditionalRedirectRules.sort(
+            (a, b) => (b.isOptionEnabled(NetworkRuleOption.Important)
+                        && !a.isOptionEnabled(NetworkRuleOption.Important) ? 1 : -1),
+        )[0];
         const redirectModifier = resultRule.getAdvancedModifier() as RedirectModifier;
         if (redirectModifier && redirectModifier.isRedirectingOnlyBlocked) {
             if (!(this.basicRule && !this.basicRule.isWhitelist())) {

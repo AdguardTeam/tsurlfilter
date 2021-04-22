@@ -558,6 +558,48 @@ describe('TestNewMatchingResult - redirect rules', () => {
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
     });
+
+    it('checks that it is possible to exclude all redirects with whitelist rule', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png',
+            '@@||ya.ru$document',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document');
+    });
+
+    it('checks that important redirect rule negates whitelist rule', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png,important',
+            '@@||ya.ru$document',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,important');
+    });
+
+    it('checks that important whitelist rule negates important redirect rule', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=2x2-transparent.png,important',
+            '@@||ya.ru$document,important',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
+    });
 });
 
 describe('TestNewMatchingResult - redirect-rule rules', () => {
