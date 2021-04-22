@@ -600,6 +600,30 @@ describe('TestNewMatchingResult - redirect rules', () => {
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
     });
+
+    it('checks that common whitelist rule negates redirect rule', () => {
+        const ruleTexts = [
+            '||*/redirect-exception-test.js$redirect=noopjs',
+            '@@||*/redirect-exception-test.js',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js');
+    });
+
+    it('checks that redirect whitelist rule negates redirect rule', () => {
+        const ruleTexts = [
+            '||*/redirect-exception-test.js$redirect=noopjs',
+            '@@||*/redirect-exception-test.js$redirect',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()).toBeNull();
+    });
 });
 
 describe('TestNewMatchingResult - redirect-rule rules', () => {
