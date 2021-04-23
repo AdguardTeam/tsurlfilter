@@ -22,6 +22,7 @@ describe('Query parameters', () => {
     it('checks regexp cleaning', () => {
         expect(utils.cleanUrlParamByRegExp('http://example.com', /.*/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test', /test.*/)).toEqual('http://example.com');
+        expect(utils.cleanUrlParamByRegExp('http://example.com?test', /test=/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1', /test=1/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1', /test.*/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1&stay=2', /test=1/)).toEqual('http://example.com?stay=2');
@@ -30,7 +31,7 @@ describe('Query parameters', () => {
     it('checks params cleaning', () => {
         expect(utils.cleanUrlParam('http://example.com', [])).toEqual('http://example.com');
         expect(utils.cleanUrlParam('http://example.com?test=1', ['test'])).toEqual('http://example.com');
-        expect(utils.cleanUrlParam('http://example.com?test', ['test'])).toEqual('http://example.com?test');
+        expect(utils.cleanUrlParam('http://example.com?test', ['test'])).toEqual('http://example.com');
         expect(utils.cleanUrlParam('http://example.com?test=1', ['not_test'])).toEqual('http://example.com?test=1');
         expect(utils.cleanUrlParam('http://example.com?not_test=1', ['test'])).toEqual('http://example.com?not_test=1');
         expect(utils.cleanUrlParam('http://example.com?test=1&stay=2', ['test'])).toEqual('http://example.com?stay=2');

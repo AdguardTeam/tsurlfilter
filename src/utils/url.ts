@@ -18,10 +18,17 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
     if (invert) {
         urlPieces[1] = urlPieces[1]
             .split('&')
+            .filter((x) => x)
             .filter((x) => x && x.match(regExp))
             .join('&');
     } else {
-        urlPieces[1] = urlPieces[1].replace(regExp, '');
+        urlPieces[1] = urlPieces[1]
+            .split('&')
+            .filter((x) => x)
+            .map((x) => (x.includes('=') ? x : `${x}=`))
+            .filter((x) => x && !x.match(regExp))
+            .map((x) => (x.endsWith('=') ? x.substring(0, x.length - 1) : x))
+            .join('&');
     }
 
     // Cleanup empty params (p0=0&=2&=3)
