@@ -4,6 +4,7 @@ import { ScriptletParser } from './scriptlet-parser';
 import { config } from '../../configuration';
 import { CosmeticContentResult } from './cosmetic-content-result';
 import { ADG_SCRIPTLET_MASK } from '../../rules/cosmetic-rule-marker';
+import { Request } from '../../request';
 
 /**
  * This class stores found script rules content in the appropriate collections
@@ -31,9 +32,10 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
     /**
      * Appends rule to appropriate collection
      * @param rule
+     * @param request
      */
-    append(rule: CosmeticRule): void {
-        CosmeticScriptsResult.setScriptCode(rule);
+    append(rule: CosmeticRule, request?: Request): void {
+        CosmeticScriptsResult.setScriptCode(rule, request);
 
         if (rule.isGeneric()) {
             this.generic.push(rule);
@@ -53,8 +55,9 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
      * Updates rule.script with js ready to execute
      *
      * @param rule
+     * @param request
      */
-    private static setScriptCode(rule: CosmeticRule): void {
+    private static setScriptCode(rule: CosmeticRule, request?: Request): void {
         if (rule.script && rule.scriptVerbose) {
             // Already done for this rule
             return;
@@ -85,6 +88,11 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         rule.script = Scriptlets.invoke(params);
 
         params.verbose = true;
+
+        // add domainName to reduce log output in the rules with multiple domains
+        if (request) {
+            params.domainName = request.domain;
+        }
         // eslint-disable-next-line no-param-reassign
         rule.scriptVerbose = Scriptlets.invoke(params);
     }

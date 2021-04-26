@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { NetworkRule } from '../../src';
+import { NetworkRule, NetworkRuleOption } from '../../src';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
@@ -259,6 +259,38 @@ describe('NetworkRule - redirect rules', () => {
     });
 });
 
+describe('NetworkRule - redirect-rule rules', () => {
+    it('works if redirect-rule modifier is correctly parsed', () => {
+        const redirectValue = 'noopjs';
+        const rule = new NetworkRule(`||example.org/script.js$script,redirect-rule=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Redirect));
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works if redirect-rule modifier is correctly parsed - mp4', () => {
+        const redirectValue = 'noopmp4-1s';
+        const rule = new NetworkRule(`||example.org/test.mp4$media,redirect-rule=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Redirect));
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works if it throws empty redirect-rule rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect-rule', 0);
+        }).toThrow(new SyntaxError('Invalid $redirect rule, redirect value must not be empty'));
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect-rule=space', 0);
+        }).toThrow(new SyntaxError('$redirect modifier is invalid'));
+    });
+});
+
 describe('NetworkRule - removeparam rules', () => {
     it('works if removeparam modifier is correctly parsed', () => {
         let rule = new NetworkRule('$removeparam=param', 0);
@@ -296,6 +328,7 @@ describe('NetworkRule - removeparam rules', () => {
         const comPage = 'http://example.com/page';
         expect(modifier.removeParameters(`${comPage}`)).toBe(`${comPage}`);
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1&p2=2&p3=3`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1&P2=2&P3=3`)).toBe(`${comPage}?p0=0`);
