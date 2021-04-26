@@ -167,7 +167,7 @@ export class CosmeticEngine {
         for (const genericRule of lookupTable.genericRules) {
             if (!lookupTable.isWhitelisted(request.hostname, genericRule)
                 && genericRule.match(request.hostname)) {
-                cosmeticResult.append(genericRule);
+                cosmeticResult.append(genericRule, request);
             }
         }
     }
@@ -187,7 +187,7 @@ export class CosmeticEngine {
         if (hostnameRules.length > 0) {
             for (const rule of hostnameRules) {
                 if (!lookupTable.isWhitelisted(request.hostname, rule)) {
-                    cosmeticResult.append(rule);
+                    cosmeticResult.append(rule, request);
                 }
             }
         }
