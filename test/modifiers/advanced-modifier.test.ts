@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { NetworkRule } from '../../src';
+import { NetworkRule, NetworkRuleOption } from '../../src';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
@@ -255,6 +255,38 @@ describe('NetworkRule - redirect rules', () => {
     it('works if it throws incorrect rule', () => {
         expect(() => {
             new NetworkRule('example.org/ads.js$script,redirect=space', 0);
+        }).toThrow(new SyntaxError('$redirect modifier is invalid'));
+    });
+});
+
+describe('NetworkRule - redirect-rule rules', () => {
+    it('works if redirect-rule modifier is correctly parsed', () => {
+        const redirectValue = 'noopjs';
+        const rule = new NetworkRule(`||example.org/script.js$script,redirect-rule=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Redirect));
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works if redirect-rule modifier is correctly parsed - mp4', () => {
+        const redirectValue = 'noopmp4-1s';
+        const rule = new NetworkRule(`||example.org/test.mp4$media,redirect-rule=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Redirect));
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works if it throws empty redirect-rule rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect-rule', 0);
+        }).toThrow(new SyntaxError('Invalid $redirect rule, redirect value must not be empty'));
+    });
+
+    it('works if it throws incorrect rule', () => {
+        expect(() => {
+            new NetworkRule('example.org/ads.js$script,redirect-rule=space', 0);
         }).toThrow(new SyntaxError('$redirect modifier is invalid'));
     });
 });

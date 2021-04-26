@@ -1107,6 +1107,11 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist());
                 break;
 
+            case OPTIONS.REDIRECTRULE:
+                this.setOptionEnabled(NetworkRuleOption.Redirect, true);
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist(), true);
+                break;
+
             case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
                 this.advancedModifier = new RemoveParamModifier(optionValue);
