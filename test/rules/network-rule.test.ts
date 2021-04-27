@@ -222,6 +222,34 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
     });
 
+    it('checks removeheader modifier compatibility', () => {
+        let correct = new NetworkRule('||example.org^$removeheader=header-name', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,important,match-case', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('@@||example.org^$removeheader', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,script', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,stylesheet', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeheader=header-name,~object', 0);
+        expect(correct).toBeTruthy();
+
+        expect(() => {
+            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,popup', 0);
+        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
+
+        expect(() => {
+            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,mp4', 0);
+        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
+    });
+
     it('works when it handles wide rules with $domain properly', () => {
         const rule = new NetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);

@@ -36,6 +36,7 @@ export const NETWORK_RULE_OPTIONS = {
     REDIRECT: 'redirect',
     REDIRECTRULE: 'redirect-rule',
     REMOVEPARAM: 'removeparam',
+    REMOVEHEADER: 'removeheader',
     APP: 'app',
     NETWORK: 'network',
     EXTENSION: 'extension',
