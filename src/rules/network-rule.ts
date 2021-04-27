@@ -1197,7 +1197,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
+        if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
+            || (this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
             !== NetworkRuleOption.RemoveHeaderCompatibleOptions) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }

@@ -232,14 +232,17 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('@@||example.org^$removeheader', 0);
         expect(correct).toBeTruthy();
 
-        correct = new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,script', 0);
-        expect(correct).toBeTruthy();
+        expect(() => {
+            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,script', 0);
+        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
 
-        correct = new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,stylesheet', 0);
-        expect(correct).toBeTruthy();
+        expect(() => {
+            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,stylesheet', 0);
+        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
 
-        correct = new NetworkRule('||example.org^$removeheader=header-name,~object', 0);
-        expect(correct).toBeTruthy();
+        expect(() => {
+            new NetworkRule('||example.org^$removeheader=header-name,~object', 0);
+        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
 
         expect(() => {
             new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,popup', 0);
