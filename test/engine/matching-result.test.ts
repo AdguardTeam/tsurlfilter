@@ -718,3 +718,44 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         expect(found.length).toBe(2);
     });
 });
+
+describe('TestNewMatchingResult - removeheader rules', () => {
+    it('works if removeheader rules are found', () => {
+        const rules = [
+            new NetworkRule('||example.org^$removeheader=header-name', 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveHeaderRules();
+        expect(found.length).toBe(rules.length);
+    });
+
+    it('works if whitelisted removeheader filter with same option is omitted', () => {
+        const ruleTexts = [
+            '||example.org^$removeheader=h1',
+            '||example.org^$removeheader=h2',
+            '@@||example.org^$removeheader=h1',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveHeaderRules();
+        expect(found.length).toBe(2);
+    });
+
+    it('work if @@||example.org^$removeheader will disable all $removeheader rules matching ||example.org^.', () => {
+        const whitelistRule = '@@||example.org^$removeheader';
+        const ruleTexts = [
+            '||example.org^$removeheader=h2',
+            whitelistRule,
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const result = new MatchingResult(rules, null);
+
+        const found = result.getRemoveHeaderRules();
+        expect(found.length).toBe(1);
+        expect(found[0].getText()).toBe(whitelistRule);
+    });
+});

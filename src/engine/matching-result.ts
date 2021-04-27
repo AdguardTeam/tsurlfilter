@@ -59,6 +59,12 @@ export class MatchingResult {
     public readonly removeParamRules: NetworkRule[] | null;
 
     /**
+     * RemoveHeader rules - a set of rules modifying headers
+     * See $removeheader modifier
+     */
+    public readonly removeHeaderRules: NetworkRule[] | null;
+
+    /**
      * StealthRule - this is a whitelist rule that negates stealth mode features
      * Note that the stealth rule can be be received from both rules and sourceRules
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
@@ -78,6 +84,7 @@ export class MatchingResult {
         this.cookieRules = null;
         this.replaceRules = null;
         this.removeParamRules = null;
+        this.removeHeaderRules = null;
         this.redirectRules = null;
         this.cspRules = null;
         this.stealthRule = null;
@@ -139,6 +146,13 @@ export class MatchingResult {
                     this.removeParamRules = [];
                 }
                 this.removeParamRules.push(rule);
+                continue;
+            }
+            if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+                if (!this.removeHeaderRules) {
+                    this.removeHeaderRules = [];
+                }
+                this.removeHeaderRules.push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
@@ -449,6 +463,18 @@ export class MatchingResult {
         }
 
         return MatchingResult.filterAdvancedModifierRules(this.removeParamRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+    }
+
+    /**
+     * Returns an array of removeheader rules
+     */
+    getRemoveHeaderRules(): NetworkRule[] {
+        if (!this.removeHeaderRules) {
+            return [];
+        }
+
+        return MatchingResult.filterAdvancedModifierRules(this.removeHeaderRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
     }
 
