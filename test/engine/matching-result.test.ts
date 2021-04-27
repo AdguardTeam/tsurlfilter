@@ -758,4 +758,43 @@ describe('TestNewMatchingResult - removeheader rules', () => {
         expect(found.length).toBe(1);
         expect(found[0].getText()).toBe(whitelistRule);
     });
+
+    it('work if document whitelist rule will disable all $removeheader rules ', () => {
+        const ruleTexts = [
+            '||example.org^$removeheader=h2',
+            '@@||example.org^$document',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const result = new MatchingResult(rules, null);
+
+        const found = result.getRemoveHeaderRules();
+        expect(found.length).toBe(0);
+    });
+
+    it('work if urlblock whitelist rule will disable all $removeheader rules ', () => {
+        const ruleTexts = [
+            '||example.org^$removeheader=h2',
+            '@@||example.org^$urlblock',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const result = new MatchingResult(rules, null);
+
+        const found = result.getRemoveHeaderRules();
+        expect(found.length).toBe(0);
+    });
+
+    it('work if whitelist rule will not disable $removeheader rules ', () => {
+        const ruleTexts = [
+            '||example.org^$removeheader=h2',
+            '@@||example.org^',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const result = new MatchingResult(rules, null);
+
+        const found = result.getRemoveHeaderRules();
+        expect(found.length).toBe(1);
+    });
 });

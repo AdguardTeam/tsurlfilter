@@ -474,6 +474,12 @@ export class MatchingResult {
             return [];
         }
 
+        if (this.basicRule
+            && this.basicRule.isWhitelist()
+            && this.basicRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
+            return [];
+        }
+
         return MatchingResult.filterAdvancedModifierRules(this.removeHeaderRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
     }
