@@ -1127,7 +1127,7 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.REMOVEHEADER:
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
-                this.advancedModifier = new RemoveHeaderModifier(optionValue);
+                this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isWhitelist());
                 break;
 
             case OPTIONS.APP: {
