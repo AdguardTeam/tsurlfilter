@@ -179,6 +179,18 @@ describe('Test cosmetic engine', () => {
         expect(negativeResult.elementHiding.generic.length).toEqual(2);
         expect(negativeResult.elementHiding.specific.length).toEqual(0);
     });
+
+    it('finds wildcard domain rules', () => {
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            `*##${genericRuleContent}`,
+        ]));
+
+        const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result).toBeDefined();
+
+        expect(result.elementHiding.generic.length).toEqual(1);
+        expect(result.elementHiding.specific.length).toEqual(0);
+    });
 });
 
 describe('Test cosmetic engine - JS rules', () => {

@@ -285,9 +285,12 @@ export class CosmeticRule implements rule.IRule {
             // This means that the marker is preceded by the list of domains
             // Now it's a good time to parse them.
             const domains = ruleText.substring(0, index);
-            const domainModifier = new DomainModifier(domains, ',');
-            this.permittedDomains = domainModifier.permittedDomains;
-            this.restrictedDomains = domainModifier.restrictedDomains;
+            // Skip wildcard domain
+            if (domains !== '*') {
+                const domainModifier = new DomainModifier(domains, ',');
+                this.permittedDomains = domainModifier.permittedDomains;
+                this.restrictedDomains = domainModifier.restrictedDomains;
+            }
         }
 
         this.whitelist = CosmeticRule.parseWhitelist(marker);
