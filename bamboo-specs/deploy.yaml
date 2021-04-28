@@ -24,7 +24,7 @@ npmjs:
             set -x
             ls -alt
 
-            export NPM_TOKEN=${bamboo.npmSecretTestToken}
+            export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             yarn install ${system.YARN_ARGS}
             yarn build
