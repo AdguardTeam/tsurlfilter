@@ -1,0 +1,40 @@
+---
+version: 2
+deployment:
+  name: tsurlfilter - deploy
+  source-plan: AJL-TSURLFILTERBUILD
+release-naming: ${bamboo.inject.version}
+environments:
+  - npmjs
+
+npmjs:
+  docker:
+    image: adguard/node-ssh:15.14--5
+    volumes:
+      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+  triggers: [ ]
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+            ls -alt
+
+            export NPM_TOKEN=${bamboo.npmSecretTestToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            yarn install ${system.YARN_ARGS}
+            yarn build
+            npm publish --access public
+  requirements:
+    - adg-docker: 'true'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
