@@ -39,7 +39,9 @@ export class HeadersService {
 
         rules.forEach((rule) => {
             if (HeadersService.applyRule(details.requestHeaders!, rule, true)) {
-                this.filteringLog.addRemoveHeaderEvent(details.tabId, rule.getAdvancedModifierValue()!, rule);
+                this.filteringLog.addRemoveHeaderEvent(
+                    details.tabId, details.url, rule.getAdvancedModifierValue()!, rule,
+                );
             }
         });
     }
@@ -50,21 +52,28 @@ export class HeadersService {
      *
      * @param details
      * @param rules
+     * @return if headers modified
      */
-    public onHeadersReceived(details: OnHeadersReceivedDetailsType, rules: NetworkRule[]): void {
+    public onHeadersReceived(details: OnHeadersReceivedDetailsType, rules: NetworkRule[]): boolean {
         if (!details.responseHeaders) {
-            return;
+            return false;
         }
 
         if (rules.length === 0) {
-            return;
+            return false;
         }
 
+        let result = false;
         rules.forEach((rule) => {
             if (HeadersService.applyRule(details.responseHeaders!, rule, false)) {
-                this.filteringLog.addRemoveHeaderEvent(details.tabId, rule.getAdvancedModifierValue()!, rule);
+                result = true;
+                this.filteringLog.addRemoveHeaderEvent(
+                    details.tabId, details.url, rule.getAdvancedModifierValue()!, rule,
+                );
             }
         });
+
+        return result;
     }
 
     /**

@@ -93,6 +93,7 @@ export class Application {
         this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
         this.cookieFiltering = new TSUrlFilter.CookieFiltering(this.filteringLog);
         this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
+        this.headersService = new TSUrlFilter.HeadersService(this.filteringLog);
         await this.redirectsService.init();
 
         console.log('Starting url filter engine..ok');
@@ -243,6 +244,10 @@ export class Application {
 
         this.cookieFiltering.onHeadersReceived(details);
 
+        if (this.headersService.onHeadersReceived(details, this.getRemoveHeaderRules(details))) {
+            responseHeadersModified = true;
+        }
+
         if (responseHeadersModified) {
             console.debug('Response headers modified');
             return { responseHeaders };
@@ -258,6 +263,7 @@ export class Application {
         this.cookieFiltering.onBeforeSendHeaders(details);
         // eslint-disable-next-line max-len
         this.stealthService.processRequestHeaders(details.url, TSUrlFilter.RequestType.Document, details.requestHeaders);
+        this.headersService.onBeforeSendHeaders(details, this.getRemoveHeaderRules(details));
     }
 
     /**
@@ -309,6 +315,18 @@ export class Application {
         const result = this.engine.matchRequest(request);
 
         return result.getReplaceRules();
+    }
+
+    /**
+     * Return $removeheader rules to apply
+     *
+     * @param details
+     */
+    getRemoveHeaderRules(details) {
+        const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
+        const result = this.engine.matchRequest(request);
+
+        return result.getRemoveHeaderRules();
     }
 
     /**

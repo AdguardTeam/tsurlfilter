@@ -56,6 +56,7 @@ export interface FilteringLog {
      */
     addRemoveHeaderEvent(
         tabId: number,
+        frameUrl: string,
         headerName: string,
         rule: NetworkRule,
     ): void;

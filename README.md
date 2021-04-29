@@ -393,6 +393,47 @@ More details on sample extension.
     }
 ```
 
+#### <a id="stealth-service"></a> HeadersService
+
+Headers service module, it provides headers modification functionality.
+See more about `$removeheader` modifier. 
+
+##### **Constructor**
+```
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    constructor(filteringLog: FilteringLog)
+```
+
+#####  **onBeforeSendHeaders**
+```
+    /**
+     * On before send headers handler.
+     * Removes request headers.
+     *
+     * @param details
+     * @param rules
+     */
+    public onHeadersReceived(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): void
+```
+
+##### **getCookieRules**
+```
+    /**
+     * On headers received handler.
+     * Remove response headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    public onHeadersReceived(details: OnHeadersReceivedDetailsType, rules: NetworkRule[]): boolean
+```
+
+
 #### <a id="cookie-filtering"></a> CookieFiltering
 Cookie filtering module applies `$cookie` rules.
 Adds a listener for `CookieApi.setOnChangedListener(..)` then applies rules from `RulesFinder` to event cookie.

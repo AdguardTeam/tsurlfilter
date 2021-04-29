@@ -62,9 +62,10 @@ describe('Headers service', () => {
     });
 
     it('checks removing response headers', () => {
-        headersService.onHeadersReceived({
+        const result = headersService.onHeadersReceived({
             ...details,
         } as OnHeadersReceivedDetailsType, []);
+        expect(result).toBeFalsy();
         expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
 
         const responseHeaders = [{

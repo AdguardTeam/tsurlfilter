@@ -168,6 +168,24 @@ export class FilteringLog {
     }
 
     /**
+     * Add header removed event
+     *
+     * @param {Number} tabId
+     * @param {String} frameUrl
+     * @param {String} headerName
+     * @param {Object} rule
+     */
+    addRemoveHeaderEvent(tabId, frameUrl, headerName, rule) {
+        const filteringEvent = {
+            eventType: 'HEADER',
+            headerName,
+            rule,
+        };
+
+        this.pushFilteringEvent(filteringEvent);
+    }
+
+    /**
      * Add dns event
      *
      * @param tabId
@@ -207,6 +225,10 @@ export class FilteringLog {
 
         if (event.eventType === 'STEALTH') {
             console.log(`[FILTERING-LOG] Request: ${event.frameUrl} Stealth action: ${event.action}`);
+        }
+
+        if (event.eventType === 'HEADER') {
+            console.log(`[FILTERING-LOG] Request: ${event.frameUrl} Header removed: ${event.headerName}`);
         }
 
         if (event.eventType === 'DNS') {
