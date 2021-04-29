@@ -393,7 +393,7 @@ More details on sample extension.
     }
 ```
 
-#### <a id="stealth-service"></a> HeadersService
+#### <a id="headers-service"></a> HeadersService
 
 Headers service module, it provides headers modification functionality.
 See more about `$removeheader` modifier. 
@@ -416,8 +416,9 @@ See more about `$removeheader` modifier.
      *
      * @param details
      * @param rules
+     * @return if headers modified
      */
-    public onHeadersReceived(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): void
+    public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): boolean
 ```
 
 ##### **getCookieRules**

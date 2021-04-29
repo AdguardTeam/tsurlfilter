@@ -27,23 +27,28 @@ export class HeadersService {
      *
      * @param details
      * @param rules
+     * @return if headers modified
      */
-    public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): void {
+    public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): boolean {
         if (!details.requestHeaders) {
-            return;
+            return false;
         }
 
         if (rules.length === 0) {
-            return;
+            return false;
         }
 
+        let result = false;
         rules.forEach((rule) => {
             if (HeadersService.applyRule(details.requestHeaders!, rule, true)) {
+                result = true;
                 this.filteringLog.addRemoveHeaderEvent(
                     details.tabId, details.url, rule.getAdvancedModifierValue()!, rule,
                 );
             }
         });
+
+        return result;
     }
 
     /**
