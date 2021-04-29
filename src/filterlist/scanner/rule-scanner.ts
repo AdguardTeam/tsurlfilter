@@ -3,6 +3,8 @@ import { RuleFactory } from '../../rules/rule-factory';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
+import { NetworkRule } from '../../rules/network-rule';
+import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
@@ -22,6 +24,11 @@ export class RuleScanner {
      * True if we should ignore javascript cosmetic rules
      */
     private readonly ignoreJS: boolean;
+
+    /**
+     * True if we should ignore unsafe rules, like $removeheader
+     */
+    private readonly ignoreUnsafe: boolean;
 
     /**
      * True if we should ignore network rules
@@ -61,10 +68,16 @@ export class RuleScanner {
      * @param scannerType scanner type
      * @param ignoreCosmetic if true, cosmetic rules will be ignored
      * @param ignoreJS if true, javascript cosmetic rules will be ignored
+     * @param ignoreUnsafe
      */
 
     constructor(
-        reader: ILineReader, listId: number, scannerType: ScannerType, ignoreCosmetic?: boolean, ignoreJS?: boolean,
+        reader: ILineReader,
+        listId: number,
+        scannerType: ScannerType,
+        ignoreCosmetic?: boolean,
+        ignoreJS?: boolean,
+        ignoreUnsafe?: boolean,
     ) {
         this.reader = reader;
         this.listId = listId;
@@ -75,6 +88,7 @@ export class RuleScanner {
         this.ignoreHost = (scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
 
         this.ignoreJS = !!ignoreJS;
+        this.ignoreUnsafe = !!ignoreUnsafe;
     }
 
     /**
@@ -140,7 +154,7 @@ export class RuleScanner {
      * @return is rule ignored
      */
     private isIgnored(rule: IRule): boolean {
-        if (!this.ignoreCosmetic && !this.ignoreJS) {
+        if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
             return false;
         }
 
@@ -149,7 +163,15 @@ export class RuleScanner {
                 return true;
             }
             // Ignore JS type rules
-            return (rule.getType() === CosmeticRuleType.Js);
+            return (this.ignoreJS && rule.getType() === CosmeticRuleType.Js);
+        }
+
+        if (this.ignoreUnsafe) {
+            if (rule instanceof NetworkRule) {
+                if (rule.getAdvancedModifier() && (rule.getAdvancedModifier() instanceof RemoveHeaderModifier)) {
+                    return true;
+                }
+            }
         }
 
         return false;
