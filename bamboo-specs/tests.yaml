@@ -3,7 +3,7 @@ version: 2
 plan:
   project-key: AJL
   key: TSURLFILTERTEST
-  name: tsurlfilter - test
+  name: tsurlfilter - tests
 variables:
   dockerJslBuilder: node:15.14.0-buster-slim
 
