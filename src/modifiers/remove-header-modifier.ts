@@ -8,6 +8,9 @@ import HttpHeaders = WebRequest.HttpHeaders;
  * Rules with $removeheader modifier are intended to remove headers from HTTP requests and responses.
  */
 export class RemoveHeaderModifier implements IAdvancedModifier {
+    /**
+     * List of forbidden headers
+     */
     private static FORBIDDEN_HEADERS = [
         'access-control-allow-origin',
         'access-control-allow-credentials',
@@ -60,7 +63,7 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     ];
 
     /**
-     * Prefixed headers are applied to request headers
+     * Request prefix
      */
     private static REQUEST_PREFIX = 'request:';
 
@@ -126,6 +129,7 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
 
     /**
      * Some headers are forbidden to remove
+     *
      * @param headerName
      */
     private static isAllowedHeader(headerName: string): boolean {
