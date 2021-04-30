@@ -68,7 +68,7 @@ export class RuleScanner {
      * @param scannerType scanner type
      * @param ignoreCosmetic if true, cosmetic rules will be ignored
      * @param ignoreJS if true, javascript cosmetic rules will be ignored
-     * @param ignoreUnsafe
+     * @param ignoreUnsafe if true, some `unsafe` rules will be ignored, $removeheader rules as an example
      */
 
     constructor(
