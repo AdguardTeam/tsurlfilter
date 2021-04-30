@@ -54,18 +54,31 @@ export class StringRuleList implements IRuleList {
     private readonly ignoreJS: boolean;
 
     /**
+     * Whether to ignore unsafe rules or not
+     */
+    private readonly ignoreUnsafe: boolean;
+
+    /**
      * Constructor
      *
      * @param listId
      * @param ruleText
      * @param ignoreCosmetic (Optional) default false
      * @param ignoreJS (Optional) default false
+     * @param ignoreUnsafe (Optional) default false
      */
-    constructor(listId: number, ruleText: string, ignoreCosmetic?: boolean, ignoreJS?: boolean) {
+    constructor(
+        listId: number,
+        ruleText: string,
+        ignoreCosmetic?: boolean,
+        ignoreJS?: boolean,
+        ignoreUnsafe?: boolean,
+    ) {
         this.id = listId;
         this.rulesText = ruleText;
         this.ignoreCosmetic = !!ignoreCosmetic;
         this.ignoreJS = !!ignoreJS;
+        this.ignoreUnsafe = !!ignoreUnsafe;
     }
 
     /**
@@ -93,7 +106,7 @@ export class StringRuleList implements IRuleList {
             scannerType,
             ignoreCosmetic: this.ignoreCosmetic,
             ignoreJS: this.ignoreJS,
-            ignoreUnsafe: this.ignoreJS,
+            ignoreUnsafe: this.ignoreUnsafe,
         });
     }
 

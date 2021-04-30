@@ -90,7 +90,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 
 ##### Starting engine
 ```
-    const list = new StringRuleList(listId, rulesText, false);
+    const list = new StringRuleList(listId, rulesText, false, false);
     const ruleStorage = new RuleStorage([list]);
 
     const config = {
