@@ -7,6 +7,35 @@ import { NetworkRule } from '../../rules/network-rule';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 
 /**
+ * Scanner configuration
+ * * @param scannerType scanner type
+ * @param ignoreCosmetic if true, cosmetic rules will be ignored
+ * @param ignoreJS if true, javascript cosmetic rules will be ignored
+ * @param ignoreUnsafe if true, some `unsafe` rules will be ignored, $removeheader rules as an example
+ */
+export interface RuleScannerConfiguration {
+    /**
+     * Scanner type
+     */
+    scannerType: ScannerType;
+
+    /**
+     * if true, cosmetic rules will be ignored
+     */
+    ignoreCosmetic?: boolean;
+
+    /**
+     * if true, javascript cosmetic rules will be ignored
+     */
+    ignoreJS?: boolean;
+
+    /**
+     * if true, some `unsafe` rules will be ignored, $removeheader rules as an example
+     */
+    ignoreUnsafe?: boolean;
+}
+
+/**
  * Rule scanner implements an interface for reading filtering rules.
  */
 export class RuleScanner {
@@ -65,30 +94,20 @@ export class RuleScanner {
      *
      * @param reader source of the filtering rules
      * @param listId filter list ID
-     * @param scannerType scanner type
-     * @param ignoreCosmetic if true, cosmetic rules will be ignored
-     * @param ignoreJS if true, javascript cosmetic rules will be ignored
-     * @param ignoreUnsafe if true, some `unsafe` rules will be ignored, $removeheader rules as an example
+     * @param configuration config object
      */
 
-    constructor(
-        reader: ILineReader,
-        listId: number,
-        scannerType: ScannerType,
-        ignoreCosmetic?: boolean,
-        ignoreJS?: boolean,
-        ignoreUnsafe?: boolean,
-    ) {
+    constructor(reader: ILineReader, listId: number, configuration: RuleScannerConfiguration) {
         this.reader = reader;
         this.listId = listId;
 
-        this.ignoreCosmetic = !!ignoreCosmetic
-            || ((scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules);
-        this.ignoreNetwork = (scannerType & ScannerType.NetworkRules) !== ScannerType.NetworkRules;
-        this.ignoreHost = (scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
+        this.ignoreCosmetic = !!configuration.ignoreCosmetic
+            || ((configuration.scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules);
+        this.ignoreNetwork = (configuration.scannerType & ScannerType.NetworkRules) !== ScannerType.NetworkRules;
+        this.ignoreHost = (configuration.scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
 
-        this.ignoreJS = !!ignoreJS;
-        this.ignoreUnsafe = !!ignoreUnsafe;
+        this.ignoreJS = !!configuration.ignoreJS;
+        this.ignoreUnsafe = !!configuration.ignoreUnsafe;
     }
 
     /**

@@ -8,7 +8,9 @@ describe('TestRuleScannerOfStringReader', () => {
         const filterList = '||example.org\n! test\n##banner';
 
         const reader = new StringLineReader(filterList);
-        const scanner = new RuleScanner(reader, 1, ScannerType.All, false);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All, ignoreCosmetic: false,
+        });
 
         expect(scanner.getRule()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();
@@ -44,7 +46,9 @@ describe('TestRuleScannerOfFileReader', () => {
 
         const reader = new FileLineReader(hostsPath);
 
-        const scanner = new RuleScanner(reader, 1, ScannerType.All, true);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All, ignoreCosmetic: true,
+        });
 
         let rulesCount = 0;
         while (scanner.scan()) {
@@ -67,7 +71,12 @@ describe('Rule Scanner Flags', () => {
 
     it('works if scanner respects ignoreJS flag', () => {
         const reader = new StringLineReader(filterList);
-        const scanner = new RuleScanner(reader, 1, ScannerType.All, false, true, false);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All,
+            ignoreCosmetic: true,
+            ignoreJS: true,
+            ignoreUnsafe: false,
+        });
 
         expect(scanner.getRule()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();
@@ -94,7 +103,12 @@ describe('Rule Scanner Flags', () => {
 
     it('works if scanner respects ignoreUnsafe flag', () => {
         const reader = new StringLineReader(filterList);
-        const scanner = new RuleScanner(reader, 1, ScannerType.All, false, false, true);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All,
+            ignoreCosmetic: false,
+            ignoreJS: false,
+            ignoreUnsafe: true,
+        });
 
         expect(scanner.getRule()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();

@@ -89,7 +89,12 @@ export class StringRuleList implements IRuleList {
      */
     newScanner(scannerType: ScannerType): RuleScanner {
         const reader = new StringLineReader(this.rulesText);
-        return new RuleScanner(reader, this.id, scannerType, this.ignoreCosmetic, this.ignoreJS, this.ignoreJS);
+        return new RuleScanner(reader, this.id, {
+            scannerType,
+            ignoreCosmetic: this.ignoreCosmetic,
+            ignoreJS: this.ignoreJS,
+            ignoreUnsafe: this.ignoreJS,
+        });
     }
 
     /**
