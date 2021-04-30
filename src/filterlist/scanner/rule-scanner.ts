@@ -8,7 +8,8 @@ import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 
 /**
  * Scanner configuration
- * * @param scannerType scanner type
+ *
+ * @param scannerType type of scanner
  * @param ignoreCosmetic if true, cosmetic rules will be ignored
  * @param ignoreJS if true, javascript cosmetic rules will be ignored
  * @param ignoreUnsafe if true, some `unsafe` rules will be ignored, $removeheader rules as an example
