@@ -63,9 +63,6 @@ export class Application {
     async startEngine(rulesText) {
         console.log('Starting url filter engine');
 
-        const list = new TSUrlFilter.StringRuleList(1, rulesText, false);
-        const ruleStorage = new TSUrlFilter.RuleStorage([list]);
-
         const config = {
             engine: 'extension',
             // eslint-disable-next-line no-undef
@@ -81,18 +78,30 @@ export class Application {
             sendDoNotTrack: true,
             stripTrackingParameters: true,
             trackingParameters: 'utm_source,utm_medium,utm_term',
-            selfDestructThirdPartyCookies: false,
-            selfDestructThirdPartyCookiesTime: 0,
+            selfDestructThirdPartyCookies: true,
+            selfDestructThirdPartyCookiesTime: 2880,
             selfDestructFirstPartyCookies: false,
             selfDestructFirstPartyCookiesTime: 1,
         };
 
         TSUrlFilter.setConfiguration(config);
+
+        // get stealth mode before engine start rules
+        const STEALTH_MODE_FILTER_ID = -1;
+        this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
+        const stealthModeList = new TSUrlFilter.StringRuleList(
+            STEALTH_MODE_FILTER_ID,
+            this.stealthService.getCookieRulesTexts().join('\n'),
+            false,
+        );
+
+        const list = new TSUrlFilter.StringRuleList(1, rulesText, false);
+        const ruleStorage = new TSUrlFilter.RuleStorage([list, stealthModeList]);
+
         this.engine = new TSUrlFilter.Engine(ruleStorage);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
         this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
         this.cookieFiltering = new TSUrlFilter.CookieFiltering(this.filteringLog);
-        this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
         await this.redirectsService.init();
 
         console.log('Starting url filter engine..ok');
@@ -183,7 +192,8 @@ export class Application {
 
         // This is a mock request, to do it properly we should pass main frame request with correct cosmetic option
         const { hostname } = new URL(url);
-        const cosmeticResult = this.engine.getCosmeticResult(hostname, TSUrlFilter.CosmeticOption.CosmeticOptionAll);
+        const request = new TSUrlFilter.Request(hostname, null, TSUrlFilter.RequestType.Document);
+        const cosmeticResult = this.engine.getCosmeticResult(request, TSUrlFilter.CosmeticOption.CosmeticOptionAll);
         console.debug(cosmeticResult);
 
         applyCss(tabId, cosmeticResult);
@@ -328,16 +338,11 @@ export class Application {
      *
      * @param request
      * @param matchingResult
-     * @return {*|NetworkRule[]}
+     * @return {NetworkRule[]}
      */
     getCookieRules(request, matchingResult) {
         const cookieRules = matchingResult.getCookieRules();
-        if (cookieRules.length > 0) {
-            return cookieRules;
-        }
-
-        // If cookie rules not found - apply stealth rules
-        return this.stealthService.getCookieRules(request);
+        return cookieRules;
     }
 
     /**

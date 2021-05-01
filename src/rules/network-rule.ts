@@ -184,11 +184,6 @@ export class NetworkRule implements rule.IRule {
     private appModifier: IAppModifier | null = null;
 
     /**
-     * Marks the rule as stealth mode generated one
-     */
-    public isStealthModeRule: boolean | undefined;
-
-    /**
      * Separates the rule pattern from the list of modifiers.
      *
      * ```

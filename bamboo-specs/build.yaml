@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERBUILD
   name: tsurlfilter - build
 variables:
-  dockerJslBuilder: node:15.14.0-buster-slim
+  dockerContainer: node:15.14.0-buster-slim
 
 stages:
   - Build:
@@ -19,7 +19,7 @@ Build:
   other:
     clean-working-dir: true
   docker:
-    image: "${bamboo.dockerJslBuilder}"
+    image: "${bamboo.dockerContainer}"
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:

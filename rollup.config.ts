@@ -74,6 +74,12 @@ const browserConfig = {
             sourcemap: false,
         },
         {
+            file: 'dist/tsurlfilter.browser.esm.js',
+            name: camelCase(libraryName),
+            format: 'esm',
+            sourcemap: false,
+        },
+        {
             file: pkg.iife,
             name: libraryName,
             format: 'iife',

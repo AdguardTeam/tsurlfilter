@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERINCR
   name: tsurlfilter - increment
 variables:
-  dockerJslBuilder: node:15.14.0-buster-slim
+  dockerContainer: node:15.14.0-buster-slim
 
 stages:
   - Increment:
@@ -17,7 +17,7 @@ stages:
 Increment:
   key: INCR
   docker:
-    image: "${bamboo.dockerJslBuilder}"
+    image: "${bamboo.dockerContainer}"
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:

@@ -418,6 +418,11 @@ export class MatchingResult {
             return [];
         }
 
+        const basic = this.getBasicResult();
+        if (basic?.isDocumentWhitelistRule()) {
+            return [];
+        }
+
         const whitelistPredicate = (rule: NetworkRule) => (
             (whiteRule: NetworkRule): boolean => {
                 const whiteRuleCookieModifier = whiteRule.getAdvancedModifier() as CookieModifier;

@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERTEST
   name: tsurlfilter - tests
 variables:
-  dockerJslBuilder: node:15.14.0-buster-slim
+  dockerContainer: node:15.14.0-buster-slim
 
 stages:
   - Test:
@@ -17,7 +17,7 @@ stages:
 Test:
   key: TEST
   docker:
-    image: "${bamboo.dockerJslBuilder}"
+    image: "${bamboo.dockerContainer}"
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
