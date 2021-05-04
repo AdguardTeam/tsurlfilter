@@ -435,6 +435,20 @@ describe('TestNewMatchingResult - cookie rules', () => {
         expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
         expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistRegexpText);
     });
+
+    it('returns empty list if document whitelist rule added', () => {
+        const documentWhitelistRule = '@@||example.com^$document';
+        const rules = [
+            new NetworkRule(cookieRuleTextOne, 0),
+            new NetworkRule(cookieRuleTextTwo, 0),
+        ];
+        const sourceRules = [
+            new NetworkRule(documentWhitelistRule, 0),
+        ];
+        const result = new MatchingResult(rules, sourceRules);
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toEqual([]);
+    });
 });
 
 describe('TestNewMatchingResult - stealth modifier', () => {

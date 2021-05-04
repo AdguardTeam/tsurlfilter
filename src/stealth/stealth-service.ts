@@ -1,6 +1,4 @@
 import { WebRequest } from 'webextension-polyfill-ts';
-import { Request } from '../request';
-import { NetworkRule } from '../rules/network-rule';
 import { findHeaderByName, removeHeader } from '../utils/headers';
 import { getHost, isThirdPartyRequest, cleanUrlParam } from '../utils/url';
 import { RequestType } from '../request-type';
@@ -156,27 +154,15 @@ export class StealthService {
     /**
      * Returns synthetic set of rules matching the specified request
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public getCookieRules(request: Request): NetworkRule[] {
-        const result: NetworkRule[] = [];
+    public getCookieRulesTexts(): string[] {
+        const result: string[] = [];
 
-        // Remove cookie header for first-party requests
-        const blockCookies = this.config.selfDestructFirstPartyCookies;
-        if (blockCookies) {
-            result.push(StealthService.generateRemoveRule(this.config.selfDestructFirstPartyCookiesTime));
+        if (this.config.selfDestructFirstPartyCookies) {
+            result.push(StealthService.generateCookieRuleText(this.config.selfDestructFirstPartyCookiesTime));
         }
 
-        const blockThirdPartyCookies = this.config.selfDestructThirdPartyCookies;
-        if (!blockThirdPartyCookies) {
-            return result;
-        }
-
-        // eslint-disable-next-line prefer-destructuring
-        const thirdParty = request.thirdParty;
-        const isMainFrame = request.requestType === RequestType.Document;
-
-        if (thirdParty && !isMainFrame) {
-            result.push(StealthService.generateRemoveRule(this.config.selfDestructThirdPartyCookiesTime));
+        if (this.config.selfDestructThirdPartyCookies) {
+            result.push(StealthService.generateCookieRuleText(this.config.selfDestructThirdPartyCookiesTime, true));
         }
 
         return result;
@@ -237,13 +223,14 @@ export class StealthService {
     /**
      * Generates rule removing cookies
      *
-     * @param {number} maxAgeMinutes Cookie maxAge in minutes
+     * @param maxAgeMinutes Cookie maxAge in minutes
+     * @param isThirdParty Flag for generating third-party rule texts
      */
-    private static generateRemoveRule(maxAgeMinutes: number): NetworkRule {
+    private static generateCookieRuleText(maxAgeMinutes: number, isThirdParty = false): string {
         const maxAgeOption = maxAgeMinutes > 0 ? `;maxAge=${maxAgeMinutes * 60}` : '';
-        const rule = new NetworkRule(`$cookie=/.+/${maxAgeOption}`, 0);
-        rule.isStealthModeRule = true;
-        return rule;
+        const thirdPartyOption = isThirdParty ? ',third-party' : '';
+        const ruleText = `$cookie=/.+/${maxAgeOption}${thirdPartyOption}`;
+        return ruleText;
     }
 
     /**

@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.4.21",
+  "version": "0.4.24",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
@@ -27,7 +27,7 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal && node tasks/build-txt",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
@@ -40,7 +40,8 @@
     "commit": "git-cz",
     "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "increment": "yarn version --patch --no-git-tag-version"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [

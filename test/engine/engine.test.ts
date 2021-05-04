@@ -662,3 +662,28 @@ describe('$specifichide modifier', () => {
         expect(cssGenericRules.some((rule) => rule.getText() === genericCosmeticRule)).toBeTruthy();
     });
 });
+
+describe('Stealth cookie rules', () => {
+    it('whitelists stealth cookie rules', () => {
+        const stealthCookieRule = '$cookie=/.+/;maxAge=60';
+        let list = new StringRuleList(1, [
+            stealthCookieRule,
+        ].join('\n'));
+        let engine = new Engine(new RuleStorage([list]));
+        let request = new Request('http://example.org', '', RequestType.Document);
+        let result = engine.matchRequest(request);
+        let cookieRules = result.getCookieRules();
+        expect(cookieRules[0].getText()).toBe(stealthCookieRule);
+
+        const allowlistRule = '@@||example.org^$stealth,removeparam,cookie';
+        list = new StringRuleList(1, [
+            stealthCookieRule,
+            allowlistRule,
+        ].join('\n'));
+        engine = new Engine(new RuleStorage([list]));
+        request = new Request('http://example.org', '', RequestType.Document);
+        result = engine.matchRequest(request);
+        cookieRules = result.getCookieRules();
+        expect(cookieRules[0].getText()).toBe(allowlistRule);
+    });
+});

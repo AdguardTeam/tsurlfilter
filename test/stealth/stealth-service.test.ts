@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
 import { StealthActions, StealthConfig, StealthService } from '../../src/stealth/stealth-service';
-import { Request } from '../../src';
 import { RequestType } from '../../src/request-type';
 
 describe('Stealth service - tracking parameters', () => {
@@ -66,46 +65,52 @@ describe('Stealth service - cookies', () => {
         };
     });
 
-    it('checks first-party cookies', () => {
+    it('returns first-party cookies', () => {
         config.selfDestructFirstPartyCookies = true;
         config.selfDestructFirstPartyCookiesTime = 1;
 
         const service = new StealthService(config);
 
-        let request = new Request('https://example.org', '', RequestType.Document);
-        let cookieRules = service.getCookieRules(request);
-        expect(cookieRules).toHaveLength(1);
-        expect(cookieRules[0].getText()).toBe('$cookie=/.+/;maxAge=60');
-        expect(cookieRules[0].isStealthModeRule).toBeTruthy();
-
-        request = new Request('https://example.org', '', RequestType.Image);
-        cookieRules = service.getCookieRules(request);
-        expect(cookieRules).toHaveLength(1);
-        expect(cookieRules[0].getText()).toBe('$cookie=/.+/;maxAge=60');
-        expect(cookieRules[0].isStealthModeRule).toBeTruthy();
+        const cookieRulesTexts = service.getCookieRulesTexts();
+        expect(cookieRulesTexts).toHaveLength(1);
+        expect(cookieRulesTexts[0]).toBe('$cookie=/.+/;maxAge=60');
     });
 
-    it('checks third-party cookies', () => {
-        config.selfDestructThirdPartyCookies = true;
-        config.selfDestructThirdPartyCookiesTime = 0;
+    it('returns third-party cookies', () => {
         config.selfDestructFirstPartyCookies = false;
         config.selfDestructFirstPartyCookiesTime = 0;
 
+        config.selfDestructThirdPartyCookies = true;
+        config.selfDestructThirdPartyCookiesTime = 1;
+
+        let service = new StealthService(config);
+
+        let cookieRules = service.getCookieRulesTexts();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0]).toBe('$cookie=/.+/;maxAge=60,third-party');
+
+        config.selfDestructThirdPartyCookies = true;
+        config.selfDestructThirdPartyCookiesTime = 0;
+
+        service = new StealthService(config);
+
+        cookieRules = service.getCookieRulesTexts();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0]).toBe('$cookie=/.+/,third-party');
+    });
+
+    it('returns third-party and first-party cookies together', () => {
+        config.selfDestructFirstPartyCookies = true;
+        config.selfDestructFirstPartyCookiesTime = 0;
+        config.selfDestructThirdPartyCookies = true;
+        config.selfDestructThirdPartyCookiesTime = 1;
+
         const service = new StealthService(config);
 
-        let request = new Request('https://example.org', 'https://source.com', RequestType.Subdocument);
-        let cookieRules = service.getCookieRules(request);
-        expect(cookieRules).toHaveLength(1);
-        expect(cookieRules[0].getText()).toBe('$cookie=/.+/');
-        expect(cookieRules[0].isStealthModeRule).toBeTruthy();
-
-        request = new Request('https://example.org', 'https://source.com', RequestType.Document);
-        cookieRules = service.getCookieRules(request);
-        expect(cookieRules).toHaveLength(0);
-
-        request = new Request('https://example.org', '', RequestType.Subdocument);
-        cookieRules = service.getCookieRules(request);
-        expect(cookieRules).toHaveLength(0);
+        const cookieRules = service.getCookieRulesTexts();
+        expect(cookieRules).toHaveLength(2);
+        expect(cookieRules.some((rule) => rule === '$cookie=/.+/;maxAge=60,third-party')).toBeTruthy();
+        expect(cookieRules.some((rule) => rule === '$cookie=/.+/')).toBeTruthy();
     });
 });
 
