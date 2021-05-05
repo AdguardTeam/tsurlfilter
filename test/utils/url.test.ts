@@ -26,6 +26,7 @@ describe('Query parameters', () => {
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1', /test=1/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1', /test.*/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1&stay=2', /test=1/)).toEqual('http://example.com?stay=2');
+        expect(utils.cleanUrlParamByRegExp('https://example.com/??.comments.js?v=1619510974', /comments/)).toEqual('https://example.com/');
     });
 
     it('checks params cleaning', () => {
@@ -36,6 +37,7 @@ describe('Query parameters', () => {
         expect(utils.cleanUrlParam('http://example.com?not_test=1', ['test'])).toEqual('http://example.com?not_test=1');
         expect(utils.cleanUrlParam('http://example.com?test=1&stay=2', ['test'])).toEqual('http://example.com?stay=2');
         expect(utils.cleanUrlParam('http://example.com?test=1&remove=2', ['test', 'remove'])).toEqual('http://example.com');
+        expect(utils.cleanUrlParam('https://example.com/??.comments.js?v=1619510974', ['v'])).toEqual('https://example.com/??.comments.js?v=1619510974');
     });
 
     it('checks inverted regexp cleaning', () => {
