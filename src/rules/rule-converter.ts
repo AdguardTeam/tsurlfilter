@@ -63,6 +63,14 @@ export class RuleConverter {
 
     private static DOC_REPLACEMENT = '$1document$3';
 
+    private static UBO_RESPONSE_HEADER = '#^responseheader(';
+
+    private static UBO_RESPONSE_HEADER_REGEX = /##\^responseheader\((?!\/.+\/\))/i;
+
+    private static UBO_RESPONSE_HEADER_EXCEPTION_REGEX = /#@#\^responseheader\((?!\/.+\/\))/i;
+
+    private static UBO_RESPONSE_HEADER_REPLACEMENT = '^$removeheader=';
+
     /**
      * Rule masks
      */
@@ -124,6 +132,11 @@ export class RuleConverter {
         converted = RuleConverter.convertRemoveRule(converted);
         converted = RuleConverter.replaceOptions(converted);
         converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
+
+        const removeHeaderRule = RuleConverter.convertUboResponseHeaderRule(converted);
+        if (removeHeaderRule) {
+            return [removeHeaderRule];
+        }
 
         const scriptlet = Scriptlets.convertScriptletToAdg(converted);
         if (scriptlet) {
@@ -462,6 +475,36 @@ export class RuleConverter {
         }
 
         return rule;
+    }
+
+    /**
+     * Converts '^responseheader()' rule to AdGuard's $removeheader modifier
+     * "ya.ru##^responseheader(header-name)" -> "||ya.ru^$removeheader=header-name"
+     *
+     * @param {string} ruleText
+     * @return {string} ruleText or converted rule
+     */
+    private static convertUboResponseHeaderRule(ruleText: string): string|null {
+        if (ruleText.startsWith(SimpleRegex.MASK_COMMENT) || !ruleText.includes(RuleConverter.UBO_RESPONSE_HEADER)) {
+            return null;
+        }
+
+        if (RuleConverter.UBO_RESPONSE_HEADER_REGEX.test(ruleText)) {
+            return `||${
+                ruleText.replace(RuleConverter.UBO_RESPONSE_HEADER_REGEX, RuleConverter.UBO_RESPONSE_HEADER_REPLACEMENT)
+                    .slice(0, -1)
+            }`;
+        }
+
+        if (RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX.test(ruleText)) {
+            return `@@||${
+                ruleText.replace(
+                    RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX, RuleConverter.UBO_RESPONSE_HEADER_REPLACEMENT,
+                ).slice(0, -1)
+            }`;
+        }
+
+        return ruleText;
     }
 
     /**

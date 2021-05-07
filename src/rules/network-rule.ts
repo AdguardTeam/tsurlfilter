@@ -10,6 +10,7 @@ import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
+import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 import {
@@ -78,10 +79,12 @@ export enum NetworkRuleOption {
     Badfilter = 1 << 19,
     /** $removeparam modifier */
     RemoveParam = 1 << 20,
+    /** $removeheader modifier */
+    RemoveHeader = 1 << 21,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 21,
+    Network = 1 << 22,
 
     // Groups (for validation)
 
@@ -105,7 +108,12 @@ export enum NetworkRuleOption {
     /**
      * Removeparam compatible modifiers
      */
-    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase,
+
+    /**
+     * Removeheader compatible modifiers
+     */
+    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase
 }
 
 /**
@@ -1112,6 +1120,11 @@ export class NetworkRule implements rule.IRule {
                 this.advancedModifier = new RemoveParamModifier(optionValue);
                 break;
 
+            case OPTIONS.REMOVEHEADER:
+                this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
+                this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isWhitelist());
+                break;
+
             case OPTIONS.APP: {
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
                     throw new SyntaxError('Extension doesn\'t support $app modifier');
@@ -1156,6 +1169,8 @@ export class NetworkRule implements rule.IRule {
     private validateOptions(): void {
         if (this.advancedModifier instanceof RemoveParamModifier) {
             this.validateRemoveParamRule();
+        } else if (this.advancedModifier instanceof RemoveHeaderModifier) {
+            this.validateRemoveHeaderRule();
         }
     }
 
@@ -1168,6 +1183,19 @@ export class NetworkRule implements rule.IRule {
             || (this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
             !== NetworkRuleOption.RemoveParamCompatibleOptions) {
             throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
+        }
+    }
+
+    /**
+     * $removeheader rules are not compatible with any other modifiers except $domain,
+     * $third-party, $app, $important, $match-case and content type modifiers (e.g. $script, $stylesheet, etc).
+     * The rules with any other modifiers are considered invalid and will be discarded.
+     */
+    private validateRemoveHeaderRule(): void {
+        if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
+            || (this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
+            !== NetworkRuleOption.RemoveHeaderCompatibleOptions) {
+            throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }
     }
 

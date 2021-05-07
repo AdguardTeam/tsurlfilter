@@ -46,4 +46,18 @@ export interface FilteringLog {
         cookieRule: NetworkRule,
         isModifyingCookieRule: boolean,
         thirdParty: boolean): void;
+
+    /**
+     * Add header removed event
+     *
+     * @param tabId
+     * @param headerName
+     * @param rule
+     */
+    addRemoveHeaderEvent(
+        tabId: number,
+        frameUrl: string,
+        headerName: string,
+        rule: NetworkRule,
+    ): void;
 }

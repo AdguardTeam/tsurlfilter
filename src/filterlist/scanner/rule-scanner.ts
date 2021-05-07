@@ -3,6 +3,38 @@ import { RuleFactory } from '../../rules/rule-factory';
 import { ILineReader } from '../reader/line-reader';
 import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
+import { NetworkRule } from '../../rules/network-rule';
+import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
+
+/**
+ * Scanner configuration
+ *
+ * @param scannerType type of scanner
+ * @param ignoreCosmetic if true, cosmetic rules will be ignored
+ * @param ignoreJS if true, javascript cosmetic rules will be ignored
+ * @param ignoreUnsafe if true, some `unsafe` rules will be ignored, $removeheader rules as an example
+ */
+export interface RuleScannerConfiguration {
+    /**
+     * Scanner type
+     */
+    scannerType: ScannerType;
+
+    /**
+     * if true, cosmetic rules will be ignored
+     */
+    ignoreCosmetic?: boolean;
+
+    /**
+     * if true, javascript cosmetic rules will be ignored
+     */
+    ignoreJS?: boolean;
+
+    /**
+     * if true, some `unsafe` rules will be ignored, $removeheader rules as an example
+     */
+    ignoreUnsafe?: boolean;
+}
 
 /**
  * Rule scanner implements an interface for reading filtering rules.
@@ -22,6 +54,11 @@ export class RuleScanner {
      * True if we should ignore javascript cosmetic rules
      */
     private readonly ignoreJS: boolean;
+
+    /**
+     * True if we should ignore unsafe rules, like $removeheader
+     */
+    private readonly ignoreUnsafe: boolean;
 
     /**
      * True if we should ignore network rules
@@ -58,23 +95,20 @@ export class RuleScanner {
      *
      * @param reader source of the filtering rules
      * @param listId filter list ID
-     * @param scannerType scanner type
-     * @param ignoreCosmetic if true, cosmetic rules will be ignored
-     * @param ignoreJS if true, javascript cosmetic rules will be ignored
+     * @param configuration config object
      */
 
-    constructor(
-        reader: ILineReader, listId: number, scannerType: ScannerType, ignoreCosmetic?: boolean, ignoreJS?: boolean,
-    ) {
+    constructor(reader: ILineReader, listId: number, configuration: RuleScannerConfiguration) {
         this.reader = reader;
         this.listId = listId;
 
-        this.ignoreCosmetic = !!ignoreCosmetic
-            || ((scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules);
-        this.ignoreNetwork = (scannerType & ScannerType.NetworkRules) !== ScannerType.NetworkRules;
-        this.ignoreHost = (scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
+        this.ignoreCosmetic = !!configuration.ignoreCosmetic
+            || ((configuration.scannerType & ScannerType.CosmeticRules) !== ScannerType.CosmeticRules);
+        this.ignoreNetwork = (configuration.scannerType & ScannerType.NetworkRules) !== ScannerType.NetworkRules;
+        this.ignoreHost = (configuration.scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
 
-        this.ignoreJS = !!ignoreJS;
+        this.ignoreJS = !!configuration.ignoreJS;
+        this.ignoreUnsafe = !!configuration.ignoreUnsafe;
     }
 
     /**
@@ -140,7 +174,7 @@ export class RuleScanner {
      * @return is rule ignored
      */
     private isIgnored(rule: IRule): boolean {
-        if (!this.ignoreCosmetic && !this.ignoreJS) {
+        if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
             return false;
         }
 
@@ -149,7 +183,15 @@ export class RuleScanner {
                 return true;
             }
             // Ignore JS type rules
-            return (rule.getType() === CosmeticRuleType.Js);
+            return (this.ignoreJS && rule.getType() === CosmeticRuleType.Js);
+        }
+
+        if (this.ignoreUnsafe) {
+            if (rule instanceof NetworkRule) {
+                if (rule.getAdvancedModifier() && (rule.getAdvancedModifier() instanceof RemoveHeaderModifier)) {
+                    return true;
+                }
+            }
         }
 
         return false;

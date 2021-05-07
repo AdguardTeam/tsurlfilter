@@ -8,7 +8,9 @@ describe('TestRuleScannerOfStringReader', () => {
         const filterList = '||example.org\n! test\n##banner';
 
         const reader = new StringLineReader(filterList);
-        const scanner = new RuleScanner(reader, 1, ScannerType.All, false);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All, ignoreCosmetic: false,
+        });
 
         expect(scanner.getRule()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();
@@ -44,7 +46,9 @@ describe('TestRuleScannerOfFileReader', () => {
 
         const reader = new FileLineReader(hostsPath);
 
-        const scanner = new RuleScanner(reader, 1, ScannerType.All, true);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All, ignoreCosmetic: true,
+        });
 
         let rulesCount = 0;
         while (scanner.scan()) {
@@ -57,6 +61,75 @@ describe('TestRuleScannerOfFileReader', () => {
         }
 
         expect(rulesCount).toBe(55997);
+        expect(scanner.scan()).toBeFalsy();
+    });
+});
+
+describe('Rule Scanner Flags', () => {
+    // eslint-disable-next-line max-len
+    const filterList = '||one.org\nexample.org#%#window.__gaq=undefined;\n||example.org^$removeheader=header-name\n||two.org';
+
+    it('works if scanner respects ignoreJS flag', () => {
+        const reader = new StringLineReader(filterList);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All,
+            ignoreCosmetic: true,
+            ignoreJS: true,
+            ignoreUnsafe: false,
+        });
+
+        expect(scanner.getRule()).toBeFalsy();
+        expect(scanner.scan()).toBeTruthy();
+
+        let indexedRule = scanner.getRule();
+        expect(indexedRule!.index).toBe(0);
+        expect(indexedRule!.rule!.getText()).toBe('||one.org');
+
+        expect(scanner.scan()).toBeTruthy();
+
+        indexedRule = scanner.getRule();
+        expect(indexedRule!.index).toBe(48);
+        expect(indexedRule!.rule!.getText()).toBe('||example.org^$removeheader=header-name');
+
+        expect(scanner.scan()).toBeTruthy();
+
+        indexedRule = scanner.getRule();
+        expect(indexedRule!.index).toBe(88);
+        expect(indexedRule!.rule!.getText()).toBe('||two.org');
+
+        expect(scanner.scan()).toBeFalsy();
+        expect(scanner.scan()).toBeFalsy();
+    });
+
+    it('works if scanner respects ignoreUnsafe flag', () => {
+        const reader = new StringLineReader(filterList);
+        const scanner = new RuleScanner(reader, 1, {
+            scannerType: ScannerType.All,
+            ignoreCosmetic: false,
+            ignoreJS: false,
+            ignoreUnsafe: true,
+        });
+
+        expect(scanner.getRule()).toBeFalsy();
+        expect(scanner.scan()).toBeTruthy();
+
+        let indexedRule = scanner.getRule();
+        expect(indexedRule!.index).toBe(0);
+        expect(indexedRule!.rule!.getText()).toBe('||one.org');
+
+        expect(scanner.scan()).toBeTruthy();
+
+        indexedRule = scanner.getRule();
+        expect(indexedRule!.index).toBe(10);
+        expect(indexedRule!.rule!.getText()).toBe('example.org#%#window.__gaq=undefined;');
+
+        expect(scanner.scan()).toBeTruthy();
+
+        indexedRule = scanner.getRule();
+        expect(indexedRule!.index).toBe(88);
+        expect(indexedRule!.rule!.getText()).toBe('||two.org');
+
+        expect(scanner.scan()).toBeFalsy();
         expect(scanner.scan()).toBeFalsy();
     });
 });

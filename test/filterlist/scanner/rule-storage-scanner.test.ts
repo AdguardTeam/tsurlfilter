@@ -15,11 +15,17 @@ describe('RuleStorageScanner Test', () => {
     // Create two filter lists
     const filterList1 = '||example.org\n! test\n##banner';
     const r1 = new StringLineReader(filterList1);
-    const scanner1 = new RuleScanner(r1, 1, ScannerType.All, false);
+    const scanner1 = new RuleScanner(r1, 1, {
+        scannerType: ScannerType.All,
+        ignoreCosmetic: false,
+    });
 
     const filterList2 = '||example.com\n! test\n##advert';
     const r2 = new StringLineReader(filterList2);
-    const scanner2 = new RuleScanner(r2, 2, ScannerType.All, false);
+    const scanner2 = new RuleScanner(r2, 2, {
+        scannerType: ScannerType.All,
+        ignoreCosmetic: false,
+    });
 
     // Now create the storage scanner
     const storageScanner = new RuleStorageScanner([scanner1, scanner2]);

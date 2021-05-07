@@ -122,6 +122,20 @@ describe('General', () => {
         expect(result).toHaveLength(1);
         expect(result).toContain('example.org#?##case26:remove()');
     });
+
+    it('check ubo responseheader conversion', () => {
+        let result = RuleConverter.convertRule('ya.ru##^responseheader(header-name)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('||ya.ru^$removeheader=header-name');
+
+        result = RuleConverter.convertRule('ya.ru#@#^responseheader(header-name)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('@@||ya.ru^$removeheader=header-name');
+
+        result = RuleConverter.convertRule('! ya.ru#@#^responseheader(header-name)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('! ya.ru#@#^responseheader(header-name)');
+    });
 });
 
 describe('Converts pseudo elements', () => {

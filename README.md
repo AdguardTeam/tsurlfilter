@@ -90,7 +90,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 
 ##### Starting engine
 ```
-    const list = new StringRuleList(listId, rulesText, false);
+    const list = new StringRuleList(listId, rulesText, false, false);
     const ruleStorage = new RuleStorage([list]);
 
     const config = {
@@ -392,6 +392,48 @@ More details on sample extension.
         const redirectUrl = redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
     }
 ```
+
+#### <a id="headers-service"></a> HeadersService
+
+Headers service module, it provides headers modification functionality.
+See more about `$removeheader` modifier. 
+
+##### **Constructor**
+```
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    constructor(filteringLog: FilteringLog)
+```
+
+#####  **onBeforeSendHeaders**
+```
+    /**
+     * On before send headers handler.
+     * Removes request headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): boolean
+```
+
+##### **getCookieRules**
+```
+    /**
+     * On headers received handler.
+     * Remove response headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    public onHeadersReceived(details: OnHeadersReceivedDetailsType, rules: NetworkRule[]): boolean
+```
+
 
 #### <a id="cookie-filtering"></a> CookieFiltering
 Cookie filtering module applies `$cookie` rules.
