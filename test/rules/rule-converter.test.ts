@@ -274,6 +274,13 @@ describe('Options', () => {
         const actual = RuleConverter.convertRule(rule);
         expect(actual[0]).toBe(rule);
     });
+
+    it('converts 1p,3p options', () => {
+        checkConversionResult('||vidads.gr^$3p', '||vidads.gr^$third-party');
+        checkConversionResult('@@.com/ads.js|$3p,domain=~3ppt.com', '@@.com/ads.js|$third-party,domain=~3ppt.com');
+        checkConversionResult('||www.ynet.co.il^$important,websocket,1p,domain=www.ynet.co.il', '||www.ynet.co.il^$important,websocket,~third-party,domain=www.ynet.co.il');
+        checkConversionResult('spiele-umsonst.de##.left > div.right[style$="1px;"]', 'spiele-umsonst.de##.left > div.right[style$="1px;"]');
+    });
 });
 
 describe('Scriptlets', () => {

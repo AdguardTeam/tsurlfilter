@@ -37,11 +37,11 @@ export class RuleConverter {
 
     private static SCRIPT_HAS_TEXT_REPLACEMENT = '$$$$script[tag-content="';
 
-    private static THIRD_PARTY_1P_3P_REGEX = /\$[^#]?(.*,)?(1p|3p)/;
+    private static THIRD_PARTY_1P_3P_REGEX = /([$,])(1p|3p)/;
 
-    private static THIRD_PARTY_1P_REPLACEMENT = '~third-party';
+    private static THIRD_PARTY_1P_REPLACEMENT = '$1~third-party';
 
-    private static THIRD_PARTY_3P_REPLACEMENT = 'third-party';
+    private static THIRD_PARTY_3P_REPLACEMENT = '$1third-party';
 
     private static GHIDE_REGEX = /(.+[^#]\$.*)(ghide)($|,.+)/i;
 
