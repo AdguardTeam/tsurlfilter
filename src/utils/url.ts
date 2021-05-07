@@ -27,9 +27,10 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
         urlPieces[1] = urlPieces[1]
             .split('&')
             .filter((x) => x)
-            .map((x) => (x.includes('=') ? x : `${x}=`))
-            .filter((x) => x && !x.match(regExp))
-            .map((x) => (x.endsWith('=') ? x.substring(0, x.length - 1) : x))
+            .filter((x) => {
+                const test = x.includes('=') ? x : `${x}=`;
+                return !test.match(regExp);
+            })
             .join('&');
     }
 

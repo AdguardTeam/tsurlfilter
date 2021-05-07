@@ -27,6 +27,7 @@ describe('Query parameters', () => {
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1', /test.*/)).toEqual('http://example.com');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1&stay=2', /test=1/)).toEqual('http://example.com?stay=2');
         expect(utils.cleanUrlParamByRegExp('https://example.com/??.comments.js?v=1619510974', /comments/)).toEqual('https://example.com/');
+        expect(utils.cleanUrlParamByRegExp('http://example.com?stay=&stay2=2', /test=1/)).toEqual('http://example.com?stay=&stay2=2');
     });
 
     it('checks params cleaning', () => {
