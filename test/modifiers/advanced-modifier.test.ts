@@ -368,4 +368,16 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p01=0&p1=1&p2=2&p3=3`)).toBe(`${comPage}?p01=0`);
     });
+
+    it('does not remove unmatched parameters', () => {
+        let rule = new NetworkRule('$removeparam=p1', 0);
+        let modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+
+        const url = 'https://l-stat.livejournal.net/js/??.comments.js?v=1619510974';
+        expect(modifier.removeParameters(`${url}`)).toBe(`${url}`);
+
+        rule = new NetworkRule('$removeparam=/comments/', 0);
+        modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}`)).toBe('https://l-stat.livejournal.net/js/');
+    });
 });

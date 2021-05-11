@@ -8,12 +8,14 @@ import { parse } from 'tldts';
  * @param invert remove every parameter in url except the ones matched regexp
  */
 export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = false): string {
-    const urlPieces = url.split('?');
+    const searchIndex = url.indexOf('?');
 
     // If no params, nothing to modify
-    if (urlPieces.length === 1) {
+    if (searchIndex === -1) {
         return url;
     }
+
+    const urlPieces = [url.slice(0, searchIndex), url.slice(searchIndex + 1)];
 
     if (invert) {
         urlPieces[1] = urlPieces[1]
