@@ -122,6 +122,13 @@ describe('Element hiding rules constructor', () => {
 
         expect(rule.getPermittedDomains()).toBeNull();
         expect(rule.getRestrictedDomains()).toBeNull();
+
+        rule = new CosmeticRule('#$#.textad { visibility: hidden; }', 0);
+        expect(rule.getType()).toEqual(CosmeticRuleType.Css);
+        expect(rule.getContent()).toEqual('.textad { visibility: hidden; }');
+
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
     });
 });
 
