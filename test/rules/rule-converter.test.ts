@@ -340,21 +340,26 @@ describe('Scriptlets', () => {
     });
 
     it('works if abp scriptlets are converted properly', () => {
-        const rule = "example.org#$#hide-if-contains li.serp-item 'li.serp-item div.label'";
-        const exp = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'li.serp-item\', \'li.serp-item div.label\')';
-        const res = RuleConverter.convertRule(rule);
+        let result = RuleConverter.convertRule("example.org#$#json-prune ad 'vinfo'");
 
-        expect(res.length).toBe(1);
-        expect(res[0]).toBe(exp);
+        expect(result).toHaveLength(1);
+        expect(result).toContain("example.org#%#//scriptlet('abp-json-prune', 'ad', 'vinfo')");
+
+        // Incompatible abp scriptlet is not converted
+        result = RuleConverter.convertRule("example.org#$#hide-if-contains li.serp-item 'li.serp-item div.label'");
+        expect(result).toHaveLength(1);
+        expect(result).toContain("example.org#$#hide-if-contains li.serp-item 'li.serp-item div.label'");
+
+        // Invalid scriptlet is not converted
+        result = RuleConverter.convertRule('example.org#$#selector:style()');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.org#$#selector:style()');
     });
 
     it('works if multiple abp scriptlets are converted properly', () => {
-        // eslint-disable-next-line max-len
-        const rule = 'example.org#$#hide-if-has-and-matches-style \'d[id^="_"]\' \'div > s\' \'display: none\'; hide-if-contains /.*/ .p \'a[href^="/ad__c?"]\'';
-        // eslint-disable-next-line max-len
-        const exp1 = 'example.org#%#//scriptlet(\'abp-hide-if-has-and-matches-style\', \'d[id^="_"]\', \'div > s\', \'display: none\')';
-        // eslint-disable-next-line max-len
-        const exp2 = 'example.org#%#//scriptlet(\'abp-hide-if-contains\', \'/.*/\', \'.p\', \'a[href^="/ad__c?"]\')';
+        const rule = "example.org#$#json-prune ad 'vinfo'; abort-on-property-write aoipwb";
+        const exp1 = "example.org#%#//scriptlet('abp-json-prune', 'ad', 'vinfo')";
+        const exp2 = "example.org#%#//scriptlet('abp-abort-on-property-write', 'aoipwb')";
         const res = RuleConverter.convertRule(rule);
 
         expect(res.length).toBe(2);
