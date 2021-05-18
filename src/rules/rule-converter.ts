@@ -122,6 +122,10 @@ export class RuleConverter {
      * @param conversionOptions
      */
     public static convertRule(rule: string, conversionOptions = {} as ConversionOptions): string[] {
+        if (rule.startsWith(SimpleRegex.MASK_COMMENT)) {
+            return [rule];
+        }
+
         const comment = RuleConverter.convertUboComments(rule);
         if (comment) {
             return [comment];
@@ -139,7 +143,7 @@ export class RuleConverter {
         }
 
         const scriptlet = Scriptlets.convertScriptletToAdg(converted);
-        if (scriptlet) {
+        if (scriptlet && scriptlet.every((x) => Scriptlets.isValidScriptletRule(x))) {
             return scriptlet;
         }
 
