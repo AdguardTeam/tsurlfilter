@@ -142,9 +142,9 @@ export class RuleConverter {
             return [removeHeaderRule];
         }
 
-        const scriptlet = Scriptlets.convertScriptletToAdg(converted);
-        if (scriptlet && scriptlet.every((x) => Scriptlets.isValidScriptletRule(x))) {
-            return scriptlet;
+        const scriptletRules = Scriptlets.convertScriptletToAdg(converted);
+        if (scriptletRules && scriptletRules.every((x) => RuleConverter.isValidScriptletRule(x))) {
+            return scriptletRules;
         }
 
         const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
@@ -158,6 +158,19 @@ export class RuleConverter {
         }
 
         return [converted];
+    }
+
+    /**
+     * Validates scriptlet rule
+     *
+     * @param ruleText
+     */
+    private static isValidScriptletRule(ruleText: string): boolean {
+        try {
+            return Scriptlets.isValidScriptletRule(ruleText);
+        } catch (e) {
+            return false;
+        }
     }
 
     /**
