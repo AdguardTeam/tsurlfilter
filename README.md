@@ -19,10 +19,11 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
             *   [CookieFiltering](#cookie-filtering)
             *   [RuleValidator](#rule-validator)
             *   [RuleSyntaxUtils](#rule-syntax-utils)
+            *   [DeclarativeConverter](#declarative-converter)
         *   [Content script classes](#content-script-classes)
             *   [CssHitsCounter](#css-hits-counter)
             *   [CookieController](#cookie-controller)
-    *   [Sample extension](#sample-extension)
+    *   [Sample extensions](#sample-extensions)
 *   [Development](#development)
     *   [NPM scripts](#npm-scripts)
     *   [Excluding peer dependencies](#excluding-peer-dependencies)
@@ -345,32 +346,39 @@ like removing tracking parameters and cookie modifications
 ##### Stealth configuration
 ```
     const stealthConfig = {
-        stripTrackingParameters: true,
-        trackingParameters: 'utm_source,utm_medium,utm_term',
-        selfDestructThirdPartyCookies: true,
+        blockChromeClientData: false,
+        hideReferrer: false,
+        hideSearchQueries: false,
+        sendDoNotTrack: false,
+        selfDestructThirdPartyCookies: false,
         selfDestructThirdPartyCookiesTime: 0,
-        selfDestructFirstPartyCookies: true,
-        selfDestructFirstPartyCookiesTime: 1,
+        selfDestructFirstPartyCookies: false,
+        selfDestructFirstPartyCookiesTime: 0,
     };
 
     this.stealthService = new StealthService(stealthConfig);
 ```
-#####  **removeTrackersFromUrl**
-```
-    /**
-     * Strips out the tracking codes/parameters from a URL and return the cleansed URL
-     *
-     * @param request
-     */
-    public removeTrackersFromUrl(request: Request): string | null
-```
 
-##### **getCookieRules**
+##### **getCookieRulesTexts**
 ```
     /**
      * Returns synthetic set of rules matching the specified request
      */
-    public getCookieRules(request: Request): NetworkRule[]
+    public getCookieRulesTexts(): string[]
+```
+
+##### **processRequestHeaders**
+```
+    /**
+     * Applies stealth actions to request headers
+     *
+     * @param requestUrl
+     * @param requestType
+     * @param requestHeaders
+     */
+    public processRequestHeaders(
+        requestUrl: string, requestType: RequestType, requestHeaders: HttpHeaders,
+    ): StealthActions
 ```
 
 #### <a id="redirect-service"></a> RedirectsService
@@ -514,6 +522,19 @@ This module is not used in the engine directly, but it can be used in other libr
     public static isRuleForUrl(ruleText: string, url: string): boolean {
 ```
 
+#### <a id="declarative-converter"></a> DeclarativeConverter
+Provides a functionality of conversion AG rules to manifest v3 declarative syntax. See `examples/manifest-v3/` for an example usage.
+
+##### Public methods
+```
+    /**
+     * Converts a set of rules to declarative rules array
+     *
+     * @param ruleList
+     */
+    public convert(ruleList: IRuleList): DeclarativeRule[] {
+```
+
 #### <a id="content-script-classes"></a> Content script classes
 Classes provided for page context:
 
@@ -546,16 +567,16 @@ This class applies cookie rules in page context
     cookieController.apply(rulesData);
 ```
 
-### <a id="sample-extension"></a> Sample extension
+### <a id="sample-extensions"></a> Sample extensions
 
-Source code of the sample extension is located in the directory `./sample-extension`
+Source code of the sample extensions is located in the directory `examples`
 
-To build sample extension run in the root directory
+To build sample extension go to the one of the examples and run
 ```
-npm run build-extension
+yarn && yarn build
 ```
 
-This command builds extension to `./dist-extension` directory. After that it's ready to be added to Chrome using "Load unpacked" in developer mode.
+This command builds tsurlfilter library and extension to `build` directory. After that it's ready to be added to Chrome using "Load unpacked" in developer mode.
 
 To test if this extension works correctly you can use next test pages:
 

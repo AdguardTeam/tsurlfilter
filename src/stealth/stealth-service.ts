@@ -1,6 +1,6 @@
 import { WebRequest } from 'webextension-polyfill-ts';
 import { findHeaderByName, removeHeader } from '../utils/headers';
-import { getHost, isThirdPartyRequest, cleanUrlParam } from '../utils/url';
+import { getHost, isThirdPartyRequest } from '../utils/url';
 import { RequestType } from '../request-type';
 import HttpHeaders = WebRequest.HttpHeaders;
 
@@ -12,25 +12,14 @@ export enum StealthActions {
     HIDE_SEARCH_QUERIES = 1 << 1,
     BLOCK_CHROME_CLIENT_DATA= 1 << 2,
     SEND_DO_NOT_TRACK = 1 << 3,
-    STRIPPED_TRACKING_URL = 1 << 4,
-    FIRST_PARTY_COOKIES= 1 << 5,
-    THIRD_PARTY_COOKIES= 1 << 6,
+    FIRST_PARTY_COOKIES= 1 << 4,
+    THIRD_PARTY_COOKIES= 1 << 5,
 }
 
 /**
  * Stealth service configuration
  */
 export interface StealthConfig {
-    /**
-     * Is strip tracking query params enabled
-     */
-    stripTrackingParameters: boolean;
-
-    /**
-     * Parameters to clean
-     */
-    trackingParameters: string;
-
     /**
      * Is destruct first-party cookies enabled
      */
@@ -124,31 +113,6 @@ export class StealthService {
      */
     constructor(config: StealthConfig) {
         this.config = config;
-    }
-
-    /**
-     * Strips out the tracking codes/parameters from a URL and return the cleansed URL
-     *
-     * @param url
-     */
-    public removeTrackersFromUrl(url: string): string | null {
-        if (!this.config.stripTrackingParameters) {
-            return null;
-        }
-
-        const params = this.config.trackingParameters
-            .trim()
-            .split(',')
-            .map((x) => x.replace('=', '').replace(/\*/g, '[^&#=]*').trim())
-            .filter((x) => x);
-
-        const result = cleanUrlParam(url, params);
-
-        if (result !== url) {
-            return result;
-        }
-
-        return null;
     }
 
     /**

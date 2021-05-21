@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.4.31",
+  "version": "0.5.1",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
@@ -28,14 +28,12 @@
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal && node tasks/build-txt",
+    "build:lib": "rimraf $PACKAGE_OUTPUT_PATH && rollup -c rollup.config.ts && cp package.json $PACKAGE_OUTPUT_PATH",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "yarn lint && yarn test --no-cache --runInBand",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
-    "build-extension": "yarn build && node ./tasks/build-extension.js",
-    "prebuild-extension": "rimraf dist-extension",
-    "deploy-docs": "ts-node tools/gh-pages-publish",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
     "precommit": "lint-staged",
@@ -131,9 +129,11 @@
     "webextension-polyfill-ts": "^0.24.0"
   },
   "dependencies": {
+    "@types/punycode": "^2.1.0",
     "consola": "^2.12.2",
     "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.11",
     "is-ip": "^3.1.0",
+    "punycode": "^2.1.1",
     "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.17",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.45"

@@ -2,51 +2,6 @@
 import { StealthActions, StealthConfig, StealthService } from '../../src/stealth/stealth-service';
 import { RequestType } from '../../src/request-type';
 
-describe('Stealth service - tracking parameters', () => {
-    let config: StealthConfig;
-
-    beforeEach(() => {
-        config = {
-            blockChromeClientData: false,
-            hideReferrer: false,
-            hideSearchQueries: false,
-            sendDoNotTrack: false,
-            stripTrackingParameters: false,
-            trackingParameters: 'utm_source,utm_medium,utm_term,utm_campaign,utm_content,utm_name,utm_cid,utm_reader,utm_viz_id,utm_pubreferrer,utm_swu,utm_referrer,utm_social,utm_social-type,utm_place,utm_userid,utm_channel,fb_action_ids,fb_action_types,fb_ref,fb_source',
-            selfDestructThirdPartyCookies: false,
-            selfDestructThirdPartyCookiesTime: 0,
-            selfDestructFirstPartyCookies: false,
-            selfDestructFirstPartyCookiesTime: 0,
-        };
-    });
-
-    it('checks tracking parameters', () => {
-        config.stripTrackingParameters = true;
-
-        const service = new StealthService(config);
-        expect(service.removeTrackersFromUrl('https://example.org')).toBeNull();
-        expect(service.removeTrackersFromUrl('https://example.org?utm_source=clean&an_other=keep&utm_name=clean')).toBe('https://example.org?an_other=keep');
-        expect(service.removeTrackersFromUrl('https://example.org?an_other=keep')).toBeNull();
-    });
-
-    it('checks tracking parameters - disabled', () => {
-        const service = new StealthService(config);
-
-        expect(service.removeTrackersFromUrl('https://example.org')).toBeNull();
-        expect(service.removeTrackersFromUrl('https://example.org?utm_source=clean&an_other=keep&utm_name=clean')).toBeNull();
-        expect(service.removeTrackersFromUrl('https://example.org?an_other=keep')).toBeNull();
-    });
-
-    it('checks tracking parameters - no parameters specified', () => {
-        config.trackingParameters = '';
-        const service = new StealthService(config);
-
-        expect(service.removeTrackersFromUrl('https://example.org')).toBeNull();
-        expect(service.removeTrackersFromUrl('https://example.org?utm_source=clean&an_other=keep&utm_name=clean')).toBeNull();
-        expect(service.removeTrackersFromUrl('https://example.org?an_other=keep')).toBeNull();
-    });
-});
-
 describe('Stealth service - cookies', () => {
     let config: StealthConfig;
 
@@ -56,8 +11,6 @@ describe('Stealth service - cookies', () => {
             hideReferrer: false,
             hideSearchQueries: false,
             sendDoNotTrack: false,
-            stripTrackingParameters: false,
-            trackingParameters: '',
             selfDestructThirdPartyCookies: false,
             selfDestructThirdPartyCookiesTime: 0,
             selfDestructFirstPartyCookies: false,
@@ -124,8 +77,6 @@ describe('Stealth service - headers', () => {
             hideReferrer: false,
             hideSearchQueries: false,
             sendDoNotTrack: false,
-            stripTrackingParameters: false,
-            trackingParameters: '',
             selfDestructThirdPartyCookies: false,
             selfDestructThirdPartyCookiesTime: 0,
             selfDestructFirstPartyCookies: false,

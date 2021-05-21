@@ -5,7 +5,10 @@ import globals from 'rollup-plugin-node-globals';
 import camelCase from 'lodash/camelCase';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
-import pkg from './package.json';
+
+const DEFAULT_OUTPUT_PATH = 'dist';
+
+const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
 
 const libraryName = 'TSUrlFilter';
 const contentScriptLibraryName = 'TSUrlFilterContentScript';
@@ -14,12 +17,12 @@ const contentScriptConfig = {
     input: 'src/content-script/index.ts',
     output: [
         {
-            file: `dist/${contentScriptLibraryName}.js`,
+            file: `${OUTPUT_PATH}/${contentScriptLibraryName}.js`,
             format: 'esm',
             sourcemap: false,
         },
         {
-            file: `dist/${contentScriptLibraryName}.umd.js`,
+            file: `${OUTPUT_PATH}/${contentScriptLibraryName}.umd.js`,
             name: contentScriptLibraryName,
             format: 'umd',
             sourcemap: false,
@@ -46,7 +49,7 @@ const esmConfig = {
     ],
     output: [
         {
-            dir: 'dist/es',
+            dir: `${OUTPUT_PATH}/es`,
             format: 'esm',
             sourcemap: false,
         },
@@ -68,19 +71,13 @@ const browserConfig = {
     input: 'src/index.browser.ts',
     output: [
         {
-            file: pkg.browser,
+            file: `${OUTPUT_PATH}/tsurlfilter.browser.js`,
             name: camelCase(libraryName),
             format: 'umd',
             sourcemap: false,
         },
         {
-            file: 'dist/tsurlfilter.browser.esm.js',
-            name: camelCase(libraryName),
-            format: 'esm',
-            sourcemap: false,
-        },
-        {
-            file: pkg.iife,
+            file: `${OUTPUT_PATH}/tsurlfilter.iife.js`,
             name: libraryName,
             format: 'iife',
             sourcemap: false,
@@ -107,7 +104,7 @@ export default [
         input: 'src/index.ts',
         output: [
             {
-                file: pkg.main,
+                file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
                 name: camelCase(libraryName),
                 format: 'umd',
                 sourcemap: false,

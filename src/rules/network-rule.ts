@@ -506,7 +506,7 @@ export class NetworkRule implements rule.IRule {
      * matchRequestType checks if the request's type matches the rule properties
      * @param requestType - request type to check.
      */
-    private matchRequestType(requestType: RequestType): boolean {
+    public matchRequestType(requestType: RequestType): boolean {
         if (this.permittedRequestTypes !== 0) {
             if ((this.permittedRequestTypes & requestType) !== requestType) {
                 return false;
@@ -686,6 +686,15 @@ export class NetworkRule implements rule.IRule {
      */
     isOptionEnabled(option: NetworkRuleOption): boolean {
         return (this.enabledOptions & option) === option;
+    }
+
+    /**
+     * Returns true if one and only option is enabled
+     *
+     * @param option
+     */
+    isSingleOptionEnabled(option: NetworkRuleOption): boolean {
+        return this.enabledOptions === option;
     }
 
     /**

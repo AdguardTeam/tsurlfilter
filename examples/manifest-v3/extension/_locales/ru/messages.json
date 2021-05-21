@@ -1,0 +1,8 @@
+{
+    "name": {
+        "message": "TSUrlFilter on Manifest-v3"
+    },
+    "description": {
+        "message": "An example of extension built with TSUrlFilter on Manifest-v3"
+    }
+}
