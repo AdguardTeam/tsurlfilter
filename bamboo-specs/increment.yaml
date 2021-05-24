@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERINCR
   name: tsurlfilter - increment
 variables:
-  dockerContainer: node:15.14.0-buster-slim
+  dockerContainer: adguard/node-ssh:15.14--6
 
 stages:
   - Increment:

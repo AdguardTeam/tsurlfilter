@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERBUILD
   name: tsurlfilter - build
 variables:
-  dockerContainer: node:15.14.0-buster-slim
+  dockerContainer: adguard/node-ssh:15.14--6
 
 stages:
   - Build:
