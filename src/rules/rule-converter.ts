@@ -21,11 +21,11 @@ export class RuleConverter {
 
     private static FIRST_PARTY_REPLACEMENT = '$1~third-party';
 
-    private static XHR_REGEX = /([$,])xhr/i;
+    private static XHR_REGEX = /([$,]~?)xhr/i;
 
     private static XHR_REPLACEMENT = '$1xmlhttprequest';
 
-    private static CSS_REGEX = /([$,]~*)(css)(,|\W|$)/i;
+    private static CSS_REGEX = /([$,]~?)(css)(,|\W|$)/i;
 
     private static CSS_REPLACEMENT = '$1stylesheet$3';
 

@@ -240,6 +240,16 @@ describe('Options', () => {
         checkConversionResult('@@||example.com^$doc,jsinject', '@@||example.com^$document,jsinject');
     });
 
+    it('converts css option', () => {
+        checkConversionResult('example.com$css', 'example.com$stylesheet');
+        checkConversionResult('example.com$~css', 'example.com$~stylesheet');
+    });
+
+    it('converts xhr option', () => {
+        checkConversionResult('example.com$xhr', 'example.com$xmlhttprequest');
+        checkConversionResult('example.com$~xhr', 'example.com$~xmlhttprequest');
+    });
+
     it('converts rules with $all modifier into few rules', () => {
         let rule = '||example.org^$all';
         let actual = RuleConverter.convertRule(rule);
