@@ -36,6 +36,60 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual(sourceRuleText);
     });
+
+    it('works if whitelist document-level rule is found', () => {
+        const ruleText = '||example.org^';
+        const sourceRuleText = '@@||example.com^$urlblock';
+
+        const rules = [new NetworkRule(ruleText, 0)];
+        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeTruthy();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        expect(basicResult!.getText()).toEqual(sourceRuleText);
+    });
+
+    it('works if whitelist jsinject rule is not found', () => {
+        const ruleText = '||example.org^';
+        const sourceRuleText = '@@||example.com^$jsinject';
+
+        const rules = [new NetworkRule(ruleText, 0)];
+        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).not.toBeNull();
+        expect(result.documentRule).toBeNull();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        expect(basicResult!.getText()).toEqual(ruleText);
+    });
+
+    it('works if whitelist elemhide rule is not found', () => {
+        const ruleText = '||example.org^';
+        const sourceRuleText = '@@||example.com^$elemhide';
+
+        const rules = [new NetworkRule(ruleText, 0)];
+        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
+
+        const result = new MatchingResult(rules, sourceRules);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).not.toBeNull();
+        expect(result.documentRule).toBeNull();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        expect(basicResult!.getText()).toEqual(ruleText);
+    });
 });
 
 describe('TestGetCosmeticOption', () => {
@@ -348,6 +402,20 @@ describe('TestNewMatchingResult - replace rules', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual('@@||example.org^$content');
+    });
+
+    it('checks only $document and $content rules disable $replace', () => {
+        const ruleTexts = [
+            '||example.org^$replace=/test1/test2/g',
+            '@@||example.org^$genericblock',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+
+        expect(result.getReplaceRules()).toHaveLength(1);
+        expect(result.getBasicResult()).toBeNull();
     });
 });
 

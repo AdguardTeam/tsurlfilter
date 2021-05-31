@@ -206,11 +206,11 @@ export class MatchingResult {
         // 1. $replace rules have a higher priority than other basic rules (including exception rules).
         //  So if a request corresponds to two different rules one of which has the $replace modifier,
         //  this rule will be applied.
-        // 2. Document-level exception rules with $content or $document modifiers do disable $replace rules
+        // 2. $document exception rules and rules with $content or $replace modifiers do disable $replace rules
         //  for requests matching them.
         if (this.replaceRules) {
             if (basic && basic.isWhitelist()) {
-                if (basic.isDocumentLevelWhitelistRule()) {
+                if (basic.isDocumentWhitelistRule()) {
                     return basic;
                 }
 
