@@ -1,6 +1,8 @@
 /* eslint-disable max-len */
+import { WebRequest } from 'webextension-polyfill-ts';
 import { StealthActions, StealthConfig, StealthService } from '../../src/stealth/stealth-service';
 import { RequestType } from '../../src/request-type';
+import HttpHeaders = WebRequest.HttpHeaders;
 
 describe('Stealth service - cookies', () => {
     let config: StealthConfig;
@@ -121,7 +123,7 @@ describe('Stealth service - headers', () => {
         ])).toBe(StealthActions.HIDE_SEARCH_QUERIES);
     });
 
-    it('checks hide search query', () => {
+    it('checks block chrome client data', () => {
         config.blockChromeClientData = true;
         const service = new StealthService(config);
 
@@ -133,10 +135,15 @@ describe('Stealth service - headers', () => {
         ])).toBe(StealthActions.BLOCK_CHROME_CLIENT_DATA);
     });
 
-    it('checks hide search query', () => {
+    it('checks send-do-not-track', () => {
         config.sendDoNotTrack = true;
         const service = new StealthService(config);
 
-        expect(service.processRequestHeaders(url, RequestType.Document, [])).toBe(StealthActions.SEND_DO_NOT_TRACK);
+        const requestHeaders = [] as HttpHeaders;
+
+        expect(service.processRequestHeaders(url, RequestType.Document, requestHeaders)).toBe(StealthActions.SEND_DO_NOT_TRACK);
+        expect(requestHeaders).toHaveLength(2);
+        expect(requestHeaders[0].name).toBe('DNT');
+        expect(requestHeaders[1].name).toBe('Sec-GPC');
     });
 });

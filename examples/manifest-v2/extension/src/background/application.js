@@ -6,6 +6,7 @@ import { FilteringLog } from './filtering-log/filtering-log.js';
 import { ModificationsListener } from './filtering-log/content-modifications.js';
 import { RedirectsService } from './redirects-service.js';
 import { applyCookieRules } from './cookie-helper.js';
+import { injectStealthScripts } from './stealth-inject.js';
 
 /**
  * Extension application class
@@ -57,6 +58,20 @@ export class Application {
     cookieFiltering = null;
 
     /**
+     * Stealth configuration object
+     */
+    stealthConfig = {
+        blockChromeClientData: false,
+        hideReferrer: false,
+        hideSearchQueries: false,
+        sendDoNotTrack: true,
+        selfDestructThirdPartyCookies: true,
+        selfDestructThirdPartyCookiesTime: 2880,
+        selfDestructFirstPartyCookies: false,
+        selfDestructFirstPartyCookiesTime: 1,
+    };
+
+    /**
      * Initializes engine instance
      *
      * @param rulesText
@@ -72,22 +87,11 @@ export class Application {
             compatibility: TSUrlFilter.CompatibilityTypes.extension,
         };
 
-        const stealthConfig = {
-            blockChromeClientData: false,
-            hideReferrer: false,
-            hideSearchQueries: false,
-            sendDoNotTrack: true,
-            selfDestructThirdPartyCookies: true,
-            selfDestructThirdPartyCookiesTime: 2880,
-            selfDestructFirstPartyCookies: false,
-            selfDestructFirstPartyCookiesTime: 1,
-        };
-
         TSUrlFilter.setConfiguration(config);
 
         // get stealth mode before engine start rules
         const STEALTH_MODE_FILTER_ID = -1;
-        this.stealthService = new TSUrlFilter.StealthService(stealthConfig);
+        this.stealthService = new TSUrlFilter.StealthService(this.stealthConfig);
         const stealthModeList = new TSUrlFilter.StringRuleList(
             STEALTH_MODE_FILTER_ID,
             this.stealthService.getCookieRulesTexts().join('\n'),
@@ -275,6 +279,8 @@ export class Application {
         applyCookieRules(details.tabId, blockingRules);
 
         this.cookieFiltering.onCompleted(details);
+
+        injectStealthScripts(details.tabId, this.stealthConfig.sendDoNotTrack);
     }
 
     /**

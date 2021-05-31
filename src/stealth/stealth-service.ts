@@ -82,6 +82,10 @@ export class StealthService {
             name: 'DNT',
             value: '1',
         },
+        GLOBAL_PRIVACY_CONTROL: {
+            name: 'Sec-GPC',
+            value: '1',
+        },
     };
 
     /**
@@ -178,6 +182,7 @@ export class StealthService {
         // Adding Do-Not-Track (DNT) header
         if (this.config.sendDoNotTrack) {
             requestHeaders.push(StealthService.HEADER_VALUES.DO_NOT_TRACK);
+            requestHeaders.push(StealthService.HEADER_VALUES.GLOBAL_PRIVACY_CONTROL);
             stealthActions |= StealthActions.SEND_DO_NOT_TRACK;
         }
 
