@@ -497,7 +497,7 @@ export class CosmeticRule implements rule.IRule {
             CosmeticRule.validateJsRules(ruleText, content);
         }
 
-        if (utils.hasUnquotedSubstring(content, '/*')
+        if (utils.hasUnquotedSubstring(content, ' /*')
             || utils.hasUnquotedSubstring(content, ' //')) {
             throw new SyntaxError('Invalid cosmetic rule, wrong brackets');
         }

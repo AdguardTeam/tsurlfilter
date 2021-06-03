@@ -64,6 +64,7 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsValid("example.org##a[title='{']");
         checkRuleIsValid('123movies.domains##.jw-logo-top-left[style^="background-image: url(\\"https://123movies.domains/addons/img/"]');
         checkRuleIsValid('testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)');
+        checkRuleIsValid('parenting.pl##:xpath(//div[count(*)=1][*[count(*)=1]/*[count(*)=1]/*[count(*)=1]/*[count(*)=0]])');
 
         checkRuleIsInvalid('example.org##img[title|={]');
         checkRuleIsInvalid('example.org##body { background: red!important; }');
