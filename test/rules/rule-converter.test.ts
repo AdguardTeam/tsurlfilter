@@ -205,6 +205,10 @@ describe('Options', () => {
         checkConversionResult('||fastmap33.com^$empty', '||fastmap33.com^$redirect=nooptext');
     });
 
+    it('converts ubo nobab into prevent-bab redirect rule', () => {
+        checkConversionResult('/blockadblock.$script,redirect=nobab.js', '/blockadblock.$script,redirect=prevent-bab');
+    });
+
     it('checks $mp4 modifier should always go with $media modifier together', () => {
         checkConversionResult('||video.example.org^$mp4', '||video.example.org^$redirect=noopmp4-1s,media');
         checkConversionResult('||video.example.org^$media,mp4', '||video.example.org^$media,redirect=noopmp4-1s');
