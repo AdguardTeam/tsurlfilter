@@ -134,7 +134,7 @@
     "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.12",
     "is-ip": "^3.1.0",
     "punycode": "^2.1.1",
-    "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.19",
+    "scriptlets": "git+https://github.com/AdguardTeam/Scriptlets.git#v1.3.20",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.45"
   }
