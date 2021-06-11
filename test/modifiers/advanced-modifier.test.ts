@@ -374,10 +374,22 @@ describe('NetworkRule - removeparam rules', () => {
         let modifier = rule.getAdvancedModifier() as RemoveParamModifier;
 
         const url = 'https://l-stat.livejournal.net/js/??.comments.js?v=1619510974';
-        expect(modifier.removeParameters(`${url}`)).toBe(`${url}`);
+        expect(modifier.removeParameters(url)).toBe(url);
 
         rule = new NetworkRule('$removeparam=/comments/', 0);
         modifier = rule.getAdvancedModifier() as RemoveParamModifier;
-        expect(modifier.removeParameters(`${url}`)).toBe('https://l-stat.livejournal.net/js/');
+        expect(modifier.removeParameters(url)).toBe('https://l-stat.livejournal.net/js/');
+    });
+
+    it('preserves empty query string', () => {
+        const url = 'https://example.org/path/file.js';
+
+        let rule = new NetworkRule('$removeparam=p1', 0);
+        let modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}?`)).toBe(`${url}?`);
+
+        rule = new NetworkRule('example.org$removeparam', 0);
+        modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}?`)).toBe(url);
     });
 });

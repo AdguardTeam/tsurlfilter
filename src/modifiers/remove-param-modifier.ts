@@ -43,6 +43,10 @@ export class RemoveParamModifier implements IAdvancedModifier {
             return url.substring(0, sepIndex);
         }
 
+        if (sepIndex === url.length - 1) {
+            return url;
+        }
+
         if (this.value.startsWith('~')) {
             return RemoveParamModifier.applyInvertedParam(url, this.value.substring(1));
         }
