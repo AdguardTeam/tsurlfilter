@@ -152,15 +152,16 @@ export default class CookieController {
             const hostName = hostParts.slice(i).join('.');
             if (hostName) {
                 CookieController.removeCookieFromHost(cookieName, hostName);
-                this.onRuleAppliedCallback(
-                    cookieName,
-                    hostName,
-                    rule.ruleText,
-                    rule.isThirdParty,
-                    rule.filterId,
-                );
             }
         }
+
+        this.onRuleAppliedCallback(
+            cookieName,
+            document.location.hostname,
+            rule.ruleText,
+            rule.isThirdParty,
+            rule.filterId,
+        );
     }
 
     /**
