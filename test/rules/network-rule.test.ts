@@ -205,20 +205,21 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('||example.org^$removeparam', 0);
         expect(correct).toBeTruthy();
 
+        correct = new NetworkRule('||example.org^$removeparam=p,object', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeparam=p,~object', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeparam=p,media', 0);
+        expect(correct).toBeTruthy();
+
         expect(() => {
             new NetworkRule('||example.org^$removeparam=p,domain=test.com,popup', 0);
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
 
         expect(() => {
             new NetworkRule('||example.org^$removeparam=p,domain=test.com,mp4', 0);
-        }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
-
-        expect(() => {
-            new NetworkRule('||example.org^$removeparam=p,object', 0);
-        }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
-
-        expect(() => {
-            new NetworkRule('||example.org^$removeparam=p,~object', 0);
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
     });
 

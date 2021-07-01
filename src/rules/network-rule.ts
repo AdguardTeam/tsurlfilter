@@ -1183,11 +1183,11 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * $removeparam rules are not compatible with any other modifiers except $domain,
-     * $third-party, $app, $important and $match-case.
+     * $third-party, $app, $important, $match-case and permitted content type modifiers ($script, $stylesheet, etc).
+     * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveParamRule(): void {
-        if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
-            || (this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
+        if ((this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
             !== NetworkRuleOption.RemoveParamCompatibleOptions) {
             throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
         }
@@ -1195,7 +1195,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * $removeheader rules are not compatible with any other modifiers except $domain,
-     * $third-party, $app, $important, $match-case and content type modifiers (e.g. $script, $stylesheet, etc).
+     * $third-party, $app, $important, $match-case.
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveHeaderRule(): void {
