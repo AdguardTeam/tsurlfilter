@@ -392,4 +392,22 @@ describe('NetworkRule - removeparam rules', () => {
         modifier = rule.getAdvancedModifier() as RemoveParamModifier;
         expect(modifier.removeParameters(`${url}?`)).toBe(url);
     });
+
+    it('doesnt apply to "?&" urls', () => {
+        const url = 'https://example.org/path==.json';
+
+        let rule = new NetworkRule('$removeparam=asg', 0);
+        let modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}?&test=1`)).toBe(`${url}?&test=1`);
+
+        modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}?t1=1&&t2=2`)).toBe(`${url}?t1=1&&t2=2`);
+
+        rule = new NetworkRule('example.org$removeparam', 0);
+        modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}?&test=1`)).toBe(url);
+
+        modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(`${url}?&test=1&`)).toBe(url);
+    });
 });

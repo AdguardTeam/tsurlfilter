@@ -15,7 +15,8 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
         return url;
     }
 
-    const urlPieces = [url.slice(0, searchIndex), url.slice(searchIndex + 1)];
+    const query = url.slice(searchIndex + 1);
+    const urlPieces = [url.slice(0, searchIndex), query];
 
     if (invert) {
         urlPieces[1] = urlPieces[1]
@@ -26,12 +27,16 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
     } else {
         urlPieces[1] = urlPieces[1]
             .split('&')
-            .filter((x) => x)
             .filter((x) => {
                 const test = x.includes('=') ? x : `${x}=`;
                 return !test.match(regExp);
             })
             .join('&');
+    }
+
+    // Do not normalize if regexp is not applied
+    if (urlPieces[1] === query) {
+        return url;
     }
 
     // Cleanup empty params (p0=0&=2&=3)
