@@ -108,12 +108,12 @@ export enum NetworkRuleOption {
     /**
      * Removeparam compatible modifiers
      */
-    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase,
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase | Badfilter,
 
     /**
      * Removeheader compatible modifiers
      */
-    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase
+    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter,
 }
 
 /**

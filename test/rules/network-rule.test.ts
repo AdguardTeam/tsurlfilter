@@ -214,6 +214,9 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('||example.org^$removeparam=p,media', 0);
         expect(correct).toBeTruthy();
 
+        correct = new NetworkRule('@@||example.org^$removeparam=p,badfilter', 0);
+        expect(correct).toBeTruthy();
+
         expect(() => {
             new NetworkRule('||example.org^$removeparam=p,domain=test.com,popup', 0);
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
@@ -231,6 +234,9 @@ describe('NetworkRule constructor', () => {
         expect(correct).toBeTruthy();
 
         correct = new NetworkRule('@@||example.org^$removeheader', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('@@||example.org^$removeheader=header-name,badfilter', 0);
         expect(correct).toBeTruthy();
 
         expect(() => {
