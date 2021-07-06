@@ -94,8 +94,13 @@ describe('Cookie filtering', () => {
         }]);
 
         await runCase(rules, requestHeaders);
-
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(0, 'c_user', 'test_value', 'example.org', 1, cookieRule, false, false);
+        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+            cookieDomain: 'example.org',
+            cookieName: 'c_user',
+            cookieRule,
+            isModifyingCookieRule: false,
+            thirdParty: false,
+        }));
     });
 
     it('checks modifying rule - max age', async () => {
@@ -111,7 +116,14 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(0, 'c_user', 'test_value', 'example.org', 1, cookieRule, true, false);
+        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+            cookieDomain: 'example.org',
+            cookieName: 'c_user',
+            cookieValue: 'test_value',
+            cookieRule,
+            isModifyingCookieRule: true,
+            thirdParty: false,
+        }));
     });
 
     it('checks modifying rule - sameSite', async () => {
@@ -127,7 +139,14 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(0, 'c_user', 'test_value', 'example.org', 1, cookieRule, true, false);
+        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+            cookieDomain: 'example.org',
+            cookieName: 'c_user',
+            cookieValue: 'test_value',
+            cookieRule,
+            isModifyingCookieRule: true,
+            thirdParty: false,
+        }));
     });
 
     it('checks remove rule - third-party cases', async () => {
@@ -149,7 +168,13 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders, responseHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(0, 'third_party_user', 'test', 'example.org', 1, thirdPartyCookieRule, false, true);
+        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+            cookieDomain: 'example.org',
+            cookieName: 'third_party_user',
+            cookieRule: thirdPartyCookieRule,
+            isModifyingCookieRule: false,
+            thirdParty: true,
+        }));
     });
 
     it('filters blocking rules', () => {

@@ -101,9 +101,12 @@ export class FilteringLog {
      * @param cookieRule
      * @param isModifyingCookieRule
      * @param thirdParty
+     * @param timestamp
      */
-    addCookieEvent(
-        tabId, cookieName, cookieValue, cookieDomain, requestType, cookieRule, isModifyingCookieRule, thirdParty) {
+    addCookieEvent({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars,max-len
+        tabId, cookieName, cookieValue, cookieDomain, requestType, cookieRule, isModifyingCookieRule, thirdParty, timestamp,
+    }) {
         const filteringEvent = {
             eventType: 'COOKIE',
             cookieDomain,

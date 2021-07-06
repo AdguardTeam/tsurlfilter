@@ -195,16 +195,17 @@ export class CookieFiltering {
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
             if (await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
-                this.filteringLog.addCookieEvent(
+                this.filteringLog.addCookieEvent({
                     tabId,
-                    cookie.name,
-                    cookie.value,
-                    cookie.domain,
-                    RequestType.Document,
-                    bRule,
-                    false,
-                    isThirdPartyCookie,
-                );
+                    cookieName: cookie.name,
+                    cookieValue: cookie.value,
+                    cookieDomain: cookie.domain,
+                    requestType: RequestType.Document,
+                    cookieRule: bRule,
+                    isModifyingCookieRule: false,
+                    thirdParty: isThirdPartyCookie,
+                    timestamp: Date.now(),
+                });
             }
 
             return;
@@ -216,16 +217,17 @@ export class CookieFiltering {
             if (appliedRules.length > 0) {
                 if (await this.browserCookieApi.modifyCookie(cookie)) {
                     appliedRules.forEach((r) => {
-                        this.filteringLog.addCookieEvent(
+                        this.filteringLog.addCookieEvent({
                             tabId,
-                            cookie.name,
-                            cookie.value,
-                            cookie.domain,
-                            RequestType.Document,
-                            r,
-                            true,
-                            isThirdPartyCookie,
-                        );
+                            cookieName: cookie.name,
+                            cookieValue: cookie.value,
+                            cookieDomain: cookie.domain,
+                            requestType: RequestType.Document,
+                            cookieRule: r,
+                            isModifyingCookieRule: true,
+                            thirdParty: isThirdPartyCookie,
+                            timestamp: Date.now(),
+                        });
                     });
                 }
             }
