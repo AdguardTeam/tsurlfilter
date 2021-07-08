@@ -308,6 +308,10 @@ describe('NetworkRule - removeparam rules', () => {
         rule = new NetworkRule('||example.org^$removeparam', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);
         expect(rule.getAdvancedModifierValue()).toBe('');
+
+        rule = new NetworkRule('||amazon.*$removeparam=*entries*', 0);
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);
+        expect(rule.getAdvancedModifierValue()).toBe('*entries*');
     });
 
     it('works if query parameters are correctly filtered', () => {
@@ -409,5 +413,23 @@ describe('NetworkRule - removeparam rules', () => {
 
         modifier = rule.getAdvancedModifier() as RemoveParamModifier;
         expect(modifier.removeParameters(`${url}?&test=1&`)).toBe(url);
+    });
+
+    it('checks invalid parameters in removeparam', () => {
+        expect(() => {
+            new NetworkRule('||amazon.*$removeparam=/*entries*/', 0);
+        }).toThrowError(/Invalid regular expression:*/);
+    });
+
+    it('preserves url hash', () => {
+        const url = 'https://example.org?p1=1&p2=2#h1=1';
+
+        let rule = new NetworkRule('$removeparam=p1', 0);
+        let modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(url)).toBe('https://example.org?p2=2#h1=1');
+
+        rule = new NetworkRule('$removeparam=p2', 0);
+        modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        expect(modifier.removeParameters(url)).toBe('https://example.org?p1=1#h1=1');
     });
 });

@@ -13,12 +13,28 @@ export class RemoveParamModifier implements IAdvancedModifier {
     private readonly value: string;
 
     /**
+     * RegExp to apply
+     */
+    private readonly valueRegExp: RegExp;
+
+    /**
      * Constructor
      *
      * @param value
      */
     constructor(value: string) {
         this.value = value;
+
+        let rawValue = value;
+        if (value.startsWith('~')) {
+            rawValue = value.substring(1);
+        }
+
+        if (rawValue.startsWith('/')) {
+            this.valueRegExp = SimpleRegex.patternFromString(rawValue);
+        } else {
+            this.valueRegExp = new RegExp(`((^|&)(${SimpleRegex.escapeRegexSpecials(rawValue)})=[^&#]*)`, 'ig');
+        }
     }
 
     /**
@@ -48,30 +64,9 @@ export class RemoveParamModifier implements IAdvancedModifier {
         }
 
         if (this.value.startsWith('~')) {
-            return RemoveParamModifier.applyInvertedParam(url, this.value.substring(1));
+            return utils.cleanUrlParamByRegExp(url, this.valueRegExp, true);
         }
 
-        if (this.value.startsWith('/')) {
-            return utils.cleanUrlParamByRegExp(url, SimpleRegex.patternFromString(this.value));
-        }
-
-        return utils.cleanUrlParam(url, [this.value]);
-    }
-
-    /**
-     * Applies exclusion param to url.
-     * It removes all query parameters with the name different from param or
-     * it removes all query parameters that do not match the regex regular expression.
-     *
-     * @param url
-     * @param param
-     */
-    private static applyInvertedParam(url: string, param: string): string {
-        if (param.startsWith('/')) {
-            const regExp = SimpleRegex.patternFromString(param);
-            return utils.cleanUrlParamByRegExp(url, regExp, true);
-        }
-
-        return utils.cleanUrlParam(url, [param], true);
+        return utils.cleanUrlParamByRegExp(url, this.valueRegExp);
     }
 }

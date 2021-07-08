@@ -5,6 +5,7 @@ import * as utils from '../utils/utils';
 // except of * | ^
 const specialCharacters = ['.', '+', '?', '$', '{', '}', '(', ')', '[', ']', '/', '\\'];
 const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g');
+const reSpecialCharactersFull = /[.*+?^${}()|[\]\\]/g;
 
 /**
  * Class with static helper methods for working with basic filtering rules patterns.
@@ -242,5 +243,14 @@ export class SimpleRegex {
         }
 
         return new RegExp(parts[0], modifiers);
+    }
+
+    /**
+     * Escapes characters with special meaning inside a regular expression.
+     *
+     * @param str
+     */
+    public static escapeRegexSpecials(str: string): string {
+        return str.replace(reSpecialCharactersFull, '\\$&');
     }
 }

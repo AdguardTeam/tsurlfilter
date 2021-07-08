@@ -68,3 +68,10 @@ describe('SimpleRegex.patternFromString', () => {
         expect(SimpleRegex.patternFromString('/test/gi').source).toBe('test');
     });
 });
+
+describe('SimpleRegex.escapeRegexSpecials', () => {
+    it('escapes specials in strings', () => {
+        expect(SimpleRegex.escapeRegexSpecials('*entries*')).toBe('\\*entries\\*');
+        expect(SimpleRegex.escapeRegexSpecials('[test]')).toBe('\\[test\\]');
+    });
+});

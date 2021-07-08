@@ -1,6 +1,56 @@
 import { parse } from 'tldts';
 
 /**
+ * Splits url into parts
+ *
+ * @param url
+ */
+function splitUrl(url: string): { path: string; query: string; hash: string } {
+    let strippedUrl = url;
+
+    let hash = '';
+    const hashIndex = url.indexOf('#');
+    if (hashIndex >= 0) {
+        hash = url.slice(hashIndex);
+        strippedUrl = url.slice(0, hashIndex);
+    }
+
+    let query = '';
+    const queryIndex = url.indexOf('?');
+    if (queryIndex >= 0) {
+        query = strippedUrl.slice(queryIndex + 1);
+        strippedUrl = strippedUrl.slice(0, queryIndex);
+    }
+
+    return {
+        path: strippedUrl,
+        query,
+        hash,
+    };
+}
+
+/**
+ * Normalizes url query parameters
+ *
+ * @param query
+ */
+function normalizeQuery(query: string): string {
+    // Cleanup empty params (p0=0&=2&=3)
+    let result = query
+        .split('&')
+        .filter((x) => x && !x.startsWith('='))
+        .join('&');
+
+    // If we've collapsed the URL to the point where there's an '&' against the '?'
+    // then we need to get rid of that.
+    while (result.charAt(0) === '&') {
+        result = result.substr(1);
+    }
+
+    return result;
+}
+
+/**
  * Removes query params from url by regexp
  *
  * @param url
@@ -9,23 +59,22 @@ import { parse } from 'tldts';
  */
 export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = false): string {
     const searchIndex = url.indexOf('?');
-
     // If no params, nothing to modify
     if (searchIndex === -1) {
         return url;
     }
 
-    const query = url.slice(searchIndex + 1);
-    const urlPieces = [url.slice(0, searchIndex), query];
+    const split = splitUrl(url);
 
+    let modifiedQuery;
     if (invert) {
-        urlPieces[1] = urlPieces[1]
+        modifiedQuery = split.query
             .split('&')
             .filter((x) => x)
             .filter((x) => x && x.match(regExp))
             .join('&');
     } else {
-        urlPieces[1] = urlPieces[1]
+        modifiedQuery = split.query
             .split('&')
             .filter((x) => {
                 const test = x.includes('=') ? x : `${x}=`;
@@ -35,35 +84,18 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
     }
 
     // Do not normalize if regexp is not applied
-    if (urlPieces[1] === query) {
+    if (modifiedQuery === split.query) {
         return url;
     }
 
-    // Cleanup empty params (p0=0&=2&=3)
-    urlPieces[1] = urlPieces[1]
-        .split('&')
-        .filter((x) => x && !x.startsWith('='))
-        .join('&');
+    modifiedQuery = normalizeQuery(modifiedQuery);
 
-    // If we've collapsed the URL to the point where there's an '&' against the '?'
-    // then we need to get rid of that.
-    while (urlPieces[1].charAt(0) === '&') {
-        urlPieces[1] = urlPieces[1].substr(1);
+    let result = split.path;
+    if (modifiedQuery) {
+        result += `?${modifiedQuery}`;
     }
 
-    return urlPieces[1] ? urlPieces.join('?') : urlPieces[0];
-}
-
-/**
- * Removes query params from url by array of params
- *
- * @param url
- * @param params
- * @param invert use params as exceptions, then it removes all query parameters with the name different from param.
- */
-export function cleanUrlParam(url: string, params: string[], invert = false): string {
-    const trackingParametersRegExp = new RegExp(`((^|&)(${params.join('|')})=[^&#]*)`, 'ig');
-    return cleanUrlParamByRegExp(url, trackingParametersRegExp, invert);
+    return result + split.hash;
 }
 
 /**
