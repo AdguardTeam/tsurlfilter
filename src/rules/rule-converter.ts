@@ -1,4 +1,4 @@
-import Scriptlets from 'scriptlets';
+import Scriptlets from '@adguard/scriptlets';
 import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { RuleFactory } from './rule-factory';

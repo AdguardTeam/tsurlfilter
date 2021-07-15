@@ -1,4 +1,4 @@
-import Scriptlets from 'scriptlets';
+import Scriptlets from '@adguard/scriptlets';
 import * as rule from './rule';
 import {
     CosmeticRuleMarker,

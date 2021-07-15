@@ -1,5 +1,5 @@
 /* eslint-disable no-console,@typescript-eslint/explicit-function-return-type,import/no-extraneous-dependencies */
-import { redirects } from 'scriptlets';
+import { redirects } from '@adguard/scriptlets';
 
 import { loadResource, createRedirectFileUrl } from './utils/resources';
 

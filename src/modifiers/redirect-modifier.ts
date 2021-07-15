@@ -1,4 +1,4 @@
-import Scriptlets from 'scriptlets';
+import Scriptlets from '@adguard/scriptlets';
 import { IAdvancedModifier } from './advanced-modifier';
 import { NETWORK_RULE_OPTIONS } from '../rules/network-rule-options';
 

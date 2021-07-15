@@ -1,4 +1,4 @@
-import Scriptlets from 'scriptlets';
+import Scriptlets from '@adguard/scriptlets';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScriptletParser } from './scriptlet-parser';
 import { config } from '../../configuration';
