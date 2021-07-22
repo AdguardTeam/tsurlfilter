@@ -92,13 +92,13 @@ describe('Stealth service - headers', () => {
 
         expect(service.processRequestHeaders(url, RequestType.Document, [
             {
-                name: 'Referrer',
+                name: 'Referer',
                 value: 'http://example.org',
             },
         ])).toBe(0);
         expect(service.processRequestHeaders(url, RequestType.Document, [
             {
-                name: 'Referrer',
+                name: 'Referer',
                 value: 'http://other.org',
             },
         ])).toBe(StealthActions.HIDE_REFERRER);
@@ -110,14 +110,14 @@ describe('Stealth service - headers', () => {
 
         expect(service.processRequestHeaders(url, RequestType.Document, [
             {
-                name: 'Referrer',
+                name: 'Referer',
                 value: 'http://other.org',
             },
         ])).toBe(0);
 
         expect(service.processRequestHeaders(url, RequestType.Document, [
             {
-                name: 'Referrer',
+                name: 'Referer',
                 value: 'http://www.google.com',
             },
         ])).toBe(StealthActions.HIDE_SEARCH_QUERIES);
