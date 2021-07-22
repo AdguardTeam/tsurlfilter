@@ -34,6 +34,31 @@ describe('Cookie Controller Tests', () => {
         expect(onAppliedCallback).toHaveBeenCalled();
     });
 
+    it('checks to not apply non-matching rule', () => {
+        const rules = [
+            new NetworkRule('||example.org^$cookie=user', 1),
+        ];
+
+        const rulesData = rules.map((rule) => ({
+            ruleText: rule.getText()!,
+            match: rule.getAdvancedModifierValue()!,
+            isThirdParty: false,
+            filterId: 1,
+        }));
+
+        const controller = new CookieController(onAppliedCallback);
+        controller.apply(rulesData);
+        expect(onAppliedCallback).not.toBeCalled();
+
+        document.cookie = 'not_user=test';
+        controller.apply(rulesData);
+        expect(onAppliedCallback).not.toBeCalled();
+
+        document.cookie = 'user_not=test';
+        controller.apply(rulesData);
+        expect(onAppliedCallback).not.toBeCalled();
+    });
+
     it('checks apply wildcard rule', () => {
         const rules = [
             new NetworkRule('||example.org^$cookie', 1),

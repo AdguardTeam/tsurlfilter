@@ -194,6 +194,6 @@ export default class CookieController {
             return new RegExp(str.slice(1, -1));
         }
         const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return new RegExp(escaped);
+        return new RegExp(`^${escaped}$`);
     }
 }
