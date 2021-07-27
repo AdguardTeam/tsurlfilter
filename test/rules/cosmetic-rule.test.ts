@@ -402,6 +402,7 @@ describe('Javascript rules', () => {
         expect(rule.isWhitelist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Js);
         expect(rule.getContent()).toBe(jsContent);
+        expect(rule.isScriptlet).toBeFalsy();
 
         const whiteRuleText = `example.org#@%#${jsContent}`;
         const whiteRule = new CosmeticRule(whiteRuleText, 0);
@@ -410,6 +411,7 @@ describe('Javascript rules', () => {
         expect(whiteRule.isWhitelist()).toBeTruthy();
         expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
         expect(whiteRule.getContent()).toBe(jsContent);
+        expect(rule.isScriptlet).toBeFalsy();
     });
 
     it('correctly parses js scriptlets rules', () => {
@@ -421,6 +423,7 @@ describe('Javascript rules', () => {
         expect(rule.isWhitelist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Js);
         expect(rule.getContent()).toBe(jsContent);
+        expect(rule.isScriptlet).toBeTruthy();
 
         const whiteRuleText = `example.org#@%#${jsContent}`;
         const whiteRule = new CosmeticRule(whiteRuleText, 0);
@@ -429,6 +432,7 @@ describe('Javascript rules', () => {
         expect(whiteRule.isWhitelist()).toBeTruthy();
         expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
         expect(whiteRule.getContent()).toBe(jsContent);
+        expect(rule.isScriptlet).toBeTruthy();
     });
 });
 

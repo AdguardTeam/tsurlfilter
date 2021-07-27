@@ -100,6 +100,11 @@ export class CosmeticRule implements rule.IRule {
     public scriptVerbose: string | null = null;
 
     /**
+     * If the rule contains scriptlet content
+     */
+    public isScriptlet = false;
+
+    /**
      * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
      * which contains a lot more selectors. So, if CSS selector contains a pseudo-class, we should try to validate it.
      * <p>
@@ -306,6 +311,8 @@ export class CosmeticRule implements rule.IRule {
                 }
             }
         }
+
+        this.isScriptlet = this.content.startsWith(ADG_SCRIPTLET_MASK);
     }
 
     /**
