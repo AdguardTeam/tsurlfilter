@@ -759,6 +759,22 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(2);
+        expect(found.filter((x) => x.getText() === '||example.org^$removeparam=p0')).toHaveLength(1);
+        expect(found.filter((x) => x.getText() === '@@||example.org^$removeparam=p1')).toHaveLength(1);
+    });
+
+    it('works if important removeparam rule is more important than whitelist rule', () => {
+        const ruleTexts = [
+            '||example.org$important,removeparam=p1',
+            '@@||example.org$removeparam=p1',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getRemoveParamRules();
+        expect(found.length).toBe(1);
+        expect(found.filter((x) => x.getText() === '||example.org$important,removeparam=p1')).toHaveLength(1);
     });
 
     it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {

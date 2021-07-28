@@ -468,7 +468,10 @@ export class MatchingResult {
         }
 
         return MatchingResult.filterAdvancedModifierRules(this.removeParamRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+            // eslint-disable-next-line arrow-body-style
+            (rule) => ((x): boolean => {
+                return x.isHigherPriority(rule) && x.getAdvancedModifierValue() === rule.getAdvancedModifierValue();
+            }));
     }
 
     /**

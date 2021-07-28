@@ -33,7 +33,7 @@ export class RemoveParamModifier implements IAdvancedModifier {
         if (rawValue.startsWith('/')) {
             this.valueRegExp = SimpleRegex.patternFromString(rawValue);
         } else {
-            this.valueRegExp = new RegExp(`((^|&)(${SimpleRegex.escapeRegexSpecials(rawValue)})=[^&#]*)`, 'ig');
+            this.valueRegExp = new RegExp(`((^|&)(${SimpleRegex.escapeRegexSpecials(rawValue)})=[^&#]*)`, 'g');
         }
     }
 

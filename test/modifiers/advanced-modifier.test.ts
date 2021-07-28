@@ -432,4 +432,14 @@ describe('NetworkRule - removeparam rules', () => {
         modifier = rule.getAdvancedModifier() as RemoveParamModifier;
         expect(modifier.removeParameters(url)).toBe('https://example.org?p1=1#h1=1');
     });
+
+    it('respects case by default', () => {
+        const rule = new NetworkRule('$removeparam=P1', 0);
+        const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+
+        const comPage = 'http://example.com/page';
+        expect(modifier.removeParameters(`${comPage}`)).toBe(`${comPage}`);
+        expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0&p1=1`);
+    });
 });
