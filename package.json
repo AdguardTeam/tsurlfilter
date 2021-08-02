@@ -129,10 +129,10 @@
     "webextension-polyfill-ts": "^0.24.0"
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.4.1",
+    "@adguard/scriptlets": "^1.4.4",
     "@types/punycode": "^2.1.0",
     "consola": "^2.12.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.12",
+    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",
     "is-ip": "^3.1.0",
     "punycode": "^2.1.1",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",

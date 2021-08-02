@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@adguard/scriptlets@^1.4.1":
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.4.1.tgz#d0d355934dee98fc0adb20ed124ba5995dd5c38b"
-  integrity sha512-la4frUWnPiLR8lNU/ItZ8dgqq3BC9CG7qvwNCUCCEFC8K0JJaPPii1Up72jMajjxNTcTMBFNnp5AwU9YX2DTIA==
+"@adguard/scriptlets@^1.4.4":
+  version "1.4.4"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.4.4.tgz#959cef45458ec01e7d89360a90b0e9bd31db20da"
+  integrity sha512-ZH4yzIAqlTA4HNtZQHipPbRmXWcNBtgKP/N1GbKe2hjskPc742iA0AHn01ko0rfcUe4tmT6Ua0IHKJKHpymLng==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
@@ -3241,9 +3241,9 @@ extend@~3.0.2:
   resolved "https://registry.yarnpkg.com/extend/-/extend-3.0.2.tgz#f8b1136b4071fbd8eb140aff858b1019ec2915fa"
   integrity sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==
 
-"extended-css@git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.12":
-  version "1.3.12"
-  resolved "git+https://github.com/AdguardTeam/ExtendedCss.git#241f588d6a3d283e7cc7a747d52d09efed41cde9"
+"extended-css@git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13":
+  version "1.3.13"
+  resolved "git+https://github.com/AdguardTeam/ExtendedCss.git#66c6c9a390f53325876e54e3de486338b2535a2c"
 
 external-editor@^3.0.0, external-editor@^3.0.3:
   version "3.1.0"
