@@ -672,10 +672,147 @@ describe('NetworkRule.match', () => {
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(true);
     });
+
     it('works when content type ping is applied properly', () => {
         const rule = new NetworkRule('||example.org^$ping', 0);
         const request = new Request('https://example.org/', null, RequestType.Ping);
         expect(rule.match(request)).toEqual(true);
+    });
+
+    it('works when $ctag modifier is applied properly', () => {
+        let rule: NetworkRule;
+        let request: Request;
+
+        rule = new NetworkRule('||example.org^$ctag=device_pc', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientTags = ['device_pc'];
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientTags = ['device_pc', 'device_phone'];
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientTags = ['device_phone'];
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$ctag=device_phone|device_pc', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientTags = ['device_pc'];
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientTags = ['device_pc', 'device_phone'];
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientTags = ['device_phone'];
+        expect(rule.match(request)).toBeTruthy();
+
+        rule = new NetworkRule('||example.org^$ctag=~device_phone|device_pc', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientTags = ['device_pc'];
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientTags = ['device_pc', 'device_phone'];
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientTags = ['device_phone'];
+        expect(rule.match(request)).toBeFalsy();
+    });
+
+    it('works when $dnstype modifier is applied properly', () => {
+        let rule: NetworkRule;
+        let request: Request;
+
+        rule = new NetworkRule('||example.org^$dnstype=TXT|AAAA', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.dnsType = 'AAAA';
+        expect(rule.match(request)).toBeTruthy();
+
+        request.dnsType = 'CNAME';
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$dnstype=~TXT|~AAAA', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.dnsType = 'AAAA';
+        expect(rule.match(request)).toBeFalsy();
+
+        request.dnsType = 'CNAME';
+        expect(rule.match(request)).toBeTruthy();
+    });
+
+    it('works when $client modifier is applied properly', () => {
+        let rule: NetworkRule;
+        let request: Request;
+
+        rule = new NetworkRule('||example.org^$client=name', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientIP = '127.0.0.1';
+        request.clientName = 'name';
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientIP = '127.0.0.1';
+        request.clientName = 'another-name';
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule("||example.org^$client=~'Frank\\'s laptop'", 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientName = "Frank's phone";
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientName = "Frank's laptop";
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$client=127.0.0.1', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientIP = '127.0.0.1';
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientIP = '127.0.0.2';
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$client=127.0.0.0/8', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientIP = '127.1.1.1';
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientIP = '126.0.0.0';
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$client=2001::c0:ffee', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientIP = '2001::c0:ffee';
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientIP = '2001::c0:ffef';
+        expect(rule.match(request)).toBeFalsy();
+
+        rule = new NetworkRule('||example.org^$client=2001::0:00c0:ffee/112', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+
+        request.clientIP = '2001::0:c0:0';
+        expect(rule.match(request)).toBeTruthy();
+
+        request.clientIP = '2001::c1:ffee';
+        expect(rule.match(request)).toBeFalsy();
     });
 });
 

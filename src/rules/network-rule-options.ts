@@ -41,6 +41,10 @@ export const NETWORK_RULE_OPTIONS = {
     NETWORK: 'network',
     EXTENSION: 'extension',
     NOOP: '_',
+    CLIENT: 'client',
+    DNSREWRITE: 'dnsrewrite',
+    DNSTYPE: 'dnstype',
+    CTAG: 'ctag',
 };
 
 export const OPTIONS_DELIMITER = '$';

@@ -93,6 +93,26 @@ export class Request {
     public sourceSubdomains: string[];
 
     /**
+     * List of client tags
+     */
+    public clientTags: string[] | undefined;
+
+    /**
+     * DNS type
+     */
+    public dnsType: string | undefined;
+
+    /**
+     * Client name
+     */
+    public clientName: string | undefined;
+
+    /**
+     * Client IP
+     */
+    public clientIP: string | undefined;
+
+    /**
     * Splits subdomains and returns all subdomains (including the hostname itself)
     *
     * @param tldResult

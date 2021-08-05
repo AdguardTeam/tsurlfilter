@@ -21,6 +21,10 @@ import {
     ESCAPE_CHARACTER,
 } from './network-rule-options';
 import { RequestType } from '../request-type';
+import { ClientModifier } from '../modifiers/dns/client-modifier';
+import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
+import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
+import { CtagModifier } from '../modifiers/dns/ctag-modifier';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -85,6 +89,12 @@ export enum NetworkRuleOption {
     // Compatibility dependent
     /** $network modifier */
     Network = 1 << 22,
+
+    /** dns modifiers */
+    Client = 1 << 23,
+    DnsRewrite = 1 << 24,
+    DnsType = 1 << 25,
+    Ctag = 1 << 26,
 
     // Groups (for validation)
 
@@ -418,6 +428,18 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
+        if (!this.matchDnsType(request.dnsType)) {
+            return false;
+        }
+
+        if (!this.matchClientTags(request.clientTags)) {
+            return false;
+        }
+
+        if (!this.matchClient(request.clientName, request.clientIP)) {
+            return false;
+        }
+
         return this.matchPattern(request);
     }
 
@@ -473,6 +495,64 @@ export class NetworkRule implements rule.IRule {
         }
 
         return true;
+    }
+
+    /**
+     * Return TRUE if this rule matches with the tags associated with a client
+     *
+     * @param clientTags
+     */
+    private matchClientTags(clientTags: string[] | undefined): boolean {
+        const advancedModifier = this.getAdvancedModifier();
+        if (!advancedModifier || !(advancedModifier instanceof CtagModifier)) {
+            return true;
+        }
+
+        if (!clientTags) {
+            return false;
+        }
+
+        const cTagsModifier = advancedModifier as CtagModifier;
+        return clientTags.every((x) => cTagsModifier.match(x));
+    }
+
+    /**
+     * returns TRUE if the rule matches with the specified client
+     *
+     * @param clientName
+     * @param clientIP
+     */
+    private matchClient(clientName: string | undefined, clientIP: string | undefined): boolean {
+        const advancedModifier = this.getAdvancedModifier();
+        if (!advancedModifier || !(advancedModifier instanceof ClientModifier)) {
+            return true;
+        }
+
+        if (!clientName && !clientIP) {
+            return false;
+        }
+
+        const modifier = advancedModifier as ClientModifier;
+        return modifier.matchAny(clientName, clientIP);
+    }
+
+    /**
+     * Return TRUE if this rule matches with the request dnstype
+     *
+     * @param dnstype
+     */
+    private matchDnsType(dnstype: string | undefined): boolean {
+        const advancedModifier = this.getAdvancedModifier();
+        if (!advancedModifier || !(advancedModifier instanceof DnsTypeModifier)) {
+            return true;
+        }
+
+        if (!dnstype) {
+            return false;
+        }
+
+        const modifier = advancedModifier as DnsTypeModifier;
+        return modifier.match(dnstype);
     }
 
     /**
@@ -1131,6 +1211,43 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isWhitelist());
                 break;
+
+            // Dns modifiers
+            case OPTIONS.CLIENT: {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $client modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Client, true);
+                this.advancedModifier = new ClientModifier(optionValue);
+                break;
+            }
+
+            case OPTIONS.DNSREWRITE: {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $dnsrewrite modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.DnsRewrite, true);
+                this.advancedModifier = new DnsRewriteModifier(optionValue);
+                break;
+            }
+
+            case OPTIONS.DNSTYPE: {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $dnstype modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.DnsType, true);
+                this.advancedModifier = new DnsTypeModifier(optionValue);
+                break;
+            }
+
+            case OPTIONS.CTAG: {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension doesn\'t support $ctag modifier');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Ctag, true);
+                this.advancedModifier = new CtagModifier(optionValue);
+                break;
+            }
 
             case OPTIONS.APP: {
                 if (isCompatibleWith(CompatibilityTypes.extension)) {
