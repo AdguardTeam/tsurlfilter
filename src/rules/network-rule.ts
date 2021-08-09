@@ -424,6 +424,12 @@ export class NetworkRule implements rule.IRule {
             }
         }
 
+        if (this.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+            if (!this.matchRequestTypeExplicit(request.requestType)) {
+                return false;
+            }
+        }
+
         if (!this.matchDenyAllowDomains(request.hostname)) {
             return false;
         }
@@ -598,6 +604,20 @@ export class NetworkRule implements rule.IRule {
         }
 
         return true;
+    }
+
+    /**
+     * In case of $removeparam modifier,
+     * we only allow it to target other content types if the rule has an explicit content-type modifier.
+     */
+    private matchRequestTypeExplicit(requestType: RequestType): boolean {
+        if (this.permittedRequestTypes === 0
+            && this.restrictedRequestTypes === 0
+            && requestType !== RequestType.Document) {
+            return false;
+        }
+
+        return this.matchRequestType(requestType);
     }
 
     /**

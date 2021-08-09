@@ -523,6 +523,41 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(false);
     });
 
+    it('works $removeparam modifier with content types logic', () => {
+        let rule: NetworkRule;
+        let request: Request;
+
+        rule = new NetworkRule('||example.org^$removeparam=p', 0);
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('||example.org^$removeparam=p,script', 0);
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('||example.org^$removeparam=p,~script', 0);
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+    });
+
     it('works when $denyallow modifier is applied properly', () => {
         let rule: NetworkRule;
         let request: Request;
