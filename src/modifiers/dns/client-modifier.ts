@@ -1,8 +1,8 @@
 // eslint-disable-next-line max-classes-per-file
 import isCidr from 'is-cidr';
+import isIp from 'is-ip';
 import { Netmask } from 'netmask';
 import { CIDR, createCIDR } from 'ip6addr';
-import { isIPv4 } from 'net';
 import { BaseValuesModifier } from '../values-modifier';
 
 /**
@@ -19,7 +19,7 @@ class NetmasksCollection {
      * @param value
      */
     contains(value: string): boolean {
-        if (isIPv4(value)) {
+        if (isIp.v4(value)) {
             return this.ipv4Masks.some((x) => x.contains(value));
         }
 

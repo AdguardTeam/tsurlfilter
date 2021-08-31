@@ -5,6 +5,7 @@ import globals from 'rollup-plugin-node-globals';
 import camelCase from 'lodash/camelCase';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
+import nodePolyfills from 'rollup-plugin-polyfill-node';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
@@ -62,6 +63,7 @@ const esmConfig = {
         typescript(),
         commonjs(),
         globals(),
+        nodePolyfills(),
         resolve({ preferBuiltins: false }),
         sourceMaps(),
     ],
@@ -91,6 +93,7 @@ const browserConfig = {
         typescript(),
         commonjs(),
         globals(),
+        nodePolyfills(),
         resolve({ preferBuiltins: false }),
         sourceMaps(),
     ],
@@ -125,6 +128,7 @@ export default [
             // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
             commonjs(),
             globals(),
+            nodePolyfills(),
 
             // Allow node_modules resolution, so you can use 'external' to control
             // which external modules to include in the bundle
