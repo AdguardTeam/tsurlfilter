@@ -1,11 +1,11 @@
 import { RuleScanner } from './rule-scanner';
 import { IndexedStorageRule } from '../../rules/rule';
+import { LIST_ID_MAX_VALUE } from '../rule-list';
 
 /**
  * RuleStorageScanner scans multiple RuleScanner instances
  * The rule index is built from the rule index in the list + the list ID
- * First 4 bytes is the rule index in the list
- * Second 4 bytes is the list ID
+ * In the index number we consider decimal part as listId and integer part as ruleId
 */
 export class RuleStorageScanner {
     /**
@@ -84,14 +84,13 @@ export class RuleStorageScanner {
 
     /**
      * ruleListIdxToStorageIdx converts pair of listID and rule list index
-     * to "storage index" string
+     * to "storage index" number
      *
      * @param listId
      * @param ruleIdx
      */
-    private static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): string {
-        // eslint-disable-next-line no-mixed-operators
-        return `${listId}-${ruleIdx}`;
+    private static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): number {
+        return listId / LIST_ID_MAX_VALUE + ruleIdx;
     }
 
     /**
@@ -102,11 +101,10 @@ export class RuleStorageScanner {
      * @param storageIdx
      * @return [listId, ruleIdx]
      */
-    public static storageIdxToRuleListIdx(storageIdx: string): [number, number] {
-        const separatorIndex = storageIdx.indexOf('-');
-        const list = Number(storageIdx.substring(0, separatorIndex));
-        const ruleId = Number(storageIdx.substring(separatorIndex + 1));
+    public static storageIdxToRuleListIdx(storageIdx: number): [number, number] {
+        const listId = Math.round((storageIdx % 1) * LIST_ID_MAX_VALUE);
+        const ruleIdx = Math.trunc(storageIdx);
 
-        return [list, ruleId];
+        return [listId, ruleIdx];
     }
 }

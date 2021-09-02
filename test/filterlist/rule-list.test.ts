@@ -1,4 +1,4 @@
-import { StringRuleList } from '../../src/filterlist/rule-list';
+import { LIST_ID_MAX_VALUE, StringRuleList } from '../../src/filterlist/rule-list';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 
 describe('TestStringRuleListScanner', () => {
@@ -6,6 +6,12 @@ describe('TestStringRuleListScanner', () => {
 
     it('checks common properties', () => {
         expect(ruleList.getId()).toBe(1);
+    });
+
+    it('checks max list id', () => {
+        expect(() => {
+            new StringRuleList(LIST_ID_MAX_VALUE, '||example.org\n! test\n##banner');
+        }).toThrowError();
     });
 
     const scanner = ruleList.newScanner(ScannerType.All);

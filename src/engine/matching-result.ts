@@ -75,9 +75,9 @@ export class MatchingResult {
      * Creates an instance of the MatchingResult struct and fills it with the rules.
      *
      * @param rules network rules
-     * @param sourceRules source rules
+     * @param sourceRule source rule
      */
-    constructor(rules: NetworkRule[], sourceRules: NetworkRule[] | null) {
+    constructor(rules: NetworkRule[], sourceRule: NetworkRule | null) {
         this.basicRule = null;
         this.documentRule = null;
         this.cspRules = null;
@@ -91,24 +91,9 @@ export class MatchingResult {
 
         // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
-        if (sourceRules) {
-            // eslint-disable-next-line no-param-reassign
-            sourceRules = MatchingResult.removeBadfilterRules(sourceRules);
-        }
 
-        // First of all, find document-level whitelist rules
-        if (sourceRules) {
-            sourceRules.forEach((r) => {
-                if (r.isDocumentLevelWhitelistRule()) {
-                    if (!this.documentRule || r.isHigherPriority(this.documentRule)) {
-                        this.documentRule = r;
-                    }
-                }
-
-                if (r.isOptionEnabled(NetworkRuleOption.Stealth)) {
-                    this.stealthRule = r;
-                }
-            });
+        if (sourceRule) {
+            this.documentRule = sourceRule;
         }
 
         // Second - check if blocking rules (generic or all of them) are allowed
@@ -524,7 +509,7 @@ export class MatchingResult {
      * @param rules to filter
      * @return filtered rules
      */
-    private static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
+    static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {

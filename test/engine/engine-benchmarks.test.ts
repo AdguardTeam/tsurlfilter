@@ -1,6 +1,8 @@
+/* eslint-disable max-len */
 import fs from 'fs';
 import zlib from 'zlib';
 import console from 'console';
+import { performance } from 'perf_hooks';
 import { NetworkEngine } from '../../src/engine/network-engine';
 import { Engine, Request, RequestType } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
@@ -8,10 +10,10 @@ import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { DnsEngine } from '../../src/engine/dns-engine';
 import { setLogger } from '../../src/utils/logger';
 
-// Benchmarks
-//     ✓ runs network-engine (1567ms)
-//     ✓ runs engine - async load (1875ms)
-//     ✓ runs dns-engine (956ms)
+// Benchmarks (Average per request)
+//     ✓ runs network-engine (40 μs)
+//     ✓ runs engine - async load (50 μs)
+//     ✓ runs dns-engine (12 μs)
 
 /**
  * Resources file paths
@@ -97,8 +99,13 @@ async function parseRequests(): Promise<Request[]> {
     return requests;
 }
 
-function getRSS(): number {
-    return process.memoryUsage().rss;
+function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
+    let { heapUsed, heapTotal } = process.memoryUsage();
+
+    heapUsed -= base.heapUsed;
+    heapTotal -= base.heapTotal;
+
+    return ({ heapUsed, heapTotal });
 }
 
 function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): number {
@@ -114,13 +121,13 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
 
         const req = requests[i];
 
-        const startMatch = Date.now();
+        const startMatch = performance.now();
 
         if (matchFunc(req)) {
             totalMatches += 1;
         }
 
-        const elapsedMatch = Date.now() - startMatch;
+        const elapsedMatch = performance.now() - startMatch;
         totalElapsed += elapsedMatch;
 
         if (elapsedMatch > maxElapsedMatch) {
@@ -131,11 +138,14 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    const round = (val: number) => Math.round(val * 1000 * 1000) / 1000;
+
     console.log(`Total matches: ${totalMatches}`);
-    console.log(`Total elapsed: ${totalElapsed}`);
-    console.log(`Average per request: ${totalElapsed / requests.length}`);
-    console.log(`Max per request: ${maxElapsedMatch}`);
-    console.log(`Min per request: ${minElapsedMatch}`);
+    console.log(`Total elapsed: ${round(totalElapsed)} μs`);
+    console.log(`Average per request: ${round(totalElapsed / requests.length)} μs`);
+    console.log(`Max per request: ${round(maxElapsedMatch)} μs`);
+    console.log(`Min per request: ${round(minElapsedMatch)} μs`);
 
     return totalMatches;
 }
@@ -168,10 +178,11 @@ describe('Benchmarks', () => {
          */
         const expectedMatchesCount = 4667;
 
+        const baseMemory = memoryUsage();
         const requests = await parseRequests();
 
-        const start = getRSS();
-        console.log(`RSS before loading rules - ${start / 1024} kB`);
+        const initMemory = memoryUsage(baseMemory);
+        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
 
         const startParse = Date.now();
         const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
@@ -183,8 +194,8 @@ describe('Benchmarks', () => {
         console.log(`Loaded rules: ${engine.rulesCount}`);
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
 
-        const afterLoad = getRSS();
-        console.log(`RSS after loading rules - ${afterLoad / 1024} kB (${(afterLoad - start) / 1024} kB diff)`);
+        const loadingMemory = memoryUsage(baseMemory);
+        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
 
         const totalMatches = runEngine(requests, (request) => {
             const rule = engine.match(request);
@@ -193,8 +204,8 @@ describe('Benchmarks', () => {
 
         expect(totalMatches).toBe(expectedMatchesCount);
 
-        const afterMatch = getRSS();
-        console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);
+        const afterMatch = memoryUsage(baseMemory);
+        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
     });
 
     it('runs engine - async load', async () => {
@@ -205,10 +216,11 @@ describe('Benchmarks', () => {
          */
         const expectedMatchesCount = 586;
 
+        const baseMemory = memoryUsage();
         const requests = await parseRequests();
 
-        const start = getRSS();
-        console.log(`RSS before loading rules - ${start / 1024} kB`);
+        const initMemory = memoryUsage(baseMemory);
+        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
 
         const startParse = Date.now();
         const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
@@ -222,8 +234,8 @@ describe('Benchmarks', () => {
         console.log(`Loaded rules: ${engine.getRulesCount()}`);
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
 
-        const afterLoad = getRSS();
-        console.log(`RSS after loading rules - ${afterLoad / 1024} kB (${(afterLoad - start) / 1024} kB diff)`);
+        const loadingMemory = memoryUsage(baseMemory);
+        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
 
         const totalMatches = runEngine(requests, (request) => {
             const matchingResult = engine.matchRequest(request);
@@ -234,8 +246,8 @@ describe('Benchmarks', () => {
 
         expect(totalMatches).toBe(expectedMatchesCount);
 
-        const afterMatch = getRSS();
-        console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);
+        const afterMatch = memoryUsage(baseMemory);
+        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
     });
 
     it('runs dns-engine', async () => {
@@ -247,10 +259,11 @@ describe('Benchmarks', () => {
          */
         const expectedMatchesCount = 11043;
 
+        const baseMemory = memoryUsage();
         const requests = await parseRequests();
 
-        const start = getRSS();
-        console.log(`RSS before loading rules - ${start / 1024} kB`);
+        const initMemory = memoryUsage(baseMemory);
+        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
 
         const startParse = Date.now();
         const ruleList = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
@@ -263,8 +276,8 @@ describe('Benchmarks', () => {
         console.log(`Loaded rules: ${engine.rulesCount}`);
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
 
-        const afterLoad = getRSS();
-        console.log(`RSS after loading rules - ${afterLoad / 1024} kB (${(afterLoad - start) / 1024} kB diff)`);
+        const loadingMemory = memoryUsage(baseMemory);
+        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
 
         const totalMatches = runEngine(requests, (request) => {
             const dnsResult = engine.match(request.hostname);
@@ -281,7 +294,7 @@ describe('Benchmarks', () => {
 
         expect(totalMatches).toBe(expectedMatchesCount);
 
-        const afterMatch = getRSS();
-        console.log(`RSS after matching - ${afterMatch / 1024} kB (${(afterMatch - afterLoad) / 1024} kB diff)`);
+        const afterMatch = memoryUsage(baseMemory);
+        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
     });
 });

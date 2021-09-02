@@ -40,6 +40,9 @@ describe('SimpleRegex.extractShortcut', () => {
 
         shortcut = SimpleRegex.extractShortcut('|https://*examp');
         expect(shortcut).toEqual('https://');
+
+        shortcut = SimpleRegex.extractShortcut('|https://*example.org/path');
+        expect(shortcut).toEqual('example.org/path');
     });
 
     it('works if it is able to extract regex shortcuts', () => {
@@ -50,14 +53,23 @@ describe('SimpleRegex.extractShortcut', () => {
         expect(shortcut).toEqual('/example');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]+\\.example/');
-        expect(shortcut).toEqual('example');
+        expect(shortcut).toEqual('.example');
+
+        shortcut = SimpleRegex.extractShortcut('/(https?:\\/\\/)142\\.91\\.159\\..{100,}/');
+        expect(shortcut).toEqual('142.91.159.');
     });
 
     it('works if it discards incorrect patterns', () => {
         let shortcut = SimpleRegex.extractShortcut('//');
         expect(shortcut).toEqual('');
 
-        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?!test.)example.org/');
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
+        expect(shortcut).toEqual('example.org');
+
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(!?test.)example.org/');
+        expect(shortcut).toEqual('');
+
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(!?test.)example.org/');
         expect(shortcut).toEqual('');
     });
 });

@@ -1,5 +1,6 @@
 import isIp from 'is-ip';
 import * as rule from './rule';
+import { isDomainName } from '../utils/url';
 
 /**
  * Implements a host rule.
@@ -20,8 +21,6 @@ import * as rule from './rule';
  * * `example.org` -- "just domain" syntax
  */
 export class HostRule implements rule.IRule {
-    private static DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
-
     private readonly ruleText: string;
 
     private readonly filterListId: number;
@@ -59,7 +58,7 @@ export class HostRule implements rule.IRule {
             // eslint-disable-next-line prefer-destructuring
             this.ip = parts[0];
             this.hostnames = parts.slice(1).filter((x) => !!x);
-        } else if (parts.length === 1 && HostRule.isDomainName(parts[0])) {
+        } else if (parts.length === 1 && isDomainName(parts[0])) {
             this.hostnames = [parts[0]];
             this.ip = '0.0.0.0';
         } else {
@@ -109,18 +108,5 @@ export class HostRule implements rule.IRule {
      */
     isInvalid(): boolean {
         return this.invalid;
-    }
-
-    /**
-     * Check if the string could be a domain name
-     *
-     * @param text
-     */
-    private static isDomainName(text: string): boolean {
-        if (!text.includes('.') || text.endsWith('.')) {
-            return false;
-        }
-
-        return HostRule.DOMAIN_REGEX.test(text);
     }
 }

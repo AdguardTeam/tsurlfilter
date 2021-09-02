@@ -5,7 +5,7 @@ describe('TestNewMatchingResult', () => {
         const ruleText = '||example.org^';
         const rules = [new NetworkRule(ruleText, 0)];
 
-        const result = new MatchingResult(rules, []);
+        const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         expect(result.getCookieRules()).toHaveLength(0);
@@ -24,9 +24,9 @@ describe('TestNewMatchingResult', () => {
         const sourceRuleText = '@@||example.com^$document';
 
         const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
+        const sourceRule = new NetworkRule(sourceRuleText, 0);
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
@@ -42,9 +42,9 @@ describe('TestNewMatchingResult', () => {
         const sourceRuleText = '@@||example.com^$urlblock';
 
         const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
+        const sourceRule = new NetworkRule(sourceRuleText, 0);
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
@@ -54,52 +54,16 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual(sourceRuleText);
     });
-
-    it('works if whitelist jsinject rule is not found', () => {
-        const ruleText = '||example.org^';
-        const sourceRuleText = '@@||example.com^$jsinject';
-
-        const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
-
-        const result = new MatchingResult(rules, sourceRules);
-
-        expect(result).toBeTruthy();
-        expect(result.basicRule).not.toBeNull();
-        expect(result.documentRule).toBeNull();
-
-        const basicResult = result.getBasicResult();
-        expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual(ruleText);
-    });
-
-    it('works if whitelist elemhide rule is not found', () => {
-        const ruleText = '||example.org^';
-        const sourceRuleText = '@@||example.com^$elemhide';
-
-        const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRules = [new NetworkRule(sourceRuleText, 0)];
-
-        const result = new MatchingResult(rules, sourceRules);
-
-        expect(result).toBeTruthy();
-        expect(result.basicRule).not.toBeNull();
-        expect(result.documentRule).toBeNull();
-
-        const basicResult = result.getBasicResult();
-        expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual(ruleText);
-    });
 });
 
 describe('TestGetCosmeticOption', () => {
     let rules: NetworkRule[];
-    const sourceRules: NetworkRule[] = [];
+    const sourceRule: NetworkRule | null = null;
 
     it('works in simple case - no limitations', () => {
         rules = [new NetworkRule('||example.org^', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
@@ -109,7 +73,7 @@ describe('TestGetCosmeticOption', () => {
     it('works with $generichide modifier', () => {
         rules = [new NetworkRule('@@||example.org^$generichide', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result.getCosmeticOption()).toEqual(
             CosmeticOption.CosmeticOptionSpecificCSS
@@ -121,7 +85,7 @@ describe('TestGetCosmeticOption', () => {
     it('works with $specifichide modifier', () => {
         rules = [new NetworkRule('@@||example.org^$specifichide', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result.getCosmeticOption()).toEqual(
             CosmeticOption.CosmeticOptionGenericCSS
@@ -133,7 +97,7 @@ describe('TestGetCosmeticOption', () => {
     it('works with $jsinject modifier', () => {
         rules = [new NetworkRule('@@||example.org^$jsinject', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
@@ -147,7 +111,7 @@ describe('TestGetCosmeticOption', () => {
     it('works with $elemhide modifier', () => {
         rules = [new NetworkRule('@@||example.org^$elemhide', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
@@ -157,7 +121,7 @@ describe('TestGetCosmeticOption', () => {
     it('works with $content modifier', () => {
         rules = [new NetworkRule('@@||example.org^$content', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeTruthy();
@@ -171,7 +135,7 @@ describe('TestGetCosmeticOption', () => {
     it('works with $document modifier', () => {
         rules = [new NetworkRule('@@||example.org^$document', 0)];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, sourceRule);
 
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeDefined();
@@ -185,9 +149,8 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
             new NetworkRule('||example.org^', 0),
             new NetworkRule('||example.org^$badfilter', 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
@@ -200,29 +163,8 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
             new NetworkRule('@@||example.org^', 0),
             new NetworkRule('@@||example.org^$badfilter', 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
-
-        expect(result).toBeTruthy();
-        expect(result.basicRule).toBeTruthy();
-        expect(result.documentRule).toBeNull();
-
-        const basicResult = result.getBasicResult();
-        expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual('||example.org^');
-    });
-
-    it('works if badfilter source whitelist is ok', () => {
-        const rules = [
-            new NetworkRule('||example.org^', 0),
-        ];
-        const sourceRules: NetworkRule[] = [
-            new NetworkRule('@@||example.org^$document', 0),
-            new NetworkRule('@@||example.org^$document,badfilter', 0),
-        ];
-
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeTruthy();
@@ -238,9 +180,8 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
             new NetworkRule('/some$domain=example.com|example.org', 0),
             new NetworkRule('/some$domain=example.com,badfilter', 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result.basicRule).toBeNull();
     });
@@ -250,9 +191,8 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
             new NetworkRule('/some$domain=example.com|example.org|example.test', 0),
             new NetworkRule('/some$domain=example.com|example.org,badfilter', 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result.basicRule).toBeNull();
     });
@@ -262,9 +202,8 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
             new NetworkRule('/some$domain=example.com|example.org|~negated.com', 0),
             new NetworkRule('/some$domain=example.com,badfilter', 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result.basicRule).not.toBeNull();
         expect(result.basicRule!.getPermittedDomains()).toHaveLength(2);
@@ -510,10 +449,8 @@ describe('TestNewMatchingResult - cookie rules', () => {
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
         ];
-        const sourceRules = [
-            new NetworkRule(documentWhitelistRule, 0),
-        ];
-        const result = new MatchingResult(rules, sourceRules);
+        const sourceRule = new NetworkRule(documentWhitelistRule, 0);
+        const result = new MatchingResult(rules, sourceRule);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toEqual([]);
     });
@@ -525,25 +462,8 @@ describe('TestNewMatchingResult - stealth modifier', () => {
         const rules = [
             new NetworkRule(ruleText, 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
-
-        expect(result).toBeTruthy();
-        expect(result.basicRule).toBeNull();
-        expect(result.documentRule).toBeNull();
-        expect(result.stealthRule).not.toBeNull();
-        expect(result.stealthRule!.getText()).toBe(ruleText);
-    });
-
-    it('works if stealth rule is found for source', () => {
-        const ruleText = '@@||example.org^$stealth';
-        const rules: NetworkRule[] = [];
-        const sourceRules: NetworkRule[] = [
-            new NetworkRule(ruleText, 0),
-        ];
-
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
@@ -559,9 +479,8 @@ describe('TestNewMatchingResult - stealth modifier', () => {
             new NetworkRule(ruleText, 0),
             new NetworkRule(stealthRuleText, 0),
         ];
-        const sourceRules: NetworkRule[] = [];
 
-        const result = new MatchingResult(rules, sourceRules);
+        const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         expect(result.basicRule).not.toBeNull();

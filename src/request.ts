@@ -8,6 +8,12 @@ import { RequestType } from './request-type';
  */
 export class Request {
     /**
+     * Max url length for matching
+     * Some urls are really long and slow down matching, so we cut them to this length.
+     */
+    public static readonly MAX_URL_MATCH_LENGTH = 2000;
+
+    /**
      * Request type
      */
     public readonly requestType: RequestType;
@@ -45,7 +51,7 @@ export class Request {
     public tabId: number | undefined;
 
     /**
-     * The same request URL, but in lower case.
+     * The same request URL, but in lower case and shortened.
      * It is necessary to use lower-cased URL in several places,
      * that's why we keep it in the object.
      */
@@ -168,9 +174,10 @@ export class Request {
      */
     constructor(url: string, sourceUrl: string | null, requestType: RequestType) {
         this.url = url;
-        this.urlLowercase = url.toLowerCase();
-        this.sourceUrl = sourceUrl;
         this.requestType = requestType;
+
+        this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
+        this.sourceUrl = Request.compactUrl(sourceUrl);
 
         const tldResult = parse(url);
         this.hostname = tldResult.hostname!;
@@ -193,5 +200,18 @@ export class Request {
         } else {
             this.thirdParty = null;
         }
+    }
+
+    /**
+     * We cut the url in performance purposes
+     * @param url
+     */
+    private static compactUrl(url: string | null): string | null {
+        let compacted = url;
+        if (compacted && compacted.length > Request.MAX_URL_MATCH_LENGTH) {
+            compacted = compacted.substring(0, Request.MAX_URL_MATCH_LENGTH);
+        }
+
+        return compacted;
     }
 }

@@ -135,7 +135,7 @@ export class Application {
             return { cancel: true };
         }
 
-        const result = this.engine.matchRequest(request);
+        const result = this.getMatchingResult(request);
         console.debug(result);
 
         const requestRule = result.getBasicResult();
@@ -284,6 +284,46 @@ export class Application {
     }
 
     /**
+     * Frame rules cache
+     * @type {Map<any, any>}
+     */
+    frameRules = new Map();
+
+    /**
+     * Records frame
+     *
+     * @param request
+     */
+    recordFrame(request) {
+        const frameUrl = request.sourceUrl;
+        const rule = this.engine.matchFrame(frameUrl);
+        this.frameRules.set(frameUrl, rule);
+    }
+
+    /**
+     * Returns frame rule if found
+     *
+     * @param request
+     */
+    getFrameRule(request) {
+        return this.frameRules.get(request.sourceUrl);
+    }
+
+    /**
+     * Gets matching result
+     *
+     * @return {MatchingResult}
+     */
+    getMatchingResult(request) {
+        if (request.requestType === TSUrlFilter.RequestType.Document) {
+            this.recordFrame(request);
+        }
+
+        const frameRule = this.getFrameRule(request);
+        return this.engine.matchRequest(request, frameRule);
+    }
+
+    /**
      * Modify CSP header to block WebSocket, prohibit data: and blob: frames and WebWorkers
      *
      * @param details
@@ -291,7 +331,7 @@ export class Application {
      */
     getCSPHeaders(details) {
         const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
-        const result = this.engine.matchRequest(request);
+        const result = this.getMatchingResult(request);
 
         const cspHeaders = [];
         const cspRules = result.getCspRules();
@@ -314,10 +354,8 @@ export class Application {
      * @param details
      */
     getReplaceRules(details) {
-        // TODO: Cache request - matching results
-
         const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
-        const result = this.engine.matchRequest(request);
+        const result = this.getMatchingResult(request);
 
         return result.getReplaceRules();
     }
@@ -329,7 +367,7 @@ export class Application {
      */
     getRemoveHeaderRules(details) {
         const request = new TSUrlFilter.Request(details.url, details.initiator, TSUrlFilter.RequestType.Document);
-        const result = this.engine.matchRequest(request);
+        const result = this.getMatchingResult(request);
 
         return result.getRemoveHeaderRules();
     }

@@ -85,12 +85,13 @@ export class CosmeticLookupTable {
         const result = [] as CosmeticRule[];
 
         // Iterate over all sub-domains
-        subdomains.forEach((subdomain) => {
+        for (let i = 0; i < subdomains.length; i += 1) {
+            const subdomain = subdomains[i];
             const rules = this.byHostname.get(subdomain);
             if (rules && rules.length > 0) {
                 result.push(...rules.filter((r) => r.match(hostname)));
             }
-        });
+        }
 
         result.push(...this.wildcardRules.filter((r) => r.match(hostname)));
 

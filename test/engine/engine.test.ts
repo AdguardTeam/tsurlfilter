@@ -8,7 +8,7 @@ import { Request } from '../../src/request';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
-describe('TestEngineMatchRequest', () => {
+describe('Engine Tests', () => {
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
         const list = new StringRuleList(1, rules.join('\n'), false);
@@ -35,6 +35,29 @@ describe('TestEngineMatchRequest', () => {
         expect(result.cspRules).toBeNull();
         expect(result.cookieRules).toBeNull();
         expect(result.stealthRule).toBeNull();
+    });
+
+    it('works if frame matches rule', () => {
+        const ruleText = '@@||example.org$document';
+        const rules = [ruleText];
+        const list = new StringRuleList(1, rules.join('\n'), false);
+        const engine = new Engine(new RuleStorage([list]));
+
+        expect(engine.getRulesCount()).toBe(1);
+
+        const request = new Request('https://example.org', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getText()).toBe(ruleText);
+        expect(result.documentRule).toBeNull();
+
+        let frameRule = engine.matchFrame('https://example.org');
+        expect(frameRule).not.toBeNull();
+        expect(frameRule!.getText()).toBe(ruleText);
+
+        frameRule = engine.matchFrame('https://test.com');
+        expect(frameRule).toBeNull();
     });
 });
 
@@ -484,10 +507,16 @@ describe('$urlblock modifier', () => {
     it('should have higher priority than important', () => {
         const important = '||example.com$important';
         const urlblock = '@@||example.org$urlblock';
+
         const list = new StringRuleList(1, [important, urlblock].join('\n'));
         const engine = new Engine(new RuleStorage([list]));
+
+        const frameRule = engine.matchFrame('http://example.org');
+        expect(frameRule).not.toBeNull();
+        expect(frameRule!.getText()).toBe(urlblock);
+
         const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
-        const result = engine.matchRequest(request).getBasicResult();
+        const result = engine.matchRequest(request, frameRule).getBasicResult();
         expect(result).toBeTruthy();
         expect(result?.getText()).toEqual(urlblock);
     });
@@ -527,11 +556,16 @@ describe('$genericblock modifier', () => {
         ].join('\n'));
 
         const engine = new Engine(new RuleStorage([list]));
+
+        const frameRule = engine.matchFrame('https://domain.com');
+        expect(frameRule).not.toBeNull();
+        expect(frameRule!.getText()).toBe(genericblockRule);
+
         const result = engine.matchRequest(new Request(
             'https://example.org',
             'https://domain.com',
             RequestType.Script,
-        ));
+        ), frameRule);
 
         expect(result.basicRule).toBeNull();
         expect(result.documentRule!.getText()).toBe(genericblockRule);

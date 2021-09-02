@@ -61,6 +61,11 @@ export class SimpleRegex {
     public static readonly MASK_ANY_CHARACTER: string = '*';
 
     /**
+     * Path separator
+     */
+    public static readonly MASK_BACKSLASH: string = '/';
+
+    /**
      * REGEX_ANY_CHARACTER corresponds to MASK_ANY_CHARACTER.
      */
     public static readonly REGEX_ANY_CHARACTER: string = '.*';
@@ -132,14 +137,12 @@ export class SimpleRegex {
             return '';
         }
 
-        if (reText.indexOf('?') !== -1) {
+        if (reText.indexOf('(?') >= 0 || reText.indexOf('(!?') >= 0) {
             // Do not mess with complex expressions which use lookahead
-            // And with those using ? special character:
-            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/978
             return '';
         }
 
-        const specialCharacter = '...';
+        const specialCharacter = '$$$';
 
         // Prepend specialCharacter for the following replace calls to work properly
         reText = specialCharacter + reText;
@@ -152,10 +155,13 @@ export class SimpleRegex {
         // Strip some special characters
         reText = reText.replace(/[^\\]\\[a-zA-Z]/, specialCharacter);
 
+        // Replace \. with .
+        reText = reText.replace(/\\\./g, '.');
+
         // Split by special characters
         // `.` is one of the special characters so our `specialCharacter`
         // will be removed from the resulting array
-        const parts = reText.split(/[\\^$*+?.()|[\]{}]/);
+        const parts = reText.split(/[\\^$*+?()|[\]{}]/);
         let longest = '';
         for (let i = 0; i < parts.length; i += 1) {
             const part = parts[i];

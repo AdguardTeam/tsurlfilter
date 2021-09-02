@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.5.28",
+  "version": "0.6.0",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
@@ -139,6 +139,7 @@
     "ip6addr": "^0.2.3",
     "is-cidr": "^4.0.2",
     "is-ip": "^3.1.0",
+    "lru_map": "^0.4.1",
     "netmask": "^2.0.2",
     "punycode": "^2.1.1",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",

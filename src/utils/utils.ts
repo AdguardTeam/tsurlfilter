@@ -235,25 +235,3 @@ export function stringArraysHaveIntersection(left: string[] | null, right: strin
 
     return false;
 }
-
-/**
- * Count enabled options in specified value of specified enumeration type
- *
- * @param value bit mask to check
- * @param enumerationType type of enum
- * @returns count of enabled bits
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function countElementsInEnum(value: number, enumerationType: any): number {
-    let count = 0;
-
-    // eslint-disable-next-line guard-for-in
-    for (const item in enumerationType) {
-        const mask = enumerationType[item];
-        if ((value & mask) === mask) {
-            count += 1;
-        }
-    }
-
-    return count;
-}

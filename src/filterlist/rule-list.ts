@@ -3,6 +3,14 @@ import { StringLineReader } from './reader/string-line-reader';
 import { ScannerType } from './scanner/scanner-type';
 
 /**
+ * List identifier max value.
+ * We use "number" type for storage indexes, so we have some limits for list identifiers,
+ * We line number for rule index, so if we save 11 ranks for rules, then we have 6 ranks left for list ids.
+ * Check RuleStorageScanner class for more info.
+ */
+export const LIST_ID_MAX_VALUE = 10 ** 6;
+
+/**
  * RuleList represents a set of filtering rules
  */
 export interface IRuleList {
@@ -74,6 +82,10 @@ export class StringRuleList implements IRuleList {
         ignoreJS?: boolean,
         ignoreUnsafe?: boolean,
     ) {
+        if (listId >= LIST_ID_MAX_VALUE) {
+            throw new Error(`Invalid list identifier, it must be less than ${LIST_ID_MAX_VALUE}`);
+        }
+
         this.id = listId;
         this.rulesText = ruleText;
         this.ignoreCosmetic = !!ignoreCosmetic;

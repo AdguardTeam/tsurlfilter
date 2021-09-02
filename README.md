@@ -68,25 +68,27 @@ Engine is a main class of this library. It represents the filtering functionalit
 
 ##### **matchRequest**
 ```
+
+
     /**
      * Matches the specified request against the filtering engine and returns the matching result.
+     * In case frameRules parameter is not specified, frame rules will be selected matching request.sourceUrl.
      *
      * @param request - request to check
+     * @param frameRules - source rules or undefined
      * @return matching result
      */
-    matchRequest(request: Request): MatchingResult
+    matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult
 ```
 
-##### **getCosmeticResult**
+##### **matchFrame**
 ```
     /**
-     * Gets cosmetic result for the specified hostname and cosmetic options
+     * Matches current frame and returns document-level allowlist rule if found.
      *
-     * @param request - request to check
-     * @param option mask of enabled cosmetic types
-     * @return cosmetic result
+     * @param frameUrl
      */
-    getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult
+    matchFrame(frameUrl: string): NetworkRule | null
 ```
 
 ##### Starting engine
