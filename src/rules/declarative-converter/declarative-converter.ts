@@ -65,7 +65,7 @@ export class DeclarativeConverter {
      * @param rule
      */
     private static isRuleApplicable(rule: NetworkRule): boolean {
-        if (!rule.isWhitelist()) {
+        if (!rule.isAllowlist()) {
             return true;
         }
 

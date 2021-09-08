@@ -12,7 +12,7 @@ export class MatchingResult {
      * BasicRule - a rule matching the request.
      * It could lead to one of the following:
      * block the request
-     * unblock the request (a regular whitelist rule or a document-level whitelist rule)
+     * unblock the request (a regular allowlist rule or a document-level allowlist rule)
      * modify the way cosmetic rules work for this request
      * modify the response (see $redirect rules)
      */
@@ -65,7 +65,7 @@ export class MatchingResult {
     public readonly removeHeaderRules: NetworkRule[] | null;
 
     /**
-     * StealthRule - this is a whitelist rule that negates stealth mode features
+     * StealthRule - this is a allowlist rule that negates stealth mode features
      * Note that the stealth rule can be be received from both rules and sourceRules
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
      */
@@ -160,7 +160,7 @@ export class MatchingResult {
             }
 
             // Check blocking rules against $genericblock / $urlblock
-            if (!rule.isWhitelist()) {
+            if (!rule.isAllowlist()) {
                 if (!basicAllowed) {
                     continue;
                 }
@@ -179,7 +179,7 @@ export class MatchingResult {
      * GetBasicResult returns a rule that should be applied to the web request.
      * Possible outcomes are:
      * returns nil -- bypass the request.
-     * returns a whitelist rule -- bypass the request.
+     * returns a allowlist rule -- bypass the request.
      * returns a blocking rule -- block the request.
      *
      * @return {NetworkRule | null} basic result rule
@@ -194,8 +194,8 @@ export class MatchingResult {
         // 2. $document exception rules and rules with $content or $replace modifiers do disable $replace rules
         //  for requests matching them.
         if (this.replaceRules) {
-            if (basic && basic.isWhitelist()) {
-                if (basic.isDocumentWhitelistRule()) {
+            if (basic && basic.isAllowlist()) {
+                if (basic.isDocumentAllowlistRule()) {
                     return basic;
                 }
 
@@ -226,11 +226,11 @@ export class MatchingResult {
      * @return {CosmeticOption} mask
      */
     getCosmeticOption(): CosmeticOption {
-        if (!this.basicRule || !this.basicRule.isWhitelist()) {
+        if (!this.basicRule || !this.basicRule.isAllowlist()) {
             return CosmeticOption.CosmeticOptionAll;
         }
 
-        if (this.basicRule.isDocumentWhitelistRule()) {
+        if (this.basicRule.isDocumentAllowlistRule()) {
             return CosmeticOption.CosmeticOptionNone;
         }
 
@@ -268,29 +268,29 @@ export class MatchingResult {
             return [];
         }
 
-        // TODO: Look up for whitelist $content rule
+        // TODO: Look up for allowlist $content rule
 
         return MatchingResult.filterAdvancedModifierRules(this.replaceRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
     }
 
     /**
-     * Filters array of rules according to whitelist rules contained.
-     * Empty advanced modifier whitelists everything.
+     * Filters array of rules according to allowlist rules contained.
+     * Empty advanced modifier allowlists everything.
      *
      * @param rules
-     * @param whitelistPredicate whitelist criteria
-     * This function result will be called for testing if rule `x` whitelists rule `r`
+     * @param allowlistPredicate allowlist criteria
+     * This function result will be called for testing if rule `x` allowlists rule `r`
      */
     private static filterAdvancedModifierRules(
-        rules: NetworkRule[], whitelistPredicate: (r: NetworkRule) => ((x: NetworkRule) => boolean),
+        rules: NetworkRule[], allowlistPredicate: (r: NetworkRule) => ((x: NetworkRule) => boolean),
     ): NetworkRule[] {
         const blockingRules: NetworkRule[] = [];
-        const whitelistRules: NetworkRule[] = [];
+        const allowlistRules: NetworkRule[] = [];
 
         for (const rule of rules) {
-            if (rule.isWhitelist()) {
-                whitelistRules.push(rule);
+            if (rule.isAllowlist()) {
+                allowlistRules.push(rule);
             } else {
                 blockingRules.push(rule);
             }
@@ -300,24 +300,24 @@ export class MatchingResult {
             return [];
         }
 
-        if (whitelistRules.length === 0) {
+        if (allowlistRules.length === 0) {
             return blockingRules;
         }
 
-        if (whitelistRules.length > 0) {
-            const whiteRuleWithEmptyOptionText = whitelistRules
-                .find((whiteRule) => whiteRule.getAdvancedModifierValue() === '');
+        if (allowlistRules.length > 0) {
+            const allowlistRuleWithEmptyOptionText = allowlistRules
+                .find((allowlistRule) => allowlistRule.getAdvancedModifierValue() === '');
 
             // @@||example.org^$replace will disable all $replace rules matching ||example.org^.
-            if (whiteRuleWithEmptyOptionText) {
-                return [whiteRuleWithEmptyOptionText];
+            if (allowlistRuleWithEmptyOptionText) {
+                return [allowlistRuleWithEmptyOptionText];
             }
 
             const foundReplaceRules: NetworkRule[] = [];
             blockingRules.forEach((blockRule) => {
-                const whitelistingRule = whitelistRules.find(whitelistPredicate(blockRule));
-                if (whitelistingRule) {
-                    foundReplaceRules.push(whitelistingRule);
+                const allowlistingRule = allowlistRules.find(allowlistPredicate(blockRule));
+                if (allowlistingRule) {
+                    foundReplaceRules.push(allowlistingRule);
                 } else {
                     foundReplaceRules.push(blockRule);
                 }
@@ -338,15 +338,15 @@ export class MatchingResult {
         }
 
         const blockingRules: NetworkRule[] = [];
-        const whitelistedRulesByDirective = new Map<string, NetworkRule>();
+        const allowlistedRulesByDirective = new Map<string, NetworkRule>();
 
         for (const rule of this.cspRules) {
-            if (rule.isWhitelist()) {
-                if (!rule.getAdvancedModifierValue()) { // Global whitelist rule
+            if (rule.isAllowlist()) {
+                if (!rule.getAdvancedModifierValue()) { // Global allowlist rule
                     return [rule];
                 }
 
-                MatchingResult.putWithPriority(rule, undefined, whitelistedRulesByDirective);
+                MatchingResult.putWithPriority(rule, undefined, allowlistedRulesByDirective);
             } else {
                 blockingRules.push(rule);
             }
@@ -354,11 +354,11 @@ export class MatchingResult {
 
         const rulesByDirective = new Map<string, NetworkRule>();
 
-        // Collect whitelist and blocking CSP rules in one array
+        // Collect allowlist and blocking CSP rules in one array
         blockingRules.forEach((rule) => {
             if (rule.getAdvancedModifierValue()) {
-                const whiteListRule = whitelistedRulesByDirective.get(rule.getAdvancedModifierValue()!);
-                MatchingResult.putWithPriority(rule, whiteListRule, rulesByDirective);
+                const allowlistRule = allowlistedRulesByDirective.get(rule.getAdvancedModifierValue()!);
+                MatchingResult.putWithPriority(rule, allowlistRule, rulesByDirective);
             }
         });
 
@@ -376,7 +376,7 @@ export class MatchingResult {
         let result = MatchingResult.filterAdvancedModifierRules(this.redirectRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
 
-        result = result.filter((r) => !r.isWhitelist());
+        result = result.filter((r) => !r.isAllowlist());
 
         const conditionalRedirectRules = result.filter((x) => {
             const redirectModifier = x.getAdvancedModifier() as RedirectModifier;
@@ -401,7 +401,7 @@ export class MatchingResult {
         )[0];
         const redirectModifier = resultRule.getAdvancedModifier() as RedirectModifier;
         if (redirectModifier && redirectModifier.isRedirectingOnlyBlocked) {
-            if (!(this.basicRule && !this.basicRule.isWhitelist())) {
+            if (!(this.basicRule && !this.basicRule.isAllowlist())) {
                 return null;
             }
         }
@@ -418,21 +418,21 @@ export class MatchingResult {
         }
 
         const basic = this.getBasicResult();
-        if (basic?.isDocumentWhitelistRule()) {
+        if (basic?.isDocumentAllowlistRule()) {
             return [];
         }
 
-        const whitelistPredicate = (rule: NetworkRule) => (
-            (whiteRule: NetworkRule): boolean => {
-                const whiteRuleCookieModifier = whiteRule.getAdvancedModifier() as CookieModifier;
+        const allowlistPredicate = (rule: NetworkRule) => (
+            (allowlistRule: NetworkRule): boolean => {
+                const allowlistRuleCookieModifier = allowlistRule.getAdvancedModifier() as CookieModifier;
                 const ruleCookieModifier = rule.getAdvancedModifier() as CookieModifier;
 
-                if (whiteRule.getAdvancedModifierValue() === rule.getAdvancedModifierValue()) {
+                if (allowlistRule.getAdvancedModifierValue() === rule.getAdvancedModifierValue()) {
                     return true;
                 }
 
                 // Matches by cookie name
-                if (whiteRuleCookieModifier.matches(ruleCookieModifier.getCookieName())) {
+                if (allowlistRuleCookieModifier.matches(ruleCookieModifier.getCookieName())) {
                     return true;
                 }
 
@@ -441,7 +441,7 @@ export class MatchingResult {
         );
 
         return MatchingResult.filterAdvancedModifierRules(this.cookieRules,
-            whitelistPredicate);
+            allowlistPredicate);
     }
 
     /**
@@ -468,7 +468,7 @@ export class MatchingResult {
         }
 
         if (this.basicRule
-            && this.basicRule.isWhitelist()
+            && this.basicRule.isAllowlist()
             && this.basicRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
             return [];
         }
@@ -482,11 +482,11 @@ export class MatchingResult {
      * Compares priorities of the two given rules with the equal CSP directive and the rule that may already in the map.
      *
      * @param rule CSP rule (not null)
-     * @param whiteListRule CSP whitelist rule (may be null)
+     * @param allowlistRule CSP allowlist rule (may be null)
      * @param map Rules mapped by csp directive
      */
     // eslint-disable-next-line max-len
-    private static putWithPriority(rule: NetworkRule, whiteListRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
+    private static putWithPriority(rule: NetworkRule, allowlistRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
         const cspDirective = rule.getAdvancedModifierValue();
         const currentRule = cspDirective ? map.get(cspDirective) : null;
 
@@ -495,8 +495,8 @@ export class MatchingResult {
             newRule = currentRule;
         }
 
-        if (whiteListRule && whiteListRule.isHigherPriority(newRule)) {
-            newRule = whiteListRule;
+        if (allowlistRule && allowlistRule.isHigherPriority(newRule)) {
+            newRule = allowlistRule;
         }
 
         map.set(cspDirective!, newRule);

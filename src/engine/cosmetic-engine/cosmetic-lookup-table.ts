@@ -25,17 +25,17 @@ export class CosmeticLookupTable {
     public genericRules: CosmeticRule[];
 
     /**
-     * Map with whitelist rules. Key is the rule content.
-     * More information about whitelist here:
+     * Map with allowlist rules. Key is the rule content.
+     * More information about allowlist here:
      *  https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
      */
-    private whitelist: Map<string, CosmeticRule[]>;
+    private allowlist: Map<string, CosmeticRule[]>;
 
     constructor() {
         this.byHostname = new Map();
         this.wildcardRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
-        this.whitelist = new Map();
+        this.allowlist = new Map();
     }
 
     /**
@@ -43,11 +43,11 @@ export class CosmeticLookupTable {
      * @param rule
      */
     addRule(rule: CosmeticRule): void {
-        if (rule.isWhitelist()) {
+        if (rule.isAllowlist()) {
             const ruleContent = rule.getContent();
-            const existingRules = this.whitelist.get(ruleContent) || [] as CosmeticRule[];
+            const existingRules = this.allowlist.get(ruleContent) || [] as CosmeticRule[];
             existingRules.push(rule);
-            this.whitelist.set(ruleContent, existingRules);
+            this.allowlist.set(ruleContent, existingRules);
             return;
         }
 
@@ -95,7 +95,7 @@ export class CosmeticLookupTable {
 
         result.push(...this.wildcardRules.filter((r) => r.match(hostname)));
 
-        return result.filter((rule) => !rule.isWhitelist());
+        return result.filter((rule) => !rule.isAllowlist());
     }
 
     /**
@@ -103,13 +103,13 @@ export class CosmeticLookupTable {
      * @param hostname
      * @param rule
      */
-    isWhitelisted(hostname: string, rule: CosmeticRule): boolean {
-        const whitelistedRules = this.whitelist.get(rule.getContent());
+    isAllowlisted(hostname: string, rule: CosmeticRule): boolean {
+        const allowlistedRules = this.allowlist.get(rule.getContent());
 
-        if (!whitelistedRules) {
+        if (!allowlistedRules) {
             return false;
         }
 
-        return whitelistedRules.some((whitelistedRule) => whitelistedRule.match(hostname));
+        return allowlistedRules.some((allowlistedRule) => allowlistedRule.match(hostname));
     }
 }

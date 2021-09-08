@@ -131,7 +131,7 @@ export class Engine {
 
         let result: NetworkRule | null = null;
         sourceRules.forEach((r) => {
-            if (r.isDocumentLevelWhitelistRule()) {
+            if (r.isDocumentLevelAllowlistRule()) {
                 if (!result || r.isHigherPriority(result)) {
                     result = r;
                 }

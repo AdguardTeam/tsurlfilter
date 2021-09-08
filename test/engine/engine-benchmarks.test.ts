@@ -199,7 +199,7 @@ describe('Benchmarks', () => {
 
         const totalMatches = runEngine(requests, (request) => {
             const rule = engine.match(request);
-            return !!(rule && !rule.isWhitelist());
+            return !!(rule && !rule.isAllowlist());
         });
 
         expect(totalMatches).toBe(expectedMatchesCount);
@@ -241,7 +241,7 @@ describe('Benchmarks', () => {
             const matchingResult = engine.matchRequest(request);
             return !!(matchingResult
                 && matchingResult.basicRule
-                && matchingResult.basicRule!.isWhitelist());
+                && matchingResult.basicRule!.isAllowlist());
         });
 
         expect(totalMatches).toBe(expectedMatchesCount);
@@ -282,7 +282,7 @@ describe('Benchmarks', () => {
         const totalMatches = runEngine(requests, (request) => {
             const dnsResult = engine.match(request.hostname);
             if (dnsResult.basicRule) {
-                if (!dnsResult.basicRule.isWhitelist()) {
+                if (!dnsResult.basicRule.isAllowlist()) {
                     return true;
                 }
             } else if (dnsResult.hostRules.length > 0) {

@@ -30,9 +30,9 @@ describe('General', () => {
         expect(res).toHaveLength(1);
         expect(res).toContain(exp);
 
-        const whitelistCssRule = 'example.com#@$#h1 { display: none!important; }';
+        const allowlistCssRule = 'example.com#@$#h1 { display: none!important; }';
         exp = 'example.com#@$#h1 { display: none!important; }';
-        res = RuleConverter.convertRule(whitelistCssRule);
+        res = RuleConverter.convertRule(allowlistCssRule);
 
         expect(res).toHaveLength(1);
         expect(res).toContain(exp);

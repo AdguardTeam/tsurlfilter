@@ -125,7 +125,7 @@ export class Application {
         const request = new TSUrlFilter.Request(details.url, details.initiator, requestType);
 
         const dnsResult = this.dnsEngine.match(request.hostname);
-        if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
+        if (dnsResult.basicRule && !dnsResult.basicRule.isAllowlist()) {
             this.filteringLog.addDnsEvent(details.tabId, details.url, [dnsResult.basicRule]);
             return { cancel: true };
         }
@@ -146,10 +146,10 @@ export class Application {
 
         this.cookieFiltering.onBeforeRequest(details, this.getCookieRules(request, result));
 
-        if (!requestRule || !requestRule.isWhitelist()) {
+        if (!requestRule || !requestRule.isAllowlist()) {
             let cleansedUrl = details.url;
             result.getRemoveParamRules().forEach((r) => {
-                if (!r.isWhitelist()) {
+                if (!r.isAllowlist()) {
                     cleansedUrl = r.getAdvancedModifier().removeParameters(cleansedUrl);
                 }
             });
@@ -162,7 +162,7 @@ export class Application {
             }
         }
 
-        if (requestRule && !requestRule.isWhitelist()) {
+        if (requestRule && !requestRule.isAllowlist()) {
             if (requestRule.isOptionEnabled(TSUrlFilter.NetworkRuleOption.Redirect)) {
                 const redirectUrl = this.redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
                 if (redirectUrl) {

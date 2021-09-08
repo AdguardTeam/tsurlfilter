@@ -130,7 +130,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         expect(result.stealthRule).toBeNull();
     });
 
-    it('it excludes whitelist rules, even if there are two badfilter rules', () => {
+    it('it excludes allowlist rules, even if there are two badfilter rules', () => {
         const redirectRule = '/fuckadblock.$script,redirect=prevent-fab-3.2.0';
         const allowlistRule = '@@/fuckadblock.min.js$domain=example.org';
         const allowlistBadfilterRule = '@@/fuckadblock.min.js$domain=example.org,badfilter';
@@ -175,7 +175,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         expect(result.getBasicResult()).toBeNull();
     });
 
-    it('checks if with whitelist redirect modifier resource type is not ignored', () => {
+    it('checks if with allowlist redirect modifier resource type is not ignored', () => {
         const baseRuleList = new StringRuleList(1, [
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=1x1-transparent.gif,image',
@@ -294,7 +294,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         expect(result.getBasicResult()).toBeNull();
     });
 
-    it('checks if redirect-rule is negated by whitelist $redirect rule', () => {
+    it('checks if redirect-rule is negated by allowlist $redirect rule', () => {
         const baseRuleList = new StringRuleList(1, [
             '||example.org/script.js',
             '||example.org^$redirect-rule=noopjs',
@@ -698,7 +698,7 @@ describe('$specifichide modifier', () => {
 });
 
 describe('Stealth cookie rules', () => {
-    it('whitelists stealth cookie rules', () => {
+    it('allowlists stealth cookie rules', () => {
         const stealthCookieRule = '$cookie=/.+/;maxAge=60';
         let list = new StringRuleList(1, [
             stealthCookieRule,

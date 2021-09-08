@@ -40,7 +40,7 @@ export enum NetworkRuleOption {
     /** $important modifier */
     Important = 1 << 2,
 
-    // Whitelist rules modifiers
+    // Allowlist rules modifiers
     // Each of them can disable part of the functionality
 
     /** $elemhide modifier */
@@ -102,8 +102,8 @@ export enum NetworkRuleOption {
     /** Blacklist-only modifiers */
     BlacklistOnly = Empty | Mp4,
 
-    /** Whitelist-only modifiers */
-    WhitelistOnly = Elemhide
+    /** Allowlist-only modifiers */
+    AllowlistOnly = Elemhide
         | Genericblock
         | Generichide
         | Specifichide
@@ -144,9 +144,9 @@ class BasicRuleParts {
     public options: string | undefined;
 
     /**
-     * Indicates if rule is "whitelist" (e.g. it should unblock requests, not block them).
+     * Indicates if rule is "allowlist" (e.g. it should unblock requests, not block them).
      */
-    public whitelist: boolean | undefined;
+    public allowlist: boolean | undefined;
 }
 
 /**
@@ -158,7 +158,7 @@ export class NetworkRule implements rule.IRule {
 
     private readonly filterListId: number;
 
-    private readonly whitelist: boolean;
+    private readonly allowlist: boolean;
 
     private readonly pattern: Pattern;
 
@@ -251,21 +251,21 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Returns `true` if the rule is "whitelist", e.g. if it disables other
+     * Returns `true` if the rule is "allowlist", e.g. if it disables other
      * rules when the pattern matches the request.
      */
-    isWhitelist(): boolean {
-        return this.whitelist;
+    isAllowlist(): boolean {
+        return this.allowlist;
     }
 
     /**
-     * Checks if the rule is a document-level whitelist rule
+     * Checks if the rule is a document-level allowlist rule
      * This means that the rule is supposed to disable or modify blocking
      * of the page subrequests.
      * For instance, `@@||example.org^$urlblock` unblocks all sub-requests.
      */
-    isDocumentLevelWhitelistRule(): boolean {
-        if (!this.isWhitelist()) {
+    isDocumentLevelAllowlistRule(): boolean {
+        if (!this.isAllowlist()) {
             return false;
         }
 
@@ -275,13 +275,13 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Checks if the rule is a document whitelist rule
+     * Checks if the rule is a document allowlist rule.
      * For instance,
      * "@@||example.org^$document"
      * completely disables filtering on all pages at example.com and all subdomains.
      */
-    isDocumentWhitelistRule(): boolean {
-        if (!this.isWhitelist()) {
+    isDocumentAllowlistRule(): boolean {
+        if (!this.isAllowlist()) {
             return false;
         }
 
@@ -649,7 +649,7 @@ export class NetworkRule implements rule.IRule {
         this.filterListId = filterListId;
 
         const ruleParts = NetworkRule.parseRuleText(ruleText);
-        this.whitelist = !!ruleParts.whitelist;
+        this.allowlist = !!ruleParts.allowlist;
 
         const pattern = ruleParts.pattern!;
         if (pattern && NetworkRule.hasSpaces(pattern)) {
@@ -710,7 +710,7 @@ export class NetworkRule implements rule.IRule {
         this.priorityWeight = optionParts.length;
 
         // Rules of these types can be applied to documents only
-        // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for whitelist rules.
+        // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for allowlist rules.
         // $popup - for url blocking
         if (
             this.isOptionEnabled(NetworkRuleOption.Jsinject)
@@ -756,16 +756,16 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * Checks if the rule has higher priority that the specified rule
-     * whitelist + $important > $important > whitelist > basic rules
+     * allowlist + $important > $important > allowlist > basic rules
      */
     isHigherPriority(r: NetworkRule): boolean {
         const important = this.isOptionEnabled(NetworkRuleOption.Important);
         const rImportant = r.isOptionEnabled(NetworkRuleOption.Important);
-        if (this.isWhitelist() && important && !(r.isWhitelist() && rImportant)) {
+        if (this.isAllowlist() && important && !(r.isAllowlist() && rImportant)) {
             return true;
         }
 
-        if (r.isWhitelist() && rImportant && !(this.isWhitelist() && important)) {
+        if (r.isAllowlist() && rImportant && !(this.isAllowlist() && important)) {
             return false;
         }
 
@@ -777,11 +777,11 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.isWhitelist() && !r.isWhitelist()) {
+        if (this.isAllowlist() && !r.isAllowlist()) {
             return true;
         }
 
-        if (r.isWhitelist() && !this.isWhitelist()) {
+        if (r.isAllowlist() && !this.isAllowlist()) {
             return false;
         }
 
@@ -815,7 +815,7 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.whitelist !== specifiedRule.whitelist) {
+        if (this.allowlist !== specifiedRule.allowlist) {
             return false;
         }
 
@@ -881,20 +881,20 @@ export class NetworkRule implements rule.IRule {
      *
      * @param option - option to enable or disable.
      * @param enabled - true to enable, false to disable.
-     * @param skipRestrictions - skip options whitelist/blacklist restrictions
+     * @param skipRestrictions - skip options allowlist/blacklist restrictions
      *
      * @throws an error if the option we're trying to enable cannot be.
      * For instance, you cannot enable $elemhide for blacklist rules.
      */
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
         if (!skipRestrictions) {
-            if (this.whitelist && (option & NetworkRuleOption.BlacklistOnly) === option) {
+            if (this.allowlist && (option & NetworkRuleOption.BlacklistOnly) === option) {
                 throw new SyntaxError(
-                    `Modifier ${NetworkRuleOption[option]} cannot be used in whitelist rule`,
+                    `Modifier ${NetworkRuleOption[option]} cannot be used in allowlist rule`,
                 );
             }
 
-            if (!this.whitelist && (option & NetworkRuleOption.WhitelistOnly) === option) {
+            if (!this.allowlist && (option & NetworkRuleOption.AllowlistOnly) === option) {
                 throw new SyntaxError(
                     `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
                 );
@@ -1000,7 +1000,7 @@ export class NetworkRule implements rule.IRule {
                 this.setDenyAllowDomains(optionValue);
                 break;
             }
-            // Document-level whitelist rules
+            // Document-level allowlist rules
             case OPTIONS.ELEMHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Elemhide, true);
                 break;
@@ -1131,7 +1131,7 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.CSP:
                 this.setOptionEnabled(NetworkRuleOption.Csp, true);
-                this.advancedModifier = new CspModifier(optionValue, this.isWhitelist());
+                this.advancedModifier = new CspModifier(optionValue, this.isAllowlist());
                 break;
 
             case OPTIONS.REPLACE:
@@ -1146,12 +1146,12 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.REDIRECT:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
-                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist());
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isAllowlist());
                 break;
 
             case OPTIONS.REDIRECTRULE:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
-                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isWhitelist(), true);
+                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isAllowlist(), true);
                 break;
 
             case OPTIONS.REMOVEPARAM:
@@ -1161,7 +1161,7 @@ export class NetworkRule implements rule.IRule {
 
             case OPTIONS.REMOVEHEADER:
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
-                this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isWhitelist());
+                this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
 
             // Dns modifiers
@@ -1284,11 +1284,11 @@ export class NetworkRule implements rule.IRule {
      */
     static parseRuleText(ruleText: string): BasicRuleParts {
         const ruleParts = new BasicRuleParts();
-        ruleParts.whitelist = false;
+        ruleParts.allowlist = false;
 
         let startIndex = 0;
         if (ruleText.startsWith(NetworkRule.MASK_ALLOWLIST)) {
-            ruleParts.whitelist = true;
+            ruleParts.allowlist = true;
             startIndex = NetworkRule.MASK_ALLOWLIST.length;
         }
 

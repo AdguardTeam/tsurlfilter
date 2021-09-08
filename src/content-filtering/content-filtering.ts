@@ -165,7 +165,7 @@ export class ContentFiltering {
 
         for (let i = 0; i < sortedReplaceRules.length; i += 1) {
             const replaceRule = sortedReplaceRules[i];
-            if (replaceRule.isWhitelist()) {
+            if (replaceRule.isAllowlist()) {
                 appliedRules.push(replaceRule);
             } else {
                 const advancedModifier = replaceRule.getAdvancedModifier() as ReplaceModifier;

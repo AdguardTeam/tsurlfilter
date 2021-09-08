@@ -45,7 +45,7 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.specificExtCss.length).toBe(0);
     });
 
-    it('finds specific rule and not whitelisted generic rule', () => {
+    it('finds specific rule and not allowlisted generic rule', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, rules));
         const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
         expect(result).toBeDefined();
@@ -88,12 +88,12 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.generic[0].getText()).toBe(genericRule);
     });
 
-    it('excludes rules with generic whitelist rule', () => {
+    it('excludes rules with generic allowlist rule', () => {
         const elemhideRule = 'example.org##body';
-        const whitelistGenericRule = '#@#body';
+        const allowlistGenericRule = '#@#body';
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
             elemhideRule,
-            whitelistGenericRule,
+            allowlistGenericRule,
         ]));
 
         const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);

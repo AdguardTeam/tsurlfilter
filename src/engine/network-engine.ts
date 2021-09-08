@@ -92,7 +92,7 @@ export class NetworkEngine {
 
     /**
      * Finds all rules matching the specified request regardless of the rule types
-     * It will find both whitelist and blacklist rules
+     * It will find both allowlist and blacklist rules
      *
      * @param request to check
      * @return array of matching rules

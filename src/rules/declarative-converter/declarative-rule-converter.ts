@@ -71,23 +71,23 @@ export class DeclarativeRuleConverter {
     /**
      * Rule priority. Defaults to 1. When specified, should be >= 1.
      *
-     * document exceptions > whitelist + $important > $important > whitelist > basic rules
+     * document exceptions > allowlist + $important > $important > allowlist > basic rules
      *
      * @param rule
      */
     private static getPriority(rule: NetworkRule): number | null {
-        if (rule.isDocumentWhitelistRule()) {
+        if (rule.isDocumentAllowlistRule()) {
             return DeclarativeRulePriority.DocumentException;
         }
 
         const isImportant = rule.isOptionEnabled(NetworkRuleOption.Important);
-        const isWhitelist = rule.isWhitelist();
+        const isAllowlist = rule.isAllowlist();
 
         if (isImportant) {
-            return isWhitelist ? DeclarativeRulePriority.ImportantException : DeclarativeRulePriority.Important;
+            return isAllowlist ? DeclarativeRulePriority.ImportantException : DeclarativeRulePriority.Important;
         }
 
-        if (isWhitelist) {
+        if (isAllowlist) {
             return DeclarativeRulePriority.Exception;
         }
 
@@ -113,7 +113,7 @@ export class DeclarativeRuleConverter {
         //  - 'modifyHeaders' = 'modifyHeaders',
         //  - 'allowAllRequests' = 'allowAllRequests',
 
-        if (rule.isWhitelist()) {
+        if (rule.isAllowlist()) {
             action.type = RuleActionType.allow;
         } else {
             action.type = RuleActionType.block;

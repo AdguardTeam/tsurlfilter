@@ -17,7 +17,7 @@ export default class CookieRulesFinder {
     }
 
     /**
-     * Finds a rule that doesn't modify cookie: i.e. this rule cancels cookie or it's a whitelist rule.
+     * Finds a rule that doesn't modify cookie: i.e. this rule cancels cookie or it's a allowlist rule.
      *
      * @param cookieName Cookie name
      * @param rules Matching rules

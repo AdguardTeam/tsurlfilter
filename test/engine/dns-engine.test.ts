@@ -98,7 +98,7 @@ describe('General', () => {
         expect(result.hostRules).toHaveLength(0);
     });
 
-    it('checks match for host level network rule - regex whitelist', () => {
+    it('checks match for host level network rule - regex allowlist', () => {
         const engine = new DnsEngine(createTestRuleStorage(1, [
             '||stats.test.com^',
             '@@/stats?\\./',
@@ -106,7 +106,7 @@ describe('General', () => {
 
         const result = engine.match('stats.test.com');
         expect(result.basicRule).not.toBeNull();
-        expect(result.basicRule!.isWhitelist()).toBeTruthy();
+        expect(result.basicRule!.isAllowlist()).toBeTruthy();
         expect(result.hostRules).toHaveLength(0);
     });
 

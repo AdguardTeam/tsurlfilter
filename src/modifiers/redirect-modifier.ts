@@ -22,11 +22,11 @@ export class RedirectModifier implements IAdvancedModifier {
      *
      * @param value
      * @param ruleText
-     * @param isWhitelist
+     * @param isAllowlist
      * @param isRedirectingOnlyBlocked is redirect-rule modifier
      */
-    constructor(value: string, ruleText: string, isWhitelist: boolean, isRedirectingOnlyBlocked = false) {
-        RedirectModifier.validate(ruleText, value, isWhitelist);
+    constructor(value: string, ruleText: string, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
+        RedirectModifier.validate(ruleText, value, isAllowlist);
 
         this.redirectTitle = value;
         this.isRedirectingOnlyBlocked = isRedirectingOnlyBlocked;
@@ -44,10 +44,10 @@ export class RedirectModifier implements IAdvancedModifier {
      *
      * @param ruleText
      * @param redirectTitle
-     * @param isWhitelist
+     * @param isAllowlist
      */
-    private static validate(ruleText: string, redirectTitle: string, isWhitelist: boolean): void {
-        if (isWhitelist && !redirectTitle) {
+    private static validate(ruleText: string, redirectTitle: string, isAllowlist: boolean): void {
+        if (isAllowlist && !redirectTitle) {
             return;
         }
 

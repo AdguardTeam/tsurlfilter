@@ -19,7 +19,7 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult!.getText()).toEqual(ruleText);
     });
 
-    it('works if whitelist rule is found', () => {
+    it('works if allowlist rule is found', () => {
         const ruleText = '||example.org^';
         const sourceRuleText = '@@||example.com^$document';
 
@@ -37,7 +37,7 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult!.getText()).toEqual(sourceRuleText);
     });
 
-    it('works if whitelist document-level rule is found', () => {
+    it('works if allowlist document-level rule is found', () => {
         const ruleText = '||example.org^';
         const sourceRuleText = '@@||example.com^$urlblock';
 
@@ -157,7 +157,7 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
         expect(result.documentRule).toBeNull();
     });
 
-    it('works if badfilter whitelist is ok', () => {
+    it('works if badfilter allowlist is ok', () => {
         const rules = [
             new NetworkRule('||example.org^', 0),
             new NetworkRule('@@||example.org^', 0),
@@ -213,9 +213,9 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
 
 describe('TestNewMatchingResult - csp rules', () => {
     const cspRule = '||example.org^$third-party,csp=connect-src \'none\',domain=~example.com|test.com';
-    const directiveWhiteListRule = '@@||example.org^$csp=connect-src \'none\'';
-    const globalWhiteListRule = '@@||example.org^$csp';
-    const directiveMissWhiteListRule = '@@||example.org^$csp=frame-src \'none\'';
+    const directiveAllowlistRule = '@@||example.org^$csp=connect-src \'none\'';
+    const globalAllowlistRule = '@@||example.org^$csp';
+    const directiveMissAllowlistRule = '@@||example.org^$csp=frame-src \'none\'';
 
     it('works if csp rule is found', () => {
         const rules = [new NetworkRule(cspRule, 0)];
@@ -227,37 +227,37 @@ describe('TestNewMatchingResult - csp rules', () => {
         expect(cspRules[0].getText()).toBe(cspRule);
     });
 
-    it('works if csp directive whitelist rule is found', () => {
+    it('works if csp directive allowlist rule is found', () => {
         const rules = [
             new NetworkRule(cspRule, 0),
-            new NetworkRule(directiveWhiteListRule, 0),
+            new NetworkRule(directiveAllowlistRule, 0),
         ];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         const cspRules = result.getCspRules();
         expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(directiveWhiteListRule);
+        expect(cspRules[0].getText()).toBe(directiveAllowlistRule);
     });
 
-    it('works if csp global whitelist rule is found', () => {
+    it('works if csp global allowlist rule is found', () => {
         const rules = [
             new NetworkRule(cspRule, 0),
-            new NetworkRule(directiveWhiteListRule, 0),
-            new NetworkRule(globalWhiteListRule, 0),
+            new NetworkRule(directiveAllowlistRule, 0),
+            new NetworkRule(globalAllowlistRule, 0),
         ];
 
         const result = new MatchingResult(rules, null);
         expect(result).toBeTruthy();
         const cspRules = result.getCspRules();
         expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(globalWhiteListRule);
+        expect(cspRules[0].getText()).toBe(globalAllowlistRule);
     });
 
-    it('works if csp wrong directive whitelist rule is not found', () => {
+    it('works if csp wrong directive allowlist rule is not found', () => {
         const rules = [
             new NetworkRule(cspRule, 0),
-            new NetworkRule(directiveMissWhiteListRule, 0),
+            new NetworkRule(directiveMissAllowlistRule, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -285,7 +285,7 @@ describe('TestNewMatchingResult - replace rules', () => {
         expect(basicResult).toBeNull();
     });
 
-    it('works if whitelisted replace filter with same option is omitted', () => {
+    it('works if allowlisted replace filter with same option is omitted', () => {
         const expectedRuleText = '||example.org^$replace=/test/test1/g';
 
         const ruleTexts = [
@@ -361,10 +361,10 @@ describe('TestNewMatchingResult - replace rules', () => {
 describe('TestNewMatchingResult - cookie rules', () => {
     const cookieRuleTextOne = '$cookie=/__utm[a-z]/';
     const cookieRuleTextTwo = '$cookie=__cfduid';
-    const cookieRuleWhitelistTextOne = '@@$cookie=/__utm[a-z]/';
-    const cookieRuleWhitelistTextTwo = '@@$cookie=__cfduid';
-    const cookieRuleWhitelistText = '@@$cookie';
-    const cookieRuleWhitelistRegexpText = '@@$cookie=/__cfd[a-z]/';
+    const cookieRuleAllowlistTextOne = '@@$cookie=/__utm[a-z]/';
+    const cookieRuleAllowlistTextTwo = '@@$cookie=__cfduid';
+    const cookieRuleAllowlistText = '@@$cookie';
+    const cookieRuleAllowlistRegexpText = '@@$cookie=/__cfd[a-z]/';
 
     it('works if cookie rules are found', () => {
         const rules = [
@@ -380,76 +380,76 @@ describe('TestNewMatchingResult - cookie rules', () => {
         expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
     });
 
-    it('works if cookie whitelist rule is ok', () => {
+    it('works if cookie allowlist rule is ok', () => {
         const rules = [
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleWhitelistTextOne, 0),
+            new NetworkRule(cookieRuleAllowlistTextOne, 0),
         ];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(rules.length - 1);
-        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
+        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
         expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
     });
 
-    it('works if cookie whitelist rule is ok', () => {
+    it('works if cookie allowlist rule is ok', () => {
         const rules = [
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleWhitelistTextOne, 0),
-            new NetworkRule(cookieRuleWhitelistTextTwo, 0),
+            new NetworkRule(cookieRuleAllowlistTextOne, 0),
+            new NetworkRule(cookieRuleAllowlistTextTwo, 0),
         ];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(rules.length - 2);
-        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
-        expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistTextTwo);
+        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
+        expect(cookieRules[1].getText()).toBe(cookieRuleAllowlistTextTwo);
     });
 
-    it('works if cookie whitelist all rule is ok', () => {
+    it('works if cookie allowlist all rule is ok', () => {
         const rules = [
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleWhitelistTextOne, 0),
-            new NetworkRule(cookieRuleWhitelistTextTwo, 0),
-            new NetworkRule(cookieRuleWhitelistText, 0),
+            new NetworkRule(cookieRuleAllowlistTextOne, 0),
+            new NetworkRule(cookieRuleAllowlistTextTwo, 0),
+            new NetworkRule(cookieRuleAllowlistText, 0),
         ];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(1);
-        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistText);
+        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistText);
     });
 
-    it('works if cookie whitelist all rule is ok', () => {
+    it('works if cookie allowlist all rule is ok', () => {
         const rules = [
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleWhitelistTextOne, 0),
-            new NetworkRule(cookieRuleWhitelistRegexpText, 0),
+            new NetworkRule(cookieRuleAllowlistTextOne, 0),
+            new NetworkRule(cookieRuleAllowlistRegexpText, 0),
         ];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(2);
-        expect(cookieRules[0].getText()).toBe(cookieRuleWhitelistTextOne);
-        expect(cookieRules[1].getText()).toBe(cookieRuleWhitelistRegexpText);
+        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
+        expect(cookieRules[1].getText()).toBe(cookieRuleAllowlistRegexpText);
     });
 
-    it('returns empty list if document whitelist rule added', () => {
-        const documentWhitelistRule = '@@||example.com^$document';
+    it('returns empty list if document allowlist rule added', () => {
+        const documentAllowlistRule = '@@||example.com^$document';
         const rules = [
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
         ];
-        const sourceRule = new NetworkRule(documentWhitelistRule, 0);
+        const sourceRule = new NetworkRule(documentAllowlistRule, 0);
         const result = new MatchingResult(rules, sourceRule);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toEqual([]);
@@ -504,7 +504,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(resultRule!.getText()).toBe('||8s8.eu^*fa.js$script,redirect=noopjs');
     });
 
-    it('works if whitelisted redirect rule with same option is omitted', () => {
+    it('works if allowlisted redirect rule with same option is omitted', () => {
         const ruleTexts = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '@@||ya.ru$redirect=1x1-transparent.gif,image',
@@ -519,7 +519,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(resultRule!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,image');
     });
 
-    it('works if whitelist rule omit all resource types', () => {
+    it('works if allowlist rule omit all resource types', () => {
         const ruleTexts = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
@@ -560,7 +560,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()).toBeNull();
     });
 
-    it('checks that it is possible to exclude all redirects with whitelist rule', () => {
+    it('checks that it is possible to exclude all redirects with allowlist rule', () => {
         const ruleTexts = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
@@ -574,7 +574,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document');
     });
 
-    it('checks that important redirect rule negates whitelist rule', () => {
+    it('checks that important redirect rule negates allowlist rule', () => {
         const ruleTexts = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
@@ -588,7 +588,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,important');
     });
 
-    it('checks that important whitelist rule negates important redirect rule', () => {
+    it('checks that important allowlist rule negates important redirect rule', () => {
         const ruleTexts = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
@@ -602,7 +602,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
     });
 
-    it('checks that common whitelist rule negates redirect rule', () => {
+    it('checks that common allowlist rule negates redirect rule', () => {
         const ruleTexts = [
             '||*/redirect-exception-test.js$redirect=noopjs',
             '@@||*/redirect-exception-test.js',
@@ -614,7 +614,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js');
     });
 
-    it('checks that redirect whitelist rule negates redirect rule', () => {
+    it('checks that redirect allowlist rule negates redirect rule', () => {
         const ruleTexts = [
             '||*/redirect-exception-test.js$redirect=noopjs',
             '@@||*/redirect-exception-test.js$redirect',
@@ -666,7 +666,7 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         expect(found.length).toBe(rules.length);
     });
 
-    it('works if whitelisted removeparam filter with same option is omitted', () => {
+    it('works if allowlisted removeparam filter with same option is omitted', () => {
         const ruleTexts = [
             '||example.org^$removeparam=p0',
             '||example.org^$removeparam=p1',
@@ -682,7 +682,7 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         expect(found.filter((x) => x.getText() === '@@||example.org^$removeparam=p1')).toHaveLength(1);
     });
 
-    it('works if important removeparam rule is more important than whitelist rule', () => {
+    it('works if important removeparam rule is more important than allowlist rule', () => {
         const ruleTexts = [
             '||example.org$important,removeparam=p1',
             '@@||example.org$removeparam=p1',
@@ -697,10 +697,10 @@ describe('TestNewMatchingResult - removeparam rules', () => {
     });
 
     it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {
-        const whitelistRule = '@@||example.org^$removeparam';
+        const allowlistRule = '@@||example.org^$removeparam';
         const ruleTexts = [
             '||example.org^$removeparam=/p1|p2/',
-            whitelistRule,
+            allowlistRule,
         ];
 
         const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
@@ -708,7 +708,7 @@ describe('TestNewMatchingResult - removeparam rules', () => {
 
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(1);
-        expect(found[0].getText()).toBe(whitelistRule);
+        expect(found[0].getText()).toBe(allowlistRule);
     });
 
     it('works if inverted removeparam rule is found', () => {
@@ -721,7 +721,7 @@ describe('TestNewMatchingResult - removeparam rules', () => {
         expect(found.length).toBe(rules.length);
     });
 
-    it('works if inverted whitelisted removeparam filter with same option is omitted', () => {
+    it('works if inverted allowlisted removeparam filter with same option is omitted', () => {
         const ruleTexts = [
             '||example.org^$removeparam=~p0',
             '||example.org^$removeparam=~p1',
@@ -747,7 +747,7 @@ describe('TestNewMatchingResult - removeheader rules', () => {
         expect(found.length).toBe(rules.length);
     });
 
-    it('works if whitelisted removeheader filter with same option is omitted', () => {
+    it('works if allowlisted removeheader filter with same option is omitted', () => {
         const ruleTexts = [
             '||example.org^$removeheader=h1',
             '||example.org^$removeheader=h2',
@@ -762,10 +762,10 @@ describe('TestNewMatchingResult - removeheader rules', () => {
     });
 
     it('work if @@||example.org^$removeheader will disable all $removeheader rules matching ||example.org^.', () => {
-        const whitelistRule = '@@||example.org^$removeheader';
+        const allowlistRule = '@@||example.org^$removeheader';
         const ruleTexts = [
             '||example.org^$removeheader=h2',
-            whitelistRule,
+            allowlistRule,
         ];
 
         const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
@@ -773,10 +773,10 @@ describe('TestNewMatchingResult - removeheader rules', () => {
 
         const found = result.getRemoveHeaderRules();
         expect(found.length).toBe(1);
-        expect(found[0].getText()).toBe(whitelistRule);
+        expect(found[0].getText()).toBe(allowlistRule);
     });
 
-    it('work if document whitelist rule will disable all $removeheader rules ', () => {
+    it('work if document allowlist rule will disable all $removeheader rules ', () => {
         const ruleTexts = [
             '||example.org^$removeheader=h2',
             '@@||example.org^$document',
@@ -789,7 +789,7 @@ describe('TestNewMatchingResult - removeheader rules', () => {
         expect(found.length).toBe(0);
     });
 
-    it('work if urlblock whitelist rule will disable all $removeheader rules ', () => {
+    it('work if urlblock allowlist rule will disable all $removeheader rules ', () => {
         const ruleTexts = [
             '||example.org^$removeheader=h2',
             '@@||example.org^$urlblock',
@@ -802,7 +802,7 @@ describe('TestNewMatchingResult - removeheader rules', () => {
         expect(found.length).toBe(0);
     });
 
-    it('work if whitelist rule will not disable $removeheader rules ', () => {
+    it('work if allowlist rule will not disable $removeheader rules ', () => {
         const ruleTexts = [
             '||example.org^$removeheader=h2',
             '@@||example.org^',

@@ -10,7 +10,7 @@ describe('Element hiding rules constructor', () => {
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('##.banner');
         expect(rule.getContent()).toEqual('.banner');
-        expect(rule.isWhitelist()).toEqual(false);
+        expect(rule.isAllowlist()).toEqual(false);
     });
 
     it('works if it parses domains properly', () => {
@@ -24,14 +24,14 @@ describe('Element hiding rules constructor', () => {
         expect(restrictedDomains[0]).toEqual('sub.example.org');
     });
 
-    it('works if it creates whitelist element hiding rules', () => {
+    it('works if it creates allowlist element hiding rules', () => {
         const rule = new CosmeticRule('example.org#@#.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
 
         const permittedDomains = rule.getPermittedDomains();
         expect(permittedDomains).not.toEqual(null);
         expect(permittedDomains![0]).toEqual('example.org');
-        expect(rule.isWhitelist()).toEqual(true);
+        expect(rule.isAllowlist()).toEqual(true);
     });
 
     it('works if it verifies rules properly', () => {
@@ -89,7 +89,7 @@ describe('Element hiding rules constructor', () => {
         let rule = new CosmeticRule('###banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('#banner');
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
 
         expect(rule.getPermittedDomains()).toBeNull();
         expect(rule.getRestrictedDomains()).toBeNull();
@@ -97,7 +97,7 @@ describe('Element hiding rules constructor', () => {
         rule = new CosmeticRule('*###banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('#banner');
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
 
         expect(rule.getPermittedDomains()).toBeNull();
         expect(rule.getRestrictedDomains()).toBeNull();
@@ -105,7 +105,7 @@ describe('Element hiding rules constructor', () => {
         rule = new CosmeticRule('*#@#.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('.banner');
-        expect(rule.isWhitelist()).toBeTruthy();
+        expect(rule.isAllowlist()).toBeTruthy();
 
         expect(rule.getPermittedDomains()).toBeNull();
         expect(rule.getRestrictedDomains()).toBeNull();
@@ -179,23 +179,23 @@ describe('CosmeticRule match', () => {
 });
 
 describe('CosmeticRule.CSS', () => {
-    it('correctly detects Cosmetic.CSS whitelist and blacklist rules', () => {
+    it('correctly detects Cosmetic.CSS allowlist and blacklist rules', () => {
         const rule = new CosmeticRule('example.org#$#.textad { visibility: hidden; }\n', 0);
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Css);
 
-        const whitelistRule = new CosmeticRule('example.org#@$#.textad { visibility: hidden; }', 0);
-        expect(whitelistRule.isWhitelist()).toBeTruthy();
-        expect(whitelistRule.getType()).toBe(CosmeticRuleType.Css);
+        const allowlistRule = new CosmeticRule('example.org#@$#.textad { visibility: hidden; }', 0);
+        expect(allowlistRule.isAllowlist()).toBeTruthy();
+        expect(allowlistRule.getType()).toBe(CosmeticRuleType.Css);
 
         const extendedRule = new CosmeticRule('example.com#$?#h3:contains(cookies) { display: none!important; }', 0);
-        expect(extendedRule.isWhitelist()).toBeFalsy();
+        expect(extendedRule.isAllowlist()).toBeFalsy();
         expect(extendedRule.getType()).toBe(CosmeticRuleType.Css);
 
         // eslint-disable-next-line max-len
-        const extendedWhitelistRule = new CosmeticRule('example.com#@$?#h3:contains(cookies) { display: none!important; }', 0);
-        expect(extendedWhitelistRule.isWhitelist()).toBeTruthy();
-        expect(extendedWhitelistRule.getType()).toBe(CosmeticRuleType.Css);
+        const extendedAllowlistRule = new CosmeticRule('example.com#@$?#h3:contains(cookies) { display: none!important; }', 0);
+        expect(extendedAllowlistRule.isAllowlist()).toBeTruthy();
+        expect(extendedAllowlistRule.getType()).toBe(CosmeticRuleType.Css);
     });
 
     it('accepts VALID pseudo classes', () => {
@@ -399,18 +399,18 @@ describe('Javascript rules', () => {
         const rule = new CosmeticRule(ruleText, 0);
 
         expect(rule).toBeTruthy();
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Js);
         expect(rule.getContent()).toBe(jsContent);
         expect(rule.isScriptlet).toBeFalsy();
 
-        const whiteRuleText = `example.org#@%#${jsContent}`;
-        const whiteRule = new CosmeticRule(whiteRuleText, 0);
+        const allowlistRuleText = `example.org#@%#${jsContent}`;
+        const allowlistRule = new CosmeticRule(allowlistRuleText, 0);
 
-        expect(whiteRule).toBeTruthy();
-        expect(whiteRule.isWhitelist()).toBeTruthy();
-        expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
-        expect(whiteRule.getContent()).toBe(jsContent);
+        expect(allowlistRule).toBeTruthy();
+        expect(allowlistRule.isAllowlist()).toBeTruthy();
+        expect(allowlistRule.getType()).toBe(CosmeticRuleType.Js);
+        expect(allowlistRule.getContent()).toBe(jsContent);
         expect(rule.isScriptlet).toBeFalsy();
     });
 
@@ -420,18 +420,18 @@ describe('Javascript rules', () => {
         const rule = new CosmeticRule(ruleText, 0);
 
         expect(rule).toBeTruthy();
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Js);
         expect(rule.getContent()).toBe(jsContent);
         expect(rule.isScriptlet).toBeTruthy();
 
-        const whiteRuleText = `example.org#@%#${jsContent}`;
-        const whiteRule = new CosmeticRule(whiteRuleText, 0);
+        const allowlistRuleText = `example.org#@%#${jsContent}`;
+        const allowlistRule = new CosmeticRule(allowlistRuleText, 0);
 
-        expect(whiteRule).toBeTruthy();
-        expect(whiteRule.isWhitelist()).toBeTruthy();
-        expect(whiteRule.getType()).toBe(CosmeticRuleType.Js);
-        expect(whiteRule.getContent()).toBe(jsContent);
+        expect(allowlistRule).toBeTruthy();
+        expect(allowlistRule.isAllowlist()).toBeTruthy();
+        expect(allowlistRule.getType()).toBe(CosmeticRuleType.Js);
+        expect(allowlistRule.getContent()).toBe(jsContent);
         expect(rule.isScriptlet).toBeTruthy();
     });
 });
@@ -444,18 +444,18 @@ describe('HTML filtering rules (content rules)', () => {
 
         const rule = new CosmeticRule(ruleText, 0);
 
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Html);
         expect(rule.getContent()).toBe(contentPart);
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
 
-        const whiteRuleText = `${domainPart}$@$${contentPart}`;
-        const whiteRule = new CosmeticRule(whiteRuleText, 0);
+        const allowlistRuleText = `${domainPart}$@$${contentPart}`;
+        const allowlistRule = new CosmeticRule(allowlistRuleText, 0);
 
-        expect(whiteRule.isWhitelist()).toBeTruthy();
-        expect(whiteRule.getType()).toBe(CosmeticRuleType.Html);
-        expect(whiteRule.getContent()).toBe(contentPart);
+        expect(allowlistRule.isAllowlist()).toBeTruthy();
+        expect(allowlistRule.getType()).toBe(CosmeticRuleType.Html);
+        expect(allowlistRule.getContent()).toBe(contentPart);
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getPermittedDomains()![0]).toBe(domainPart);
     });
@@ -466,7 +466,7 @@ describe('HTML filtering rules (content rules)', () => {
         const ruleText = `${domainPart}$$${contentPart}`;
         const rule = new CosmeticRule(ruleText, 0);
 
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Html);
         expect(rule.getContent()).toBe(contentPart);
         expect(rule.getPermittedDomains()).toHaveLength(1);
@@ -479,7 +479,7 @@ describe('HTML filtering rules (content rules)', () => {
         const ruleText = `~nigma.ru,google.com$$${contentPart}`;
         const rule = new CosmeticRule(ruleText, 0);
 
-        expect(rule.isWhitelist()).toBeFalsy();
+        expect(rule.isAllowlist()).toBeFalsy();
         expect(rule.getType()).toBe(CosmeticRuleType.Html);
         expect(rule.getContent()).toBe(contentPart);
         expect(rule.getPermittedDomains()).toHaveLength(1);

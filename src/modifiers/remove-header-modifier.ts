@@ -86,12 +86,12 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
      * Constructor
      *
      * @param value
-     * @param isWhitelist
+     * @param isAllowlist
      */
-    constructor(value: string, isWhitelist: boolean) {
+    constructor(value: string, isAllowlist: boolean) {
         this.value = value.toLowerCase();
 
-        if (!isWhitelist && !this.value) {
+        if (!isAllowlist && !this.value) {
             throw new SyntaxError('Invalid $removeheader rule, removeheader value must not be empty');
         }
 

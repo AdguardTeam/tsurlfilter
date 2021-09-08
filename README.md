@@ -128,7 +128,7 @@ MatchingResult contains all the rules matching a web request, and provides metho
      * GetBasicResult returns a rule that should be applied to the web request.
      * Possible outcomes are:
      * returns null -- bypass the request.
-     * returns a whitelist rule -- bypass the request.
+     * returns a allowlist rule -- bypass the request.
      * returns a blocking rule -- block the request.
      *
      * @return basic result rule
@@ -251,7 +251,7 @@ DNSEngine combines host rules and network rules and is supposed to quickly find 
 ##### Matching hostname
 ```
     const dnsResult = dnsEngine.match(hostname);
-    if (dnsResult.basicRule && !dnsResult.basicRule.isWhitelist()) {
+    if (dnsResult.basicRule && !dnsResult.basicRule.isAllowlist()) {
         // blocking rule found
         ..
     }
@@ -406,7 +406,7 @@ More details on sample extension.
 #### <a id="headers-service"></a> HeadersService
 
 Headers service module, it provides headers modification functionality.
-See more about `$removeheader` modifier. 
+See more about `$removeheader` modifier.
 
 ##### **Constructor**
 ```

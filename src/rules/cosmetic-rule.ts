@@ -81,7 +81,7 @@ export class CosmeticRule implements rule.IRule {
 
     private readonly content: string;
 
-    private whitelist = false;
+    private allowlist = false;
 
     private extendedCss = false;
 
@@ -201,11 +201,11 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Whitelist means that this rule is meant to disable other rules.
+     * Allowlist means that this rule is meant to disable other rules.
      * For instance, https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#elemhide-exceptions
      */
-    isWhitelist(): boolean {
-        return this.whitelist;
+    isAllowlist(): boolean {
+        return this.allowlist;
     }
 
     /**
@@ -298,7 +298,7 @@ export class CosmeticRule implements rule.IRule {
             }
         }
 
-        this.whitelist = CosmeticRule.parseWhitelist(marker);
+        this.allowlist = CosmeticRule.parseAllowlist(marker);
         this.extendedCss = isExtCssMarker(marker);
         if (!this.extendedCss
             && (this.type === CosmeticRuleType.ElementHiding
@@ -372,11 +372,11 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Determines if rule is whitelist rule
+     * Determines if rule is allowlist rule
      * @param marker
      * @private
      */
-    private static parseWhitelist(marker: string): boolean {
+    private static parseAllowlist(marker: string): boolean {
         switch (marker) {
             case CosmeticRuleMarker.ElementHidingException:
             case CosmeticRuleMarker.ElementHidingExtCSSException:

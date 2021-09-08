@@ -11,56 +11,56 @@ describe('NetworkRule.parseRuleText', () => {
         let parts = NetworkRule.parseRuleText('||example.org^');
         expect(parts.pattern).toEqual('||example.org^');
         expect(parts.options).toBeUndefined();
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
 
         parts = NetworkRule.parseRuleText('||example.org^$third-party');
         expect(parts.pattern).toEqual('||example.org^');
         expect(parts.options).toEqual('third-party');
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
 
         parts = NetworkRule.parseRuleText('@@||example.org^$third-party');
         expect(parts.pattern).toEqual('||example.org^');
         expect(parts.options).toEqual('third-party');
-        expect(parts.whitelist).toEqual(true);
+        expect(parts.allowlist).toEqual(true);
 
         parts = NetworkRule.parseRuleText('@@||example.org/this$is$path$third-party');
         expect(parts.pattern).toEqual('||example.org/this$is$path');
         expect(parts.options).toEqual('third-party');
-        expect(parts.whitelist).toEqual(true);
+        expect(parts.allowlist).toEqual(true);
 
         parts = NetworkRule.parseRuleText('||example.org/this$is$path$third-party');
         expect(parts.pattern).toEqual('||example.org/this$is$path');
         expect(parts.options).toEqual('third-party');
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
     });
 
     it('works when it handles regex rules properly', () => {
         let parts = NetworkRule.parseRuleText('/regex/');
         expect(parts.pattern).toEqual('/regex/');
         expect(parts.options).toBeUndefined();
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
 
         parts = NetworkRule.parseRuleText('@@/regex/');
         expect(parts.pattern).toEqual('/regex/');
         expect(parts.options).toBeUndefined();
-        expect(parts.whitelist).toEqual(true);
+        expect(parts.allowlist).toEqual(true);
 
         parts = NetworkRule.parseRuleText('@@/regex/$third-party');
         expect(parts.pattern).toEqual('/regex/');
         expect(parts.options).toEqual('third-party');
-        expect(parts.whitelist).toEqual(true);
+        expect(parts.allowlist).toEqual(true);
     });
 
     it('works when it handles $replace properly', () => {
         let parts = NetworkRule.parseRuleText('@@/regex/$replace=/test/test2/');
         expect(parts.pattern).toEqual('/regex/');
         expect(parts.options).toEqual('replace=/test/test2/');
-        expect(parts.whitelist).toEqual(true);
+        expect(parts.allowlist).toEqual(true);
 
         parts = NetworkRule.parseRuleText('/regex/$replace=/test/test2/');
         expect(parts.pattern).toEqual('/regex/');
         expect(parts.options).toEqual('replace=/test/test2/');
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
     });
 
     it('works when it handles delimiter in $removeparam rules properly', () => {
@@ -86,12 +86,12 @@ describe('NetworkRule.parseRuleText', () => {
         let parts = NetworkRule.parseRuleText('||example.org\\$smth');
         expect(parts.pattern).toEqual('||example.org\\$smth');
         expect(parts.options).toBeUndefined();
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
 
         parts = NetworkRule.parseRuleText('/regex/$replace=/test\\$/test2/');
         expect(parts.pattern).toEqual('/regex/');
         expect(parts.options).toEqual('replace=/test\\$/test2/');
-        expect(parts.whitelist).toEqual(false);
+        expect(parts.allowlist).toEqual(false);
     });
 
     it('works when it handles incorrect rules properly', () => {
@@ -106,7 +106,7 @@ describe('NetworkRule constructor', () => {
         const rule = new NetworkRule('||example.org^', 0);
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('||example.org^');
-        expect(rule.isWhitelist()).toEqual(false);
+        expect(rule.isAllowlist()).toEqual(false);
         expect(rule.getShortcut()).toEqual('example.org');
         expect(rule.isRegexRule()).toEqual(false);
         expect(rule.getPermittedDomains()).toEqual(null);
@@ -121,28 +121,28 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError(`Unknown modifier: ${unknownModifier}`));
     });
 
-    it('throws error if whitelist-only modifier used in blacklist rule - $generichide', () => {
+    it('throws error if allowlist-only modifier used in blacklist rule - $generichide', () => {
         expect(() => {
             new NetworkRule('||example.org^$generichide', 0);
         }).toThrow('cannot be used in blacklist rule');
     });
 
-    it('throws error if whitelist-only modifier used in blacklist rule - $specifichide', () => {
+    it('throws error if allowlist-only modifier used in blacklist rule - $specifichide', () => {
         expect(() => {
             new NetworkRule('||example.org^$specifichide', 0);
         }).toThrow('cannot be used in blacklist rule');
     });
 
-    it('throws error if whitelist-only modifier used in blacklist rule - $elemhide', () => {
+    it('throws error if allowlist-only modifier used in blacklist rule - $elemhide', () => {
         expect(() => {
             new NetworkRule('||example.org^$elemhide', 0);
         }).toThrowError('cannot be used in blacklist rule');
     });
 
-    it('throws error if blacklist-only modifiers used in whitelist rule - $empty', () => {
+    it('throws error if blacklist-only modifiers used in allowlist rule - $empty', () => {
         expect(() => {
             new NetworkRule('@@||example.org^$empty', 0);
-        }).toThrowError('cannot be used in whitelist rule');
+        }).toThrowError('cannot be used in allowlist rule');
     });
 
     it('works when it handles empty $domain modifier', () => {
@@ -266,9 +266,9 @@ describe('NetworkRule constructor', () => {
         expect(rule.getText()).toEqual('$domain=ya.ru');
     });
 
-    function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, whitelist = false): void {
+    function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, allowlist = false): void {
         let ruleText = `||example.org^$${name}`;
-        if (whitelist || (option & NetworkRuleOption.WhitelistOnly) === option) {
+        if (allowlist || (option & NetworkRuleOption.AllowlistOnly) === option) {
             ruleText = `@@${ruleText}`;
         }
 
@@ -865,13 +865,13 @@ describe('NetworkRule.isHigherPriority', () => {
         compareRulesPriority('@@||example.org$important', '@@||example.org', true);
         compareRulesPriority('@@||example.org$important', '||example.org', true);
 
-        // $important -> whitelist
+        // $important -> allowlist
         compareRulesPriority('||example.org$important', '@@||example.org$important', false);
         compareRulesPriority('||example.org$important', '||example.org$important', false);
         compareRulesPriority('||example.org$important', '@@||example.org', true);
         compareRulesPriority('||example.org$important', '||example.org', true);
 
-        // whitelist -> basic
+        // allowlist -> basic
         compareRulesPriority('@@||example.org', '@@||example.org$important', false);
         compareRulesPriority('@@||example.org', '||example.org$important', false);
         compareRulesPriority('@@||example.org', '@@||example.org', false);

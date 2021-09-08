@@ -25,8 +25,8 @@ describe('TestEmptyNetworkEngine', () => {
     });
 });
 
-describe('TestMatchWhitelistRule', () => {
-    it('works if it finds simple whitelist rule', () => {
+describe('TestMatchAllowlistRule', () => {
+    it('works if it finds simple allowlist rule', () => {
         const rule = '||example.org^$script';
         const exceptionRule = '@@http://example.org^';
 
@@ -48,7 +48,7 @@ describe('TestMatchImportantRule', () => {
     let request;
     let result;
 
-    it('should find domain whitelist rule ', () => {
+    it('should find domain allowlist rule ', () => {
         request = new Request('http://example.org/', '', RequestType.Other);
         result = engine.match(request);
 
@@ -56,7 +56,7 @@ describe('TestMatchImportantRule', () => {
         expect(result && result.getText()).toEqual(r2);
     });
 
-    it('should find domain whitelist rule', () => {
+    it('should find domain allowlist rule', () => {
         request = new Request('http://test1.example.org/', '', RequestType.Other);
         result = engine.match(request);
 
@@ -64,7 +64,7 @@ describe('TestMatchImportantRule', () => {
         expect(result && result.getText()).toEqual(r2);
     });
 
-    it('should find suitable sub-domain whitelist rule', () => {
+    it('should find suitable sub-domain allowlist rule', () => {
         request = new Request('http://test2.example.org/', '', RequestType.Other);
         result = engine.match(request);
 

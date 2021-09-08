@@ -165,7 +165,7 @@ export class CosmeticEngine {
         request: Request,
     ): void {
         for (const genericRule of lookupTable.genericRules) {
-            if (!lookupTable.isWhitelisted(request.hostname, genericRule)
+            if (!lookupTable.isAllowlisted(request.hostname, genericRule)
                 && genericRule.match(request.hostname)) {
                 cosmeticResult.append(genericRule, request);
             }
@@ -186,7 +186,7 @@ export class CosmeticEngine {
         const hostnameRules = lookupTable.findByHostname(request.hostname, request.subdomains);
         if (hostnameRules.length > 0) {
             for (const rule of hostnameRules) {
-                if (!lookupTable.isWhitelisted(request.hostname, rule)) {
+                if (!lookupTable.isAllowlisted(request.hostname, rule)) {
                     cosmeticResult.append(rule, request);
                 }
             }

@@ -10,19 +10,19 @@ export class CspModifier implements IAdvancedModifier {
     private readonly cspDirective: string;
 
     /**
-     * Is whitelist rule
+     * Is allowlist rule
      */
-    private readonly isWhitelist: boolean;
+    private readonly isAllowlist: boolean;
 
     /**
      * Constructor
      *
      * @param value
-     * @param isWhitelist
+     * @param isAllowlist
      */
-    constructor(value: string, isWhitelist: boolean) {
+    constructor(value: string, isAllowlist: boolean) {
         this.cspDirective = value;
-        this.isWhitelist = isWhitelist;
+        this.isAllowlist = isAllowlist;
 
         this.validateCspDirective();
     }
@@ -40,10 +40,10 @@ export class CspModifier implements IAdvancedModifier {
     private validateCspDirective(): void {
         /**
          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/685
-         * CSP directive may be empty in case of whitelist rule,
-         * it means to disable all $csp rules matching the whitelist rule
+         * CSP directive may be empty in case of allowlist rule,
+         * it means to disable all $csp rules matching the allowlist rule
          */
-        if (!this.isWhitelist && !this.cspDirective) {
+        if (!this.isAllowlist && !this.cspDirective) {
             throw new Error('Invalid $CSP rule: CSP directive must not be empty');
         }
 
