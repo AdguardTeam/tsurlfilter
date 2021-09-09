@@ -2,7 +2,7 @@
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { Request } from '../request';
-import { DomainModifier } from '../modifiers/domain-modifier';
+import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
 import { IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
@@ -930,14 +930,15 @@ export class NetworkRule implements rule.IRule {
      * @param optionValue
      */
     private setDenyAllowDomains(optionValue: string): void {
-        const domainModifier = new DomainModifier(optionValue, '|');
+        const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
         if (domainModifier.restrictedDomains && domainModifier.restrictedDomains.length > 0) {
             throw new SyntaxError(
                 'Invalid modifier: $denyallow domains cannot be negated',
             );
         }
 
-        if (domainModifier.permittedDomains && domainModifier.permittedDomains.some((x) => x.includes('*'))) {
+        if (domainModifier.permittedDomains
+            && domainModifier.permittedDomains.some((x) => x.includes(SimpleRegex.MASK_ANY_CHARACTER))) {
             throw new SyntaxError(
                 'Invalid modifier: $denyallow domains wildcards are not supported',
             );
@@ -991,7 +992,7 @@ export class NetworkRule implements rule.IRule {
 
             // $domain modifier
             case OPTIONS.DOMAIN: {
-                const domainModifier = new DomainModifier(optionValue, '|');
+                const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
                 break;

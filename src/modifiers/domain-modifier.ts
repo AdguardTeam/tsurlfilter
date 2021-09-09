@@ -126,3 +126,13 @@ export class DomainModifier {
         return '';
     }
 }
+
+/**
+ * Comma separator
+ */
+export const COMMA_SEPARATOR = ',';
+
+/**
+ * Pipe separator
+ */
+export const PIPE_SEPARATOR = '|';

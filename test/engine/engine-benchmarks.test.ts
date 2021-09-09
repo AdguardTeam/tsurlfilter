@@ -4,11 +4,14 @@ import zlib from 'zlib';
 import console from 'console';
 import { performance } from 'perf_hooks';
 import { NetworkEngine } from '../../src/engine/network-engine';
-import { Engine, Request, RequestType } from '../../src';
+import {
+    CosmeticOption, Engine, Request, RequestType,
+} from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { DnsEngine } from '../../src/engine/dns-engine';
 import { setLogger } from '../../src/utils/logger';
+import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
 
 // Benchmarks (Average per request)
 //     ✓ runs network-engine (40 μs)
@@ -290,6 +293,48 @@ describe('Benchmarks', () => {
             }
 
             return false;
+        });
+
+        expect(totalMatches).toBe(expectedMatchesCount);
+
+        const afterMatch = memoryUsage(baseMemory);
+        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
+    });
+
+    it('runs cosmetic-engine', async () => {
+        const rulesFilePath = './test/resources/adguard_base_filter.txt';
+
+        /**
+         * Expected matches for specified requests and rules
+         */
+        const expectedMatchesCount = 1754;
+
+        const baseMemory = memoryUsage();
+        const requests = await parseRequests();
+
+        const initMemory = memoryUsage(baseMemory);
+        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
+
+        const startParse = Date.now();
+        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), false);
+        const ruleStorage = new RuleStorage([list]);
+
+        const engine = new CosmeticEngine(ruleStorage);
+        expect(engine).toBeTruthy();
+
+        console.log(`Loaded rules: ${engine.rulesCount}`);
+        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
+
+        const loadingMemory = memoryUsage(baseMemory);
+        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
+
+        const totalMatches = runEngine(requests, (request) => {
+            if (request.requestType !== RequestType.Subdocument) {
+                return false;
+            }
+
+            const result = engine.match(request, CosmeticOption.CosmeticOptionAll);
+            return result.elementHiding.specific.length + result.elementHiding.generic.length > 0;
         });
 
         expect(totalMatches).toBe(expectedMatchesCount);

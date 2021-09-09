@@ -53,10 +53,10 @@ export class CosmeticEngine {
         this.ruleStorage = ruleStorage;
         this.rulesCount = 0;
 
-        this.elementHidingLookupTable = new CosmeticLookupTable();
-        this.cssLookupTable = new CosmeticLookupTable();
-        this.jsLookupTable = new CosmeticLookupTable();
-        this.htmlLookupTable = new CosmeticLookupTable();
+        this.elementHidingLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.cssLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.jsLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.htmlLookupTable = new CosmeticLookupTable(ruleStorage);
 
         if (skipStorageScan) {
             return;
@@ -68,7 +68,7 @@ export class CosmeticEngine {
             const indexedRule = scanner.getRule();
             if (indexedRule
                 && indexedRule.rule instanceof CosmeticRule) {
-                this.addRule(indexedRule.rule);
+                this.addRule(indexedRule.rule, indexedRule.index);
             }
         }
     }
@@ -76,23 +76,24 @@ export class CosmeticEngine {
     /**
      * Adds rules into appropriate tables
      * @param rule
+     * @param storageIdx
      */
-    public addRule(rule: CosmeticRule): void {
+    public addRule(rule: CosmeticRule, storageIdx: number): void {
         switch (rule.getType()) {
             case CosmeticRuleType.ElementHiding: {
-                this.elementHidingLookupTable.addRule(rule);
+                this.elementHidingLookupTable.addRule(rule, storageIdx);
                 break;
             }
             case CosmeticRuleType.Css: {
-                this.cssLookupTable.addRule(rule);
+                this.cssLookupTable.addRule(rule, storageIdx);
                 break;
             }
             case CosmeticRuleType.Js: {
-                this.jsLookupTable.addRule(rule);
+                this.jsLookupTable.addRule(rule, storageIdx);
                 break;
             }
             case CosmeticRuleType.Html: {
-                this.htmlLookupTable.addRule(rule);
+                this.htmlLookupTable.addRule(rule, storageIdx);
                 break;
             }
             default: {

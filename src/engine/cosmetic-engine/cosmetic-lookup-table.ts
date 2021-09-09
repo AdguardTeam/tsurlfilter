@@ -1,6 +1,8 @@
 import { parse } from 'tldts';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
+import { fastHash } from '../../utils/utils';
+import { RuleStorage } from '../../filterlist/rule-storage';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -8,9 +10,9 @@ import { DomainModifier } from '../../modifiers/domain-modifier';
  */
 export class CosmeticLookupTable {
     /**
-     * Map with rules grouped by the permitted domains names
+     * Map with rules indices grouped by the permitted domains names
      */
-    private byHostname: Map<string, CosmeticRule[]>;
+    private byHostname: Map<number, number[]>;
 
     /**
      * Collection of domain specific rules, those could not be grouped by domain name
@@ -25,29 +27,42 @@ export class CosmeticLookupTable {
     public genericRules: CosmeticRule[];
 
     /**
-     * Map with allowlist rules. Key is the rule content.
+     * Map with allowlist rules indices. Key is the rule content.
      * More information about allowlist here:
-     *  https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
      */
-    private allowlist: Map<string, CosmeticRule[]>;
+    private allowlist: Map<number, number[]>;
 
-    constructor() {
+    /**
+     * Storage for the filtering rules
+     */
+    private readonly ruleStorage: RuleStorage;
+
+    /**
+     * Creates a new instance
+     *
+     * @param storage rules storage. We store "rule indexes" in the lookup table which
+     * can be used to retrieve the full rules from the storage.
+     */
+    constructor(storage: RuleStorage) {
         this.byHostname = new Map();
         this.wildcardRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
         this.allowlist = new Map();
+        this.ruleStorage = storage;
     }
 
     /**
      * Adds rule to the appropriate collection
      * @param rule
+     * @param storageIdx
      */
-    addRule(rule: CosmeticRule): void {
+    addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
-            const ruleContent = rule.getContent();
-            const existingRules = this.allowlist.get(ruleContent) || [] as CosmeticRule[];
-            existingRules.push(rule);
-            this.allowlist.set(ruleContent, existingRules);
+            const key = fastHash(rule.getContent());
+            const existingRules = this.allowlist.get(key) || [] as number[];
+            existingRules.push(storageIdx);
+            this.allowlist.set(key, existingRules);
             return;
         }
 
@@ -69,9 +84,10 @@ export class CosmeticLookupTable {
                 // tldResult.domain equals to eTLD domain,
                 // e.g. sub.example.uk.org would result in example.uk.org
                 const parsedDomain = tldResult.domain || domain;
-                const rules = this.byHostname.get(parsedDomain) || [] as CosmeticRule[];
-                rules.push(rule);
-                this.byHostname.set(parsedDomain, rules);
+                const key = fastHash(parsedDomain);
+                const rules = this.byHostname.get(key) || [] as number[];
+                rules.push(storageIdx);
+                this.byHostname.set(key, rules);
             }
         }
     }
@@ -87,9 +103,14 @@ export class CosmeticLookupTable {
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-            const rules = this.byHostname.get(subdomain);
-            if (rules && rules.length > 0) {
-                result.push(...rules.filter((r) => r.match(hostname)));
+            const rulesIndexes = this.byHostname.get(fastHash(subdomain));
+            if (rulesIndexes) {
+                for (let j = 0; j < rulesIndexes.length; j += 1) {
+                    const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
+                    if (rule && rule.match(hostname)) {
+                        result.push(rule);
+                    }
+                }
             }
         }
 
@@ -104,12 +125,19 @@ export class CosmeticLookupTable {
      * @param rule
      */
     isAllowlisted(hostname: string, rule: CosmeticRule): boolean {
-        const allowlistedRules = this.allowlist.get(rule.getContent());
+        const rulesIndexes = this.allowlist.get(fastHash(rule.getContent()));
 
-        if (!allowlistedRules) {
+        if (!rulesIndexes) {
             return false;
         }
 
-        return allowlistedRules.some((allowlistedRule) => allowlistedRule.match(hostname));
+        for (let j = 0; j < rulesIndexes.length; j += 1) {
+            const r = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
+            if (r && r.match(hostname)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

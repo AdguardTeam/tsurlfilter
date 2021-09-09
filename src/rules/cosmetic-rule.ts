@@ -6,8 +6,9 @@ import {
     isExtCssMarker,
     ADG_SCRIPTLET_MASK,
 } from './cosmetic-rule-marker';
-import { DomainModifier } from '../modifiers/domain-modifier';
+import { DomainModifier, COMMA_SEPARATOR } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
+import { SimpleRegex } from './simple-regex';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -85,19 +86,19 @@ export class CosmeticRule implements rule.IRule {
 
     private extendedCss = false;
 
-    private permittedDomains: string[] | null = null;
+    private readonly permittedDomains: string[] | undefined = undefined;
 
-    private restrictedDomains: string[] | null = null;
+    private readonly restrictedDomains: string[] | undefined = undefined;
 
     /**
      * Js script to execute
      */
-    public script: string | null = null;
+    public script: string | undefined = undefined;
 
     /**
      * Js script to execute - debug
      */
-    public scriptVerbose: string | null = null;
+    public scriptVerbose: string | undefined = undefined;
 
     /**
      * If the rule contains scriptlet content
@@ -221,14 +222,14 @@ export class CosmeticRule implements rule.IRule {
      * Get rule script string
      * @param debug
      */
-    getScript(debug = false): string | null {
+    getScript(debug = false): string | undefined {
         return debug ? this.scriptVerbose : this.script;
     }
 
     /**
      * Gets list of permitted domains.
      */
-    getPermittedDomains(): string[] | null {
+    getPermittedDomains(): string[] | undefined {
         return this.permittedDomains;
     }
 
@@ -246,7 +247,7 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Gets list of restricted domains.
      */
-    getRestrictedDomains(): string[] | null {
+    getRestrictedDomains(): string[] | undefined {
         return this.restrictedDomains;
     }
 
@@ -291,10 +292,12 @@ export class CosmeticRule implements rule.IRule {
             // Now it's a good time to parse them.
             const domains = ruleText.substring(0, index);
             // Skip wildcard domain
-            if (domains !== '*') {
-                const domainModifier = new DomainModifier(domains, ',');
-                this.permittedDomains = domainModifier.permittedDomains;
-                this.restrictedDomains = domainModifier.restrictedDomains;
+            if (domains !== SimpleRegex.MASK_ANY_CHARACTER) {
+                const domainModifier = new DomainModifier(domains, COMMA_SEPARATOR);
+                this.permittedDomains = domainModifier.permittedDomains !== null
+                    ? domainModifier.permittedDomains : undefined;
+                this.restrictedDomains = domainModifier.restrictedDomains !== null
+                    ? domainModifier.restrictedDomains : undefined;
             }
         }
 
@@ -406,6 +409,8 @@ export class CosmeticRule implements rule.IRule {
         }
     }
 
+    private static ELEMHIDE_VALIDATION_REGEX = / {.+}/;
+
     /**
      * Simple validation for elemhide rules
      *
@@ -414,10 +419,10 @@ export class CosmeticRule implements rule.IRule {
      * @throws SyntaxError
      */
     private static validateElemhideRule(ruleText: string, ruleContent: string): void {
-        if (ruleText.startsWith('||')) {
+        if (ruleText.startsWith(SimpleRegex.MASK_START_URL)) {
             throw new SyntaxError('Element hiding rule shouldn\'t start with "||"');
         }
-        if (/ {.+}/.test(ruleContent)) {
+        if (CosmeticRule.ELEMHIDE_VALIDATION_REGEX.test(ruleContent)) {
             throw new SyntaxError('Invalid elemhide rule, style presented');
         }
     }

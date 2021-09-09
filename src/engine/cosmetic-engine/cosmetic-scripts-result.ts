@@ -84,8 +84,9 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
             version: config.version ? config.version : '',
         };
 
+        let scriptText = Scriptlets.invoke(params);
         // eslint-disable-next-line no-param-reassign
-        rule.script = Scriptlets.invoke(params);
+        rule.script = scriptText !== null ? scriptText : undefined;
 
         params.verbose = true;
 
@@ -93,7 +94,9 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         if (request) {
             params.domainName = request.domain;
         }
+
+        scriptText = Scriptlets.invoke(params);
         // eslint-disable-next-line no-param-reassign
-        rule.scriptVerbose = Scriptlets.invoke(params);
+        rule.scriptVerbose = scriptText !== null ? scriptText : undefined;
     }
 }

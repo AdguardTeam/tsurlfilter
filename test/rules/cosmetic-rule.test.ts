@@ -5,8 +5,8 @@ describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
         const rule = new CosmeticRule('##.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
-        expect(rule.getPermittedDomains()).toEqual(null);
-        expect(rule.getRestrictedDomains()).toEqual(null);
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('##.banner');
         expect(rule.getContent()).toEqual('.banner');
@@ -91,45 +91,45 @@ describe('Element hiding rules constructor', () => {
         expect(rule.getContent()).toEqual('#banner');
         expect(rule.isAllowlist()).toBeFalsy();
 
-        expect(rule.getPermittedDomains()).toBeNull();
-        expect(rule.getRestrictedDomains()).toBeNull();
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
 
         rule = new CosmeticRule('*###banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('#banner');
         expect(rule.isAllowlist()).toBeFalsy();
 
-        expect(rule.getPermittedDomains()).toBeNull();
-        expect(rule.getRestrictedDomains()).toBeNull();
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
 
         rule = new CosmeticRule('*#@#.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('.banner');
         expect(rule.isAllowlist()).toBeTruthy();
 
-        expect(rule.getPermittedDomains()).toBeNull();
-        expect(rule.getRestrictedDomains()).toBeNull();
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
 
         rule = new CosmeticRule('*#$#.textad { visibility: hidden; }', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.Css);
         expect(rule.getContent()).toEqual('.textad { visibility: hidden; }');
 
-        expect(rule.getPermittedDomains()).toBeNull();
-        expect(rule.getRestrictedDomains()).toBeNull();
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
 
         rule = new CosmeticRule('*#%#//scriptlet("set-constant", "test", "true")', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.Js);
         expect(rule.getContent()).toEqual('//scriptlet("set-constant", "test", "true")');
 
-        expect(rule.getPermittedDomains()).toBeNull();
-        expect(rule.getRestrictedDomains()).toBeNull();
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
 
         rule = new CosmeticRule('#$#.textad { visibility: hidden; }', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.Css);
         expect(rule.getContent()).toEqual('.textad { visibility: hidden; }');
 
-        expect(rule.getPermittedDomains()).toBeNull();
-        expect(rule.getRestrictedDomains()).toBeNull();
+        expect(rule.getPermittedDomains()).toBeUndefined();
+        expect(rule.getRestrictedDomains()).toBeUndefined();
     });
 });
 

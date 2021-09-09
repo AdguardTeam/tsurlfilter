@@ -169,7 +169,7 @@ export class Engine {
             if (indexedRule.rule instanceof NetworkRule) {
                 this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
             } else if (indexedRule.rule instanceof CosmeticRule) {
-                this.cosmeticEngine.addRule(indexedRule.rule);
+                this.cosmeticEngine.addRule(indexedRule.rule, indexedRule.index);
             }
         }
     }
