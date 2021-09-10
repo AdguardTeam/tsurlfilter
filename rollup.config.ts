@@ -6,6 +6,7 @@ import camelCase from 'lodash/camelCase';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
+import { terser } from 'rollup-plugin-terser';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
@@ -119,6 +120,13 @@ export default [
                 name: camelCase(libraryName),
                 format: 'umd',
                 sourcemap: false,
+            },
+            {
+                file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
+                name: camelCase(libraryName),
+                format: 'umd',
+                sourcemap: false,
+                plugins: [terser()],
             },
         ],
         // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
