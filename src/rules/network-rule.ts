@@ -665,7 +665,7 @@ export class NetworkRule implements rule.IRule {
             pattern === SimpleRegex.MASK_START_URL
             || pattern === SimpleRegex.MASK_ANY_CHARACTER
             || pattern === ''
-            || pattern.length < 3
+            || pattern.length < SimpleRegex.MIN_SHORTCUT_LENGTH
         ) {
             // Except cookie and removeparam rules, they have their own atmosphere
             if (!(this.advancedModifier instanceof CookieModifier)

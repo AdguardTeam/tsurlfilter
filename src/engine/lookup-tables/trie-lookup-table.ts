@@ -3,6 +3,7 @@ import { Request } from '../../request';
 import { NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
 import { ILookupTable } from './lookup-table';
+import { SimpleRegex } from '../../rules/simple-regex';
 
 /**
  * Look up table with underlying prefix tree
@@ -56,7 +57,8 @@ export class TrieLookupTable implements ILookupTable {
     public addRule(rule: NetworkRule, storageIdx: number): boolean {
         const shortcut = rule.getShortcut();
 
-        if (!shortcut || TrieLookupTable.isAnyURLShortcut(shortcut)) {
+        if (!shortcut || TrieLookupTable.isAnyURLShortcut(shortcut)
+            || shortcut.length < SimpleRegex.MIN_SHORTCUT_LENGTH) {
             return false;
         }
 

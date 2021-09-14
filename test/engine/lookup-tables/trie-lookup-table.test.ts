@@ -24,6 +24,10 @@ describe('Trie Lookup Table Tests', () => {
 
         expect(table.addRule(new NetworkRule('https://domain.com', 0), 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(3);
+
+        // Rule shortcut is too short
+        expect(table.addRule(new NetworkRule('aa$app=com.mobile', 0), 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(3);
     });
 
     it('matches rules from lookup table', () => {

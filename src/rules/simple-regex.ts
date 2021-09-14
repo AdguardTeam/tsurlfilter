@@ -81,6 +81,12 @@ export class SimpleRegex {
      */
     public static readonly MASK_COMMENT = '!';
 
+    /**
+     * Min length of rule shortcut
+     * This value has been picked as a result of performance experiments
+     */
+    public static readonly MIN_SHORTCUT_LENGTH = 3;
+
     /** Regex with basic matching pattern special characters */
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 
