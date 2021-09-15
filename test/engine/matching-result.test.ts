@@ -54,6 +54,20 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual(sourceRuleText);
     });
+
+    it('works if allowlist non-document-level rule is not found', () => {
+        const sourceRuleText = '@@||example.com^$generichide';
+        const sourceRule = new NetworkRule(sourceRuleText, 0);
+
+        const result = new MatchingResult([], sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeTruthy();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeNull();
+    });
 });
 
 describe('TestGetCosmeticOption', () => {

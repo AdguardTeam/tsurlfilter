@@ -185,7 +185,15 @@ export class MatchingResult {
      * @return {NetworkRule | null} basic result rule
      */
     getBasicResult(): NetworkRule | null {
-        const basic = this.basicRule || this.documentRule;
+        let basic = this.basicRule;
+        if (!basic) {
+            // Only document-level frame rule would be returned as a basic result,
+            // cause only those rules could block or modify page subrequests.
+            // Other frame rules (generichide, elemhide etc) will be used in getCosmeticOption function.
+            if (this.documentRule && this.documentRule.isDocumentLevelAllowlistRule()) {
+                basic = this.documentRule;
+            }
+        }
 
         // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#replace-modifier
         // 1. $replace rules have a higher priority than other basic rules (including exception rules).
