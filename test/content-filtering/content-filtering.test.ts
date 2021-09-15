@@ -180,6 +180,7 @@ describe('Content filtering - charsets', () => {
     it('checks charset parsing', () => {
         expect(parseCharsetFromHeader('text/html; charset=utf-8')).toBe(DEFAULT_CHARSET);
         expect(parseCharsetFromHeader('text/html; charset=windows-1251')).toBe(WIN_1251);
+        expect(parseCharsetFromHeader('text/html; charset="windows-1251"')).toBe(WIN_1251);
         expect(parseCharsetFromHeader('')).toBeNull();
         expect(parseCharsetFromHeader('smth else')).toBeNull();
     });

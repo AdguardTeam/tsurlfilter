@@ -19,7 +19,7 @@ export function parseCharsetFromHeader(contentType: string): string | null {
         return null;
     }
 
-    const match = /charset=(.*?)$/.exec(contentType.toLowerCase());
+    const match = /charset="?(.*?)"?$/.exec(contentType.toLowerCase());
     if (match && match.length > 1) {
         return match[1].toLowerCase();
     }
