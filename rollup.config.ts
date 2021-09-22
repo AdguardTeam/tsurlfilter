@@ -1,11 +1,11 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import sourceMaps from 'rollup-plugin-sourcemaps';
 import globals from 'rollup-plugin-node-globals';
 import camelCase from 'lodash/camelCase';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
+import cleanup from 'rollup-plugin-cleanup';
 import { terser } from 'rollup-plugin-terser';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
@@ -35,9 +35,13 @@ const contentScriptConfig = {
     },
     plugins: [
         typescript(),
-        commonjs(),
+        commonjs({
+            sourceMap: false,
+        }),
         resolve(),
-        sourceMaps(),
+        cleanup({
+            comments: ['srcmaps'],
+        }),
     ],
 };
 
@@ -66,11 +70,14 @@ const esmConfig = {
             namedExports: {
                 lru_map: ['LRUMap'],
             },
+            sourceMap: false,
         }),
         globals(),
         nodePolyfills(),
         resolve({ preferBuiltins: false }),
-        sourceMaps(),
+        cleanup({
+            comments: ['srcmaps'],
+        }),
     ],
 };
 
@@ -100,11 +107,14 @@ const browserConfig = {
             namedExports: {
                 lru_map: ['LRUMap'],
             },
+            sourceMap: false,
         }),
         globals(),
         nodePolyfills(),
         resolve({ preferBuiltins: false }),
-        sourceMaps(),
+        cleanup({
+            comments: ['srcmaps'],
+        }),
     ],
 };
 
@@ -146,6 +156,7 @@ export default [
                 namedExports: {
                     lru_map: ['LRUMap'],
                 },
+                sourceMap: false,
             }),
             globals(),
             nodePolyfills(),
@@ -155,8 +166,9 @@ export default [
             // https://github.com/rollup/rollup-plugin-node-resolve#usage
             resolve({ preferBuiltins: false }),
 
-            // Resolve source maps to the original source
-            sourceMaps(),
+            cleanup({
+                comments: ['srcmaps'],
+            }),
         ],
     },
 ];
