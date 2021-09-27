@@ -1,16 +1,7 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.7.7",
+  "version": "0.7.6",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
-  "main": "dist/tsurlfilter.umd.js",
-  "module": "dist/es/index.js",
-  "iife": "dist/tsurlfilter.iife.js",
-  "browser": "dist/tsurlfilter.browser.js",
-  "typings": "dist/types",
-  "files": [
-    "dist",
-    "src"
-  ],
   "author": "AdGuard",
   "repository": {
     "type": "git",
@@ -25,64 +16,12 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
-    "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal && node tasks/build-txt",
-    "build:lib": "rimraf $PACKAGE_OUTPUT_PATH && rollup -c rollup.config.ts && cp package.json $PACKAGE_OUTPUT_PATH",
-    "start": "rollup -c rollup.config.ts -w",
-    "test": "jest --coverage",
-    "test:watch": "jest --coverage --watch",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
-    "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
-    "report-coverage": "cat ./coverage/lcov.info | coveralls",
-    "commit": "git-cz",
-    "precommit": "lint-staged",
-    "travis-deploy-once": "travis-deploy-once",
-    "prepublishOnly": "yarn build",
-    "increment": "yarn version --patch --no-git-tag-version"
-  },
-  "lint-staged": {
-    "{src,test}/**/*.ts": [
-      "eslint --fix",
-      "git add"
-    ]
+    "lint": "lerna run --parallel lint"
   },
   "config": {
     "commitizen": {
       "path": "node_modules/cz-conventional-changelog"
     }
-  },
-  "jest": {
-    "transform": {
-      ".(ts|tsx)": "ts-jest"
-    },
-    "testEnvironment": "node",
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/test/"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 90,
-        "functions": 95,
-        "lines": 95,
-        "statements": 95
-      }
-    },
-    "collectCoverageFrom": [
-      "src/*.{js,ts}",
-      "src/*/*.{js,ts}",
-      "src/*/*/*.{js,ts}"
-    ],
-    "setupFiles": [
-      "jest-webextension-mock"
-    ]
   },
   "commitlint": {
     "extends": [
@@ -90,6 +29,11 @@
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.13.14",
+    "@babel/node": "^7.13.13",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/plugin-transform-runtime": "^7.13.10",
+    "@babel/preset-env": "^7.13.12",
     "@commitlint/cli": "^8.3.5",
     "@commitlint/config-conventional": "^8.3.4",
     "@rollup/plugin-commonjs": "^11.0.2",
@@ -102,18 +46,23 @@
     "@types/rollup-plugin-node-globals": "^1.4.0",
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
+    "babel-loader": "^8.2.2",
+    "clean-webpack-plugin": "^3.0.0",
     "colors": "^1.4.0",
     "commitizen": "^3.1.2",
+    "copy-webpack-plugin": "^8.1.0",
     "coveralls": "^3.0.9",
     "cz-conventional-changelog": "^3.1.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-typescript": "^6.3.1",
     "eslint-plugin-import": "^2.20.1",
     "fs-extra": "^8.1.0",
+    "html-webpack-plugin": "^5.3.1",
     "husky": "^4.2.1",
     "jest": "^25.5.4",
     "jest-webextension-mock": "^3.7.8",
     "jsdom": "^16.2.2",
+    "lerna": "^4.0.0",
     "lint-staged": "^10.0.7",
     "lodash": "^4.17.15",
     "rimraf": "^3.0.1",
@@ -121,6 +70,7 @@
     "rollup-plugin-cleanup": "^3.2.1",
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.7.0",
+    "rollup-plugin-sourcemaps": "^0.5.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.25.3",
     "travis-deploy-once": "^5.0.11",
@@ -128,22 +78,12 @@
     "ts-node": "^8.6.2",
     "typedoc": "^0.20.32",
     "typescript": "3.9.9",
-    "webextension-polyfill-ts": "^0.24.0"
+    "webextension-polyfill-ts": "^0.24.0",
+    "webpack": "^5.28.0"
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.4.4",
-    "@types/ip6addr": "^0.2.3",
-    "@types/netmask": "^1.0.30",
-    "@types/punycode": "^2.1.0",
-    "consola": "^2.12.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",
-    "ip6addr": "^0.2.3",
-    "is-cidr": "^4.0.2",
-    "is-ip": "^3.1.0",
-    "lru_map": "^0.4.1",
-    "netmask": "^2.0.2",
-    "punycode": "^2.1.1",
-    "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
-    "tldts": "^5.6.45"
+    "@adguard/tsurlfilter": "file:packages/tsurlfilter",
+    "manifest-v2": "file:packages/examples/manifest-v2",
+    "manifest-v3": "file:packages/examples/manifest-v3"
   }
 }

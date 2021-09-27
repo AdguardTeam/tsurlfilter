@@ -22,11 +22,22 @@ npmjs:
           - |-
             set -e
             set -x
+
+            ls -alt
+
+            yarn install
+
+            cd ./packages/tsurlfilter && yarn install
+            cd ../..
+
+            npx lerna bootstrap
+            npx lerna run build -- ${system.YARN_ARGS}
+
+            cd ./packages/tsurlfilter
             ls -alt
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            yarn install ${system.YARN_ARGS}
             npm publish --access public
   requirements:
     - adg-docker: 'true'

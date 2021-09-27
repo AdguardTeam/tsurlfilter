@@ -1,0 +1,15 @@
+{
+  "name": "manifest-v2",
+  "version": "0.0.1",
+  "description": "Sample extension with manifest V2",
+  "author": "adguard@adguard.com",
+  "license": "GPL-3.0",
+  "scripts": {
+    "build": "babel-node ./scripts/build"
+  },
+  "dependencies": {
+    "@adguard/scriptlets": "^1.4.4",
+    "@adguard/tsurlfilter": "file:../../tsurlfilter",
+    "@babel/runtime": "^7.13.10"
+  }
+}

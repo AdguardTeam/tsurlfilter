@@ -31,12 +31,18 @@ Build:
           - |-
             set -e
             set -x
+
             ls -alt
 
-            yarn install ${system.YARN_ARGS}
-            yarn build
+            yarn install
+
+            cd ./packages/tsurlfilter && yarn install
+            cd ../..
+
+            npx lerna bootstrap
+            npx lerna run build -- ${system.YARN_ARGS}
     - inject-variables:
-        file: dist/build.txt
+        file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT
         namespace: inject
     - any-task:

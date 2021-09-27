@@ -29,11 +29,17 @@ Test:
           - |-
             set -e
             set -x
+
             ls -alt
 
-            yarn install ${system.YARN_ARGS}
-            yarn test:prod
-            yarn build
+            yarn install
+
+            cd ./packages/tsurlfilter && yarn install
+            cd ../..
+
+            npx lerna bootstrap
+            npx lerna run --scope @adguard/tsurlfilter test:prod
+            npx lerna run --scope @adguard/tsurlfilter build
   final-tasks:
     - clean
   requirements:

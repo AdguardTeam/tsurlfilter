@@ -1,0 +1,16 @@
+{
+  "name": "manifest-v3",
+  "version": "0.0.1",
+  "description": "Sample extension with manifest V3",
+  "author": "adguard@adguard.com",
+  "license": "GPL-3.0",
+  "scripts": {
+    "build": "yarn build:precompile-rules && yarn build:extension",
+    "build:extension": "babel-node ./scripts/build",
+    "build:precompile-rules": "babel-node ./scripts/build/precompile-rules.js"
+  },
+  "dependencies": {
+    "@adguard/scriptlets": "^1.4.4",
+    "@adguard/tsurlfilter": "file:../../tsurlfilter"
+  }
+}
