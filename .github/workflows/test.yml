@@ -40,9 +40,14 @@ jobs:
         shell: bash
         run: |
           npm install
-          npm run lint
-          npm run test
-          npm run build
+
+          cd ./packages/tsurlfilter && npm install
+          cd ../..
+
+          npx lerna bootstrap
+          npx lerna run lint
+          npx lerna run --scope @adguard/tsurlfilter test:prod
+          npx lerna run --scope @adguard/tsurlfilter build
   notify:
     needs: [test]
     # Secrets are not passed to workflows that are triggered by a pull request from a fork
