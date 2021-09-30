@@ -72,6 +72,11 @@ export class Application {
     };
 
     /**
+     * Request details map
+     */
+    requestContextCache = new Map();
+
+    /**
      * Initializes engine instance
      *
      * @param rulesText
@@ -103,7 +108,7 @@ export class Application {
 
         this.engine = new TSUrlFilter.Engine(ruleStorage);
         this.dnsEngine = new TSUrlFilter.DnsEngine(ruleStorage);
-        this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog));
+        this.contentFiltering = new TSUrlFilter.ContentFiltering(new ModificationsListener(this.filteringLog), this.getRequestDetails);
         this.cookieFiltering = new TSUrlFilter.CookieFiltering(this.filteringLog);
         this.headersService = new TSUrlFilter.HeadersService(this.filteringLog);
         await this.redirectsService.init();
@@ -123,6 +128,11 @@ export class Application {
 
         const requestType = Application.transformRequestType(details.type);
         const request = new TSUrlFilter.Request(details.url, details.initiator, requestType);
+        request.requestId = details.requestId;
+        request.tabId = details.tabId;
+        request.method = details.method;
+
+        this.requestContextCache.set(request.requestId, { request });
 
         const dnsResult = this.dnsEngine.match(request.hostname);
         if (dnsResult.basicRule && !dnsResult.basicRule.isAllowlist()) {
@@ -172,6 +182,19 @@ export class Application {
 
             return { cancel: true };
         }
+
+        // Apply Html filtering and replace rules
+        if (this.responseContentFilteringSupported) {
+            const replaceRules = this.getReplaceRules(details);
+            const htmlRules = this.getHtmlRules(details);
+
+            this.contentFiltering.onBeforeRequest(
+                this.browser.webRequest.filterResponseData(details.requestId),
+                request,
+                replaceRules,
+                htmlRules,
+            );
+        }
     }
 
     /**
@@ -212,28 +235,6 @@ export class Application {
     onResponseHeadersReceived(details) {
         let responseHeaders = details.responseHeaders || [];
 
-        // Apply Html filtering and replace rules
-        if (this.responseContentFilteringSupported) {
-            const contentType = Application.getHeaderValueByName(responseHeaders, 'content-type');
-            const replaceRules = this.getReplaceRules(details);
-            const htmlRules = this.getHtmlRules(details);
-
-            const requestType = Application.transformRequestType(details.type);
-            const request = new TSUrlFilter.Request(details.url, details.initiator, requestType);
-            request.requestId = details.requestId;
-            request.tabId = details.tabId;
-            request.statusCode = details.statusCode;
-            request.method = details.method;
-
-            this.contentFiltering.apply(
-                this.browser.webRequest.filterResponseData(details.requestId),
-                request,
-                contentType,
-                replaceRules,
-                htmlRules,
-            );
-        }
-
         let responseHeadersModified = false;
         if (details.type === 'main_frame') {
             const cspHeaders = this.getCSPHeaders(details);
@@ -254,6 +255,17 @@ export class Application {
         if (responseHeadersModified) {
             console.debug('Response headers modified');
             return { responseHeaders };
+        }
+
+        // Update request context with new data
+        if (this.responseContentFilteringSupported) {
+            const contentType = Application.getHeaderValueByName(responseHeaders, 'content-type');
+
+            const context = this.requestContextCache.get(details.requestId);
+            if (context) {
+                context.statusCode = details.statusCode;
+                context.contentType = contentType;
+            }
         }
     }
 
@@ -394,6 +406,24 @@ export class Application {
     getCookieRules(request, matchingResult) {
         const cookieRules = matchingResult.getCookieRules();
         return cookieRules;
+    }
+
+    /**
+     * Returns request details data
+     *
+     * @param requestId
+     * @return {{request: *, contentType: *, statusCode: *}|null}
+     */
+    getRequestDetails(requestId) {
+        const context = this.requestContextCache.get(requestId);
+        if (!context) {
+            return null;
+        }
+        return {
+            request: context.request,
+            contentType: context.contentType,
+            statusCode: context.statusCode,
+        };
     }
 
     /**

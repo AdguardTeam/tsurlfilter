@@ -12,6 +12,12 @@ import { ModificationsListener } from './modifications-listener';
 import { logger } from '../utils/logger';
 import { RequestType } from '../request-type';
 
+interface RequestDetails {
+    request: Request;
+    contentType: string | null;
+    statusCode: number | null;
+}
+
 /**
  * Content filtering module
  * Handles Html filtering and replace rules
@@ -22,13 +28,20 @@ export class ContentFiltering {
      */
     private readonly modificationsListener: ModificationsListener;
 
+    private readonly requestDetailsCallback: (requestId: number) => RequestDetails | null;
+
     /**
      * Constructor
      *
      * @param modificationsListener
+     * @param requestDetailsCallback
      */
-    constructor(modificationsListener: ModificationsListener) {
+    constructor(
+        modificationsListener: ModificationsListener,
+        requestDetailsCallback: (requestId: number) => RequestDetails,
+    ) {
         this.modificationsListener = modificationsListener;
+        this.requestDetailsCallback = requestDetailsCallback;
     }
 
     /**
@@ -64,38 +77,70 @@ export class ContentFiltering {
      * This function allows read response fully.
      * See some details here: https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
      *
-     * @param streamFilter
      * @param request
-     * @param charset
+     * @param streamFilter
      * @param callback
      */
+    // eslint-disable-next-line consistent-return
     private handleResponse(
-        streamFilter: StreamFilter,
         request: Request,
-        charset: string | null,
-        callback: (x: string) => string,
+        streamFilter: StreamFilter,
+        callback: (x: string, context: RequestDetails | null) => string,
     ): void {
+        const requestId = request.requestId!;
+
         try {
             // eslint-disable-next-line max-len
-            const contentFilter = new ContentFilter(streamFilter, request.requestId!, request.requestType, charset, (content) => {
-                this.modificationsListener.onModificationStarted(request.requestId!);
+            const contentFilter = new ContentFilter(streamFilter, requestId, request.requestType, (content) => {
+                this.modificationsListener.onModificationStarted(requestId);
 
                 try {
-                    // eslint-disable-next-line no-param-reassign
-                    content = callback(content);
+                    const context = this.getRequestDetails(requestId);
+                    if (context) {
+                        const charset = parseCharsetFromHeader(context.contentType);
+                        if (ContentFiltering.shouldProcessRequest(context, charset)) {
+                            contentFilter.setCharset(charset);
+                            // eslint-disable-next-line no-param-reassign
+                            content = callback(content, context);
+                        }
+                    }
                 } catch (ex) {
                     logger.error(`Error while applying content filter to ${request.url}. Error: ${ex}`);
                 } finally {
-                    this.modificationsListener.onModificationFinished(request.requestId!);
+                    this.modificationsListener.onModificationFinished(requestId);
                 }
 
                 contentFilter.write(content!);
             });
         } catch (e) {
             // eslint-disable-next-line max-len
-            logger.error(`An error has occurred in content filter for request ${request.requestId} to ${request.url}. Error: ${e}`);
-            callback('');
+            logger.error(`An error has occurred in content filter for request ${requestId} to ${request.url}. Error: ${e}`);
+            callback('', null);
         }
+    }
+
+    /**
+     * Checks if the request should be processed
+     *
+     * @param context
+     * @param charset
+     */
+    private static shouldProcessRequest(context: RequestDetails, charset: string | null): boolean {
+        if (!context.contentType) {
+            return false;
+        }
+
+        if (context.statusCode !== 200) {
+            return false;
+        }
+
+        if (charset && SUPPORTED_CHARSETS.indexOf(charset) < 0) {
+            // Charset is detected and it is not supported
+            logger.warn(`Skipping request ${context.request.requestId} with Content-Type ${context.contentType}`);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -220,24 +265,44 @@ export class ContentFiltering {
     /**
      * Applies replace/content rules to the content
      *
-     * @param request
-     * @param {Array} contentRules
-     * @param {Array} replaceRules
+     * @param context
      * @param {string} content
+     * @param replaceRules
+     * @param htmlRules
+     * @param replaceRules
+     * @param htmlRules
      * @returns {string} Modified content
      */
     private applyRulesToContent(
-        request: Request,
-        contentRules: CosmeticRule[] | null,
-        replaceRules: NetworkRule[] | null,
+        context: RequestDetails | null,
         content: string,
+        replaceRules: NetworkRule[],
+        htmlRules: CosmeticRule[],
     ): string {
+        if (!context) {
+            return content;
+        }
+
+        let htmlRulesToApply: CosmeticRule[] | null = null;
+        if (ContentFiltering.shouldApplyHtmlRules(context.request.requestType)) {
+            htmlRulesToApply = htmlRules;
+        }
+
+        let replaceRulesToApply: NetworkRule[] | null = null;
+        if (ContentFiltering.shouldApplyReplaceRule(context.request.requestType, context.contentType!)) {
+            replaceRulesToApply = replaceRules;
+        }
+
+        if (!htmlRulesToApply && !replaceRulesToApply) {
+            return content;
+        }
+
         let result = content;
 
-        if (contentRules && contentRules.length > 0) {
+        if (htmlRulesToApply && htmlRulesToApply.length > 0) {
             const doc = this.documentParser.parse(content);
             if (doc !== null) {
-                const modified = this.applyHtmlRules(request, doc, contentRules);
+                const modified = this.applyHtmlRules(context.request, doc, htmlRulesToApply);
                 if (modified !== null) {
                     result = modified;
                 }
@@ -249,38 +314,36 @@ export class ContentFiltering {
             return result;
         }
 
-        if (replaceRules) {
-            result = this.applyReplaceRules(request, result, replaceRules);
+        if (replaceRulesToApply) {
+            result = this.applyReplaceRules(context.request, result, replaceRulesToApply);
         }
 
         return result;
     }
 
     /**
-     * Applies content and replace rules to the request
+     * OnBeforeRequest handler
      *
      * @param streamFilter
      * @param request
-     * @param contentType Content-Type header
      * @param replaceRules
      * @param htmlRules
      */
-    public apply(
+    public onBeforeRequest(
         streamFilter: StreamFilter,
         request: Request,
-        contentType: string,
         replaceRules: NetworkRule[],
         htmlRules: CosmeticRule[],
     ): void {
-        const {
-            requestId, requestType, statusCode, method, tabId,
-        } = request;
-
-        if (!requestId || !tabId) {
+        if (!request.requestId) {
             return;
         }
 
-        if (statusCode !== 200) {
+        const {
+            method, tabId,
+        } = request;
+
+        if (!tabId) {
             return;
         }
 
@@ -288,32 +351,19 @@ export class ContentFiltering {
             return;
         }
 
-        const charset = parseCharsetFromHeader(contentType);
-        if (charset && SUPPORTED_CHARSETS.indexOf(charset) < 0) {
-            // Charset is detected and it is not supported
-            logger.warn(`Skipping request ${request.requestId} with Content-Type ${contentType}`);
-            return;
-        }
-
-        let htmlRulesToApply: CosmeticRule[] | null = null;
-        if (ContentFiltering.shouldApplyHtmlRules(requestType)) {
-            htmlRulesToApply = htmlRules;
-        }
-
-        let replaceRulesToApply: NetworkRule[] | null = null;
-        if (ContentFiltering.shouldApplyReplaceRule(requestType, contentType)) {
-            replaceRulesToApply = replaceRules;
-        }
-
-        if (!htmlRulesToApply && !replaceRulesToApply) {
-            return;
-        }
-
         this.handleResponse(
-            streamFilter,
             request,
-            charset,
-            (content) => this.applyRulesToContent(request, htmlRulesToApply, replaceRulesToApply, content!),
+            streamFilter,
+            (content, context) => this.applyRulesToContent(context, content!, replaceRules, htmlRules),
         );
+    }
+
+    /**
+     * Returns request details
+     *
+     * @param requestId
+     */
+    private getRequestDetails(requestId: number): RequestDetails | null {
+        return this.requestDetailsCallback(requestId);
     }
 }

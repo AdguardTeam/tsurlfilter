@@ -26,7 +26,7 @@ export class ContentFilter {
     /**
      * Request charset
      */
-    charset: string | null;
+    charset: string | undefined;
 
     /**
      * Content
@@ -54,19 +54,16 @@ export class ContentFilter {
      * @param filter implementation
      * @param requestId Request identifier
      * @param requestType Request type
-     * @param charset encoding
      * @param onContentCallback
      */
     constructor(
         filter: StreamFilter,
         requestId: number,
         requestType: RequestType,
-        charset: string | null,
         onContentCallback: (data: string) => void,
     ) {
         this.filter = filter;
         this.requestType = requestType;
-        this.charset = charset;
 
         this.content = '';
         this.onContentCallback = onContentCallback;
@@ -155,6 +152,18 @@ export class ContentFilter {
     public write(content: string): void {
         this.filter.write(this.encoder!.encode(content));
         this.filter.close();
+    }
+
+    /**
+     * Sets charset
+     *
+     * @param charset
+     */
+    setCharset(charset: string| null): void {
+        if (charset) {
+            this.charset = charset;
+            this.initEncoders();
+        }
     }
 
     /**
