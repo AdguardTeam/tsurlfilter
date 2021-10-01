@@ -87,6 +87,11 @@ export class SimpleRegex {
      */
     public static readonly MIN_SHORTCUT_LENGTH = 3;
 
+    /**
+     * Min length of generic rule shortcut
+     */
+    public static readonly MIN_GENERIC_RULE_LENGTH = 4;
+
     /** Regex with basic matching pattern special characters */
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 

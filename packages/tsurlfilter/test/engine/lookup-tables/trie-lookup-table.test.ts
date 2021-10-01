@@ -10,16 +10,13 @@ describe('Trie Lookup Table Tests', () => {
         const ruleStorage = createRuleStorage([]);
         const table = new TrieLookupTable(ruleStorage);
 
-        expect(table.addRule(new NetworkRule('||*$script', 0), 0)).toBeFalsy();
-        expect(table.getRulesCount()).toBe(0);
-
         expect(table.addRule(new NetworkRule('http://p', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
         expect(table.addRule(new NetworkRule('shortcut', 0), 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
 
-        expect(table.addRule(new NetworkRule('mac', 0), 0)).toBeTruthy();
+        expect(table.addRule(new NetworkRule('path', 0), 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(2);
 
         expect(table.addRule(new NetworkRule('https://domain.com', 0), 0)).toBeTruthy();

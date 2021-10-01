@@ -170,6 +170,10 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
 
         expect(() => {
+            new NetworkRule('||*$script', 0);
+        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
+
+        expect(() => {
             new NetworkRule('$third-party', 0);
         }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
 
