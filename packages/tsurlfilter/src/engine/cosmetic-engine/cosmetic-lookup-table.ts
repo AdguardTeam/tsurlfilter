@@ -3,6 +3,7 @@ import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/utils';
 import { RuleStorage } from '../../filterlist/rule-storage';
+import { Request } from '../../request';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -94,12 +95,12 @@ export class CosmeticLookupTable {
 
     /**
      * Finds rules by hostname
-     * @param hostname
+     * @param request
      * @param subdomains
      */
-    findByHostname(hostname: string, subdomains: string[]): CosmeticRule[] {
+    findByHostname(request: Request): CosmeticRule[] {
         const result = [] as CosmeticRule[];
-
+        const { subdomains } = request;
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
@@ -107,24 +108,24 @@ export class CosmeticLookupTable {
             if (rulesIndexes) {
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
                     const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
-                    if (rule && rule.match(hostname)) {
+                    if (rule && rule.match(request)) {
                         result.push(rule);
                     }
                 }
             }
         }
 
-        result.push(...this.wildcardRules.filter((r) => r.match(hostname)));
+        result.push(...this.wildcardRules.filter((r) => r.match(request)));
 
         return result.filter((rule) => !rule.isAllowlist());
     }
 
     /**
      * Checks if the rule is disabled on the specified hostname.
-     * @param hostname
+     * @param request
      * @param rule
      */
-    isAllowlisted(hostname: string, rule: CosmeticRule): boolean {
+    isAllowlisted(request: Request, rule: CosmeticRule): boolean {
         const rulesIndexes = this.allowlist.get(fastHash(rule.getContent()));
 
         if (!rulesIndexes) {
@@ -133,7 +134,7 @@ export class CosmeticLookupTable {
 
         for (let j = 0; j < rulesIndexes.length; j += 1) {
             const r = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
-            if (r && r.match(hostname)) {
+            if (r && r.match(request)) {
                 return true;
             }
         }

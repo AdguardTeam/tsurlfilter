@@ -177,3 +177,12 @@ export const isDomainName = (text: string): boolean => {
 
     return DOMAIN_REGEX.test(text);
 };
+
+/**
+ * Extract relative part from hierarchical structured URL
+ * @param url
+ */
+export const getRelativeUrl = (url: string): string | null => {
+    const i = url.indexOf('/', url.indexOf('://') + 3);
+    return i !== -1 ? url.substr(i) : null;
+};

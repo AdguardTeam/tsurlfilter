@@ -5,6 +5,7 @@
  * @param delimiter - delimiter
  * @param escapeCharacter - escape character
  * @param preserveAllTokens - if true, preserve empty parts
+ * @param unescape - if true, delete EscapeCharacter
  * @return array of string parts
  */
 export function splitByDelimiterWithEscapeCharacter(
@@ -12,6 +13,7 @@ export function splitByDelimiterWithEscapeCharacter(
     delimiter: string,
     escapeCharacter: string,
     preserveAllTokens: boolean,
+    unescape = true,
 ): string[] {
     let parts: string[] = [];
 
@@ -38,7 +40,9 @@ export function splitByDelimiterWithEscapeCharacter(
         const c = str.charAt(i);
         if (c === delimiter) {
             if (i > 0 && str.charAt(i - 1) === escapeCharacter) {
-                sb.splice(sb.length - 1, 1);
+                if (unescape) {
+                    sb.splice(sb.length - 1, 1);
+                }
                 sb.push(c);
             } else if (preserveAllTokens || sb.length > 0) {
                 const part = sb.join('');

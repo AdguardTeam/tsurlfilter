@@ -6,9 +6,16 @@ import {
     isExtCssMarker,
     ADG_SCRIPTLET_MASK,
 } from './cosmetic-rule-marker';
-import { DomainModifier, COMMA_SEPARATOR } from '../modifiers/domain-modifier';
+import { DomainModifier, COMMA_SEPARATOR, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
+import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
+import {
+    CosmeticRuleModifiers,
+    CosmeticRuleModifiersSyntax,
+} from './cosmetic-rule-modifiers';
+import { Request } from '../request';
+import { Pattern } from './pattern';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -52,6 +59,12 @@ export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ex
     ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
     ':matches-attr(', ':matches-property(', ':is('];
 
+const cosmeticRuleModifiersList = Object.values(CosmeticRuleModifiers) as string[];
+
+export type CosmeticRuleModifiersCollection = {
+    [P in CosmeticRuleModifiers]?: string;
+};
+
 /**
  * Implements a basic cosmetic rule.
  *
@@ -89,6 +102,11 @@ export class CosmeticRule implements rule.IRule {
     private readonly permittedDomains: string[] | undefined = undefined;
 
     private readonly restrictedDomains: string[] | undefined = undefined;
+
+    /**
+     * $path modifier pattern. It is only set if $path modifier is specified for this rule.
+     */
+    public pathModifier: Pattern | undefined;
 
     /**
      * Js script to execute
@@ -184,6 +202,110 @@ export class CosmeticRule implements rule.IRule {
         }
 
         return name;
+    }
+
+    /**
+     * Gets the rule modifiers and domains. They are located to the left side from the cosmetic rule marker.
+     * @param ruleTextLeftPart
+     * @returns Object with modifiers and domains parts
+     */
+    private static getDomainsAndModifiersText(ruleTextLeftPart: string): {
+        modifiersText?: string;
+        domainsText?: string;
+    } {
+        const {
+            OPEN_BRACKET,
+            CLOSE_BRACKET,
+            SPECIAL_SYMBOL,
+            ESCAPE_CHARACTER,
+        } = CosmeticRuleModifiersSyntax;
+
+        if (!ruleTextLeftPart.startsWith(`${OPEN_BRACKET + SPECIAL_SYMBOL}`)) {
+            return { domainsText: ruleTextLeftPart };
+        }
+
+        let closeBracketIndex;
+
+        // The first two characters cannot be closing brackets
+        for (let i = 2; i < ruleTextLeftPart.length; i += 1) {
+            if (ruleTextLeftPart[i] === CLOSE_BRACKET && ruleTextLeftPart[i - 1] !== ESCAPE_CHARACTER) {
+                closeBracketIndex = i;
+                break;
+            }
+        }
+
+        if (!closeBracketIndex) {
+            throw new SyntaxError('Can\'t parse modifiers list');
+        }
+
+        // Handle this case: `$[]`
+        if (closeBracketIndex === 2) {
+            throw new SyntaxError('Modifiers list can\'t be empty');
+        }
+
+        const modifiersText = ruleTextLeftPart.slice(2, closeBracketIndex);
+
+        let domainsText;
+
+        if (closeBracketIndex < ruleTextLeftPart.length - 1) {
+            domainsText = ruleTextLeftPart.slice(closeBracketIndex + 1);
+        }
+
+        return {
+            modifiersText,
+            domainsText,
+        };
+    }
+
+    /**
+     * Parses the list of modifiers. Parsing is done in the same way as it's done in the NetworkRule, i.e.
+     * we have a comma-separated list of modifier-value pairs.
+     * If we encounter an invalid modifier, this method throws a SyntaxError.
+     *
+     * @param modifiersText - list of modifiers splited by comma
+     * @returns - modifiers collection object
+     */
+    private static parseRuleModifiers(modifiersText: string | undefined): CosmeticRuleModifiersCollection | null {
+        if (!modifiersText) {
+            return null;
+        }
+
+        const {
+            ESCAPE_CHARACTER,
+            DELIMITER,
+            ASSIGNER,
+        } = CosmeticRuleModifiersSyntax;
+
+        const modifiersTextArray = utils.splitByDelimiterWithEscapeCharacter(
+            modifiersText,
+            DELIMITER,
+            ESCAPE_CHARACTER,
+            false,
+            false,
+        );
+
+        const modifiers = Object.create(null);
+
+        for (let i = 0; i < modifiersTextArray.length; i += 1) {
+            const modifierText = modifiersTextArray[i];
+            const assignerIndex = modifierText.indexOf(ASSIGNER);
+
+            if (assignerIndex === -1) {
+                throw new SyntaxError('Modifier must have assigned value');
+            }
+
+            const modifierKey = modifierText.substring(0, assignerIndex);
+
+            if (cosmeticRuleModifiersList.includes(modifierKey)) {
+                const modifierValue = modifierText.substring(assignerIndex + 1);
+
+                modifiers[modifierKey] = modifierValue;
+            } else {
+                throw new SyntaxError(`'${modifierKey}' is not valid modifier`);
+            }
+        }
+
+        return modifiers;
     }
 
     getText(): string {
@@ -288,12 +410,33 @@ export class CosmeticRule implements rule.IRule {
         CosmeticRule.validate(ruleText, this.type, this.content);
 
         if (index > 0) {
-            // This means that the marker is preceded by the list of domains
+            // This means that the marker is preceded by the list of domains and modifiers
             // Now it's a good time to parse them.
-            const domains = ruleText.substring(0, index);
+            const { domainsText, modifiersText } = CosmeticRule.getDomainsAndModifiersText(
+                ruleText.substring(0, index),
+            );
+
+            let domains = domainsText;
+            const modifiers = CosmeticRule.parseRuleModifiers(modifiersText);
+
+            if (modifiers) {
+                if (modifiers.path) {
+                    this.pathModifier = new Pattern(modifiers.path);
+                }
+
+                if (modifiers.domain) {
+                    if (domains) {
+                        throw new SyntaxError('The $domain modifier is not allowed in a domain-specific rule');
+                    } else {
+                        domains = modifiers.domain;
+                    }
+                }
+            }
+
             // Skip wildcard domain
-            if (domains !== SimpleRegex.MASK_ANY_CHARACTER) {
-                const domainModifier = new DomainModifier(domains, COMMA_SEPARATOR);
+            if (domains && domains !== SimpleRegex.MASK_ANY_CHARACTER) {
+                const separator = modifiers?.domain ? PIPE_SEPARATOR : COMMA_SEPARATOR;
+                const domainModifier = new DomainModifier(domains, separator);
                 this.permittedDomains = domainModifier.permittedDomains !== null
                     ? domainModifier.permittedDomains : undefined;
                 this.restrictedDomains = domainModifier.restrictedDomains !== null
@@ -319,28 +462,37 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Match returns true if this rule can be used on the specified domain.
+     * Match returns true if this rule can be used on the specified request.
      *
-     * @param domain - domain to check
+     * @param request - request to check
      */
-    match(domain: string): boolean {
-        if (!this.permittedDomains && !this.restrictedDomains) {
+    match(request: Request): boolean {
+        if (!this.permittedDomains && !this.restrictedDomains && !this.pathModifier) {
             return true;
         }
 
-        if (this.restrictedDomains != null && this.restrictedDomains.length > 0) {
-            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains)) {
-                // Domain or host is restricted
-                // i.e. ~example.org##rule
+        if (this.matchesRestrictedDomains(request.hostname)) {
+            /**
+             * Domain or host is restricted
+             * i.e. ~example.org##rule
+             */
+            return false;
+        }
+
+        if (this.hasPermittedDomains()) {
+            if (!DomainModifier.isDomainOrSubdomainOfAny(request.hostname, this.permittedDomains!)) {
+                /**
+                 * Domain is not among permitted
+                 * i.e. example.org##rule and we're checking example.org
+                 */
                 return false;
             }
         }
 
-        if (this.hasPermittedDomains()) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
-                // Domain is not among permitted
-                // i.e. example.org##rule and we're checking example.org
-                return false;
+        if (this.pathModifier) {
+            const path = getRelativeUrl(request.urlLowercase);
+            if (path) {
+                return this.pathModifier.matchPathPattern(path);
             }
         }
 
@@ -461,22 +613,34 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Checks if rule has permitted domains
+     * Checks if the rule has permitted domains
      */
     private hasPermittedDomains(): boolean {
         return this.permittedDomains != null && this.permittedDomains.length > 0;
     }
 
     /**
-     * Checks if hostname matches permitted domains
+     * Checks if the rule has restricted domains
+     */
+    private hasRestrictedDomains(): boolean {
+        return this.restrictedDomains != null && this.restrictedDomains.length > 0;
+    }
+
+    /**
+     * Checks if the hostname matches permitted domains
      * @param hostname
      */
     public matchesPermittedDomains(hostname: string): boolean {
-        if (this.hasPermittedDomains()
-            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
-            return true;
-        }
-        return false;
+        return this.hasPermittedDomains() && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!);
+    }
+
+    /**
+     * Checks if the hostname matches the restricted domains.
+     * @param hostname
+     */
+    public matchesRestrictedDomains(hostname: string): boolean {
+        return this.hasRestrictedDomains()
+            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.restrictedDomains!);
     }
 
     /**

@@ -24,6 +24,9 @@ describe('splitByDelimiterWithEscapeCharacter', () => {
 
         parts = utils.splitByDelimiterWithEscapeCharacter('/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/$1<\\/VAST>/', '/', '\\', true);
         expect(parts.length).toEqual(3);
+
+        parts = utils.splitByDelimiterWithEscapeCharacter('qwe\\,rty,1,2,3', ',', '\\', false, false);
+        expect(parts[0]).toEqual('qwe\\,rty');
     });
 
     it('measures splitByDelimiterWithEscapeCharacter', async () => {

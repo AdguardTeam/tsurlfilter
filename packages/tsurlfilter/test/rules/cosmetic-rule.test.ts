@@ -1,5 +1,7 @@
 /* eslint-disable max-len */
 import { CosmeticRule, CosmeticRuleType } from '../../src/rules/cosmetic-rule';
+import { Request } from '../../src/request';
+import { RequestType } from '../../src/request-type';
 
 describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
@@ -131,50 +133,167 @@ describe('Element hiding rules constructor', () => {
         expect(rule.getPermittedDomains()).toBeUndefined();
         expect(rule.getRestrictedDomains()).toBeUndefined();
     });
+
+    it('works if it correctly parses rule modifiers', () => {
+        let rule = new CosmeticRule('[$path=page.html]###banner', 0);
+        expect(rule.pathModifier?.pattern).toEqual('page.html');
+
+        rule = new CosmeticRule('[$path=/\\[^a|b|c|\\,\\=\\]werty?=qwe/,domain=example.com]###banner', 0);
+        expect(rule.pathModifier?.pattern).toEqual('/\\[^a|b|c|\\,\\=\\]werty?=qwe/');
+
+        rule = new CosmeticRule('[$path=/page*.html]example.com###banner', 0);
+        expect(rule.pathModifier?.pattern).toEqual('/page*.html');
+
+        rule = new CosmeticRule('[$path=qwerty,]example.com###banner', 0);
+        expect(rule.pathModifier?.pattern).toEqual('qwerty');
+
+        rule = new CosmeticRule('[$,path=qwerty]example.com###banner', 0);
+        expect(rule.pathModifier?.pattern).toEqual('qwerty');
+
+        rule = new CosmeticRule('example.com###banner', 0);
+        expect(rule.pathModifier).toEqual(undefined);
+
+        expect(() => {
+            new CosmeticRule('[$path=page.html###banner', 0);
+        }).toThrow(new SyntaxError('Can\'t parse modifiers list'));
+
+        expect(() => {
+            new CosmeticRule('[$domain,path=/page*.html]###banner', 0);
+        }).toThrow(new SyntaxError('Modifier must have assigned value'));
+
+        expect(() => {
+            new CosmeticRule('[$]example.com###banner', 0);
+        }).toThrow(new SyntaxError('Modifiers list can\'t be empty'));
+
+        expect(() => {
+            new CosmeticRule('[$test=example.com,path=/page*.html]###banner', 0);
+        }).toThrow(new SyntaxError('\'test\' is not valid modifier'));
+
+        expect(() => {
+            new CosmeticRule('[$domain=example.com]example.org###banner', 0);
+        }).toThrow(new SyntaxError('The $domain modifier is not allowed in a domain-specific rule'));
+    });
 });
 
 describe('CosmeticRule match', () => {
+    const createRequest = (url: string, sourceUrl?: string): Request => {
+        const source = sourceUrl || url;
+        return new Request(url, source, RequestType.Document);
+    };
+
     it('works if it matches wide rules', () => {
         const rule = new CosmeticRule('##banner', 0);
-        expect(rule.match('example.org')).toEqual(true);
+        expect(rule.match(createRequest('example.org'))).toEqual(true);
     });
 
     it('works if it matches domain restrictions properly', () => {
         const rule = new CosmeticRule('example.org,~sub.example.org##banner', 0);
-        expect(rule.match('example.org')).toEqual(true);
-        expect(rule.match('test.example.org')).toEqual(true);
-        expect(rule.match('testexample.org')).toEqual(false);
-        expect(rule.match('sub.example.org')).toEqual(false);
-        expect(rule.match('sub.sub.example.org')).toEqual(false);
+        expect(rule.match(createRequest('example.org'))).toEqual(true);
+        expect(rule.match(createRequest('test.example.org'))).toEqual(true);
+        expect(rule.match(createRequest('testexample.org'))).toEqual(false);
+        expect(rule.match(createRequest('sub.example.org'))).toEqual(false);
+        expect(rule.match(createRequest('sub.sub.example.org'))).toEqual(false);
     });
 
     it('works if it matches wildcard domain restrictions properly', () => {
         const rule = new CosmeticRule('example.*##body', 0);
-        expect(rule.match('example.org')).toEqual(true);
-        expect(rule.match('example.de')).toEqual(true);
-        expect(rule.match('example.co.uk')).toEqual(true);
-        expect(rule.match('sub.example.org')).toEqual(true);
+        expect(rule.match(createRequest('example.org'))).toEqual(true);
+        expect(rule.match(createRequest('example.de'))).toEqual(true);
+        expect(rule.match(createRequest('example.co.uk'))).toEqual(true);
+        expect(rule.match(createRequest('sub.example.org'))).toEqual(true);
 
-        expect(rule.match('testexample.org')).toEqual(false);
+        expect(rule.match(createRequest('testexample.org'))).toEqual(false);
         // non-existent tld
-        expect(rule.match('example.eu.uk')).toEqual(false);
+        expect(rule.match(createRequest('example.eu.uk'))).toEqual(false);
     });
 
     it('works if it matches wildcard domain restrictions properly - complicated', () => {
         const rule = new CosmeticRule('~yandex.*,google.*,youtube.*###ad-iframe', 0);
-        expect(rule.match('google.com')).toEqual(true);
-        expect(rule.match('youtube.ru')).toEqual(true);
-        expect(rule.match('youtube.co.id')).toEqual(true);
+        expect(rule.match(createRequest('google.com'))).toEqual(true);
+        expect(rule.match(createRequest('youtube.ru'))).toEqual(true);
+        expect(rule.match(createRequest('youtube.co.id'))).toEqual(true);
 
-        expect(rule.match('yandex.com')).toEqual(false);
-        expect(rule.match('www.yandex.ru')).toEqual(false);
-        expect(rule.match('www.adguard.com')).toEqual(false);
+        expect(rule.match(createRequest('yandex.com'))).toEqual(false);
+        expect(rule.match(createRequest('www.yandex.ru'))).toEqual(false);
+        expect(rule.match(createRequest('www.adguard.com'))).toEqual(false);
     });
 
     it('works if it matches wildcard rule', () => {
         const rule = new CosmeticRule('*##banner', 0);
-        expect(rule.match('example.org')).toEqual(true);
-        expect(rule.match('test.com')).toEqual(true);
+        expect(rule.match(createRequest('example.org'))).toEqual(true);
+        expect(rule.match(createRequest('test.com'))).toEqual(true);
+    });
+
+    it('works if it matches rule with path modifier pattern', () => {
+        let rule = new CosmeticRule('[$path=page.html]##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.org/page.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://another.org/page.html?param=1'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org/sub/page.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org/sub/another_page.html'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://example.org/another.html'))).toEqual(false);
+
+        rule = new CosmeticRule('[$path=/page.html]##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.org/page.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://another.org/page.html?param=1'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org/sub/page.html'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://example.org/sub/another_page.html'))).toEqual(false);
+    });
+
+    it('works if it matches path modifier with \'|\' special character included in the rule', () => {
+        let rule = new CosmeticRule('[$path=|/page.html]##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.org/page.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://another.org/page.html?param=1'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://example.org/sub/page.html'))).toEqual(false);
+
+        rule = new CosmeticRule('[$path=/page|]##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.org/page'))).toEqual(true);
+        expect(rule.match(createRequest('https://another.org/page'))).toEqual(true);
+        expect(rule.match(createRequest('https://another.org/sub/page'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://another.org/page?param=1'))).toEqual(false);
+        expect(rule.match(createRequest('https://another.org/page.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.org/page/sub'))).toEqual(false);
+    });
+
+    it('works if it matches path modifier with wildcard included in the rule, limited by domain pattern', () => {
+        const rule = new CosmeticRule('[$path=/page*.html]example.com,~test.example.com##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.com/page1.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/page2.html?param=1'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://test.example.com/page1.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com/another-page.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://another.org/page1.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://another.org/page2.html'))).toEqual(false);
+    });
+
+    it('works if it matches domain and path modifiers included in the rule', () => {
+        const rule = new CosmeticRule('[$domain=example.com|~test.example.com,path=/page.html]##.textad', 0);
+
+        expect(rule.match(createRequest('http://example.com/page.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/page.html?param=1'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/sub/page.html'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://test.example.com/page.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com/another-page.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://another.org/page.html'))).toEqual(false);
+    });
+
+    it('work if it matches path modifiers with regex included in the rule', () => {
+        const rule = new CosmeticRule('[$path=/\\/(sub1|sub2)\\/page\\.html/]##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.com/sub1/page.html'))).toEqual(true);
+        expect(rule.match(createRequest('https://another.org/sub2/page.html'))).toEqual(true);
+
+        expect(rule.match(createRequest('https://example.com/page.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://another.org/sub3/page.html'))).toEqual(false);
     });
 });
 

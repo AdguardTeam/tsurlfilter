@@ -77,7 +77,7 @@ export class Pattern {
         this.prepare();
 
         if (this.patternShortcut) {
-            return shortcutMatched || this.matchShortcut(request);
+            return shortcutMatched || this.matchShortcut(request.urlLowercase);
         }
 
         if (this.hostname) {
@@ -105,11 +105,37 @@ export class Pattern {
     }
 
     /**
+     * Checks if this rule pattern matches the specified relative path string.
+     * This method is used in cosmetic rules to implement the $path modifier matching logic.
+     *
+     * @param path - path to check
+     * @returns true if pattern matches
+     */
+    public matchPathPattern(path: string): boolean {
+        this.prepare();
+
+        if (this.hostname) {
+            return false;
+        }
+
+        if (this.patternShortcut) {
+            return this.matchShortcut(path);
+        }
+
+        // If the regular expression is invalid, just return false right away.
+        if (this.regexInvalid || !this.regex) {
+            return false;
+        }
+
+        return this.regex.test(path);
+    }
+
+    /**
      * matchShortcut simply checks if shortcut is a substring of the URL.
      * @param request - request to check.
      */
-    private matchShortcut(request: Request): boolean {
-        return request.urlLowercase.indexOf(this.shortcut) >= 0;
+    private matchShortcut(str: string): boolean {
+        return str.indexOf(this.shortcut) >= 0;
     }
 
     /**
