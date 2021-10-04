@@ -38,7 +38,7 @@ Build:
 
             npx lerna bootstrap
             npx lerna exec yarn install
-            npx lerna run build -- ${system.YARN_ARGS}
+            npx lerna run --scope @adguard/tsurlfilter build -- ${system.YARN_ARGS}
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT
