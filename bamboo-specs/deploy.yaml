@@ -25,13 +25,11 @@ npmjs:
 
             ls -alt
 
-            yarn install
-
-            cd ./packages/tsurlfilter && yarn install
-            cd ../..
+            yarn install -- ${system.YARN_ARGS}
 
             npx lerna bootstrap
-            npx lerna run build -- ${system.YARN_ARGS}
+            npx lerna exec --scope @adguard/tsurlfilter yarn install -- ${system.YARN_ARGS}
+            npx lerna run --scope @adguard/tsurlfilter build
 
             cd ./packages/tsurlfilter
             ls -alt

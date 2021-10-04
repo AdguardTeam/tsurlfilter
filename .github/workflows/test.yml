@@ -41,10 +41,8 @@ jobs:
         run: |
           npm install
 
-          cd ./packages/tsurlfilter && npm install
-          cd ../..
-
           npx lerna bootstrap
+          npx lerna exec npm install
           npx lerna run lint
           npx lerna run --scope @adguard/tsurlfilter test:prod
           npx lerna run --scope @adguard/tsurlfilter build
