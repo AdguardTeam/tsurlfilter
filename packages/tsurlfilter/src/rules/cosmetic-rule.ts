@@ -421,7 +421,16 @@ export class CosmeticRule implements rule.IRule {
 
             if (modifiers) {
                 if (modifiers.path) {
-                    this.pathModifier = new Pattern(modifiers.path);
+                    let { path } = modifiers;
+
+                    if (SimpleRegex.isRegexPattern(path)) {
+                        path = SimpleRegex.unescapeRegexSpecials(
+                            path,
+                            SimpleRegex.reModifierPatternEscapedSpecialCharacters,
+                        );
+                    }
+
+                    this.pathModifier = new Pattern(path);
                 }
 
                 if (modifiers.domain) {

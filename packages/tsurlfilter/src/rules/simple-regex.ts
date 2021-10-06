@@ -6,6 +6,7 @@ import * as utils from '../utils/utils';
 const specialCharacters = ['.', '+', '?', '$', '{', '}', '(', ')', '[', ']', '/', '\\'];
 const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g');
 const reSpecialCharactersFull = /[.*+?^${}()|[\]\\]/g;
+const reEscapedSpecialCharactersFull = /\\[.*+?^${}()|[\]\\]/g;
 
 /**
  * Class with static helper methods for working with basic filtering rules patterns.
@@ -75,6 +76,16 @@ export class SimpleRegex {
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regular-expressions-support
      */
     public static readonly MASK_REGEX_RULE: string = '/';
+
+    /**
+     *  Regex for matching special characters in modifier regex pattern
+     */
+    public static readonly reModifierPatternSpecialCharacters = /[[\],\\]/g;
+
+    /**
+      *  Regex for matching escaped special characters in modifier regex pattern
+      */
+    public static readonly reModifierPatternEscapedSpecialCharacters = /\\[[\],\\]/g;
 
     /**
      * If string starts with exclamation mark "!" we consider it as comment
@@ -266,8 +277,32 @@ export class SimpleRegex {
      * Escapes characters with special meaning inside a regular expression.
      *
      * @param str
+     * @param searchPattern - Pattern for detecting special characters. Optional.
      */
-    public static escapeRegexSpecials(str: string): string {
-        return str.replace(reSpecialCharactersFull, '\\$&');
+    public static escapeRegexSpecials(
+        str: string,
+        searchPattern: string | RegExp = reSpecialCharactersFull,
+    ): string {
+        return str.replace(searchPattern, '\\$&');
+    }
+
+    /**
+     * Unescapes characters with special meaning inside a regular expression.
+     *
+     * @param str
+     * @param searchPattern - Pattern for detecting special characters. Optional.
+     */
+    public static unescapeRegexSpecials(
+        str: string,
+        searchPattern: string | RegExp = reEscapedSpecialCharactersFull,
+    ): string {
+        return str.replace(searchPattern, (match) => match.substring(1));
+    }
+
+    /**
+     * Check if pattern is Regex
+     */
+    public static isRegexPattern(str: string): boolean {
+        return str.startsWith('/') && str.endsWith('/');
     }
 }

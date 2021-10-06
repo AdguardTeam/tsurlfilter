@@ -1,6 +1,7 @@
 import Scriptlets from '@adguard/scriptlets';
 import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
+import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { RuleFactory } from './rule-factory';
 import { SimpleRegex } from './simple-regex';
 
@@ -71,6 +72,10 @@ export class RuleConverter {
 
     private static UBO_RESPONSE_HEADER_REPLACEMENT = '^$removeheader=';
 
+    private static UBO_MATCHES_PATH = ':matches-path(';
+
+    private static UBO_REVERSED_MATCHES_PATH = ':not(:matches-path(';
+
     /**
      * Rule masks
      */
@@ -108,7 +113,7 @@ export class RuleConverter {
             try {
                 result.push(...RuleConverter.convertRule(line, conversionOptions));
             } catch (e) {
-                logger.warn(e);
+                logger.warn((e as Error).message);
             }
         }
 
@@ -136,6 +141,7 @@ export class RuleConverter {
         converted = RuleConverter.convertRemoveRule(converted);
         converted = RuleConverter.replaceOptions(converted);
         converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
+        converted = RuleConverter.convertUboMatchesPathRule(converted);
 
         const removeHeaderRule = RuleConverter.convertUboResponseHeaderRule(converted);
         if (removeHeaderRule) {
@@ -522,6 +528,90 @@ export class RuleConverter {
         }
 
         return ruleText;
+    }
+
+    /**
+     * Converts cosmetic 'matches-path()' rule to AdGuard's $path modifier
+     * "ya.ru##:matches-path(/page) p" -> "[$path=/page]ya.ru##p"
+     *
+     * @param {string} ruleText
+     * @return {string} ruleText or converted rule
+     */
+    private static convertUboMatchesPathRule(ruleText: string): string {
+        if (ruleText.startsWith(SimpleRegex.MASK_COMMENT)) {
+            return ruleText;
+        }
+
+        const [markerIndex, marker] = findCosmeticRuleMarker(ruleText);
+
+        if (!marker) {
+            return ruleText;
+        }
+
+        const expressionStartIndex = markerIndex + marker.length;
+
+        const matchesPathStartIndex = ruleText.indexOf(RuleConverter.UBO_MATCHES_PATH, expressionStartIndex);
+
+        if (matchesPathStartIndex === -1) {
+            return ruleText;
+        }
+
+        const reversedMatchesPathStartIndex = ruleText.indexOf(
+            RuleConverter.UBO_REVERSED_MATCHES_PATH,
+            expressionStartIndex,
+        );
+
+        const isReversed = reversedMatchesPathStartIndex !== -1;
+
+        const pathStartIndex = isReversed
+            ? reversedMatchesPathStartIndex + RuleConverter.UBO_REVERSED_MATCHES_PATH.length
+            : matchesPathStartIndex + RuleConverter.UBO_MATCHES_PATH.length;
+
+        let matchPathOperatorCloseBracketIndex;
+
+        let openBracketCounter = 1;
+        let closeBracketCounter = 0;
+
+        for (let i = pathStartIndex; i < ruleText.length; i += 1) {
+            if (ruleText[i - 1] !== '\\') {
+                if (ruleText[i] === '(') {
+                    openBracketCounter += 1;
+                } else if (ruleText[i] === ')') {
+                    closeBracketCounter += 1;
+                    if (openBracketCounter === closeBracketCounter) {
+                        matchPathOperatorCloseBracketIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!matchPathOperatorCloseBracketIndex) {
+            return ruleText;
+        }
+
+        const domains = ruleText.slice(0, markerIndex);
+
+        const expressionMiddle = ruleText.slice(
+            expressionStartIndex,
+            isReversed ? reversedMatchesPathStartIndex : matchesPathStartIndex,
+        );
+
+        const expressionTail = ruleText.slice(matchPathOperatorCloseBracketIndex + (isReversed ? 2 : 1));
+
+        let path = ruleText.slice(pathStartIndex, matchPathOperatorCloseBracketIndex);
+
+        const isRegex = SimpleRegex.isRegexPattern(path);
+
+        if (isReversed) {
+            path = `/^((?!${isRegex ? path.slice(1, path.length - 1) : SimpleRegex.patternToRegexp(path)}).)*$/`;
+        }
+
+        if (isRegex) {
+            path = SimpleRegex.escapeRegexSpecials(path, SimpleRegex.reModifierPatternSpecialCharacters);
+        }
+
+        return `[$path=${path}]${domains}${marker}${expressionMiddle}${expressionTail}`;
     }
 
     /**

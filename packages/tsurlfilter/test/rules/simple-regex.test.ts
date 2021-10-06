@@ -85,5 +85,28 @@ describe('SimpleRegex.escapeRegexSpecials', () => {
     it('escapes specials in strings', () => {
         expect(SimpleRegex.escapeRegexSpecials('*entries*')).toBe('\\*entries\\*');
         expect(SimpleRegex.escapeRegexSpecials('[test]')).toBe('\\[test\\]');
+        expect(SimpleRegex.escapeRegexSpecials(
+            '[*test*]',
+            SimpleRegex.reModifierPatternSpecialCharacters,
+        )).toBe('\\[*test*\\]');
+    });
+});
+
+describe('SimpleRegex.unescapeRegexSpecials', () => {
+    it('unescapes specials in strings', () => {
+        expect(SimpleRegex.unescapeRegexSpecials('\\*entries\\*')).toBe('*entries*');
+        expect(SimpleRegex.unescapeRegexSpecials('\\[test\\]')).toBe('[test]');
+        expect(SimpleRegex.unescapeRegexSpecials(
+            '\\[\\*test\\*\\]',
+            SimpleRegex.reModifierPatternEscapedSpecialCharacters,
+        )).toBe('[\\*test\\*]');
+    });
+});
+
+describe('SimpleRegex.isRegexPattern', () => {
+    it('checks if pattern is Regex', () => {
+        expect(SimpleRegex.isRegexPattern('/path.html/')).toBe(true);
+        expect(SimpleRegex.isRegexPattern('/path.html')).toBe(false);
+        expect(SimpleRegex.isRegexPattern('path.html')).toBe(false);
     });
 });

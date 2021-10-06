@@ -138,8 +138,8 @@ describe('Element hiding rules constructor', () => {
         let rule = new CosmeticRule('[$path=page.html]###banner', 0);
         expect(rule.pathModifier?.pattern).toEqual('page.html');
 
-        rule = new CosmeticRule('[$path=/\\[^a|b|c|\\,\\=\\]werty?=qwe/,domain=example.com]###banner', 0);
-        expect(rule.pathModifier?.pattern).toEqual('/\\[^a|b|c|\\,\\=\\]werty?=qwe/');
+        rule = new CosmeticRule(String.raw`[$path=/\[^a|b|c|\,|d|\\]\]werty\\?=qwe/,domain=example.com]###banner`, 0);
+        expect(rule.pathModifier?.pattern).toEqual(String.raw`/[^a|b|c|,|d|\]]werty\?=qwe/`);
 
         rule = new CosmeticRule('[$path=/page*.html]example.com###banner', 0);
         expect(rule.pathModifier?.pattern).toEqual('/page*.html');
@@ -287,7 +287,8 @@ describe('CosmeticRule match', () => {
     });
 
     it('work if it matches path modifiers with regex included in the rule', () => {
-        const rule = new CosmeticRule('[$path=/\\/(sub1|sub2)\\/page\\.html/]##.textad', 0);
+        const testReString = String.raw`/\\/(sub1|sub2)\\/page\\.html/`;
+        const rule = new CosmeticRule(`[$path=${testReString}]##.textad`, 0);
 
         expect(rule.match(createRequest('https://example.com/sub1/page.html'))).toEqual(true);
         expect(rule.match(createRequest('https://another.org/sub2/page.html'))).toEqual(true);

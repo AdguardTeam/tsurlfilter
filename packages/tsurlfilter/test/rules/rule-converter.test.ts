@@ -434,3 +434,69 @@ describe('Redirects', () => {
         expect(res[0]).toBe(exp);
     });
 });
+
+describe('Ubo cosmetic rule with :matches-path(...)', () => {
+    it('works if ubo \':matches-path(...)\' is converted in $path modifier', () => {
+        const rules = [
+            {
+                source: 'ya.ru##:matches-path(/page)p',
+                expected: '[$path=/page]ya.ru##p',
+            },
+            {
+                source: 'ya.ru#@#:matches-path(/page)p',
+                expected: '[$path=/page]ya.ru#@#p',
+            },
+            {
+                source: 'ya.ru#@#p:matches-path(/page)',
+                expected: '[$path=/page]ya.ru#@#p',
+            },
+            {
+                source: String.raw`ya.ru##:matches-path(/\/(sub1|sub2)\/page\.html/)p`,
+                expected: String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]ya.ru##p`,
+            },
+            {
+                source: String.raw`ya.ru##:not(:matches-path(/\/(sub1|sub2)\/page\.html/))p`,
+                expected: String.raw`[$path=/^((?!\\/(sub1|sub2)\\/page\\.html).)*$/]ya.ru##p`,
+            },
+            {
+                source: 'ya.ru##:not(:matches-path(/page))p',
+                expected: String.raw`[$path=/^((?!\/page).)*$/]ya.ru##p`,
+            },
+            {
+                source: 'ya.ru##p:not(:matches-path(/page))',
+                expected: String.raw`[$path=/^((?!\/page).)*$/]ya.ru##p`,
+            },
+            {
+                source: 'blog.livedoor.jp##:matches-path(/sexykpopidol) #containerWrap > #container > .blog-title-outer + #content.hfeed',
+                expected: '[$path=/sexykpopidol]blog.livedoor.jp## #containerWrap > #container > .blog-title-outer + #content.hfeed',
+            },
+            {
+                source: String.raw`www.google.*##:not(:matches-path(/\/search\?q=.*?tbm=shop/)) #test`,
+                expected: String.raw`[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*## #test`,
+            },
+            {
+                source: String.raw`exapmle.com##:matches-path(/\/[a|b|,]\/page\.html/) #test`,
+                expected: String.raw`[$path=/\\/\[a|b|\,\]\\/page\\.html/]exapmle.com## #test`,
+            },
+            {
+                source: 'example.com#@#:not(:matches-path(/page))h1:style(background-color: blue !important)',
+                expected: String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important }`,
+            },
+            {
+                source: String.raw`example.org##:matches-path(/\/(sub1|sub2)\/page\.html/)p:has-text(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
+                expected: String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]example.org#$?#p:has-text(/[\w\W]{30,}/) { background: #ff0033 !important; }`,
+            },
+            {
+                source: String.raw`example.org##+js(setTimeout-defuser.js, [native code], 8000):matches-path(/page)`,
+                expected: String.raw`[$path=/page]example.org#%#//scriptlet('ubo-setTimeout-defuser.js', '[native code]', '8000')`,
+            },
+        ];
+
+        rules.forEach((rule) => {
+            const res = RuleConverter.convertRule(rule.source);
+
+            expect(res.length).toBe(1);
+            expect({ source: rule.source, expected: res[0] }).toEqual(rule);
+        });
+    });
+});
