@@ -2,18 +2,14 @@ import Scriptlets from '@adguard/scriptlets';
 import * as rule from './rule';
 import {
     CosmeticRuleMarker,
-    findCosmeticRuleMarker,
     isExtCssMarker,
     ADG_SCRIPTLET_MASK,
 } from './cosmetic-rule-marker';
-import { DomainModifier, COMMA_SEPARATOR, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
+import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
-import {
-    CosmeticRuleModifiers,
-    CosmeticRuleModifiersSyntax,
-} from './cosmetic-rule-modifiers';
+import { CosmeticRuleParser } from './cosmetic-rule-parser';
 import { Request } from '../request';
 import { Pattern } from './pattern';
 
@@ -58,12 +54,6 @@ export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ex
     ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
     ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
     ':matches-attr(', ':matches-property(', ':is('];
-
-const cosmeticRuleModifiersList = Object.values(CosmeticRuleModifiers) as string[];
-
-export type CosmeticRuleModifiersCollection = {
-    [P in CosmeticRuleModifiers]?: string;
-};
 
 /**
  * Implements a basic cosmetic rule.
@@ -204,110 +194,6 @@ export class CosmeticRule implements rule.IRule {
         return name;
     }
 
-    /**
-     * Gets the rule modifiers and domains. They are located to the left side from the cosmetic rule marker.
-     * @param ruleTextLeftPart
-     * @returns Object with modifiers and domains parts
-     */
-    private static getDomainsAndModifiersText(ruleTextLeftPart: string): {
-        modifiersText?: string;
-        domainsText?: string;
-    } {
-        const {
-            OPEN_BRACKET,
-            CLOSE_BRACKET,
-            SPECIAL_SYMBOL,
-            ESCAPE_CHARACTER,
-        } = CosmeticRuleModifiersSyntax;
-
-        if (!ruleTextLeftPart.startsWith(`${OPEN_BRACKET + SPECIAL_SYMBOL}`)) {
-            return { domainsText: ruleTextLeftPart };
-        }
-
-        let closeBracketIndex;
-
-        // The first two characters cannot be closing brackets
-        for (let i = 2; i < ruleTextLeftPart.length; i += 1) {
-            if (ruleTextLeftPart[i] === CLOSE_BRACKET && ruleTextLeftPart[i - 1] !== ESCAPE_CHARACTER) {
-                closeBracketIndex = i;
-                break;
-            }
-        }
-
-        if (!closeBracketIndex) {
-            throw new SyntaxError('Can\'t parse modifiers list');
-        }
-
-        // Handle this case: `$[]`
-        if (closeBracketIndex === 2) {
-            throw new SyntaxError('Modifiers list can\'t be empty');
-        }
-
-        const modifiersText = ruleTextLeftPart.slice(2, closeBracketIndex);
-
-        let domainsText;
-
-        if (closeBracketIndex < ruleTextLeftPart.length - 1) {
-            domainsText = ruleTextLeftPart.slice(closeBracketIndex + 1);
-        }
-
-        return {
-            modifiersText,
-            domainsText,
-        };
-    }
-
-    /**
-     * Parses the list of modifiers. Parsing is done in the same way as it's done in the NetworkRule, i.e.
-     * we have a comma-separated list of modifier-value pairs.
-     * If we encounter an invalid modifier, this method throws a SyntaxError.
-     *
-     * @param modifiersText - list of modifiers splited by comma
-     * @returns - modifiers collection object
-     */
-    private static parseRuleModifiers(modifiersText: string | undefined): CosmeticRuleModifiersCollection | null {
-        if (!modifiersText) {
-            return null;
-        }
-
-        const {
-            ESCAPE_CHARACTER,
-            DELIMITER,
-            ASSIGNER,
-        } = CosmeticRuleModifiersSyntax;
-
-        const modifiersTextArray = utils.splitByDelimiterWithEscapeCharacter(
-            modifiersText,
-            DELIMITER,
-            ESCAPE_CHARACTER,
-            false,
-            false,
-        );
-
-        const modifiers = Object.create(null);
-
-        for (let i = 0; i < modifiersTextArray.length; i += 1) {
-            const modifierText = modifiersTextArray[i];
-            const assignerIndex = modifierText.indexOf(ASSIGNER);
-
-            if (assignerIndex === -1) {
-                throw new SyntaxError('Modifier must have assigned value');
-            }
-
-            const modifierKey = modifierText.substring(0, assignerIndex);
-
-            if (cosmeticRuleModifiersList.includes(modifierKey)) {
-                const modifierValue = modifierText.substring(assignerIndex + 1);
-
-                modifiers[modifierKey] = modifierValue;
-            } else {
-                throw new SyntaxError(`'${modifierKey}' is not valid modifier`);
-            }
-        }
-
-        return modifiers;
-    }
-
     getText(): string {
         return this.ruleText;
     }
@@ -394,62 +280,36 @@ export class CosmeticRule implements rule.IRule {
         this.ruleText = ruleText;
         this.filterListId = filterListId;
 
-        const [index, marker] = findCosmeticRuleMarker(ruleText);
+        const {
+            pattern,
+            marker,
+            content,
+        } = CosmeticRuleParser.parseRuleTextByMarker(ruleText);
 
-        if (index < 0 || marker === null) {
-            throw new SyntaxError('Not a cosmetic rule');
-        }
-
-        this.content = ruleText.substring(index + marker.length).trim();
-        if (!this.content) {
-            throw new SyntaxError('Rule content is empty');
-        }
-
+        this.content = content;
         this.type = CosmeticRule.parseType(marker);
 
-        CosmeticRule.validate(ruleText, this.type, this.content);
+        CosmeticRule.validate(ruleText, this.type, content);
 
-        if (index > 0) {
+        if (pattern) {
             // This means that the marker is preceded by the list of domains and modifiers
             // Now it's a good time to parse them.
-            const { domainsText, modifiersText } = CosmeticRule.getDomainsAndModifiersText(
-                ruleText.substring(0, index),
-            );
+            const {
+                path,
+                permittedDomains,
+                restrictedDomains,
+            } = CosmeticRuleParser.parseRulePattern(pattern);
 
-            let domains = domainsText;
-            const modifiers = CosmeticRule.parseRuleModifiers(modifiersText);
-
-            if (modifiers) {
-                if (modifiers.path) {
-                    let { path } = modifiers;
-
-                    if (SimpleRegex.isRegexPattern(path)) {
-                        path = SimpleRegex.unescapeRegexSpecials(
-                            path,
-                            SimpleRegex.reModifierPatternEscapedSpecialCharacters,
-                        );
-                    }
-
-                    this.pathModifier = new Pattern(path);
-                }
-
-                if (modifiers.domain) {
-                    if (domains) {
-                        throw new SyntaxError('The $domain modifier is not allowed in a domain-specific rule');
-                    } else {
-                        domains = modifiers.domain;
-                    }
-                }
+            if (path) {
+                this.pathModifier = new Pattern(path);
             }
 
-            // Skip wildcard domain
-            if (domains && domains !== SimpleRegex.MASK_ANY_CHARACTER) {
-                const separator = modifiers?.domain ? PIPE_SEPARATOR : COMMA_SEPARATOR;
-                const domainModifier = new DomainModifier(domains, separator);
-                this.permittedDomains = domainModifier.permittedDomains !== null
-                    ? domainModifier.permittedDomains : undefined;
-                this.restrictedDomains = domainModifier.restrictedDomains !== null
-                    ? domainModifier.restrictedDomains : undefined;
+            if (permittedDomains) {
+                this.permittedDomains = permittedDomains;
+            }
+
+            if (restrictedDomains) {
+                this.restrictedDomains = restrictedDomains;
             }
         }
 
