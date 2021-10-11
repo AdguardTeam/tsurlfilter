@@ -32,7 +32,7 @@ export class CosmeticLookupTable {
      * More information about allowlist here:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
      */
-    private allowlist: Map<number, number[]>;
+    private allowlist: Map<string, number[]>;
 
     /**
      * Storage for the filtering rules
@@ -60,7 +60,7 @@ export class CosmeticLookupTable {
      */
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
-            const key = fastHash(rule.getContent());
+            const key = rule.getContent();
             const existingRules = this.allowlist.get(key) || [] as number[];
             existingRules.push(storageIdx);
             this.allowlist.set(key, existingRules);
@@ -128,8 +128,7 @@ export class CosmeticLookupTable {
      * @param rule
      */
     isAllowlisted(request: Request, rule: CosmeticRule): boolean {
-        const rulesIndexes = this.allowlist.get(fastHash(rule.getContent()));
-
+        const rulesIndexes = this.allowlist.get(rule.getContent());
         if (!rulesIndexes) {
             return false;
         }

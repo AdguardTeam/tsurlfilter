@@ -335,4 +335,16 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
         expect(result.Html.specific).toHaveLength(0);
         expect(result.Html.generic).toHaveLength(0);
     });
+
+    it('checks cosmetic HTML content exceptions', () => {
+        const rule = 'example.org$$div[id="ad_text_1"]';
+        const exceptionRule = 'example.org$@$div[id="ad_text_2"]';
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            rule,
+            exceptionRule,
+        ]));
+        const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(1);
+        expect(result.Html.generic).toHaveLength(0);
+    });
 });
