@@ -104,8 +104,10 @@ export class CosmeticLookupTable {
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-            const rulesIndexes = this.byHostname.get(fastHash(subdomain));
+            let rulesIndexes = this.byHostname.get(fastHash(subdomain));
             if (rulesIndexes) {
+                // Filtering out duplicates
+                rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
                     const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
                     if (rule && rule.match(request)) {

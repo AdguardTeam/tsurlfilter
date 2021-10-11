@@ -192,6 +192,18 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.specific.length).toEqual(0);
     });
 
+    it('removes duplicates in result domain rules', () => {
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            `base.com, a.base.com, b.base.com##${specificRuleContent}`,
+        ]));
+
+        const result = cosmeticEngine.match(createRequest('base.com'), CosmeticOption.CosmeticOptionAll);
+        expect(result).toBeDefined();
+
+        expect(result.elementHiding.generic.length).toEqual(0);
+        expect(result.elementHiding.specific.length).toEqual(1);
+    });
+
     it('finds empty domain rules', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
             `##${genericRuleContent}`,
