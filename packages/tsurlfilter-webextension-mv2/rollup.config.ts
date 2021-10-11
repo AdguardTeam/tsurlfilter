@@ -13,9 +13,9 @@ const DEFAULT_OUTPUT_PATH = 'dist';
 
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
 
-const libraryName = 'TSUrlFilter';
-const contentScriptLibraryName = 'TSUrlFilterContentScript';
+const libraryName = 'TSUrlFilterWebextensionMV2';
 
+/*
 const contentScriptConfig = {
     input: 'src/content-script/index.ts',
     output: [
@@ -45,14 +45,11 @@ const contentScriptConfig = {
         }),
     ],
 };
+*/
 
 const esmConfig = {
     input: [
         'src/index.ts',
-        'src/request-type.ts',
-        'src/rules/simple-regex.ts',
-        'src/rules/cosmetic-rule-marker.ts',
-        'src/rules/network-rule-options.ts',
     ],
     output: [
         {
@@ -86,13 +83,13 @@ const browserConfig = {
     input: 'src/index.browser.ts',
     output: [
         {
-            file: `${OUTPUT_PATH}/tsurlfilter.browser.js`,
+            file: `${OUTPUT_PATH}/tsurlfilter-webextension-mv2.browser.js`,
             name: camelCase(libraryName),
             format: 'umd',
             sourcemap: false,
         },
         {
-            file: `${OUTPUT_PATH}/tsurlfilter.iife.js`,
+            file: `${OUTPUT_PATH}/tsurlfilter-webextension-mv2.iife.js`,
             name: libraryName,
             format: 'iife',
             sourcemap: false,
@@ -120,20 +117,20 @@ const browserConfig = {
 };
 
 export default [
-    contentScriptConfig,
+    // contentScriptConfig,
     esmConfig,
     browserConfig,
     {
         input: 'src/index.ts',
         output: [
             {
-                file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
+                file: `${OUTPUT_PATH}/tsurlfilter-webextension-mv2.umd.js`,
                 name: camelCase(libraryName),
                 format: 'umd',
                 sourcemap: false,
             },
             {
-                file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
+                file: `${OUTPUT_PATH}/tsurlfilter-webextension-mv2.umd.min.js`,
                 name: camelCase(libraryName),
                 format: 'umd',
                 sourcemap: false,

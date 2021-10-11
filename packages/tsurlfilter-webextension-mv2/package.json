@@ -1,0 +1,97 @@
+{
+  "name": "@adguard/tsurlfilter-webextension-mv2",
+  "version": "0.0.1",
+  "description": "This is a TypeScript library that implements AdGuard's extension API",
+  "main": "dist/tsurlfilter-webextension-mv2.umd.js",
+  "module": "dist/es/index.js",
+  "iife": "dist/tsurlfilter-webextension-mv2.iife.js",
+  "browser": "dist/tsurlfilter-webextension-mv2.browser.js",
+  "typings": "dist/types",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "author": "AdGuard",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git"
+  },
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+  },
+  "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
+  "scripts": {
+    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
+    "prebuild": "rimraf dist",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal",
+    "start": "rollup -c rollup.config.ts -w",
+    "test": "jest --coverage",
+    "test:watch": "jest --coverage --watch",
+    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
+    "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
+    "report-coverage": "cat ./coverage/lcov.info | coveralls",
+    "commit": "git-cz",
+    "precommit": "lint-staged",
+    "travis-deploy-once": "travis-deploy-once",
+    "prepublishOnly": "yarn build",
+    "increment": "yarn version --patch --no-git-tag-version"
+  },
+  "lint-staged": {
+    "{src,test}/**/*.ts": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-conventional-changelog"
+    }
+  },
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/test/",
+      "/src/index.browser.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    },
+    "collectCoverageFrom": [
+      "src/*.{js,ts}",
+      "src/*/*.{js,ts}",
+      "src/*/*/*.{js,ts}"
+    ],
+    "setupFiles": [
+      "jest-webextension-mock"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.14",
+    "jest": "^25.5.4",
+    "webextension-polyfill-ts": "^0.24.0"
+  }
+}
