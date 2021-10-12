@@ -25,7 +25,7 @@ npmjs:
 
             ls -alt
 
-            yarn install ${system.YARN_ARGS}
+            yarn install ${bamboo.varsYarn}
 
             npx lerna bootstrap
             npx lerna exec --scope @adguard/tsurlfilter yarn install -- ${bamboo.varsYarn}
