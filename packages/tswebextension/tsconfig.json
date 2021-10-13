@@ -5,13 +5,8 @@
     "module":"es2015",
     "lib": ["esnext", "dom"],
     "strict": true,
-    "declaration": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "declarationDir": "dist/types",
-    "outDir": "dist/lib",
-    "emitDeclarationOnly": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "typeRoots": [

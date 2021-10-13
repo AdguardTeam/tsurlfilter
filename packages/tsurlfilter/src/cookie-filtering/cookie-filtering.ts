@@ -132,7 +132,7 @@ export class CookieFiltering {
         try {
             await this.applyRules(details.requestId);
         } catch (e) {
-            logger.error(e);
+            logger.error((e as Error).message);
         }
     }
 

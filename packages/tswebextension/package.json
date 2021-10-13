@@ -1,11 +1,8 @@
 {
-  "name": "@adguard/tsurlfilter-webextension-mv2",
+  "name": "@adguard/tswebextension",
   "version": "0.0.1",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
-  "main": "dist/tsurlfilter-webextension-mv2.umd.js",
-  "module": "dist/es/index.js",
-  "iife": "dist/tsurlfilter-webextension-mv2.iife.js",
-  "browser": "dist/tsurlfilter-webextension-mv2.browser.js",
+  "main": "dist/index.js",
   "typings": "dist/types",
   "files": [
     "dist",
@@ -27,7 +24,9 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal",
+    "build": "yarn build:types && rollup -c rollup.config.ts",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
+    "docs": "typedoc src --out docs",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
@@ -93,5 +92,8 @@
     "@types/jest": "^23.3.14",
     "jest": "^25.5.4",
     "webextension-polyfill-ts": "^0.24.0"
+  },
+  "dependencies": {
+    "zod": "^3.9.8"
   }
 }

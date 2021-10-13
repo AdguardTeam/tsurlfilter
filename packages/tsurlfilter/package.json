@@ -27,7 +27,9 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc src --out docs --theme minimal && node tasks/build-txt",
+    "build": "yarn build:types && rollup -c rollup.config.ts && node tasks/build-txt",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
+    "docs": "typedoc src --out docs",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",

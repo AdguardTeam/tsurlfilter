@@ -125,7 +125,7 @@ export class ContentFilter {
                         this.disconnect(event.data);
                     }
                 } catch (e) {
-                    logger.warn(e);
+                    logger.warn((e as Error).message);
                     // on error we disconnect the filter from the request
                     this.disconnect(event.data);
                 }

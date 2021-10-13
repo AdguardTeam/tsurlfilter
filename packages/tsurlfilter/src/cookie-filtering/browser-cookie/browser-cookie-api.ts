@@ -21,7 +21,7 @@ export default class BrowserCookieApi {
             await browser.cookies.remove({ name, url });
             return true;
         } catch (e) {
-            logger.error(e);
+            logger.error((e as Error).message);
         }
 
         return false;
@@ -39,7 +39,7 @@ export default class BrowserCookieApi {
 
             return true;
         } catch (e) {
-            logger.error(e);
+            logger.error((e as Error).message);
         }
 
         return false;

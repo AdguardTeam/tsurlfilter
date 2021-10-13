@@ -53,7 +53,7 @@ export class RuleFactory {
                 return new NetworkRule(line, filterListId);
             }
         } catch (e) {
-            logger.info(`Error: "${e.message}" in the rule: "${line}"`);
+            logger.info(`Error: "${(e as Error).message}" in the rule: "${line}"`);
         }
 
         return null;
