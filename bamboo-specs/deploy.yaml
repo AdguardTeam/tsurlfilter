@@ -9,7 +9,7 @@ environments:
 
 npmjs:
   docker:
-    image: adguard/node-ssh:15.14--6
+    image: adguard/node-ssh:14.18--0
     volumes:
       ${system.YARN_DIR}: "${bamboo.cacheYarn}"
   triggers: [ ]
@@ -37,6 +37,12 @@ npmjs:
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish --access public
+
+            # cleanup parent
+            cd ../..
+            rm -rf node_modules
+            # cleanup child packages
+            npx lerna exec -- rm -rf node_modules
   requirements:
     - adg-docker: 'true'
   notifications:

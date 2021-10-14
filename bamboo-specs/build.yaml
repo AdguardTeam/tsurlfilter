@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERBUILD
   name: tsurlfilter - build
 variables:
-  dockerContainer: adguard/node-ssh:15.14--6
+  dockerContainer: adguard/node-ssh:14.18--0
 
 stages:
   - Build:
@@ -39,6 +39,11 @@ Build:
             npx lerna bootstrap
             npx lerna exec yarn install
             npx lerna run --scope @adguard/tsurlfilter build -- ${bamboo.varsYarn}
+
+            # cleanup parent
+            rm -rf node_modules
+            # cleanup child packages
+            npx lerna exec -- rm -rf node_modules
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT
