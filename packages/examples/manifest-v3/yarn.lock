@@ -11,7 +11,7 @@
     js-yaml "^3.13.1"
 
 "@adguard/tsurlfilter@file:../../tsurlfilter":
-  version "0.7.10"
+  version "0.7.17"
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
     "@types/ip6addr" "^0.2.3"
@@ -27,6 +27,7 @@
     punycode "^2.1.1"
     text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1"
     tldts "^5.6.45"
+    webextension-polyfill "^0.8.0"
 
 "@babel/runtime@^7.7.2":
   version "7.15.4"
@@ -197,3 +198,8 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
+
+webextension-polyfill@^0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.8.0.tgz#f80e9f4b7f81820c420abd6ffbebfa838c60e041"
+  integrity sha512-a19+DzlT6Kp9/UI+mF9XQopeZ+n2ussjhxHJ4/pmIGge9ijCDz7Gn93mNnjpZAk95T4Tae8iHZ6sSf869txqiQ==

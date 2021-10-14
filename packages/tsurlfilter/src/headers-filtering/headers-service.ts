@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { FilteringLog } from '../filtering-log';
 import { NetworkRule } from '../rules/network-rule';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';

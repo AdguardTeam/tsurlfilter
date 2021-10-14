@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable guard-for-in */
 
 import HitsStorage from '../../src/content-script/hits-storage';

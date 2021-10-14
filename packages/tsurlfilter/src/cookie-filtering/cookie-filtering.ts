@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule } from '../rules/network-rule';
 import { FilteringLog } from '../filtering-log';
 import CookieRulesFinder from './cookie-rules-finder';

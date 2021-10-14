@@ -17,5 +17,5 @@ export enum ScannerType {
     /**
      * All
      */
-    All = NetworkRules | CosmeticRules | HostRules
+    All = NetworkRules | CosmeticRules | HostRules,
 }

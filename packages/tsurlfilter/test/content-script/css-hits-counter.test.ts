@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
 
 import CssHitsCounter from '../../src/content-script/css-hits-counter';

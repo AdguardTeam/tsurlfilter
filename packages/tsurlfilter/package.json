@@ -36,9 +36,7 @@
     "test:prod": "yarn lint && yarn test --no-cache --runInBand",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
-    "commit": "git-cz",
     "precommit": "lint-staged",
-    "travis-deploy-once": "travis-deploy-once",
     "prepublishOnly": "yarn build",
     "increment": "yarn version --patch --no-git-tag-version"
   },
@@ -47,11 +45,6 @@
       "eslint --fix",
       "git add"
     ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "node_modules/cz-conventional-changelog"
-    }
   },
   "jest": {
     "transform": {
@@ -85,16 +78,6 @@
       "jest-webextension-mock"
     ]
   },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
-  "devDependencies": {
-    "@types/jest": "^23.3.14",
-    "jest": "^25.5.4",
-    "webextension-polyfill-ts": "^0.24.0"
-  },
   "dependencies": {
     "@adguard/scriptlets": "^1.4.4",
     "@types/ip6addr": "^0.2.3",
@@ -109,6 +92,7 @@
     "netmask": "^2.0.2",
     "punycode": "^2.1.1",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
-    "tldts": "^5.6.45"
+    "tldts": "^5.6.45",
+    "webextension-polyfill": "^0.8.0"
   }
 }

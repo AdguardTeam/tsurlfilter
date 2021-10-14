@@ -90,7 +90,7 @@ export class Engine {
                  * Rules creation is rather slow operation so we should
                  * use setTimeout calls to give UI thread some time.
                  */
-                // eslint-disable-next-line no-await-in-loop
+                // eslint-disable-next-line @typescript-eslint/no-loop-func
                 await new Promise((resolve) => setTimeout(resolve, 1));
             }
 

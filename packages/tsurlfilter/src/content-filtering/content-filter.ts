@@ -140,7 +140,7 @@ export class ContentFilter {
         };
 
         this.filter.onerror = (): void => {
-            throw this.filter.error;
+            throw this.filter.error as Error;
         };
     }
 
@@ -159,7 +159,7 @@ export class ContentFilter {
      *
      * @param charset
      */
-    setCharset(charset: string| null): void {
+    setCharset(charset: string | null): void {
         if (charset) {
             this.charset = charset;
             this.initEncoders();

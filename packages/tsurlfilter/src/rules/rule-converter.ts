@@ -79,21 +79,21 @@ export class RuleConverter {
     /**
      * Rule masks
      */
-    private static MASK_ELEMENT_HIDING= '##';
+    private static MASK_ELEMENT_HIDING = '##';
 
-    private static MASK_ELEMENT_HIDING_EXCEPTION= '#@#';
+    private static MASK_ELEMENT_HIDING_EXCEPTION = '#@#';
 
-    private static MASK_CSS= '#$#';
+    private static MASK_CSS = '#$#';
 
-    private static MASK_CSS_EXCEPTION= '#@$#';
+    private static MASK_CSS_EXCEPTION = '#@$#';
 
-    private static MASK_CSS_EXTENDED_CSS_RULE= '#?#';
+    private static MASK_CSS_EXTENDED_CSS_RULE = '#?#';
 
-    private static MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE= '#@?#';
+    private static MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE = '#@?#';
 
-    private static MASK_CSS_INJECT_EXTENDED_CSS_RULE= '#$?#';
+    private static MASK_CSS_INJECT_EXTENDED_CSS_RULE = '#$?#';
 
-    private static MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE= '#@$?#';
+    private static MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE = '#@$?#';
 
     private static REMOVE_RULE_PATTERN = ':remove()';
 
@@ -507,7 +507,7 @@ export class RuleConverter {
      * @param {string} ruleText
      * @return {string} ruleText or converted rule
      */
-    private static convertUboResponseHeaderRule(ruleText: string): string|null {
+    private static convertUboResponseHeaderRule(ruleText: string): string | null {
         if (ruleText.startsWith(SimpleRegex.MASK_COMMENT) || !ruleText.includes(RuleConverter.UBO_RESPONSE_HEADER)) {
             return null;
         }

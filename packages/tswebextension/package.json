@@ -26,16 +26,10 @@
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
     "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
-    "docs": "typedoc src --out docs",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
-    "test:watch": "jest --coverage --watch",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
-    "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
-    "commit": "git-cz",
     "precommit": "lint-staged",
-    "travis-deploy-once": "travis-deploy-once",
     "prepublishOnly": "yarn build",
     "increment": "yarn version --patch --no-git-tag-version"
   },
@@ -44,11 +38,6 @@
       "eslint --fix",
       "git add"
     ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "node_modules/cz-conventional-changelog"
-    }
   },
   "jest": {
     "transform": {
@@ -81,11 +70,6 @@
     ],
     "setupFiles": [
       "jest-webextension-mock"
-    ]
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
     ]
   },
   "devDependencies": {

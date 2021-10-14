@@ -2,14 +2,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { validateConfiguration, Configuration } from './configuration';
 
+export type UnknownFunction = (...args: unknown[]) => unknown;
 export interface EventChannel {
-    addListener: (callback: Function) => void;
+    addListener: (callback: UnknownFunction) => void;
 
-    removeListener: (callback: Function) => void;
+    removeListener: (callback: UnknownFunction) => void;
 
-    notify: (...args: unknown[]) => unknown;
+    notify: UnknownFunction;
 
-    notifyInReverseOrder: (...args: unknown[]) => unknown;
+    notifyInReverseOrder: UnknownFunction;
 }
 
 export interface IApp {

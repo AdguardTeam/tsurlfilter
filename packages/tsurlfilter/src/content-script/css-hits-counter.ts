@@ -221,7 +221,7 @@ export default class CssHitsCounter {
      */
     private countCssHitsForElements(elements: NodeListOf<Element> | Element[],
         start: number,
-        length: number | null): {filterId: number; ruleText: string; element: string}[] {
+        length: number | null): { filterId: number; ruleText: string; element: string }[] {
         const RULE_FILTER_SEPARATOR = ';';
         start = start || 0;
         length = length || elements.length;
@@ -368,7 +368,7 @@ export default class CssHitsCounter {
      * @param {Node} element
      * @returns {({filterId: Number, ruleText: String} | null)}
      */
-    private static getCssHitData(element: Element): {filterId: number; ruleText: string} | null {
+    private static getCssHitData(element: Element): { filterId: number; ruleText: string } | null {
         const style = getComputedStyle(element);
         return ElementUtils.parseInfo(style.content, CssHitsCounter.CONTENT_ATTR_PREFIX);
     }

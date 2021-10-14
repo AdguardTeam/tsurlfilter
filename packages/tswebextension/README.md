@@ -1,1 +1,1 @@
-# TSUrlFilterWebextension
+# TSWebExtension

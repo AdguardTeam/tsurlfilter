@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { CookieFiltering } from '../../src/cookie-filtering/cookie-filtering';
 import { MockFilteringLog } from '../mock-filtering-log';
 import { NetworkRule } from '../../src';
@@ -15,7 +15,7 @@ jest.mock('../../src/cookie-filtering/browser-cookie/browser-cookie-api');
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
 BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
 
-const createTestHeaders = (headers: {name: string;value: string}[]): {name: string;value: string}[] => [
+const createTestHeaders = (headers: { name: string;value: string }[]): { name: string;value: string }[] => [
     { name: 'Header One', value: 'Header Value One' },
     ...headers,
 ];

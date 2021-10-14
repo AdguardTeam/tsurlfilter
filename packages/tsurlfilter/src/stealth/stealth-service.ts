@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { findHeaderByName, removeHeader } from '../utils/headers';
 import { getHost, isThirdPartyRequest } from '../utils/url';
 import { RequestType } from '../request-type';
@@ -10,10 +10,10 @@ import HttpHeaders = WebRequest.HttpHeaders;
 export enum StealthActions {
     HIDE_REFERRER = 1 << 0,
     HIDE_SEARCH_QUERIES = 1 << 1,
-    BLOCK_CHROME_CLIENT_DATA= 1 << 2,
+    BLOCK_CHROME_CLIENT_DATA = 1 << 2,
     SEND_DO_NOT_TRACK = 1 << 3,
-    FIRST_PARTY_COOKIES= 1 << 4,
-    THIRD_PARTY_COOKIES= 1 << 5,
+    FIRST_PARTY_COOKIES = 1 << 4,
+    THIRD_PARTY_COOKIES = 1 << 5,
 }
 
 /**

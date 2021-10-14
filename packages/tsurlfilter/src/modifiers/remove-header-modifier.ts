@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { IAdvancedModifier } from './advanced-modifier';
 import { removeHeader } from '../utils/headers';
 import HttpHeaders = WebRequest.HttpHeaders;
@@ -75,7 +75,7 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     /**
      * Effective header name to be removed
      */
-    private readonly applicableHeaderName: string|null;
+    private readonly applicableHeaderName: string | null;
 
     /**
      * Value

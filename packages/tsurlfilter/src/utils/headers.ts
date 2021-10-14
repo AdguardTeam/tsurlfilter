@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 import HttpHeaders = WebRequest.HttpHeaders;
 

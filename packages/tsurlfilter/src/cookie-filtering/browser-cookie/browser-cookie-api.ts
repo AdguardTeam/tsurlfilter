@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 /* eslint-disable class-methods-use-this */
-import { browser, Cookies } from 'webextension-polyfill-ts';
+import browser, { Cookies } from 'webextension-polyfill';
 import ParsedCookie from '../parsed-cookie';
 import { logger } from '../../utils/logger';
 import SetDetailsType = Cookies.SetDetailsType;
@@ -104,7 +104,7 @@ export default class BrowserCookieApi {
      *
      * @param sameSite
      */
-    private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus|undefined {
+    private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus | undefined {
         if (sameSite) {
             if (sameSite.toLowerCase() === 'lax') {
                 return 'lax';
