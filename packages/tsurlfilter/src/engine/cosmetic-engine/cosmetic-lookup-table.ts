@@ -32,7 +32,7 @@ export class CosmeticLookupTable {
      * More information about allowlist here:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
      */
-    private allowlist: Map<number, number[]>;
+    private allowlist: Map<string, number[]>;
 
     /**
      * Storage for the filtering rules
@@ -60,7 +60,7 @@ export class CosmeticLookupTable {
      */
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
-            const key = fastHash(rule.getContent());
+            const key = rule.getContent();
             const existingRules = this.allowlist.get(key) || [] as number[];
             existingRules.push(storageIdx);
             this.allowlist.set(key, existingRules);
@@ -104,8 +104,10 @@ export class CosmeticLookupTable {
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-            const rulesIndexes = this.byHostname.get(fastHash(subdomain));
+            let rulesIndexes = this.byHostname.get(fastHash(subdomain));
             if (rulesIndexes) {
+                // Filtering out duplicates
+                rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
                     const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
                     if (rule && rule.match(request)) {
@@ -126,8 +128,7 @@ export class CosmeticLookupTable {
      * @param rule
      */
     isAllowlisted(request: Request, rule: CosmeticRule): boolean {
-        const rulesIndexes = this.allowlist.get(fastHash(rule.getContent()));
-
+        const rulesIndexes = this.allowlist.get(rule.getContent());
         if (!rulesIndexes) {
             return false;
         }

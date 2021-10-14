@@ -192,6 +192,18 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.specific.length).toEqual(0);
     });
 
+    it('removes duplicates in result domain rules', () => {
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            `base.com, a.base.com, b.base.com##${specificRuleContent}`,
+        ]));
+
+        const result = cosmeticEngine.match(createRequest('base.com'), CosmeticOption.CosmeticOptionAll);
+        expect(result).toBeDefined();
+
+        expect(result.elementHiding.generic.length).toEqual(0);
+        expect(result.elementHiding.specific.length).toEqual(1);
+    });
+
     it('finds empty domain rules', () => {
         const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
             `##${genericRuleContent}`,
@@ -321,6 +333,18 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
         ]));
         const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
         expect(result.Html.specific).toHaveLength(0);
+        expect(result.Html.generic).toHaveLength(0);
+    });
+
+    it('checks cosmetic HTML content exceptions', () => {
+        const rule = 'example.org$$div[id="ad_text_1"]';
+        const exceptionRule = 'example.org$@$div[id="ad_text_2"]';
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            rule,
+            exceptionRule,
+        ]));
+        const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        expect(result.Html.specific).toHaveLength(1);
         expect(result.Html.generic).toHaveLength(0);
     });
 });
