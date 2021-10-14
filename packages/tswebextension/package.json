@@ -1,11 +1,8 @@
 {
-  "name": "@adguard/tsurlfilter",
-  "version": "0.7.23",
-  "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
-  "main": "dist/tsurlfilter.umd.js",
-  "module": "dist/es/index.js",
-  "iife": "dist/tsurlfilter.iife.js",
-  "browser": "dist/tsurlfilter.browser.js",
+  "name": "@adguard/tswebextension",
+  "version": "0.0.1",
+  "description": "This is a TypeScript library that implements AdGuard's extension API",
+  "main": "dist/index.js",
   "typings": "dist/types",
   "files": [
     "dist",
@@ -27,14 +24,10 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "yarn build:types && rollup -c rollup.config.ts && node tasks/build-txt",
+    "build": "yarn build:types && rollup -c rollup.config.ts",
     "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
-    "docs": "typedoc src --out docs",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
-    "test:watch": "jest --coverage --watch",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
-    "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",
@@ -59,7 +52,8 @@
     ],
     "coveragePathIgnorePatterns": [
       "/node_modules/",
-      "/test/"
+      "/test/",
+      "/src/index.browser.ts"
     ],
     "coverageThreshold": {
       "global": {
@@ -78,21 +72,12 @@
       "jest-webextension-mock"
     ]
   },
+  "devDependencies": {
+    "@types/jest": "^23.3.14",
+    "jest": "^25.5.4",
+    "webextension-polyfill-ts": "^0.24.0"
+  },
   "dependencies": {
-    "@adguard/scriptlets": "^1.4.4",
-    "@types/ip6addr": "^0.2.3",
-    "@types/netmask": "^1.0.30",
-    "@types/punycode": "^2.1.0",
-    "consola": "^2.12.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",
-    "ip6addr": "^0.2.3",
-    "is-cidr": "^4.0.2",
-    "is-ip": "^3.1.0",
-    "lru_map": "^0.4.1",
-    "netmask": "^2.0.2",
-    "punycode": "^2.1.1",
-    "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
-    "tldts": "^5.6.45",
-    "webextension-polyfill": "^0.8.0"
+    "zod": "^3.9.8"
   }
 }

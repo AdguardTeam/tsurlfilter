@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Scriptlets helper class
  */
@@ -133,7 +134,7 @@ export class ScriptletParser {
      * @param {*} ruleContent
      * @returns {{name: string, args: Array<string>}}
      */
-    public static parseRule(ruleContent: string): { name: string; args: string[]} {
+    public static parseRule(ruleContent: string): { name: string; args: string[] } {
         const transitions = {
             [ScriptletParser.TRANSITION.OPENED]: ScriptletParser.opened,
             [ScriptletParser.TRANSITION.PARAM]: ScriptletParser.param,

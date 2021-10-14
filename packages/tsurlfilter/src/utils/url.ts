@@ -116,7 +116,7 @@ export function isThirdPartyRequest(requestUrl: string, referrer: string): boole
  *
  * @param url
  */
-export function getHost(url: string): string|null {
+export function getHost(url: string): string | null {
     let firstIdx = url.indexOf('//');
     if (firstIdx === -1) {
         /**

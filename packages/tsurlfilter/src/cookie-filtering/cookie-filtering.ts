@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule } from '../rules/network-rule';
 import { FilteringLog } from '../filtering-log';
 import CookieRulesFinder from './cookie-rules-finder';
@@ -132,7 +132,7 @@ export class CookieFiltering {
         try {
             await this.applyRules(details.requestId);
         } catch (e) {
-            logger.error(e);
+            logger.error((e as Error).message);
         }
     }
 

@@ -15,6 +15,36 @@ const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUT
 const libraryName = 'TSUrlFilter';
 const contentScriptLibraryName = 'TSUrlFilterContentScript';
 
+
+const commonConfig = {
+    watch: {
+        include: 'src/**',
+    },
+    plugins: [
+        // Allow json resolution
+        json(),
+
+        // Compile TypeScript files
+        typescript(),
+
+        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
+        commonjs({
+            sourceMap: false,
+        }),
+        globals(),
+        nodePolyfills(),
+
+        // Allow node_modules resolution, so you can use 'external' to control
+        // which external modules to include in the bundle
+        // https://github.com/rollup/rollup-plugin-node-resolve#usage
+        resolve({ preferBuiltins: false }),
+
+        cleanup({
+            comments: ['srcmaps'],
+        }),
+    ],
+}
+
 const contentScriptConfig = {
     input: 'src/content-script/index.ts',
     output: [
@@ -67,9 +97,6 @@ const esmConfig = {
         json(),
         typescript(),
         commonjs({
-            namedExports: {
-                lru_map: ['LRUMap'],
-            },
             sourceMap: false,
         }),
         globals(),
@@ -104,9 +131,6 @@ const browserConfig = {
         json(),
         typescript(),
         commonjs({
-            namedExports: {
-                lru_map: ['LRUMap'],
-            },
             sourceMap: false,
         }),
         globals(),
@@ -139,36 +163,6 @@ export default [
                 plugins: [terser()],
             },
         ],
-        // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
-        external: [],
-        watch: {
-            include: 'src/**',
-        },
-        plugins: [
-            // Allow json resolution
-            json(),
-
-            // Compile TypeScript files
-            typescript(),
-
-            // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-            commonjs({
-                namedExports: {
-                    lru_map: ['LRUMap'],
-                },
-                sourceMap: false,
-            }),
-            globals(),
-            nodePolyfills(),
-
-            // Allow node_modules resolution, so you can use 'external' to control
-            // which external modules to include in the bundle
-            // https://github.com/rollup/rollup-plugin-node-resolve#usage
-            resolve({ preferBuiltins: false }),
-
-            cleanup({
-                comments: ['srcmaps'],
-            }),
-        ],
+        ...commonConfig,
     },
 ];

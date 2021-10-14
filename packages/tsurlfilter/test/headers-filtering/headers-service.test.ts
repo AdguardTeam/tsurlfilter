@@ -1,4 +1,4 @@
-import { WebRequest } from 'webextension-polyfill-ts';
+import { WebRequest } from 'webextension-polyfill';
 import { HeadersService } from '../../src/headers-filtering/headers-service';
 import { MockFilteringLog } from '../mock-filtering-log';
 import { NetworkRule } from '../../src';

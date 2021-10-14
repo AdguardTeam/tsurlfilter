@@ -7,5 +7,5 @@ export interface ILineReader {
      *
      * @return line string or null
      */
-    readLine(): string| null;
+    readLine(): string | null;
 }

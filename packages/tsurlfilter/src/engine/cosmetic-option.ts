@@ -47,5 +47,5 @@ export enum CosmeticOption {
     /**
      * everything is disabled
      */
-    CosmeticOptionNone = 0
+    CosmeticOptionNone = 0,
 }

@@ -18,7 +18,7 @@ export default class HitsStorage {
     /**
      * Map storage
      */
-    private map = new Map<number, { element: any; rule: string}>();
+    private map = new Map<number, { element: any; rule: string }>();
 
     /**
      * Checks if element is counted
