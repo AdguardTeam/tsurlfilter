@@ -1,47 +1,60 @@
 import { z } from 'zod';
 
-const configurationValidator = z.object({
+export const configurationValidator = z.object({
     /**
-     * An array of filters identifiers.
-     * You can look for possible filters identifiers in the filters metadata file:
-     * https://filters.adtidy.org/extension/chromium/filters.json
+   * Specifies filter lists that will be used to filter content.
+   * filterId should uniquely identify the filter so that the API user
+   * may match it with the source lists in the filtering log callbacks.
+   * content is a string with the full filter list content. The API will
+   * parse it into a list of individual rules.
+   */
+    filters: z.object({
+        filterId: z.number(),
+        content: z.string(),
+    }).array(),
+
+    /**
+   * List of domain names of sites, which should be excluded from blocking
+   * or which should be included in blocking depending on the value of
+   * allowlistInverted setting value
+   */
+    allowlist: z.string().array(),
+
+    /**
+   * List of rules added by user
+   */
+    userrules: z.string().array(),
+
+    /**
+   * Flag responsible for logging
+   */
+    verbose: z.boolean(),
+
+
+    settings: z.object({
+    /**
+     * Flag specifying if ads for sites would be blocked or allowed
      */
-    filters: z.number().array(),
-    /**
-     * An absolute path to a file, containing filters metadata.
-     * Once started, AdGuard will periodically check filters updates by downloading this file.
-     *
-     * Example: https://path.to/filters/metadata.json
+        allowlistInverted: z.boolean(),
+
+        /**
+     * Enables css hits counter if true
      */
-    filtersMetadataUrl: z.string(),
-    /**
-     * URL mask used for fetching filters rules.
-     * {filter_id} parameter will be replaced with an actual filter identifier.
-     *
-     * Example: https://path.to/filters/{filter_id}.txt
-     */
-    filtersRulesUrlMask: z.string(),
-    /**
-     * An array of domains, for which AdGuard won't work.
-     */
-    allowList: z.optional(z.string().array()),
-    /**
-      * If it is true, Adguard will work for domains from the allowlist only.
-      * All other domains will be ignored.
-      */
-    isAllowlistInverted: z.optional(z.boolean()),
-    /**
-      * An array of custom filtering rules.
-      * Filtering rules syntax is described here:
-      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
-      *
-      * These custom rules might be created by a user via AdGuard Assistant UI.
-      */
-    rules: z.optional(z.string().array()),
+        collectStats: z.boolean(),
+
+        stealth: z.object({
+            blockChromeClientData: z.boolean(),
+            hideReferrer: z.boolean(),
+            hideSearchQueries: z.boolean(),
+            sendDoNotTrack: z.boolean(),
+            blockWebRTC: z.boolean(),
+            selfDestructThirdPartyCookies: z.boolean(),
+            selfDestructThirdPartyCookiesTime: z.number(),
+            selfDestructFirstPartyCookies: z.boolean(),
+            selfDestructFirstPartyCookiesTime: z.number(),
+        }),
+    }),
+
 }).strict();
 
 export type Configuration = z.infer<typeof configurationValidator>;
-
-export const validateConfiguration = (configuration: unknown): void => {
-    configurationValidator.parse(configuration);   
-};

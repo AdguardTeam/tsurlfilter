@@ -57,10 +57,10 @@
     ],
     "coverageThreshold": {
       "global": {
-        "branches": 90,
-        "functions": 95,
-        "lines": 95,
-        "statements": 95
+        "branches": 0,
+        "functions": 0,
+        "lines": 0,
+        "statements": 0
       }
     },
     "collectCoverageFrom": [
@@ -72,12 +72,8 @@
       "jest-webextension-mock"
     ]
   },
-  "devDependencies": {
-    "@types/jest": "^23.3.14",
-    "jest": "^25.5.4",
-    "webextension-polyfill-ts": "^0.24.0"
-  },
   "dependencies": {
+    "@adguard/tsurlfilter": "^0.7.22",
     "zod": "^3.9.8"
   }
 }
