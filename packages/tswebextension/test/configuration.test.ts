@@ -32,31 +32,21 @@ describe('configuration validator', () => {
     });
 
     it('throws error on required field missing', () => {
-        const configuration = {
-            filters: [
-                { filterId: 1, content: '' },
-                { filterId: 2, content: '' },
-            ],
-            allowlist: ['example.com'],
-            userrules: ['||example.org^', 'example.com##h1'],
-            verbose: false,
-        };
-
         expect(() => {
             configurationValidator.parse({ 
                 ...validConfiguration, 
-                settings: undefined 
-            })
+                settings: undefined, 
+            });
         }).toThrow(new ZodError([{
-            code: "invalid_type",
-            expected: "object",
-            received: "undefined",
+            code: 'invalid_type',
+            expected: 'object',
+            received: 'undefined',
             path: [
-                "settings"
+                'settings',
             ],
-            message: "Required"
+            message: 'Required',
         }]));
-    })
+    });
 
     it('throws error on nested field missmatch', () => {
         const configuration = {
@@ -68,35 +58,35 @@ describe('configuration validator', () => {
         };
 
         expect(() => {
-            configurationValidator.parse(configuration)
+            configurationValidator.parse(configuration);
         }).toThrow(new ZodError([{
-            code: "invalid_type",
-            expected: "string",
-            received: "boolean",
+            code: 'invalid_type',
+            expected: 'string',
+            received: 'boolean',
             path: [
-                "filters",
+                'filters',
                 0,
-                "content"
+                'content',
             ],
-            message: "Expected string, received boolean"
+            message: 'Expected string, received boolean',
         }]));
-    })
+    });
 
     it('throws error on unrecognized key detection', () => {
         const configuration = {
             ...validConfiguration,
-            beep: 'boop'
+            beep: 'boop',
         };
 
         expect(() => {
-            configurationValidator.parse(configuration)
+            configurationValidator.parse(configuration);
         }).toThrow(new ZodError([{
-            code: "unrecognized_keys",
+            code: 'unrecognized_keys',
             keys: [
-                "beep"
+                'beep',
             ],
             path: [],
-            message: "Unrecognized key(s) in object: 'beep'"
+            message: "Unrecognized key(s) in object: 'beep'",
         }]));
-    })
+    });
 });

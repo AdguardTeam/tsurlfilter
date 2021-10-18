@@ -1,7 +1,9 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import browser from 'webextension-polyfill';
 import { StringRuleList, RuleStorage, Engine, setConfiguration } from '@adguard/tsurlfilter';
 import { configurationValidator, Configuration } from './configuration';
+import { WebRequestApi } from './web-request-api';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 // TODO complement with other methods
@@ -64,7 +66,7 @@ interface FilteringLogEvent {
 
 
 
-export interface ITsWebExtension {
+export interface TsWebExtensionInterface {
     /**
      * Starts api
      * @param configuration
@@ -103,7 +105,7 @@ export interface ITsWebExtension {
     getSiteStatus(url: string): SiteStatus,
 }
 
-export class TsWebExtension implements ITsWebExtension {
+export class TsWebExtension implements TsWebExtensionInterface {
     private engine: Engine | undefined;
 
     public async start(configuration: Configuration): Promise<void> {
@@ -133,6 +135,10 @@ export class TsWebExtension implements ITsWebExtension {
         this.engine = new Engine(ruleStorage, true);
 
         await this.engine.loadRulesAsync(5000);
+
+        const webRequestApi = new WebRequestApi();
+
+        webRequestApi.init();
     }
 
     public async stop(): Promise<void> {

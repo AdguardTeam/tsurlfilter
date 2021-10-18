@@ -10,8 +10,28 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
+"@adguard/tsurlfilter@^0.7.22":
+  version "0.7.22"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.22.tgz#d78b3823678a45a8d4f932352c54bc4258f8f811"
+  integrity sha512-rN9S3YZzYngx6NKiYHcZVVcfMmdkTHmM0SBwpO36PjSn4MtoKnKt+3VPll86C+ZEl08Xu3MWz3r4WsEAyp0Z0Q==
+  dependencies:
+    "@adguard/scriptlets" "^1.4.4"
+    "@types/ip6addr" "^0.2.3"
+    "@types/netmask" "^1.0.30"
+    "@types/punycode" "^2.1.0"
+    consola "^2.12.2"
+    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13"
+    ip6addr "^0.2.3"
+    is-cidr "^4.0.2"
+    is-ip "^3.1.0"
+    lru_map "^0.4.1"
+    netmask "^2.0.2"
+    punycode "^2.1.1"
+    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1"
+    tldts "^5.6.45"
+
 "@adguard/tsurlfilter@file:packages/tsurlfilter":
-  version "0.7.17"
+  version "0.7.24"
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
     "@types/ip6addr" "^0.2.3"
@@ -32,6 +52,8 @@
 "@adguard/tswebextension@file:packages/tswebextension":
   version "0.0.1"
   dependencies:
+    "@adguard/tsurlfilter" "^0.7.22"
+    webextension-polyfill "^0.8.0"
     zod "^3.9.8"
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.10.4", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.14.5", "@babel/code-frame@^7.15.8":
@@ -6944,14 +6966,14 @@ makeerror@1.0.x:
   version "0.0.1"
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
-    "@adguard/tsurlfilter" "file:../../../Users/vladimir/Library/Caches/Yarn/v6/npm-manifest-v2-0.0.1-a551a36b-aec0-4d76-b8a2-e16da556d112-1634223362941/tsurlfilter"
+    "@adguard/tsurlfilter" "file:../../../Users/vladimir/Library/Caches/Yarn/v6/npm-manifest-v2-0.0.1-47533966-0135-4ae8-a0ef-ad06bf287d4f-1634553777346/tsurlfilter"
     "@babel/runtime" "^7.13.10"
 
 "manifest-v3@file:packages/examples/manifest-v3":
   version "0.0.1"
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
-    "@adguard/tsurlfilter" "file:../../../Users/vladimir/Library/Caches/Yarn/v6/npm-manifest-v3-0.0.1-94f5fa3c-2675-4e79-8849-70eb1afb3662-1634223362943/tsurlfilter"
+    "@adguard/tsurlfilter" "file:../../../Users/vladimir/Library/Caches/Yarn/v6/npm-manifest-v3-0.0.1-b538d584-8c14-4beb-8e9e-5c10e7e02db7-1634553777351/tsurlfilter"
 
 map-age-cleaner@^0.1.1:
   version "0.1.3"

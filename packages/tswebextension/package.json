@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
+    "lint": "eslint --fix 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
     "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
@@ -74,6 +74,7 @@
   },
   "dependencies": {
     "@adguard/tsurlfilter": "^0.7.22",
+    "webextension-polyfill": "^0.8.0",
     "zod": "^3.9.8"
   }
 }
