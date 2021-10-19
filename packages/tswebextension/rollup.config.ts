@@ -1,5 +1,4 @@
 import typescript from '@rollup/plugin-typescript';
-import resolve from '@rollup/plugin-node-resolve';
 import cleanup from 'rollup-plugin-cleanup';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
@@ -23,7 +22,6 @@ export default {
     },
     plugins: [
         typescript(),
-        resolve({ preferBuiltins: false }),
         cleanup({
             comments: ['srcmaps'],
         }),

@@ -1,9 +1,8 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import browser from 'webextension-polyfill';
-import { StringRuleList, RuleStorage, Engine, setConfiguration } from '@adguard/tsurlfilter';
 import { configurationValidator, Configuration } from './configuration';
-import { WebRequestApi } from './web-request-api';
+import { webRequestApi } from './web-request-api';
+import { engineApi } from './engine-api'
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 // TODO complement with other methods
@@ -106,38 +105,11 @@ export interface TsWebExtensionInterface {
 }
 
 export class TsWebExtension implements TsWebExtensionInterface {
-    private engine: Engine | undefined;
 
     public async start(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
-        const { filters, userrules, verbose } = configuration;
-
-        const lists: StringRuleList[] = [];
-
-        for (let i = 0; i < filters.length; i += 1) {
-            const { filterId, content } = filters[i];
-            lists.push(new StringRuleList(filterId, content));
-        }
-
-        if (userrules.length > 0) {
-            lists.push(new StringRuleList(0, userrules.join('\n')));
-        }
-
-        const ruleStorage = new RuleStorage(lists);
-
-        setConfiguration({
-            engine: 'extension',
-            version: '1.0.0',
-            verbose,
-        });
-
-        this.engine = new Engine(ruleStorage, true);
-
-        await this.engine.loadRulesAsync(5000);
-
-        const webRequestApi = new WebRequestApi();
-
+        await engineApi.startEngine(configuration);
         webRequestApi.init();
     }
 
