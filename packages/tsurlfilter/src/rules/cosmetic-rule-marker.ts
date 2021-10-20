@@ -15,7 +15,7 @@
  * * `marker` is `##` (marker of element hiding rules)
  * * `content` is `.banner` (CSS selector)
  */
-export const enum CosmeticRuleMarker {
+export enum CosmeticRuleMarker {
     /** https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-elemhide-rules */
     ElementHiding = '##',
     /** https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions */
