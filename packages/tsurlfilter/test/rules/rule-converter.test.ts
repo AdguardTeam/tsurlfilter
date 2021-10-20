@@ -12,6 +12,29 @@ describe('General', () => {
         expect(converted).not.toBeNull();
     });
 
+    it('checks general method - handle line breaks', () => {
+        const domain0 = 'example.org';
+        const domain1 = 'example.com';
+
+        let rulesText;
+        let converted;
+        let rules;
+
+        rulesText = `${domain0}\n${domain1}`;
+        converted = RuleConverter.convertRules(rulesText);
+        rules = converted.split('\n');
+        expect(rules).toHaveLength(2);
+        expect(rules[0]).toBe(domain0);
+        expect(rules[1]).toBe(domain1);
+
+        rulesText = `${domain0}\r\n${domain1}`;
+        converted = RuleConverter.convertRules(rulesText);
+        rules = converted.split('\n');
+        expect(rules).toHaveLength(2);
+        expect(rules[0]).toBe(domain0);
+        expect(rules[1]).toBe(domain1);
+    });
+
     it('works if ubo script tag rules are converted properly', () => {
         let result = RuleConverter.convertRule('example.com##^script:some-another-rule(test)');
         expect(result).toHaveLength(1);
