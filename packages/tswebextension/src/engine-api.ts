@@ -47,12 +47,13 @@ export interface EngineApiInterface {
     getRulesCount: () => number;
 }
 
+
+const ASYNC_LOAD_CHINK_SIZE = 5000;
+
 /**
  * TSUrlFilter Engine wrapper
  */
 export class EngineApi implements EngineApiInterface {
-    private static ASYNC_LOAD_CHINK_SIZE = 5000;
-
     private engine: Engine | undefined;
 
     public async startEngine(configuration: Configuration): Promise<void> {
@@ -86,7 +87,7 @@ export class EngineApi implements EngineApiInterface {
         */
         this.engine = new Engine(ruleStorage, true);
 
-        await this.engine.loadRulesAsync(EngineApi.ASYNC_LOAD_CHINK_SIZE);
+        await this.engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
     }
 
     public matchRequest(matchQuery: MatchQuery): MatchingResult | null {

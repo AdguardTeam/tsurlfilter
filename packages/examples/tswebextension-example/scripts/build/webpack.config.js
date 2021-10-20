@@ -1,0 +1,53 @@
+import path from 'path';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+
+const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
+const BUILD_PATH = path.resolve(__dirname, '../../build');
+
+export const config = {
+    mode: 'development',
+    devtool: 'eval-source-map',
+    entry: {
+        background: BACKGROUND_PATH,
+    },
+    output: {
+        path: BUILD_PATH,
+        filename: '[name].js',
+    },
+    resolve: {
+        extensions: ['*', '.js'],
+        modules: [path.resolve(__dirname, '../../node_modules')],
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: [{
+                    loader: 'babel-loader',
+                    options: { babelrc: true },
+                }],
+            },
+        ],
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            template: path.join(BACKGROUND_PATH, 'index.html'),
+            filename: 'background.html',
+            chunks: ['background'],
+            cache: false,
+        }),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    context: 'extension',
+                    from: 'manifest.json',
+                    to: 'manifest.json',
+                },
+            ],
+        }),
+    ],
+};

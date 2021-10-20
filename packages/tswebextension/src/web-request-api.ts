@@ -1,19 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { RequestType } from '@adguard/tsurlfilter'
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 
 import { engineApi } from './engine-api';
+import { isOwnRequest } from './background';
+import { transformResourceType } from './request-type';
 
-export type WebRequestEventResponce = WebRequest.BlockingResponseOrPromise | void;
+export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
 export interface WebRequestApiInterface {
     init: () => void;
 }
 export class WebRequestApi implements WebRequestApiInterface {
-    private static ALL_URLS_REQUEST_FILTER: WebRequest.RequestFilter = {
-        urls: ['<all_urls>'],
-    };
-
     public init(): void {
         this.initBeforeRequestEventListener();
         this.initCspReportRequestsEventListener();
@@ -23,30 +20,44 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
 
-    private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponce {
-        const { url, documentUrl, type } = details;
+    private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+        const { url, documentUrl, originUrl, type } = details;
 
-        const responce = engineApi.matchRequest({
+        if(isOwnRequest(originUrl || documentUrl || url)){
+            return;
+        }
+
+        const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: documentUrl || url,
-            requestType: WebRequestApi.transformResourceTypeToTsUrlFilterRequestType(type),
+            requestType: transformResourceType(type),
             frameRule: null,
         })
+
+        if(!result){
+            return;
+        }
+
+        const basicResult = result.getBasicResult()
         
-        console.log(responce);
+        if(basicResult && !basicResult.isAllowlist()){
+            return { cancel: true };
+        }
+
+        return;
     }
 
-    private onBeforeSendHeaders(details: WebRequest.OnBeforeSendHeadersDetailsType): WebRequestEventResponce {
+    private onBeforeSendHeaders(details: WebRequest.OnBeforeSendHeadersDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
     }
 
-    private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponce {
+    private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
     }
 
-    private handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponce {
+    private handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
     } 
@@ -58,9 +69,16 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private initBeforeRequestEventListener(): void {
+        const filter: WebRequest.RequestFilter = {
+            urls: ['<all_urls>'],
+        };
+
+        const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
+
         browser.webRequest.onBeforeRequest.addListener(
             this.onBeforeRequest,
-            WebRequestApi.ALL_URLS_REQUEST_FILTER,
+            filter,
+            extraInfoSpec,
         );
     }
 
@@ -68,64 +86,47 @@ export class WebRequestApi implements WebRequestApiInterface {
      * Handler for csp reports urls
      */
     private initCspReportRequestsEventListener(): void {
-        const requestFilter = {
-            ...WebRequestApi.ALL_URLS_REQUEST_FILTER,
+        const filter: WebRequest.RequestFilter = {
+            urls: ['<all_urls>'],
             types: ['csp_report'],
-        } as WebRequest.RequestFilter;
+        }; 
 
-        const extraInfoSpec = ['requestBody'] as WebRequest.OnBeforeRequestOptions[];
+        const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['requestBody'];
 
         browser.webRequest.onBeforeRequest.addListener(
             this.handleCspReportRequests,
-            requestFilter,
+            filter,
             extraInfoSpec,
         );
     }
 
     private initBeforeSendHeadersEventListener(): void {
+        const filter: WebRequest.RequestFilter = {
+            urls: ['<all_urls>'],
+        }; 
+
         browser.webRequest.onBeforeSendHeaders.addListener(
             this.onBeforeSendHeaders,
-            WebRequestApi.ALL_URLS_REQUEST_FILTER,
+            filter,
         );
     }
 
     private initHeadersReceivedEventListener(): void {
+        const filter: WebRequest.RequestFilter = {
+            urls: ['<all_urls>'],
+        }; 
+
+        const extraInfoSpec: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
+
         browser.webRequest.onHeadersReceived.addListener(
             this.onHeadersReceived,
-            WebRequestApi.ALL_URLS_REQUEST_FILTER,
+            filter,
+            extraInfoSpec,
         );
     }
 
     private initCommittedCheckFrameUrlEventListener(): void {
         browser.webNavigation.onCommitted.addListener(this.onCommittedCheckFrameUrl);
-    }
-
-    private static transformResourceTypeToTsUrlFilterRequestType(resourceType: WebRequest.ResourceType): RequestType {
-        switch (resourceType) {
-            case 'main_frame':
-                return RequestType.Document;
-            case 'sub_frame':
-                return RequestType.Subdocument;
-            case 'stylesheet':
-                return RequestType.Stylesheet;
-            case 'font':
-                return RequestType.Font;
-            case 'image':
-                return RequestType.Image;
-            case 'media':
-                return RequestType.Media;
-            case 'script':
-                return RequestType.Script;
-            case 'xmlhttprequest':
-                return RequestType.XmlHttpRequest;
-            case 'websocket':
-                return RequestType.Websocket;
-            case 'ping':
-            case 'beacon':
-                return RequestType.Ping;
-            default:
-                return RequestType.Other;
-        }
     }
 }
 
