@@ -74,6 +74,7 @@
   },
   "dependencies": {
     "@adguard/tsurlfilter": "^0.7.22",
+    "lodash.merge": "^4.6.2",
     "webextension-polyfill": "^0.8.0",
     "zod": "^3.9.8"
   }

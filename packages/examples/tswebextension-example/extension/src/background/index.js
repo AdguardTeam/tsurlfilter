@@ -9,7 +9,7 @@ tsWebExtension.start({
         { filterId: 2, content: '' },
     ],
     allowlist: ['example.com'],
-    userrules: ['||example.org^', 'example.com##h1'],
+    userrules: ['example.org', 'example.com##h1'],
     verbose: false,
     settings: {
         collectStats: true,
@@ -26,4 +26,9 @@ tsWebExtension.start({
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
-})
+});
+
+
+setTimeout(() => {
+    tsWebExtension.stop();
+}, 10000);

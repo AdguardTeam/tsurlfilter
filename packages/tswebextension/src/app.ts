@@ -2,7 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { configurationValidator, Configuration } from './configuration';
 import { webRequestApi } from './web-request-api';
-import { engineApi } from './engine-api'
+import { engineApi } from './engine-api';
+import { tabsApi } from './tabs-api';
+import { webRequest } from 'webextension-polyfill';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 // TODO complement with other methods
@@ -105,20 +107,31 @@ export interface TsWebExtensionInterface {
 }
 
 export class TsWebExtension implements TsWebExtensionInterface {
+    private isStarted = false;
 
     public async start(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
+        await tabsApi.start();
         await engineApi.startEngine(configuration);
-        webRequestApi.init();
+        webRequestApi.start();
+        this.isStarted = true;
     }
 
     public async stop(): Promise<void> {
-        // TODO: implement
+        webRequestApi.stop();
+        tabsApi.stop();
+        this.isStarted = false;
     }
 
     public async configure(configuration: Configuration): Promise<void> {
-        // TODO: implement
+        configurationValidator.parse(configuration);
+
+        if(!this.isStarted){
+            throw new Error('app is not strated!')
+        }
+
+        await engineApi.startEngine(configuration);
     }
 
     public openAssistant(tabId: number): void {

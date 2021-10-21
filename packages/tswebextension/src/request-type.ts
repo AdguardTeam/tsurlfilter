@@ -1,5 +1,5 @@
-import { RequestType } from '@adguard/tsurlfilter'
-import { WebRequest } from "webextension-polyfill"
+import { RequestType } from '@adguard/tsurlfilter';
+import { WebRequest } from 'webextension-polyfill';
 
 /**
  * Transform `webextension-polyfill` `WebRequest.ResourceType` to `@adguard/tsurlfilter` `RequestType` 
@@ -30,4 +30,4 @@ export const transformResourceType = (resourceType: WebRequest.ResourceType): Re
         default:
             return RequestType.Other;
     }
-}
+};

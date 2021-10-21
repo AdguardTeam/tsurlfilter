@@ -25,8 +25,7 @@ export interface MatchQuery{
     frameRule?: NetworkRule | null;
 }
 
-
-export interface EngineApiInterface {
+export interface EngineApi {
     startEngine: (configuration: Configuration) => Promise<void>;
 
     /**
@@ -47,16 +46,15 @@ export interface EngineApiInterface {
     getRulesCount: () => number;
 }
 
-
-const ASYNC_LOAD_CHINK_SIZE = 5000;
-
 /**
  * TSUrlFilter Engine wrapper
  */
-export class EngineApi implements EngineApiInterface {
-    private engine: Engine | undefined;
+export const engineApi = (function (): EngineApi {
+    const ASYNC_LOAD_CHINK_SIZE = 5000;
 
-    public async startEngine(configuration: Configuration): Promise<void> {
+    let engine: Engine | undefined;
+
+    async function startEngine(configuration: Configuration): Promise<void> {
         const { filters, userrules, verbose } = configuration;
 
         const lists: StringRuleList[] = [];
@@ -85,13 +83,13 @@ export class EngineApi implements EngineApiInterface {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        this.engine = new Engine(ruleStorage, true);
+        engine = new Engine(ruleStorage, true);
 
-        await this.engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
+        await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
     }
 
-    public matchRequest(matchQuery: MatchQuery): MatchingResult | null {
-        if (!this.engine) {
+    function matchRequest(matchQuery: MatchQuery): MatchingResult | null {
+        if (!engine) {
             return null;
         }
 
@@ -113,32 +111,38 @@ export class EngineApi implements EngineApiInterface {
             frameRule = null;
         }
 
-        return this.engine.matchRequest(request, frameRule);
+        return engine.matchRequest(request, frameRule);
     }
 
-    public matchFrame(frameUrl: string): NetworkRule | null {
-        if(!this.engine){
+    function matchFrame(frameUrl: string): NetworkRule | null {
+        if (!engine){
             return null;
         }
 
-        return this.engine.matchFrame(frameUrl)
+        return engine.matchFrame(frameUrl);
     }
 
     
-     public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
-        if (!this.engine) {
+    function getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+        if (!engine) {
             return new CosmeticResult();
         }
 
         const frameUrl = getHost(url);
         const request = new Request(url, frameUrl, RequestType.Document);
 
-        return this.engine.getCosmeticResult(request, option);
-    };
-
-    public getRulesCount(): number{
-        return this.engine ? this.engine.getRulesCount() : 0;
+        return engine.getCosmeticResult(request, option);
     }
-}
 
-export const engineApi = new EngineApi();
+    function getRulesCount(): number{
+        return engine ? engine.getRulesCount() : 0;
+    }
+
+    return {
+        startEngine,
+        matchRequest,
+        matchFrame,
+        getCosmeticResult,
+        getRulesCount,
+    };
+})();

@@ -1,74 +1,83 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
+import { NetworkRule } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
-import { isOwnRequest } from './background';
+import { tabsApi } from './tabs-api';
+import { isOwnUrl } from './utils';
 import { transformResourceType } from './request-type';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
-export interface WebRequestApiInterface {
-    init: () => void;
+export interface WebRequestApi {
+    start: () => void;
+    stop: () => void;
 }
-export class WebRequestApi implements WebRequestApiInterface {
-    public init(): void {
-        this.initBeforeRequestEventListener();
-        this.initCspReportRequestsEventListener();
-        this.initBeforeSendHeadersEventListener();
-        this.initHeadersReceivedEventListener();
-        this.initCommittedCheckFrameUrlEventListener();
-    }
 
+export const webRequestApi = (function (): WebRequestApi {
+    function onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+        const { url, documentUrl, originUrl, type, tabId } = details;
 
-    private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
-        const { url, documentUrl, originUrl, type } = details;
-
-        if(isOwnRequest(originUrl || documentUrl || url)){
+        if (isOwnUrl(originUrl || documentUrl || url)){
             return;
+        }
+
+        let frameRule = null;
+
+        if (type === 'main_frame') {
+            frameRule = engineApi.matchFrame(url);
+            if (frameRule){
+                tabsApi.updateTabMetadata(tabId, { frameRule });
+            }
+        } else {
+            const tabContext = tabsApi.getTabContext(tabId);
+            if (tabContext?.metadata?.frameRule){
+                frameRule = tabContext.metadata.frameRule as NetworkRule;
+            }
         }
 
         const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: documentUrl || url,
             requestType: transformResourceType(type),
-            frameRule: null,
-        })
+            frameRule,
+        });
 
-        if(!result){
+        if (!result){
             return;
         }
 
-        const basicResult = result.getBasicResult()
+        const basicResult = result.getBasicResult();
         
-        if(basicResult && !basicResult.isAllowlist()){
+        if (basicResult && !basicResult.isAllowlist()){
             return { cancel: true };
         }
 
         return;
     }
 
-    private onBeforeSendHeaders(details: WebRequest.OnBeforeSendHeadersDetailsType): WebRequestEventResponse {
+    function onBeforeSendHeaders(details: WebRequest.OnBeforeSendHeadersDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
     }
 
-    private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
+    function onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
     }
 
-    private handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+    function handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
     } 
 
 
-    private onCommittedCheckFrameUrl(details: WebNavigation.OnCommittedDetailsType): void {
+    function onCommittedCheckFrameUrl(details: WebNavigation.OnCommittedDetailsType): void {
         // TODO: implement
         return;
     }
 
-    private initBeforeRequestEventListener(): void {
+    function initBeforeRequestEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
         };
@@ -76,7 +85,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
 
         browser.webRequest.onBeforeRequest.addListener(
-            this.onBeforeRequest,
+            onBeforeRequest,
             filter,
             extraInfoSpec,
         );
@@ -85,7 +94,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     /**
      * Handler for csp reports urls
      */
-    private initCspReportRequestsEventListener(): void {
+    function initCspReportRequestsEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
             types: ['csp_report'],
@@ -94,24 +103,24 @@ export class WebRequestApi implements WebRequestApiInterface {
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['requestBody'];
 
         browser.webRequest.onBeforeRequest.addListener(
-            this.handleCspReportRequests,
+            handleCspReportRequests,
             filter,
             extraInfoSpec,
         );
     }
 
-    private initBeforeSendHeadersEventListener(): void {
+    function initBeforeSendHeadersEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
         }; 
 
         browser.webRequest.onBeforeSendHeaders.addListener(
-            this.onBeforeSendHeaders,
+            onBeforeSendHeaders,
             filter,
         );
     }
 
-    private initHeadersReceivedEventListener(): void {
+    function initHeadersReceivedEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
         }; 
@@ -119,15 +128,34 @@ export class WebRequestApi implements WebRequestApiInterface {
         const extraInfoSpec: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
 
         browser.webRequest.onHeadersReceived.addListener(
-            this.onHeadersReceived,
+            onHeadersReceived,
             filter,
             extraInfoSpec,
         );
     }
 
-    private initCommittedCheckFrameUrlEventListener(): void {
-        browser.webNavigation.onCommitted.addListener(this.onCommittedCheckFrameUrl);
+    function initCommittedCheckFrameUrlEventListener(): void {
+        browser.webNavigation.onCommitted.addListener(onCommittedCheckFrameUrl);
     }
-}
 
-export const webRequestApi = new WebRequestApi();
+    function start(): void {
+        initBeforeRequestEventListener();
+        initCspReportRequestsEventListener();
+        initBeforeSendHeadersEventListener();
+        initHeadersReceivedEventListener();
+        initCommittedCheckFrameUrlEventListener();
+    }
+
+    function stop(): void {
+        browser.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
+        browser.webRequest.onBeforeRequest.removeListener(handleCspReportRequests);
+        browser.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
+        browser.webRequest.onHeadersReceived.removeListener(onHeadersReceived);
+        browser.webNavigation.onCommitted.removeListener(onCommittedCheckFrameUrl);
+    }
+
+    return {
+        start,
+        stop,
+    };
+})();
