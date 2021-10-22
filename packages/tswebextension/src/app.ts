@@ -4,9 +4,9 @@ import { configurationValidator, Configuration } from './configuration';
 import { webRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs-api';
-import { webRequest } from 'webextension-polyfill';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
+
 // TODO complement with other methods
 type RequestMethod = 'POST' | 'GET';
 
@@ -115,6 +115,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         await tabsApi.start();
         await engineApi.startEngine(configuration);
         webRequestApi.start();
+
         this.isStarted = true;
     }
 
@@ -128,7 +129,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         configurationValidator.parse(configuration);
 
         if(!this.isStarted){
-            throw new Error('app is not strated!')
+            throw new Error('App is not strated!')
         }
 
         await engineApi.startEngine(configuration);

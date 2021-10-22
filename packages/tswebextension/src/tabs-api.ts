@@ -1,103 +1,120 @@
+import { NetworkRule } from '@adguard/tsurlfilter/dist/types';
 import browser, { Tabs } from 'webextension-polyfill';
 
 import { EventChannel } from './utils';
 
-export interface TabMetadata { 
-    [key: string]: unknown 
-}
-
 export interface TabContext extends Tabs.Tab {
-    metadata?: TabMetadata
+    frameRule?: NetworkRule
 }
 
-export interface TabsApi {
+export interface TabsApiInterface {
     start: () => Promise<void>
     stop: () => void;
 
-    updateTabMetadata: (tabId: number, metadata: TabMetadata) => void;
     getTabContext: (tabId: number) => TabContext | undefined;
+
+    setTabFrameRule: (tabId: number, frameRule: NetworkRule) => void
+    getTabFrameRule: (tabId: number) => NetworkRule | null
 
     onCreate: EventChannel
     onUpdate: EventChannel
     onDelete: EventChannel
 }
 
-export const tabsApi: TabsApi = (function () {
-    const contextStorage = new Map<number, TabContext>();
+export class TabsApi implements TabsApiInterface {
+    private context = new Map<number, TabContext>();
 
-    const onCreate = new EventChannel();
+    public onCreate = new EventChannel();
 
-    const onUpdate = new EventChannel();
+    public onUpdate = new EventChannel();
 
-    const onDelete = new EventChannel();
+    public onDelete = new EventChannel();
+
+    constructor() {
+        // bind context of methods, invoked in external event listeners
+        this.createTabContext = this.createTabContext.bind(this);
+        this.updateTabContext = this.updateTabContext.bind(this);
+        this.deleteTabContext = this.deleteTabContext.bind(this);
+    }
+
+    public async start() {
+        await this.createCurrentTabsContext();
+
+        browser.tabs.onCreated.addListener(this.createTabContext);
+        browser.tabs.onRemoved.addListener(this.deleteTabContext);
+        browser.tabs.onUpdated.addListener(this.updateTabContext);
+    }
 
 
-    function updateTabMetadata(tabId: number, metadata: TabMetadata): void {
-        const tabContext = contextStorage.get(tabId);
+    public stop() {
+        browser.tabs.onCreated.removeListener(this.createTabContext);
+        browser.tabs.onRemoved.removeListener(this.deleteTabContext);
+        browser.tabs.onUpdated.removeListener(this.updateTabContext);
+        this.context.clear();
+    }
 
-        if (tabContext){
-            tabContext.metadata = { ...tabContext?.metadata, ...metadata };
-            contextStorage.set(tabId, tabContext);
-            onUpdate.dispatch(tabContext);
+    public setTabFrameRule(tabId: number, frameRule: NetworkRule): void {
+        const tabContext = this.context.get(tabId);
+
+        if (tabContext) {
+            tabContext.frameRule = frameRule;
+            this.context.set(tabId, tabContext);
+            this.onUpdate.dispatch(tabContext);
         }
     }
 
-    function getTabContext(tabId: number): TabContext | undefined {
-        return contextStorage.get(tabId);
+    public getTabFrameRule(tabId: number): NetworkRule | null {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return null;
+        }
+
+        const frameRule = tabContext.frameRule
+
+        if (!frameRule) {
+            return null;
+        }
+
+        return frameRule
     }
 
-    function createTabContext(tab: Tabs.Tab): void {
-        if (tab.id){
-            contextStorage.set(tab.id, tab);
-            onCreate.dispatch(tab);
-        }   
+    public getTabContext(tabId: number): TabContext | undefined {
+        return this.context.get(tabId);
     }
 
-    function deleteTabContext(tabId: number): void {
-        contextStorage.delete(tabId);
-        onDelete.dispatch(tabId);
-    }
-
-    function updateTabContext(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType): void{
-        const tabContext = contextStorage.get(tabId);
-        if (tabContext){
-            contextStorage.set(tabId, { ...tabContext, ...changeInfo });
+    private createTabContext(tab: Tabs.Tab): void {
+        if (tab.id) {
+            this.context.set(tab.id, tab);
+            this.onCreate.dispatch(tab);
         }
     }
 
-    async function createCurrentTabsContext(): Promise<void>{
+    private deleteTabContext(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+        if (tabContext) {
+            this.context.delete(tabId);
+            this.onDelete.dispatch(tabContext);
+        }
+    }
+
+    private updateTabContext(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType): void {
+        // TODO: we can ignore some events (favicon url update etc.)
+        const tabContext = this.context.get(tabId);
+        if (tabContext) {
+            const newTabContext = Object.assign(tabContext, changeInfo);
+            this.context.set(tabId, newTabContext);
+            this.onUpdate.dispatch(newTabContext)
+        }
+    }
+
+    private async createCurrentTabsContext(): Promise<void> {
         const currentTabs = await browser.tabs.query({});
 
         for (let i = 0; i < currentTabs.length; i += 1) {
-            createTabContext(currentTabs[i]);
+            this.createTabContext(currentTabs[i]);
         }
     }
+}
 
-    async function start(){
-        await createCurrentTabsContext();
-
-        browser.tabs.onCreated.addListener(createTabContext);
-        browser.tabs.onRemoved.addListener(deleteTabContext);
-        browser.tabs.onUpdated.addListener(updateTabContext);
-    }
-
-
-    function stop(){
-        browser.tabs.onCreated.removeListener(createTabContext);
-        browser.tabs.onRemoved.removeListener(deleteTabContext);
-        browser.tabs.onUpdated.removeListener(updateTabContext);
-        contextStorage.clear();
-    }
-    
-    return {
-        start,
-        stop,
-
-        updateTabMetadata,
-        getTabContext,
-
-        onCreate,
-        onDelete,
-        onUpdate,
-    };
-})();
+export const tabsApi = new TabsApi();

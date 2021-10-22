@@ -27,8 +27,3 @@ tsWebExtension.start({
         },
     },
 });
-
-
-setTimeout(() => {
-    tsWebExtension.stop();
-}, 10000);
