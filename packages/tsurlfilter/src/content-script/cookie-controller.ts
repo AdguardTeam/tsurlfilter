@@ -8,7 +8,9 @@ export default class CookieController {
     /**
      * On rule applied callback
      */
-    private readonly onRuleAppliedCallback: (cookieName: string,
+    private readonly onRuleAppliedCallback: (
+        cookieName: string,
+        cookieValue: string,
         cookieDomain: string,
         cookieRuleText: string,
         thirdParty: boolean,
@@ -24,7 +26,9 @@ export default class CookieController {
      *
      * @param callback
      */
-    constructor(callback: (cookieName: string,
+    constructor(callback: (
+        cookieName: string,
+        cookieValue: string,
         cookieDomain: string,
         cookieRuleText: string,
         thirdParty: boolean,
@@ -122,8 +126,9 @@ export default class CookieController {
             }
 
             const cookieName = cookieStr.slice(0, pos).trim();
+            const cookieValue = cookieStr.slice(pos + 1).trim();
             rules.forEach((rule) => {
-                this.applyRule(rule, cookieName);
+                this.applyRule(rule, cookieName, cookieValue);
             });
         });
     }
@@ -133,10 +138,12 @@ export default class CookieController {
      *
      * @param rule
      * @param cookieName
+     * @param cookieValue
      */
     private applyRule(
         rule: { ruleText: string; match: string; isThirdParty: boolean; filterId: number },
         cookieName: string,
+        cookieValue: string,
     ): void {
         if (this.isThirdPartyContext !== rule.isThirdParty) {
             return;
@@ -157,6 +164,7 @@ export default class CookieController {
 
         this.onRuleAppliedCallback(
             cookieName,
+            cookieValue,
             document.location.hostname,
             rule.ruleText,
             rule.isThirdParty,

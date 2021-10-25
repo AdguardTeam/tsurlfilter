@@ -1,5 +1,4 @@
 import { NetworkRule } from './rules/network-rule';
-import { RequestType } from './request-type';
 
 /**
  * Filtering log interface
@@ -16,7 +15,6 @@ export interface FilteringLog {
         cookieName: string;
         cookieValue: string;
         cookieDomain: string;
-        requestType: RequestType;
         cookieRule: NetworkRule;
         isModifyingCookieRule: boolean;
         thirdParty: boolean;
