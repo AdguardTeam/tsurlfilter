@@ -313,25 +313,29 @@ export class MatchingResult {
         }
 
         if (allowlistRules.length > 0) {
-            const allowlistRuleWithEmptyOptionText = allowlistRules
+            const allowlistRuleWithEmptyOption = allowlistRules
                 .find((allowlistRule) => allowlistRule.getAdvancedModifierValue() === '');
 
-            // @@||example.org^$replace will disable all $replace rules matching ||example.org^.
-            if (allowlistRuleWithEmptyOptionText) {
-                return [allowlistRuleWithEmptyOptionText];
-            }
-
-            const foundReplaceRules: NetworkRule[] = [];
+            const result: NetworkRule[] = [];
             blockingRules.forEach((blockRule) => {
-                const allowlistingRule = allowlistRules.find(allowlistPredicate(blockRule));
+                if (allowlistRuleWithEmptyOption
+                    && !blockRule.isHigherPriority(allowlistRuleWithEmptyOption)) {
+                    result.push(allowlistRuleWithEmptyOption);
+                    return;
+                }
+
+                const allowlistingRule = allowlistRules.find((a) => {
+                    return !blockRule.isHigherPriority(a) && allowlistPredicate.call(this, blockRule)(a);
+                });
+
                 if (allowlistingRule) {
-                    foundReplaceRules.push(allowlistingRule);
+                    result.push(allowlistingRule);
                 } else {
-                    foundReplaceRules.push(blockRule);
+                    result.push(blockRule);
                 }
             });
 
-            return foundReplaceRules;
+            return result.filter((item, pos) => result.indexOf(item) == pos);
         }
 
         return blockingRules;

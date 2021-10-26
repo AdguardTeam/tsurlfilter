@@ -441,7 +441,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
         expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistText);
     });
 
-    it('works if cookie allowlist all rule is ok', () => {
+    it('works if cookie allowlist regexp rule is ok', () => {
         const rules = [
             new NetworkRule(cookieRuleTextOne, 0),
             new NetworkRule(cookieRuleTextTwo, 0),
@@ -467,6 +467,72 @@ describe('TestNewMatchingResult - cookie rules', () => {
         const result = new MatchingResult(rules, sourceRule);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toEqual([]);
+    });
+
+    it('respects $cookie-$important rules', () => {
+        const importBlockingRuleText = '||example.com^$cookie=test,important';
+        const rules = [
+            new NetworkRule('@@||example.com^$cookie=test', 0),
+            new NetworkRule(importBlockingRuleText, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+    });
+
+    it('checks $cookie rule is negated by regex allowlist', () => {
+        const importBlockingRuleText = '||example.com^$cookie=test';
+        const allowlistRuleText = '@@||example.com^$cookie=/test|other/';
+        const rules = [
+            new NetworkRule(allowlistRuleText, 0),
+            new NetworkRule(importBlockingRuleText, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0].getText()).toBe(allowlistRuleText);
+    });
+
+    it('checks $cookie-$important rule negates regex allowlist', () => {
+        const importBlockingRuleText = '||example.com^$cookie=test,important';
+        const rules = [
+            new NetworkRule('@@||example.com^$cookie=/test|other/', 0),
+            new NetworkRule(importBlockingRuleText, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+    });
+
+    it('respects $cookie-$important rules - empty option', () => {
+        const importBlockingRuleText = '||example.com^$cookie,important';
+        const rules = [
+            new NetworkRule('@@||example.com^$cookie', 0),
+            new NetworkRule(importBlockingRuleText, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+    });
+
+    it('respects $cookie-$important rules - allowlist empty option', () => {
+        const importBlockingRuleText = '||example.com^$cookie=test,important';
+        const rules = [
+            new NetworkRule('@@||example.com^$cookie', 0),
+            new NetworkRule(importBlockingRuleText, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const cookieRules = result.getCookieRules();
+        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
     });
 });
 
