@@ -3,8 +3,9 @@ import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 import { NetworkRule } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
-import { tabsApi } from './tabs-api';
-import { isOwnUrl,  } from './utils';
+import { tabsApi } from './tabs';
+import { requestContextStorage } from './request-context-storage';
+import { isOwnUrl, isHttpOrWsRequest } from './utils';
 import { transformResourceType } from './request-type';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -16,7 +17,7 @@ export interface WebRequestApiInterface {
 
 export class WebRequestApi implements WebRequestApiInterface {
 
-    constructor(){
+    constructor() {
         this.onBeforeRequest = this.onBeforeRequest.bind(this);
         this.onBeforeSendHeaders = this.onBeforeSendHeaders.bind(this);
         this.onHeadersReceived = this.onHeadersReceived.bind(this);
@@ -40,11 +41,14 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webRequest.onHeadersReceived.removeListener(this.onHeadersReceived);
         browser.webNavigation.onCommitted.removeListener(this.onCommittedCheckFrameUrl);
     }
-    
-    private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
-        const { url, documentUrl, originUrl, type, tabId } = details;
 
-        if (isOwnUrl(originUrl || documentUrl || url)){
+    private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+        const { url, documentUrl, originUrl, initiator, type, tabId } = details;
+
+        const referrerUrl = originUrl || initiator as string
+
+        if (isOwnUrl(referrerUrl)
+            || !isHttpOrWsRequest(url)) {
             return;
         }
 
@@ -52,7 +56,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         if (type === 'main_frame') {
             frameRule = engineApi.matchFrame(url);
-            if (frameRule){
+            if (frameRule) {
                 tabsApi.setTabFrameRule(tabId, frameRule);
             }
         } else {
@@ -66,13 +70,13 @@ export class WebRequestApi implements WebRequestApiInterface {
             frameRule,
         });
 
-        if (!result){
+        if (!result) {
             return;
         }
 
         const basicResult = result.getBasicResult();
-        
-        if (basicResult && !basicResult.isAllowlist()){
+
+        if (basicResult && !basicResult.isAllowlist()) {
             return { cancel: true };
         }
 
@@ -92,7 +96,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     private handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
         // TODO: implement
         return;
-    } 
+    }
 
 
     private onCommittedCheckFrameUrl(details: WebNavigation.OnCommittedDetailsType): void {
@@ -118,11 +122,11 @@ export class WebRequestApi implements WebRequestApiInterface {
     /**
      * Handler for csp reports urls
      */
-     private initCspReportRequestsEventListener(): void {
+    private initCspReportRequestsEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
             types: ['csp_report'],
-        }; 
+        };
 
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['requestBody'];
 
@@ -136,7 +140,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     private initBeforeSendHeadersEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
-        }; 
+        };
 
         browser.webRequest.onBeforeSendHeaders.addListener(
             this.onBeforeSendHeaders,
@@ -147,7 +151,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     private initHeadersReceivedEventListener(): void {
         const filter: WebRequest.RequestFilter = {
             urls: ['<all_urls>'],
-        }; 
+        };
 
         const extraInfoSpec: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
 

@@ -3,7 +3,7 @@
 import { configurationValidator, Configuration } from './configuration';
 import { webRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
-import { tabsApi } from './tabs-api';
+import { tabsApi } from './tabs';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 
@@ -128,8 +128,8 @@ export class TsWebExtension implements TsWebExtensionInterface {
     public async configure(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
-        if(!this.isStarted){
-            throw new Error('App is not strated!')
+        if (!this.isStarted) {
+            throw new Error('App is not strated!');
         }
 
         await engineApi.startEngine(configuration);

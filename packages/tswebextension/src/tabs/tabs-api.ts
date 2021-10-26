@@ -1,12 +1,8 @@
 import { NetworkRule } from '@adguard/tsurlfilter/dist/types';
 import browser, { Tabs } from 'webextension-polyfill';
+import { Frame, TabContext } from './tab-context';
 
-import { EventChannel } from './utils';
-
-export interface TabContext extends Tabs.Tab {
-    frameRule?: NetworkRule
-}
-
+import { EventChannel } from '../utils';
 export interface TabsApiInterface {
     start: () => Promise<void>
     stop: () => void;
@@ -15,6 +11,9 @@ export interface TabsApiInterface {
 
     setTabFrameRule: (tabId: number, frameRule: NetworkRule) => void
     getTabFrameRule: (tabId: number) => NetworkRule | null
+
+    setTabFrame: (tabId: number, frameId: number, frameData: Frame) => void
+    getTabFrame: (tabId: number, frameId: number) => Frame | null
 
     onCreate: EventChannel
     onUpdate: EventChannel
@@ -33,7 +32,7 @@ export class TabsApi implements TabsApiInterface {
     constructor() {
         // bind context of methods, invoked in external event listeners
         this.createTabContext = this.createTabContext.bind(this);
-        this.updateTabContext = this.updateTabContext.bind(this);
+        this.updateTabContextData = this.updateTabContextData.bind(this);
         this.deleteTabContext = this.deleteTabContext.bind(this);
     }
 
@@ -42,14 +41,14 @@ export class TabsApi implements TabsApiInterface {
 
         browser.tabs.onCreated.addListener(this.createTabContext);
         browser.tabs.onRemoved.addListener(this.deleteTabContext);
-        browser.tabs.onUpdated.addListener(this.updateTabContext);
+        browser.tabs.onUpdated.addListener(this.updateTabContextData);
     }
 
 
     public stop() {
         browser.tabs.onCreated.removeListener(this.createTabContext);
         browser.tabs.onRemoved.removeListener(this.deleteTabContext);
-        browser.tabs.onUpdated.removeListener(this.updateTabContext);
+        browser.tabs.onUpdated.removeListener(this.updateTabContextData);
         this.context.clear();
     }
 
@@ -58,7 +57,6 @@ export class TabsApi implements TabsApiInterface {
 
         if (tabContext) {
             tabContext.frameRule = frameRule;
-            this.context.set(tabId, tabContext);
             this.onUpdate.dispatch(tabContext);
         }
     }
@@ -70,13 +68,38 @@ export class TabsApi implements TabsApiInterface {
             return null;
         }
 
-        const frameRule = tabContext.frameRule
+        const frameRule = tabContext.frameRule;
 
         if (!frameRule) {
             return null;
         }
 
-        return frameRule
+        return frameRule;
+    }
+
+    public setTabFrame(tabId: number, frameId: number, frameData: Frame){
+        const tabContext = this.context.get(tabId);
+
+        if (tabContext) {
+            tabContext.frames.set(frameId, frameData);
+            this.onUpdate.dispatch(tabContext);
+        }
+    }
+
+    public getTabFrame(tabId: number, frameId: number){
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return null;
+        }
+
+        const frame = tabContext.frames.get(frameId);
+
+        if (!frame) {
+            return null;
+        }
+
+        return frame;
     }
 
     public getTabContext(tabId: number): TabContext | undefined {
@@ -85,8 +108,9 @@ export class TabsApi implements TabsApiInterface {
 
     private createTabContext(tab: Tabs.Tab): void {
         if (tab.id) {
-            this.context.set(tab.id, tab);
-            this.onCreate.dispatch(tab);
+            const tabContext = new TabContext(tab);
+            this.context.set(tab.id, tabContext);
+            this.onCreate.dispatch(tabContext);
         }
     }
 
@@ -98,13 +122,12 @@ export class TabsApi implements TabsApiInterface {
         }
     }
 
-    private updateTabContext(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType): void {
+    private updateTabContextData(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType): void {
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
         if (tabContext) {
-            const newTabContext = Object.assign(tabContext, changeInfo);
-            this.context.set(tabId, newTabContext);
-            this.onUpdate.dispatch(newTabContext)
+            tabContext.updateTabInfo(changeInfo);
+            this.onUpdate.dispatch(tabContext);
         }
     }
 
