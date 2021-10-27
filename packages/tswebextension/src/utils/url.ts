@@ -6,8 +6,8 @@ import browser from 'webextension-polyfill';
  * (e.g. request for filter downloading)
  * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1437
  */
-export const isOwnUrl = (referrerUrl: string): boolean => {
-    return referrerUrl.indexOf(browser.runtime.getURL('')) === 0;
+export const isOwnUrl = (referrerUrl?: string): boolean => {
+    return referrerUrl?.indexOf(browser.runtime.getURL('')) === 0;
 };
 
 export const isHttpOrWsRequest = (url: string): boolean => {

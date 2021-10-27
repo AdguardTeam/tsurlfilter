@@ -14,6 +14,7 @@ export interface TabsApiInterface {
 
     setTabFrame: (tabId: number, frameId: number, frameData: Frame) => void
     getTabFrame: (tabId: number, frameId: number) => Frame | null
+    getTabMainFrame: (tabId: number) => Frame | null
 
     onCreate: EventChannel
     onUpdate: EventChannel
@@ -30,10 +31,19 @@ export class TabsApi implements TabsApiInterface {
     public onDelete = new EventChannel();
 
     constructor() {
-        // bind context of methods, invoked in external event listeners
         this.createTabContext = this.createTabContext.bind(this);
         this.updateTabContextData = this.updateTabContextData.bind(this);
         this.deleteTabContext = this.deleteTabContext.bind(this);
+
+        this.getTabContext =  this.getTabContext.bind(this);
+
+        this.setTabFrameRule = this.setTabFrameRule.bind(this);
+        this.getTabFrameRule = this.getTabFrameRule.bind(this);
+    
+        this.setTabFrame = this.setTabFrame.bind(this);
+        this.getTabFrame = this.getTabFrame.bind(this);
+        this.getTabMainFrame = this.getTabMainFrame.bind(this);
+        this.getTabFrame = this.getTabFrame.bind(this);
     }
 
     public async start() {
@@ -100,6 +110,10 @@ export class TabsApi implements TabsApiInterface {
         }
 
         return frame;
+    }
+
+    public getTabMainFrame(tabId: number){
+        return this.getTabFrame(tabId, 0);
     }
 
     public getTabContext(tabId: number): TabContext | undefined {

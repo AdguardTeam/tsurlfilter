@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
-import { requestContextStorage } from './request-context-storage';
 import { isOwnUrl, isHttpOrWsRequest } from './utils';
-import { transformResourceType } from './request-type';
+import { getExtendedRequestDetails } from './request-details';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -43,9 +42,12 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
-        const { url, documentUrl, originUrl, initiator, type, tabId } = details;
-
-        const referrerUrl = originUrl || initiator as string
+        const {
+            url,
+            referrerUrl,
+            requestType,
+            tabId,
+        } = getExtendedRequestDetails(details);
 
         if (isOwnUrl(referrerUrl)
             || !isHttpOrWsRequest(url)) {
@@ -54,7 +56,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         let frameRule: NetworkRule | null = null;
 
-        if (type === 'main_frame') {
+        if (requestType === RequestType.Document) {
             frameRule = engineApi.matchFrame(url);
             if (frameRule) {
                 tabsApi.setTabFrameRule(tabId, frameRule);
@@ -65,8 +67,8 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const result = engineApi.matchRequest({
             requestUrl: url,
-            frameUrl: documentUrl || url,
-            requestType: transformResourceType(type),
+            frameUrl: referrerUrl || url,
+            requestType,
             frameRule,
         });
 
