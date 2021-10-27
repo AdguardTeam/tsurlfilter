@@ -26,52 +26,29 @@ describe('NetworkRule - removeheader rules', () => {
 });
 
 describe('Removeheader modifier - apply to headers', () => {
-    let headers: { name: string; value: string }[] = [];
-
-    beforeEach(() => {
-        headers = [
-            {
-                name: 'test_name',
-                value: 'test_value',
-            },
-            {
-                name: 'origin',
-                value: 'forbidden_header',
-            },
-        ];
-    });
-
     it('checks simple case', () => {
         const modifier = new RemoveHeaderModifier('test_name', false);
 
-        const result = modifier.apply(headers, false);
-        expect(result).toBeTruthy();
-        expect(headers).toHaveLength(1);
-        expect(headers.find((x) => x.name === 'test_name')).not.toBeDefined();
+        const result = modifier.getApplicableHeaderName(false);
+        expect(result).toBe('test_name');
     });
 
     it('respects request/response flag', () => {
         let modifier = new RemoveHeaderModifier('test_name', false);
 
-        let result = modifier.apply(headers, true);
-        expect(result).toBeFalsy();
-        expect(headers).toHaveLength(2);
-        expect(headers.find((x) => x.name === 'test_name')).toBeDefined();
+        let result = modifier.getApplicableHeaderName(true);
+        expect(result).toBeNull();
 
         modifier = new RemoveHeaderModifier('request:test_name', false);
 
-        result = modifier.apply(headers, true);
-        expect(result).toBeTruthy();
-        expect(headers).toHaveLength(1);
-        expect(headers.find((x) => x.name === 'test_name')).not.toBeDefined();
+        result = modifier.getApplicableHeaderName(true);
+        expect(result).toBe('test_name');
     });
 
     it('respects forbidden headers', () => {
         const modifier = new RemoveHeaderModifier('origin', false);
 
-        const result = modifier.apply(headers, false);
-        expect(result).toBeFalsy();
-        expect(headers).toHaveLength(2);
-        expect(headers.find((x) => x.name === 'origin')).toBeDefined();
+        const result = modifier.getApplicableHeaderName(false);
+        expect(result).toBeNull();
     });
 });

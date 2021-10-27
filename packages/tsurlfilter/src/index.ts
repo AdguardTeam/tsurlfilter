@@ -18,8 +18,6 @@ export * from './rules/rule-converter';
 export * from './rules/rule-factory';
 export * from './rules/simple-regex';
 export * from './rules/declarative-converter/declarative-converter';
-export * from './stealth/stealth-service';
-export * from './headers-filtering/headers-service';
 export * from './utils/logger';
 export * from './utils/rule-validator';
 export * from './utils/url';

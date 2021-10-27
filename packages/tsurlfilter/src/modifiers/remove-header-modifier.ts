@@ -1,7 +1,4 @@
-import { WebRequest } from 'webextension-polyfill';
 import { IAdvancedModifier } from './advanced-modifier';
-import { removeHeader } from '../utils/headers';
-import HttpHeaders = WebRequest.HttpHeaders;
 
 /**
  * Headers filtering modifier class.
@@ -110,21 +107,20 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     }
 
     /**
-     * Applies modifier to headers collection
+     * Returns effective header name to be removed
      *
-     * @param headers
      * @param isRequestHeaders
      */
-    public apply(headers: HttpHeaders, isRequestHeaders: boolean): boolean {
+    public getApplicableHeaderName(isRequestHeaders: boolean): string | null {
         if (!this.applicableHeaderName) {
-            return false;
+            return null;
         }
 
         if (isRequestHeaders !== this.isRequestModifier) {
-            return false;
+            return null;
         }
 
-        return removeHeader(headers, this.applicableHeaderName);
+        return this.applicableHeaderName;
     }
 
     /**
