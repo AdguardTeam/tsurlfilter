@@ -13,6 +13,7 @@ export * from './request';
 export * from './request-type';
 export * from './rules/cosmetic-rule';
 export * from './rules/network-rule';
+export * from './rules/host-rule';
 export * from './rules/rule';
 export * from './rules/rule-converter';
 export * from './rules/rule-factory';
