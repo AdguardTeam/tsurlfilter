@@ -1,8 +1,10 @@
-import { NetworkRule } from '@adguard/tsurlfilter/dist/types';
+import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import browser, { Tabs } from 'webextension-polyfill';
 import { Frame, TabContext } from './tab-context';
 
-import { EventChannel } from '../utils';
+import { EventChannel, getDomain } from '../utils';
+import { engineApi } from '../engine-api';
+import { MAIN_FRAME_ID } from '.';
 export interface TabsApiInterface {
     start: () => Promise<void>
     stop: () => void;
@@ -15,6 +17,12 @@ export interface TabsApiInterface {
     setTabFrame: (tabId: number, frameId: number, frameData: Frame) => void
     getTabFrame: (tabId: number, frameId: number) => Frame | null
     getTabMainFrame: (tabId: number) => Frame | null
+    recordRequestFrame: (
+        tabId: number,
+        frameId: number,
+        referrerUrl: string,
+        requestType: RequestType
+    ) => void
 
     onCreate: EventChannel
     onUpdate: EventChannel
@@ -34,16 +42,13 @@ export class TabsApi implements TabsApiInterface {
         this.createTabContext = this.createTabContext.bind(this);
         this.updateTabContextData = this.updateTabContextData.bind(this);
         this.deleteTabContext = this.deleteTabContext.bind(this);
-
-        this.getTabContext =  this.getTabContext.bind(this);
-
+        this.getTabContext = this.getTabContext.bind(this);
         this.setTabFrameRule = this.setTabFrameRule.bind(this);
         this.getTabFrameRule = this.getTabFrameRule.bind(this);
-    
         this.setTabFrame = this.setTabFrame.bind(this);
         this.getTabFrame = this.getTabFrame.bind(this);
         this.getTabMainFrame = this.getTabMainFrame.bind(this);
-        this.getTabFrame = this.getTabFrame.bind(this);
+        this.recordRequestFrame = this.recordRequestFrame.bind(this);
     }
 
     public async start() {
@@ -66,7 +71,7 @@ export class TabsApi implements TabsApiInterface {
         const tabContext = this.context.get(tabId);
 
         if (tabContext) {
-            tabContext.frameRule = frameRule;
+            tabContext.metadata.frameRule = frameRule;
             this.onUpdate.dispatch(tabContext);
         }
     }
@@ -78,7 +83,7 @@ export class TabsApi implements TabsApiInterface {
             return null;
         }
 
-        const frameRule = tabContext.frameRule;
+        const frameRule = tabContext.metadata.frameRule;
 
         if (!frameRule) {
             return null;
@@ -87,7 +92,8 @@ export class TabsApi implements TabsApiInterface {
         return frameRule;
     }
 
-    public setTabFrame(tabId: number, frameId: number, frameData: Frame){
+
+    public setTabFrame(tabId: number, frameId: number, frameData: Frame) {
         const tabContext = this.context.get(tabId);
 
         if (tabContext) {
@@ -96,7 +102,7 @@ export class TabsApi implements TabsApiInterface {
         }
     }
 
-    public getTabFrame(tabId: number, frameId: number){
+    public getTabFrame(tabId: number, frameId: number) {
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
@@ -112,8 +118,29 @@ export class TabsApi implements TabsApiInterface {
         return frame;
     }
 
-    public getTabMainFrame(tabId: number){
+    public getTabMainFrame(tabId: number) {
         return this.getTabFrame(tabId, 0);
+    }
+
+    public recordRequestFrame(
+        tabId: number, 
+        frameId: number, 
+        referrerUrl: string, 
+        requestType: RequestType
+    ) {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        if (requestType === RequestType.Document) {
+            tabContext.reloadTabFrameData(referrerUrl);
+        }else{
+            tabContext.frames.set(frameId, {
+                url: referrerUrl
+            })
+        } 
     }
 
     public getTabContext(tabId: number): TabContext | undefined {

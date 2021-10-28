@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
@@ -42,34 +42,35 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+        const requestDetails = getExtendedRequestDetails(details);
+
         const {
             url,
             referrerUrl,
             requestType,
             tabId,
-        } = getExtendedRequestDetails(details);
+            frameId,
+        } = requestDetails
 
         if (isOwnUrl(referrerUrl)
             || !isHttpOrWsRequest(url)) {
             return;
         }
 
-        let frameRule: NetworkRule | null = null;
-
-        if (requestType === RequestType.Document) {
-            frameRule = engineApi.matchFrame(url);
-            if (frameRule) {
-                tabsApi.setTabFrameRule(tabId, frameRule);
-            }
-        } else {
-            frameRule = tabsApi.getTabFrameRule(tabId);
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument){
+            tabsApi.recordRequestFrame(
+                tabId,
+                frameId,
+                referrerUrl,
+                requestType
+            );
         }
 
         const result = engineApi.matchRequest({
             requestUrl: url,
-            frameUrl: referrerUrl || url,
+            frameUrl: referrerUrl,
             requestType,
-            frameRule,
+            frameRule: tabsApi.getTabFrameRule(tabId),
         });
 
         if (!result) {

@@ -1,7 +1,7 @@
-import { RequestType } from '@adguard/tsurlfilter'
+import { RequestType, isThirdPartyRequest } from '@adguard/tsurlfilter'
 import { WebRequest } from 'webextension-polyfill'
 import { ContentType, resourceToRequestTypeDataMap } from './request-type'
-import { tabsApi } from './tabs';
+import { getDomain } from './utils';
 
 export interface ExtendedDetailsData {
     /**
@@ -12,7 +12,7 @@ export interface ExtendedDetailsData {
     /**
      * The origin where the request was initiated
      */
-    referrerUrl?: string;
+    referrerUrl: string;
 
     /**
      * Content type {@link ContentType}
@@ -24,6 +24,11 @@ export interface ExtendedDetailsData {
      */
     requestType: RequestType;
 
+    /**
+     * Indicates if this request and its content window hierarchy is third party.
+     */
+    thirdParty: boolean;
+
 }
 
 export type RequestDetailsType =
@@ -33,45 +38,48 @@ export type RequestDetailsType =
     | WebRequest.OnBeforeRequestDetailsType;
 
 export const getExtendedRequestDetails = <T extends RequestDetailsType>(details: T): T & ExtendedDetailsData => {
+
+    const {
+        type,
+        frameId,
+        parentFrameId,
+        originUrl,
+        initiator
+    } = details;
+
+    let { url } = details;
     /**
      * FF sends http instead of ws protocol at the http-listeners layer
      * Although this is expected, as the Upgrade request is indeed an HTTP request,
      * we use a chromium based approach in this case.
      */
-    if (details.type === 'websocket' && details.url.indexOf('http') === 0) {
-        details.url = details.url.replace(/^http(s)?:/, 'ws$1:');
+    if (type === 'websocket' && url.indexOf('http') === 0) {
+        url = url.replace(/^http(s)?:/, 'ws$1:');
     }
 
-    const { requestType, contentType } = resourceToRequestTypeDataMap[details.type];
+    const { requestType, contentType } = resourceToRequestTypeDataMap[type];
 
-    let requestFrameId = details.type === 'main_frame'
-        ? details.frameId
-        : details.parentFrameId;
+    let requestFrameId = type === 'main_frame'
+        ? frameId
+        : parentFrameId;
 
     // Relate request to main_frame
     if (requestFrameId === -1) {
         requestFrameId = 0;
     }
 
-    let referrerUrl = details.originUrl
-        || details.initiator
-        || getReferrerUrl(details.tabId, details.frameId);
+    let referrerUrl = originUrl 
+    || initiator
+    || getDomain(url)
+    || url
+
+    const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
     return Object.assign(details, {
         requestFrameId,
         referrerUrl,
         requestType,
-        contentType
+        contentType,
+        thirdParty,
     });
 }
-/**
- * get referrer url from frame data
- */
-const getReferrerUrl = (tabId: number, frameId: number): string | undefined => {
-    const { getTabFrame, getTabMainFrame } = tabsApi;
-    let frame = getTabFrame(tabId, frameId) || getTabMainFrame(tabId);
-
-    return frame?.url;
-}
-
-
