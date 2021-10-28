@@ -68,10 +68,10 @@ export const getExtendedRequestDetails = <T extends RequestDetailsType>(details:
         requestFrameId = 0;
     }
 
-    let referrerUrl = originUrl 
-    || initiator
-    || getDomain(url)
-    || url
+    let referrerUrl = originUrl
+        || initiator
+        || getDomain(url)
+        || url
 
     const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
