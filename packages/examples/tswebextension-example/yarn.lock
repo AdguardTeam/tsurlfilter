@@ -11,9 +11,9 @@
     js-yaml "^3.13.1"
 
 "@adguard/tsurlfilter@^0.7.22":
-  version "0.7.32"
-  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.32.tgz#2922a0a5074da7f7b1d8b6a9cd529db313b26746"
-  integrity sha512-giYHQbAsRC3YQDq/7KrRq1tzkJs6fJcefYn7yqk2mcSOTtKLbkZ49rTP2lDFPPpPXbqaxXIa8HQ/TjqL9q30/g==
+  version "0.7.33"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.33.tgz#324cf1c46c4bcc194b15ccc6c63822ab3a02bdb1"
+  integrity sha512-TrrmgcUiB5RJkyG8lwG9IPhzhb7/raTUdwGC18onRiQ2zJ0trvz2IOY99fcLIL45dlphRYQomkl7l/7VD8G1HA==
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
     "@types/ip6addr" "^0.2.3"
@@ -206,17 +206,17 @@ sprintf-js@~1.0.2:
   version "0.7.0"
   resolved "git+https://github.com/AdguardTeam/text-encoding.git#80dbd7df2b17858e8e9e2da00e9134d4ca63d8ad"
 
-tldts-core@^5.7.49:
-  version "5.7.49"
-  resolved "https://registry.yarnpkg.com/tldts-core/-/tldts-core-5.7.49.tgz#258d8f68e17fc36dcb383141469235b5ae4b0945"
-  integrity sha512-ZwUJwp6gUnhCwH6K2xC5YJLnnzKrLrfIsGr9lWZH3DWwGmMVdWzOn4ZVBpTa8StP+H9Dxtk4UJYFiHtFL/qU3Q==
+tldts-core@^5.7.50:
+  version "5.7.50"
+  resolved "https://registry.yarnpkg.com/tldts-core/-/tldts-core-5.7.50.tgz#7fd8a441d90ad61cd4b07214ed7d383583f6676a"
+  integrity sha512-CzJuiqovI5lMoijDVzT6aVZ713EdJPA7Wd0CtDtw4dElLuaYN8kzxtb2w43j60ViQZpoe9cn+EXdswsA+FXZdA==
 
 tldts@^5.6.45:
-  version "5.7.49"
-  resolved "https://registry.yarnpkg.com/tldts/-/tldts-5.7.49.tgz#b2d31ad64f71e564c26d4cd8b54c411b89294a63"
-  integrity sha512-AAS/2F3WiNrlD+PcSGiQzTui0BgsYDAxX/+jz8HB3EeyGjvz/y1LPpny8nCH9qt47sQQtAha5SiH7IIU7kVhzg==
+  version "5.7.50"
+  resolved "https://registry.yarnpkg.com/tldts/-/tldts-5.7.50.tgz#6d31f2b84a23f0210e04fc87f0c700ea7162ad66"
+  integrity sha512-7GUz1Jt0CLqAO1fXAQid79gwN93JR6MEkrFljjKwz1zU5W0swejI5a0qk6thxOjjx6YFWebXpkM/ZXFgur69aw==
   dependencies:
-    tldts-core "^5.7.49"
+    tldts-core "^5.7.50"
 
 verror@1.10.0:
   version "1.10.0"

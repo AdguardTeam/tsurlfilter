@@ -5,7 +5,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest } from './utils';
-import { getExtendedRequestDetails } from './request-details';
+import { preprocessRequestDetails } from './request-details';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -42,7 +42,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
-        const requestDetails = getExtendedRequestDetails(details);
+        const requestDetails = preprocessRequestDetails(details);
 
         const {
             url,
@@ -50,7 +50,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             requestType,
             tabId,
             frameId,
-        } = requestDetails
+        } = requestDetails;
 
         if (isOwnUrl(referrerUrl)
             || !isHttpOrWsRequest(url)) {
@@ -62,7 +62,7 @@ export class WebRequestApi implements WebRequestApiInterface {
                 tabId,
                 frameId,
                 referrerUrl,
-                requestType
+                requestType,
             );
         }
 

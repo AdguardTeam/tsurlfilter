@@ -2,22 +2,22 @@ import { RequestType } from '@adguard/tsurlfilter';
 import { WebRequest } from 'webextension-polyfill';
 
 export const enum ContentType {
-     DOCUMENT = 'DOCUMENT',
-     SUBDOCUMENT = 'SUBDOCUMENT',
-     SCRIPT = 'SCRIPT',
-     STYLESHEET = 'STYLESHEET',
-     OBJECT = 'OBJECT',
-     IMAGE = 'IMAGE',
-     XMLHTTPREQUEST = 'XMLHTTPREQUEST',
-     MEDIA = 'MEDIA',
-     FONT ='FONT',
-     WEBSOCKET = 'WEBSOCKET',
-     WEBRTC = 'WEBRTC',
-     OTHER = 'OTHER',
-     CSP ='CSP',
-     COOKIE = 'COOKIE',
-     PING = 'PING',
-     CSP_REPORT = 'CSP_REPORT',
+    DOCUMENT = 'DOCUMENT',
+    SUBDOCUMENT = 'SUBDOCUMENT',
+    SCRIPT = 'SCRIPT',
+    STYLESHEET = 'STYLESHEET',
+    OBJECT = 'OBJECT',
+    IMAGE = 'IMAGE',
+    XMLHTTPREQUEST = 'XMLHTTPREQUEST',
+    MEDIA = 'MEDIA',
+    FONT = 'FONT',
+    WEBSOCKET = 'WEBSOCKET',
+    WEBRTC = 'WEBRTC',
+    OTHER = 'OTHER',
+    CSP = 'CSP',
+    COOKIE = 'COOKIE',
+    PING = 'PING',
+    CSP_REPORT = 'CSP_REPORT',
 }
 
 export interface RequestTypeData {
@@ -56,7 +56,7 @@ export const resourceToRequestTypeDataMap: Record<WebRequest.ResourceType, Reque
     },
     xmlhttprequest: {
         contentType: ContentType.XMLHTTPREQUEST,
-        requestType: RequestType.XmlHttpRequest
+        requestType: RequestType.XmlHttpRequest,
     },
     xslt: {
         contentType: ContentType.OTHER,
@@ -64,11 +64,11 @@ export const resourceToRequestTypeDataMap: Record<WebRequest.ResourceType, Reque
     },
     ping: {
         contentType: ContentType.PING,
-        requestType: RequestType.Ping
+        requestType: RequestType.Ping,
     },
     beacon: {
         contentType: ContentType.PING,
-        requestType: RequestType.Ping
+        requestType: RequestType.Ping,
     },
     xml_dtd: {
         contentType: ContentType.OTHER,
@@ -80,11 +80,11 @@ export const resourceToRequestTypeDataMap: Record<WebRequest.ResourceType, Reque
     },
     media: {
         contentType: ContentType.MEDIA,
-        requestType: RequestType.Media
+        requestType: RequestType.Media,
     },
     websocket: {
         contentType: ContentType.WEBSOCKET,
-        requestType: RequestType.Websocket
+        requestType: RequestType.Websocket,
     },
     csp_report: {
         contentType: ContentType.CSP_REPORT,
@@ -100,10 +100,10 @@ export const resourceToRequestTypeDataMap: Record<WebRequest.ResourceType, Reque
     },
     speculative: {
         contentType: ContentType.OTHER,
-        requestType: RequestType.Other
+        requestType: RequestType.Other,
     },
     other: {
         contentType: ContentType.OTHER,
-        requestType: RequestType.Other
+        requestType: RequestType.Other,
     },
-}
+};

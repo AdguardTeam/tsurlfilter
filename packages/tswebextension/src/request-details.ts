@@ -1,6 +1,6 @@
-import { RequestType, isThirdPartyRequest } from '@adguard/tsurlfilter'
-import { WebRequest } from 'webextension-polyfill'
-import { ContentType, resourceToRequestTypeDataMap } from './request-type'
+import { RequestType, isThirdPartyRequest } from '@adguard/tsurlfilter';
+import { WebRequest } from 'webextension-polyfill';
+import { ContentType, resourceToRequestTypeDataMap } from './request-type';
 import { getDomain } from './utils';
 
 export interface ExtendedDetailsData {
@@ -37,17 +37,28 @@ export type RequestDetailsType =
     | WebRequest.OnHeadersReceivedDetailsType
     | WebRequest.OnBeforeRequestDetailsType;
 
-export const getExtendedRequestDetails = <T extends RequestDetailsType>(details: T): T & ExtendedDetailsData => {
+export const MAX_URL_LENGTH = 1024 * 16;
+
+export const preprocessRequestDetails = <T extends RequestDetailsType>(details: T): T & ExtendedDetailsData => {
 
     const {
         type,
         frameId,
         parentFrameId,
         originUrl,
-        initiator
+        initiator,
     } = details;
 
     let { url } = details;
+
+    /**
+     * truncate too long urls
+     * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493
+     */
+    if (url.length > MAX_URL_LENGTH) {
+        url = url.slice(0, MAX_URL_LENGTH);
+    } 
+        
     /**
      * FF sends http instead of ws protocol at the http-listeners layer
      * Although this is expected, as the Upgrade request is indeed an HTTP request,
@@ -68,10 +79,10 @@ export const getExtendedRequestDetails = <T extends RequestDetailsType>(details:
         requestFrameId = 0;
     }
 
-    let referrerUrl = originUrl
+    const referrerUrl = originUrl
         || initiator
         || getDomain(url)
-        || url
+        || url;
 
     const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
@@ -82,4 +93,4 @@ export const getExtendedRequestDetails = <T extends RequestDetailsType>(details:
         contentType,
         thirdParty,
     });
-}
+};

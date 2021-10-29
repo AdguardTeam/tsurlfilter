@@ -2,44 +2,44 @@ import { z } from 'zod';
 
 export const configurationValidator = z.object({
     /**
-   * Specifies filter lists that will be used to filter content.
-   * filterId should uniquely identify the filter so that the API user
-   * may match it with the source lists in the filtering log callbacks.
-   * content is a string with the full filter list content. The API will
-   * parse it into a list of individual rules.
-   */
+     * Specifies filter lists that will be used to filter content.
+     * filterId should uniquely identify the filter so that the API user
+     * may match it with the source lists in the filtering log callbacks.
+     * content is a string with the full filter list content. The API will
+     * parse it into a list of individual rules.
+     */
     filters: z.object({
         filterId: z.number(),
         content: z.string(),
     }).array(),
 
     /**
-   * List of domain names of sites, which should be excluded from blocking
-   * or which should be included in blocking depending on the value of
-   * allowlistInverted setting value
-   */
+     * List of domain names of sites, which should be excluded from blocking
+     * or which should be included in blocking depending on the value of
+     * allowlistInverted setting value
+     */
     allowlist: z.string().array(),
 
     /**
-   * List of rules added by user
-   */
+     * List of rules added by user
+     */
     userrules: z.string().array(),
 
     /**
-   * Flag responsible for logging
-   */
+     * Flag responsible for logging
+     */
     verbose: z.boolean(),
 
 
     settings: z.object({
-    /**
-     * Flag specifying if ads for sites would be blocked or allowed
-     */
+        /**
+         * Flag specifying if ads for sites would be blocked or allowed
+         */
         allowlistInverted: z.boolean(),
 
         /**
-     * Enables css hits counter if true
-     */
+         * Enables css hits counter if true
+         */
         collectStats: z.boolean(),
 
         stealth: z.object({

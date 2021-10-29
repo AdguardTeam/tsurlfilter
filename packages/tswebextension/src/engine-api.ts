@@ -12,6 +12,7 @@ import {
     getHost,
     CosmeticOption,
 } from '@adguard/tsurlfilter';
+import { listeners } from 'process';
 
 import { Configuration } from './configuration';
 
@@ -48,6 +49,10 @@ export interface EngineApiInterface {
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
+const ALLOWLIST_FILTER_ID = 100;
+
+const USER_FILTER_ID = 0;
+
 /**
  * TSUrlFilter Engine wrapper
  */
@@ -55,7 +60,7 @@ export class EngineApi implements EngineApiInterface {
     private engine: Engine | undefined;
 
     public async startEngine(configuration: Configuration): Promise<void> {
-        const { filters, userrules, verbose } = configuration;
+        const { filters, userrules, allowlist, verbose, settings } = configuration;
 
         const lists: StringRuleList[] = [];
 
@@ -64,8 +69,17 @@ export class EngineApi implements EngineApiInterface {
             lists.push(new StringRuleList(filterId, content));
         }
 
+        if(allowlist.length > 0){
+            lists.push(new StringRuleList(
+                ALLOWLIST_FILTER_ID, 
+                allowlist.map((domain) => {
+                    return (settings.allowlistInverted ? '' : '@@') + `//${domain}$document`
+                }).join('\n'))
+            )
+        }
+
         if (userrules.length > 0) {
-            lists.push(new StringRuleList(0, userrules.join('\n')));
+            lists.push(new StringRuleList(USER_FILTER_ID, userrules.join('\n')));
         }
 
         const ruleStorage = new RuleStorage(lists);

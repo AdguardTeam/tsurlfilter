@@ -4,10 +4,10 @@ import { engineApi } from '../engine-api';
 import { getDomain } from '../utils';
 
 export interface Frame {
-    url: string
+    url: string;
 }
 export interface TabMetadata {
-    frameRule?: NetworkRule | null,
+    frameRule?: NetworkRule | null
     previousUrl?: string
 }
 export interface TabContextInterface {
@@ -29,7 +29,7 @@ export class TabContext implements TabContextInterface {
 
     constructor(info: Tabs.Tab) {
         this.updateTabInfo = this.updateTabInfo.bind(this);
-        this.reloadTabFrameData = this.reloadTabFrameData.bind(this)
+        this.reloadTabFrameData = this.reloadTabFrameData.bind(this);
 
         this.info = info;
 
@@ -42,7 +42,7 @@ export class TabContext implements TabContextInterface {
         this.info = Object.assign(this.info, changeInfo);
 
         if (changeInfo.url) {
-            this.reloadTabFrameData(changeInfo.url)
+            this.reloadTabFrameData(changeInfo.url);
         }
     }
 
@@ -51,12 +51,14 @@ export class TabContext implements TabContextInterface {
 
         const url = getDomain(frameUrl) || frameUrl;
 
-        this.frames.clear();
-        this.frames.set(MAIN_FRAME_ID, { url });
-
-        this.metadata = {
-            frameRule: engineApi.matchFrame(frameUrl),
-            previousUrl
+        if(previousUrl !== url){
+            this.frames.clear();
+            this.frames.set(MAIN_FRAME_ID, { url });
+    
+            this.metadata = {
+                frameRule: engineApi.matchFrame(url),
+                previousUrl,
+            };
         }
     }
 }

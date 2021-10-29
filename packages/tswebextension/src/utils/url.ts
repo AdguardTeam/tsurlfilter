@@ -6,8 +6,8 @@ import browser from 'webextension-polyfill';
  * (e.g. request for filter downloading)
  * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1437
  */
-export const isOwnUrl = (referrerUrl?: string): boolean => {
-    return referrerUrl?.indexOf(browser.runtime.getURL('')) === 0;
+export const isOwnUrl = (referrerUrl: string): boolean => {
+    return referrerUrl.indexOf(browser.runtime.getURL('')) === 0;
 };
 
 export const isHttpOrWsRequest = (url: string): boolean => {
@@ -35,7 +35,7 @@ export const getDomain = (url: string): string | undefined => {
     const nextSlashIdx = url.indexOf('/', firstIdx + 2);
     const startParamsIdx = url.indexOf('?', firstIdx + 2);
 
-    const lastIdx = startParamsIdx < nextSlashIdx ? startParamsIdx : nextSlashIdx
+    const lastIdx = startParamsIdx < nextSlashIdx ? startParamsIdx : nextSlashIdx;
 
     return lastIdx !== -1 ? url.slice(0, lastIdx) : url;
-}
+};
