@@ -60,6 +60,43 @@ describe('Cookie rules - lookup rules', () => {
         expect(rule).not.toBeNull();
     });
 
+    it('looks up blocking rules - cookie specific allowlist', () => {
+        let rule = CookieRulesFinder.lookupNotModifyingRule('pick', [
+            new NetworkRule('$cookie=pick', 0),
+            new NetworkRule('@@||example.org^$cookie=pick', 0),
+        ], true);
+        expect(rule).not.toBeNull();
+        expect(rule!.isAllowlist()).toBeTruthy();
+
+        rule = CookieRulesFinder.lookupNotModifyingRule('pick', [
+            new NetworkRule('example.org$cookie=/pick|pack/', 0),
+            new NetworkRule('@@||example.org^$cookie=pick', 0),
+        ], true);
+        expect(rule).not.toBeNull();
+        expect(rule!.isAllowlist()).toBeTruthy();
+
+        rule = CookieRulesFinder.lookupNotModifyingRule('pick', [
+            new NetworkRule('example.org$cookie=/pick|pack/', 0),
+            new NetworkRule('@@||example.org^$cookie=/pick|other/', 0),
+        ], true);
+        expect(rule).not.toBeNull();
+        expect(rule!.isAllowlist()).toBeTruthy();
+
+        rule = CookieRulesFinder.lookupNotModifyingRule('pack', [
+            new NetworkRule('example.org$cookie=/pick|pack/', 0),
+            new NetworkRule('@@||example.org^$cookie=/pick|other/', 0),
+        ], true);
+        expect(rule).not.toBeNull();
+        expect(rule!.isAllowlist()).not.toBeTruthy();
+
+        rule = CookieRulesFinder.lookupNotModifyingRule('other', [
+            new NetworkRule('example.org$cookie=/pick|pack/', 0),
+            new NetworkRule('@@||example.org^$cookie=/pick|other/', 0),
+        ], true);
+        expect(rule).not.toBeNull();
+        expect(rule!.isAllowlist()).toBeTruthy();
+    });
+
     it('looks up modifying rules', () => {
         let rules = CookieRulesFinder.lookupModifyingRules('test', [
             new NetworkRule('$cookie=test', 0),
@@ -70,5 +107,15 @@ describe('Cookie rules - lookup rules', () => {
             new NetworkRule('$cookie=test;maxAge=15;sameSite=lax', 0),
         ], false);
         expect(rules).toHaveLength(1);
+    });
+
+    it('looks up modifying rules - cookie specific allowlist', () => {
+        const rule = CookieRulesFinder.lookupModifyingRules('pick', [
+            new NetworkRule('$cookie=pick;maxAge=15;sameSite=lax', 0),
+            new NetworkRule('@@||example.org^$cookie=pick', 0),
+        ], false);
+        expect(rule).not.toBeNull();
+        expect(rule).toHaveLength(1);
+        expect(rule[0].isAllowlist()).toBeTruthy();
     });
 });

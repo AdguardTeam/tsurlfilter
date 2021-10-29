@@ -452,8 +452,8 @@ export class MatchingResult {
             }
         );
 
-        return MatchingResult.filterAdvancedModifierRules(this.cookieRules,
-            allowlistPredicate);
+        const filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
+        return filtered.concat([...this.cookieRules.filter((r) => r.isAllowlist())] );
     }
 
     /**

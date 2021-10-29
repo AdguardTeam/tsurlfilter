@@ -8,13 +8,14 @@ export default class CookieController {
     /**
      * On rule applied callback
      */
-    private readonly onRuleAppliedCallback: (
-        cookieName: string,
-        cookieValue: string,
-        cookieDomain: string,
-        cookieRuleText: string,
-        thirdParty: boolean,
-        filterId: number) => void;
+    private readonly onRuleAppliedCallback: (data: {
+        cookieName: string;
+        cookieValue: string;
+        cookieDomain: string;
+        cookieRuleText: string;
+        thirdParty: boolean;
+        filterId: number;
+    }) => void;
 
     /**
      * Is current context third-party
@@ -26,13 +27,14 @@ export default class CookieController {
      *
      * @param callback
      */
-    constructor(callback: (
-        cookieName: string,
-        cookieValue: string,
-        cookieDomain: string,
-        cookieRuleText: string,
-        thirdParty: boolean,
-        filterId: number) => void) {
+    constructor(callback: (data: {
+        cookieName: string;
+        cookieValue: string;
+        cookieDomain: string;
+        cookieRuleText: string;
+        thirdParty: boolean;
+        filterId: number;
+    }) => void) {
         this.onRuleAppliedCallback = callback;
 
         this.isThirdPartyContext = this.isThirdPartyFrame();
@@ -49,6 +51,7 @@ export default class CookieController {
             match: string;
             isThirdParty: boolean;
             filterId: number;
+            isAllowlist: boolean;
         }[],
     ): void {
         this.applyRules(rules);
@@ -117,6 +120,7 @@ export default class CookieController {
             match: string;
             isThirdParty: boolean;
             filterId: number;
+            isAllowlist: boolean;
         }[],
     ): void {
         document.cookie.split(';').forEach((cookieStr) => {
@@ -127,9 +131,33 @@ export default class CookieController {
 
             const cookieName = cookieStr.slice(0, pos).trim();
             const cookieValue = cookieStr.slice(pos + 1).trim();
-            rules.forEach((rule) => {
-                this.applyRule(rule, cookieName, cookieValue);
+
+            const matchingRules = rules.filter((r) => {
+                if (this.isThirdPartyContext !== r.isThirdParty) {
+                    return false;
+                }
+
+                const regex = r.match ? CookieController.toRegExp(r.match) : CookieController.toRegExp('/.?/');
+                return regex.test(cookieName);
             });
+
+            const importantRules = matchingRules.filter((r) => r.ruleText.includes('important'));
+            if (importantRules.length > 0) {
+                importantRules.forEach((rule) => {
+                    this.applyRule(rule, cookieName, cookieValue);
+                });
+            } else {
+                const allowlistRules = matchingRules.filter((r) => r.isAllowlist);
+                if (allowlistRules.length > 0) {
+                    allowlistRules.forEach((rule) => {
+                        this.applyRule(rule, cookieName, cookieValue);
+                    });
+                } else {
+                    matchingRules.forEach((rule) => {
+                        this.applyRule(rule, cookieName, cookieValue);
+                    });
+                }
+            }
         });
     }
 
@@ -141,34 +169,28 @@ export default class CookieController {
      * @param cookieValue
      */
     private applyRule(
-        rule: { ruleText: string; match: string; isThirdParty: boolean; filterId: number },
+        rule: { ruleText: string; match: string; isThirdParty: boolean; filterId: number; isAllowlist: boolean; },
         cookieName: string,
         cookieValue: string,
     ): void {
-        if (this.isThirdPartyContext !== rule.isThirdParty) {
-            return;
-        }
-
-        const regex = rule.match ? CookieController.toRegExp(rule.match) : CookieController.toRegExp('/.?/');
-        if (!regex.test(cookieName)) {
-            return;
-        }
-
-        const hostParts = document.location.hostname.split('.');
-        for (let i = 0; i <= hostParts.length - 1; i += 1) {
-            const hostName = hostParts.slice(i).join('.');
-            if (hostName) {
-                CookieController.removeCookieFromHost(cookieName, hostName);
+        if (!rule.isAllowlist) {
+            const hostParts = document.location.hostname.split('.');
+            for (let i = 0; i <= hostParts.length - 1; i += 1) {
+                const hostName = hostParts.slice(i).join('.');
+                if (hostName) {
+                    CookieController.removeCookieFromHost(cookieName, hostName);
+                }
             }
         }
 
-        this.onRuleAppliedCallback(
+        this.onRuleAppliedCallback({
             cookieName,
             cookieValue,
-            document.location.hostname,
-            rule.ruleText,
-            rule.isThirdParty,
-            rule.filterId,
+            cookieDomain: document.location.hostname,
+            cookieRuleText: rule.ruleText,
+            thirdParty: rule.isThirdParty,
+            filterId: rule.filterId,
+        },
         );
     }
 

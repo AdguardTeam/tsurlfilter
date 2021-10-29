@@ -103,6 +103,52 @@ describe('Cookie filtering', () => {
         }));
     });
 
+    it('checks cookie specific allowlist rule', async () => {
+        const cookieRule = new NetworkRule('$cookie=/pick|other/,domain=example.org|other.com', 1);
+        const allowlistRule = new NetworkRule('@@||example.org^$cookie=pick', 1);
+        const rules = [
+            cookieRule,
+            allowlistRule,
+        ];
+
+        const requestHeaders = createTestHeaders([{
+            name: 'Cookie',
+            value: 'pick=test_value',
+        }]);
+
+        await runCase(rules, requestHeaders);
+        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+            cookieDomain: 'example.org',
+            cookieName: 'pick',
+            cookieRule: allowlistRule,
+            isModifyingCookieRule: false,
+            thirdParty: false,
+        }));
+    });
+
+    it('checks cookie specific allowlist regex rule', async () => {
+        const cookieRule = new NetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
+        const allowlistRule = new NetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);
+        const rules = [
+            cookieRule,
+            allowlistRule,
+        ];
+
+        const requestHeaders = createTestHeaders([{
+            name: 'Cookie',
+            value: 'pick=test_value',
+        }]);
+
+        await runCase(rules, requestHeaders);
+        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
+            cookieDomain: 'example.org',
+            cookieName: 'pick',
+            cookieRule: allowlistRule,
+            isModifyingCookieRule: false,
+            thirdParty: false,
+        }));
+    });
+
     it('checks modifying rule - max age', async () => {
         const cookieRule = new NetworkRule('||example.org^$cookie=c_user;maxAge=15', 1);
         const rules = [

@@ -404,7 +404,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(rules.length - 1);
+        expect(cookieRules).toHaveLength(3);
         expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
         expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
     });
@@ -420,7 +420,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(rules.length - 2);
+        expect(cookieRules).toHaveLength(4);
         expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
         expect(cookieRules[1].getText()).toBe(cookieRuleAllowlistTextTwo);
     });
@@ -437,7 +437,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules).toHaveLength(4);
         expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistText);
     });
 
@@ -452,7 +452,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(2);
+        expect(cookieRules).toHaveLength(4);
         expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
         expect(cookieRules[1].getText()).toBe(cookieRuleAllowlistRegexpText);
     });
@@ -478,7 +478,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules).toHaveLength(2);
         expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
     });
 
@@ -492,7 +492,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules).toHaveLength(2);
         expect(cookieRules[0].getText()).toBe(allowlistRuleText);
     });
 
@@ -505,7 +505,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules).toHaveLength(2);
         expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
     });
 
@@ -518,7 +518,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules).toHaveLength(2);
         expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
     });
 
@@ -531,7 +531,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
 
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
-        expect(cookieRules).toHaveLength(1);
+        expect(cookieRules).toHaveLength(2);
         expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
     });
 });
