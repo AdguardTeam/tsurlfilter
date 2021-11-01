@@ -73,8 +73,8 @@
     ]
   },
   "dependencies": {
-    "@adguard/tsurlfilter": "^0.7.22",
+    "@adguard/tsurlfilter": "^0.7.33",
     "webextension-polyfill": "^0.8.0",
-    "zod": "^3.9.8"
+    "zod": "^3.11.6"
   }
 }

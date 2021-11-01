@@ -73,6 +73,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             frameRule: tabsApi.getTabFrameRule(tabId),
         });
 
+
         if (!result) {
             return;
         }
@@ -92,7 +93,13 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
-        // TODO: implement
+        // TODO: implement css injection
+
+        /**
+         *  const { result } = requestContextStorage.get(details.requestId)
+         *  const cosmeticOptions = result.getCosmeticOption();
+         *  cosmeticResult = engineApi.getCosmeticResult(referrerUrl, cosmeticOptions))
+         */
         return;
     }
 

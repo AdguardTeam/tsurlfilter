@@ -4,6 +4,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
+const CONTENT_SCRIPT = path.resolve(__dirname, '../../extension/pages/content-script');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 
 export const config = {
@@ -11,6 +12,7 @@ export const config = {
     devtool: 'eval-source-map',
     entry: {
         background: BACKGROUND_PATH,
+        'content-script': CONTENT_SCRIPT,
     },
     output: {
         path: BUILD_PATH,

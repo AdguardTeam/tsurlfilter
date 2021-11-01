@@ -2,39 +2,20 @@
 # yarn lockfile v1
 
 
-"@adguard/scriptlets@^1.4.4":
-  version "1.4.4"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.4.4.tgz#959cef45458ec01e7d89360a90b0e9bd31db20da"
-  integrity sha512-ZH4yzIAqlTA4HNtZQHipPbRmXWcNBtgKP/N1GbKe2hjskPc742iA0AHn01ko0rfcUe4tmT6Ua0IHKJKHpymLng==
+"@adguard/scriptlets@^1.4.26":
+  version "1.4.26"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.4.26.tgz#0976ce0b2b6059d68155684e44605667ed162fdb"
+  integrity sha512-8+LHDlCKsdDZTibbHHaQP4l6llLs/WtTO9JnZgUgLFNF4TmunohYZ1NvP6+gUi4sdsB4v75IpdVlTBZn0vL2jQ==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/tsurlfilter@^0.7.22":
-  version "0.7.33"
-  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.33.tgz#324cf1c46c4bcc194b15ccc6c63822ab3a02bdb1"
-  integrity sha512-TrrmgcUiB5RJkyG8lwG9IPhzhb7/raTUdwGC18onRiQ2zJ0trvz2IOY99fcLIL45dlphRYQomkl7l/7VD8G1HA==
+"@adguard/tsurlfilter@^0.7.33":
+  version "0.7.34"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.34.tgz#7a219353b9b90a47396b7b37872aa8794a06c7f6"
+  integrity sha512-Hxvujdb44+TRk8WnvjpWk0dB7jz1MflCoBJxH2hbVIS2afAqLyY7fOewebjSQZYUE3OSVMkjRqq5Tqq2pNs23A==
   dependencies:
-    "@adguard/scriptlets" "^1.4.4"
-    "@types/ip6addr" "^0.2.3"
-    "@types/netmask" "^1.0.30"
-    "@types/punycode" "^2.1.0"
-    consola "^2.12.2"
-    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13"
-    ip6addr "^0.2.3"
-    is-cidr "^4.0.2"
-    is-ip "^3.1.0"
-    lru_map "^0.4.1"
-    netmask "^2.0.2"
-    punycode "^2.1.1"
-    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1"
-    tldts "^5.6.45"
-    webextension-polyfill "^0.8.0"
-
-"@adguard/tsurlfilter@file:../../tsurlfilter":
-  version "0.7.24"
-  dependencies:
-    "@adguard/scriptlets" "^1.4.4"
+    "@adguard/scriptlets" "^1.4.26"
     "@types/ip6addr" "^0.2.3"
     "@types/netmask" "^1.0.30"
     "@types/punycode" "^2.1.0"
@@ -53,14 +34,14 @@
 "@adguard/tswebextension@file:../../tswebextension":
   version "0.0.1"
   dependencies:
-    "@adguard/tsurlfilter" "^0.7.22"
+    "@adguard/tsurlfilter" "^0.7.33"
     webextension-polyfill "^0.8.0"
-    zod "^3.9.8"
+    zod "^3.11.6"
 
 "@babel/runtime@^7.13.10", "@babel/runtime@^7.7.2":
-  version "7.15.4"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.15.4.tgz#fd17d16bfdf878e6dd02d19753a39fa8a8d9c84a"
-  integrity sha512-99catp6bHCaxr4sJ/DbTGgHS4+Rs2RVd2g7iOap6SLGPDknRK9ztKNsE/Fg6QhSeh1FGE5f6gHGQmvvn3I3xhw==
+  version "7.16.0"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.16.0.tgz#e27b977f2e2088ba24748bf99b5e1dece64e4f0b"
+  integrity sha512-Nht8L0O8YCktmsDV6FqFue7vQLRx3Hb0B37lS5y0jDRqRxlBG4wIJHnf9/bgSE2UyipKFA01YtS+npRdTWBUyw==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -232,7 +213,7 @@ webextension-polyfill@^0.8.0:
   resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.8.0.tgz#f80e9f4b7f81820c420abd6ffbebfa838c60e041"
   integrity sha512-a19+DzlT6Kp9/UI+mF9XQopeZ+n2ussjhxHJ4/pmIGge9ijCDz7Gn93mNnjpZAk95T4Tae8iHZ6sSf869txqiQ==
 
-zod@^3.9.8:
+zod@^3.11.6:
   version "3.11.6"
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.11.6.tgz#e43a5e0c213ae2e02aefe7cb2b1a6fa3d7f1f483"
   integrity sha512-daZ80A81I3/9lIydI44motWe6n59kRBfNzTuS2bfzVh1nAXi667TOTWWtatxyG+fwgNUiagSj/CWZwRRbevJIg==

@@ -10,10 +10,10 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/tsurlfilter@^0.7.22":
-  version "0.7.26"
-  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.26.tgz#04156a9f6e6fde1c76f838f367dff2358d74dcd9"
-  integrity sha512-TNZX3s1SOMZHmcqit8o/JRPTHRiUssz1Ute9Ps6kzbHo9VV+WPydaf2sorE5NMpb7iwmdXVK/0czXnStBgMuGQ==
+"@adguard/tsurlfilter@^0.7.33":
+  version "0.7.33"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.33.tgz#324cf1c46c4bcc194b15ccc6c63822ab3a02bdb1"
+  integrity sha512-TrrmgcUiB5RJkyG8lwG9IPhzhb7/raTUdwGC18onRiQ2zJ0trvz2IOY99fcLIL45dlphRYQomkl7l/7VD8G1HA==
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
     "@types/ip6addr" "^0.2.3"
@@ -151,11 +151,6 @@ jsprim@^1.4.0:
     json-schema "0.2.3"
     verror "1.10.0"
 
-lodash.merge@^4.6.2:
-  version "4.6.2"
-  resolved "https://registry.yarnpkg.com/lodash.merge/-/lodash.merge-4.6.2.tgz#558aa53b43b661e1925a0afdfa36a9a1085fe57a"
-  integrity sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==
-
 lru_map@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/lru_map/-/lru_map-0.4.1.tgz#f7b4046283c79fb7370c36f8fca6aee4324b0a98"
@@ -211,7 +206,7 @@ webextension-polyfill@^0.8.0:
   resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.8.0.tgz#f80e9f4b7f81820c420abd6ffbebfa838c60e041"
   integrity sha512-a19+DzlT6Kp9/UI+mF9XQopeZ+n2ussjhxHJ4/pmIGge9ijCDz7Gn93mNnjpZAk95T4Tae8iHZ6sSf869txqiQ==
 
-zod@^3.9.8:
-  version "3.10.3"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-3.10.3.tgz#8ddcc95a52d5960251953362d3700f55dacb5969"
-  integrity sha512-ngMXcA/TNXnlXWAmAdH98U6rV5W0K8wNASafMIYUuOrBfwtO7LyPXaOi/riRZns1qfWuE1lHr7gt9N4rmyYFlQ==
+zod@^3.11.6:
+  version "3.11.6"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.11.6.tgz#e43a5e0c213ae2e02aefe7cb2b1a6fa3d7f1f483"
+  integrity sha512-daZ80A81I3/9lIydI44motWe6n59kRBfNzTuS2bfzVh1nAXi667TOTWWtatxyG+fwgNUiagSj/CWZwRRbevJIg==
