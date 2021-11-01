@@ -108,7 +108,7 @@ export class RuleConverter {
     public static convertRules(rulesText: string, conversionOptions = {} as ConversionOptions): string {
         const result = [];
 
-        const lines = rulesText.split('\n');
+        const lines = rulesText.split(/[\r\n]+/);
         for (const line of lines) {
             try {
                 result.push(...RuleConverter.convertRule(line, conversionOptions));

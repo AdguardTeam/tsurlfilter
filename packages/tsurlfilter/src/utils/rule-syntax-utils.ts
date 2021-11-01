@@ -1,4 +1,4 @@
-import { parse } from 'tldts';
+import { getHostname } from 'tldts';
 
 import { RuleFactory } from '../rules/rule-factory';
 import { NetworkRule } from '../rules/network-rule';
@@ -31,7 +31,7 @@ export class RuleSyntaxUtils {
      * @param url
      */
     public static isRuleForUrl(ruleText: string, url: string): boolean {
-        const { domain } = parse(url);
+        const domain = getHostname(url);
 
         if (!domain) {
             return false;

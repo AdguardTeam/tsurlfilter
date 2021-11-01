@@ -559,6 +559,9 @@ This class applies cookie rules in page context
         return {
             ruleText: rule.getText(),
             match: rule.getAdvancedModifierValue(),
+            isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
+            filterId: rule.getFilterListId();
+            isAllowlist: rule.isAllowlist(),
         };
     });
 

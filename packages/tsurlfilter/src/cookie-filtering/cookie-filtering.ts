@@ -6,7 +6,6 @@ import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { CookieModifier } from '../modifiers/cookie-modifier';
-import { RequestType } from '../request-type';
 import { findHeaderByName } from '../utils/headers';
 import { logger } from '../utils/logger';
 import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
@@ -200,7 +199,6 @@ export class CookieFiltering {
                     cookieName: cookie.name,
                     cookieValue: cookie.value,
                     cookieDomain: cookie.domain,
-                    requestType: RequestType.Document,
                     cookieRule: bRule,
                     isModifyingCookieRule: false,
                     thirdParty: isThirdPartyCookie,
@@ -222,7 +220,6 @@ export class CookieFiltering {
                             cookieName: cookie.name,
                             cookieValue: cookie.value,
                             cookieDomain: cookie.domain,
-                            requestType: RequestType.Document,
                             cookieRule: r,
                             isModifyingCookieRule: true,
                             thirdParty: isThirdPartyCookie,

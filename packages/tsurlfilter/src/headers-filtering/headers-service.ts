@@ -5,6 +5,7 @@ import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
+import { removeHeader } from '../utils/headers';
 
 /**
  * Headers filtering service module
@@ -94,6 +95,11 @@ export class HeadersService {
             return false;
         }
 
-        return modifier.apply(headers, isRequestHeaders);
+        const headerName = modifier.getApplicableHeaderName(isRequestHeaders);
+        if (!headerName) {
+            return false;
+        }
+
+        return removeHeader(headers, headerName);
     }
 }

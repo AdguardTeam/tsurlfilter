@@ -29,6 +29,9 @@ export default class CookieRulesFinder {
         rules: NetworkRule[],
         isThirdPartyCookie: boolean,
     ): NetworkRule | null {
+        const blockingRules: NetworkRule[] = [];
+        const allowlistRules: NetworkRule[] = [];
+
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
             if (!CookieRulesFinder.matchThirdParty(rule, isThirdPartyCookie)) {
@@ -37,8 +40,20 @@ export default class CookieRulesFinder {
 
             const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
             if (cookieModifier.matches(cookieName) && !CookieRulesFinder.isModifyingRule(rule)) {
-                return rule;
+                if (rule.isAllowlist()) {
+                    allowlistRules.push(rule);
+                } else {
+                    blockingRules.push(rule);
+                }
             }
+        }
+
+        if (allowlistRules.length > 0) {
+            return allowlistRules[0];
+        }
+
+        if (blockingRules.length > 0) {
+            return blockingRules[0];
         }
 
         return null;
@@ -57,7 +72,9 @@ export default class CookieRulesFinder {
         rules: NetworkRule[],
         isThirdPartyCookie: boolean,
     ): NetworkRule[] {
-        const result = [];
+        const result: NetworkRule[] = [];
+        const allowlistRules: NetworkRule[] = [];
+
         if (rules && rules.length > 0) {
             for (let i = 0; i < rules.length; i += 1) {
                 const rule = rules[i];
@@ -70,13 +87,22 @@ export default class CookieRulesFinder {
                     continue;
                 }
 
-                if (!CookieRulesFinder.isModifyingRule(rule)) {
+                if (!rule.isAllowlist() && !CookieRulesFinder.isModifyingRule(rule)) {
                     return [];
                 }
 
-                result.push(rule);
+                if (rule.isAllowlist()) {
+                    allowlistRules.push(rule);
+                } else {
+                    result.push(rule);
+                }
             }
         }
+
+        if (allowlistRules.length > 0) {
+            return allowlistRules;
+        }
+
         return result;
     }
 
