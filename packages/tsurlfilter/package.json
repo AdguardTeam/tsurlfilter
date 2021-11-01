@@ -79,7 +79,7 @@
     ]
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.4.4",
+    "@adguard/scriptlets": "^1.4.26",
     "@types/ip6addr": "^0.2.3",
     "@types/netmask": "^1.0.30",
     "@types/punycode": "^2.1.0",
