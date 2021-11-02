@@ -33,6 +33,14 @@ describe('General', () => {
         expect(rules).toHaveLength(2);
         expect(rules[0]).toBe(domain0);
         expect(rules[1]).toBe(domain1);
+
+        rulesText = `${domain0}\n \n${domain1}`;
+        converted = RuleConverter.convertRules(rulesText);
+        rules = converted.split('\n');
+        expect(rules).toHaveLength(3);
+        expect(rules[0]).toBe(domain0);
+        expect(rules[1]).toBe('');
+        expect(rules[2]).toBe(domain1);
     });
 
     it('works if ubo script tag rules are converted properly', () => {
