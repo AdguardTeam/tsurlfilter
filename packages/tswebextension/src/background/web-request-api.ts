@@ -6,7 +6,6 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
 import { preprocessRequestDetails } from './request-details';
-import { messagesApi } from './messages-api';
 import { cosmeticApi } from './cosmetic-api';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -109,7 +108,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         const { url, tabId, frameId } = details;
 
 
-        const frame = tabsApi.getTabFrame(tabId, frameId)
+        const frame = tabsApi.getTabFrame(tabId, frameId);
 
         const referrerUrl = frame?.url || getDomain(url) || url;
 

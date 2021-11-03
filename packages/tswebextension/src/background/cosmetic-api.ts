@@ -35,7 +35,7 @@ export class CosmeticApi implements CosmeticApiInterface {
             return;
         }
 
-        const code = buildScriptText(scriptText)
+        const code = buildScriptText(scriptText);
 
         browser.tabs.executeScript(tabId, { code });
     }
@@ -73,7 +73,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         
         const injectDetails = {
             code: styleText,
-            runAt: "document_start"
+            runAt: 'document_start',
         } as ExtensionTypes.InjectDetails;
     
         browser.tabs.insertCSS(tabId, injectDetails);

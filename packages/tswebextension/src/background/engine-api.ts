@@ -12,7 +12,6 @@ import {
     getHost,
     CosmeticOption,
 } from '@adguard/tsurlfilter';
-import { listeners } from 'process';
 
 import { Configuration } from './configuration';
 
@@ -73,13 +72,13 @@ export class EngineApi implements EngineApiInterface {
             lists.push(new StringRuleList(USER_FILTER_ID, userrules.join('\n')));
         }
 
-        if(allowlist.length > 0){
+        if (allowlist.length > 0){
             lists.push(new StringRuleList(
                 ALLOWLIST_FILTER_ID, 
                 allowlist.map((domain) => {
-                    return (settings.allowlistInverted ? '' : '@@') + `//${domain}$document`
-                }).join('\n'))
-            )
+                    return (settings.allowlistInverted ? '' : '@@') + `//${domain}$document`;
+                }).join('\n')),
+            );
         }
 
         const ruleStorage = new RuleStorage(lists);

@@ -51,7 +51,7 @@ export class TabContext implements TabContextInterface {
 
         const url = getDomain(frameUrl) || frameUrl;
 
-        if(previousUrl !== url){
+        if (previousUrl !== url){
             this.frames.clear();
             this.frames.set(MAIN_FRAME_ID, { url });
     

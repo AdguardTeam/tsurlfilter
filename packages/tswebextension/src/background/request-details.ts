@@ -1,5 +1,5 @@
 import { RequestType, isThirdPartyRequest } from '@adguard/tsurlfilter';
-import { WebRequest, WebNavigation } from 'webextension-polyfill';
+import { WebRequest } from 'webextension-polyfill';
 import { ContentType, resourceToRequestTypeDataMap } from './request-type';
 import { getDomain } from './utils';
 

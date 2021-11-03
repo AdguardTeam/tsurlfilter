@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill'
+import browser from 'webextension-polyfill';
 
 export interface MessagesApiInterface {
     start: () => void;
@@ -13,11 +13,11 @@ export class MessagesApi {
     }
 
     public start(): void {
-        browser.runtime.onMessage.addListener(this.handleMessage)
+        browser.runtime.onMessage.addListener(this.handleMessage);
     }
 
     public stop(): void {
-        browser.runtime.onMessage.removeListener(this.handleMessage)
+        browser.runtime.onMessage.removeListener(this.handleMessage);
     }
 
     public sendMessage(tabId: number, message: unknown){
@@ -25,7 +25,7 @@ export class MessagesApi {
     }
 
     private handleMessage(message: unknown){
-        console.log('handle message:', message)
+        console.log('handle message:', message);
     }
 }
 

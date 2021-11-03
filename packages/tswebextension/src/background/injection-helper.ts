@@ -110,5 +110,5 @@ export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
 
             console.debug('Extended css applied');
         })();
-    `
-}
+    `;
+};
