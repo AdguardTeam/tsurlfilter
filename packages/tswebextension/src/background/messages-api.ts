@@ -1,11 +1,13 @@
 import browser from 'webextension-polyfill'
 
-export interface MessageHandlerInterface {
+export interface MessagesApiInterface {
     start: () => void;
     stop: () => void;
+    sendMessage: (tabId: number, message: unknown) => void;
 }
 
-export class MessageHandler {
+export class MessagesApi {
+
     constructor() {
         this.handleMessage = this.handleMessage.bind(this);
     }
@@ -18,9 +20,13 @@ export class MessageHandler {
         browser.runtime.onMessage.removeListener(this.handleMessage)
     }
 
+    public sendMessage(tabId: number, message: unknown){
+        browser.tabs.sendMessage(tabId, message);
+    }
+
     private handleMessage(message: unknown){
         console.log('handle message:', message)
     }
 }
 
-export const messageHandler = new MessageHandler();
+export const messagesApi = new MessagesApi();

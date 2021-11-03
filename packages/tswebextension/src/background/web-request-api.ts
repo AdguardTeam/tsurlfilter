@@ -4,8 +4,10 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
-import { isOwnUrl, isHttpOrWsRequest } from './utils';
+import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
 import { preprocessRequestDetails } from './request-details';
+import { messagesApi } from './messages-api';
+import { cosmeticApi } from './cosmetic-api';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -57,7 +59,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             return;
         }
 
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument){
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
             tabsApi.recordRequestFrame(
                 tabId,
                 frameId,
@@ -93,13 +95,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
-        // TODO: implement css injection
-
-        /**
-         *  const { result } = requestContextStorage.get(details.requestId)
-         *  const cosmeticOptions = result.getCosmeticOption();
-         *  cosmeticResult = engineApi.getCosmeticResult(referrerUrl, cosmeticOptions))
-         */
+        // TODO: implement
         return;
     }
 
@@ -110,7 +106,33 @@ export class WebRequestApi implements WebRequestApiInterface {
 
 
     private onCommittedCheckFrameUrl(details: WebNavigation.OnCommittedDetailsType): void {
-        // TODO: implement
+        const { url, tabId, frameId } = details;
+
+
+        const frame = tabsApi.getTabFrame(tabId, frameId)
+
+        const referrerUrl = frame?.url || getDomain(url) || url;
+
+        const result = engineApi.matchRequest({
+            requestUrl: url,
+            frameUrl: referrerUrl,
+            requestType: RequestType.Document,
+            frameRule: tabsApi.getTabFrameRule(tabId),
+        });
+
+        if (!result) {
+            return;
+        }
+
+
+        const cosmeticOptions = result.getCosmeticOption();
+        const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOptions);
+
+        console.debug(cosmeticResult);
+
+        cosmeticApi.applyCss(tabId, cosmeticResult);
+        cosmeticApi.applyScripts(tabId, cosmeticResult);
+
         return;
     }
 

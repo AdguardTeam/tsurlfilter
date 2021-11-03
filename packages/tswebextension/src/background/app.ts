@@ -4,7 +4,7 @@ import { configurationValidator, Configuration } from './configuration';
 import { webRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
-import { messageHandler } from './message-handler';
+import { messagesApi } from './messages-api';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 
@@ -116,13 +116,11 @@ export class TsWebExtension implements TsWebExtensionInterface {
         await tabsApi.start();
         await engineApi.startEngine(configuration);
         webRequestApi.start();
-        messageHandler.start();
 
         this.isStarted = true;
     }
 
     public async stop(): Promise<void> {
-        messageHandler.stop();
         webRequestApi.stop();
         tabsApi.stop();
         this.isStarted = false;

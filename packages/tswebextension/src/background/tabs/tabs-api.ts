@@ -3,7 +3,7 @@ import browser, { Tabs } from 'webextension-polyfill';
 import { Frame, TabContext } from './tab-context';
 
 import { EventChannel } from '../utils';
-import { MAIN_FRAME_ID } from '.';
+
 export interface TabsApiInterface {
     start: () => Promise<void>
     stop: () => void

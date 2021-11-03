@@ -69,6 +69,10 @@ export class EngineApi implements EngineApiInterface {
             lists.push(new StringRuleList(filterId, content));
         }
 
+        if (userrules.length > 0) {
+            lists.push(new StringRuleList(USER_FILTER_ID, userrules.join('\n')));
+        }
+
         if(allowlist.length > 0){
             lists.push(new StringRuleList(
                 ALLOWLIST_FILTER_ID, 
@@ -76,10 +80,6 @@ export class EngineApi implements EngineApiInterface {
                     return (settings.allowlistInverted ? '' : '@@') + `//${domain}$document`
                 }).join('\n'))
             )
-        }
-
-        if (userrules.length > 0) {
-            lists.push(new StringRuleList(USER_FILTER_ID, userrules.join('\n')));
         }
 
         const ruleStorage = new RuleStorage(lists);
