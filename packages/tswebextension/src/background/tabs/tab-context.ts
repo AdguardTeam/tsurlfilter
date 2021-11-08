@@ -2,12 +2,10 @@ import { Tabs } from 'webextension-polyfill';
 import { NetworkRule } from '@adguard/tsurlfilter';
 import { engineApi } from '../engine-api';
 import { getDomain } from '../utils';
+import { Frame } from './frame';
 
-export interface Frame {
-    url: string;
-}
 export interface TabMetadata {
-    frameRule?: NetworkRule | null
+    mainFrameRule?: NetworkRule | null
     previousUrl?: string
 }
 export interface TabContextInterface {
@@ -53,10 +51,10 @@ export class TabContext implements TabContextInterface {
 
         if (previousUrl !== url){
             this.frames.clear();
-            this.frames.set(MAIN_FRAME_ID, { url });
+            this.frames.set(MAIN_FRAME_ID, new Frame({ url }));
     
             this.metadata = {
-                frameRule: engineApi.matchFrame(url),
+                mainFrameRule: engineApi.matchFrame(url),
                 previousUrl,
             };
         }

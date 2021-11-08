@@ -1,6 +1,7 @@
 import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import browser, { Tabs } from 'webextension-polyfill';
-import { Frame, TabContext } from './tab-context';
+import { TabContext } from './tab-context';
+import { Frame } from './frame'
 
 import { EventChannel } from '../utils';
 
@@ -70,7 +71,7 @@ export class TabsApi implements TabsApiInterface {
         const tabContext = this.context.get(tabId);
 
         if (tabContext) {
-            tabContext.metadata.frameRule = frameRule;
+            tabContext.metadata.mainFrameRule = frameRule;
             this.onUpdate.dispatch(tabContext);
         }
     }
@@ -82,7 +83,7 @@ export class TabsApi implements TabsApiInterface {
             return null;
         }
 
-        const frameRule = tabContext.metadata.frameRule;
+        const frameRule = tabContext.metadata.mainFrameRule;
 
         if (!frameRule) {
             return null;
@@ -136,9 +137,9 @@ export class TabsApi implements TabsApiInterface {
         if (requestType === RequestType.Document) {
             tabContext.reloadTabFrameData(referrerUrl);
         } else {
-            tabContext.frames.set(frameId, {
+            tabContext.frames.set(frameId, new Frame({
                 url: referrerUrl,
-            });
+            }));
         } 
     }
 

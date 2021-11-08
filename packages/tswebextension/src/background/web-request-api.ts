@@ -58,7 +58,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             return;
         }
 
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+        if (this.isFrameRequest(requestType)) {
             tabsApi.recordRequestFrame(
                 tabId,
                 frameId,
@@ -94,7 +94,53 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
-        // TODO: implement
+        const requestDetails = preprocessRequestDetails(details);
+
+        const {
+            url,
+            referrerUrl,
+            requestType,
+            tabId,
+            frameId,
+        } = requestDetails;
+
+        if (isOwnUrl(referrerUrl)
+            || !isHttpOrWsRequest(url)) {
+            return;
+        }
+
+        const result = engineApi.matchRequest({
+            requestUrl: url,
+            frameUrl: referrerUrl,
+            requestType,
+            frameRule: tabsApi.getTabFrameRule(tabId),
+        });
+
+
+        if (!result) {
+            return;
+        }
+
+        if(this.isFrameRequest(requestType)){
+            const cosmeticOptions = result.getCosmeticOption();
+            const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOptions);
+
+
+            const cssText = cosmeticApi.getCssText(cosmeticResult);
+            const extCssText = cosmeticApi.getExtCssText(cosmeticResult);
+            const jsScriptText = cosmeticApi.getScriptText(cosmeticResult);
+
+            const frame = tabsApi.getTabFrame(tabId, frameId);
+
+            if(frame){
+                frame.injection = {
+                    cssText,
+                    extCssText,
+                    jsScriptText,
+                }
+            }
+        }
+
         return;
     }
 
@@ -112,6 +158,11 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const referrerUrl = frame?.url || getDomain(url) || url;
 
+        if (isOwnUrl(referrerUrl)
+            || !isHttpOrWsRequest(url)) {
+            return;
+        }
+
         const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: referrerUrl,
@@ -123,14 +174,25 @@ export class WebRequestApi implements WebRequestApiInterface {
             return;
         }
 
+        if(frame?.injection){
+            const { 
+                cssText,
+                extCssText,
+                jsScriptText
+            } = frame.injection;
 
-        const cosmeticOptions = result.getCosmeticOption();
-        const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOptions);
+            if(cssText){
+                cosmeticApi.injectCss(tabId, cssText);
+            }
 
-        console.debug(cosmeticResult);
-
-        cosmeticApi.applyCss(tabId, cosmeticResult);
-        cosmeticApi.applyScripts(tabId, cosmeticResult);
+            if(extCssText){
+                cosmeticApi.injectExtCss(tabId, extCssText);
+            }
+            
+            if(jsScriptText){
+                cosmeticApi.injectScripts(tabId, jsScriptText);
+            }
+        }
 
         return;
     }
@@ -195,6 +257,10 @@ export class WebRequestApi implements WebRequestApiInterface {
 
     private initCommittedCheckFrameUrlEventListener(): void {
         browser.webNavigation.onCommitted.addListener(this.onCommittedCheckFrameUrl);
+    }
+
+    private isFrameRequest(requestType: RequestType): boolean {
+        return requestType === RequestType.Document || requestType === RequestType.Subdocument
     }
 
 }
