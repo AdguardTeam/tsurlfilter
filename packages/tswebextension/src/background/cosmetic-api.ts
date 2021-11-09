@@ -2,12 +2,13 @@ import browser, { ExtensionTypes } from 'webextension-polyfill';
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper.js';
+import { tabsApi } from './tabs/tabs-api.js';
 
 export interface CosmeticApiInterface {
     /**
      * Applies scripts from cosmetic result
      */
-    injectScripts: (tabId: number, scriptText: string) => void;
+    injectScript: (scriptText: string, tabId: number, frameId?: number) => void;
 
     /**
      * Applies css from cosmetic result
@@ -16,9 +17,9 @@ export interface CosmeticApiInterface {
      * Example:
      * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
      */
-    injectCss: (tabId: number, cssText: string) => void;
+    injectCss: (cssText: string, tabId: number, frameId?: number) => void;
 
-    injectExtCss: (tabId: number, extCssText: string) => void;
+    injectExtCss: (extCssText: string, tabId: number, frameId?: number) => void;
 
     getCssText: (cosmeticResult: CosmeticResult) => string | undefined;
 
@@ -30,26 +31,24 @@ export interface CosmeticApiInterface {
 
 export class CosmeticApi implements CosmeticApiInterface {
 
-    public injectScripts(tabId: number, scriptText: string): void {
-        const code = buildScriptText(scriptText);
+    private ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
 
-        browser.tabs.executeScript(tabId, { code });
-    }
+    private INJECT_HIT_START = " content: 'adguard";
 
+    private HIT_SEP = encodeURIComponent(';');
 
-    public injectCss(tabId: number, cssText: string): void {
-        const injectDetails = {
-            code: cssText,
-            runAt: 'document_start',
-        } as ExtensionTypes.InjectDetails;
+    private HIT_END = "' !important;}\r\n";
     
-        browser.tabs.insertCSS(tabId, injectDetails);
+    public injectScript(scriptText: string, tabId: number, frameId = 0): void {
+        tabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
     }
 
-    public injectExtCss(tabId: number, extCssText: string): void {
-        browser.tabs.executeScript(tabId, {
-            code: buildExtendedCssScriptText(extCssText),
-        });
+    public injectCss(cssText: string, tabId: number, frameId = 0): void {
+        tabsApi.injectCss(cssText, tabId, frameId);
+    }
+
+    public injectExtCss(extCssText: string, tabId: number, frameId = 0): void {
+        tabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
     }
 
     public getCssText(cosmeticResult: CosmeticResult, collectingCosmeticRulesHits = false): string | undefined {
@@ -66,7 +65,7 @@ export class CosmeticApi implements CosmeticApiInterface {
             styles = this.buildStyleSheet(elemhideCss, injectCss, true);
         }
 
-        if(styles.length > 0){
+        if (styles.length > 0){
             return styles.join('\n');
         }
             
@@ -87,7 +86,7 @@ export class CosmeticApi implements CosmeticApiInterface {
             extStyles = this.buildStyleSheet(elemhideExtCss, injectExtCss, false);
         }
 
-        if(extStyles.length > 0){
+        if (extStyles.length > 0){
             return extStyles.join('\n');
         }
 
@@ -114,9 +113,9 @@ export class CosmeticApi implements CosmeticApiInterface {
      * Builds stylesheet from rules
      */
     private buildStyleSheet(
-         elemhideRules: CosmeticRule[],
-         injectRules: CosmeticRule[], 
-         groupElemhideSelectors: boolean
+        elemhideRules: CosmeticRule[],
+        injectRules: CosmeticRule[], 
+        groupElemhideSelectors: boolean,
     ) {
         const CSS_SELECTORS_PER_LINE = 50;
         const ELEMHIDE_CSS_STYLE = ' { display: none!important; }\r\n';
@@ -155,12 +154,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         }
 
         return styles;
-    };
-
-    private ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
-    private INJECT_HIT_START = " content: 'adguard";
-    private HIT_SEP = encodeURIComponent(';');
-    private HIT_END = "' !important;}\r\n";
+    }
 
     /**
      * Urlencodes rule text.
@@ -189,7 +183,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         result.push(this.escapeRule(rule.getText()));
         result.push(this.HIT_END);
         return result.join('');
-    };
+    }
 
     /**
      * Patch rule selector adding adguard mark and rule info in the content attribute
@@ -219,14 +213,14 @@ export class CosmeticApi implements CosmeticApiInterface {
         result.push(this.HIT_END);
 
         return result.join('');
-    };
+    }
 
     /**
      * Builds stylesheet with css-hits marker
      */
     private buildStyleSheetWithHits = (
         elemhideRules: CosmeticRule[],
-        injectRules: CosmeticRule[]
+        injectRules: CosmeticRule[],
     ) => {
         const elemhideStyles = elemhideRules.map(x => this.addMarkerToElemhideRule(x));
         const injectStyles = injectRules.map(x => this.addMarkerToInjectRule(x));

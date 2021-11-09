@@ -1,7 +1,7 @@
 import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
-import browser, { Tabs } from 'webextension-polyfill';
+import browser, { ExtensionTypes, Tabs } from 'webextension-polyfill';
 import { TabContext } from './tab-context';
-import { Frame } from './frame'
+import { Frame } from './frame';
 
 import { EventChannel } from '../utils';
 
@@ -23,6 +23,9 @@ export interface TabsApiInterface {
         referrerUrl: string,
         requestType: RequestType
     ) => void
+
+    injectScript: (code: string, tabId: number, frameId?: number) => void
+    injectCss: (code: string, tabId: number, frameId?: number) => void
 
     onCreate: EventChannel
     onUpdate: EventChannel
@@ -49,6 +52,8 @@ export class TabsApi implements TabsApiInterface {
         this.getTabFrame = this.getTabFrame.bind(this);
         this.getTabMainFrame = this.getTabMainFrame.bind(this);
         this.recordRequestFrame = this.recordRequestFrame.bind(this);
+        this.injectScript = this.injectScript.bind(this);
+        this.injectCss = this.injectCss.bind(this);
     }
 
     public async start() {
@@ -145,6 +150,24 @@ export class TabsApi implements TabsApiInterface {
 
     public getTabContext(tabId: number): TabContext | undefined {
         return this.context.get(tabId);
+    }
+
+    public injectScript(code: string, tabId: number, frameId?: number): void{
+        const injectDetails = {
+            code,
+            frameId,
+        } as ExtensionTypes.InjectDetails;
+
+        browser.tabs.executeScript(tabId, injectDetails);
+    }
+
+    public injectCss(code: string, tabId: number, frameId?: number): void{
+        const injectDetails = {
+            code,
+            frameId,
+        } as ExtensionTypes.InjectDetails;
+    
+        browser.tabs.insertCSS(tabId, injectDetails);
     }
 
     private createTabContext(tab: Tabs.Tab): void {

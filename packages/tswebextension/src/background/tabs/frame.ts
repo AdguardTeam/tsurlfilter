@@ -11,6 +11,7 @@ export interface FrameData {
 
 export class Frame {
     url: string;
+
     injection: Injection | undefined;
 
     constructor(data: FrameData){

@@ -11,7 +11,7 @@ tsWebExtension.start({
     allowlist: ['example.com'],
     userrules: [
         'example.org##h1',
-        'example.org#%#alert(1);',
+        'example.org#%#console.log(1);',
         'example.org#?#a:contains(More information...)',
         'example.com##h1'
     ],

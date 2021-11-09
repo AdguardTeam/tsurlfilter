@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter';
+import { CosmeticOption, RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
@@ -22,8 +22,9 @@ export class WebRequestApi implements WebRequestApiInterface {
         this.onBeforeSendHeaders = this.onBeforeSendHeaders.bind(this);
         this.onHeadersReceived = this.onHeadersReceived.bind(this);
         this.handleCspReportRequests = this.handleCspReportRequests.bind(this);
+        this.onResponseStarted = this.onResponseStarted.bind(this);
+        this.onErrorOccurred = this.onErrorOccurred.bind(this);
         this.onCommittedCheckFrameUrl = this.onCommittedCheckFrameUrl.bind(this);
-
     }
 
     public start(): void {
@@ -31,6 +32,8 @@ export class WebRequestApi implements WebRequestApiInterface {
         this.initCspReportRequestsEventListener();
         this.initBeforeSendHeadersEventListener();
         this.initHeadersReceivedEventListener();
+        this.initOnResponseStarted();
+        this.initOnErrorOccurred();
         this.initCommittedCheckFrameUrlEventListener();
     }
 
@@ -39,6 +42,8 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webRequest.onBeforeRequest.removeListener(this.handleCspReportRequests);
         browser.webRequest.onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
         browser.webRequest.onHeadersReceived.removeListener(this.onHeadersReceived);
+        browser.webRequest.onErrorOccurred.removeListener(this.onErrorOccurred);
+        browser.webRequest.onResponseStarted.removeListener(this.onResponseStarted);
         browser.webNavigation.onCommitted.removeListener(this.onCommittedCheckFrameUrl);
     }
 
@@ -121,27 +126,28 @@ export class WebRequestApi implements WebRequestApiInterface {
             return;
         }
 
-        if(this.isFrameRequest(requestType)){
-            const cosmeticOptions = result.getCosmeticOption();
-            const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOptions);
-
-
-            const cssText = cosmeticApi.getCssText(cosmeticResult);
-            const extCssText = cosmeticApi.getExtCssText(cosmeticResult);
-            const jsScriptText = cosmeticApi.getScriptText(cosmeticResult);
-
-            const frame = tabsApi.getTabFrame(tabId, frameId);
-
-            if(frame){
-                frame.injection = {
-                    cssText,
-                    extCssText,
-                    jsScriptText,
-                }
-            }
+        if (this.isFrameRequest(requestType)){
+            const cosmeticOption = result.getCosmeticOption();
+            this.recordFrameInjection(referrerUrl, tabId, frameId, cosmeticOption);
         }
+    }
 
-        return;
+    private onResponseStarted(details: WebRequest.OnResponseStartedDetailsType): WebRequestEventResponse {
+        const { requestType, tabId, frameId } = preprocessRequestDetails(details);
+
+        if (requestType === RequestType.Document){
+            this.injectJsScriptOnResponseStarted(tabId, frameId);
+        }
+    }
+
+    private onErrorOccurred(details: WebRequest.OnErrorOccurredDetailsType): WebRequestEventResponse {
+        const { tabId, frameId } = details;
+
+        const frame = tabsApi.getTabFrame(tabId, frameId);
+
+        if (frame?.injection){
+            delete frame.injection;
+        }
     }
 
     private handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
@@ -151,50 +157,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
 
     private onCommittedCheckFrameUrl(details: WebNavigation.OnCommittedDetailsType): void {
-        const { url, tabId, frameId } = details;
-
-
-        const frame = tabsApi.getTabFrame(tabId, frameId);
-
-        const referrerUrl = frame?.url || getDomain(url) || url;
-
-        if (isOwnUrl(referrerUrl)
-            || !isHttpOrWsRequest(url)) {
-            return;
-        }
-
-        const result = engineApi.matchRequest({
-            requestUrl: url,
-            frameUrl: referrerUrl,
-            requestType: RequestType.Document,
-            frameRule: tabsApi.getTabFrameRule(tabId),
-        });
-
-        if (!result) {
-            return;
-        }
-
-        if(frame?.injection){
-            const { 
-                cssText,
-                extCssText,
-                jsScriptText
-            } = frame.injection;
-
-            if(cssText){
-                cosmeticApi.injectCss(tabId, cssText);
-            }
-
-            if(extCssText){
-                cosmeticApi.injectExtCss(tabId, extCssText);
-            }
-            
-            if(jsScriptText){
-                cosmeticApi.injectScripts(tabId, jsScriptText);
-            }
-        }
-
-        return;
+        this.injectCosmetic(details);
     }
 
 
@@ -255,14 +218,96 @@ export class WebRequestApi implements WebRequestApiInterface {
         );
     }
 
+    private initOnResponseStarted(): void {
+        const filter: WebRequest.RequestFilter = {
+            urls: ['<all_urls>'],
+        };
+
+        browser.webRequest.onResponseStarted.addListener(this.onResponseStarted, filter);
+    }
+
+    private initOnErrorOccurred(): void {
+        const filter: WebRequest.RequestFilter = {
+            urls: ['<all_urls>'],
+        };
+
+        browser.webRequest.onErrorOccurred.addListener(this.onErrorOccurred, filter);
+    }
+
     private initCommittedCheckFrameUrlEventListener(): void {
         browser.webNavigation.onCommitted.addListener(this.onCommittedCheckFrameUrl);
     }
 
     private isFrameRequest(requestType: RequestType): boolean {
-        return requestType === RequestType.Document || requestType === RequestType.Subdocument
+        return requestType === RequestType.Document || requestType === RequestType.Subdocument;
     }
 
+    private recordFrameInjection(
+        url: string,
+        tabId: number,
+        frameId: number,
+        cosmeticOption: CosmeticOption,
+    ): void {
+        const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOption);
+
+        const cssText = cosmeticApi.getCssText(cosmeticResult);
+        const extCssText = cosmeticApi.getExtCssText(cosmeticResult);
+        const jsScriptText = cosmeticApi.getScriptText(cosmeticResult);
+
+        const frame = tabsApi.getTabFrame(tabId, frameId);
+
+        if (frame){
+            frame.injection = {
+                cssText,
+                extCssText,
+                jsScriptText,
+            };
+        }
+    }
+
+    private injectJsScriptOnResponseStarted(tabId: number, frameId: number) {
+        const frame = tabsApi.getTabFrame(tabId, frameId);
+
+        if (frame?.injection?.jsScriptText) {
+            cosmeticApi.injectScript(frame.injection.jsScriptText, tabId, frameId);
+            delete frame.injection.jsScriptText;
+        }
+    }
+
+    private injectCosmetic(details: WebNavigation.OnCommittedDetailsType): void{
+        const { url, tabId, frameId } = details;
+
+        const frame = tabsApi.getTabFrame(tabId, frameId);
+
+        const referrerUrl = frame?.url || getDomain(url) || url;
+
+        if (isOwnUrl(referrerUrl)
+            || !isHttpOrWsRequest(url)) {
+            return;
+        }
+
+        if (frame?.injection){
+            const { 
+                cssText,
+                extCssText,
+                jsScriptText,
+            } = frame.injection;
+    
+            if (cssText){
+                cosmeticApi.injectCss(cssText, tabId, frameId);
+            }
+    
+            if (extCssText){
+                cosmeticApi.injectExtCss(extCssText, tabId, frameId);
+            }
+            
+            if (jsScriptText){
+                cosmeticApi.injectScript(jsScriptText, tabId, frameId);
+            }
+    
+            delete frame.injection;
+        }
+    }
 }
 
 

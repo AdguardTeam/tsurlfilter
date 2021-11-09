@@ -35,7 +35,8 @@ export type RequestDetailsType =
     | WebRequest.OnBeforeRequestDetailsType
     | WebRequest.OnBeforeSendHeadersDetailsType
     | WebRequest.OnHeadersReceivedDetailsType
-    | WebRequest.OnBeforeRequestDetailsType;
+    | WebRequest.OnBeforeRequestDetailsType
+    | WebRequest.OnResponseStartedDetailsType;
 
 export const MAX_URL_LENGTH = 1024 * 16;
 
