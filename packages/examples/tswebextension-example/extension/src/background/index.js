@@ -3,6 +3,8 @@ import { TsWebExtension } from "@adguard/tswebextension";
 
 const tsWebExtension = new TsWebExtension();
 
+tsWebExtension.initMessageHandler();
+
 tsWebExtension.start({
     filters: [
         { filterId: 1, content: 'example.org##h1\nexample.org#%#console.log(1);' },

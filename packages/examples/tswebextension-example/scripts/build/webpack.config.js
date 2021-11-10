@@ -5,6 +5,7 @@ import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const CONTENT_SCRIPT = path.resolve(__dirname, '../../extension/pages/content-script');
+const POPUP_PATH = path.resolve(__dirname, '../../extension/pages/popup');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 
 export const config = {
@@ -13,6 +14,7 @@ export const config = {
     entry: {
         background: BACKGROUND_PATH,
         'content-script': CONTENT_SCRIPT,
+        'pages/popup': POPUP_PATH,
     },
     output: {
         path: BUILD_PATH,
@@ -32,6 +34,10 @@ export const config = {
                     options: { babelrc: true },
                 }],
             },
+            {
+                test: /\.css$/,
+                use: ["style-loader", "css-loader"],
+            },
         ],
     },
     plugins: [
@@ -40,6 +46,12 @@ export const config = {
             template: path.join(BACKGROUND_PATH, 'index.html'),
             filename: 'background.html',
             chunks: ['background'],
+            cache: false,
+        }),
+        new HtmlWebpackPlugin({
+            template: path.join(POPUP_PATH, 'index.html'),
+            filename: 'pages/popup.html',
+            chunks: ['pages/popup'],
             cache: false,
         }),
         new CopyWebpackPlugin({
