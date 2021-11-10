@@ -73,6 +73,7 @@
     ]
   },
   "dependencies": {
+    "@adguard/scriptlets": "^1.4.26",
     "@adguard/tsurlfilter": "^0.7.33",
     "webextension-polyfill": "^0.8.0",
     "zod": "^3.11.6"

@@ -34,14 +34,15 @@
 "@adguard/tswebextension@file:../../tswebextension":
   version "0.0.1"
   dependencies:
+    "@adguard/scriptlets" "^1.4.26"
     "@adguard/tsurlfilter" "^0.7.33"
     webextension-polyfill "^0.8.0"
     zod "^3.11.6"
 
 "@babel/runtime@^7.13.10", "@babel/runtime@^7.7.2":
-  version "7.16.0"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.16.0.tgz#e27b977f2e2088ba24748bf99b5e1dece64e4f0b"
-  integrity sha512-Nht8L0O8YCktmsDV6FqFue7vQLRx3Hb0B37lS5y0jDRqRxlBG4wIJHnf9/bgSE2UyipKFA01YtS+npRdTWBUyw==
+  version "7.16.3"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.16.3.tgz#b86f0db02a04187a3c17caa77de69840165d42d5"
+  integrity sha512-WBwekcqacdY2e9AF/Q7WLFUWmdJGJTkbjqTjoMDgXkVZ3ZRUvOPsLb5KdwISoQVsbP+DQzVZW4Zhci0DvpbNTQ==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -187,17 +188,17 @@ sprintf-js@~1.0.2:
   version "0.7.0"
   resolved "git+https://github.com/AdguardTeam/text-encoding.git#80dbd7df2b17858e8e9e2da00e9134d4ca63d8ad"
 
-tldts-core@^5.7.51:
-  version "5.7.51"
-  resolved "https://registry.yarnpkg.com/tldts-core/-/tldts-core-5.7.51.tgz#c902ac103271ab37fd9083bedeca9e214dc95366"
-  integrity sha512-Hi0RIsTewymDfAPdtslX2I0pKgE39Bflv8JBby4l0Ehrrkp+/JtzgEn3//XeKGuvhbvL4gY805V1w1ks916FLQ==
+tldts-core@^5.7.52:
+  version "5.7.52"
+  resolved "https://registry.yarnpkg.com/tldts-core/-/tldts-core-5.7.52.tgz#9e5fa3ecc61bacf9320fc7c60efdd9d14fc6d915"
+  integrity sha512-xLa9sSdmSIec2kok76Fv68vvf58QZJFGEOan/pLsk9rrPfkfMZq7Vr03X0hPr8VCc09tcbfU6izXzRDl8oItYQ==
 
 tldts@^5.6.45:
-  version "5.7.51"
-  resolved "https://registry.yarnpkg.com/tldts/-/tldts-5.7.51.tgz#beb356e024583531f5887cc78eebc805c1564e14"
-  integrity sha512-mOvmO1Qe7J5iFuNjsMpcdUYxiZciz8tjCrjmhI3buUS8dJTCvkxwBDbn3zli/VJS+z1hyXCiqvOtNSDPhouspw==
+  version "5.7.52"
+  resolved "https://registry.yarnpkg.com/tldts/-/tldts-5.7.52.tgz#0d961c687f2f539b43a36f2ad7467d8e6d2f764e"
+  integrity sha512-0ddIYX/04P8qFVY0XYAlF7vJEef+nd+natGSnlasB8MRC4iZIz5HzX4G0Vm6jRItxEtWUuXo2+eeBLBtsZZgEQ==
   dependencies:
-    tldts-core "^5.7.51"
+    tldts-core "^5.7.52"
 
 verror@1.10.0:
   version "1.10.0"

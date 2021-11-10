@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { CosmeticOption, RequestType } from '@adguard/tsurlfilter';
+import { CosmeticOption, RequestType, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
 import { preprocessRequestDetails } from './request-details';
 import { cosmeticApi } from './cosmetic-api';
+import { redirectsApi } from './redirects-api';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -24,7 +25,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         this.handleCspReportRequests = this.handleCspReportRequests.bind(this);
         this.onResponseStarted = this.onResponseStarted.bind(this);
         this.onErrorOccurred = this.onErrorOccurred.bind(this);
-        this.onCommittedCheckFrameUrl = this.onCommittedCheckFrameUrl.bind(this);
+        this.onCommitted = this.onCommitted.bind(this);
     }
 
     public start(): void {
@@ -44,7 +45,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webRequest.onHeadersReceived.removeListener(this.onHeadersReceived);
         browser.webRequest.onErrorOccurred.removeListener(this.onErrorOccurred);
         browser.webRequest.onResponseStarted.removeListener(this.onResponseStarted);
-        browser.webNavigation.onCommitted.removeListener(this.onCommittedCheckFrameUrl);
+        browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
     private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
@@ -87,6 +88,13 @@ export class WebRequestApi implements WebRequestApiInterface {
         const basicResult = result.getBasicResult();
 
         if (basicResult && !basicResult.isAllowlist()) {
+            if (basicResult.isOptionEnabled(NetworkRuleOption.Redirect)) {
+                const redirectUrl = redirectsApi.createRedirectUrl(basicResult.getAdvancedModifierValue());
+                if (redirectUrl) {
+                    return { redirectUrl };
+                }
+            }
+
             return { cancel: true };
         }
 
@@ -156,7 +164,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
 
-    private onCommittedCheckFrameUrl(details: WebNavigation.OnCommittedDetailsType): void {
+    private onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
         this.injectCosmetic(details);
     }
 
@@ -235,7 +243,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private initCommittedCheckFrameUrlEventListener(): void {
-        browser.webNavigation.onCommitted.addListener(this.onCommittedCheckFrameUrl);
+        browser.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
     private isFrameRequest(requestType: RequestType): boolean {
@@ -270,7 +278,6 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         if (frame?.injection?.jsScriptText) {
             cosmeticApi.injectScript(frame.injection.jsScriptText, tabId, frameId);
-            delete frame.injection.jsScriptText;
         }
     }
 

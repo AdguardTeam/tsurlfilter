@@ -5,14 +5,14 @@ const tsWebExtension = new TsWebExtension();
 
 tsWebExtension.start({
     filters: [
-        { filterId: 1, content: '' },
+        { filterId: 1, content: 'example.org##h1\nexample.org#%#console.log(1);' },
         { filterId: 2, content: '' },
     ],
     allowlist: ['example.com'],
     userrules: [
-        'example.org##h1',
-        'example.org#%#console.log(1);',
+        `example.org#%#//scriptlet('log', 'arg1', 'arg2')`,
         'example.org#?#a:contains(More information...)',
+        '||meduza.io^$script,redirect=noopjs',
         'example.com##h1'
     ],
     verbose: false,

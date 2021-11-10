@@ -4,7 +4,8 @@ import { configurationValidator, Configuration } from './configuration';
 import { webRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
-import { messagesApi } from './messages-api';
+import { resourcesApi } from './resources-api';
+import { redirectsApi } from './redirects-api';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 
@@ -113,6 +114,8 @@ export class TsWebExtension implements TsWebExtensionInterface {
     public async start(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
+        resourcesApi.start();
+        await redirectsApi.start();
         await tabsApi.start();
         await engineApi.startEngine(configuration);
         webRequestApi.start();
@@ -123,6 +126,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
     public async stop(): Promise<void> {
         webRequestApi.stop();
         tabsApi.stop();
+        resourcesApi.stop();
         this.isStarted = false;
     }
 

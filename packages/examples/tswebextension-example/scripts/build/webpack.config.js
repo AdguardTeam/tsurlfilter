@@ -49,6 +49,11 @@ export const config = {
                     from: 'manifest.json',
                     to: 'manifest.json',
                 },
+                {
+                    context: 'extension',
+                    from: 'war',
+                    to: 'war',
+                },
             ],
         }),
     ],
