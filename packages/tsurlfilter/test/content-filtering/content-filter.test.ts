@@ -89,6 +89,24 @@ describe('Content filter', () => {
         expect(received).toBe(data);
     });
 
+    it('checks parsing charset from data - utf-8 - http-equiv', () => {
+        const data = 'Тест charset in data <meta content="text/html; charset=utf-8" http-equiv="content-type"/>';
+
+        const mockFilter = new MockStreamFilter();
+        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+
+        mockFilter.send(textEncoderUtf8.encode(data));
+        expect(onContentCallback).toHaveBeenCalled();
+        expect(onContentCallback).toHaveBeenLastCalledWith(data);
+
+        filter.write(data);
+
+        const received = textDecoderUtf8.decode(mockFilter.receive());
+
+        expect(received).not.toBeNull();
+        expect(received).toBe(data);
+    });
+
     it('checks parsing charset from data - win-1251', () => {
         const data = 'Тест charset in data <meta charset="windows-1251">';
 

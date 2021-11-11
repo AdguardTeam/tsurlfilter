@@ -180,6 +180,7 @@ export class ContentFilter {
      * Parses charset from data, looking for:
      * <meta charset="utf-8" />
      * <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+     * <meta content="text/html; charset=utf-8" http-equiv="Content-type" />
      *
      * @param data
      * @returns {*}
@@ -193,6 +194,12 @@ export class ContentFilter {
 
         // eslint-disable-next-line max-len
         match = /<meta\s*http-equiv\s*=\s*['"]?content-type['"]?\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]/.exec(decoded);
+        if (match && match.length > 1) {
+            return match[1].trim().toLowerCase();
+        }
+
+        // eslint-disable-next-line max-len
+        match = /<meta\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]\s*http-equiv\s*=\s*['"]?content-type['"]?/.exec(decoded);
         if (match && match.length > 1) {
             return match[1].trim().toLowerCase();
         }
