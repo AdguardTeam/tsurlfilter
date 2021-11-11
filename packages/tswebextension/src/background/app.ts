@@ -70,6 +70,17 @@ interface FilteringLogEvent {
 
 
 export interface TsWebExtensionInterface {
+
+    /**
+     * Is app started
+     */
+    isStarted: boolean;
+
+    /**
+     * Current Configuration object
+     */
+    configuration?: Configuration;
+
     /**
      * Starts api
      * @param configuration
@@ -109,7 +120,9 @@ export interface TsWebExtensionInterface {
 }
 
 export class TsWebExtension implements TsWebExtensionInterface {
-    private isStarted = false;
+
+    public isStarted = false;
+    public configuration: Configuration | undefined;
 
     public async start(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
@@ -121,6 +134,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         webRequestApi.start();
 
         this.isStarted = true;
+        this.configuration = configuration;
     }
 
     public async stop(): Promise<void> {
@@ -138,6 +152,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         }
 
         await engineApi.startEngine(configuration);
+        this.configuration = configuration;
     }
 
     public openAssistant(tabId: number): void {
