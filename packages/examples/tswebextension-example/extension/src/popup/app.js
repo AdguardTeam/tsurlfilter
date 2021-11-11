@@ -1,15 +1,48 @@
-import browser from 'webextension-polyfill'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Formik } from 'formik'
 
 import './app.css'
 
+const rulesArrayToText = arr => arr.join('\n')
+const rulesTextToArray = text => text.trim().split('\n').filter(el => el !== '')
+
 export function App() {
+    const [formValue, setFormValue] = useState({
+        userrules: "",
+        allowlist: "",
+    })
+
+    useEffect(() => {
+        chrome.runtime.sendMessage(JSON.stringify({
+            type: 'GET_CONFIG',
+        }), (response) => {
+            console.log(response)
+            const { userrules, allowlist } = response.payload
+
+            setFormValue({
+                userrules: rulesArrayToText(userrules),
+                allowlist: rulesArrayToText(allowlist),
+            })
+        })
+    }, []);
+
     return (
         <Formik
-            initialValues={{ userrules: 'example.org', allowlist: 'example.com' }}
+            enableReinitialize={true}
+            initialValues={formValue}
             onSubmit={values => {
-                browser.runtime.sendMessage(JSON.stringify(values))
+                const payload = {
+                    userrules: rulesTextToArray(values.userrules),
+                    allowlist: rulesTextToArray(values.allowlist),
+                }
+                chrome.runtime.sendMessage(JSON.stringify({
+                    type: 'SET_CONFIG',
+                    payload,
+                }), (response) => {
+                    if (response.type === 'SET_CONFIG_FAIL') {
+                        alert(response.payload)
+                    }
+                })
             }}
         >
             {({
@@ -18,7 +51,7 @@ export function App() {
                 handleSubmit,
             }) => (
                 <form className="form" onSubmit={handleSubmit}>
-                    <label for="userrules">User rules</label>
+                    <label>User rules</label>
                     <textarea
                         rows={10}
                         name="userrules"
@@ -26,7 +59,7 @@ export function App() {
                         onChange={handleChange}
                         value={values.userrules}
                     />
-                    <label for="allowlist">Allowlist</label>
+                    <label>Allowlist</label>
                     <textarea
                         rows={10}
                         name="allowlist"
