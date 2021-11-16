@@ -122,6 +122,7 @@ export interface TsWebExtensionInterface {
 export class TsWebExtension implements TsWebExtensionInterface {
 
     public isStarted = false;
+
     public configuration: Configuration | undefined;
 
     public async start(configuration: Configuration): Promise<void> {

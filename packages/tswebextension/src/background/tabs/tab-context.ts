@@ -38,10 +38,6 @@ export class TabContext implements TabContextInterface {
 
     updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType): void {
         this.info = Object.assign(this.info, changeInfo);
-
-        if (changeInfo.url) {
-            this.reloadTabFrameData(changeInfo.url);
-        }
     }
 
     reloadTabFrameData(frameUrl: string): void {

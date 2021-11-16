@@ -1,4 +1,3 @@
-import browser, { ExtensionTypes } from 'webextension-polyfill';
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper.js';

@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { CosmeticOption, RequestType, NetworkRuleOption } from '@adguard/tsurlfilter';
+import {
+    CosmeticOption,
+    RequestType,
+    NetworkRuleOption
+} from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
-import { preprocessRequestDetails } from './request-details';
 import { cosmeticApi } from './cosmetic-api';
 import { redirectsApi } from './redirects-api';
+import { preprocessRequestDetails, hideRequestInitiatorElement } from './request';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -35,7 +39,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         this.initHeadersReceivedEventListener();
         this.initOnResponseStarted();
         this.initOnErrorOccurred();
-        this.initCommittedCheckFrameUrlEventListener();
+        this.initCommittedEventListener();
     }
 
     public stop(): void {
@@ -57,6 +61,8 @@ export class WebRequestApi implements WebRequestApiInterface {
             requestType,
             tabId,
             frameId,
+            thirdParty,
+            requestFrameId
         } = requestDetails;
 
         if (isOwnUrl(referrerUrl)
@@ -94,6 +100,8 @@ export class WebRequestApi implements WebRequestApiInterface {
                     return { redirectUrl };
                 }
             }
+
+            hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
 
             return { cancel: true };
         }
@@ -144,7 +152,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         const { requestType, tabId, frameId } = preprocessRequestDetails(details);
 
         if (requestType === RequestType.Document){
-            this.injectJsScriptOnResponseStarted(tabId, frameId);
+            this.injectJsScript(tabId, frameId);
         }
     }
 
@@ -242,7 +250,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webRequest.onErrorOccurred.addListener(this.onErrorOccurred, filter);
     }
 
-    private initCommittedCheckFrameUrlEventListener(): void {
+    private initCommittedEventListener(): void {
         browser.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
@@ -273,7 +281,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private injectJsScriptOnResponseStarted(tabId: number, frameId: number) {
+    private injectJsScript(tabId: number, frameId: number) {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
         if (frame?.injection?.jsScriptText) {
@@ -316,6 +324,5 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 }
-
 
 export const webRequestApi = new WebRequestApi();

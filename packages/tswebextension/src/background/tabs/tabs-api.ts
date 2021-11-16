@@ -152,19 +152,24 @@ export class TabsApi implements TabsApiInterface {
         return this.context.get(tabId);
     }
 
-    public injectScript(code: string, tabId: number, frameId?: number): void{
+    public injectScript(code: string, tabId: number, frameId?: number): void {
         const injectDetails = {
             code,
             frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,     
         } as ExtensionTypes.InjectDetails;
 
         browser.tabs.executeScript(tabId, injectDetails);
     }
 
-    public injectCss(code: string, tabId: number, frameId?: number): void{
+    public injectCss(code: string, tabId: number, frameId?: number): void {
         const injectDetails = {
             code,
             frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+            cssOrigin: 'user',
         } as ExtensionTypes.InjectDetails;
     
         browser.tabs.insertCSS(tabId, injectDetails);

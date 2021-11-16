@@ -9,15 +9,14 @@ export interface RedirectsApiInterface {
     createRedirectUrl: (title: string) => string | null;
 }
 
- export class RedirectsApi implements RedirectsApiInterface {
+export class RedirectsApi implements RedirectsApiInterface {
     redirects: any;
 
     public async start() {
         try {
             const rawYaml = await resourcesApi.loadResource('/war/redirects.yml');
-            // ts-ignore
             this.redirects = new Redirects(rawYaml);
-        } catch(e){
+        } catch (e){
             throw new Error((e as Error).message);
         }
    
@@ -28,7 +27,7 @@ export interface RedirectsApiInterface {
             return null;
         }
 
-        if(!this.redirects){
+        if (!this.redirects){
             return null;
         }
 

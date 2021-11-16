@@ -1,7 +1,7 @@
 import { RequestType, isThirdPartyRequest } from '@adguard/tsurlfilter';
 import { WebRequest } from 'webextension-polyfill';
-import { ContentType, resourceToRequestTypeDataMap } from './request-type';
-import { getDomain } from './utils';
+import { ContentType, getRequestType } from './request-type';
+import { getDomain } from '../utils';
 
 export interface ExtendedDetailsData {
     /**
@@ -69,7 +69,7 @@ export const preprocessRequestDetails = <T extends RequestDetailsType>(details: 
         url = url.replace(/^http(s)?:/, 'ws$1:');
     }
 
-    const { requestType, contentType } = resourceToRequestTypeDataMap[type];
+    const { requestType, contentType } = getRequestType(type);
 
     let requestFrameId = type === 'main_frame'
         ? frameId

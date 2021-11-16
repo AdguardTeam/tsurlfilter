@@ -4,15 +4,8 @@ const tsWebExtension = new TsWebExtension();
 
 const defaultConfig = {
     filters: [],
-    allowlist: ['example.com'],
-    userrules: [
-        'example.org##h1',
-        `example.org#%#alert('hi');`,
-        `example.org#%#//scriptlet('log', 'arg1', 'arg2')`,
-        'example.org#?#a:contains(More information...)',
-        '||meduza.io^$script,redirect=noopjs',
-        'example.com##h1'
-    ],
+    allowlist: [],
+    userrules: [],
     verbose: false,
     settings: {
         collectStats: true,
@@ -44,8 +37,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponce) => {
         }  
         case 'SET_CONFIG': {
             const config = { ...defaultConfig, ...payload }
-            tsWebExtension.configure(config);
-            sendResponce({ type: 'SET_CONFIG_SUCCESS', payload: config })
+            tsWebExtension.configure(config).then(() => {
+                alert('loaded')
+                sendResponce({ type: 'SET_CONFIG_SUCCESS', payload: config })
+            });
             break;
         }
         default:

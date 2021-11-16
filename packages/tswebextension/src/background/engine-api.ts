@@ -11,6 +11,7 @@ import {
     CosmeticResult,
     getHost,
     CosmeticOption,
+    RuleConverter
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from './configuration';
@@ -65,11 +66,13 @@ export class EngineApi implements EngineApiInterface {
 
         for (let i = 0; i < filters.length; i += 1) {
             const { filterId, content } = filters[i];
-            lists.push(new StringRuleList(filterId, content));
+            const convertedContent = RuleConverter.convertRules(content);
+            lists.push(new StringRuleList(filterId, convertedContent));
         }
 
         if (userrules.length > 0) {
-            lists.push(new StringRuleList(USER_FILTER_ID, userrules.join('\n')));
+            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
+            lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
         if (allowlist.length > 0){

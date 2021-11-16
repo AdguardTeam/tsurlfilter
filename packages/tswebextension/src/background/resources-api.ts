@@ -1,4 +1,4 @@
-import browser, { WebRequest} from "webextension-polyfill";
+import browser, { WebRequest } from 'webextension-polyfill';
 
 export interface ResourcesApiInterface {
     start: () => void;
@@ -12,6 +12,7 @@ export class ResourcesApi implements ResourcesApiInterface {
     private secrets: string[] = [];
 
     private root = browser.runtime.getURL('/');
+
     private lastSecretTime = 0;
 
     constructor(){
@@ -33,10 +34,10 @@ export class ResourcesApi implements ResourcesApiInterface {
     public async loadResource(path: string): Promise<string> {
         const url = this.createResourceUrl(path);
         const response = await fetch(url);
-        return await response.text();
+        return response.text();
     }
 
-    private generateSecretKey(){
+    private generateSecretKey(): string{
         return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
     }
 
@@ -63,7 +64,7 @@ export class ResourcesApi implements ResourcesApiInterface {
         }
 
         this.secrets.splice(pos, 1);
-    };
+    }
 
     private initGuard(){
         const filter: WebRequest.RequestFilter = {
