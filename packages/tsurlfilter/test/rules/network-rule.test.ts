@@ -221,6 +221,9 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('@@||example.org^$removeparam=p,badfilter', 0);
         expect(correct).toBeTruthy();
 
+        correct = new NetworkRule('@@||example.org^$removeparam=p,document', 0);
+        expect(correct).toBeTruthy();
+
         expect(() => {
             new NetworkRule('||example.org^$removeparam=p,domain=test.com,popup', 0);
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
@@ -240,20 +243,20 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('@@||example.org^$removeheader', 0);
         expect(correct).toBeTruthy();
 
+        correct = new NetworkRule('||example.org^$removeheader=header-name,object', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeheader=header-name,~object', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$removeheader=header-name,media', 0);
+        expect(correct).toBeTruthy();
+
         correct = new NetworkRule('@@||example.org^$removeheader=header-name,badfilter', 0);
         expect(correct).toBeTruthy();
 
-        expect(() => {
-            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,script', 0);
-        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
-
-        expect(() => {
-            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,third-party,stylesheet', 0);
-        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
-
-        expect(() => {
-            new NetworkRule('||example.org^$removeheader=header-name,~object', 0);
-        }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
+        correct = new NetworkRule('@@||example.org^$removeheader=header-name,document', 0);
+        expect(correct).toBeTruthy();
 
         expect(() => {
             new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,popup', 0);
@@ -373,6 +376,9 @@ describe('NetworkRule constructor', () => {
 
         checkRequestType('webrtc', RequestType.Webrtc, true);
         checkRequestType('~webrtc', RequestType.Webrtc, false);
+
+        checkRequestType('document', RequestType.Document, true);
+        checkRequestType('~document', RequestType.Document, false);
     });
 
     function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
@@ -430,6 +436,43 @@ describe('NetworkRule constructor', () => {
         expect(() => {
             new NetworkRule('/some$denyallow=example.*,domain=example.com', -1);
         }).toThrow('Invalid modifier: $denyallow domains wildcards are not supported');
+    });
+
+    it('works if document modifier works properly', () => {
+        let rule = new NetworkRule('||example.org^$document', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('@@||example.org^$document', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$document,script', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document | RequestType.Script);
+
+        rule = new NetworkRule('||example.org^$document,popup', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$document,replace=/test/test2/', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$document,removeparam=p', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$~document', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionDisabled(NetworkRuleOption.Document));
+        expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
     });
 });
 

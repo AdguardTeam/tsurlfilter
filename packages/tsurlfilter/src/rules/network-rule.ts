@@ -97,6 +97,9 @@ export enum NetworkRuleOption {
     DnsType = 1 << 25,
     Ctag = 1 << 26,
 
+    // Document
+    Document = 1 << 27,
+
     // Groups (for validation)
 
     /** Blacklist-only modifiers */
@@ -118,13 +121,19 @@ export enum NetworkRuleOption {
 
     /**
      * Removeparam compatible modifiers
+     *
+     * $removeparam rules are compatible only with content type modifiers ($script, $stylesheet, etc)
+     * and this list of modifiers:
      */
-    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase | Badfilter,
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase | Badfilter | Document,
 
     /**
      * Removeheader compatible modifiers
+     *
+     * $removeheader rules are compatible only with content type modifiers ($script, $stylesheet, etc)
+     * and this list of modifiers:
      */
-    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter,
+    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter | Document,
 }
 
 /**
@@ -285,10 +294,7 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        return this.isOptionEnabled(NetworkRuleOption.Urlblock)
-            && this.isOptionEnabled(NetworkRuleOption.Elemhide)
-            && this.isOptionEnabled(NetworkRuleOption.Jsinject)
-            && this.isOptionEnabled(NetworkRuleOption.Content);
+        return this.isOptionEnabled(NetworkRuleOption.Document);
     }
 
     /**
@@ -658,7 +664,6 @@ export class NetworkRule implements rule.IRule {
 
         if (ruleParts.options) {
             this.loadOptions(ruleParts.options);
-            this.validateOptions();
         }
 
         if (
@@ -708,6 +713,17 @@ export class NetworkRule implements rule.IRule {
 
         // More specified rule has more priority
         this.priorityWeight = optionParts.length;
+
+        this.validateOptions();
+
+        // In the case of allowlist rules $document implicitly includes all other modifiers:
+        // `$content`, `$elemhide`, `$jsinject`, `$urlblock`.
+        if (this.isAllowlist() && this.isOptionEnabled(NetworkRuleOption.Document)) {
+            this.setOptionEnabled(NetworkRuleOption.Elemhide, true, true);
+            this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
+            this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
+            this.setOptionEnabled(NetworkRuleOption.Content, true, true);
+        }
 
         // Rules of these types can be applied to documents only
         // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for allowlist rules.
@@ -1026,12 +1042,13 @@ export class NetworkRule implements rule.IRule {
 
             // $document
             case OPTIONS.DOCUMENT:
-                this.setOptionEnabled(NetworkRuleOption.Elemhide, true, true);
-                this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
-                this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
-                this.setOptionEnabled(NetworkRuleOption.Content, true, true);
+                this.setOptionEnabled(NetworkRuleOption.Document, true);
+                this.setRequestType(RequestType.Document, true);
                 break;
-
+            case NOT_MARK + OPTIONS.DOCUMENT:
+                this.setOptionEnabled(NetworkRuleOption.Document, false);
+                this.setRequestType(RequestType.Document, false);
+                break;
             // Stealth mode $stealth
             case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
@@ -1265,12 +1282,11 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * $removeheader rules are not compatible with any other modifiers except $domain,
-     * $third-party, $app, $important, $match-case.
+     * $third-party, $app, $important, $match-case and permitted content type modifiers ($script, $stylesheet, etc).
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveHeaderRule(): void {
-        if ((this.permittedRequestTypes > 0 || this.restrictedRequestTypes > 0)
-            || (this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
+        if ((this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
             !== NetworkRuleOption.RemoveHeaderCompatibleOptions) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }
