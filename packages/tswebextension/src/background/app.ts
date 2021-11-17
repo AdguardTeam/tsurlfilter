@@ -6,6 +6,7 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { resourcesApi } from './resources-api';
 import { redirectsApi } from './redirects-api';
+import { messagesApi } from './messages-api';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 
@@ -133,12 +134,14 @@ export class TsWebExtension implements TsWebExtensionInterface {
         await tabsApi.start();
         await engineApi.startEngine(configuration);
         webRequestApi.start();
+        messagesApi.start();
 
         this.isStarted = true;
         this.configuration = configuration;
     }
 
     public async stop(): Promise<void> {
+        messagesApi.stop();
         webRequestApi.stop();
         tabsApi.stop();
         resourcesApi.stop();

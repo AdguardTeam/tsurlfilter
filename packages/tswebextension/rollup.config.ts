@@ -16,7 +16,7 @@ const commonConfig = {
 }
 
 const contentScriptConfig = {
-    input: 'src/content-script/index.js',
+    input: 'src/content-script/index.ts',
     output: [
         {
             file: `${OUTPUT_PATH}/content-script.js`,

@@ -5,19 +5,19 @@ import { cosmeticApi } from '../cosmetic-api';
 const enum InitiatorTag {
     FRAME = 'frame',
     IFRAME = 'iframe',
-    IMAGE = 'img'
+    IMAGE = 'img',
 }
 
 const initiatorTagHiddenStyle = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
 
 function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null {
-    switch(requestType){
+    switch (requestType){
         case RequestType.Subdocument:
-            return [InitiatorTag.IFRAME, InitiatorTag.FRAME]
+            return [InitiatorTag.IFRAME, InitiatorTag.FRAME];
         case RequestType.Image:
-            return [InitiatorTag.IMAGE]
+            return [InitiatorTag.IMAGE];
         default:
-            return null
+            return null;
     }
 }
 
@@ -44,8 +44,8 @@ export function hideRequestInitiatorElement(
 
     let code = '';
 
-    for(let i = 0; i < initiatorTags.length; i++){
-        code += `${initiatorTags[i]}[src$="${srcUrl}"] ${initiatorTagHiddenStyle}\n`
+    for (let i = 0; i < initiatorTags.length; i++){
+        code += `${initiatorTags[i]}[src$="${srcUrl}"] ${initiatorTagHiddenStyle}\n`;
     }
 
     cosmeticApi.injectCss(code, tabId, requestFrameId);

@@ -3,7 +3,7 @@ import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 import {
     CosmeticOption,
     RequestType,
-    NetworkRuleOption
+    NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
@@ -29,6 +29,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         this.handleCspReportRequests = this.handleCspReportRequests.bind(this);
         this.onResponseStarted = this.onResponseStarted.bind(this);
         this.onErrorOccurred = this.onErrorOccurred.bind(this);
+
         this.onCommitted = this.onCommitted.bind(this);
     }
 
@@ -62,7 +63,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             tabId,
             frameId,
             thirdParty,
-            requestFrameId
+            requestFrameId,
         } = requestDetails;
 
         if (isOwnUrl(referrerUrl)

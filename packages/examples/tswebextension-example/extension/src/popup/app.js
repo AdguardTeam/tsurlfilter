@@ -13,16 +13,17 @@ export function App() {
     })
 
     useEffect(() => {
-        chrome.runtime.sendMessage(JSON.stringify({
+        chrome.runtime.sendMessage({
             type: 'GET_CONFIG',
-        }), (response) => {
-            console.log(response)
-            const { userrules, allowlist } = response.payload
+        }, (response) => {
+            if(response?.payload){
+                const { userrules, allowlist } = response.payload
 
-            setFormValue({
-                userrules: rulesArrayToText(userrules),
-                allowlist: rulesArrayToText(allowlist),
-            })
+                setFormValue({
+                    userrules: rulesArrayToText(userrules),
+                    allowlist: rulesArrayToText(allowlist),
+                })
+            }
         })
     }, []);
 
@@ -35,12 +36,12 @@ export function App() {
                     userrules: rulesTextToArray(values.userrules),
                     allowlist: rulesTextToArray(values.allowlist),
                 }
-                chrome.runtime.sendMessage(JSON.stringify({
+                chrome.runtime.sendMessage({
                     type: 'SET_CONFIG',
                     payload,
-                }), (response) => {
-                    if (response.type === 'SET_CONFIG_FAIL') {
-                        alert(response.payload)
+                }, (response) => {
+                    if (response?.type === 'SET_CONFIG_FAIL') {
+                        alert(response?.payload)
                     }
                 })
             }}

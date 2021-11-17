@@ -11,7 +11,7 @@ import {
     CosmeticResult,
     getHost,
     CosmeticOption,
-    RuleConverter
+    RuleConverter,
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from './configuration';

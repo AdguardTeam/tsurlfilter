@@ -27,16 +27,14 @@ const defaultConfig = {
 tsWebExtension.start(defaultConfig);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponce) => {
-    const { type, payload } = JSON.parse(message);
-
-    switch (type) {
+    switch (message.type) {
         case 'GET_CONFIG': {
             const config = tsWebExtension.configuration;
             sendResponce({ type: 'GET_CONFIG_SUCCESS', payload: config });
             break;
         }  
         case 'SET_CONFIG': {
-            const config = { ...defaultConfig, ...payload }
+            const config = { ...defaultConfig, ...message.payload }
             tsWebExtension.configure(config).then(() => {
                 alert('loaded')
                 sendResponce({ type: 'SET_CONFIG_SUCCESS', payload: config })

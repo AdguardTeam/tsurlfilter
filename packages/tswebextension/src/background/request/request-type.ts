@@ -27,73 +27,73 @@ export interface RequestTypeData {
 
 
 export function getRequestType(resourceType: WebRequest.ResourceType): RequestTypeData {
-    switch(resourceType){
+    switch (resourceType){
         case 'main_frame':
             return {
                 contentType: ContentType.DOCUMENT,
                 requestType: RequestType.Document,
-            }
+            };
         case 'sub_frame': 
             return {
                 contentType: ContentType.SUBDOCUMENT,
                 requestType: RequestType.Subdocument,
-            }
+            };
         case 'stylesheet':
             return {
                 contentType: ContentType.STYLESHEET,
                 requestType: RequestType.Stylesheet,
-            }
+            };
         case 'script':
             return {
                 contentType: ContentType.SCRIPT,
                 requestType: RequestType.Script,
-            }
+            };
         case 'image':
         case 'imageset': 
             return {
                 contentType: ContentType.IMAGE,
                 requestType: RequestType.Image,
-            }
+            };
         case 'object': 
             return {
                 contentType: ContentType.OBJECT,
                 requestType: RequestType.Object,
-            }
+            };
         case 'xmlhttprequest': 
             return {
                 contentType: ContentType.XMLHTTPREQUEST,
                 requestType: RequestType.XmlHttpRequest,
-            }
+            };
         case 'ping':
         case 'beacon':
             return {
                 contentType: ContentType.PING,
                 requestType: RequestType.Ping,
-            }
+            };
         case 'font':
             return {
                 contentType: ContentType.FONT,
                 requestType: RequestType.Font,
-            }
+            };
         case 'media':
             return {
                 contentType: ContentType.MEDIA,
                 requestType: RequestType.Media,
-            }
+            };
         case 'websocket':
             return {
                 contentType: ContentType.WEBSOCKET,
                 requestType: RequestType.Websocket,
-            }
+            };
         case 'csp_report': 
             return {
                 contentType: ContentType.CSP_REPORT,
                 requestType: RequestType.Other,
-            }
+            };
         default:
             return {
                 contentType: ContentType.OTHER,
                 requestType: RequestType.Other,
-            }      
+            };      
     }
 }
