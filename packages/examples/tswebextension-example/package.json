@@ -5,7 +5,8 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "babel-node ./scripts/build"
+    "build": "babel-node ./scripts/build",
+    "test": "node ./browser_test"
   },
   "dependencies": {
     "@adguard/tswebextension": "file:../../tswebextension",

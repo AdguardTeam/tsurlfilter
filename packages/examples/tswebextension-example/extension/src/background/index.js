@@ -2,6 +2,8 @@ import { TsWebExtension } from "@adguard/tswebextension";
 
 const tsWebExtension = new TsWebExtension();
 
+window.tsWebExtension = tsWebExtension;
+
 const defaultConfig = {
     filters: [],
     allowlist: [],
