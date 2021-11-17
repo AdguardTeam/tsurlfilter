@@ -1,34 +1,19 @@
-import { RequestType } from '@adguard/tsurlfilter';
+import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 export interface RequestContext {
-    requestId: string;
     requestUrl: string
     referrerUrl: string
-    originUrl: string
     requestType: RequestType
     tabId: number
-    method: string
+    frameId: number
     timestamp: number // in ms
-}
-
-export interface CreateRequestContext {
-    requestId: string
-    requestUrl: string
-    referrerUrl: string
-    originUrl: string
-    requestType: RequestType
-    tabId: number
-    method: string
-}
-
-export interface UpdateRequestContext {
-    timestamp: number // in ms;
+    matchingResult: MatchingResult | null
 }
 
 export interface RequestContextStorageInterface {
-    record: (data: CreateRequestContext) => void;
     get: (requestId: string) => RequestContext | undefined;
-    update: (requestId: string, data: Partial<UpdateRequestContext>) => void;
+    record: (requestId: string, data: RequestContext) => void;
+    update: (requestId: string, data: Partial<RequestContext>) => void;
     delete: (requestId: string) => void;
 
 }
@@ -36,15 +21,15 @@ export interface RequestContextStorageInterface {
 export class RequestContextStorage implements RequestContextStorageInterface {
     private contextStorage = new Map<string, RequestContext>();
 
-    public record(data: CreateRequestContext): void {
-        this.contextStorage.set(data.requestId, { ...data, timestamp: Date.now() });
-    }
-
     public get(requestId: string): RequestContext | undefined {
         return this.contextStorage.get(requestId);
     }
 
-    public update(requestId: string, data: Partial<UpdateRequestContext>): void {
+    public record(requestId: string, data: RequestContext): void {
+        this.contextStorage.set(requestId, data);
+    }
+
+    public update(requestId: string, data: Partial<RequestContext>): void {
         const requestContext = this.contextStorage.get(requestId);
         if (requestContext) {
             this.contextStorage.set(requestId, Object.assign(requestContext, data));

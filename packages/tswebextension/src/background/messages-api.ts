@@ -5,7 +5,7 @@ import {
     Message,
     MessageType,
     messageValidator,
-    processShouldCollapsePayloadValidator
+    processShouldCollapsePayloadValidator,
 } from '../common';
 
 export interface MessagesApiInterface {

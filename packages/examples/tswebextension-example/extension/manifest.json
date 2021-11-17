@@ -6,14 +6,11 @@
     "description": "An example of extension built with TSUrlFilter on Manifest-v2",
     "permissions": [
         "tabs",
-        "http://*/*",
-        "https://*/*",
-        "ws://*/*",
-        "wss://*/*",
         "webRequest",
         "webRequestBlocking",
         "webNavigation",
-        "cookies"
+        "cookies",
+        "<all_urls>"
     ],
     "background": {
         "page": "background.html",

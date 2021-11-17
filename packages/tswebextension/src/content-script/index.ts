@@ -3,11 +3,11 @@ export default '@adguard/tsurlfilter/dist/TSUrlFilterContentScript';
 import browser from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { MessageType, Message, ProcessShouldCollapsePayload } from '../common'
+import { MessageType, Message, ProcessShouldCollapsePayload } from '../common';
 
 // TODO: code decomposition
 
-type RequestInitiatorElement = HTMLElement & { src?: string, data?: string }
+type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 
 async function sendMessage(message: Message) {
     return browser.runtime.sendMessage(message);
@@ -17,19 +17,19 @@ function getRequestTypeByInitiatorTagName(tagName: string): RequestType | null {
     switch (tagName) {
         case 'img':
         case 'input': {
-            return RequestType.Image
+            return RequestType.Image;
         }
         case 'audio':
         case 'video': {
-            return RequestType.Media
+            return RequestType.Media;
         }
         case 'object':
         case 'embed': {
-            return RequestType.Object
+            return RequestType.Object;
         }
         case 'frame':
         case 'iframe':
-            return RequestType.Subdocument
+            return RequestType.Subdocument;
         default:
             return null;
     }
@@ -63,7 +63,7 @@ const getElementUrl = function (element: RequestInitiatorElement): string | null
 function isElementCollapsed(element: HTMLElement): boolean {
     const computedStyle = window.getComputedStyle(element);
     return (computedStyle && computedStyle.display === 'none');
-};
+}
 
 /**
  * Checks if loaded element is blocked by AG and should be hidden
@@ -89,7 +89,7 @@ async function shouldCollapseElement(event: Event) {
         return;
     }
 
-    const elementUrl = getElementUrl(element)
+    const elementUrl = getElementUrl(element);
 
     if (!elementUrl) {
         return;
@@ -103,19 +103,19 @@ async function shouldCollapseElement(event: Event) {
         elementUrl,
         documentUrl: document.URL,
         requestType,
-    } as ProcessShouldCollapsePayload
+    } as ProcessShouldCollapsePayload;
 
     const shouldCollapse = await sendMessage({
         type: MessageType.PROCESS_SHOULD_COLLAPSE,
         payload, 
-    })
+    });
 
-    if(!shouldCollapse){
+    if (!shouldCollapse){
         return;
     }
 
-    element.setAttribute("style", "display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important;")
-};
+    element.setAttribute('style', 'display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important;');
+}
 
 document.addEventListener('error', shouldCollapseElement, true);
 // We need to listen for load events to hide blocked iframes (they don't raise error event)
