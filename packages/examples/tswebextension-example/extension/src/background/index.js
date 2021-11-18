@@ -2,6 +2,8 @@ import { TsWebExtension } from "@adguard/tswebextension";
 
 const tsWebExtension = new TsWebExtension();
 
+
+// Need for access tsWebExtension instance form browser autotest tool
 window.tsWebExtension = tsWebExtension;
 
 const defaultConfig = {

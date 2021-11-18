@@ -2,14 +2,26 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { cosmeticApi } from '../cosmetic-api';
 
+/**
+ * Some html tags can trigger network requests. 
+ * If request is blocked by network rule, we try to collapse broken element from backgound page
+ */
 const enum InitiatorTag {
     FRAME = 'frame',
     IFRAME = 'iframe',
     IMAGE = 'img',
 }
 
+
+/**
+ * Css, injected to broken element for hiding
+ */
 const initiatorTagHiddenStyle = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
 
+
+/**
+ * match network request initiator tag by request type 
+ */
 function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null {
     switch (requestType){
         case RequestType.Subdocument:
@@ -21,6 +33,9 @@ function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null
     }
 }
 
+/**
+ * Inject css for element hiding by tabs.injectCss
+ */
 export function hideRequestInitiatorElement(
     tabId: number, 
     requestFrameId: number,
