@@ -1,9 +1,15 @@
-export default '@adguard/tsurlfilter/dist/TSUrlFilterContentScript';
-
 import browser from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
-
+import ExtendedCss from 'extended-css';
+import StealthHelper from './stealth-helper';
+import CookieController from './cookie-controller';
+import CssHitsCounter from './css-hits-counter';
 import { MessageType, Message, ProcessShouldCollapsePayload } from '../common';
+
+/**
+ * This module exports libraries used in the extension via content scripts
+ */
+export default { ExtendedCss, StealthHelper, CookieController, CssHitsCounter };
 
 // TODO: code decomposition
 
@@ -107,7 +113,7 @@ async function shouldCollapseElement(event: Event) {
 
     const shouldCollapse = await sendMessage({
         type: MessageType.PROCESS_SHOULD_COLLAPSE,
-        payload, 
+        payload,
     });
 
     if (!shouldCollapse){

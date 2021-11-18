@@ -109,6 +109,11 @@ export class CosmeticRule implements rule.IRule {
     public scriptVerbose: string | undefined = undefined;
 
     /**
+     * Needed to avoid reinvoking scriptVerbose for scriptlets rules
+     */
+    public verboseInvokedForDomain?: string | undefined = undefined;
+
+    /**
      * If the rule contains scriptlet content
      */
     public isScriptlet = false;

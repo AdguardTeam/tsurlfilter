@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@adguard/scriptlets@^1.4.4":
-  version "1.4.4"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.4.4.tgz#959cef45458ec01e7d89360a90b0e9bd31db20da"
-  integrity sha512-ZH4yzIAqlTA4HNtZQHipPbRmXWcNBtgKP/N1GbKe2hjskPc742iA0AHn01ko0rfcUe4tmT6Ua0IHKJKHpymLng==
+"@adguard/scriptlets@^1.4.26":
+  version "1.4.26"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.4.26.tgz#0976ce0b2b6059d68155684e44605667ed162fdb"
+  integrity sha512-8+LHDlCKsdDZTibbHHaQP4l6llLs/WtTO9JnZgUgLFNF4TmunohYZ1NvP6+gUi4sdsB4v75IpdVlTBZn0vL2jQ==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
@@ -154,10 +154,6 @@ sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
-
-"text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1":
-  version "0.7.0"
-  resolved "git+https://github.com/AdguardTeam/text-encoding.git#80dbd7df2b17858e8e9e2da00e9134d4ca63d8ad"
 
 tldts-core@^5.7.48:
   version "5.7.48"

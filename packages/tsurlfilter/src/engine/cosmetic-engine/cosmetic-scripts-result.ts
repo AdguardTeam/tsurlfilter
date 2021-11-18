@@ -58,9 +58,22 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
      * @param request
      */
     private static setScriptCode(rule: CosmeticRule, request?: Request): void {
+        let requestDomainName;
+        if (request) {
+            requestDomainName = request.domain;
+        }
+
         if (rule.script && rule.scriptVerbose) {
-            // Already done for this rule
-            return;
+            if (!rule.isScriptlet) {
+                // Already done for this none-scriptlet rule
+                return;
+            }
+            // do not reinvoke scriptVerbose for same domain for scriptlet rule
+            if (rule.isScriptlet
+                && requestDomainName
+                && rule.verboseInvokedForDomain === requestDomainName) {
+                return;
+            }
         }
 
         const ruleContent = rule.getContent();
@@ -84,15 +97,19 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
             version: config.version ? config.version : '',
         };
 
-        let scriptText = Scriptlets.invoke(params);
-        // eslint-disable-next-line no-param-reassign
-        rule.script = scriptText !== null ? scriptText : undefined;
+        let scriptText;
+
+        if (!rule.script) {
+            scriptText = Scriptlets.invoke(params);
+            // eslint-disable-next-line no-param-reassign
+            rule.script = scriptText !== null ? scriptText : undefined;
+        }
 
         params.verbose = true;
-
         // add domainName to reduce log output in the rules with multiple domains
-        if (request) {
-            params.domainName = request.domain;
+        if (requestDomainName) {
+            params.domainName = requestDomainName;
+            rule.verboseInvokedForDomain = requestDomainName;
         }
 
         scriptText = Scriptlets.invoke(params);

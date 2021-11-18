@@ -83,6 +83,7 @@ export const buildScriptText = (scriptText: string): string => {
             })()`;
 };
 
+// TODO: TSUrlFilterContentScript has been removed from tsurlfilter bundle
 export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
     return `
         (() => {

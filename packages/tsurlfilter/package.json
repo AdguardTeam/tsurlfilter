@@ -1,11 +1,10 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.7.35",
+  "version": "0.7.37",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
   "iife": "dist/tsurlfilter.iife.js",
-  "browser": "dist/tsurlfilter.browser.js",
   "typings": "dist/types",
   "files": [
     "dist",
@@ -91,7 +90,6 @@
     "lru_map": "^0.4.1",
     "netmask": "^2.0.2",
     "punycode": "^2.1.1",
-    "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.45",
     "webextension-polyfill": "^0.8.0"
   }
