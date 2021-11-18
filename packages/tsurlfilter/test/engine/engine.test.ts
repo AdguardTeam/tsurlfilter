@@ -331,6 +331,53 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
     });
 });
 
+describe('TestEngineMatchRequest - document modifier', () => {
+    it('respects document modifier request type in blocking rules', () => {
+        const documentBlockingRuleText = '||example.org^$document';
+        const baseRuleList = new StringRuleList(1, [
+            documentBlockingRuleText,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request('http://example.org/', null, RequestType.Document);
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
+
+        request = new Request('http://other.org/', null, RequestType.Document);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).toBeNull();
+
+        request = new Request('http://example.org/', null, RequestType.Image);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).toBeNull();
+    });
+
+    it('respects document modifier request type in blocking rules - other request types', () => {
+        const documentBlockingRuleText = '||example.org^$document,script';
+        const baseRuleList = new StringRuleList(1, [
+            documentBlockingRuleText,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request('http://example.org/', null, RequestType.Document);
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
+
+        request = new Request('http://example.org/', null, RequestType.Script);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
+
+        request = new Request('http://example.org/', null, RequestType.Image);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).toBeNull();
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;
