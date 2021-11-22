@@ -1,7 +1,7 @@
-import { RequestType, isThirdPartyRequest } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter';
 import { WebRequest } from 'webextension-polyfill';
 import { ContentType, getRequestType } from './request-type';
-import { getDomain } from '../utils';
+import { getDomain, isThirdPartyRequest } from '../utils';
 
 export interface ExtendedDetailsData {
     /**

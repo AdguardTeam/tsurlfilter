@@ -9,12 +9,13 @@ import {
     MatchingResult,
     Request,
     CosmeticResult,
-    getHost,
     CosmeticOption,
     RuleConverter,
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from './configuration';
+
+import { getHost } from './utils'
 
 /**
  * Request Match Query
