@@ -14,7 +14,14 @@ import { redirectsApi } from './redirects-api';
 import {
     preprocessRequestDetails,
     hideRequestInitiatorElement,
-    requestContextStorage, 
+    requestContextStorage,
+    onBeforeRequest,
+    onBeforeSendHeaders,
+    RequestData,
+    onHeadersReceived,
+    onErrorOccurred,
+    onResponseStarted,
+    onCompleted, 
 } from './request';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -54,17 +61,18 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     public stop(): void {
-        browser.webRequest.onBeforeRequest.removeListener(this.onBeforeRequest);
-        browser.webRequest.onBeforeRequest.removeListener(this.handleCspReportRequests);
-        browser.webRequest.onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
-        browser.webRequest.onHeadersReceived.removeListener(this.onHeadersReceived);
-        browser.webRequest.onErrorOccurred.removeListener(this.onErrorOccurred);
-        browser.webRequest.onResponseStarted.removeListener(this.onResponseStarted);
-        browser.webRequest.onCompleted.removeListener(this.onCompleted);
+        onBeforeRequest.removeListener(this.onBeforeRequest);
+        onBeforeRequest.removeListener(this.handleCspReportRequests);
+        onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
+        onHeadersReceived.removeListener(this.onHeadersReceived);
+        onErrorOccurred.removeListener(this.onErrorOccurred);
+        onResponseStarted.removeListener(this.onResponseStarted);
+        onCompleted.removeListener(this.onCompleted);
         browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
-    private onBeforeRequest(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+    private onBeforeRequest(data: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
+        const { details } = data;
         const requestDetails = preprocessRequestDetails(details);
 
         const {
@@ -132,12 +140,13 @@ export class WebRequestApi implements WebRequestApiInterface {
         return;
     }
 
-    private onBeforeSendHeaders(details: WebRequest.OnBeforeSendHeadersDetailsType): WebRequestEventResponse {
+    private onBeforeSendHeaders(data: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): WebRequestEventResponse {
         // TODO: implement
         return;
     }
 
-    private onHeadersReceived(details: WebRequest.OnHeadersReceivedDetailsType): WebRequestEventResponse {
+    private onHeadersReceived(data: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
+        const { details } = data;
         const { requestId } = details;
 
         const request = requestContextStorage.get(requestId);
@@ -160,7 +169,8 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onResponseStarted(details: WebRequest.OnResponseStartedDetailsType): WebRequestEventResponse {
+    private onResponseStarted(data: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
+        const { details } = data;
         const { requestId } = details;
         const request = requestContextStorage.get(requestId);
 
@@ -169,11 +179,13 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onCompleted(details: WebRequest.OnCompletedDetailsType): WebRequestEventResponse {
+    private onCompleted(data: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
+        const { details } = data; 
         requestContextStorage.delete(details.requestId);
     }
 
-    private onErrorOccurred(details: WebRequest.OnErrorOccurredDetailsType): WebRequestEventResponse {
+    private onErrorOccurred(data: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
+        const { details } = data;
         const { requestId, tabId, frameId } = details;
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
@@ -185,7 +197,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         requestContextStorage.delete(requestId);
     }
 
-    private handleCspReportRequests(details: WebRequest.OnBeforeRequestDetailsType): WebRequestEventResponse {
+    private handleCspReportRequests(data: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
         // TODO: implement
         return;
     }
@@ -203,7 +215,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
 
-        browser.webRequest.onBeforeRequest.addListener(
+        onBeforeRequest.addListener(
             this.onBeforeRequest,
             filter,
             extraInfoSpec,
@@ -221,7 +233,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['requestBody'];
 
-        browser.webRequest.onBeforeRequest.addListener(
+        onBeforeRequest.addListener(
             this.handleCspReportRequests,
             filter,
             extraInfoSpec,
@@ -233,7 +245,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             urls: ['<all_urls>'],
         };
 
-        browser.webRequest.onBeforeSendHeaders.addListener(
+        onBeforeSendHeaders.addListener(
             this.onBeforeSendHeaders,
             filter,
         );
@@ -246,7 +258,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
 
-        browser.webRequest.onHeadersReceived.addListener(
+        onHeadersReceived.addListener(
             this.onHeadersReceived,
             filter,
             extraInfoSpec,
@@ -258,7 +270,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             urls: ['<all_urls>'],
         };
 
-        browser.webRequest.onResponseStarted.addListener(this.onResponseStarted, filter);
+        onResponseStarted.addListener(this.onResponseStarted, filter);
     }
 
     private initOnErrorOccurredEventListener(): void {
@@ -266,7 +278,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             urls: ['<all_urls>'],
         };
 
-        browser.webRequest.onErrorOccurred.addListener(this.onErrorOccurred, filter);
+        onErrorOccurred.addListener(this.onErrorOccurred, filter);
     }
 
     private initOnCompletedEventListener(): void {
@@ -276,11 +288,11 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnCompletedOptions[] = ['responseHeaders'];
 
-        browser.webRequest.onCompleted.addListener(
+        onCompleted.addListener(
             this.onCompleted, 
             filter,
             extraInfoSpec,
-        )
+        );
     }
 
     private initCommittedEventListener(): void {
