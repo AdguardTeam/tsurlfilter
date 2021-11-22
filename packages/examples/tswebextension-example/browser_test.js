@@ -18,7 +18,15 @@ const testcases = [
   {
     rulesUrl: '/Filters/simple-rules/generichide-test/generichide-test.txt',
     pageUrl: '/Filters/simple-rules/generichide-test/generichide-test.html'
-  }
+  },
+  {
+    rulesUrl: '/Filters/script-rules/test-script-rules.txt',
+    pageUrl: '/Filters/script-rules/test-script-rules.html'
+  },
+  {
+    rulesUrl: '/Filters/scriptlet-rules/test-scriptlet-rules.txt',
+    pageUrl: '/Filters/scriptlet-rules/test-scriptlet-rules.html'
+  },
 ];
 
 const defaultConfig = {
