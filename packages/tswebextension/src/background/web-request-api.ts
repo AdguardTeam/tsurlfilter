@@ -12,16 +12,15 @@ import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
 import { cosmeticApi } from './cosmetic-api';
 import { redirectsApi } from './redirects-api';
 import {
-    preprocessRequestDetails,
     hideRequestInitiatorElement,
-    requestContextStorage,
     onBeforeRequest,
     onBeforeSendHeaders,
     RequestData,
     onHeadersReceived,
     onErrorOccurred,
     onResponseStarted,
-    onCompleted, 
+    onCompleted,
+    requestContextStorage, 
 } from './request';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -71,58 +70,12 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
-    private onBeforeRequest(data: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
-        const { details } = data;
-        const requestDetails = preprocessRequestDetails(details);
-
-        const {
-            url,
-            requestId,
-            referrerUrl,
-            requestType,
-            tabId,
-            frameId,
-            thirdParty,
-            requestFrameId,
-        } = requestDetails;
-
-
-        if (isOwnUrl(referrerUrl)
-            || !isHttpOrWsRequest(url)) {
+    private onBeforeRequest({ context }: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
+        if (!context?.matchingResult) {
             return;
         }
 
-        if (this.isFrameRequest(requestType)) {
-            tabsApi.recordRequestFrame(
-                tabId,
-                frameId,
-                referrerUrl,
-                requestType,
-            );
-        }
-
-        const result = engineApi.matchRequest({
-            requestUrl: url,
-            frameUrl: referrerUrl,
-            requestType,
-            frameRule: tabsApi.getTabFrameRule(tabId),
-        });
-
-        requestContextStorage.record(requestId, {
-            requestUrl: url,
-            referrerUrl,
-            requestType,
-            tabId,
-            frameId,
-            timestamp: Date.now(),
-            matchingResult: result,
-        });
-
-        if (!result) {
-            return;
-        }
-
-        const basicResult = result.getBasicResult();
+        const basicResult = context.matchingResult.getBasicResult();
 
         if (basicResult && !basicResult.isAllowlist()) {
             if (basicResult.isOptionEnabled(NetworkRuleOption.Redirect)) {
@@ -132,7 +85,15 @@ export class WebRequestApi implements WebRequestApiInterface {
                 }
             }
 
-            hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
+            const {
+                tabId,
+                requestFrameId,
+                requestUrl,
+                requestType,
+                thirdParty,
+            } = context;
+
+            hideRequestInitiatorElement(tabId, requestFrameId, requestUrl, requestType, thirdParty);
 
             return { cancel: true };
         }
@@ -145,13 +106,8 @@ export class WebRequestApi implements WebRequestApiInterface {
         return;
     }
 
-    private onHeadersReceived(data: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
-        const { details } = data;
-        const { requestId } = details;
-
-        const request = requestContextStorage.get(requestId);
-
-        if (!request?.matchingResult){
+    private onHeadersReceived({ context }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
+        if (!context?.matchingResult){
             return;
         }
 
@@ -161,31 +117,35 @@ export class WebRequestApi implements WebRequestApiInterface {
             referrerUrl,
             tabId,
             frameId,
-        } = request;
+        } = context;
 
-        if (this.isFrameRequest(requestType)){
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument){
             const cosmeticOption = matchingResult.getCosmeticOption();
             this.recordFrameInjection(referrerUrl, tabId, frameId, cosmeticOption);
         }
     }
 
-    private onResponseStarted(data: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
-        const { details } = data;
-        const { requestId } = details;
-        const request = requestContextStorage.get(requestId);
+    private onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
+        if (!context?.matchingResult){
+            return;
+        }
 
-        if (request?.requestType === RequestType.Document){
-            this.injectJsScript(request.tabId, request.frameId);
+        const {
+            requestType,
+            tabId,
+            frameId
+        } = context;
+
+        if (requestType === RequestType.Document){
+            this.injectJsScript(tabId, frameId);
         }
     }
 
-    private onCompleted(data: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
-        const { details } = data; 
+    private onCompleted({ details }: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
-    private onErrorOccurred(data: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
-        const { details } = data;
+    private onErrorOccurred({ details }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
         const { requestId, tabId, frameId } = details;
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
@@ -297,10 +257,6 @@ export class WebRequestApi implements WebRequestApiInterface {
 
     private initCommittedEventListener(): void {
         browser.webNavigation.onCommitted.addListener(this.onCommitted);
-    }
-
-    private isFrameRequest(requestType: RequestType): boolean {
-        return requestType === RequestType.Document || requestType === RequestType.Subdocument;
     }
 
     private recordFrameInjection(

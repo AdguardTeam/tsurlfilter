@@ -1,18 +1,22 @@
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import { ContentType } from './request-type';
 
 export interface RequestContext {
     requestUrl: string
     referrerUrl: string
     requestType: RequestType
+    contentType: ContentType
     tabId: number
     frameId: number
+    requestFrameId: number
     timestamp: number // in ms
+    thirdParty: boolean
     matchingResult: MatchingResult | null
 }
 
 export interface RequestContextStorageInterface {
     get: (requestId: string) => RequestContext | undefined;
-    record: (requestId: string, data: RequestContext) => void;
+    record: (requestId: string, data: RequestContext) => RequestContext;
     update: (requestId: string, data: Partial<RequestContext>) => void;
     delete: (requestId: string) => void;
 
@@ -25,8 +29,9 @@ export class RequestContextStorage implements RequestContextStorageInterface {
         return this.contextStorage.get(requestId);
     }
 
-    public record(requestId: string, data: RequestContext): void {
+    public record(requestId: string, data: RequestContext): RequestContext {
         this.contextStorage.set(requestId, data);
+        return data;
     }
 
     public update(requestId: string, data: Partial<RequestContext>): void {
