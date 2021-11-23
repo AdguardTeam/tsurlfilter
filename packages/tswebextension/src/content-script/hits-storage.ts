@@ -4,7 +4,7 @@
  * This storage is used to keep track of counted rules
  * regarding to node elements
  */
-export default class HitsStorage {
+export class HitsStorage {
     /**
      * Start count number
      */

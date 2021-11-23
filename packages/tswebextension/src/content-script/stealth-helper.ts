@@ -1,7 +1,7 @@
 /**
  * This class applies stealth actions in page context
  */
-export default class StealthHelper {
+export class StealthHelper {
     /**
      * Sends a Global Privacy Control DOM signal
      */

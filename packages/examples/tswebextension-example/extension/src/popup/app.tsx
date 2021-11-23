@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { Formik } from 'formik'
 
+import { MessageTypes } from '../common/message-types'
+
 import './app.css'
 
-const rulesArrayToText = arr => arr.join('\n')
-const rulesTextToArray = text => text.trim().split('\n').filter(el => el !== '')
+const rulesArrayToText = (arr: string[]): string => arr.join('\n')
+const rulesTextToArray = (text: string): string[] => text.trim().split('\n').filter(el => el !== '')
 
 export function App() {
     const [formValue, setFormValue] = useState({
@@ -14,7 +16,7 @@ export function App() {
 
     useEffect(() => {
         chrome.runtime.sendMessage({
-            type: 'GET_CONFIG',
+            type: MessageTypes.GET_CONFIG,
         }, (response) => {
             if(response?.payload){
                 const { userrules, allowlist } = response.payload
@@ -37,10 +39,10 @@ export function App() {
                     allowlist: rulesTextToArray(values.allowlist),
                 }
                 chrome.runtime.sendMessage({
-                    type: 'SET_CONFIG',
+                    type: MessageTypes.SET_CONFIG,
                     payload,
                 }, (response) => {
-                    if (response?.type === 'SET_CONFIG_FAIL') {
+                    if (response?.type === MessageTypes.SET_CONFIG_FAIL) {
                         alert(response?.payload)
                     }
                 })

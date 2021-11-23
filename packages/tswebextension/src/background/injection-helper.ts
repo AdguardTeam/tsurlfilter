@@ -88,7 +88,6 @@ export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
     return `
         (() => {
             // Init css hits counter
-            const { CssHitsCounter } = TSUrlFilterContentScript;
             const cssHitsCounter = new CssHitsCounter((stats) => {
                 console.debug('Css stats ready');
                 console.debug(stats);
@@ -99,7 +98,6 @@ export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
             console.debug('CssHitsCounter initialized');
             
             // Apply extended css stylesheets
-            const { ExtendedCss } = TSUrlFilterContentScript;
             const extendedCssContent = \`${extendedCssStylesheets}\`;
             const extendedCss = new ExtendedCss({
                 styleSheet: extendedCssContent,

@@ -1,7 +1,7 @@
 /**
  * Utils class
  */
-export default class ElementUtils {
+export class ElementUtils {
     /**
      * Serialize HTML element
      *

@@ -21,13 +21,13 @@ export const config = {
         filename: '[name].js',
     },
     resolve: {
-        extensions: ['*', '.js'],
+        extensions: ['*', '.tsx', '.ts', '.js'],
         modules: [path.resolve(__dirname, '../../node_modules')],
     },
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.(js|ts)x?$/,
                 exclude: /node_modules/,
                 use: [{
                     loader: 'babel-loader',

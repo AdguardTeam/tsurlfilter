@@ -1,9 +1,19 @@
 import { TsWebExtension } from "@adguard/tswebextension";
 
+import { MessageTypes } from "../common/message-types";
+
 const tsWebExtension = new TsWebExtension();
 
+/*
+ * Need for access tsWebExtension instance form browser autotest tool
+ */
 
-// Need for access tsWebExtension instance form browser autotest tool
+declare global {
+    interface Window {
+        tsWebExtension: TsWebExtension;
+    }
+}
+
 window.tsWebExtension = tsWebExtension;
 
 const defaultConfig = {
@@ -32,16 +42,16 @@ tsWebExtension.start(defaultConfig);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponce) => {
     switch (message.type) {
-        case 'GET_CONFIG': {
+        case MessageTypes.GET_CONFIG: {
             const config = tsWebExtension.configuration;
-            sendResponce({ type: 'GET_CONFIG_SUCCESS', payload: config });
+            sendResponce({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });
             break;
         }  
-        case 'SET_CONFIG': {
+        case MessageTypes.SET_CONFIG: {
             const config = { ...defaultConfig, ...message.payload }
             tsWebExtension.configure(config).then(() => {
                 alert('loaded')
-                sendResponce({ type: 'SET_CONFIG_SUCCESS', payload: config })
+                sendResponce({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config })
             });
             break;
         }

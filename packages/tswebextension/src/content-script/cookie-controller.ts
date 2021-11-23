@@ -4,7 +4,7 @@
  * - Removes cookies matching rules
  * - Listens to new cookies, then tries to apply rules to them
  */
-export default class CookieController {
+export class CookieController {
     /**
      * On rule applied callback
      */

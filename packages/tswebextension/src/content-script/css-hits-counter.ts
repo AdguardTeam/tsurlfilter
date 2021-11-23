@@ -1,8 +1,8 @@
 /* eslint-disable no-param-reassign */
 
 import { IAffectedElement } from 'extended-css';
-import ElementUtils from './utils/element-utils';
-import HitsStorage from './hits-storage';
+import { ElementUtils } from './utils/element-utils';
+import { HitsStorage } from './hits-storage';
 
 /**
  * Counted element interface
@@ -22,7 +22,7 @@ interface ICountedElement {
  *
  * then here we parse this attribute and calls provided callback function
  */
-export default class CssHitsCounter {
+export class CssHitsCounter {
     /**
      * We split CSS hits counting into smaller batches of elements
      * and schedule them one by one using setTimeout

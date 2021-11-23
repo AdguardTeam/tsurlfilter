@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/index.js",
-  "typings": "dist/types",
+  "typings": "dist/types/background/index.d.ts",
   "files": [
     "dist",
     "src"

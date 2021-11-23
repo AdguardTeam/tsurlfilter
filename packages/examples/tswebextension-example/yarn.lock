@@ -10,10 +10,8 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/tsurlfilter@^0.7.33":
-  version "0.7.37"
-  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.37.tgz#a91d7d4af290af67beb1954e6398696dcbf4a3c5"
-  integrity sha512-Sc/oY5zFfEmpJk2aj+pcgCVdI6gAoSd15xJp+rKr3Rdds5sQvWmgbuTk+qth6oYFOa2a61iCXnWPDPpUnfEv1A==
+"@adguard/tsurlfilter@file:../../tsurlfilter":
+  version "0.7.38"
   dependencies:
     "@adguard/scriptlets" "^1.4.26"
     "@types/ip6addr" "^0.2.3"
@@ -27,7 +25,6 @@
     lru_map "^0.4.1"
     netmask "^2.0.2"
     punycode "^2.1.1"
-    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1"
     tldts "^5.6.45"
     webextension-polyfill "^0.8.0"
 
@@ -35,7 +32,10 @@
   version "0.0.1"
   dependencies:
     "@adguard/scriptlets" "^1.4.26"
-    "@adguard/tsurlfilter" "^0.7.33"
+    "@adguard/tsurlfilter" "file:../../../../../../Users/vladimir/Library/Caches/Yarn/v6/npm-@adguard-tswebextension-0.0.1-bef383e4-ac92-4617-aa56-8e2be6a057d1-1637658224923/node_modules/@adguard/tsurlfilter"
+    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13"
+    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1"
+    tldts "^5.6.45"
     webextension-polyfill "^0.8.0"
     zod "^3.11.6"
 
@@ -279,6 +279,31 @@
   dependencies:
     "@babel/helper-validator-identifier" "^7.15.7"
     to-fast-properties "^2.0.0"
+
+"@types/chrome@^0.0.164":
+  version "0.0.164"
+  resolved "https://registry.yarnpkg.com/@types/chrome/-/chrome-0.0.164.tgz#0a7669cf7225df0c472c69f73ef4b7b1d2d94013"
+  integrity sha512-/EvjbfcowiA+f8Fwv5PSzxHhnAgjIx50Bjy1zQQYYwxlbJ+rI07CXMhrxwz4jUZlxLjnn/kugNQBjZIN58pKyg==
+  dependencies:
+    "@types/filesystem" "*"
+    "@types/har-format" "*"
+
+"@types/filesystem@*":
+  version "0.0.32"
+  resolved "https://registry.yarnpkg.com/@types/filesystem/-/filesystem-0.0.32.tgz#307df7cc084a2293c3c1a31151b178063e0a8edf"
+  integrity sha512-Yuf4jR5YYMR2DVgwuCiP11s0xuVRyPKmz8vo6HBY3CGdeMj8af93CFZX+T82+VD1+UqHOxTq31lO7MI7lepBtQ==
+  dependencies:
+    "@types/filewriter" "*"
+
+"@types/filewriter@*":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@types/filewriter/-/filewriter-0.0.29.tgz#a48795ecadf957f6c0d10e0c34af86c098fa5bee"
+  integrity sha512-BsPXH/irW0ht0Ji6iw/jJaK8Lj3FJemon2gvEqHKpCdDCeemHa+rI3WBGq5z7cDMZgoLjY40oninGxqk+8NzNQ==
+
+"@types/har-format@*":
+  version "1.2.8"
+  resolved "https://registry.yarnpkg.com/@types/har-format/-/har-format-1.2.8.tgz#e6908b76d4c88be3db642846bb8b455f0bfb1c4e"
+  integrity sha512-OP6L9VuZNdskgNN3zFQQ54ceYD8OLq5IbqO4VK91ORLfOm7WdT/CiT/pHEBSQEqCInJ2y3O6iCm/zGtPElpgJQ==
 
 "@types/ip6addr@^0.2.3":
   version "0.2.3"

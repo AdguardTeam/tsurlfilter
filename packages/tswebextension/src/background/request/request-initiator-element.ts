@@ -13,10 +13,13 @@ const enum InitiatorTag {
 }
 
 
+
+const BACKGROUND_TAB_ID = -1;
+
 /**
  * Css, injected to broken element for hiding
  */
-const initiatorTagHiddenStyle = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
+const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
 
 
 /**
@@ -46,7 +49,7 @@ export function hideRequestInitiatorElement(
 
     const initiatorTags = getRequestInitiatorTag(requestType);
 
-    if (!initiatorTags || tabId === -1) {
+    if (!initiatorTags || tabId === BACKGROUND_TAB_ID) {
         return;
     }
 
@@ -60,7 +63,7 @@ export function hideRequestInitiatorElement(
     let code = '';
 
     for (let i = 0; i < initiatorTags.length; i++){
-        code += `${initiatorTags[i]}[src$="${srcUrl}"] ${initiatorTagHiddenStyle}\n`;
+        code += `${initiatorTags[i]}[src$="${srcUrl}"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
     }
 
     cosmeticApi.injectCss(code, tabId, requestFrameId);
