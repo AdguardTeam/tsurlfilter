@@ -474,6 +474,18 @@ describe('NetworkRule constructor', () => {
         expect(rule.isOptionDisabled(NetworkRuleOption.Document));
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
     });
+
+    it('works if doc modifier alias works properly', () => {
+        let rule = new NetworkRule('||example.org^$doc', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$~doc', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionDisabled(NetworkRuleOption.Document));
+        expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
+    });
 });
 
 describe('NetworkRule.match', () => {

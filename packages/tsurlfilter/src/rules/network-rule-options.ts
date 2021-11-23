@@ -13,6 +13,7 @@ export const NETWORK_RULE_OPTIONS = {
     URLBLOCK: 'urlblock',
     CONTENT: 'content',
     DOCUMENT: 'document',
+    DOC: 'doc',
     STEALTH: 'stealth',
     POPUP: 'popup',
     EMPTY: 'empty',

@@ -1042,10 +1042,12 @@ export class NetworkRule implements rule.IRule {
 
             // $document
             case OPTIONS.DOCUMENT:
+            case OPTIONS.DOC:
                 this.setOptionEnabled(NetworkRuleOption.Document, true);
                 this.setRequestType(RequestType.Document, true);
                 break;
             case NOT_MARK + OPTIONS.DOCUMENT:
+            case NOT_MARK + OPTIONS.DOC:
                 this.setOptionEnabled(NetworkRuleOption.Document, false);
                 this.setRequestType(RequestType.Document, false);
                 break;
