@@ -70,7 +70,7 @@ export class ElementCollapser {
         }
 
         return elementUrl;
-    };
+    }
 
 
     private isElementCollapsed(element: HTMLElement): boolean {

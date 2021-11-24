@@ -9,20 +9,31 @@
     "test": "node ./browser_test"
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.4.26",
     "@adguard/tswebextension": "file:../../tswebextension",
-    "@babel/runtime": "^7.13.10",
     "formik": "^2.2.9",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/node": "^7.16.0",
+    "@babel/plugin-proposal-class-properties": "^7.16.0",
+    "@babel/plugin-transform-runtime": "^7.16.4",
+    "@babel/preset-env": "^7.16.4",
     "@babel/preset-react": "^7.16.0",
     "@babel/preset-typescript": "^7.16.0",
     "@types/chrome": "^0.0.164",
     "@types/react": "^17.0.34",
     "@types/react-dom": "^17.0.11",
+    "axios": "^0.24.0",
+    "babel-loader": "^8.2.3",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^10.0.0",
     "css-loader": "^6.5.1",
-    "style-loader": "^3.3.1"
+    "html-webpack-plugin": "^5.5.0",
+    "jsdom": "^18.1.1",
+    "puppeteer": "^11.0.0",
+    "style-loader": "^3.3.1",
+    "webpack": "^5.64.2"
   }
 }

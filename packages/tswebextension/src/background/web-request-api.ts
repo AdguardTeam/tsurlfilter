@@ -133,7 +133,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         const {
             requestType,
             tabId,
-            frameId
+            frameId,
         } = context;
 
         if (requestType === RequestType.Document){

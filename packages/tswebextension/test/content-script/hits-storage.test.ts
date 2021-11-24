@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable guard-for-in */
 
-import HitsStorage from '../../src/content-script/hits-storage';
+import { HitsStorage } from '../../src/content-script/hits-storage';
 
 describe('HitsStorage', () => {
     const hitsStorage = new HitsStorage();

@@ -15,7 +15,7 @@ import {
 
 import { Configuration } from './configuration';
 
-import { getHost } from './utils'
+import { getHost } from './utils';
 
 /**
  * Request Match Query

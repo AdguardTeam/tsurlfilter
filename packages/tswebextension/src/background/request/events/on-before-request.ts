@@ -9,8 +9,8 @@ import { tabsApi } from '../../tabs/tabs-api';
 import { engineApi } from '../../engine-api';
 
 export type OnBeforeRequest = OriginalRequestEvent<
-    WebRequest.OnBeforeRequestDetailsType,
-    WebRequest.OnBeforeRequestOptions
+WebRequest.OnBeforeRequestDetailsType,
+WebRequest.OnBeforeRequestOptions
 >;
 
 const MAX_URL_LENGTH = 1024 * 16;
@@ -96,7 +96,7 @@ export const onBeforeRequest = new RequestEvent(
             timestamp: Date.now(),
             matchingResult: result,
             thirdParty,
-            contentType
+            contentType,
         });
 
         return callback({ details, context });

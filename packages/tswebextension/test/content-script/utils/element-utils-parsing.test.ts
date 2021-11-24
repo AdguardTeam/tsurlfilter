@@ -1,4 +1,4 @@
-import ElementUtils from '../../../src/content-script/utils/element-utils';
+import { ElementUtils } from '../../../src/content-script/utils/element-utils';
 
 describe('Element utils - parsing', () => {
     it('checks parseInfo', () => {

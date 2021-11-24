@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import ElementUtils from '../../../src/content-script/utils/element-utils';
+import { ElementUtils } from '../../../src/content-script/utils/element-utils';
 
 describe('Element utils', () => {
     document.body.innerHTML = `
