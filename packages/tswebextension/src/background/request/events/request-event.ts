@@ -3,7 +3,7 @@ import { Events, WebRequest } from 'webextension-polyfill';
 import { RequestContext } from '../request-context-storage';
 
 /**
- * Extended callback argument data
+ * Extended {@link RequestEventCallback}  argument data
  */
 export interface RequestData<Details> {
     details: Details,
@@ -11,7 +11,15 @@ export interface RequestData<Details> {
 }
 
 /**
- * Callback function passed as RequestEvent.addListener method argument
+ * Callback function passed as {@link RequestEvent} methods argument
+ * 
+ * If the function passed to {@link RequestEvent.addListener},
+ * {@link RequestEventListener} is dynamicly created by {@link CreateRequestEventListener} function,
+ * mapped with callback and registetered in the browser.WebRequest event
+ * 
+ * If the fucntion is passed to {@link RequestEvent.removeListener},
+ * mapped {@link RequestEventListener} unsubscribes from the browser.WebRequest event
+ * 
  */
 export type RequestEventCallback<Details> = (
     requestData: RequestData<Details>
@@ -19,22 +27,29 @@ export type RequestEventCallback<Details> = (
 
 
 /**
- * Function registered as listener of the original event
+ * Function registered as listener of the browser.WebRequest event
+ * 
+ * 1. Handles request details from original event
+ * 2. Does some preprocessing (Reads/Writes data from {@link RequestContext})
+ * 3. Executes the {@link RequestEventCallback} passed 
+ *    to {@link RequestEvent.addListener} with {@link RequestData}
+ * 4. Returns callback result
  */
 export type RequestEventListener<Details> = (
     details: Details
 ) => WebRequest.BlockingResponseOrPromise | void;
 
 /**
- * Creates listener for original event from extended callback
+ * Creates {@link RequestEventListener}, that
+ * execute {@link RequestEventCallback} with {@link RequestData} argument
  */
-export type RequestEventListenerFactory<Details> = (
+export type CreateRequestEventListener<Details> = (
     callback: RequestEventCallback<Details>
 ) => RequestEventListener<Details>;
 
 
 /**
- * Original lifecycle event of browser.webRequest
+ * More flexible variant for {@link Events.Event} interface
  */
 export interface OriginalRequestEvent<Details, Options> 
     extends Events.Event<RequestEventListener<Details>>{
@@ -45,9 +60,16 @@ export interface OriginalRequestEvent<Details, Options>
     ): void;
 }
 
-
+/**
+ * browser.webRequest generic event wrapper,
+ * that register and unregister dynamicly created callbacks,
+ * based on preprocess logic, described in {@link CreateRequestEventListener}
+ * and logic of {@link RequestEventCallback} passed as class methods argument
+ * 
+ * The class use same {@link Events.Event} interface for maximum compatibility with original api
+ */
 export class RequestEvent<Details, Options> {
-    private listenerFactory: RequestEventListenerFactory<Details>;
+    private createListener: CreateRequestEventListener<Details>;
 
     private event: OriginalRequestEvent<Details, Options>;
 
@@ -55,10 +77,10 @@ export class RequestEvent<Details, Options> {
 
     constructor(
         event: OriginalRequestEvent<Details, Options>,
-        listenerFactory: RequestEventListenerFactory<Details>,
+        createListener: CreateRequestEventListener<Details>,
     ){
         this.event = event;
-        this.listenerFactory = listenerFactory;
+        this.createListener = createListener;
     }
 
     public addListener(
@@ -66,7 +88,7 @@ export class RequestEvent<Details, Options> {
         filter: WebRequest.RequestFilter,
         extraInfoSpec?: Options[],
     ): void {
-        const listener = this.listenerFactory(callback);
+        const listener = this.createListener(callback);
 
         this.listeners.set(callback, listener);
 

@@ -10,7 +10,7 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
 import { cosmeticApi } from './cosmetic-api';
-import { redirectsApi } from './redirects-api';
+import { redirectsService } from './services/redirects-service';
 import {
     hideRequestInitiatorElement,
     onBeforeRequest,
@@ -79,7 +79,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         if (basicResult && !basicResult.isAllowlist()) {
             if (basicResult.isOptionEnabled(NetworkRuleOption.Redirect)) {
-                const redirectUrl = redirectsApi.createRedirectUrl(basicResult.getAdvancedModifierValue());
+                const redirectUrl = redirectsService.createRedirectUrl(basicResult.getAdvancedModifierValue());
                 if (redirectUrl) {
                     return { redirectUrl };
                 }

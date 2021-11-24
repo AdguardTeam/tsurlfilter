@@ -1,6 +1,6 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 
-export interface ResourcesApiInterface {
+export interface ResourcesServiceInterface {
     start: () => void;
     stop: () => void;
 
@@ -8,7 +8,7 @@ export interface ResourcesApiInterface {
     loadResource: (path: string) => Promise<string>;
 }
 
-export class ResourcesApi implements ResourcesApiInterface {
+export class ResourcesService implements ResourcesServiceInterface {
     private secrets: string[] = [];
 
     private root = browser.runtime.getURL('/');
@@ -77,4 +77,4 @@ export class ResourcesApi implements ResourcesApiInterface {
     }
 }
 
-export const resourcesApi = new ResourcesApi();
+export const resourcesService = new ResourcesService();
