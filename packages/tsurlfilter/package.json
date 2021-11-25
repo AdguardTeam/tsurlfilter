@@ -41,7 +41,7 @@
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
-      "eslint --fix"
+      "eslint"
     ]
   },
   "jest": {

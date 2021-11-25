@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "eslint --fix 'src/**/*.ts' 'test/**/*.ts'",
+    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
     "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
@@ -35,7 +35,7 @@
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
-      "eslint --fix"
+      "eslint"
     ]
   },
   "jest": {
