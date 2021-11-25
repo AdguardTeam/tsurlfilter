@@ -27,6 +27,10 @@ const testcases = [
     rulesUrl: '/Filters/scriptlet-rules/test-scriptlet-rules.txt',
     pageUrl: '/Filters/scriptlet-rules/test-scriptlet-rules.html'
   },
+  {
+    rulesUrl: '/Filters/extended-css-rules/test-extended-css-rules.txt',
+    pageUrl: '/Filters/extended-css-rules/test-extended-css-rules.html'
+  },
 ];
 
 const defaultConfig = {

@@ -313,9 +313,11 @@ export class WebRequestApi implements WebRequestApiInterface {
                 cosmeticApi.injectCss(cssText, tabId, frameId);
             }
     
+            /*
             if (extCssText){
                 cosmeticApi.injectExtCss(extCssText, tabId, frameId);
             }
+            */
             
             if (jsScriptText){
                 cosmeticApi.injectScript(jsScriptText, tabId, frameId);

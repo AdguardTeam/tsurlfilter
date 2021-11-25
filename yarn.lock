@@ -10,18 +10,6 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/tswebextension@file:packages/tswebextension":
-  version "0.0.1"
-  dependencies:
-    "@adguard/scriptlets" "^1.4.26"
-    "@adguard/tsurlfilter" "^0.7.37"
-    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13"
-    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1"
-    tldts "^5.6.45"
-    tslib "^2.3.1"
-    webextension-polyfill "^0.8.0"
-    zod "^3.11.6"
-
 "@babel/code-frame@^7.10.4", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.16.0":
   version "7.16.0"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.16.0.tgz#0dfc80309beec8411e65e706461c408b0bb9b431"

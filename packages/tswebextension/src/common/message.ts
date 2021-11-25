@@ -3,6 +3,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 export enum MessageType {
     PROCESS_SHOULD_COLLAPSE = 'PROCESS_SHOULD_COLLAPSE',
+    GET_EXTENDED_CSS = 'GET_EXTENDED_CSS',
 }
 
 
@@ -21,3 +22,10 @@ export const processShouldCollapsePayloadValidator = z.object({
 }).strict();
 
 export type ProcessShouldCollapsePayload = z.infer<typeof processShouldCollapsePayloadValidator>;
+
+
+export const  getExtendedCssPayloadValidator = z.object({
+    documentUrl: z.string(),
+}).strict();
+
+export type GetExtendedCssPayloadValidator = z.infer<typeof getExtendedCssPayloadValidator>;

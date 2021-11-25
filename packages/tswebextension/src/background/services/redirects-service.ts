@@ -1,6 +1,8 @@
-import { Redirects, Redirect } from '@adguard/scriptlets';
+import { redirects, Redirect } from '@adguard/scriptlets';
 import { resourcesService } from './resources-service';
 
+// TODO: Update Redirect export
+const { Redirects } = redirects as any;
 export interface RedirectsServiceInterface {
     start: () => void;
 
@@ -9,7 +11,7 @@ export interface RedirectsServiceInterface {
 
 
 export class RedirectsService implements RedirectsServiceInterface {
-    redirects: Redirects | undefined;
+    redirects: any;
 
     public async start() {
         try {
