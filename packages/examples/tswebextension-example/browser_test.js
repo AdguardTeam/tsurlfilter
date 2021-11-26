@@ -1,6 +1,7 @@
 const path = require("path");
 const puppeteer = require("puppeteer");
 const axios = require("axios");
+const chalk = require("chalk");
 
 
 const baseURL = 'https://testcases.adguard.com';
@@ -9,51 +10,30 @@ axios.defaults.baseURL = baseURL;
 
 const pathToExtension = path.join(__dirname, "build");
 
-
-const testcases = [
-  {
-    rulesUrl: '/Filters/simple-rules/test-simple-rules.txt',
-    pageUrl: '/Filters/simple-rules/test-simple-rules.html'
-  },
-  {
-    rulesUrl: '/Filters/simple-rules/generichide-test/generichide-test.txt',
-    pageUrl: '/Filters/simple-rules/generichide-test/generichide-test.html'
-  },
-  {
-    rulesUrl: '/Filters/script-rules/test-script-rules.txt',
-    pageUrl: '/Filters/script-rules/test-script-rules.html'
-  },
-  {
-    rulesUrl: '/Filters/scriptlet-rules/test-scriptlet-rules.txt',
-    pageUrl: '/Filters/scriptlet-rules/test-scriptlet-rules.html'
-  },
-  {
-    rulesUrl: '/Filters/extended-css-rules/test-extended-css-rules.txt',
-    pageUrl: '/Filters/extended-css-rules/test-extended-css-rules.html'
-  },
-];
-
 const defaultConfig = {
   filters: [],
   allowlist: [],
   userrules: [],
   verbose: false,
   settings: {
-      collectStats: true,
-      allowlistInverted: false,
-      stealth: {
-          blockChromeClientData: true,
-          hideReferrer: true,
-          hideSearchQueries: true,
-          sendDoNotTrack: true,
-          blockWebRTC: true,
-          selfDestructThirdPartyCookies: true,
-          selfDestructThirdPartyCookiesTime: 3600,
-          selfDestructFirstPartyCookies: true,
-          selfDestructFirstPartyCookiesTime: 3600,
-      },
+    collectStats: true,
+    allowlistInverted: false,
+    stealth: {
+      blockChromeClientData: true,
+      hideReferrer: true,
+      hideSearchQueries: true,
+      sendDoNotTrack: true,
+      blockWebRTC: true,
+      selfDestructThirdPartyCookies: true,
+      selfDestructThirdPartyCookiesTime: 3600,
+      selfDestructFirstPartyCookies: true,
+      selfDestructFirstPartyCookiesTime: 3600,
+    },
   },
 };
+
+
+const getColorStatus = (status) => status === 'passed' ? chalk.green(status) : chalk.red(status);
 
 (async () => {
   // Launch browser with installed extension
@@ -77,10 +57,65 @@ const defaultConfig = {
 
   const page = await browser.newPage();
 
+  // Get testcases data
+
+  await page.goto(baseURL, { waitUntil: 'networkidle0' });
+
+  const testcases = await page.evaluate(() => {
+    const testInfocontainers = document.querySelectorAll('div.test-info');
+
+    const testcases = [];
+
+    for (let testInfocontainer of testInfocontainers) {
+      const compatibility = testInfocontainer.querySelector('div.full-compatibility').textContent;
+
+      if (compatibility.indexOf('Chrome') > 0) {
+        const testTitleElement = testInfocontainer.querySelector('a.test-title');
+
+        const title = testTitleElement.textContent;
+        const pageUrl = '/' + testTitleElement.getAttribute('href');
+
+        const rulesUrl = pageUrl.slice(0, pageUrl.lastIndexOf('.html')) + '.txt';
+
+        testcases.push({
+          title,
+          pageUrl,
+          rulesUrl,
+        })
+      }
+    }
+
+    console.log(testcases)
+    return testcases;
+  });
+
+
   // register function, that transfer args from page to puppeteer context
   // installed function survive navigations.
-  await page.exposeFunction('logDone', async (details) => {
-    console.log(details);
+  await page.exposeFunction('logRunEnd', async (details) => {
+
+    const counts = details.testCounts;
+  
+    console.log('Name:', details.name)
+
+    console.log('Status:', getColorStatus(details.status));
+    console.log('Total %d tests: %d passed, %d failed, %d skipped',
+      counts.total,
+      counts.passed,
+      counts.failed,
+      counts.skipped
+    );
+    console.log('Duration:', details.runtime, '\n')
+
+    const tests = details.tests
+
+    for(let i = 0; i < tests.length; i++) {
+      const test = tests[i]
+
+      console.log(test.name, getColorStatus(test.status))
+    }
+
+    console.log('\n');
   });
 
   // extends QUnit instance on creation by custom event listeners,
@@ -92,8 +127,11 @@ const defaultConfig = {
       set: (value) => {
         qUnit = value;
 
-        qUnit.done(details => {
-          window.logDone(details)
+        console.log(qUnit);
+
+        // https://github.com/js-reporters/js-reporters
+        qUnit.on('runEnd', details => {
+          window.logRunEnd(details)
         })
       },
       configurable: true,
