@@ -6,7 +6,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "build": "babel-node ./scripts/build",
-    "test": "node ./browser_test"
+    "test": "node ./browser-test"
   },
   "dependencies": {
     "@adguard/tswebextension": "0.0.1",
