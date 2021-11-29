@@ -19,12 +19,9 @@ export namespace BrowserEvents {
     /**
      * Callback function passed as {@link RequestEvent} methods argument
      * 
-     * If the function passed to {@link RequestEvent.addListener},
-     * {@link RequestEventListener} is dynamicly created by {@link CreateRequestEventListener} function,
-     * mapped with callback and registetered in the browser.WebRequest event
-     * 
-     * If the fucntion is passed to {@link RequestEvent.removeListener},
-     * mapped {@link RequestEventListener} unsubscribes from the browser.WebRequest event
+     * This function passed to {@link RequestEvent.addListener},
+     * {@link RequestEventListener} is dynamicly created by {@link CreateRequestEventListener} function
+     * and registetered in the browser.WebRequest event
      * 
      */
     export type RequestEventCallback<Details> = (
@@ -35,7 +32,7 @@ export namespace BrowserEvents {
      * Function registered as listener of the browser.WebRequest event
      * 
      * 1. Handles request details from original event
-     * 2. Does some preprocessing (Reads/Writes data from {@link RequestContext})
+     * 2. modifies data in {@link RequestContext})
      * 3. Executes the {@link RequestEventCallback} passed 
      *    to {@link RequestEvent.addListener} with {@link RequestData}
      * 4. Returns callback result
@@ -74,10 +71,7 @@ export namespace BrowserEvents {
     /**
      * browser.webRequest generic event wrapper,
      * that register and unregister dynamicly created callbacks,
-     * based on preprocess logic, described in {@link CreateRequestEventListener}
-     * and logic of {@link RequestEventCallback} passed as class methods argument
-     * 
-     * The class use same {@link Events.Event} interface for maximum compatibility with original api
+     * based on logic, described in {@link CreateRequestEventListener} and {@link RequestEventCallback}
      */
     export class RequestEvent<Details, Options> {
 
