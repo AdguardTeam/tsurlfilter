@@ -2,16 +2,17 @@ import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { ContentType } from './request-type';
 
 export interface RequestContext {
-    requestUrl: string
-    referrerUrl: string
-    requestType: RequestType
-    contentType: ContentType
-    tabId: number
-    frameId: number
-    requestFrameId: number
+    tabId: number,
+    frameId: number,
     timestamp: number // in ms
-    thirdParty: boolean
-    matchingResult: MatchingResult | null
+
+    requestUrl?: string
+    referrerUrl?: string
+    requestType?: RequestType
+    contentType?: ContentType
+    requestFrameId?: number
+    thirdParty?: boolean
+    matchingResult?: MatchingResult | null
 }
 
 export interface RequestContextStorageInterface {

@@ -8,19 +8,14 @@ import {
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
-import { isOwnUrl, isHttpOrWsRequest, getDomain } from './utils';
+import { isOwnUrl, isHttpOrWsRequest, getDomain, isThirdPartyRequest } from './utils';
 import { cosmeticApi } from './cosmetic-api';
 import { redirectsService } from './services/redirects-service';
 import {
     hideRequestInitiatorElement,
-    onBeforeRequest,
-    onBeforeSendHeaders,
-    RequestData,
-    onHeadersReceived,
-    onErrorOccurred,
-    onResponseStarted,
-    onCompleted,
-    requestContextStorage, 
+    BrowserEvents,
+    requestContextStorage,
+    getRequestType 
 } from './request';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -30,7 +25,11 @@ export interface WebRequestApiInterface {
     stop: () => void;
 }
 
+
+const MAX_URL_LENGTH = 1024 * 16;
+
 export class WebRequestApi implements WebRequestApiInterface {
+    private listenerRemovers: (() => void)[] = [];
 
     constructor() {
         this.onBeforeRequest = this.onBeforeRequest.bind(this);
@@ -60,22 +59,106 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     public stop(): void {
-        onBeforeRequest.removeListener(this.onBeforeRequest);
-        onBeforeRequest.removeListener(this.handleCspReportRequests);
-        onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
-        onHeadersReceived.removeListener(this.onHeadersReceived);
-        onErrorOccurred.removeListener(this.onErrorOccurred);
-        onResponseStarted.removeListener(this.onResponseStarted);
-        onCompleted.removeListener(this.onCompleted);
+        this.listenerRemovers.forEach(removeListener => {
+            removeListener();
+        })
+
+        this.listenerRemovers = [];
+
         browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
-    private onBeforeRequest({ context }: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
-        if (!context?.matchingResult) {
+    private onBeforeRequest({ context, details }: BrowserEvents.RequestData<
+        WebRequest.OnBeforeRequestDetailsType
+    >): WebRequestEventResponse {
+        const {
+            requestId,
+            type,
+            frameId,
+            tabId,
+            parentFrameId,
+            originUrl,
+            initiator,
+        } = details;
+        
+        let { url } = details;
+        
+        /**
+         * truncate too long urls
+         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493
+         */
+        if (url.length > MAX_URL_LENGTH) {
+            url = url.slice(0, MAX_URL_LENGTH);
+        }
+        
+        /**
+         * FF sends http instead of ws protocol at the http-listeners layer
+         * Although this is expected, as the Upgrade request is indeed an HTTP request,
+         * we use a chromium based approach in this case.
+         */
+        if (type === 'websocket' && url.indexOf('http') === 0) {
+            url = url.replace(/^http(s)?:/, 'ws$1:');
+        }
+        
+        const { requestType, contentType } = getRequestType(type);
+        
+        let requestFrameId = type === 'main_frame'
+            ? frameId
+            : parentFrameId;
+        
+        // Relate request to main_frame
+        if (requestFrameId === -1) {
+            requestFrameId = 0;
+        }
+        
+        const referrerUrl = originUrl
+            || initiator
+            || getDomain(url)
+            || url;
+        
+        const thirdParty = isThirdPartyRequest(url, referrerUrl);
+
+        requestContextStorage.update(requestId, {
+            requestUrl: url,
+            referrerUrl,
+            requestType,
+            tabId,
+            frameId,
+            requestFrameId,
+            thirdParty,
+            contentType,
+        })
+        
+        if (isOwnUrl(referrerUrl)
+            || !isHttpOrWsRequest(url)) {
+            return;
+        }
+        
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+            tabsApi.recordRequestFrame(
+                tabId,
+                frameId,
+                referrerUrl,
+                requestType,
+            );
+        }
+        
+        const result = engineApi.matchRequest({
+            requestUrl: url,
+            frameUrl: referrerUrl,
+            requestType,
+            frameRule: tabsApi.getTabFrameRule(tabId),
+        });
+
+        if (!result) {
             return;
         }
 
-        const basicResult = context.matchingResult.getBasicResult();
+        requestContextStorage.update(requestId, {
+            matchingResult: result
+        });
+
+        const basicResult = result.getBasicResult();
 
         if (basicResult && !basicResult.isAllowlist()) {
             if (basicResult.isOptionEnabled(NetworkRuleOption.Redirect)) {
@@ -85,15 +168,7 @@ export class WebRequestApi implements WebRequestApiInterface {
                 }
             }
 
-            const {
-                tabId,
-                requestFrameId,
-                requestUrl,
-                requestType,
-                thirdParty,
-            } = context;
-
-            hideRequestInitiatorElement(tabId, requestFrameId, requestUrl, requestType, thirdParty);
+            hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
 
             return { cancel: true };
         }
@@ -101,12 +176,16 @@ export class WebRequestApi implements WebRequestApiInterface {
         return;
     }
 
-    private onBeforeSendHeaders(data: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): WebRequestEventResponse {
+    private onBeforeSendHeaders(data: BrowserEvents.RequestData<
+        WebRequest.OnBeforeSendHeadersDetailsType
+    >): WebRequestEventResponse {
         // TODO: implement
         return;
     }
 
-    private onHeadersReceived({ context }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
+    private onHeadersReceived({ context }: BrowserEvents.RequestData<
+        WebRequest.OnHeadersReceivedDetailsType
+    >): WebRequestEventResponse {
         if (!context?.matchingResult){
             return;
         }
@@ -119,13 +198,15 @@ export class WebRequestApi implements WebRequestApiInterface {
             frameId,
         } = context;
 
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument){
+        if (referrerUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)){
             const cosmeticOption = matchingResult.getCosmeticOption();
             this.recordFrameInjection(referrerUrl, tabId, frameId, cosmeticOption);
         }
     }
 
-    private onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
+    private onResponseStarted({ context }: BrowserEvents.RequestData<
+        WebRequest.OnResponseStartedDetailsType
+    >): WebRequestEventResponse {
         if (!context?.matchingResult){
             return;
         }
@@ -141,11 +222,15 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onCompleted({ details }: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
+    private onCompleted({ details }: BrowserEvents.RequestData<
+        WebRequest.OnCompletedDetailsType
+    >): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
-    private onErrorOccurred({ details }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
+    private onErrorOccurred({ details }: BrowserEvents.RequestData<
+        WebRequest.OnErrorOccurredDetailsType
+    >): WebRequestEventResponse {
         const { requestId, tabId, frameId } = details;
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
@@ -157,7 +242,9 @@ export class WebRequestApi implements WebRequestApiInterface {
         requestContextStorage.delete(requestId);
     }
 
-    private handleCspReportRequests(data: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
+    private handleCspReportRequests(data: BrowserEvents.RequestData<
+        WebRequest.OnBeforeRequestDetailsType
+    >): WebRequestEventResponse {
         // TODO: implement
         return;
     }
@@ -175,11 +262,13 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
 
-        onBeforeRequest.addListener(
-            this.onBeforeRequest,
+        const removeListener = BrowserEvents.onBeforeRequest.addListener({
+            callback: this.onBeforeRequest,
             filter,
             extraInfoSpec,
-        );
+        });
+
+        this.listenerRemovers.push(removeListener);
     }
 
     /**
@@ -193,11 +282,13 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['requestBody'];
 
-        onBeforeRequest.addListener(
-            this.handleCspReportRequests,
+        const removeListener = BrowserEvents.onBeforeRequest.addListener({
+            callback: this.handleCspReportRequests,
             filter,
             extraInfoSpec,
-        );
+        });
+
+        this.listenerRemovers.push(removeListener);
     }
 
     private initBeforeSendHeadersEventListener(): void {
@@ -205,10 +296,12 @@ export class WebRequestApi implements WebRequestApiInterface {
             urls: ['<all_urls>'],
         };
 
-        onBeforeSendHeaders.addListener(
-            this.onBeforeSendHeaders,
+        const removeListener =  BrowserEvents.onBeforeSendHeaders.addListener({
+            callback: this.onBeforeSendHeaders,
             filter,
-        );
+        });
+
+        this.listenerRemovers.push(removeListener);
     }
 
     private initHeadersReceivedEventListener(): void {
@@ -218,11 +311,13 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
 
-        onHeadersReceived.addListener(
-            this.onHeadersReceived,
+        const removeListener =  BrowserEvents.onHeadersReceived.addListener({
+            callback: this.onHeadersReceived,
             filter,
             extraInfoSpec,
-        );
+        });
+
+        this.listenerRemovers.push(removeListener);
     }
 
     private initOnResponseStartedEventListener(): void {
@@ -230,7 +325,12 @@ export class WebRequestApi implements WebRequestApiInterface {
             urls: ['<all_urls>'],
         };
 
-        onResponseStarted.addListener(this.onResponseStarted, filter);
+        const removeListener = BrowserEvents.onResponseStarted.addListener({
+            callback: this.onResponseStarted,
+            filter, 
+        });
+
+        this.listenerRemovers.push(removeListener);
     }
 
     private initOnErrorOccurredEventListener(): void {
@@ -238,7 +338,8 @@ export class WebRequestApi implements WebRequestApiInterface {
             urls: ['<all_urls>'],
         };
 
-        onErrorOccurred.addListener(this.onErrorOccurred, filter);
+        const removeListener = BrowserEvents.onErrorOccurred.addListener({ filter });
+        this.listenerRemovers.push(removeListener);
     }
 
     private initOnCompletedEventListener(): void {
@@ -248,11 +349,12 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const extraInfoSpec: WebRequest.OnCompletedOptions[] = ['responseHeaders'];
 
-        onCompleted.addListener(
-            this.onCompleted, 
+        const removeListener = BrowserEvents.onCompleted.addListener({
             filter,
-            extraInfoSpec,
-        );
+            extraInfoSpec
+        });
+
+        this.listenerRemovers.push(removeListener);
     }
 
     private initCommittedEventListener(): void {
