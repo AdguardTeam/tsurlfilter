@@ -1,4 +1,4 @@
-import { TsWebExtension } from "@adguard/tswebextension";
+import { TsWebExtension, Configuration } from "@adguard/tswebextension";
 
 import { MessageTypes } from "../common/message-types";
 
@@ -16,7 +16,7 @@ declare global {
 
 window.tsWebExtension = tsWebExtension;
 
-const defaultConfig = {
+const defaultConfig: Configuration = {
     filters: [],
     allowlist: [],
     userrules: [],

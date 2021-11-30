@@ -1,6 +1,6 @@
-const { colorizeStatusText, colorizeTitleText } = require("./text-color"); 
+import { colorizeStatusText, colorizeTitleText } from "./text-color"; 
 
-exports.logTestResult = (details) => {
+export const logTestResult = (details) => {
     const counts = details.testCounts;
 
     console.log(colorizeTitleText(details.name));

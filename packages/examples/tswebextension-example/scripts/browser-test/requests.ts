@@ -1,10 +1,10 @@
-const axios = require("axios");
+import axios from "axios";
 
-const { baseUrl } = require('./config');
+import { baseUrl } from './config';
 
 axios.defaults.baseURL = baseUrl;
 
-exports.loadRulesText = async (url) => {
+export const loadRulesText = async (url: string) => {
     try {
         const res = await axios.get(url, {
             validateStatus: (status) => {

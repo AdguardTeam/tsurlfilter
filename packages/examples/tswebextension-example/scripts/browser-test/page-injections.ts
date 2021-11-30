@@ -1,4 +1,12 @@
-exports.getTestcasesData = () => {
+import { Configuration, TsWebExtension } from '@adguard/tswebextension';
+
+declare global {
+    interface Window {
+        tsWebExtension: TsWebExtension;
+    }
+}
+
+export const getTestcasesData = () => {
     const testInfocontainers = document.querySelectorAll('div.test-info');
 
     const testcases = [];
@@ -24,8 +32,8 @@ exports.getTestcasesData = () => {
     return testcases;
 }
 
-exports.addQunitListeners = (callbackName) => {
-    let qUnit;
+export const addQunitListeners = (callbackName: string) => {
+    let qUnit: QUnit;
 
     Object.defineProperty(window, 'QUnit', {
         get: () => qUnit,
@@ -36,19 +44,21 @@ exports.addQunitListeners = (callbackName) => {
             qUnit.on('runEnd', details => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
-                window[callbackName]({...details, name })
+                (<any>window)[callbackName](Object.assign(details, { name }))
             })
         },
         configurable: true,
     });
 }
 
-exports.setTsWebExtensionConfig = async (defaultConfig, rulesText) => {
-    await window.tsWebExtension.configure({
-        ...defaultConfig,
+export const setTsWebExtensionConfig = async (
+    defaultConfig: Configuration,
+    rulesText: string
+) => {
+    await window.tsWebExtension.configure(Object.assign(defaultConfig, {
         filters: [{
             filterId: 1,
             content: rulesText
         }],
-    })
+    }))
 }

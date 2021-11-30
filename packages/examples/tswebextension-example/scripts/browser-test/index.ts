@@ -1,19 +1,11 @@
-const puppeteer = require("puppeteer");
-const { loadRulesText } = require("./requests");
+import puppeteer from "puppeteer";
+import { loadRulesText } from "./requests";
 
-const { 
-    baseUrl,
-    pathToExtension,
-    defaultExtensionConfig
-} = require("./config");
+import { baseUrl, pathToExtension, defaultExtensionConfig } from "./config";
 
-const {
-    getTestcasesData,
-    addQunitListeners,
-    setTsWebExtensionConfig
-} = require("./page-injections");
+import { getTestcasesData, addQunitListeners, setTsWebExtensionConfig } from "./page-injections";
 
-const { logTestResult } = require("./logger");
+import { logTestResult } from "./logger";
 
 (async () => {
     // Launch browser with installed extension
@@ -25,7 +17,7 @@ const { logTestResult } = require("./logger");
         ],
     });
 
-    const targets = await browser.targets();
+    const targets = browser.targets();
     const backgroundPageTarget = targets.find(
         (target) => target.type() === 'background_page'
     );

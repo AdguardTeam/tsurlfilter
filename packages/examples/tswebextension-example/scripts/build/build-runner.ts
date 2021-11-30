@@ -1,20 +1,19 @@
 /* eslint-disable no-console */
-import webpack from 'webpack';
+import webpack, { Stats, Configuration } from 'webpack';
 
-export const buildRunner = (webpackConfig, watch = false) => {
+type CompilerCallback = (err?: Error, stats?: Stats) => void
+
+export const buildRunner = (webpackConfig: Configuration, watch = false): Promise<void> => {
     const compiler = webpack(webpackConfig);
 
     const run = watch
-        ? (cb) => compiler.watch({}, cb)
-        : (cb) => compiler.run(cb);
+        ? (cb: CompilerCallback) => compiler.watch({}, cb)
+        : (cb: CompilerCallback) => compiler.run(cb);
 
     return new Promise((resolve, reject) => {
-        run((err, stats) => {
+        run((err: Error, stats: Stats) => {
             if (err) {
                 console.error(err.stack || err);
-                if (err.details) {
-                    console.error(err.details);
-                }
                 reject();
                 return;
             }

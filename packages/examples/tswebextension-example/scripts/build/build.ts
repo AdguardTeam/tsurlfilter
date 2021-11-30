@@ -6,7 +6,7 @@ const build = async () => {
     try {
         await buildRunner(config);
     } catch (e) {
-        console.log(e);
+        console.log((e as Error).message);
         process.exit(1);
     }
 };

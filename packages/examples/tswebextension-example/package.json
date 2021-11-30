@@ -5,8 +5,8 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "babel-node ./scripts/build",
-    "test": "node ./scripts/browser-test"
+    "build": "node -r esbuild-register ./scripts/build",
+    "test": "node -r esbuild-register ./scripts/browser-test/index.ts"
   },
   "dependencies": {
     "@adguard/tswebextension": "0.0.1",
@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",
-    "@babel/node": "^7.16.0",
     "@babel/plugin-proposal-class-properties": "^7.16.0",
     "@babel/plugin-transform-runtime": "^7.16.4",
     "@babel/preset-env": "^7.16.4",
@@ -31,6 +30,8 @@
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^10.0.0",
     "css-loader": "^6.5.1",
+    "esbuild": "^0.14.1",
+    "esbuild-register": "^3.2.0",
     "html-webpack-plugin": "^5.5.0",
     "jsdom": "^18.1.1",
     "puppeteer": "^11.0.0",

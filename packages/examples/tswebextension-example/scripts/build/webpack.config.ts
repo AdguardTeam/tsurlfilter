@@ -1,4 +1,5 @@
 import path from 'path';
+import { Configuration } from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
@@ -8,7 +9,7 @@ const CONTENT_SCRIPT = path.resolve(__dirname, '../../extension/pages/content-sc
 const POPUP_PATH = path.resolve(__dirname, '../../extension/pages/popup');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 
-export const config = {
+export const config: Configuration = {
     mode: 'development',
     devtool: 'eval-source-map',
     entry: {
