@@ -13,7 +13,7 @@ import { cosmeticApi } from './cosmetic-api';
 import { redirectsService } from './services/redirects-service';
 import {
     hideRequestInitiatorElement,
-    BrowserEvents,
+    RequestEvents,
     requestContextStorage,
     getRequestType 
 } from './request';
@@ -29,13 +29,9 @@ export interface WebRequestApiInterface {
 const MAX_URL_LENGTH = 1024 * 16;
 
 export class WebRequestApi implements WebRequestApiInterface {
-    private listenerRemovers: (() => void)[] = [];
-
     constructor() {
         this.onBeforeRequest = this.onBeforeRequest.bind(this);
-        this.onBeforeSendHeaders = this.onBeforeSendHeaders.bind(this);
         this.onHeadersReceived = this.onHeadersReceived.bind(this);
-        this.handleCspReportRequests = this.handleCspReportRequests.bind(this);
         this.onResponseStarted = this.onResponseStarted.bind(this);
         this.onErrorOccurred = this.onErrorOccurred.bind(this);
         this.onCompleted = this.onCompleted.bind(this);
@@ -45,30 +41,27 @@ export class WebRequestApi implements WebRequestApiInterface {
 
     public start(): void {
         // browser.webRequest Events
-        this.initBeforeRequestEventListener();
-        this.initCspReportRequestsEventListener();
-
-        this.initBeforeSendHeadersEventListener();
-        this.initHeadersReceivedEventListener();
-        this.initOnResponseStartedEventListener();
-        this.initOnErrorOccurredEventListener();
-        this.initOnCompletedEventListener();
+        RequestEvents.onBeforeRequest.addListener(this.onBeforeRequest);
+        RequestEvents.onHeadersReceived.addListener(this.onHeadersReceived);
+        RequestEvents.onResponseStarted.addListener(this.onResponseStarted);
+        RequestEvents.onErrorOccurred.addListener(this.onErrorOccurred);
+        RequestEvents.onCompleted.addListener(this.onCompleted);
 
         // browser.webNavigation Events
-        this.initCommittedEventListener();
+        browser.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
     public stop(): void {
-        this.listenerRemovers.forEach(removeListener => {
-            removeListener();
-        })
-
-        this.listenerRemovers = [];
+        RequestEvents.onBeforeRequest.removeListener(this.onBeforeRequest);
+        RequestEvents.onHeadersReceived.removeListener(this.onHeadersReceived);
+        RequestEvents.onResponseStarted.removeListener(this.onResponseStarted);
+        RequestEvents.onErrorOccurred.removeListener(this.onErrorOccurred);
+        RequestEvents.onCompleted.removeListener(this.onCompleted);
 
         browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
-    private onBeforeRequest({ context, details }: BrowserEvents.RequestData<
+    private onBeforeRequest({ details }: RequestEvents.RequestData<
         WebRequest.OnBeforeRequestDetailsType
     >): WebRequestEventResponse {
         const {
@@ -176,14 +169,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         return;
     }
 
-    private onBeforeSendHeaders(data: BrowserEvents.RequestData<
-        WebRequest.OnBeforeSendHeadersDetailsType
-    >): WebRequestEventResponse {
-        // TODO: implement
-        return;
-    }
-
-    private onHeadersReceived({ context }: BrowserEvents.RequestData<
+    private onHeadersReceived({ context }: RequestEvents.RequestData<
         WebRequest.OnHeadersReceivedDetailsType
     >): WebRequestEventResponse {
         if (!context?.matchingResult){
@@ -204,7 +190,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onResponseStarted({ context }: BrowserEvents.RequestData<
+    private onResponseStarted({ context }: RequestEvents.RequestData<
         WebRequest.OnResponseStartedDetailsType
     >): WebRequestEventResponse {
         if (!context?.matchingResult){
@@ -222,13 +208,13 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onCompleted({ details }: BrowserEvents.RequestData<
+    private onCompleted({ details }: RequestEvents.RequestData<
         WebRequest.OnCompletedDetailsType
     >): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
-    private onErrorOccurred({ details }: BrowserEvents.RequestData<
+    private onErrorOccurred({ details }: RequestEvents.RequestData<
         WebRequest.OnErrorOccurredDetailsType
     >): WebRequestEventResponse {
         const { requestId, tabId, frameId } = details;
@@ -242,123 +228,9 @@ export class WebRequestApi implements WebRequestApiInterface {
         requestContextStorage.delete(requestId);
     }
 
-    private handleCspReportRequests(data: BrowserEvents.RequestData<
-        WebRequest.OnBeforeRequestDetailsType
-    >): WebRequestEventResponse {
-        // TODO: implement
-        return;
-    }
-
 
     private onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
         this.injectCosmetic(details);
-    }
-
-
-    private initBeforeRequestEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
-
-        const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
-
-        const removeListener = BrowserEvents.onBeforeRequest.addListener({
-            callback: this.onBeforeRequest,
-            filter,
-            extraInfoSpec,
-        });
-
-        this.listenerRemovers.push(removeListener);
-    }
-
-    /**
-     * Handler for csp reports urls
-     */
-    private initCspReportRequestsEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-            types: ['csp_report'],
-        };
-
-        const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['requestBody'];
-
-        const removeListener = BrowserEvents.onBeforeRequest.addListener({
-            callback: this.handleCspReportRequests,
-            filter,
-            extraInfoSpec,
-        });
-
-        this.listenerRemovers.push(removeListener);
-    }
-
-    private initBeforeSendHeadersEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
-
-        const removeListener =  BrowserEvents.onBeforeSendHeaders.addListener({
-            callback: this.onBeforeSendHeaders,
-            filter,
-        });
-
-        this.listenerRemovers.push(removeListener);
-    }
-
-    private initHeadersReceivedEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
-
-        const extraInfoSpec: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
-
-        const removeListener =  BrowserEvents.onHeadersReceived.addListener({
-            callback: this.onHeadersReceived,
-            filter,
-            extraInfoSpec,
-        });
-
-        this.listenerRemovers.push(removeListener);
-    }
-
-    private initOnResponseStartedEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
-
-        const removeListener = BrowserEvents.onResponseStarted.addListener({
-            callback: this.onResponseStarted,
-            filter, 
-        });
-
-        this.listenerRemovers.push(removeListener);
-    }
-
-    private initOnErrorOccurredEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
-
-        const removeListener = BrowserEvents.onErrorOccurred.addListener({ filter });
-        this.listenerRemovers.push(removeListener);
-    }
-
-    private initOnCompletedEventListener(): void {
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
-
-        const extraInfoSpec: WebRequest.OnCompletedOptions[] = ['responseHeaders'];
-
-        const removeListener = BrowserEvents.onCompleted.addListener({
-            filter,
-            extraInfoSpec
-        });
-
-        this.listenerRemovers.push(removeListener);
-    }
-
-    private initCommittedEventListener(): void {
-        browser.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
     private recordFrameInjection(
@@ -405,21 +277,11 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
 
         if (frame?.injection){
-            const { 
-                cssText,
-                extCssText,
-                jsScriptText,
-            } = frame.injection;
+            const { cssText, jsScriptText } = frame.injection;
     
             if (cssText){
                 cosmeticApi.injectCss(cssText, tabId, frameId);
             }
-    
-            /*
-            if (extCssText){
-                cosmeticApi.injectExtCss(extCssText, tabId, frameId);
-            }
-            */
             
             if (jsScriptText){
                 cosmeticApi.injectScript(jsScriptText, tabId, frameId);

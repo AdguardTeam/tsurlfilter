@@ -1,30 +1,29 @@
 import browser, { WebRequest, Events } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter';
 
 import { RequestContext } from '../request-context-storage';
 import { requestContextStorage } from '../request-context-storage';
-
-const MAX_URL_LENGTH = 1024 * 16;
-
-export namespace BrowserEvents {
-
+export namespace RequestEvents {
     /**
-     * Extended {@link RequestEventCallback}  argument data
+     * Extended {@link EventCallback}  argument data
      */
     export interface RequestData<Details> {
         details: Details,
         context?: RequestContext;
     }
 
+    export type DetailsHandler<Details> = (
+        details: Details
+    ) => RequestData<Details>
+
     /**
-     * Callback function passed as {@link RequestEvent} methods argument
+     * Callback function passed as {@link BrowserEvent} methods argument
      * 
-     * This function passed to {@link RequestEvent.addListener},
-     * {@link RequestEventListener} is dynamicly created by {@link CreateRequestEventListener} function
+     * This function passed to {@link BrowserEvent.addListener},
+     * {@link BrowserEventListener} is dynamicly created by {@link CreateBrowserEventListener} function
      * and registetered in the browser.WebRequest event
      * 
      */
-    export type RequestEventCallback<Details> = (
+    export type EventCallback<Details> = (
         requestData: RequestData<Details>
     ) => WebRequest.BlockingResponseOrPromise | void;
 
@@ -33,86 +32,78 @@ export namespace BrowserEvents {
      * 
      * 1. Handles request details from original event
      * 2. modifies data in {@link RequestContext})
-     * 3. Executes the {@link RequestEventCallback} passed 
-     *    to {@link RequestEvent.addListener} with {@link RequestData}
+     * 3. Executes the {@link EventCallback} passed 
+     *    to {@link BrowserEvent.addListener} with {@link RequestData}
      * 4. Returns callback result
      */
-    export type RequestEventListener<Details> = (
+    export type BrowserEventListener<Details> = (
         details: Details
     ) => WebRequest.BlockingResponseOrPromise | void;
 
-
     /**
-     * Creates {@link RequestEventListener}, that
-     * execute {@link RequestEventCallback} with {@link RequestData} argument
+     * More flexible variants for {@link Events.Event} interfaces
      */
-    export type CreateRequestEventListener<Details> = (
-        callback?: RequestEventCallback<Details>
-    ) => RequestEventListener<Details>;
-
-    /**
-     * More flexible variant for {@link Events.Event} interface
-     */
-    export interface OriginalRequestEvent<Details, Options>
-        extends Events.Event<RequestEventListener<Details>> {
+    export interface BrowserRequstEvent<Details, Options>
+        extends Events.Event<BrowserEventListener<Details>> {
         addListener(
-            callback: RequestEventListener<Details>,
+            callback: BrowserEventListener<Details>,
             filter: WebRequest.RequestFilter,
             extraInfoSpec?: Options[]
         ): void;
     }
 
-    export interface RequestEventAddListenerProps<Details, Options> {
-        filter: WebRequest.RequestFilter,
-        extraInfoSpec?: Options[],
-        callback?: RequestEventCallback<Details>,
-    }
-
     /**
      * browser.webRequest generic event wrapper,
      * that register and unregister dynamicly created callbacks,
-     * based on logic, described in {@link CreateRequestEventListener} and {@link RequestEventCallback}
+     * based on logic, described in {@link CreateBrowserEventListener} and {@link EventCallback}
      */
     export class RequestEvent<Details, Options> {
-
-        private createListener: CreateRequestEventListener<Details>;
-
-        private event: OriginalRequestEvent<Details, Options>;
+        private listeners: EventCallback<Details>[] = [];
 
         constructor(
-            event: OriginalRequestEvent<Details, Options>,
-            createListener: CreateRequestEventListener<Details>,
+            event: BrowserRequstEvent<Details, Options>,
+            handler: DetailsHandler<Details>,
+            filter: WebRequest.RequestFilter,
+            extraInfoSpec?: Options[],
         ) {
-            this.event = event;
-            this.createListener = createListener;
+            const handleBrowserEvent = (details: Details) => {
+                const data = handler(details);
+
+                for (let i = 0; this.listeners.length; i++) {
+                    const res = this.listeners[i](data);
+                    if (res) {
+                        return res;
+                    }
+                }
+            }
+
+            event.addListener(handleBrowserEvent, filter, extraInfoSpec);
         }
 
-        public addListener({ 
-            filter,
-            extraInfoSpec,
-            callback,
-        }: RequestEventAddListenerProps<Details, Options>): () => void {
-            const listener = this.createListener(callback);
+        public addListener(listener: EventCallback<Details>) {
+            this.listeners.push(listener);
+        }
 
-            this.event.addListener(listener, filter, extraInfoSpec);
+        public removeListener(listener: EventCallback<Details>) {
+            const index = this.listeners.indexOf(listener);
 
-            return () => {
-                this.event.removeListener(listener);
-            };
+            if (index !== -1) {
+                this.listeners.splice(index, 1);
+            }
         }
     }
 
+    
 
-
-
-    export type OnBeforeRequest = OriginalRequestEvent<
+    export type OnBeforeRequest = BrowserRequstEvent<
         WebRequest.OnBeforeRequestDetailsType,
         WebRequest.OnBeforeRequestOptions
     >;
 
+
     export const onBeforeRequest = new RequestEvent(
         browser.webRequest.onBeforeRequest as OnBeforeRequest,
-        (callback) => (details) => {
+        (details) => {
             const {
                 requestId,
                 frameId,
@@ -126,140 +117,108 @@ export namespace BrowserEvents {
                 timestamp: Date.now(),
             });
 
-            if (callback) {
-                return callback({ details, context });
-            };
+            return { details, context };
         },
+        { urls: ['<all_urls>'] },
+        ['blocking', 'requestBody']
     );
 
 
-    export type OnBeforeSendHeaders = OriginalRequestEvent<
+
+    const getContext = <T extends { requestId: string }>(details: T) => {
+        const { requestId } = details;
+        const context = requestContextStorage.get(requestId);
+        return { details, context };
+    }
+
+
+    export type OnBeforeSendHeaders = BrowserRequstEvent<
         WebRequest.OnBeforeSendHeadersDetailsType,
         WebRequest.OnBeforeSendHeadersOptions
     >;
 
     export const onBeforeSendHeaders = new RequestEvent(
         browser.webRequest.onBeforeSendHeaders as OnBeforeSendHeaders,
-        (callback) => {
-            return (details) => {
-                if (callback) {
-                    return callback({ details });
-                };
-            };
-        },
+        (details) => ({ details }),
+        { urls: ['<all_urls>'] },
     );
 
-    export type OnSendHeaders = OriginalRequestEvent<
+    export type OnSendHeaders = BrowserRequstEvent<
         WebRequest.OnSendHeadersDetailsType,
         WebRequest.OnSendHeadersOptions
     >;
 
     export const onSendHeaders = new RequestEvent(
         browser.webRequest.onSendHeaders as OnSendHeaders,
-        (callback) => {
-            return (details) => {
-                if (callback) {
-                    return callback({ details });
-                };
-            };
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
     );
 
-    export type OnHeadersReceived = OriginalRequestEvent<
+    export type OnHeadersReceived = BrowserRequstEvent<
         WebRequest.OnHeadersReceivedDetailsType,
         WebRequest.OnHeadersReceivedOptions
     >;
 
     export const onHeadersReceived = new RequestEvent(
         browser.webRequest.onHeadersReceived as OnHeadersReceived,
-        (callback) => {
-            return (details) => {
-                const { requestId } = details;
-                const context = requestContextStorage.get(requestId);
-                if (callback) {
-                    return callback({ details, context });
-                }
-            };
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
+        ['responseHeaders', 'blocking'],
     );
 
-    export type OnAuthRequired = OriginalRequestEvent<
+    export type OnAuthRequired = BrowserRequstEvent<
         WebRequest.OnAuthRequiredDetailsType,
         WebRequest.OnAuthRequiredOptions
     >;
 
     export const onAuthRequired = new RequestEvent(
         browser.webRequest.onAuthRequired as OnAuthRequired,
-        (callback) => (details) => {
-            if (callback) {
-                return callback({ details });
-            }
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
     );
 
-    export type OnBeforeRedirect = OriginalRequestEvent<
+    export type OnBeforeRedirect = BrowserRequstEvent<
         WebRequest.OnBeforeRedirectDetailsType,
         WebRequest.OnBeforeRedirectOptions
     >;
 
     export const onBeforeRedirect = new RequestEvent(
         browser.webRequest.onBeforeRedirect as OnBeforeRedirect,
-        (callback) => (details) => {
-            if (callback) {
-                return callback({ details });
-            }
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
     );
 
-    export type OnResponseStarted = OriginalRequestEvent<
+    export type OnResponseStarted = BrowserRequstEvent<
         WebRequest.OnResponseStartedDetailsType,
         WebRequest.OnResponseStartedOptions
     >;
 
     export const onResponseStarted = new RequestEvent(
         browser.webRequest.onResponseStarted as OnResponseStarted,
-        (callback) => {
-            return (details) => {
-                if (callback) {
-                    return callback({ details });
-                }
-            };
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
     );
 
-    export type OnCompleted = OriginalRequestEvent<
+    export type OnCompleted = BrowserRequstEvent<
         WebRequest.OnCompletedDetailsType,
         WebRequest.OnCompletedOptions
     >;
 
     export const onCompleted = new RequestEvent(
         browser.webRequest.onCompleted as OnCompleted,
-        (callback) => {
-            return (details) => {
-                const { requestId } = details;
-                const context = requestContextStorage.get(requestId);
-                if (callback) {
-                    return callback({ details, context });
-                }
-            };
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
+        ['responseHeaders'],
     );
 
-    export type OnErrorOccurred = OriginalRequestEvent<
+    export type OnErrorOccurred = BrowserRequstEvent<
         WebRequest.OnErrorOccurredDetailsType,
         WebRequest.OnErrorOccurredOptions
     >;
 
     export const onErrorOccurred = new RequestEvent(
         browser.webRequest.onErrorOccurred as OnErrorOccurred,
-        (callback) => {
-            return (details) => {
-                const { requestId } = details;
-                const context = requestContextStorage.get(requestId);
-                if (callback) {
-                    return callback({ details, context });
-                }
-            };
-        },
+        getContext,
+        { urls: ['<all_urls>'] },
     );
 }
