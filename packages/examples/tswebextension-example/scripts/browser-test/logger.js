@@ -1,9 +1,9 @@
-const { colorizeStatusText } = require("./text-color"); 
+const { colorizeStatusText, colorizeTitleText } = require("./text-color"); 
 
 exports.logTestResult = (details) => {
     const counts = details.testCounts;
 
-    console.log('Name:', details.name)
+    console.log(colorizeTitleText(details.name));
 
     console.log('Status:', colorizeStatusText(details.status));
     console.log('Total %d tests: %d passed, %d failed, %d skipped',

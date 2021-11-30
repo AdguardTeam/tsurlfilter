@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
     baseUrl: 'https://testcases.adguard.com',
-    pathToExtension: path.join(__dirname, "../build"),
+    pathToExtension: path.join(__dirname, "../../build"),
     defaultExtensionConfig: {
         filters: [],
         allowlist: [],

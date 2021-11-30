@@ -11,13 +11,11 @@ exports.getTestcasesData = () => {
         }
         const testTitleElement = testInfocontainer.querySelector('a.test-title');
 
-        const title = testTitleElement.textContent;
         const pageUrl = '/' + testTitleElement.getAttribute('href');
 
         const rulesUrl = pageUrl.slice(0, pageUrl.lastIndexOf('.html')) + '.txt';
 
         testcases.push({
-            title,
             pageUrl,
             rulesUrl,
         })
@@ -28,16 +26,17 @@ exports.getTestcasesData = () => {
 
 exports.addQunitListeners = (callbackName) => {
     let qUnit;
+
     Object.defineProperty(window, 'QUnit', {
         get: () => qUnit,
         set: (value) => {
             qUnit = value;
 
-            console.log(qUnit);
-
             // https://github.com/js-reporters/js-reporters
             qUnit.on('runEnd', details => {
-                window[callbackName](details)
+                const name = document.getElementById('qunit-header')?.textContent;
+
+                window[callbackName]({...details, name })
             })
         },
         configurable: true,

@@ -5,3 +5,5 @@ exports.colorizeStatusText = (status) => {
         ? chalk.green(status)
         : chalk.red(status);
 }
+
+exports.colorizeTitleText = (title) => chalk.white.bgBlue(title);
