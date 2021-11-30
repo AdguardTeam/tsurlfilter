@@ -4,7 +4,7 @@ import { RequestContext } from '../request-context-storage';
 import { requestContextStorage } from '../request-context-storage';
 export namespace RequestEvents {
     /**
-     * Extended {@link EventCallback}  argument data
+     * Extended {@link EventCallback} argument data
      */
     export interface RequestData<Details> {
         details: Details,
@@ -16,11 +16,7 @@ export namespace RequestEvents {
     ) => RequestData<Details>
 
     /**
-     * Callback function passed as {@link BrowserEvent} methods argument
-     * 
-     * This function passed to {@link BrowserEvent.addListener},
-     * {@link BrowserEventListener} is dynamicly created by {@link CreateBrowserEventListener} function
-     * and registetered in the browser.WebRequest event
+     * Callback function passed as {@link RequestEvent} methods argument
      * 
      */
     export type EventCallback<Details> = (
@@ -29,12 +25,6 @@ export namespace RequestEvents {
 
     /**
      * Function registered as listener of the browser.WebRequest event
-     * 
-     * 1. Handles request details from original event
-     * 2. modifies data in {@link RequestContext})
-     * 3. Executes the {@link EventCallback} passed 
-     *    to {@link BrowserEvent.addListener} with {@link RequestData}
-     * 4. Returns callback result
      */
     export type BrowserEventListener<Details> = (
         details: Details
@@ -53,9 +43,7 @@ export namespace RequestEvents {
     }
 
     /**
-     * browser.webRequest generic event wrapper,
-     * that register and unregister dynamicly created callbacks,
-     * based on logic, described in {@link CreateBrowserEventListener} and {@link EventCallback}
+     * browser.webRequest generic wrapper with custom event implementation
      */
     export class RequestEvent<Details, Options> {
         private listeners: EventCallback<Details>[] = [];
@@ -69,6 +57,9 @@ export namespace RequestEvents {
             const handleBrowserEvent = (details: Details) => {
                 const data = handler(details);
 
+                /**
+                 * Execute all registered listeners one by one until a non-empty value is returned
+                 */
                 for (let i = 0; this.listeners.length; i++) {
                     const res = this.listeners[i](data);
                     if (res) {
