@@ -15,7 +15,7 @@ import {
     hideRequestInitiatorElement,
     RequestEvents,
     requestContextStorage,
-    getRequestType 
+    getRequestType,
 } from './request';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -62,7 +62,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onBeforeRequest({ details }: RequestEvents.RequestData<
-        WebRequest.OnBeforeRequestDetailsType
+    WebRequest.OnBeforeRequestDetailsType
     >): WebRequestEventResponse {
         const {
             requestId,
@@ -120,7 +120,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             requestFrameId,
             thirdParty,
             contentType,
-        })
+        });
         
         if (isOwnUrl(referrerUrl)
             || !isHttpOrWsRequest(url)) {
@@ -148,7 +148,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
 
         requestContextStorage.update(requestId, {
-            matchingResult: result
+            matchingResult: result,
         });
 
         const basicResult = result.getBasicResult();
@@ -170,7 +170,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onHeadersReceived({ context }: RequestEvents.RequestData<
-        WebRequest.OnHeadersReceivedDetailsType
+    WebRequest.OnHeadersReceivedDetailsType
     >): WebRequestEventResponse {
         if (!context?.matchingResult){
             return;
@@ -191,7 +191,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onResponseStarted({ context }: RequestEvents.RequestData<
-        WebRequest.OnResponseStartedDetailsType
+    WebRequest.OnResponseStartedDetailsType
     >): WebRequestEventResponse {
         if (!context?.matchingResult){
             return;
@@ -209,13 +209,13 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onCompleted({ details }: RequestEvents.RequestData<
-        WebRequest.OnCompletedDetailsType
+    WebRequest.OnCompletedDetailsType
     >): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
     private onErrorOccurred({ details }: RequestEvents.RequestData<
-        WebRequest.OnErrorOccurredDetailsType
+    WebRequest.OnErrorOccurredDetailsType
     >): WebRequestEventResponse {
         const { requestId, tabId, frameId } = details;
 

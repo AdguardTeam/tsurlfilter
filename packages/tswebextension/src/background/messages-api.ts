@@ -58,7 +58,7 @@ export class MessagesApi {
                 return this.handleGetExtendedCssMessage(
                     sender,
                     message.payload,
-                )
+                );
             }
             default:
                 return;
@@ -113,8 +113,8 @@ export class MessagesApi {
             frameRule: tabsApi.getTabFrameRule(tabId),
         });
 
-        if(!matchingResult){
-            return
+        if (!matchingResult){
+            return;
         }
 
         const cosmeticOption = matchingResult.getCosmeticOption();

@@ -1,6 +1,22 @@
 import { colorizeStatusText, colorizeTitleText } from "./text-color"; 
 
-export const logTestResult = (details) => {
+export interface LogDetails {
+    name: string,
+    tests: {
+        name: string,
+        status: string,
+    }[],
+    status: string,
+    testCounts: {
+      passed: number,
+      failed: number,
+      skipped: number,
+      total: number
+    },
+    runtime: number
+  }
+
+export const logTestResult = (details: LogDetails) => {
     const counts = details.testCounts;
 
     console.log(colorizeTitleText(details.name));

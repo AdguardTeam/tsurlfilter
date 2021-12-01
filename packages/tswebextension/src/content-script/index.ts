@@ -25,7 +25,7 @@ const applyExtendedCss = (cssText: string) => {
         styleSheet: cssText,
         beforeStyleApplied: (el: IAffectedElement) => {
             return cssHitsCounter.countAffectedByExtendedCss(el);
-        }
+        },
     });
     extendedCss.apply();
 
@@ -36,11 +36,11 @@ const applyExtendedCss = (cssText: string) => {
     const res = await browser.runtime.sendMessage({
         type: MessageType.GET_EXTENDED_CSS,
         payload: {
-            documentUrl: window.location.href
-        }
+            documentUrl: window.location.href,
+        },
     }) as string;
 
-    if(res){
+    if (res){
         applyExtendedCss(res);
     }
 })();

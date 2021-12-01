@@ -1,1 +1,1 @@
-export * from './request-events';
+export * as RequestEvents from './request-events';

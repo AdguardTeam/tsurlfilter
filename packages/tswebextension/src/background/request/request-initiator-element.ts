@@ -19,6 +19,7 @@ const BACKGROUND_TAB_ID = -1;
 /**
  * Css, injected to broken element for hiding
  */
+// eslint-disable-next-line max-len
 const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
 
 

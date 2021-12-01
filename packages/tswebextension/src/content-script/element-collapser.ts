@@ -124,7 +124,10 @@ export class ElementCollapser {
             return;
         }
 
-        element.setAttribute('style', 'display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important;');
+        element.setAttribute(
+            'style',
+            'display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important;',
+        );
     }
 }
 

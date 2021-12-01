@@ -1,11 +1,13 @@
 import path from "path";
 import { Configuration } from "@adguard/tswebextension";
 
-export const baseUrl = 'https://testcases.adguard.com';
+export const BASE_URL = 'https://testcases.adguard.com';
 
-export const pathToExtension = path.join(__dirname, "../../build");
+export const TESTCASES_DATA_PATH = '/data.json';
 
-export const defaultExtensionConfig: Configuration = {
+export const EXTENSION_PATH = path.join(__dirname, "../../build");
+
+export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     filters: [],
     allowlist: [],
     userrules: [],
