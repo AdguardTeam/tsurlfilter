@@ -6,7 +6,7 @@ export interface Testcase {
     title: string,
     link: string,
     rulesUrl?: string,
-    readmeUrl: string,
+    readmeUrl?: string,
     compatibility: Compatibility,
 }
 
