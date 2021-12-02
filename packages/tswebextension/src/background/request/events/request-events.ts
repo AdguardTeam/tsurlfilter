@@ -60,7 +60,7 @@ export class RequestEvent<Details, Options> {
             /**
              * Execute all registered listeners one by one until a non-empty value is returned
              */
-            for (let i = 0; this.listeners.length; i++) {
+            for (let i = 0; i < this.listeners.length; i++) {
                 const res = this.listeners[i](data);
                 if (res) {
                     return res;
