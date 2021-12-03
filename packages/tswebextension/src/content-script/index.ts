@@ -17,9 +17,9 @@ const applyExtendedCss = (cssText: string) => {
         console.debug('Css stats ready');
         console.debug(stats);
     });
-    
+
     console.debug('CssHitsCounter initialized');
-    
+
     // Apply extended css stylesheets
     const extendedCss = new ExtendedCss({
         styleSheet: cssText,
@@ -27,23 +27,28 @@ const applyExtendedCss = (cssText: string) => {
             return cssHitsCounter.countAffectedByExtendedCss(el);
         },
     });
+
     extendedCss.apply();
 
     console.debug('Extended css applied');
 };
 
-(async () => {
+(async function () {
+    /**
+     * if the window.top exists, the script is executed in the child frame
+     * 
+     * TODO: detect child frame with src
+     */
+    const documentUrl = window.top?.location?.href || window.location.href;
+
     const res = await browser.runtime.sendMessage({
         type: MessageType.GET_EXTENDED_CSS,
         payload: {
-            documentUrl: window.location.href,
+            documentUrl,
         },
     }) as string;
 
-    if (res){
+    if (res) {
         applyExtendedCss(res);
     }
 })();
-
-
-

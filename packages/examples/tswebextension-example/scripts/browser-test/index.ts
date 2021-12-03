@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer";
 
-import { 
+import {
     BASE_URL,
     EXTENSION_PATH,
     DEFAULT_EXTENSION_CONFIG,
@@ -53,10 +53,10 @@ import { filterCompatibleTestcases } from './testcase';
 
         // TODO: implement separate e2e test for popups
         // ignore popup tests
-        if(!testcase.rulesUrl){
+        if (!testcase.rulesUrl) {
             continue;
         }
-        
+
         // load rules text for current testcase
         const rulesText = await getRuleText(testcase.rulesUrl);
 

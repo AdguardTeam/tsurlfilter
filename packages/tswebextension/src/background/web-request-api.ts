@@ -230,7 +230,8 @@ export class WebRequestApi implements WebRequestApiInterface {
 
 
     private onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
-        this.injectCosmetic(details);
+        const { frameId, tabId } = details;
+        this.injectCosmetic(tabId, frameId);
     }
 
     private recordFrameInjection(
@@ -264,17 +265,9 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private injectCosmetic(details: WebNavigation.OnCommittedDetailsType): void{
-        const { url, tabId, frameId } = details;
+    private injectCosmetic(tabId: number, frameId: number): void{
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
-
-        const referrerUrl = frame?.url || getDomain(url) || url;
-
-        if (isOwnUrl(referrerUrl)
-            || !isHttpOrWsRequest(url)) {
-            return;
-        }
 
         if (frame?.injection){
             const { cssText, jsScriptText } = frame.injection;
