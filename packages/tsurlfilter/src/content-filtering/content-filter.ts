@@ -2,7 +2,11 @@ import { TextEncoder, TextDecoder } from 'text-encoding';
 import { StreamFilter } from './stream-filter';
 import { RequestType } from '../request-type';
 import {
-    DEFAULT_CHARSET, LATIN_1, SUPPORTED_CHARSETS, WIN_1252,
+    DEFAULT_CHARSET,
+    LATIN_1,
+    SUPPORTED_CHARSETS,
+    WIN_1252,
+    parseCharsetFromHtml,
 } from './charsets';
 import { logger } from '../utils/logger';
 
@@ -177,33 +181,13 @@ export class ContentFilter {
     }
 
     /**
-     * Parses charset from data, looking for:
-     * <meta charset="utf-8" />
-     * <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-     * <meta content="text/html; charset=utf-8" http-equiv="Content-type" />
+     * Parses charset from data
      *
      * @param data
      * @returns {*}
      */
     private static parseCharset(data: BufferSource): string | null {
         const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
-        let match = /<meta\s*charset\s*=\s*['"](.*?)['"]/.exec(decoded);
-        if (match && match.length > 1) {
-            return match[1].trim().toLowerCase();
-        }
-
-        // eslint-disable-next-line max-len
-        match = /<meta\s*http-equiv\s*=\s*['"]?content-type['"]?\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]/.exec(decoded);
-        if (match && match.length > 1) {
-            return match[1].trim().toLowerCase();
-        }
-
-        // eslint-disable-next-line max-len
-        match = /<meta\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]\s*http-equiv\s*=\s*['"]?content-type['"]?/.exec(decoded);
-        if (match && match.length > 1) {
-            return match[1].trim().toLowerCase();
-        }
-
-        return null;
+        return parseCharsetFromHtml(decoded);
     }
 }

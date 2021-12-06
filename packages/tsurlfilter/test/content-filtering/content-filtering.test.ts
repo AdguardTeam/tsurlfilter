@@ -8,7 +8,6 @@ import {
     ContentFiltering, IRule, NetworkRule, Request, RequestType,
 } from '../../src';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
-import { DEFAULT_CHARSET, parseCharsetFromHeader, WIN_1251 } from '../../src/content-filtering/charsets';
 import { ModificationsListener } from '../../src/content-filtering/modifications-listener';
 
 class MockFilteringLog implements ModificationsListener {
@@ -244,15 +243,5 @@ describe('Content filtering', () => {
         contentFiltering.onBeforeRequest(mockFilter, request, [], []);
 
         checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, '');
-    });
-});
-
-describe('Content filtering - charsets', () => {
-    it('checks charset parsing', () => {
-        expect(parseCharsetFromHeader('text/html; charset=utf-8')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHeader('text/html; charset=windows-1251')).toBe(WIN_1251);
-        expect(parseCharsetFromHeader('text/html; charset="windows-1251"')).toBe(WIN_1251);
-        expect(parseCharsetFromHeader('')).toBeNull();
-        expect(parseCharsetFromHeader('smth else')).toBeNull();
     });
 });
