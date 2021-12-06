@@ -2,6 +2,7 @@ import { redirects, Redirect } from '@adguard/scriptlets';
 import { resourcesService } from './resources-service';
 
 // TODO: Update Redirect export
+// TODO: Store files in tswebextension?
 const { Redirects } = redirects as any;
 export interface RedirectsServiceInterface {
     start: () => void;
