@@ -8,6 +8,12 @@ export interface ResourcesServiceInterface {
     loadResource: (path: string) => Promise<string>;
 }
 
+/**
+ * Foil ability of web pages to identify extension through its web accessible resources.
+ *
+ * Inspired by:
+ * https://github.com/gorhill/uBlock/blob/7f999b759fe540e457e297363f55b25d9860dd3e/platform/chromium/vapi-background
+ */
 export class ResourcesService implements ResourcesServiceInterface {
     private secrets: string[] = [];
 
@@ -15,29 +21,42 @@ export class ResourcesService implements ResourcesServiceInterface {
 
     private lastSecretTime = 0;
 
-    constructor(){
+    /**
+     * Resources directory
+     */
+    private warDir: string;
+
+    constructor(warDir: string) {
+        this.warDir = warDir;
         this.guardWar = this.guardWar.bind(this);
     }
 
-    public start(): void{
+    public start(): void {
         this.initGuard();
     }
 
-    public stop(): void{
+    public stop(): void {
         browser.webRequest.onBeforeRequest.removeListener(this.guardWar);
     }
 
-    public createResourceUrl(path: string): string{
-        return browser.runtime.getURL(`${path}${this.createSecretParam()}`);
+    /**
+     * Create url for war file
+     */
+    public createResourceUrl(path: string): string {
+        return browser.runtime.getURL(`/${this.warDir}/${path}${this.createSecretParam()}`);
     }
 
+
+    /**
+     * Load war resource by path
+     */
     public async loadResource(path: string): Promise<string> {
         const url = this.createResourceUrl(path);
         const response = await fetch(url);
         return response.text();
     }
 
-    private generateSecretKey(): string{
+    private generateSecretKey(): string {
         return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
     }
 
@@ -66,9 +85,9 @@ export class ResourcesService implements ResourcesServiceInterface {
         this.secrets.splice(pos, 1);
     }
 
-    private initGuard(){
+    private initGuard() {
         const filter: WebRequest.RequestFilter = {
-            urls: [`${this.root}/*`],
+            urls: [`${this.root}${this.warDir}/*`],
         };
 
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
@@ -77,4 +96,4 @@ export class ResourcesService implements ResourcesServiceInterface {
     }
 }
 
-export const resourcesService = new ResourcesService();
+export const resourcesService = new ResourcesService('war');

@@ -1,6 +1,10 @@
 import { RequestType } from '@adguard/tsurlfilter';
 import { WebRequest } from 'webextension-polyfill';
 
+
+/**
+ * TODO: move contentType to frontend or delete?
+ */
 export const enum ContentType {
     DOCUMENT = 'DOCUMENT',
     SUBDOCUMENT = 'SUBDOCUMENT',

@@ -4,6 +4,9 @@ import { MessageType, Message, ProcessShouldCollapsePayload } from '../common';
 
 type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 
+/**
+ * Hides broken items after blocking a network request
+ */
 export class ElementCollapser {
 
     constructor(){

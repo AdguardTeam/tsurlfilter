@@ -1,10 +1,13 @@
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { ContentType } from './request-type';
 
+/**
+ * Request context data
+ */
 export interface RequestContext {
     tabId: number,
     frameId: number,
-    timestamp: number // in ms
+    timestamp: number // record time in ms 
 
     requestUrl?: string
     referrerUrl?: string
@@ -12,13 +15,31 @@ export interface RequestContext {
     contentType?: ContentType
     requestFrameId?: number
     thirdParty?: boolean
+    /**
+     * filtering data from {@link EngineApi.matchRequest}
+     */
     matchingResult?: MatchingResult | null
 }
-
+/**
+ * Managing requests context api.
+ * Each request has a {@link RequestContext} with unique key: requestId
+ */
 export interface RequestContextStorageInterface {
+    /**
+     * Get request by requestId
+     */
     get: (requestId: string) => RequestContext | undefined;
+    /**
+     * Record request context. If context with passed id is exist, it will be overwritten
+     */
     record: (requestId: string, data: RequestContext) => RequestContext;
+    /**
+     * Update request context fields
+     */
     update: (requestId: string, data: Partial<RequestContext>) => void;
+    /**
+     * Delete request context
+     */
     delete: (requestId: string) => void;
 
 }

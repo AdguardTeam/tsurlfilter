@@ -35,9 +35,11 @@ const applyExtendedCss = (cssText: string) => {
 
 (async function () {
     /**
-     * if the window.top exists, the script is executed in the child frame
+     * This content script executes in every page frame
+     * We find nearest external source in window.top proxy
+     * if this prop doesn't exist, read location data in frame context
      * 
-     * TODO: detect child frame with src
+     * TODO: more intelligent search with base64 src url support etc.
      */
     const documentUrl = window.top?.location?.href || window.location.href;
 
