@@ -1,7 +1,7 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
-import { buildScriptText, buildExtendedCssScriptText } from './injection-helper.js';
-import { tabsApi } from './tabs/tabs-api.js';
+import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
+import { tabsApi } from './tabs/tabs-api';
 
 export interface CosmeticApiInterface {
     /**

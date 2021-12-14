@@ -85,29 +85,27 @@ export const buildScriptText = (scriptText: string): string => {
 
 // TODO: TSUrlFilterContentScript has been removed from tsurlfilter bundle
 export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
-    return `
-        (() => {
-            // Init css hits counter
-            const cssHitsCounter = new CssHitsCounter((stats) => {
-                console.debug('Css stats ready');
-                console.debug(stats);
+    return `(function() {
+                // Init css hits counter
+                const cssHitsCounter = new CssHitsCounter((stats) => {
+                    console.debug('Css stats ready');
+                    console.debug(stats);
+                    
+                    chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
+                });
                 
-                chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
-            });
-            
-            console.debug('CssHitsCounter initialized');
-            
-            // Apply extended css stylesheets
-            const extendedCssContent = \`${extendedCssStylesheets}\`;
-            const extendedCss = new ExtendedCss({
-                styleSheet: extendedCssContent,
-                beforeStyleApplied: (el) => {
-                    return cssHitsCounter.countAffectedByExtendedCss(el);
-                }
-            });
-            extendedCss.apply();
+                console.debug('CssHitsCounter initialized');
+                
+                // Apply extended css stylesheets
+                const extendedCssContent = \`${extendedCssStylesheets}\`;
+                const extendedCss = new ExtendedCss({
+                    styleSheet: extendedCssContent,
+                    beforeStyleApplied: (el) => {
+                        return cssHitsCounter.countAffectedByExtendedCss(el);
+                    }
+                });
+                extendedCss.apply();
 
-            console.debug('Extended css applied');
-        })();
-    `;
+                console.debug('Extended css applied');
+            })()`;
 };

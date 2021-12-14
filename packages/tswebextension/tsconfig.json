@@ -5,6 +5,7 @@
     "module":"es2015",
     "lib": ["esnext", "dom"],
     "strict": true,
+    "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,

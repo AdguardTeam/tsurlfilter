@@ -56,10 +56,13 @@ export class RequestContextStorage implements RequestContextStorageInterface {
         return data;
     }
 
-    public update(requestId: string, data: Partial<RequestContext>): void {
+    public update(requestId: string, data: Partial<RequestContext>): RequestContext | undefined {
         const requestContext = this.contextStorage.get(requestId);
+
         if (requestContext) {
-            this.contextStorage.set(requestId, Object.assign(requestContext, data));
+            const newData = Object.assign(requestContext, data);
+            this.contextStorage.set(requestId, newData);
+            return newData;
         }
 
     }

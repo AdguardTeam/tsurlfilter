@@ -6,7 +6,7 @@ import { cosmeticApi } from '../cosmetic-api';
  * Some html tags can trigger network requests. 
  * If request is blocked by network rule, we try to collapse broken element from backgound page
  */
-const enum InitiatorTag {
+export const enum InitiatorTag {
     FRAME = 'frame',
     IFRAME = 'iframe',
     IMAGE = 'img',
@@ -14,13 +14,13 @@ const enum InitiatorTag {
 
 
 
-const BACKGROUND_TAB_ID = -1;
+export const BACKGROUND_TAB_ID = -1;
 
 /**
  * Css, injected to broken element for hiding
  */
 // eslint-disable-next-line max-len
-const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
+export const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
 
 
 /**

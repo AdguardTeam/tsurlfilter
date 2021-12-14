@@ -14,6 +14,7 @@ import { redirectsService } from './services/redirects-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
+    RequestData,
     requestContextStorage,
     getRequestType,
 } from './request';
@@ -61,9 +62,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
-    private onBeforeRequest({ details }: RequestEvents.RequestData<
-    WebRequest.OnBeforeRequestDetailsType
-    >): WebRequestEventResponse {
+    private onBeforeRequest({ details }: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
         const {
             requestId,
             type,
@@ -169,7 +168,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         return;
     }
 
-    private onHeadersReceived({ context }: RequestEvents.RequestData<
+    private onHeadersReceived({ context }: RequestData<
     WebRequest.OnHeadersReceivedDetailsType
     >): WebRequestEventResponse {
         if (!context?.matchingResult){
@@ -190,7 +189,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onResponseStarted({ context }: RequestEvents.RequestData<
+    private onResponseStarted({ context }: RequestData<
     WebRequest.OnResponseStartedDetailsType
     >): WebRequestEventResponse {
         if (!context?.matchingResult){
@@ -208,13 +207,13 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private onCompleted({ details }: RequestEvents.RequestData<
+    private onCompleted({ details }: RequestData<
     WebRequest.OnCompletedDetailsType
     >): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
-    private onErrorOccurred({ details }: RequestEvents.RequestData<
+    private onErrorOccurred({ details }: RequestData<
     WebRequest.OnErrorOccurredDetailsType
     >): WebRequestEventResponse {
         const { requestId, tabId, frameId } = details;

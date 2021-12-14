@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { configurationValidator } from '../src/background/configuration';
+import { configurationValidator } from '../../src/background/configuration';
 
 describe('configuration validator', () => {
     const validConfiguration = {
