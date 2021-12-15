@@ -1,3 +1,3 @@
-import SinonChrome from 'sinon-chrome';
+import browser from 'sinon-chrome';
 
-jest.mock('webextension-polyfill', () => SinonChrome);
+jest.mock('webextension-polyfill', () => browser);
