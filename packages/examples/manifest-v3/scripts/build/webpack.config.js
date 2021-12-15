@@ -19,7 +19,6 @@ export const config = {
     },
     resolve: {
         extensions: ['*', '.js'],
-        modules: [path.resolve(__dirname, '../../node_modules')],
     },
     module: {
         rules: [

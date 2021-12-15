@@ -32,10 +32,7 @@ Test:
 
             ls -alt
 
-            yarn install
-
             npx lerna bootstrap
-            npx lerna exec yarn install
             npx lerna run --scope @adguard/tsurlfilter test:prod
             npx lerna run --scope @adguard/tsurlfilter build
 

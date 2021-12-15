@@ -4,5 +4,7 @@
       "src/**/*.ts",
       "test/**/*.ts",
       ".eslintrc.js",
+      "rollup.config.ts",
+      "setupTests.ts",
     ]
 }

@@ -13,7 +13,6 @@ const DEFAULT_OUTPUT_PATH = 'dist';
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
 
 const libraryName = 'TSUrlFilter';
-const contentScriptLibraryName = 'TSUrlFilterContentScript';
 
 
 const commonConfig = {
@@ -44,36 +43,6 @@ const commonConfig = {
         }),
     ],
 }
-
-const contentScriptConfig = {
-    input: 'src/content-script/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/${contentScriptLibraryName}.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-        {
-            file: `${OUTPUT_PATH}/${contentScriptLibraryName}.umd.js`,
-            name: contentScriptLibraryName,
-            format: 'umd',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/**',
-    },
-    plugins: [
-        typescript(),
-        commonjs({
-            sourceMap: false,
-        }),
-        resolve(),
-        cleanup({
-            comments: ['srcmaps'],
-        }),
-    ],
-};
 
 const esmConfig = {
     input: [
@@ -108,44 +77,8 @@ const esmConfig = {
     ],
 };
 
-const browserConfig = {
-    input: 'src/index.browser.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.browser.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-        },
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.iife.js`,
-            name: libraryName,
-            format: 'iife',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/**',
-    },
-    plugins: [
-        json(),
-        typescript(),
-        commonjs({
-            sourceMap: false,
-        }),
-        globals(),
-        nodePolyfills(),
-        resolve({ preferBuiltins: false }),
-        cleanup({
-            comments: ['srcmaps'],
-        }),
-    ],
-};
-
 export default [
-    contentScriptConfig,
     esmConfig,
-    browserConfig,
     {
         input: 'src/index.ts',
         output: [

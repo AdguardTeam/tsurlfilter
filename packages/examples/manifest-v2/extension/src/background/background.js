@@ -49,18 +49,6 @@ export const background = async () => {
     }, { urls: ['<all_urls>'] }, ['blocking']);
 
     /**
-     * Add listener on before send headers
-     */
-    chrome.webRequest.onBeforeSendHeaders.addListener((details) => {
-        if (!isHttpOrWsRequest(details.url)) {
-            return;
-        }
-
-        // eslint-disable-next-line consistent-return
-        return application.onBeforeSendHeaders(details);
-    }, { urls: ['<all_urls>'] }, ['requestHeaders', 'blocking', 'extraHeaders']);
-
-    /**
      * Add listener on headers received
      */
     chrome.webRequest.onHeadersReceived.addListener((details) => {
@@ -71,18 +59,6 @@ export const background = async () => {
         // eslint-disable-next-line consistent-return
         return application.onResponseHeadersReceived(details);
     }, { urls: ['<all_urls>'] }, ['responseHeaders', 'blocking', 'extraHeaders']);
-
-    /**
-     * Add listener on completed
-     */
-    chrome.webRequest.onCompleted.addListener((details) => {
-        if (!isHttpOrWsRequest(details.url)) {
-            return;
-        }
-
-        // eslint-disable-next-line consistent-return
-        return application.onCompleted(details);
-    }, { urls: ['<all_urls>'] });
 
     /**
      * Add listener on tab updated

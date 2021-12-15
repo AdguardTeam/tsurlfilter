@@ -9,7 +9,19 @@
   },
   "dependencies": {
     "@adguard/scriptlets": "^1.4.4",
-    "@adguard/tsurlfilter": "file:../../tsurlfilter",
+    "@adguard/tsurlfilter": "^0.7.37",
     "@babel/runtime": "^7.13.10"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/node": "^7.16.0",
+    "@babel/plugin-proposal-class-properties": "^7.16.0",
+    "@babel/plugin-transform-runtime": "^7.16.4",
+    "@babel/preset-env": "^7.16.4",
+    "babel-loader": "^8.2.3",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^10.0.0",
+    "html-webpack-plugin": "^5.5.0",
+    "webpack": "^5.64.2"
   }
 }
