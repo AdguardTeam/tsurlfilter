@@ -1,13 +1,16 @@
-import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import { CosmeticRule, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { ContentType } from './request-type';
+import ParsedCookie from '../services/cookie-filtering/parsed-cookie';
 
 /**
  * Request context data
  */
 export interface RequestContext {
+    requestId: string
+
     tabId: number,
     frameId: number,
-    timestamp: number // record time in ms 
+    timestamp: number // record time in ms
 
     requestUrl?: string
     referrerUrl?: string
@@ -19,6 +22,10 @@ export interface RequestContext {
      * filtering data from {@link EngineApi.matchRequest}
      */
     matchingResult?: MatchingResult | null
+    statusCode?: number
+    cookies?: ParsedCookie[]
+    htmlRules?: CosmeticRule[]
+    contentTypeHeader?: string
 }
 /**
  * Managing requests context api.

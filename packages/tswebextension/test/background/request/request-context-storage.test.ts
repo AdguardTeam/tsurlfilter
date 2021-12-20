@@ -5,6 +5,7 @@ describe('Request Context Storage', () => {
         const requestId = '12345';
 
         const data: RequestContext = {
+            requestId: '1',
             tabId: 1,
             frameId: 0,
             timestamp: Date.now(),

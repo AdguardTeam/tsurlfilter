@@ -17,6 +17,7 @@ describe('Stealth service - cookies', () => {
             selfDestructThirdPartyCookiesTime: 0,
             selfDestructFirstPartyCookies: false,
             selfDestructFirstPartyCookiesTime: 0,
+            blockWebRTC: false,
         };
     });
 
@@ -83,6 +84,7 @@ describe('Stealth service - headers', () => {
             selfDestructThirdPartyCookiesTime: 0,
             selfDestructFirstPartyCookies: false,
             selfDestructFirstPartyCookiesTime: 0,
+            blockWebRTC: false,
         };
     });
 

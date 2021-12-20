@@ -14,8 +14,8 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from './configuration';
-
 import { getHost } from './utils';
+import { stealthApi } from './stealth-api';
 
 /**
  * Request Match Query
@@ -78,11 +78,16 @@ export class EngineApi implements EngineApiInterface {
 
         if (allowlist.length > 0){
             lists.push(new StringRuleList(
-                ALLOWLIST_FILTER_ID, 
+                ALLOWLIST_FILTER_ID,
                 allowlist.map((domain) => {
                     return (settings.allowlistInverted ? '' : '@@') + `//${domain}$document`;
                 }).join('\n')),
             );
+        }
+
+        const stealthModeList = stealthApi.getStealthModeRuleList();
+        if (stealthModeList) {
+            lists.push(stealthModeList);
         }
 
         const ruleStorage = new RuleStorage(lists);

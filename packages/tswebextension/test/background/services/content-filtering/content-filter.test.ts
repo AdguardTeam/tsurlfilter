@@ -22,7 +22,7 @@ describe('Content filter', () => {
 
     it('checks content filter with utf-8 encoding', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
         filter.setCharset(DEFAULT_CHARSET);
 
         mockFilter.send(textEncoderUtf8.encode(testData));
@@ -39,7 +39,7 @@ describe('Content filter', () => {
 
     it('checks content filter with win-1251 encoding', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
         filter.setCharset(WIN_1251);
 
         mockFilter.send(textEncoderWin1251.encode(testData));
@@ -56,7 +56,7 @@ describe('Content filter', () => {
 
     it('checks content filter with win-1252 encoding', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
         filter.setCharset(WIN_1252);
 
         mockFilter.send(textEncoderIso8859.encode(testData));
@@ -75,7 +75,7 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta charset="UTF-8">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
 
         mockFilter.send(textEncoderUtf8.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta content="text/html; charset=utf-8" http-equiv="content-type"/>';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
 
         mockFilter.send(textEncoderUtf8.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta charset="windows-1251">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
 
         mockFilter.send(textEncoderWin1251.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('Content filter', () => {
         const data = 'Charset in data <meta charset="iso-8859-1">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
 
         mockFilter.send(textEncoderIso8859.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta http-equiv="content-type" content="text/html; charset=windows-1251">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
 
         mockFilter.send(textEncoderWin1251.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -165,7 +165,7 @@ describe('Content filter', () => {
         const data = 'No charset in data';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
 
         mockFilter.send(textEncoderIso8859.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe('Content filter', () => {
         const data = 'unsupported charset in data <meta charset="koi8-r">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onNullContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onNullContentCallback);
 
         mockFilter.send(textEncoderUtf8.encode(data));
         expect(onNullContentCallback).toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('Content filter', () => {
 
     it('checks content filter with empty content', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, 1, RequestType.Document, onContentCallback);
+        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
         filter.setCharset(DEFAULT_CHARSET);
 
         mockFilter.send(textEncoderUtf8.encode(''));

@@ -21,6 +21,7 @@ export const onBeforeRequest = new RequestEvent(
 
 
         const context = requestContextStorage.record(requestId, {
+            requestId,
             frameId,
             tabId,
             timestamp: Date.now(),
@@ -50,6 +51,7 @@ export const onBeforeSendHeaders = new RequestEvent(
     browser.webRequest.onBeforeSendHeaders as OnBeforeSendHeaders,
     handleDetails,
     { urls: ['<all_urls>'] },
+    ['requestHeaders', 'blocking', 'extraHeaders'],
 );
 
 export type OnSendHeaders = BrowserRequstEvent<
@@ -72,7 +74,7 @@ export const onHeadersReceived = new RequestEvent(
     browser.webRequest.onHeadersReceived as OnHeadersReceived,
     handleDetails,
     { urls: ['<all_urls>'] },
-    ['responseHeaders', 'blocking'],
+    ['responseHeaders', 'blocking', 'extraHeaders'],
 );
 
 export type OnAuthRequired = BrowserRequstEvent<

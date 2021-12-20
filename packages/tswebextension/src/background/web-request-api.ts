@@ -11,13 +11,18 @@ import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest, getDomain, isThirdPartyRequest } from './utils';
 import { cosmeticApi } from './cosmetic-api';
 import { redirectsService } from './services/redirects-service';
+import { headersService } from './services/headers-service';
+import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { contentFilteringService } from './services/content-filtering/content-filtering';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
     RequestData,
     requestContextStorage,
     getRequestType,
+    requestBlockingApi,
 } from './request';
+import { stealthService } from './services/stealth-service';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -28,10 +33,12 @@ export interface WebRequestApiInterface {
 
 
 const MAX_URL_LENGTH = 1024 * 16;
+const CSP_HEADER_NAME = 'Content-Security-Policy';
 
 export class WebRequestApi implements WebRequestApiInterface {
     constructor() {
         this.onBeforeRequest = this.onBeforeRequest.bind(this);
+        this.onBeforeSendHeaders = this.onBeforeSendHeaders.bind(this);
         this.onHeadersReceived = this.onHeadersReceived.bind(this);
         this.onResponseStarted = this.onResponseStarted.bind(this);
         this.onErrorOccurred = this.onErrorOccurred.bind(this);
@@ -43,6 +50,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     public start(): void {
         // browser.webRequest Events
         RequestEvents.onBeforeRequest.addListener(this.onBeforeRequest);
+        RequestEvents.onBeforeSendHeaders.addListener(this.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(this.onHeadersReceived);
         RequestEvents.onResponseStarted.addListener(this.onResponseStarted);
         RequestEvents.onErrorOccurred.addListener(this.onErrorOccurred);
@@ -54,6 +62,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
     public stop(): void {
         RequestEvents.onBeforeRequest.removeListener(this.onBeforeRequest);
+        RequestEvents.onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(this.onHeadersReceived);
         RequestEvents.onResponseStarted.removeListener(this.onResponseStarted);
         RequestEvents.onErrorOccurred.removeListener(this.onErrorOccurred);
@@ -62,7 +71,9 @@ export class WebRequestApi implements WebRequestApiInterface {
         browser.webNavigation.onCommitted.removeListener(this.onCommitted);
     }
 
-    private onBeforeRequest({ details }: RequestData<WebRequest.OnBeforeRequestDetailsType>): WebRequestEventResponse {
+    private onBeforeRequest(
+        { context, details }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+    ): WebRequestEventResponse {
         const {
             requestId,
             type,
@@ -72,9 +83,9 @@ export class WebRequestApi implements WebRequestApiInterface {
             originUrl,
             initiator,
         } = details;
-        
+
         let { url } = details;
-        
+
         /**
          * truncate too long urls
          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493
@@ -82,7 +93,7 @@ export class WebRequestApi implements WebRequestApiInterface {
         if (url.length > MAX_URL_LENGTH) {
             url = url.slice(0, MAX_URL_LENGTH);
         }
-        
+
         /**
          * FF sends http instead of ws protocol at the http-listeners layer
          * Although this is expected, as the Upgrade request is indeed an HTTP request,
@@ -91,23 +102,23 @@ export class WebRequestApi implements WebRequestApiInterface {
         if (type === 'websocket' && url.indexOf('http') === 0) {
             url = url.replace(/^http(s)?:/, 'ws$1:');
         }
-        
+
         const { requestType, contentType } = getRequestType(type);
-        
+
         let requestFrameId = type === 'main_frame'
             ? frameId
             : parentFrameId;
-        
+
         // Relate request to main_frame
         if (requestFrameId === -1) {
             requestFrameId = 0;
         }
-        
+
         const referrerUrl = originUrl
             || initiator
             || getDomain(url)
             || url;
-        
+
         const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
         requestContextStorage.update(requestId, {
@@ -120,12 +131,12 @@ export class WebRequestApi implements WebRequestApiInterface {
             thirdParty,
             contentType,
         });
-        
+
         if (isOwnUrl(referrerUrl)
             || !isHttpOrWsRequest(url)) {
             return;
         }
-        
+
         if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
             tabsApi.recordRequestFrame(
                 tabId,
@@ -134,7 +145,7 @@ export class WebRequestApi implements WebRequestApiInterface {
                 requestType,
             );
         }
-        
+
         const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: referrerUrl,
@@ -152,7 +163,9 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const basicResult = result.getBasicResult();
 
-        if (basicResult && !basicResult.isAllowlist()) {
+        const isAllowList = basicResult && basicResult.isAllowlist();
+
+        if (basicResult && !isAllowList) {
             if (basicResult.isOptionEnabled(NetworkRuleOption.Redirect)) {
                 const redirectUrl = redirectsService.createRedirectUrl(basicResult.getAdvancedModifierValue());
                 if (redirectUrl) {
@@ -165,12 +178,46 @@ export class WebRequestApi implements WebRequestApiInterface {
             return { cancel: true };
         }
 
+        // TODO: Check if content filtering is available (is FF)
+        if (context && browser.webRequest.filterResponseData) {
+            const cosmeticResult = engineApi.getCosmeticResult(
+                context.referrerUrl!, CosmeticOption.CosmeticOptionHtml,
+            );
+            context.htmlRules = cosmeticResult.Html.getRules();
+
+            // contentFilteringService.onBeforeRequest(
+            //     browser.webRequest.filterResponseData(context.requestId),
+            //     details,
+            // );
+        }
+
         return;
     }
 
-    private onHeadersReceived({ context }: RequestData<
-    WebRequest.OnHeadersReceivedDetailsType
-    >): WebRequestEventResponse {
+    private onBeforeSendHeaders(
+        data: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>,
+    ): WebRequestEventResponse {
+        if (!data.context?.matchingResult){
+            return;
+        }
+
+        cookieFiltering.onBeforeSendHeaders(data.details);
+
+        let requestHeadersModified = false;
+        if (headersService.onBeforeSendHeaders(data)) {
+            requestHeadersModified = true;
+        }
+
+        if (requestHeadersModified) {
+            return { requestHeaders: data.details.requestHeaders };
+        }
+    }
+
+    private onHeadersReceived(
+        data: RequestData<WebRequest.OnHeadersReceivedDetailsType>,
+    ): WebRequestEventResponse {
+        const { context, details } = data;
+
         if (!context?.matchingResult){
             return;
         }
@@ -183,16 +230,69 @@ export class WebRequestApi implements WebRequestApiInterface {
             frameId,
         } = context;
 
-        if (referrerUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)){
+        let { responseHeaders } = details;
+
+        let responseHeadersModified = false;
+
+        if (referrerUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)) {
             const cosmeticOption = matchingResult.getCosmeticOption();
             this.recordFrameInjection(referrerUrl, tabId, frameId, cosmeticOption);
+
+            // TODO: replace to separate method
+            const cspHeaders = [];
+
+            const cspRules = matchingResult.getCspRules();
+
+            for (let i = 0; i < cspRules.length; i += 1) {
+                const rule = cspRules[i];
+                // Don't forget: getCspRules returns all $csp rules, we must directly check that the rule is blocking.
+                if (requestBlockingApi.isRequestBlockedByRule(rule)) {
+
+                    const cspHeaderValue = rule.getAdvancedModifierValue();
+
+                    if (cspHeaderValue) {
+                        cspHeaders.push({
+                            name: CSP_HEADER_NAME,
+                            value: cspHeaderValue,
+                        });
+                    }
+                }
+            }
+
+            if (cspHeaders.length > 0) {
+                responseHeaders = responseHeaders 
+                    ? responseHeaders.concat(cspHeaders) 
+                    : cspHeaders;
+
+                responseHeadersModified = true;
+            }
+        }
+
+        cookieFiltering.onHeadersReceived(details);
+
+        if (headersService.onHeadersReceived(data)) {
+            responseHeadersModified = true;
+        }
+
+        if (responseHeadersModified) {
+            return { responseHeaders };
+        }
+
+        cookieFiltering.onHeadersReceived(details);
+
+        if (headersService.onHeadersReceived(data)) {
+            responseHeadersModified = true;
+        }
+
+        if (responseHeadersModified) {
+            return { responseHeaders: details.responseHeaders };
         }
     }
 
     private onResponseStarted({ context }: RequestData<
     WebRequest.OnResponseStartedDetailsType
     >): WebRequestEventResponse {
-        if (!context?.matchingResult){
+        if (!context?.matchingResult) {
             return;
         }
 
@@ -202,7 +302,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             frameId,
         } = context;
 
-        if (requestType === RequestType.Document){
+        if (requestType === RequestType.Document) {
             this.injectJsScript(tabId, frameId);
         }
     }
@@ -220,7 +320,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (frame?.injection){
+        if (frame?.injection) {
             delete frame.injection;
         }
 
@@ -247,7 +347,7 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (frame){
+        if (frame) {
             frame.injection = {
                 cssText,
                 extCssText,
@@ -264,21 +364,21 @@ export class WebRequestApi implements WebRequestApiInterface {
         }
     }
 
-    private injectCosmetic(tabId: number, frameId: number): void{
+    private injectCosmetic(tabId: number, frameId: number): void {
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (frame?.injection){
+        if (frame?.injection) {
             const { cssText, jsScriptText } = frame.injection;
-    
+
             if (cssText){
                 cosmeticApi.injectCss(cssText, tabId, frameId);
             }
-            
+
             if (jsScriptText){
                 cosmeticApi.injectScript(jsScriptText, tabId, frameId);
             }
-    
+
             delete frame.injection;
         }
     }

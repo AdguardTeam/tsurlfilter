@@ -7,6 +7,7 @@ import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects-service';
 import { messagesApi } from './messages-api';
+import { stealthApi } from './stealth-api';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 
@@ -135,6 +136,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         await engineApi.startEngine(configuration);
         webRequestApi.start();
         messagesApi.start();
+        await stealthApi.start(configuration);
 
         this.isStarted = true;
         this.configuration = configuration;
@@ -145,6 +147,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         webRequestApi.stop();
         tabsApi.stop();
         resourcesService.stop();
+        stealthApi.stop();
         this.isStarted = false;
     }
 
@@ -152,11 +155,14 @@ export class TsWebExtension implements TsWebExtensionInterface {
         configurationValidator.parse(configuration);
 
         if (!this.isStarted) {
-            throw new Error('App is not strated!');
+            throw new Error('App is not started!');
         }
 
         await engineApi.startEngine(configuration);
         this.configuration = configuration;
+
+        stealthApi.stop();
+        await stealthApi.start(configuration);
     }
 
     public openAssistant(tabId: number): void {

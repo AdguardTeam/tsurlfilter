@@ -1,4 +1,4 @@
-import { RequestType, NetworkRuleOption } from '@adguard/tsurlfilter';
+import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
 import { engineApi } from '../engine-api';
 import { tabsApi } from '../tabs';
 
@@ -30,12 +30,14 @@ export class RequestBlockingApi implements  RequestBlockingApiInterface{
             return false;
         }
 
-        const requestRule = result.getBasicResult();
+        return this.isRequestBlockedByRule(result.getBasicResult());
+    }
 
+    public isRequestBlockedByRule(requestRule: NetworkRule | null){
         return !!requestRule
-            && !requestRule.isAllowlist()
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
-            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+        && !requestRule.isAllowlist()
+        && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
+        && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
     }
 }
 

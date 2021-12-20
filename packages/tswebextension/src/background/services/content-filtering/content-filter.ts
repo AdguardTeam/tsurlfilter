@@ -51,13 +51,11 @@ export class ContentFilter {
      * Constructor
      *
      * @param filter implementation
-     * @param requestId Request identifier
      * @param requestType Request type
      * @param onContentCallback
      */
     constructor(
         filter: StreamFilter,
-        requestId: number,
         requestType: RequestType,
         onContentCallback: (data: string) => void,
     ) {

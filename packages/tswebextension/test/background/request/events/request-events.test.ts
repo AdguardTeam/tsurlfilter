@@ -30,6 +30,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -55,6 +56,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -80,6 +82,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -113,6 +116,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -152,6 +156,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -193,6 +198,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -221,6 +227,7 @@ describe('Request Events', () => {
 
         const expectedContext = {
             frameId: commonRequestData.frameId,
+            requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
             timestamp,
         };
@@ -228,7 +235,7 @@ describe('Request Events', () => {
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
         browser.webRequest.onErrorOccurred.dispatch(details);
-    
+
         expect(listener).toBeCalledWith({ details, context: expectedContext });
     });
 });

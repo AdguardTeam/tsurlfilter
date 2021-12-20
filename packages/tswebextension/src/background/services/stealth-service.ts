@@ -61,6 +61,11 @@ export interface StealthConfig {
      * Adding Do-Not-Track (DNT) header
      */
     sendDoNotTrack: boolean;
+
+    /**
+     * Is WebRTC blocking enabled
+     */
+    blockWebRTC: boolean;
 }
 
 /**
@@ -224,3 +229,18 @@ export class StealthService {
         return StealthService.SEARCH_ENGINES.some((searchEngineRegex) => searchEngineRegex.test(url));
     }
 }
+
+
+// TODO: load stealth config data from context
+export const stealthService = new StealthService({
+    blockChromeClientData: true,
+    hideReferrer: true,
+    hideSearchQueries: true,
+    sendDoNotTrack: true,
+    blockWebRTC: true,
+    selfDestructThirdPartyCookies: true,
+    selfDestructThirdPartyCookiesTime: 3600,
+    selfDestructFirstPartyCookies: true,
+    selfDestructFirstPartyCookiesTime: 3600,
+});
+

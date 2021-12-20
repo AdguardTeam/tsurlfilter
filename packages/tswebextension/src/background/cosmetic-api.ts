@@ -37,7 +37,7 @@ export class CosmeticApi implements CosmeticApiInterface {
     private HIT_SEP = encodeURIComponent(';');
 
     private HIT_END = "' !important;}\r\n";
-    
+
     public injectScript(scriptText: string, tabId: number, frameId = 0): void {
         tabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
     }
@@ -67,7 +67,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         if (styles.length > 0){
             return styles.join('\n');
         }
-            
+
         return;
     }
 
@@ -113,7 +113,7 @@ export class CosmeticApi implements CosmeticApiInterface {
      */
     private buildStyleSheet(
         elemhideRules: CosmeticRule[],
-        injectRules: CosmeticRule[], 
+        injectRules: CosmeticRule[],
         groupElemhideSelectors: boolean,
     ) {
         const CSS_SELECTORS_PER_LINE = 50;

@@ -1,45 +1,19 @@
+import { WebRequest } from 'webextension-polyfill/namespaces/webRequest';
+import { CosmeticRule, NetworkRule, ReplaceModifier, logger, RequestType } from '@adguard/tsurlfilter';
 import { SUPPORTED_CHARSETS, parseCharsetFromHeader } from './charsets';
 import { ContentFilter } from './content-filter';
 import { DocumentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
 import { HtmlRuleSelector } from './rule/html-rule-selector';
-import { Request, CosmeticRule, NetworkRule, ReplaceModifier, logger, RequestType } from '@adguard/tsurlfilter';
 import { StreamFilter } from './stream-filter';
-import { ModificationsListener } from './modifications-listener';
-
-interface RequestDetails {
-    request: Request;
-    contentType: string | null;
-    statusCode: number | null;
-}
+import { RequestContext, requestContextStorage } from '../../request/request-context-storage';
+import { mockFilteringLog, FilteringLog } from '../../filtering-log';
 
 /**
  * Content filtering module
  * Handles Html filtering and replace rules
  */
 export class ContentFiltering {
-    /**
-     * Filtering log
-     */
-    private readonly modificationsListener: ModificationsListener;
-
-    // TODO: Use RequestContextStorage
-    private readonly requestDetailsCallback: (requestId: number) => RequestDetails | null;
-
-    /**
-     * Constructor
-     *
-     * @param modificationsListener
-     * @param requestDetailsCallback
-     */
-    constructor(
-        modificationsListener: ModificationsListener,
-        requestDetailsCallback: (requestId: number) => RequestDetails,
-    ) {
-        this.modificationsListener = modificationsListener;
-        this.requestDetailsCallback = requestDetailsCallback;
-    }
-
     /**
      * Contains collection of accepted request types for replace rules
      */
@@ -69,39 +43,49 @@ export class ContentFiltering {
     private documentParser = new DocumentParser();
 
     /**
+     * Filtering log
+     */
+    private readonly modificationsListener: FilteringLog;
+
+    /**
+     * Constructor
+     *
+     * @param modificationsListener
+     */
+    constructor(modificationsListener: FilteringLog) {
+        this.modificationsListener = modificationsListener;
+    }
+
+    /**
      * For correctly applying replace or content rules we have to work with the whole response content.
      * This function allows read response fully.
      * See some details here: https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
      *
-     * @param request
+     * @param requestId
      * @param streamFilter
-     * @param callback
      */
-    // eslint-disable-next-line consistent-return
-    private handleResponse(
-        request: Request,
+    private setupContentFilter(
+        requestId: string,
         streamFilter: StreamFilter,
-        callback: (x: string, context: RequestDetails | null) => string,
     ): void {
-        const requestId = request.requestId!;
+        const context = requestContextStorage.get(requestId);
+        if (!context || !context.requestType) {
+            return;
+        }
 
         try {
-            // eslint-disable-next-line max-len
-            const contentFilter = new ContentFilter(streamFilter, requestId, request.requestType, (content) => {
+            const contentFilter = new ContentFilter(streamFilter, context.requestType, (content) => {
                 this.modificationsListener.onModificationStarted(requestId);
 
                 try {
-                    const context = this.getRequestDetails(requestId);
-                    if (context) {
-                        const charset = parseCharsetFromHeader(context.contentType);
-                        if (ContentFiltering.shouldProcessRequest(context, charset)) {
-                            contentFilter.setCharset(charset);
-                            // eslint-disable-next-line no-param-reassign
-                            content = callback(content, context);
-                        }
+                    const charset = parseCharsetFromHeader(context.contentTypeHeader);
+                    if (ContentFiltering.shouldProcessRequest(context, charset)) {
+                        contentFilter.setCharset(charset);
+                        // eslint-disable-next-line no-param-reassign
+                        content = this.applyRulesToContent(context, content!);
                     }
                 } catch (ex) {
-                    logger.error(`Error while applying content filter to ${request.url}. Error: ${ex}`);
+                    logger.error(`Error while applying content filter to ${context.requestUrl}. Error: ${ex}`);
                 } finally {
                     this.modificationsListener.onModificationFinished(requestId);
                 }
@@ -110,8 +94,7 @@ export class ContentFiltering {
             });
         } catch (e) {
             // eslint-disable-next-line max-len
-            logger.error(`An error has occurred in content filter for request ${requestId} to ${request.url}. Error: ${e}`);
-            callback('', null);
+            logger.error(`An error has occurred in content filter for request ${requestId} to ${context.requestUrl}. Error: ${e}`);
         }
     }
 
@@ -121,8 +104,8 @@ export class ContentFiltering {
      * @param context
      * @param charset
      */
-    private static shouldProcessRequest(context: RequestDetails, charset: string | null): boolean {
-        if (!context.contentType) {
+    private static shouldProcessRequest(context: RequestContext, charset: string | null): boolean {
+        if (!context.contentTypeHeader) {
             return false;
         }
 
@@ -132,7 +115,7 @@ export class ContentFiltering {
 
         if (charset && SUPPORTED_CHARSETS.indexOf(charset) < 0) {
             // Charset is detected and it is not supported
-            logger.warn(`Skipping request ${context.request.requestId} with Content-Type ${context.contentType}`);
+            logger.warn(`Skipping request ${context.requestId} with Content-Type ${context.contentTypeHeader}`);
             return false;
         }
 
@@ -143,12 +126,12 @@ export class ContentFiltering {
      * Applies Html rules to the document.
      * If document wasn't modified then method will return null
      *
-     * @param request
+     * @param context
      * @param {object} doc Document
      * @param {Array} rules Content rules
      * @returns null or document html
      */
-    private applyHtmlRules(request: Request, doc: Document, rules: CosmeticRule[]): string | null {
+    private applyHtmlRules(context: RequestContext, doc: Document, rules: CosmeticRule[]): string | null {
         const deleted = [];
 
         for (let i = 0; i < rules.length; i += 1) {
@@ -163,7 +146,7 @@ export class ContentFiltering {
                         element.parentNode.removeChild(element);
 
                         this.modificationsListener.onHtmlRuleApplied(
-                            request.tabId!, request.requestId!, element.innerHTML, request.url, rule,
+                            context.tabId!, context.requestId, element.innerHTML, context.requestUrl!, rule,
                         );
                         deleted.push(element);
                     }
@@ -182,11 +165,11 @@ export class ContentFiltering {
     /**
      * Applies replace rules to content
      *
-     * @param request
+     * @param context
      * @param content
      * @param replaceRules
      */
-    private applyReplaceRules(request: Request, content: string, replaceRules: NetworkRule[]): string {
+    private applyReplaceRules(context: RequestContext, content: string, replaceRules: NetworkRule[]): string {
         let modifiedContent = content;
         const appliedRules = [];
 
@@ -221,8 +204,9 @@ export class ContentFiltering {
         }
 
         if (appliedRules.length > 0) {
-            // eslint-disable-next-line max-len
-            this.modificationsListener.onReplaceRulesApplied(request.tabId!, request.requestId!, request.url, appliedRules);
+            this.modificationsListener.onReplaceRulesApplied(
+                context.tabId!, context.requestId, context.requestUrl!, appliedRules,
+            );
         }
 
         return result;
@@ -233,14 +217,14 @@ export class ContentFiltering {
      *
      * @returns {boolean}
      */
-    private static shouldApplyReplaceRule(requestType: RequestType, contentType: string): boolean {
+    private static shouldApplyReplaceRule(requestType: RequestType, contentTypeHeader: string): boolean {
         if (ContentFiltering.replaceRulesRequestTypes.indexOf(requestType) >= 0) {
             return true;
         }
 
-        if (requestType === RequestType.Other && contentType) {
+        if (requestType === RequestType.Other && contentTypeHeader) {
             for (let i = 0; i < ContentFiltering.replaceRuleAllowedContentTypes.length; i += 1) {
-                if (contentType.indexOf(ContentFiltering.replaceRuleAllowedContentTypes[i]) === 0) {
+                if (contentTypeHeader.indexOf(ContentFiltering.replaceRuleAllowedContentTypes[i]) === 0) {
                     return true;
                 }
             }
@@ -263,30 +247,22 @@ export class ContentFiltering {
      *
      * @param context
      * @param {string} content
-     * @param replaceRules
-     * @param htmlRules
-     * @param replaceRules
-     * @param htmlRules
      * @returns {string} Modified content
      */
     private applyRulesToContent(
-        context: RequestDetails | null,
+        context: RequestContext,
         content: string,
-        replaceRules: NetworkRule[],
-        htmlRules: CosmeticRule[],
     ): string {
-        if (!context) {
-            return content;
-        }
-
-        let htmlRulesToApply: CosmeticRule[] | null = null;
-        if (ContentFiltering.shouldApplyHtmlRules(context.request.requestType)) {
-            htmlRulesToApply = htmlRules;
+        let htmlRulesToApply: CosmeticRule[] | undefined;
+        if (ContentFiltering.shouldApplyHtmlRules(context.requestType!)) {
+            htmlRulesToApply = context.htmlRules;
         }
 
         let replaceRulesToApply: NetworkRule[] | null = null;
-        if (ContentFiltering.shouldApplyReplaceRule(context.request.requestType, context.contentType!)) {
-            replaceRulesToApply = replaceRules;
+        if (context.matchingResult) {
+            if (ContentFiltering.shouldApplyReplaceRule(context.requestType!, context.contentTypeHeader!)) {
+                replaceRulesToApply = context.matchingResult.getReplaceRules();
+            }
         }
 
         if (!htmlRulesToApply && !replaceRulesToApply) {
@@ -298,7 +274,7 @@ export class ContentFiltering {
         if (htmlRulesToApply && htmlRulesToApply.length > 0) {
             const doc = this.documentParser.parse(content);
             if (doc !== null) {
-                const modified = this.applyHtmlRules(context.request, doc, htmlRulesToApply);
+                const modified = this.applyHtmlRules(context, doc, htmlRulesToApply);
                 if (modified !== null) {
                     result = modified;
                 }
@@ -311,7 +287,7 @@ export class ContentFiltering {
         }
 
         if (replaceRulesToApply) {
-            result = this.applyReplaceRules(context.request, result, replaceRulesToApply);
+            result = this.applyReplaceRules(context, result, replaceRulesToApply);
         }
 
         return result;
@@ -321,25 +297,17 @@ export class ContentFiltering {
      * OnBeforeRequest handler
      *
      * @param streamFilter
-     * @param request
-     * @param replaceRules
-     * @param htmlRules
+     * @param details
      */
     public onBeforeRequest(
         streamFilter: StreamFilter,
-        request: Request,
-        replaceRules: NetworkRule[],
-        htmlRules: CosmeticRule[],
+        details: WebRequest.OnBeforeRequestDetailsType,
     ): void {
-        if (!request.requestId) {
-            return;
-        }
-
         const {
-            method, tabId,
-        } = request;
+            requestId, method, tabId,
+        } = details;
 
-        if (!tabId) {
+        if (!requestId || !tabId) {
             return;
         }
 
@@ -347,19 +315,8 @@ export class ContentFiltering {
             return;
         }
 
-        this.handleResponse(
-            request,
-            streamFilter,
-            (content, context) => this.applyRulesToContent(context, content!, replaceRules, htmlRules),
-        );
-    }
-
-    /**
-     * Returns request details
-     *
-     * @param requestId
-     */
-    private getRequestDetails(requestId: number): RequestDetails | null {
-        return this.requestDetailsCallback(requestId);
+        this.setupContentFilter(requestId, streamFilter);
     }
 }
+
+export const contentFilteringService = new ContentFiltering(mockFilteringLog);

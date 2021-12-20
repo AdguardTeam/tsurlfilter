@@ -14,7 +14,7 @@ export const SUPPORTED_CHARSETS = [DEFAULT_CHARSET, WIN_1251, WIN_1252, LATIN_1]
  * @param contentType
  * @returns {*}
  */
-export function parseCharsetFromHeader(contentType: string | null): string | null {
+export function parseCharsetFromHeader(contentType: string | undefined): string | null {
     if (!contentType) {
         return null;
     }

@@ -1,16 +1,14 @@
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
-import { FilteringLog } from '../../filtering-log';
+import { FilteringLog, mockFilteringLog } from '../../filtering-log';
 import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { findHeaderByName } from '../../utils/headers';
-import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
+import { requestContextStorage } from '../../request/request-context-storage';
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
-import OnCompletedDetailsType = WebRequest.OnCompletedDetailsType;
-import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
 
 /**
  * Cookie filtering
@@ -20,9 +18,6 @@ import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
  *
  * Logic introduction:
  *
- * onBeforeRequest:
- * - get $cookie rules for current url
- *
  * onBeforeSendHeaders:
  * - get all cookies for request url
  * - store cookies (first-party)
@@ -31,9 +26,6 @@ import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
  * - parse set-cookie header, only to detect if the cookie in header will be set from third-party request
  * - save third-party flag for this cookie cookie.thirdParty=request.thirdParty
  * - apply rules
- *
- * onCompleted/onErrorOccurred:
- * - delete request context from the storage
  *
  * onCompleted
  * - apply rules via content script
@@ -46,14 +38,6 @@ export class CookieFiltering {
 
     private browserCookieApi: BrowserCookieApi = new BrowserCookieApi();
 
-    // TODO: Use RequestContext storage
-    private requestContextStorage = new Map<string, {
-        rules: NetworkRule[];
-        cookies: ParsedCookie[];
-        url: string;
-        tabId: number;
-    }>();
-
     /**
      * Constructor
      *
@@ -61,21 +45,6 @@ export class CookieFiltering {
      */
     constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
-    }
-
-    /**
-     * Finds rules for request and saves it to context storage
-     * @param details
-     * @param rules
-     */
-    public onBeforeRequest(details: OnBeforeRequestDetailsType, rules: NetworkRule[]): void {
-        this.requestContextStorage.set(details.requestId,
-            {
-                rules,
-                cookies: [],
-                url: details.url,
-                tabId: details.tabId,
-            });
     }
 
     /**
@@ -87,7 +56,7 @@ export class CookieFiltering {
             return;
         }
 
-        const context = this.requestContextStorage.get(details.requestId);
+        const context = requestContextStorage.get(details.requestId);
         if (!context) {
             return;
         }
@@ -97,7 +66,7 @@ export class CookieFiltering {
             return;
         }
 
-        const cookies = CookieUtils.parseCookies(cookieHeader.value, context.url);
+        const cookies = CookieUtils.parseCookies(cookieHeader.value, context.requestUrl!);
         if (cookies.length === 0) {
             return;
         }
@@ -112,19 +81,19 @@ export class CookieFiltering {
      * @param details
      */
     public async onHeadersReceived(details: OnHeadersReceivedDetailsType): Promise<void> {
-        const context = this.requestContextStorage.get(details.requestId);
+        const context = requestContextStorage.get(details.requestId);
         if (!context) {
             return;
         }
 
         if (details.responseHeaders) {
-            const cookies = CookieUtils.parseSetCookieHeaders(details.responseHeaders, context.url);
-            const newCookies = cookies.filter((c) => !context.cookies.includes(c));
+            const cookies = CookieUtils.parseSetCookieHeaders(details.responseHeaders, context.requestUrl!);
+            const newCookies = cookies.filter((c) => !context.cookies?.includes(c));
             for (const cookie of newCookies) {
                 cookie.thirdParty = details.thirdParty;
             }
 
-            context.cookies.push(...newCookies);
+            context.cookies?.push(...newCookies);
         }
 
         try {
@@ -134,26 +103,19 @@ export class CookieFiltering {
         }
     }
 
-    public onCompleted(details: OnCompletedDetailsType): void {
-        this.requestContextStorage.delete(details.requestId);
-    }
-
-    public onErrorOccurred(details: OnErrorOccurredDetailsType): void {
-        this.requestContextStorage.delete(details.requestId);
-    }
-
     /**
      * Looks up blocking rules for content-script
      *
      * @param requestId
      */
     public getBlockingRules(requestId: string): NetworkRule[] {
-        const context = this.requestContextStorage.get(requestId);
-        if (!context) {
+        const context = requestContextStorage.get(requestId);
+        if (!context || !context.matchingResult) {
             return [];
         }
 
-        return CookieRulesFinder.getBlockingRules(context.url, context.rules);
+        const cookieRules = context.matchingResult.getCookieRules();
+        return CookieRulesFinder.getBlockingRules(context.requestUrl!, cookieRules);
     }
 
     /**
@@ -161,14 +123,19 @@ export class CookieFiltering {
      * @param requestId
      */
     private async applyRules(requestId: string): Promise<void> {
-        const context = this.requestContextStorage.get(requestId);
-        const { rules, cookies } = context!;
-        if (!rules || !cookies) {
+        const context = requestContextStorage.get(requestId);
+        if (!context || !context.matchingResult) {
+            return;
+        }
+
+        const cookieRules = context.matchingResult.getCookieRules();
+        const { cookies } = context;
+        if (!cookies) {
             return;
         }
 
         const promises = cookies.map(async (cookie) => {
-            await this.applyRulesToCookie(cookie, rules, context!.tabId);
+            await this.applyRulesToCookie(cookie, cookieRules, context!.tabId);
         });
 
         await Promise.all(promises);
@@ -269,3 +236,5 @@ export class CookieFiltering {
         return appliedRules;
     }
 }
+
+export const cookieFiltering = new CookieFiltering(mockFilteringLog);
