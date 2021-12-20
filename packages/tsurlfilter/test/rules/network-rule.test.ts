@@ -589,6 +589,8 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('||example.org^$removeparam=p', 0);
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(true);
+        request = new Request('https://example.org/', null, RequestType.Subdocument);
+        expect(rule.match(request)).toEqual(true);
 
         request = new Request('https://example.org/', null, RequestType.Script);
         expect(rule.match(request)).toEqual(false);
@@ -599,6 +601,8 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('||example.org^$removeparam=p,script', 0);
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(false);
+        request = new Request('https://example.org/', null, RequestType.Subdocument);
+        expect(rule.match(request)).toEqual(false);
 
         request = new Request('https://example.org/', null, RequestType.Script);
         expect(rule.match(request)).toEqual(true);
@@ -608,6 +612,8 @@ describe('NetworkRule.match', () => {
 
         rule = new NetworkRule('||example.org^$removeparam=p,~script', 0);
         request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+        request = new Request('https://example.org/', null, RequestType.Subdocument);
         expect(rule.match(request)).toEqual(true);
 
         request = new Request('https://example.org/', null, RequestType.Script);
