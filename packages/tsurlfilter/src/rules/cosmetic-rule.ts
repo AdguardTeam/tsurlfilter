@@ -1,4 +1,4 @@
-import Scriptlets from '@adguard/scriptlets';
+import scriptlets from '@adguard/scriptlets';
 import * as rule from './rule';
 import {
     CosmeticRuleMarker,
@@ -455,7 +455,7 @@ export class CosmeticRule implements rule.IRule {
 
     private static validateJsRules(ruleText: string, ruleContent: string): void {
         if (ruleContent.startsWith(ADG_SCRIPTLET_MASK)) {
-            if (!Scriptlets.isValidScriptletRule(ruleText)) {
+            if (!scriptlets.isValidScriptletRule(ruleText)) {
                 throw new SyntaxError('Invalid scriptlet');
             }
         }

@@ -1,4 +1,4 @@
-import Scriptlets from '@adguard/scriptlets';
+import scriptlets from '@adguard/scriptlets';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScriptletParser } from './scriptlet-parser';
 import { config } from '../../configuration';
@@ -88,7 +88,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         const scriptletContent = ruleContent.substr(ADG_SCRIPTLET_MASK.length);
         const scriptletParams = ScriptletParser.parseRule(scriptletContent);
 
-        const params: Scriptlets.IConfiguration = {
+        const params: scriptlets.IConfiguration = {
             args: scriptletParams.args,
             engine: config.engine ? config.engine : '',
             name: scriptletParams.name,
@@ -100,7 +100,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         let scriptText;
 
         if (!rule.script) {
-            scriptText = Scriptlets.invoke(params);
+            scriptText = scriptlets.invoke(params);
             // eslint-disable-next-line no-param-reassign
             rule.script = scriptText !== null ? scriptText : undefined;
         }
@@ -112,7 +112,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
             rule.verboseInvokedForDomain = requestDomainName;
         }
 
-        scriptText = Scriptlets.invoke(params);
+        scriptText = scriptlets.invoke(params);
         // eslint-disable-next-line no-param-reassign
         rule.scriptVerbose = scriptText !== null ? scriptText : undefined;
     }
