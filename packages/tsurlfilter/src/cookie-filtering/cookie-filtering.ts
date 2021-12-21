@@ -193,7 +193,7 @@ export class CookieFiltering {
 
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
-            if (await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
+            if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
                 this.filteringLog.addCookieEvent({
                     tabId,
                     cookieName: cookie.name,
@@ -244,6 +244,11 @@ export class CookieFiltering {
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
+            if (rule.isAllowlist()) {
+                appliedRules.push(rule);
+                continue;
+            }
+
             const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
 
             let modified = false;
