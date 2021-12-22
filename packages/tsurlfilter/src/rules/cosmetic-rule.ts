@@ -294,7 +294,20 @@ export class CosmeticRule implements rule.IRule {
         this.content = content;
         this.type = CosmeticRule.parseType(marker);
 
-        CosmeticRule.validate(ruleText, this.type, content);
+        this.extendedCss = isExtCssMarker(marker);
+        if (!this.extendedCss
+            && (this.type === CosmeticRuleType.ElementHiding
+                || this.type === CosmeticRuleType.Css)) {
+            // additional check if rule is extended css rule by pseudo class indicators
+            for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
+                if (this.content.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
+                    this.extendedCss = true;
+                    break;
+                }
+            }
+        }
+
+        CosmeticRule.validate(ruleText, this.type, content, this.extendedCss);
 
         if (pattern) {
             // This means that the marker is preceded by the list of domains and modifiers
@@ -319,19 +332,6 @@ export class CosmeticRule implements rule.IRule {
         }
 
         this.allowlist = CosmeticRule.parseAllowlist(marker);
-        this.extendedCss = isExtCssMarker(marker);
-        if (!this.extendedCss
-            && (this.type === CosmeticRuleType.ElementHiding
-                || this.type === CosmeticRuleType.Css)) {
-            // additional check if rule is extended css rule by pseudo class indicators
-            for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
-                if (this.content.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
-                    this.extendedCss = true;
-                    break;
-                }
-            }
-        }
-
         this.isScriptlet = this.content.startsWith(ADG_SCRIPTLET_MASK);
     }
 
@@ -479,6 +479,14 @@ export class CosmeticRule implements rule.IRule {
             throw new SyntaxError('CSS modifying rule with \'url\' was omitted');
         }
 
+        // discard css inject rules containing other unsafe selectors
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1920
+        if (/{.*image-set\(.*\)/gi.test(ruleContent) ||
+            /{.*image\(.*\)/gi.test(ruleContent) ||
+            /{.*cross-fade\(.*\)/gi.test(ruleContent)) {
+            throw new SyntaxError('CSS modifying rule with unsafe style was omitted');
+        }
+
         // Prohibit "\" character in style of CSS injection rules
         // Check slash character only after the index of last opening curly brackets
         if (ruleContent.indexOf('\\', ruleContent.lastIndexOf('{')) > -1) {
@@ -522,9 +530,12 @@ export class CosmeticRule implements rule.IRule {
      * @param ruleText
      * @param type
      * @param content
+     * @param isExtCss
      * @private
      */
-    private static validate(ruleText: string, type: CosmeticRuleType, content: string): void {
+    private static validate(
+        ruleText: string, type: CosmeticRuleType, content: string, isExtCss: boolean,
+    ): void {
         if (type !== CosmeticRuleType.Css
             && type !== CosmeticRuleType.Js
             && type !== CosmeticRuleType.Html) {
@@ -547,9 +558,11 @@ export class CosmeticRule implements rule.IRule {
             CosmeticRule.validateJsRules(ruleText, content);
         }
 
-        if (utils.hasUnquotedSubstring(content, ' /*')
-            || utils.hasUnquotedSubstring(content, ' //')) {
-            throw new SyntaxError('Invalid cosmetic rule, wrong brackets');
+        if ((!isExtCss && utils.hasUnquotedSubstring(content, '/*')) ||
+            utils.hasUnquotedSubstring(content, ' /*') ||
+            utils.hasUnquotedSubstring(content, ' //')
+        ) {
+            throw new SyntaxError('Cosmetic rule should not contain comments');
         }
     }
 }
