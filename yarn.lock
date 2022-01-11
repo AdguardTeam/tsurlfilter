@@ -10,18 +10,18 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/scriptlets@^1.5.7":
-  version "1.5.7"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.5.7.tgz#cf710675a7fbcb71024d10c08356dd3646dbdaa6"
-  integrity sha512-kYt32VYgpgaHVvq08yZRpDqwZOB9+qp8qdXe2Md2BVlF2wnld1ZWlbB4pUze2QjXXZF8OoY2HsT7sec2BBinVA==
+"@adguard/scriptlets@^1.5.11":
+  version "1.5.11"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.5.11.tgz#1b9188e4a7a4dca6489d3859b44f03398ef55285"
+  integrity sha512-m7MEjwJgzhIKew7f+U/AKGQnnuxKpGWUYs52O31Qc23owAQGkqAzk0Fjf2DxsUrzLU9gnWgOZgzfVTuDo9RxMw==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
 "@adguard/tsurlfilter@file:packages/tsurlfilter":
-  version "0.7.45"
+  version "0.7.46"
   dependencies:
-    "@adguard/scriptlets" "^1.5.7"
+    "@adguard/scriptlets" "^1.5.11"
     "@types/ip6addr" "^0.2.3"
     "@types/netmask" "^1.0.30"
     "@types/punycode" "^2.1.0"
@@ -6952,14 +6952,14 @@ makeerror@1.0.x:
   version "0.0.1"
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
-    "@adguard/tsurlfilter" "file:../../../../../../../usr/local/share/.cache/yarn/v6/npm-manifest-v2-0.0.1-7577d3ce-1873-497d-89ef-3b4d26ee075f-1640352080393/tsurlfilter"
+    "@adguard/tsurlfilter" "file:../../../../../../../usr/local/share/.cache/yarn/v6/npm-manifest-v2-0.0.1-abf0ec59-5174-4c0e-acef-1a34cfa1dc5d-1641901037306/tsurlfilter"
     "@babel/runtime" "^7.13.10"
 
 "manifest-v3@file:packages/examples/manifest-v3":
   version "0.0.1"
   dependencies:
     "@adguard/scriptlets" "^1.4.4"
-    "@adguard/tsurlfilter" "file:../../../../../../../usr/local/share/.cache/yarn/v6/npm-manifest-v3-0.0.1-4196ea8a-d761-4ac5-a756-156bf4f0a46b-1640352080398/tsurlfilter"
+    "@adguard/tsurlfilter" "file:../../../../../../../usr/local/share/.cache/yarn/v6/npm-manifest-v3-0.0.1-0a4c57a6-51b0-4b52-b012-f9cff7d62b3d-1641901037310/tsurlfilter"
 
 map-age-cleaner@^0.1.1:
   version "0.1.3"
