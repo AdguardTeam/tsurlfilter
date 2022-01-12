@@ -94,13 +94,13 @@ describe('NetworkRule - replace rules apply', () => {
     it('checks replace apply for jsons', () => {
         const input = `
         {
-            "enabled": true, 
+            "enabled": true,
             "force_disabled": false
         }`;
 
         const expected = `
         {
-            "enabled": false, 
+            "enabled": false,
             "force_disabled": false
         }`;
 
@@ -241,6 +241,14 @@ describe('NetworkRule - redirect rules', () => {
     it('works if redirect modifier is correctly parsed - mp4', () => {
         const redirectValue = 'noopmp4-1s';
         const rule = new NetworkRule(`||example.org/test.mp4$media,redirect=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works for click2load redirect', () => {
+        const redirectValue = 'click2load.html';
+        const rule = new NetworkRule(`||example.org/embed/$subdocument,redirect=${redirectValue}`, 0);
         expect(rule).toBeTruthy();
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
         expect(rule.getAdvancedModifierValue()).toBe(redirectValue);

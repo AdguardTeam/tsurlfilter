@@ -1,4 +1,4 @@
-import Scriptlets from '@adguard/scriptlets';
+import scriptlets from '@adguard/scriptlets';
 import { IAdvancedModifier } from './advanced-modifier';
 import { NETWORK_RULE_OPTIONS } from '../rules/network-rule-options';
 
@@ -55,7 +55,7 @@ export class RedirectModifier implements IAdvancedModifier {
             throw new SyntaxError('Invalid $redirect rule, redirect value must not be empty');
         }
 
-        const { redirects } = Scriptlets;
+        const { redirects } = scriptlets;
         const ruleTextToValidate = ruleText.replace(NETWORK_RULE_OPTIONS.REDIRECTRULE, NETWORK_RULE_OPTIONS.REDIRECT);
         if (!redirects.isAdgRedirectRule(ruleTextToValidate) || !redirects.isValidAdgRedirectRule(ruleTextToValidate)) {
             throw new SyntaxError('$redirect modifier is invalid');

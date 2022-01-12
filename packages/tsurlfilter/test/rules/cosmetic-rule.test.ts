@@ -67,6 +67,9 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsValid('123movies.domains##.jw-logo-top-left[style^="background-image: url(\\"https://123movies.domains/addons/img/"]');
         checkRuleIsValid('testcases.adguard.com,surge.sh###case9.banner:contains(/[aа]{20,}/)');
         checkRuleIsValid('parenting.pl##:xpath(//div[count(*)=1][*[count(*)=1]/*[count(*)=1]/*[count(*)=1]/*[count(*)=0]])');
+        checkRuleIsValid('example.org##:contains(@import)');
+        checkRuleIsValid('example.org##:contains(@font-face)');
+        checkRuleIsValid('example.org##:contains(@color-profile)');
 
         checkRuleIsInvalid('example.org##img[title|={]');
         checkRuleIsInvalid('example.org##body { background: red!important; }');
@@ -79,6 +82,10 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsInvalid('example.org##body:not(blabla/*[*/) { background: lightblue url("https://www.w3schools.com/cssref/img_tree.gif") no-repeat fixed center!important; } /*]*\\/');
         checkRuleIsInvalid('example.org##.generic1 /*comment*/');
         checkRuleIsInvalid('example.org##a //');
+        checkRuleIsInvalid('example.org##input,input/*');
+        checkRuleIsInvalid('example.org#$#@import \'https://evil.org/nefarious.css\'; {}');
+        checkRuleIsInvalid('example.org#$#@font-face \'https://evil.org/nefarious.ttf\'; {}');
+        checkRuleIsInvalid('example.org#$#@color-profile \'https://evil.org/nefarious.icc\'; {}');
     });
 
     it('throws error if marker is not supported yet', () => {
@@ -443,6 +450,18 @@ describe('CosmeticRule.CSS', () => {
 
         checkRuleIsInvalid('example.com#$#body { background: url(http://example.org/empty.gif) }');
         checkRuleIsInvalid('example.org#$#body { background:url("http://example.org/image.png"); }');
+    });
+
+    it('throws error when cosmetic rule contains unsafe styles', () => {
+        const checkRuleIsInvalid = (ruleText: string): void => {
+            expect(() => {
+                new CosmeticRule(ruleText, 0);
+            }).toThrow(new SyntaxError('CSS modifying rule with unsafe style was omitted'));
+        };
+
+        checkRuleIsInvalid('*#$#* { background:image-set(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }');
+        checkRuleIsInvalid('*#$#* { background:image(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }');
+        checkRuleIsInvalid('*#$#* { background:cross-fade(\'https://hackvertor.co.uk/images/logo.gif\' 1x) }');
     });
 
     it('doesnt throw error if cosmetic rule contains url in selector', () => {

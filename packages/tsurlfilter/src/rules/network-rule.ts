@@ -623,7 +623,8 @@ export class NetworkRule implements rule.IRule {
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
         if (this.permittedRequestTypes === 0
             && this.restrictedRequestTypes === 0
-            && requestType !== RequestType.Document) {
+            && requestType !== RequestType.Document
+            && requestType !== RequestType.Subdocument) {
             return false;
         }
 
@@ -1042,10 +1043,12 @@ export class NetworkRule implements rule.IRule {
 
             // $document
             case OPTIONS.DOCUMENT:
+            case OPTIONS.DOC:
                 this.setOptionEnabled(NetworkRuleOption.Document, true);
                 this.setRequestType(RequestType.Document, true);
                 break;
             case NOT_MARK + OPTIONS.DOCUMENT:
+            case NOT_MARK + OPTIONS.DOC:
                 this.setOptionEnabled(NetworkRuleOption.Document, false);
                 this.setRequestType(RequestType.Document, false);
                 break;
