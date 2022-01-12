@@ -239,6 +239,7 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.org/sub/page.html'))).toEqual(true);
         expect(rule.match(createRequest('https://example.org/sub/another_page.html'))).toEqual(true);
 
+        expect(rule.match(createRequest('https://example.org'))).toEqual(false);
         expect(rule.match(createRequest('https://example.org/another.html'))).toEqual(false);
 
         rule = new CosmeticRule('[$path=/page.html]##.textad', 0);

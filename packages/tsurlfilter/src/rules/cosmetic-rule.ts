@@ -368,6 +368,8 @@ export class CosmeticRule implements rule.IRule {
             if (path) {
                 return this.pathModifier.matchPathPattern(path);
             }
+
+            return false;
         }
 
         return true;

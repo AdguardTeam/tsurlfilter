@@ -215,6 +215,40 @@ describe('Test cosmetic engine', () => {
         expect(result.elementHiding.generic.length).toEqual(1);
         expect(result.elementHiding.specific.length).toEqual(0);
     });
+
+    it('tests path modifier rules', () => {
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            '[$path=/subpage1]example.org$$div[id="case1"]',
+            '[$path=/subpage2]example.org$$div[id="case2"]',
+            '[$path=/sub.*/]example.org$$div[id="case3"]',
+            '[$path=/subpage(?!1)/]example.org$$div[id="case4"]',
+        ]));
+
+        let result = cosmeticEngine.match(
+            createRequest('http://example.org'), CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.Html.specific.length).toEqual(0);
+
+        result = cosmeticEngine.match(
+            createRequest('http://example.org/subpage1'), CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.Html.specific.length).toEqual(2);
+
+        result = cosmeticEngine.match(
+            createRequest('http://example.org/subpage2'), CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.Html.specific.length).toEqual(3);
+
+        result = cosmeticEngine.match(
+            createRequest('http://example.org/subpage3'), CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.Html.specific.length).toEqual(2);
+
+        result = cosmeticEngine.match(
+            createRequest('http://example.org/another'), CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.Html.specific.length).toEqual(0);
+    });
 });
 
 describe('Test cosmetic engine - JS rules', () => {
