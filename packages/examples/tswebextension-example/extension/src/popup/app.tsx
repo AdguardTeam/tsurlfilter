@@ -29,6 +29,22 @@ export function App() {
         })
     }, []);
 
+    const handleOpenAssistant = () => {
+        chrome.runtime.sendMessage({
+            type: MessageTypes.OPEN_ASSISTANT
+        });
+
+        return false;
+    };
+
+    const handleCloseAssistant = () => {
+        chrome.runtime.sendMessage({
+            type: MessageTypes.CLOSE_ASSISTANT
+        });
+
+        return false;
+    };
+
     return (
         <Formik
             enableReinitialize={true}
@@ -72,6 +88,12 @@ export function App() {
                     />
                     <button type="submit">
                         Load
+                    </button>
+                    <button type="button" onClick={handleOpenAssistant}>
+                        Open assistant
+                    </button>
+                    <button type="button" onClick={handleCloseAssistant}>
+                        Close assistant
                     </button>
                 </form>
             )}

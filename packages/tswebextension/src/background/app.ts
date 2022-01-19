@@ -8,6 +8,7 @@ import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects-service';
 import { messagesApi } from './messages-api';
 import { stealthApi } from './stealth-api';
+import { MessageType } from '../common';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
 
@@ -166,11 +167,17 @@ export class TsWebExtension implements TsWebExtensionInterface {
     }
 
     public openAssistant(tabId: number): void {
-        // TODO: implement
+        messagesApi.addAssistantCreateRuleListener(this.addUserRule.bind(this));
+
+        messagesApi.sendMessage(tabId, {
+            type: MessageType.INIT_ASSISTANT,
+        });
     }
 
     public closeAssistant(tabId: number): void {
-        // TODO: implement
+        messagesApi.sendMessage(tabId, {
+            type: MessageType.CLOSE_ASSISTANT,
+        });
     }
 
     public getSiteStatus(url: string): SiteStatus {
@@ -198,5 +205,19 @@ export class TsWebExtension implements TsWebExtensionInterface {
                 cssRule: false,
             },
         });
+    }
+
+    /**
+     * Adds ruleText to user rules
+     *
+     * @param ruleText
+     */
+    private addUserRule(ruleText: string): void {
+        if (!this.configuration || !this.isStarted) {
+            return;
+        }
+
+        this.configuration.userrules.push(ruleText);
+        this.configure(this.configuration);
     }
 }

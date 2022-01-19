@@ -7,8 +7,11 @@ import { CssHitsCounter } from './css-hits-counter';
 import { elementCollapser } from './element-collapser';
 import { MessageType } from '../common';
 import { CookieController } from './cookie-controller';
+import { initAssistant } from './assistant';
 
 elementCollapser.start();
+
+initAssistant();
 
 // TODO: replace to separate class
 

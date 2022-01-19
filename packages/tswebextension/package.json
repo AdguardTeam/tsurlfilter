@@ -70,6 +70,7 @@
     ]
   },
   "dependencies": {
+    "@adguard/assistant": "^4.3.59",
     "@adguard/scriptlets": "^1.4.26",
     "@adguard/tsurlfilter": "^0.7.37",
     "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",

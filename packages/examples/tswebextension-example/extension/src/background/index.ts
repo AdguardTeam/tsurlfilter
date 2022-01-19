@@ -46,12 +46,28 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponce) => {
             const config = tsWebExtension.configuration;
             sendResponce({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });
             break;
-        }  
+        }
         case MessageTypes.SET_CONFIG: {
             const config = { ...defaultConfig, ...message.payload }
             tsWebExtension.configure(config).then(() => {
                 alert('loaded')
                 sendResponce({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config })
+            });
+            break;
+        }
+        case MessageTypes.OPEN_ASSISTANT: {
+            chrome.tabs.query({active: true }, (res) => {
+                if (res.length > 0 && res[0].id) {
+                    tsWebExtension.openAssistant(res[0].id);
+                }
+            });
+            break;
+        }
+        case MessageTypes.CLOSE_ASSISTANT: {
+            chrome.tabs.query({active: true }, (res) => {
+                if (res.length > 0 && res[0].id) {
+                    tsWebExtension.closeAssistant(res[0].id);
+                }
             });
             break;
         }

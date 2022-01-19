@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@adguard/assistant@^4.3.59":
+  version "4.3.59"
+  resolved "https://registry.yarnpkg.com/@adguard/assistant/-/assistant-4.3.59.tgz#1c6a6071db76224223c41aa3c4effc630e635dc2"
+  integrity sha512-QHIU3akC6htnM9IuVU7KGYHp7H1/g2uKvDMyL0uS04CuoSbpz745bGIN1AvvWJ2qzRGJQbvUJdcfTsMyc12KEQ==
+
 "@adguard/scriptlets@^1.4.26", "@adguard/scriptlets@^1.4.4", "@adguard/scriptlets@^1.5.11":
   version "1.5.11"
   resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.5.11.tgz#1b9188e4a7a4dca6489d3859b44f03398ef55285"

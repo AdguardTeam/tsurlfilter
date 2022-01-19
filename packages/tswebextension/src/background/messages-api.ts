@@ -3,6 +3,7 @@ import { RequestType, CookieModifier, NetworkRuleOption, NetworkRule } from '@ad
 
 import { requestBlockingApi } from './request';
 import {
+    getAssistantCreateRulePayloadValidator,
     getCookieRulesPayloadValidator,
     getExtendedCssPayloadValidator,
     getSaveCookieLogEventPayloadValidator,
@@ -20,11 +21,17 @@ export interface MessagesApiInterface {
     start: () => void;
     stop: () => void;
     sendMessage: (tabId: number, message: unknown) => void;
+    addAssistantCreateRuleListener: (listener: (ruleText: string) => void) => void;
 }
 // TODO: add long live connection
-export class MessagesApi {
+export class MessagesApi implements MessagesApiInterface {
 
     filteringLog: FilteringLog;
+
+    /**
+     * Assistant event listener
+     */
+    onAssistantCreateRuleListener: undefined | ((ruleText: string) => void) ;
 
     constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
@@ -41,6 +48,15 @@ export class MessagesApi {
 
     public sendMessage(tabId: number, message: unknown) {
         browser.tabs.sendMessage(tabId, message);
+    }
+
+    /**
+     * Adds listener on rule created by assistant content script
+     *
+     * @param listener
+     */
+    public addAssistantCreateRuleListener(listener: (ruleText: string) => void): void {
+        this.onAssistantCreateRuleListener = listener;
     }
 
     private async handleMessage(message: Message, sender: Runtime.MessageSender) {
@@ -74,6 +90,12 @@ export class MessagesApi {
             }
             case MessageType.SAVE_COOKIE_LOG_EVENT: {
                 return this.handleSaveCookieLogEvent(
+                    sender,
+                    message.payload,
+                );
+            }
+            case MessageType.ASSISTANT_CREATE_RULE: {
+                return this.handleAssistantCreateRuleMessage(
                     sender,
                     message.payload,
                 );
@@ -225,6 +247,31 @@ export class MessagesApi {
             thirdParty: data.thirdParty,
             timestamp: Date.now(),
         });
+    }
+
+    /**
+     * Handles message with new rule from assistant content script
+     *
+     * @param sender
+     * @param payload
+     */
+    private handleAssistantCreateRuleMessage(
+        sender: Runtime.MessageSender,
+        payload?: unknown,
+    ) {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const res = getAssistantCreateRulePayloadValidator.safeParse(payload);
+        if (!res.success){
+            return false;
+        }
+
+        const { ruleText } = res.data;
+        if (this.onAssistantCreateRuleListener) {
+            this.onAssistantCreateRuleListener(ruleText);
+        }
     }
 
 }

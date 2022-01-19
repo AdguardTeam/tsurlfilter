@@ -6,6 +6,9 @@ export enum MessageType {
     GET_EXTENDED_CSS = 'GET_EXTENDED_CSS',
     GET_COOKIE_RULES = 'GET_COOKIE_RULES',
     SAVE_COOKIE_LOG_EVENT = 'SAVE_COOKIE_LOG_EVENT',
+    INIT_ASSISTANT = 'INIT_ASSISTANT',
+    CLOSE_ASSISTANT = 'CLOSE_ASSISTANT',
+    ASSISTANT_CREATE_RULE = 'ASSISTANT_CREATE_RULE',
 }
 
 
@@ -48,3 +51,9 @@ export const  getSaveCookieLogEventPayloadValidator = z.object({
 }).strict();
 
 export type GetSaveCookieLogEventPayloadValidator = z.infer<typeof getSaveCookieLogEventPayloadValidator>;
+
+export const  getAssistantCreateRulePayloadValidator = z.object({
+    ruleText: z.string(),
+}).strict();
+
+export type GetAssistantCreateRulePayloadValidator = z.infer<typeof getAssistantCreateRulePayloadValidator>;
