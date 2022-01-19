@@ -109,12 +109,8 @@ export class ContentFilter {
                         charset = ContentFilter.parseCharset(event.data);
                     }
 
-                    /**
-                     * If we fail to find charset from meta tags we set charset to 'iso-8859-1',
-                     * because this charset allows to decode and encode data without errors
-                     */
                     if (!charset) {
-                        charset = LATIN_1;
+                        charset = DEFAULT_CHARSET;
                     }
 
                     if (charset && SUPPORTED_CHARSETS.indexOf(charset) >= 0) {
@@ -141,7 +137,9 @@ export class ContentFilter {
         };
 
         this.filter.onerror = (): void => {
-            throw this.filter.error as Error;
+            if (this.filter.error && this.filter.error.message) {
+                logger.info(this.filter.error.message);
+            }
         };
     }
 
