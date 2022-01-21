@@ -264,20 +264,40 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
-    it('converts cyrillic domain rules', () => {
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule('path$domain=меил.рф', -1), 2);
-        expect(declarativeRule).toEqual({
-            id: 2,
-            action: {
-                type: 'block',
-            },
-            condition: {
-                urlFilter: 'path',
-                isUrlFilterCaseSensitive: false,
-                domains: [
-                    'xn--e1agjb.xn--p1ai',
-                ],
-            },
+    describe('converts cyrillic domain rules', () => {
+        it('converts domains section', () => {
+            const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule('path$domain=меил.рф', -1), 2);
+            expect(declarativeRule).toEqual({
+                id: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    urlFilter: 'path',
+                    isUrlFilterCaseSensitive: false,
+                    domains: [
+                        'xn--e1agjb.xn--p1ai',
+                    ],
+                },
+            });
+        });
+
+        it('converts urlFilterSection', () => {
+            const declarativeRule = DeclarativeRuleConverter.convert(
+                new NetworkRule('||банрек.рус^$third-party', -1),
+                1,
+            );
+            expect(declarativeRule).toEqual({
+                'id': 1,
+                'action': {
+                    'type': 'block',
+                },
+                'condition': {
+                    'urlFilter': 'xn--||-8kcdv4aty.xn--^-4tbdh',
+                    'domainType': 'thirdParty',
+                    'isUrlFilterCaseSensitive': false,
+                },
+            });
         });
     });
 });

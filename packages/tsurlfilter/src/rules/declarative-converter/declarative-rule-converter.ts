@@ -1,8 +1,13 @@
-import * as punycode from 'punycode';
+import punycode from 'punycode/';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { RequestType } from '../../request-type';
 import {
-    ResourceType, DeclarativeRule, RuleAction, RuleActionType, RuleCondition, DomainType,
+    ResourceType,
+    DeclarativeRule,
+    RuleAction,
+    RuleActionType,
+    RuleCondition,
+    DomainType,
 } from './declarative-rule';
 
 /**
@@ -53,6 +58,23 @@ export class DeclarativeRuleConverter {
             .map(([resourceTypeKey]) => ResourceType[resourceTypeKey as ResourceType]);
     }
 
+    private static isASCII(str: string) {
+        // eslint-disable-next-line no-control-regex
+        return /^[\x00-\x7F]+$/.test(str);
+    }
+
+    /**
+     * Converts to punycode non if string contains non ASCII characters
+     * @param str
+     * @private
+     */
+    private static prepareASCII(str: string) {
+        if (DeclarativeRuleConverter.isASCII(str)) {
+            return str;
+        }
+        return punycode.toASCII(str);
+    }
+
     /**
      * The entries must consist of only ascii characters
      *
@@ -60,11 +82,7 @@ export class DeclarativeRuleConverter {
      */
     private static prepareDomains(domains: string[]): string[] {
         return domains.map((domain) => {
-            // eslint-disable-next-line no-control-regex
-            if (/^[\x00-\x7F]+$/.test(domain)) {
-                return domain;
-            }
-            return punycode.toASCII(domain);
+            return DeclarativeRuleConverter.prepareASCII(domain);
         });
     }
 
@@ -137,10 +155,11 @@ export class DeclarativeRuleConverter {
                 // TODO consider MAX_NUMBER_OF_REGEX_RULES
                 // eslint-disable-next-line max-len
                 //  https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#property-MAX_NUMBER_OF_REGEX_RULES
-                condition.regexFilter = pattern;
+                condition.regexFilter = DeclarativeRuleConverter.prepareASCII(pattern);
             } else {
                 // A pattern beginning with ||* is not allowed. Use * instead.
-                condition.urlFilter = pattern.startsWith('||*') ? pattern.substring(2) : pattern;
+                const patternWithoutVerticals = pattern.startsWith('||*') ? pattern.substring(2) : pattern;
+                condition.urlFilter = DeclarativeRuleConverter.prepareASCII(patternWithoutVerticals);
             }
         }
 
