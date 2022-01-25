@@ -1,6 +1,8 @@
+import { WebRequest } from 'webextension-polyfill';
 import { CosmeticRule, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { ContentType } from './request-type';
 import ParsedCookie from '../services/cookie-filtering/parsed-cookie';
+import { EventChannel, EventChannelInterface } from '../utils';
 
 /**
  * Request context data
@@ -18,6 +20,9 @@ export interface RequestContext {
     contentType?: ContentType
     requestFrameId?: number
     thirdParty?: boolean
+    responseHeaders?: WebRequest.HttpHeaders
+    method?: string
+
     /**
      * filtering data from {@link EngineApi.matchRequest}
      */
@@ -48,11 +53,30 @@ export interface RequestContextStorageInterface {
      * Delete request context
      */
     delete: (requestId: string) => void;
+    /**
+     * Clear context storage
+     */
+    clear: () => void;
 
+    /**
+     * find first request context matching specified url and request type
+     */
+    find: (
+        requestUrl: string,
+        requestType: RequestType
+    ) =>  RequestContext | undefined
+
+    onRecord: EventChannelInterface;
+
+    onUpdate: EventChannelInterface;
 }
 
 export class RequestContextStorage implements RequestContextStorageInterface {
-    private contextStorage = new Map<string, RequestContext>();
+    protected contextStorage = new Map<string, RequestContext>();
+
+    onRecord = new EventChannel();
+
+    onUpdate = new EventChannel();
 
     public get(requestId: string): RequestContext | undefined {
         return this.contextStorage.get(requestId);
@@ -60,6 +84,7 @@ export class RequestContextStorage implements RequestContextStorageInterface {
 
     public record(requestId: string, data: RequestContext): RequestContext {
         this.contextStorage.set(requestId, data);
+        this.onRecord.dispatch(requestId, data);
         return data;
     }
 
@@ -69,7 +94,11 @@ export class RequestContextStorage implements RequestContextStorageInterface {
         if (requestContext) {
             const newData = Object.assign(requestContext, data);
             this.contextStorage.set(requestId, newData);
+            this.onUpdate.dispatch(requestId, newData);
             return newData;
+        } else {
+            this.contextStorage.set(requestId, data as RequestContext);
+            this.onUpdate.dispatch(requestId, data);
         }
 
     }
@@ -78,6 +107,21 @@ export class RequestContextStorage implements RequestContextStorageInterface {
         if (this.contextStorage.has(requestId)) {
             this.contextStorage.delete(requestId);
         }
+    }
+
+    public find(requestUrl: string, requestType: RequestType): RequestContext | undefined {
+        for (const context of this.contextStorage.values()) {
+            if (
+                context.requestUrl === requestUrl &&
+                context.requestType === requestType
+            ) {
+                return context;
+            }
+        }
+    }
+
+    public clear(): void {
+        this.contextStorage.clear();
     }
 }
 

@@ -1,11 +1,19 @@
-import path from "path";
-import { Configuration } from "@adguard/tswebextension";
+import path from 'path';
+import { Configuration } from '@adguard/tswebextension';
 
-export const BASE_URL = 'https://testcases.adguard.com';
+export const BUILD_PATH = path.join(__dirname, '../build');
+
+export const BACKGROUND_PATH = path.join(__dirname, '../extension/pages/background');
+
+export const CONTENT_SCRIPT = path.join(__dirname, '../extension/pages/content-script');
+
+export const POPUP_PATH = path.join(__dirname, '../extension/pages/popup');
+
+export const USER_DATA_PATH = path.join(__dirname, '../tmp');
+
+export const TESTCASES_BASE_URL = 'https://testcases.adguard.com';
 
 export const TESTCASES_DATA_PATH = '/data.json';
-
-export const EXTENSION_PATH = path.join(__dirname, "../../build");
 
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     filters: [],
@@ -27,4 +35,4 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
-}
+};

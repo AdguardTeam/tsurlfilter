@@ -1,19 +1,27 @@
-import { StreamFilter } from '../../../../src/background/services/content-filtering/stream-filter';
+import { WebRequest } from 'webextension-polyfill';
 
 /**
  * Mock filter implementation
  */
-export class MockStreamFilter implements StreamFilter {
+export class MockStreamFilter implements WebRequest.StreamFilter {
     content: BufferSource | undefined;
 
-    error: Error | undefined;
+    status: WebRequest.StreamFilterStatus = 'uninitialized';
+
+    error = '';
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ondata = (event: { data: BufferSource }): void => {};
 
-    onerror = (): void => {};
+    onerror(): void {}
 
-    onstop = (): void => {};
+    onstop(): void {}
+
+    create(): void {}
+
+    suspend(): void {}
+
+    resume(): void {}
 
     // eslint-disable-next-line class-methods-use-this
     close(): void {

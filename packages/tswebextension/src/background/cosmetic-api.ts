@@ -1,6 +1,8 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { engineApi } from './engine-api';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
+import { FrameRequestService } from './services/frame-request-service';
 import { tabsApi } from './tabs/tabs-api';
 
 export interface CosmeticApiInterface {
@@ -26,6 +28,7 @@ export interface CosmeticApiInterface {
 
     getScriptText: (cosmeticResult: CosmeticResult, collectingCosmeticRulesHits?: boolean ) => string | undefined;
 
+    getFrameExtCssText: (frameUrl: string, tabId: number, frameId: number) => string | undefined;
 }
 
 export class CosmeticApi implements CosmeticApiInterface {
@@ -106,6 +109,25 @@ export class CosmeticApi implements CosmeticApiInterface {
         }
 
         return scriptText;
+    }
+
+    public getFrameExtCssText(frameUrl: string, tabId: number, frameId: number): string | undefined {
+        const searchParams = FrameRequestService.prepareSearchParams(frameUrl, tabId, frameId);
+
+        const requestContext = FrameRequestService.search(searchParams);
+
+        const matchingResult = requestContext?.matchingResult;
+
+        if (!matchingResult) {
+            return;
+        }
+
+        const cosmeticOption = matchingResult.getCosmeticOption();
+
+        const cosmeticResult = engineApi.getCosmeticResult(searchParams.requestUrl, cosmeticOption);
+        const extCssText = this.getExtCssText(cosmeticResult);
+
+        return extCssText;
     }
 
     /**

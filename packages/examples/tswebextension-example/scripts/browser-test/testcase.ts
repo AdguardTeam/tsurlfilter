@@ -1,5 +1,5 @@
-import { Product } from "./product";
-import { Compatibility, isCompatible } from "./compatibility";
+import { Product } from './product';
+import { Compatibility, isCompatible } from './compatibility';
 
 export interface Testcase {
     id: number,
@@ -14,5 +14,5 @@ export const filterCompatibleTestcases = (testcases: Testcase[], productType: Pr
     return testcases.filter(testcase => {
 
         return isCompatible(testcase.compatibility, productType);
-    })
-}
+    });
+};

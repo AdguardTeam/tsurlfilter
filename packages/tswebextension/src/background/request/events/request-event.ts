@@ -66,7 +66,11 @@ export class RequestEvent<Details, Options> {
             }
         };
 
-        event.addListener(handleBrowserEvent, filter, extraInfoSpec);
+        if (extraInfoSpec){
+            event.addListener(handleBrowserEvent, filter, extraInfoSpec);
+        } else {
+            event.addListener(handleBrowserEvent, filter); 
+        }
     }
 
     public addListener(listener: EventCallback<Details>) {

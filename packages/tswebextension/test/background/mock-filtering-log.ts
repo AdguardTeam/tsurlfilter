@@ -1,31 +1,19 @@
 import { FilteringLog } from '../../src/background/filtering-log';
 
 export class MockFilteringLog implements FilteringLog {
-    addCookieEvent = jest.fn(() => {
-        // Do nothing
-    });
+    addCookieEvent = jest.fn();
 
-    addRemoveHeaderEvent = jest.fn(() => {
-        // Do nothing
-    });
+    addRemoveHeaderEvent = jest.fn();
 
-    onHtmlRuleApplied = jest.fn(() => {
-        // Do nothing
-    });
+    addRemoveParamEvent = jest.fn();
 
-    onModificationFinished = jest.fn(() => {
-        // Do nothing
-    });
+    onHtmlRuleApplied = jest.fn();
 
-    onModificationStarted = jest.fn(() => {
-        // Do nothing
-    });
+    onModificationFinished = jest.fn();
 
-    onReplaceRulesApplied = jest.fn(() => {
-        // Do nothing
-    });
+    onModificationStarted = jest.fn();
 
-    bindStealthActionsToHttpRequestEvent = jest.fn(() => {
-        // Do nothing
-    });
+    onReplaceRulesApplied = jest.fn();
+
+    bindStealthActionsToHttpRequestEvent = jest.fn();
 }

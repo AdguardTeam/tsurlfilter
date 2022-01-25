@@ -1,5 +1,5 @@
 import browser, { Runtime } from 'webextension-polyfill';
-import { RequestType, CookieModifier, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { requestBlockingApi } from './request';
 import {
@@ -12,10 +12,9 @@ import {
     messageValidator,
     processShouldCollapsePayloadValidator,
 } from '../common';
-import { tabsApi } from './tabs';
-import { engineApi } from './engine-api';
 import { cosmeticApi } from './cosmetic-api';
 import { FilteringLog, mockFilteringLog } from './filtering-log';
+import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 export interface MessagesApiInterface {
     start: () => void;
@@ -115,7 +114,7 @@ export class MessagesApi implements MessagesApiInterface {
 
         const res = processShouldCollapsePayloadValidator.safeParse(payload);
 
-        if (!res.success){
+        if (!res.success) {
             return false;
         }
 
@@ -136,33 +135,16 @@ export class MessagesApi implements MessagesApiInterface {
 
         const res = getExtendedCssPayloadValidator.safeParse(payload);
 
-        if (!res.success){
+        if (!res.success) {
             return false;
         }
 
         const tabId = sender.tab.id;
+        const frameId = sender.frameId || 0;
 
         const { documentUrl } = res.data;
 
-        //TODO: replace to separate function
-
-        const matchingResult = engineApi.matchRequest({
-            requestUrl: documentUrl,
-            frameUrl: documentUrl,
-            requestType: RequestType.Document,
-            frameRule: tabsApi.getTabFrameRule(tabId),
-        });
-
-        if (!matchingResult){
-            return;
-        }
-
-        const cosmeticOption = matchingResult.getCosmeticOption();
-
-        const cosmeticResult = engineApi.getCosmeticResult(documentUrl, cosmeticOption);
-        const extCssText = cosmeticApi.getExtCssText(cosmeticResult);
-
-        return extCssText;
+        return cosmeticApi.getFrameExtCssText(documentUrl, tabId, frameId);
     }
 
     /**
@@ -181,39 +163,24 @@ export class MessagesApi implements MessagesApiInterface {
         }
 
         const res = getCookieRulesPayloadValidator.safeParse(payload);
-        if (!res.success){
+        if (!res.success) {
             return false;
         }
 
         const tabId = sender.tab.id;
+        const frameId = sender.frameId || 0;
+
         const { documentUrl } = res.data;
 
-        // TODO: Is it possible to find corresponding request context?
-        const matchingResult = engineApi.matchRequest({
-            requestUrl: documentUrl,
-            frameUrl: documentUrl,
-            requestType: RequestType.Document,
-            frameRule: tabsApi.getTabFrameRule(tabId),
-        });
+        const cookieRules = cookieFiltering.getBlockingRules(documentUrl, tabId, frameId);
 
-        if (!matchingResult) {
-            return;
-        }
-
-        const blockingRules = matchingResult.getCookieRules().filter((rule) => {
-            const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
-            return !cookieModifier.getSameSite() && !cookieModifier.getMaxAge();
-        });
-
-        return blockingRules.map((rule) => {
-            return {
-                ruleText: rule.getText(),
-                match: rule.getAdvancedModifierValue(),
-                isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
-                filterId: rule.getFilterListId(),
-                isAllowlist: rule.isAllowlist(),
-            };
-        });
+        return cookieRules.map((rule) => ({
+            ruleText: rule.getText(),
+            match: rule.getAdvancedModifierValue(),
+            isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
+            filterId: rule.getFilterListId(),
+            isAllowlist: rule.isAllowlist(),
+        }));
     }
 
     /**
@@ -231,7 +198,7 @@ export class MessagesApi implements MessagesApiInterface {
         }
 
         const res = getSaveCookieLogEventPayloadValidator.safeParse(payload);
-        if (!res.success){
+        if (!res.success) {
             return false;
         }
 

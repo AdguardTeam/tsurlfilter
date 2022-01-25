@@ -3,11 +3,14 @@ import { Configuration } from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import {
+    BACKGROUND_PATH,
+    CONTENT_SCRIPT,
+    POPUP_PATH,
+    BUILD_PATH,
+} from '../constants';
 
-const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
-const CONTENT_SCRIPT = path.resolve(__dirname, '../../extension/pages/content-script');
-const POPUP_PATH = path.resolve(__dirname, '../../extension/pages/popup');
-const BUILD_PATH = path.resolve(__dirname, '../../build');
+const isFFBuild = process.env.BROWSER === 'firefox';
 
 export const config: Configuration = {
     mode: 'development',
@@ -36,7 +39,7 @@ export const config: Configuration = {
             },
             {
                 test: /\.css$/,
-                use: ["style-loader", "css-loader"],
+                use: ['style-loader', 'css-loader'],
             },
         ],
     },
@@ -58,7 +61,7 @@ export const config: Configuration = {
             patterns: [
                 {
                     context: 'extension',
-                    from: 'manifest.json',
+                    from: isFFBuild ? 'manifest.firefox.json' : 'manifest.chrome.json',
                     to: 'manifest.json',
                 },
                 {

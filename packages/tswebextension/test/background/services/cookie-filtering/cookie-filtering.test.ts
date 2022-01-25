@@ -1,4 +1,5 @@
 /* eslint-disable max-len */
+import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
 import { CookieFiltering } from '../../../../src/background/services/cookie-filtering/cookie-filtering';
 import { MockFilteringLog } from '../../mock-filtering-log';
@@ -9,6 +10,8 @@ import { ContentType } from '../../../../src/background/request/request-type';
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
 import HttpHeaders = WebRequest.HttpHeaders;
+import { tabsApi } from '../../../../src/background/tabs';
+import { frameRequestService } from '../../../../src/background/services/frame-request-service';
 
 jest.mock('../../../../src/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
@@ -137,27 +140,6 @@ describe('Cookie filtering', () => {
         }));
     });
 
-    it('checks cookie lonely allowlist rule', async () => {
-        const allowlistRule = new NetworkRule('@@||example.org^$cookie=pick', 1);
-        const rules = [
-            allowlistRule,
-        ];
-
-        const requestHeaders = createTestHeaders([{
-            name: 'Cookie',
-            value: 'pick=test_value',
-        }]);
-
-        await runCase(rules, requestHeaders);
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'pick',
-            cookieRule: allowlistRule,
-            isModifyingCookieRule: false,
-            thirdParty: false,
-        }));
-    });
-
     it('checks cookie specific allowlist regex rule', async () => {
         const cookieRule = new NetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
         const allowlistRule = new NetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);
@@ -255,23 +237,33 @@ describe('Cookie filtering', () => {
         }));
     });
 
-    it('filters blocking rules', () => {
+    it('filters blocking rules', async () => {
         const rules = [
             new NetworkRule('||example.org^$cookie=c_user', 1),
             new NetworkRule('||example.org^$third-party,cookie=third_party_user', 1),
             new NetworkRule('||example.org^$cookie=m_user;sameSite=lax', 1),
         ];
 
+        await tabsApi.start();
+        frameRequestService.start(); 
+
+        browser.tabs.onCreated.dispatch({ id: 0 });
+
+        tabsApi.recordRequestFrame(0, 0, 'https://example.org', RequestType.Document);
+
         context.matchingResult = new MatchingResult(rules, null);
         requestContextStorage.record(details.requestId, context);
 
-        let result = cookieFiltering.getBlockingRules(details.requestId);
+        let result = cookieFiltering.getBlockingRules('https://example.org', 0, 0);
         expect(result).toHaveLength(2);
 
-        result = cookieFiltering.getBlockingRules(details.requestId + 1);
+        result = cookieFiltering.getBlockingRules('https://another.org', 0, 0);
         expect(result).toHaveLength(0);
 
         requestContextStorage.delete(details.requestId);
+
+        frameRequestService.stop();
+        tabsApi.stop();
     });
 
     it('checks invalids', async () => {

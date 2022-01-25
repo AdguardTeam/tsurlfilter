@@ -1,17 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import {
-    CosmeticOption,
-    RequestType,
-    NetworkRuleOption,
-} from '@adguard/tsurlfilter';
+import { CosmeticOption, RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { isOwnUrl, isHttpOrWsRequest, getDomain, isThirdPartyRequest } from './utils';
 import { cosmeticApi } from './cosmetic-api';
-import { redirectsService } from './services/redirects-service';
 import { headersService } from './services/headers-service';
+import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { contentFilteringService } from './services/content-filtering/content-filtering';
 import {
@@ -22,7 +17,7 @@ import {
     getRequestType,
     requestBlockingApi,
 } from './request';
-import { stealthService } from './services/stealth-service';
+import { findHeaderByName } from './utils/headers';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -72,8 +67,10 @@ export class WebRequestApi implements WebRequestApiInterface {
     }
 
     private onBeforeRequest(
-        { context, details }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        data: RequestData<WebRequest.OnBeforeRequestDetailsType>,
     ): WebRequestEventResponse {
+        const { details } = data;
+
         const {
             requestId,
             type,
@@ -82,6 +79,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             parentFrameId,
             originUrl,
             initiator,
+            method,
         } = details;
 
         let { url } = details;
@@ -121,29 +119,28 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+            tabsApi.recordRequestFrame(
+                tabId,
+                frameId,
+                url,
+                requestType,
+            );
+        }
+
         requestContextStorage.update(requestId, {
             requestUrl: url,
             referrerUrl,
             requestType,
-            tabId,
-            frameId,
             requestFrameId,
             thirdParty,
             contentType,
+            method,
         });
 
         if (isOwnUrl(referrerUrl)
             || !isHttpOrWsRequest(url)) {
             return;
-        }
-
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
-            tabsApi.recordRequestFrame(
-                tabId,
-                frameId,
-                referrerUrl,
-                requestType,
-            );
         }
 
         const result = engineApi.matchRequest({
@@ -163,41 +160,53 @@ export class WebRequestApi implements WebRequestApiInterface {
 
         const basicResult = result.getBasicResult();
 
-        const isAllowList = basicResult && basicResult.isAllowlist();
+        const response = requestBlockingApi.getBlockedResponseByRule(basicResult, requestType);
 
-        if (basicResult && !isAllowList) {
-            if (basicResult.isOptionEnabled(NetworkRuleOption.Redirect)) {
-                const redirectUrl = redirectsService.createRedirectUrl(basicResult.getAdvancedModifierValue());
-                if (redirectUrl) {
-                    return { redirectUrl };
-                }
+        if (!response) {
+            /*
+             Strip url by $removeparam rules
+             $removeparam rules are applied after URL blocking rules
+             https://github.com/AdguardTeam/CoreLibs/issues/1462
+            */
+            const purgedUrl = paramsService.getPurgedUrl(requestId);
+
+            if (purgedUrl) {
+                return { redirectUrl: purgedUrl };
+            }
+        }
+
+        if (response?.cancel) {
+            hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
+        }
+
+        if (browser.webRequest.filterResponseData) {
+            const cosmeticResult = engineApi.getCosmeticResult(
+                referrerUrl!, CosmeticOption.CosmeticOptionHtml,
+            );
+
+            const htmlRules = cosmeticResult.Html.getRules();
+
+            if (htmlRules.length > 0) {
+                requestContextStorage.update(requestId, { htmlRules: cosmeticResult.Html.getRules() });
             }
 
-            hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
-
-            return { cancel: true };
+            // Bypass images
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1906
+            if (requestType !== RequestType.Image) {
+                contentFilteringService.onBeforeRequest(
+                    browser.webRequest.filterResponseData(requestId),
+                    details,
+                );
+            }
         }
 
-        // TODO: Check if content filtering is available (is FF)
-        if (context && browser.webRequest.filterResponseData) {
-            const cosmeticResult = engineApi.getCosmeticResult(
-                context.referrerUrl!, CosmeticOption.CosmeticOptionHtml,
-            );
-            context.htmlRules = cosmeticResult.Html.getRules();
-
-            // contentFilteringService.onBeforeRequest(
-            //     browser.webRequest.filterResponseData(context.requestId),
-            //     details,
-            // );
-        }
-
-        return;
+        return response;
     }
 
     private onBeforeSendHeaders(
         data: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>,
     ): WebRequestEventResponse {
-        if (!data.context?.matchingResult){
+        if (!data.context?.matchingResult) {
             return;
         }
 
@@ -218,25 +227,33 @@ export class WebRequestApi implements WebRequestApiInterface {
     ): WebRequestEventResponse {
         const { context, details } = data;
 
-        if (!context?.matchingResult){
+        if (!context?.matchingResult) {
             return;
         }
 
         const {
+            requestId,
+            requestUrl,
             matchingResult,
             requestType,
-            referrerUrl,
             tabId,
             frameId,
         } = context;
 
-        let { responseHeaders } = details;
+        let { responseHeaders } = context;
+
+
+        const contentTypeHeader = findHeaderByName(responseHeaders!, 'content-type')?.value;
+
+        if (contentTypeHeader) {
+            requestContextStorage.update(requestId, { contentTypeHeader });
+        }
 
         let responseHeadersModified = false;
 
-        if (referrerUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)) {
+        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)) {
             const cosmeticOption = matchingResult.getCosmeticOption();
-            this.recordFrameInjection(referrerUrl, tabId, frameId, cosmeticOption);
+            this.recordFrameInjection(requestUrl, tabId, frameId, cosmeticOption);
 
             // TODO: replace to separate method
             const cspHeaders = [];
@@ -260,8 +277,8 @@ export class WebRequestApi implements WebRequestApiInterface {
             }
 
             if (cspHeaders.length > 0) {
-                responseHeaders = responseHeaders 
-                    ? responseHeaders.concat(cspHeaders) 
+                responseHeaders = responseHeaders
+                    ? responseHeaders.concat(cspHeaders)
                     : cspHeaders;
 
                 responseHeadersModified = true;
@@ -371,11 +388,11 @@ export class WebRequestApi implements WebRequestApiInterface {
         if (frame?.injection) {
             const { cssText, jsScriptText } = frame.injection;
 
-            if (cssText){
+            if (cssText) {
                 cosmeticApi.injectCss(cssText, tabId, frameId);
             }
 
-            if (jsScriptText){
+            if (jsScriptText) {
                 cosmeticApi.injectScript(jsScriptText, tabId, frameId);
             }
 

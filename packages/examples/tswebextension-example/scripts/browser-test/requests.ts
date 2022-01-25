@@ -1,9 +1,9 @@
-import axios from "axios";
+import axios from 'axios';
 
-import { BASE_URL, TESTCASES_DATA_PATH } from './constants';
-import { Testcase } from "./testcase";
+import { TESTCASES_BASE_URL, TESTCASES_DATA_PATH } from '../constants';
+import { Testcase } from './testcase';
 
-axios.defaults.baseURL = BASE_URL;
+axios.defaults.baseURL = TESTCASES_BASE_URL;
 
 export const get = async <ResponseData>(url: string) => {
     const res = await axios.get<ResponseData>(url, {
@@ -13,7 +13,7 @@ export const get = async <ResponseData>(url: string) => {
     });
 
     return res.data;
-}
+};
 
 export const getRuleText = (path: string) => get<string>(path);
 

@@ -18,21 +18,22 @@ export const addQunitListeners = (callbackName: string) => {
             qUnit.on('runEnd', (details: any) => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
-                (<any>window)[callbackName](Object.assign(details, { name }))
-            })
+                (<any>window)[callbackName](Object.assign(details, { name }));
+            });
         },
         configurable: true,
     });
-}
+};
 
-export const setTsWebExtensionConfig = async (
-    defaultConfig: Configuration,
-    rulesText: string
-) => {
+
+export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, rulesText: string ];
+
+export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) => {
+    const [ defaultConfig, rulesText ] = arg;
     await window.tsWebExtension.configure(Object.assign(defaultConfig, {
         filters: [{
             filterId: 1,
-            content: rulesText
+            content: rulesText,
         }],
-    }))
-}
+    }));
+};

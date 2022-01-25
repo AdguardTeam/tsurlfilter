@@ -2,7 +2,9 @@ import browser, { WebRequest } from 'webextension-polyfill';
 
 import { requestContextStorage } from '../request-context-storage';
 import { RequestEvent, BrowserRequstEvent } from './request-event';
+import { isChrome } from '../../utils/browser-detector';
 
+// TODO: firefox adapter
 
 export type OnBeforeRequest = BrowserRequstEvent<
 WebRequest.OnBeforeRequestDetailsType,
@@ -47,11 +49,17 @@ WebRequest.OnBeforeSendHeadersDetailsType,
 WebRequest.OnBeforeSendHeadersOptions
 >;
 
+const onBeforeSendHeadersOptions = ['requestHeaders', 'blocking'];
+
+if (isChrome){
+    onBeforeSendHeadersOptions.push('extraHeaders');
+}
+
 export const onBeforeSendHeaders = new RequestEvent(
     browser.webRequest.onBeforeSendHeaders as OnBeforeSendHeaders,
     handleDetails,
     { urls: ['<all_urls>'] },
-    ['requestHeaders', 'blocking', 'extraHeaders'],
+    onBeforeSendHeadersOptions,
 );
 
 export type OnSendHeaders = BrowserRequstEvent<
@@ -70,11 +78,30 @@ WebRequest.OnHeadersReceivedDetailsType,
 WebRequest.OnHeadersReceivedOptions
 >;
 
+const onHeadersReceivedOptions = ['responseHeaders', 'blocking'];
+
+if (isChrome){
+    onHeadersReceivedOptions.push('extraHeaders');
+}
+
 export const onHeadersReceived = new RequestEvent(
     browser.webRequest.onHeadersReceived as OnHeadersReceived,
-    handleDetails,
+    (details) => {
+        const { 
+            requestId,
+            responseHeaders,
+            statusCode,
+        } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            responseHeaders,
+            statusCode,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
-    ['responseHeaders', 'blocking', 'extraHeaders'],
+    onHeadersReceivedOptions,
 );
 
 export type OnAuthRequired = BrowserRequstEvent<

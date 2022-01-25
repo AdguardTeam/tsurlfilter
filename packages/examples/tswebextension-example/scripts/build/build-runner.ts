@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import webpack, { Stats, Configuration } from 'webpack';
 
-type CompilerCallback = (err?: Error, stats?: Stats) => void
+type CompilerCallback = (err?: Error, stats?: Stats) => void;
 
 export const buildRunner = (webpackConfig: Configuration, watch = false): Promise<void> => {
     const compiler = webpack(webpackConfig);

@@ -2,7 +2,12 @@ import browser, { WebRequest } from 'webextension-polyfill';
 import { StringRuleList, logger } from '@adguard/tsurlfilter';
 import { Configuration } from './configuration';
 import { StealthConfig, StealthService } from './services/stealth-service';
-import { RequestContext, requestContextStorage } from './request/request-context-storage';
+import { 
+    RequestContext,
+    requestContextStorage,
+    RequestEvents,
+    RequestData,
+} from './request';
 import { FilteringLog, mockFilteringLog } from './filtering-log';
 
 /**
@@ -60,11 +65,8 @@ export class StealthApi implements StealthApiInterface {
 
         this.engine = new StealthService(this.configuration);
 
-        const filter: WebRequest.RequestFilter = {
-            urls: ['<all_urls>'],
-        };
 
-        browser.webRequest.onBeforeSendHeaders.addListener(this.onBeforeSendHeaders, filter);
+        RequestEvents.onBeforeSendHeaders.addListener(this.onBeforeSendHeaders);
 
         if (this.canBlockWebRTC()) {
             let isPermissionsGranted = false;
@@ -84,7 +86,7 @@ export class StealthApi implements StealthApiInterface {
      * Stops service
      */
     public stop():void {
-        browser.webRequest.onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
+        RequestEvents.onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
     }
 
     /**
@@ -105,7 +107,7 @@ export class StealthApi implements StealthApiInterface {
      *
      * @param details
      */
-    private onBeforeSendHeaders(details: WebRequest.OnBeforeSendHeadersDetailsType):void {
+    private onBeforeSendHeaders({ details }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>):void {
         if (!this.engine) {
             return;
         }

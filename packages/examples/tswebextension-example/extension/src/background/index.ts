@@ -1,6 +1,7 @@
-import { TsWebExtension, Configuration } from "@adguard/tswebextension";
+import browser, { Events } from 'webextension-polyfill';
+import { TsWebExtension, Configuration } from '@adguard/tswebextension';
 
-import { MessageTypes } from "../common/message-types";
+import { MessageTypes } from '../common/message-types';
 
 const tsWebExtension = new TsWebExtension();
 
@@ -36,22 +37,22 @@ const defaultConfig: Configuration = {
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
-}
+};
 
 tsWebExtension.start(defaultConfig);
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponce) => {
+(browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, _sender, sendResponse) => {
     switch (message.type) {
         case MessageTypes.GET_CONFIG: {
             const config = tsWebExtension.configuration;
-            sendResponce({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });
+            sendResponse({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });
             break;
         }
         case MessageTypes.SET_CONFIG: {
-            const config = { ...defaultConfig, ...message.payload }
+            const config = { ...defaultConfig, ...message.payload };
             tsWebExtension.configure(config).then(() => {
-                alert('loaded')
-                sendResponce({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config })
+                alert('loaded');
+                sendResponse({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });
             });
             break;
         }

@@ -40,4 +40,4 @@ export const isCompatible = (compatiblity: Compatibility, product: Product) => {
     if (partial) {
         return partial.exceptions.map(ex => ex.product).includes(product);
     }
-}
+};

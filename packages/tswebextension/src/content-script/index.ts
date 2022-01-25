@@ -38,19 +38,10 @@ const applyExtendedCss = (cssText: string) => {
 };
 
 (async function () {
-    /**
-     * This content script executes in every page frame
-     * We find nearest external source in window.top proxy
-     * if this prop doesn't exist, read location data in frame context
-     *
-     * TODO: more intelligent search with base64 src url support etc.
-     */
-    const documentUrl = window.top?.location?.href || window.location.href;
-
     const res = await browser.runtime.sendMessage({
         type: MessageType.GET_EXTENDED_CSS,
         payload: {
-            documentUrl,
+            documentUrl: window.location.href,
         },
     }) as string;
 

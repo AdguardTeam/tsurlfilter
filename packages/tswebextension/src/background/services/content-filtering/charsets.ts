@@ -27,6 +27,7 @@ export function parseCharsetFromHeader(contentType: string | undefined): string 
     return null;
 }
 
+
 /**
  * Parses charset from data, looking for:
  * <meta charset="utf-8" />

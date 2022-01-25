@@ -1,6 +1,7 @@
+import { WebRequest } from 'webextension-polyfill';
 import { TextEncoder, TextDecoder } from 'text-encoding';
-import { StreamFilter } from './stream-filter';
 import { RequestType, logger } from '@adguard/tsurlfilter';
+
 import {
     DEFAULT_CHARSET,
     LATIN_1,
@@ -19,7 +20,7 @@ export class ContentFilter {
     /**
      * Web request filter
      */
-    filter: StreamFilter;
+    filter: WebRequest.StreamFilter;
 
     /**
      * Request type
@@ -59,7 +60,7 @@ export class ContentFilter {
      * @param onContentCallback
      */
     constructor(
-        filter: StreamFilter,
+        filter: WebRequest.StreamFilter,
         requestType: RequestType,
         onContentCallback: (data: string) => void,
     ) {
@@ -137,8 +138,8 @@ export class ContentFilter {
         };
 
         this.filter.onerror = (): void => {
-            if (this.filter.error && this.filter.error.message) {
-                logger.info(this.filter.error.message);
+            if (this.filter.error && this.filter.error) {
+                logger.info(this.filter.error);
             }
         };
     }
@@ -171,13 +172,13 @@ export class ContentFilter {
      * @param data
      */
     private disconnect(data: BufferSource): void {
-        this.filter.write(data);
+        this.filter.write(data as ArrayBuffer);
         this.filter.disconnect();
     }
 
     /**
      * Parses charset from data
-     *
+     * 
      * @param data
      * @returns {*}
      */

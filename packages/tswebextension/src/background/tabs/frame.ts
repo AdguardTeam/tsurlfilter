@@ -1,3 +1,4 @@
+import { RequestContextStorage  } from '../request';
 export interface Injection {
     jsScriptText?: string;
     cssText?: string;
@@ -13,6 +14,8 @@ export class Frame {
     url: string;
 
     injection: Injection | undefined;
+
+    requests = new RequestContextStorage();
 
     constructor(data: FrameData){
         this.url = data.url;

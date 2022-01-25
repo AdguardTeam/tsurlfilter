@@ -6,9 +6,12 @@ import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { findHeaderByName } from '../../utils/headers';
-import { requestContextStorage } from '../../request/request-context-storage';
+import { requestContextStorage } from '../../request';
+import { FrameRequestService } from '../frame-request-service';
+
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
+
 
 /**
  * Cookie filtering
@@ -104,18 +107,29 @@ export class CookieFiltering {
     }
 
     /**
-     * Looks up blocking rules for content-script
-     *
-     * @param requestId
+     * Looks up blocking rules for content-script in frame context
      */
-    public getBlockingRules(requestId: string): NetworkRule[] {
-        const context = requestContextStorage.get(requestId);
-        if (!context || !context.matchingResult) {
+    public getBlockingRules(
+        frameUrl: string, 
+        tabId: number, 
+        frameId: number,
+    ): NetworkRule[] {
+        const searchParams = FrameRequestService.prepareSearchParams(frameUrl, tabId, frameId);
+        const requestContext = FrameRequestService.search(searchParams);
+
+        if (!requestContext){
             return [];
         }
 
-        const cookieRules = context.matchingResult.getCookieRules();
-        return CookieRulesFinder.getBlockingRules(context.requestUrl!, cookieRules);
+        const { matchingResult, requestUrl } = requestContext;
+
+        if (!matchingResult || !requestUrl) {
+            return [];
+        }
+
+        const cookieRules = matchingResult.getCookieRules();
+
+        return CookieRulesFinder.getBlockingRules(requestUrl, cookieRules);    
     }
 
     /**
@@ -210,11 +224,12 @@ export class CookieFiltering {
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
+
             if (rule.isAllowlist()) {
                 appliedRules.push(rule);
                 continue;
             }
-
+            
             const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
 
             let modified = false;

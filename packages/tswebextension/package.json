@@ -42,7 +42,7 @@
     "transform": {
       ".+\\.(ts|tsx)": "ts-jest"
     },
-    "testEnvironment": "node",
+    "testEnvironment": "jsdom",
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
     "moduleFileExtensions": [
       "ts",
@@ -73,6 +73,7 @@
     "@adguard/assistant": "^4.3.59",
     "@adguard/scriptlets": "^1.4.26",
     "@adguard/tsurlfilter": "^0.7.37",
+    "bowser": "^2.11.0",
     "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",
     "tldts": "^5.6.45",
@@ -81,6 +82,7 @@
     "zod": "^3.11.6"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
     "@rollup/plugin-typescript": "^8.3.0",
     "@types/jest": "^27.0.3",
     "@types/sinon-chrome": "^2.2.11",
@@ -88,6 +90,7 @@
     "@typescript-eslint/eslint-plugin": "5.4.0",
     "@typescript-eslint/parser": "5.4.0",
     "coveralls": "^3.1.1",
+    "esbuild": "^0.14.6",
     "eslint": "^8.3.0",
     "eslint-config-airbnb-typescript": "^16.0.0",
     "eslint-plugin-import": "^2.25.3",

@@ -6,4 +6,4 @@ export const enum MessageTypes {
     SET_CONFIG_FAIL = 'SET_CONFIG_FAIL',
     OPEN_ASSISTANT = 'OPEN_ASSISTANT',
     CLOSE_ASSISTANT = 'CLOSE_ASSISTANT',
-};
+}

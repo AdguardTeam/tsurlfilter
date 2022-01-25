@@ -130,7 +130,7 @@ export class TabsApi implements TabsApiInterface {
     public recordRequestFrame(
         tabId: number, 
         frameId: number, 
-        referrerUrl: string, 
+        url: string, 
         requestType: RequestType,
     ) {
         const tabContext = this.context.get(tabId);
@@ -140,11 +140,9 @@ export class TabsApi implements TabsApiInterface {
         }
 
         if (requestType === RequestType.Document) {
-            tabContext.reloadTabFrameData(referrerUrl);
+            tabContext.reloadTabFrameData(url);
         } else {
-            tabContext.frames.set(frameId, new Frame({
-                url: referrerUrl,
-            }));
+            tabContext.frames.set(frameId, new Frame({ url }));
         } 
     }
 
@@ -176,7 +174,7 @@ export class TabsApi implements TabsApiInterface {
     }
 
     private createTabContext(tab: Tabs.Tab): void {
-        if (tab.id) {
+        if (typeof tab.id === 'number') {
             const tabContext = new TabContext(tab);
             this.context.set(tab.id, tabContext);
             this.onCreate.dispatch(tabContext);
@@ -202,6 +200,10 @@ export class TabsApi implements TabsApiInterface {
 
     private async createCurrentTabsContext(): Promise<void> {
         const currentTabs = await browser.tabs.query({});
+
+        if (!Array.isArray(currentTabs)){
+            return;
+        }
 
         for (let i = 0; i < currentTabs.length; i += 1) {
             this.createTabContext(currentTabs[i]);

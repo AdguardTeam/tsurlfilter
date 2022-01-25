@@ -1,11 +1,11 @@
-import { WebRequest } from 'webextension-polyfill/namespaces/webRequest';
+import { WebRequest } from 'webextension-polyfill';
 import { CosmeticRule, NetworkRule, ReplaceModifier, logger, RequestType } from '@adguard/tsurlfilter';
+
 import { SUPPORTED_CHARSETS, parseCharsetFromHeader } from './charsets';
 import { ContentFilter } from './content-filter';
 import { DocumentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
 import { HtmlRuleSelector } from './rule/html-rule-selector';
-import { StreamFilter } from './stream-filter';
 import { RequestContext, requestContextStorage } from '../../request/request-context-storage';
 import { mockFilteringLog, FilteringLog } from '../../filtering-log';
 
@@ -66,7 +66,7 @@ export class ContentFiltering {
      */
     private setupContentFilter(
         requestId: string,
-        streamFilter: StreamFilter,
+        streamFilter: WebRequest.StreamFilter,
     ): void {
         const context = requestContextStorage.get(requestId);
         if (!context || !context.requestType) {
@@ -300,7 +300,7 @@ export class ContentFiltering {
      * @param details
      */
     public onBeforeRequest(
-        streamFilter: StreamFilter,
+        streamFilter: WebRequest.StreamFilter,
         details: WebRequest.OnBeforeRequestDetailsType,
     ): void {
         const {

@@ -7,11 +7,6 @@ import { TextDecoder, TextEncoder } from 'text-encoding';
 import { WebRequest } from 'webextension-polyfill/namespaces/webRequest';
 import { CosmeticRule, NetworkRule, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { MockStreamFilter } from './mock-stream-filter';
-import {
-    DEFAULT_CHARSET,
-    parseCharsetFromHeader,
-    WIN_1251,
-} from '../../../../src/background/services/content-filtering/charsets';
 import { ContentFiltering } from '../../../../src/background/services/content-filtering/content-filtering';
 import { MockFilteringLog } from '../../mock-filtering-log';
 import { RequestContext, requestContextStorage } from '../../../../src/background/request/request-context-storage';
@@ -170,15 +165,5 @@ describe('Content filtering', () => {
         context.matchingResult = new MatchingResult(rules, null);
 
         runCase(testData);
-    });
-});
-
-describe('Content filtering - charsets', () => {
-    it('checks charset parsing', () => {
-        expect(parseCharsetFromHeader('text/html; charset=utf-8')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHeader('text/html; charset=windows-1251')).toBe(WIN_1251);
-        expect(parseCharsetFromHeader('text/html; charset="windows-1251"')).toBe(WIN_1251);
-        expect(parseCharsetFromHeader('')).toBeNull();
-        expect(parseCharsetFromHeader('smth else')).toBeNull();
     });
 });

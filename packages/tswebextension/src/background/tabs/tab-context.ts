@@ -1,7 +1,6 @@
 import { Tabs } from 'webextension-polyfill';
 import { NetworkRule } from '@adguard/tsurlfilter';
 import { engineApi } from '../engine-api';
-import { getDomain } from '../utils';
 import { Frame } from './frame';
 
 export interface TabMetadata {
@@ -14,7 +13,7 @@ export interface TabContextInterface {
     metadata: TabMetadata
 
     updateTabInfo: (changeInfo: Tabs.OnUpdatedChangeInfoType) => void
-    reloadTabFrameData: (frameUrl: string) => void 
+    reloadTabFrameData: (frameUrl: string) => void
 }
 
 export const MAIN_FRAME_ID = 0;
@@ -40,19 +39,15 @@ export class TabContext implements TabContextInterface {
         this.info = Object.assign(this.info, changeInfo);
     }
 
-    reloadTabFrameData(frameUrl: string): void {
+    reloadTabFrameData(url: string): void {
         const previousUrl = this.frames.get(MAIN_FRAME_ID)?.url;
 
-        const url = getDomain(frameUrl) || frameUrl;
+        this.frames.clear();
+        this.frames.set(MAIN_FRAME_ID, new Frame({ url }));
 
-        if (previousUrl !== url){
-            this.frames.clear();
-            this.frames.set(MAIN_FRAME_ID, new Frame({ url }));
-    
-            this.metadata = {
-                mainFrameRule: engineApi.matchFrame(url),
-                previousUrl,
-            };
-        }
+        this.metadata = {
+            mainFrameRule: engineApi.matchFrame(url),
+            previousUrl,
+        };
     }
 }

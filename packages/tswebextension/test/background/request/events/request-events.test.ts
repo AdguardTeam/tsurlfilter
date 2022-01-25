@@ -118,6 +118,13 @@ describe('Request Events', () => {
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
+            responseHeaders: [
+                {
+                    name: 'content-type',
+                    value: 'text/html; charset=UTF-8',
+                },
+            ],
+            statusCode: 200,
             timestamp,
         };
 
@@ -158,6 +165,13 @@ describe('Request Events', () => {
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
+            responseHeaders: [
+                {
+                    name: 'content-type',
+                    value: 'text/html; charset=UTF-8',
+                },
+            ],
+            statusCode: 200,
             timestamp,
         };
 
@@ -200,6 +214,13 @@ describe('Request Events', () => {
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
+            responseHeaders: [
+                {
+                    name: 'content-type',
+                    value: 'text/html; charset=UTF-8',
+                },
+            ],
+            statusCode: 200,
             timestamp,
         };
 
@@ -229,6 +250,13 @@ describe('Request Events', () => {
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
+            responseHeaders: [
+                {
+                    name: 'content-type',
+                    value: 'text/html; charset=UTF-8',
+                },
+            ],
+            statusCode: 200,
             timestamp,
         };
 

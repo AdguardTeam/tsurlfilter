@@ -18,6 +18,7 @@ export * from './rules/rule-factory';
 export * from './rules/simple-regex';
 export * from './rules/declarative-converter/declarative-converter';
 export * from './modifiers/remove-header-modifier';
+export * from './modifiers/remove-param-modifier';
 export * from './modifiers/cookie-modifier';
 export * from './modifiers/replace-modifier';
 export * from './utils/logger';

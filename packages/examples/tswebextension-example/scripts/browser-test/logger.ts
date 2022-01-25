@@ -1,4 +1,4 @@
-import { colorizeStatusText, colorizeTitleText } from "./text-color"; 
+import { colorizeStatusText, colorizeTitleText } from './text-color'; 
 
 export interface LogDetails {
     name: string,
@@ -8,13 +8,13 @@ export interface LogDetails {
     }[],
     status: string,
     testCounts: {
-      passed: number,
-      failed: number,
-      skipped: number,
-      total: number
+        passed: number,
+        failed: number,
+        skipped: number,
+        total: number
     },
     runtime: number
-  }
+}
 
 export const logTestResult = (details: LogDetails) => {
     const counts = details.testCounts;
@@ -26,7 +26,7 @@ export const logTestResult = (details: LogDetails) => {
         counts.total,
         counts.passed,
         counts.failed,
-        counts.skipped
+        counts.skipped,
     );
     console.log('Duration:', details.runtime, '\n');
 
@@ -39,4 +39,4 @@ export const logTestResult = (details: LogDetails) => {
     }
 
     console.log('\n');
-}
+};

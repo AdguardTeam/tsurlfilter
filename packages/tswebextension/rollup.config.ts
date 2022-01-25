@@ -1,5 +1,6 @@
 import typescript from '@rollup/plugin-typescript';
 import cleanup from 'rollup-plugin-cleanup';
+import commonjs from '@rollup/plugin-commonjs';
 
 
 const DEFAULT_OUTPUT_PATH = 'dist';
@@ -10,6 +11,7 @@ const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUT
 const commonConfig = {
     plugins: [
         typescript(),
+        commonjs(),
         cleanup({
             comments: ['srcmaps'],
         }),
@@ -30,6 +32,7 @@ const contentScriptConfig = {
         'webextension-polyfill',
         'extended-css',
         '@adguard/tsurlfilter',
+        '@adguard/assistant',
     ],
     watch: {
         include: 'src/content-script/**',
@@ -58,6 +61,7 @@ const backgroundConfig = {
         '@adguard/tsurlfilter',
         '@adguard/scriptlets',
         'tldts',
+        'bowser',
     ],
     ...commonConfig,
 };

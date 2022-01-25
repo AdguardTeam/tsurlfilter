@@ -6,6 +6,7 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects-service';
+import { frameRequestService } from './services/frame-request-service';
 import { messagesApi } from './messages-api';
 import { stealthApi } from './stealth-api';
 import { MessageType } from '../common';
@@ -134,10 +135,11 @@ export class TsWebExtension implements TsWebExtensionInterface {
         resourcesService.start();
         await redirectsService.start();
         await tabsApi.start();
+        frameRequestService.start(); 
         await engineApi.startEngine(configuration);
+        await stealthApi.start(configuration);
         webRequestApi.start();
         messagesApi.start();
-        await stealthApi.start(configuration);
 
         this.isStarted = true;
         this.configuration = configuration;
@@ -146,12 +148,14 @@ export class TsWebExtension implements TsWebExtensionInterface {
     public async stop(): Promise<void> {
         messagesApi.stop();
         webRequestApi.stop();
+        frameRequestService.stop(); 
         tabsApi.stop();
         resourcesService.stop();
         stealthApi.stop();
         this.isStarted = false;
     }
 
+    /* TODO: merge update */
     public async configure(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
@@ -162,6 +166,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
         await engineApi.startEngine(configuration);
         this.configuration = configuration;
 
+        /* TODO: this.stop */
         stealthApi.stop();
         await stealthApi.start(configuration);
     }

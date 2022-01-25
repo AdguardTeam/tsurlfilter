@@ -27,6 +27,7 @@ export interface FilteringLog {
      * Add header removed event
      *
      * @param tabId
+     * @param frameUrl
      * @param headerName
      * @param rule
      */
@@ -34,6 +35,22 @@ export interface FilteringLog {
         tabId: number,
         frameUrl: string,
         headerName: string,
+        rule: NetworkRule,
+    ): void;
+
+
+    /**
+     * Add param removed event
+     *
+     * @param tabId
+     * @param frameUrl
+     * @param paramName
+     * @param rule
+     */
+    addRemoveParamEvent(
+        tabId: number,
+        frameUrl: string,
+        paramName: string,
         rule: NetworkRule,
     ): void;
 
@@ -96,6 +113,10 @@ export class MockFilteringLog implements FilteringLog {
     }
 
     addRemoveHeaderEvent(tabId: number, frameUrl: string, headerName: string, rule: NetworkRule): void {
+    }
+
+    addRemoveParamEvent(tabId: number, frameUrl: string, paramName: string, rule: NetworkRule): void {
+        
     }
 
     onHtmlRuleApplied(tabId: number, requestId: string, elementString: string, frameUrl: string, rule: CosmeticRule): void {

@@ -253,7 +253,7 @@ describe('NetworkRule - redirect rules', () => {
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
         expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
     });
-
+    
     it('works if it throws empty redirect rule', () => {
         expect(() => {
             new NetworkRule('example.org/ads.js$script,redirect', 0);
