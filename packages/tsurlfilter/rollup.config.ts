@@ -43,7 +43,7 @@ const commonConfig = {
             comments: ['srcmaps'],
         }),
     ],
-}
+};
 
 const contentScriptConfig = {
     input: 'src/content-script/index.ts',
