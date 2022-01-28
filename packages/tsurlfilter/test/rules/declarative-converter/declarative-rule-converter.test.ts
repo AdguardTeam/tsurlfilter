@@ -300,6 +300,14 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
+    // Cookies rules are not supported
+    it('converts cookies rules', () => {
+        const ruleText = '$cookie=bf_lead';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual(null);
+    });
+
     describe('converts cyrillic domain rules', () => {
         it('converts domains section', () => {
             const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule('path$domain=меил.рф', -1), 2);

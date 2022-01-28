@@ -1,5 +1,6 @@
 import punycode from 'punycode/';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
+import { CookieModifier } from '../../modifiers/cookie-modifier';
 import { RequestType } from '../../request-type';
 import { logger } from '../../utils/logger';
 import {
@@ -211,6 +212,11 @@ export class DeclarativeRuleConverter {
      * @param id - rule identifier
      */
     static convert(rule: NetworkRule, id: number): DeclarativeRule | null {
+        if (rule.getAdvancedModifier() instanceof CookieModifier) {
+            logger.info(`Error: cookies rules are not supported: "${rule.getText()}"`);
+            return null;
+        }
+
         const declarativeRule = {} as DeclarativeRule;
 
         const priority = this.getPriority(rule);
