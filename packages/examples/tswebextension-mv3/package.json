@@ -1,0 +1,30 @@
+{
+  "name": "tswebextension-mv3",
+  "version": "0.0.1",
+  "description": "Sample extension with tswebextension on manifest V3",
+  "author": "adguard@adguard.com",
+  "license": "GPL-3.0",
+  "scripts": {
+    "build": "yarn build:precompile-rules && yarn build:extension",
+    "build:extension": "node -r esbuild-register ./scripts/build",
+    "build:precompile-rules": "node -r esbuild-register ./scripts/precompile-rules.ts",
+    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
+  },
+  "dependencies": {
+    "@adguard/tswebextension": "file:../../tswebextension"
+  },
+  "devDependencies": {
+    "@adguard/tsurlfilter": "file:../../tsurlfilter",
+    "@babel/core": "^7.16.0",
+    "@babel/plugin-proposal-class-properties": "^7.16.0",
+    "@babel/plugin-transform-runtime": "^7.16.4",
+    "@babel/preset-env": "^7.16.4",
+    "@babel/preset-typescript": "^7.16.0",
+    "babel-loader": "^8.2.3",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^10.0.0",
+    "esbuild": "^0.14.1",
+    "esbuild-register": "^3.2.0",
+    "webpack": "^5.64.2"
+  }
+}

@@ -9,6 +9,7 @@ This repo contains typescript packages implementing AdGuard filtering engine.
 - examples/manifest-v2
 - examples/manifest-v3
 - examples/tswebextension-example
+- examples/tswebextension-mv3
 
 See packages details in `./packages`.
 

@@ -129,13 +129,27 @@ export class TsWebExtension implements TsWebExtensionInterface {
 
     public configuration: Configuration | undefined;
 
+    /**
+     * Web accessible resources path in the result bundle
+     */
+    private readonly webAccessibleResourcesPath: string | undefined;
+
+    /**
+     * Constructor
+     *
+     * @param webAccessibleResourcesPath optional
+     */
+    constructor(webAccessibleResourcesPath?: string) {
+        this.webAccessibleResourcesPath = webAccessibleResourcesPath;
+    }
+
     public async start(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
-        resourcesService.start();
+        resourcesService.start(this.webAccessibleResourcesPath);
         await redirectsService.start();
         await tabsApi.start();
-        frameRequestService.start(); 
+        frameRequestService.start();
         await engineApi.startEngine(configuration);
         await stealthApi.start(configuration);
         webRequestApi.start();
@@ -148,7 +162,7 @@ export class TsWebExtension implements TsWebExtensionInterface {
     public async stop(): Promise<void> {
         messagesApi.stop();
         webRequestApi.stop();
-        frameRequestService.stop(); 
+        frameRequestService.stop();
         tabsApi.stop();
         resourcesService.stop();
         stealthApi.stop();

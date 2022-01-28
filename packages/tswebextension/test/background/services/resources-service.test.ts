@@ -2,7 +2,7 @@ import browser from 'sinon-chrome';
 import { ResourcesService, resourcesService } from '../../../src/background/services/resources-service';
 
 global.fetch = jest.fn(() => {
-    return Promise.resolve({ 
+    return Promise.resolve({
         text: () => Promise.resolve('test response'),
     } as unknown as Response);
 });
@@ -15,6 +15,10 @@ jest.spyOn(ResourcesService.prototype as any, 'generateSecretKey').mockImplement
 describe('Resources Service', () => {
     it('guards web accessible resources', () => {
         resourcesService.start();
+
+        expect(browser.webRequest.onBeforeRequest.addListener.notCalled);
+
+        resourcesService.start('war');
 
         expect(browser.webRequest.onBeforeRequest.addListener.calledOnce);
 
@@ -34,11 +38,22 @@ describe('Resources Service', () => {
     });
 
     it('creates resource url', () => {
+        expect(() => {
+            resourcesService.createResourceUrl('resources/path');
+        }).toThrow();
+
+        resourcesService.start('war');
         expect(resourcesService.createResourceUrl('resources/path'))
             .toBe('test/war/resources/path?secret=12345');
+        resourcesService.stop();
     });
 
     it('loads Resource', async () => {
-        expect(await resourcesService.loadResource('test')).toBe('test response');
+        await expect(resourcesService.loadResource('test')).rejects.toThrow();
+
+        resourcesService.start('war');
+        expect(await resourcesService.loadResource('test'))
+            .toBe('test response');
+        resourcesService.stop();
     });
 });

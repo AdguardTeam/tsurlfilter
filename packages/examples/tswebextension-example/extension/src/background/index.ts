@@ -3,7 +3,7 @@ import { TsWebExtension, Configuration } from '@adguard/tswebextension';
 
 import { MessageTypes } from '../common/message-types';
 
-const tsWebExtension = new TsWebExtension();
+const tsWebExtension = new TsWebExtension('war');
 
 /*
  * Need for access tsWebExtension instance form browser autotest tool

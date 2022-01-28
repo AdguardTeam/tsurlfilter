@@ -1,7 +1,7 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 
 export interface ResourcesServiceInterface {
-    start: () => void;
+    start: (warDir?: string) => void;
     stop: () => void;
 
     createResourceUrl: (path: string) => string;
@@ -24,25 +24,33 @@ export class ResourcesService implements ResourcesServiceInterface {
     /**
      * Resources directory
      */
-    private warDir: string;
+    private warDir: string | undefined;
 
-    constructor(warDir: string) {
-        this.warDir = warDir;
+    constructor() {
         this.guardWar = this.guardWar.bind(this);
     }
 
-    public start(): void {
-        this.initGuard();
+    public start(warDir?: string): void {
+        if (warDir) {
+            this.warDir = warDir;
+            this.initGuard();
+        }
     }
 
     public stop(): void {
         browser.webRequest.onBeforeRequest.removeListener(this.guardWar);
+
+        delete this.warDir;
     }
 
     /**
      * Create url for war file
      */
     public createResourceUrl(path: string): string {
+        if (!this.warDir) {
+            throw new Error('Resources path is not defined');
+        }
+
         return browser.runtime.getURL(`/${this.warDir}/${path}${this.createSecretParam()}`);
     }
 
@@ -96,4 +104,4 @@ export class ResourcesService implements ResourcesServiceInterface {
     }
 }
 
-export const resourcesService = new ResourcesService('war');
+export const resourcesService = new ResourcesService();
