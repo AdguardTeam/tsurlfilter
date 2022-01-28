@@ -1,6 +1,7 @@
 import punycode from 'punycode/';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { RequestType } from '../../request-type';
+import { logger } from '../../utils/logger';
 import {
     ResourceType,
     DeclarativeRule,
@@ -26,6 +27,7 @@ const DECLARATIVE_RESOURCE_TYPES_MAP = {
     // [ResourceType.csp_report]: RequestType.Document, // TODO what should match this resource type?
     [ResourceType.media]: RequestType.Media,
     [ResourceType.websocket]: RequestType.Websocket,
+    [ResourceType.webrtc]: RequestType.Webrtc,
     [ResourceType.other]: RequestType.Other,
 };
 
@@ -218,6 +220,15 @@ export class DeclarativeRuleConverter {
         declarativeRule.id = id;
         declarativeRule.action = this.getAction(rule);
         declarativeRule.condition = this.getCondition(rule);
+
+        const { regexFilter } = declarativeRule.condition;
+
+        // backreference; negative lookahead not supported;
+        // https://github.com/google/re2/wiki/Syntax
+        if (regexFilter && regexFilter.match(/\\[1-9]|(?<!\\)\?/g)) {
+            logger.info(`Error: invalid regex in the: "${rule.getText()}"`);
+            return null;
+        }
 
         return declarativeRule;
     }

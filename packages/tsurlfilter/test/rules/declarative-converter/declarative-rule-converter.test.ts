@@ -264,6 +264,42 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
+    // backreference; negative lookahead not supported;
+    // https://github.com/google/re2/wiki/Syntax
+    it('converts regex backslash before 1-9', () => {
+        // eslint-disable-next-line max-len
+        const ruleText = '/\\.vidzi\\.tv\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/\\1\\2\\3([a-f0-9]{26})\\.js/$domain=vidzi.tv';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual(null);
+    });
+
+
+    it('converts regex negative lookahead', () => {
+        const ruleText = '/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual(null);
+    });
+
+    it('converts WebRTC connections rules', () => {
+        const ruleText = '@@$webrtc,domain=walla.co.il';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual({
+            priority: 1,
+            id: ruleId,
+            action: {
+                type: 'allow',
+            },
+            condition: {
+                domains: ['walla.co.il'],
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: ['webrtc'],
+            },
+        });
+    });
+
     describe('converts cyrillic domain rules', () => {
         it('converts domains section', () => {
             const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule('path$domain=меил.рф', -1), 2);
