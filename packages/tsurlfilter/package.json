@@ -79,7 +79,6 @@
   },
   "dependencies": {
     "@adguard/scriptlets": "^1.5.14",
-    "consola": "^2.12.2",
     "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",
     "ip6addr": "^0.2.3",
     "is-cidr": "^4.0.2",

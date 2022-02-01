@@ -1,5 +1,16 @@
 import { NetworkRule } from './rules/network-rule';
 
+export interface CookieEventOptions {
+    tabId: number;
+    cookieName: string;
+    cookieValue: string;
+    cookieDomain: string;
+    cookieRule: NetworkRule;
+    isModifyingCookieRule: boolean;
+    thirdParty: boolean;
+    timestamp: number;
+}
+
 /**
  * Filtering log interface
  */
@@ -10,21 +21,13 @@ export interface FilteringLog {
      *
      * @param options
      */
-    addCookieEvent(options: {
-        tabId: number;
-        cookieName: string;
-        cookieValue: string;
-        cookieDomain: string;
-        cookieRule: NetworkRule;
-        isModifyingCookieRule: boolean;
-        thirdParty: boolean;
-        timestamp: number;
-    }): void;
+    addCookieEvent(options: CookieEventOptions): void;
 
     /**
      * Add header removed event
      *
      * @param tabId
+     * @param frameUrl
      * @param headerName
      * @param rule
      */

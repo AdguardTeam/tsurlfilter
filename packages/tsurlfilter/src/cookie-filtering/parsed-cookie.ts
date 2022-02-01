@@ -50,6 +50,18 @@ export default class ParsedCookie {
     sameSite?: string;
 
     /**
+     * Cookies path
+     */
+    path?: string;
+
+    /**
+     * Priority chrome only specs
+     * Don't affected. Let it be here just in case
+     * https://bugs.chromium.org/p/chromium/issues/detail?id=232693
+     */
+    priority?: string;
+
+    /**
      * Cookie's third-party status.
      */
     thirdParty = false;
