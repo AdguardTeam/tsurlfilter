@@ -4,10 +4,23 @@ import { ContentType } from './request-type';
 import ParsedCookie from '../services/cookie-filtering/parsed-cookie';
 import { EventChannel, EventChannelInterface } from '../utils';
 
+export const enum RequestContextState {
+    BEFORE_REQUEST = 'BEFORE_REQUEST',
+    BEFORE_SEND_HEADERS = 'BEFORE_SEND_HEADERS',
+    SEND_HEADERS = 'SEND_HEADERS',
+    HEADERS_RECEIVED = 'HEADERS_RECEIVED',
+    AUTH_REQUIRED = 'AUTH_REQUIRED',
+    BEFORE_REDIRECT = 'BEFORE_REDIRECT',
+    RESPONSE_STARTED = 'RESPONSE_STARTED',
+    COMPLETED = 'COMPLETED',
+    ERROR = 'ERROR',
+}
+
 /**
  * Request context data
  */
 export interface RequestContext {
+    state: RequestContextState
     requestId: string
 
     tabId: number,

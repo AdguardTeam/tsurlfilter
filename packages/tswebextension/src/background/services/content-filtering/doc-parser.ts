@@ -41,3 +41,5 @@ export class DocumentParser {
         return doc;
     }
 }
+
+export const documentParser = new DocumentParser();

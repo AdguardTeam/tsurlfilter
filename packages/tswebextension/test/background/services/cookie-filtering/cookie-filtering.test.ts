@@ -5,7 +5,7 @@ import { CookieFiltering } from '../../../../src/background/services/cookie-filt
 import { MockFilteringLog } from '../../mock-filtering-log';
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import BrowserCookieApi from '../../../../src/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
-import { RequestContext, requestContextStorage } from '../../../../src/background/request/request-context-storage';
+import { RequestContext, RequestContextState, requestContextStorage } from '../../../../src/background/request/request-context-storage';
 import { ContentType } from '../../../../src/background/request/request-type';
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
@@ -34,6 +34,7 @@ describe('Cookie filtering', () => {
         cookieFiltering = new CookieFiltering(mockFilteringLog);
 
         context = {
+            state: RequestContextState.HEADERS_RECEIVED,
             requestId: '1',
             requestUrl: 'https://example.org',
             referrerUrl: 'https://example.org',

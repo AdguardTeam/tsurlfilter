@@ -1,189 +1,159 @@
-import { WebRequest } from 'webextension-polyfill';
-import { TextEncoder, TextDecoder } from 'text-encoding';
-import { RequestType, logger } from '@adguard/tsurlfilter';
+import { RequestType, NetworkRule, ReplaceModifier } from '@adguard/tsurlfilter';
+import { FilteringLog, mockFilteringLog } from '../../filtering-log';
 
-import {
-    DEFAULT_CHARSET,
-    LATIN_1,
-    SUPPORTED_CHARSETS,
-    WIN_1252,
-    parseCharsetFromHtml,
-} from './charsets';
+import { RequestContext } from '../../request';
+import { documentParser } from './doc-parser';
+import { HtmlRuleParser } from './rule/html-rule-parser';
+import { HtmlRuleSelector } from './rule/html-rule-selector';
 
-/**
- * Content Filter class
- *
- * Encapsulates response data filter logic
- * https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
- */
-export class ContentFilter {
+export interface ContentFilterInterface {
     /**
-     * Web request filter
+     * Applies Html rules to content.
      */
-    filter: WebRequest.StreamFilter;
+    applyHtmlRules: (content: string, context: RequestContext) => string;
 
     /**
-     * Request type
+     * Applies replace rules to content
      */
-    requestType: RequestType;
+    applyReplaceRules: (content: string, context: RequestContext) => string;
+}
+
+export class ContentFilter implements ContentFilterInterface {
+    filteringLog: FilteringLog;
 
     /**
-     * Request charset
+     * Contains collection of accepted content types for replace rules
      */
-    charset: string | undefined;
+    private readonly replaceRuleAllowedContentTypes = [
+        'text/',
+        'application/json',
+        'application/xml',
+        'application/xhtml+xml',
+        'application/javascript',
+        'application/x-javascript',
+    ];
 
-    /**
-     * Content
-     */
-    content: string;
-
-    /**
-     * Decoder instance
-     */
-    decoder: TextDecoder | undefined;
-
-    /**
-     * Encoder instance
-     */
-    encoder: TextEncoder | undefined;
-
-    /**
-     * Result callback
-     */
-    onContentCallback: (data: string) => void;
-
-    /**
-     * Constructor
-     *
-     * @param filter implementation
-     * @param requestType Request type
-     * @param onContentCallback
-     */
-    constructor(
-        filter: WebRequest.StreamFilter,
-        requestType: RequestType,
-        onContentCallback: (data: string) => void,
-    ) {
-        this.filter = filter;
-        this.requestType = requestType;
-
-        this.content = '';
-        this.onContentCallback = onContentCallback;
-
-        this.initEncoders();
-        this.initFilter();
+    constructor(filteringLog: FilteringLog) {
+        this.filteringLog = filteringLog;
     }
 
-    /**
-     * Initializes encoders
-     */
-    private initEncoders(): void {
-        let set = this.charset ? this.charset : DEFAULT_CHARSET;
+    applyHtmlRules(content: string, context: RequestContext): string {
+        const { htmlRules } = context;
 
-        // Redefining it as TextDecoder does not understand the iso- name
-        if (set === LATIN_1) {
-            set = WIN_1252;
+        if (!htmlRules || htmlRules.length === 0) {
+            return content;
         }
 
-        this.decoder = new TextDecoder(set);
-        if (set === DEFAULT_CHARSET) {
-            this.encoder = new TextEncoder();
-        } else {
-            this.encoder = new TextEncoder(set, { NONSTANDARD_allowLegacyEncoding: true });
+        const doc = documentParser.parse(content);
+
+        if (!doc) {
+            return content;
         }
-    }
 
-    /**
-     * Initializes inner filter
-     */
-    private initFilter(): void {
-        this.filter.ondata = (event): void => {
-            if (!this.charset) {
-                try {
-                    let charset;
-                    /**
-                     * If this.charset is undefined and requestType is DOCUMENT or SUBDOCUMENT, we try
-                     * to detect charset from page <meta> tags
-                     */
-                    if (this.requestType === RequestType.Subdocument
-                        || this.requestType === RequestType.Document) {
-                        charset = ContentFilter.parseCharset(event.data);
-                    }
+        const deleted = [];
 
-                    if (!charset) {
-                        charset = DEFAULT_CHARSET;
-                    }
+        for (let i = 0; i < htmlRules.length; i += 1) {
+            const rule = htmlRules[i];
 
-                    if (charset && SUPPORTED_CHARSETS.indexOf(charset) >= 0) {
-                        this.charset = charset;
-                        this.initEncoders();
-                        this.content += this.decoder!.decode(event.data, { stream: true });
-                    } else {
-                        // Charset is not supported
-                        this.disconnect(event.data);
+            const parsed = HtmlRuleParser.parse(rule);
+            const elements = new HtmlRuleSelector(parsed).getMatchedElements(doc);
+            if (elements) {
+                for (let j = 0; j < elements.length; j += 1) {
+                    const element = elements[j];
+                    if (element.parentNode && deleted.indexOf(element) < 0) {
+                        element.parentNode.removeChild(element);
+
+                        this.filteringLog.onHtmlRuleApplied(
+                            context.tabId!,
+                            context.requestId,
+                            element.innerHTML,
+                            context.requestUrl!,
+                            rule,
+                        );
+                        deleted.push(element);
                     }
-                } catch (e) {
-                    logger.warn((e as Error).message);
-                    // on error we disconnect the filter from the request
-                    this.disconnect(event.data);
                 }
-            } else {
-                this.content += this.decoder!.decode(event.data, { stream: true });
             }
-        };
-
-        this.filter.onstop = (): void => {
-            this.content += this.decoder!.decode(); // finish stream
-            this.onContentCallback(this.content);
-        };
-
-        this.filter.onerror = (): void => {
-            if (this.filter.error && this.filter.error) {
-                logger.info(this.filter.error);
-            }
-        };
-    }
-
-    /**
-     * Writes data to stream
-     *
-     * @param content
-     */
-    public write(content: string): void {
-        this.filter.write(this.encoder!.encode(content));
-        this.filter.close();
-    }
-
-    /**
-     * Sets charset
-     *
-     * @param charset
-     */
-    setCharset(charset: string | null): void {
-        if (charset) {
-            this.charset = charset;
-            this.initEncoders();
         }
+
+        // Add <!DOCTYPE html ... >
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/959
+        // XMLSerializer is used to serialize doctype object
+        // eslint-disable-next-line no-undef
+        const doctype = doc.doctype ? `${new XMLSerializer().serializeToString(doc.doctype)}\r\n` : '';
+
+
+        if (deleted.length > 0) {
+            return doctype + doc.documentElement.outerHTML;
+        }
+
+        return content;
     }
 
-    /**
-     * Disconnects filter from stream
-     *
-     * @param data
-     */
-    private disconnect(data: BufferSource): void {
-        this.filter.write(data as ArrayBuffer);
-        this.filter.disconnect();
-    }
+    applyReplaceRules(content: string, context: RequestContext): string {
+        const { matchingResult, requestType, contentTypeHeader } = context;
 
-    /**
-     * Parses charset from data
-     * 
-     * @param data
-     * @returns {*}
-     */
-    private static parseCharset(data: BufferSource): string | null {
-        const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
-        return parseCharsetFromHtml(decoded);
+        if (!matchingResult) {
+            return content;
+        }
+
+
+        if (requestType === RequestType.Other) {
+            if (!contentTypeHeader ||
+                !this.replaceRuleAllowedContentTypes.some(contentType => {
+                    return contentTypeHeader.indexOf(contentType) === 0;
+                })
+            ) {
+                return content;
+            }
+        }
+
+        const replaceRules = matchingResult.getReplaceRules();
+
+        if (replaceRules.length === 0) {
+            return content;
+        }
+
+        // Sort replace rules alphabetically as noted here
+        // https://github.com/AdguardTeam/CoreLibs/issues/45
+        const sortedReplaceRules = replaceRules.sort((prev: NetworkRule, next: NetworkRule) => {
+            if (prev.getText() > next.getText()) {
+                return 1;
+            }
+
+            if (prev.getText() < next.getText()) {
+                return -1;
+            }
+
+            return 0;
+        });
+
+        const appliedRules = [];
+
+        let modifiedContent = content;
+
+        for (let i = 0; i < sortedReplaceRules.length; i += 1) {
+            const replaceRule = sortedReplaceRules[i];
+            if (replaceRule.isAllowlist()) {
+                appliedRules.push(replaceRule);
+            } else {
+                const advancedModifier = replaceRule.getAdvancedModifier() as ReplaceModifier;
+                modifiedContent = advancedModifier.getApplyFunc()(modifiedContent);
+                appliedRules.push(replaceRule);
+            }
+        }
+
+        if (appliedRules.length > 0) {
+            this.filteringLog.onReplaceRulesApplied(
+                context.tabId!,
+                context.requestId,
+                context.requestUrl!,
+                appliedRules,
+            );
+        }
+
+        return modifiedContent;
     }
 }
+
+export const contentFilter = new ContentFilter(mockFilteringLog);

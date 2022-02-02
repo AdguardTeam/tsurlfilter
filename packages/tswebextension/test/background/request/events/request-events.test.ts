@@ -2,6 +2,7 @@ import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
 
 import * as RequestEvents from '../../../../src/background/request/events/request-events';
+import { RequestContextState } from '../../../../src/background/request';
 
 describe('Request Events', () => {
     const commonRequestData = {
@@ -29,6 +30,7 @@ describe('Request Events', () => {
         };
 
         const expectedContext = {
+            state: RequestContextState.BEFORE_REQUEST,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
@@ -55,6 +57,7 @@ describe('Request Events', () => {
         };
 
         const expectedContext = {
+            state: RequestContextState.BEFORE_SEND_HEADERS,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
@@ -81,6 +84,7 @@ describe('Request Events', () => {
         };
 
         const expectedContext = {
+            state: RequestContextState.SEND_HEADERS,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
@@ -115,6 +119,7 @@ describe('Request Events', () => {
         };
 
         const expectedContext = {
+            state: RequestContextState.HEADERS_RECEIVED,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
@@ -162,6 +167,7 @@ describe('Request Events', () => {
 
 
         const expectedContext = {
+            state: RequestContextState.RESPONSE_STARTED,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
@@ -211,6 +217,7 @@ describe('Request Events', () => {
         };
 
         const expectedContext = {
+            state: RequestContextState.COMPLETED,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,
@@ -247,6 +254,7 @@ describe('Request Events', () => {
         };
 
         const expectedContext = {
+            state: RequestContextState.ERROR,
             frameId: commonRequestData.frameId,
             requestId: commonRequestData.requestId,
             tabId: commonRequestData.tabId,

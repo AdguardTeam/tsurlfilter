@@ -1,10 +1,15 @@
-import { requestContextStorage, RequestContext } from '../../../src/background/request/request-context-storage';
+import {
+    requestContextStorage,
+    RequestContext,
+    RequestContextState,
+} from '../../../src/background/request/request-context-storage';
 
 describe('Request Context Storage', () => {
     it('supports CRUD operations', () => {
         const requestId = '12345';
 
         const data: RequestContext = {
+            state: RequestContextState.BEFORE_REQUEST,
             requestId: '1',
             tabId: 1,
             frameId: 0,

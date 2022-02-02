@@ -179,26 +179,7 @@ export class WebRequestApi implements WebRequestApiInterface {
             hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
         }
 
-        if (browser.webRequest.filterResponseData) {
-            const cosmeticResult = engineApi.getCosmeticResult(
-                referrerUrl!, CosmeticOption.CosmeticOptionHtml,
-            );
-
-            const htmlRules = cosmeticResult.Html.getRules();
-
-            if (htmlRules.length > 0) {
-                requestContextStorage.update(requestId, { htmlRules: cosmeticResult.Html.getRules() });
-            }
-
-            // Bypass images
-            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1906
-            if (requestType !== RequestType.Image) {
-                contentFilteringService.onBeforeRequest(
-                    browser.webRequest.filterResponseData(requestId),
-                    details,
-                );
-            }
-        }
+        contentFilteringService.onBeforeRequest(requestId);
 
         return response;
     }

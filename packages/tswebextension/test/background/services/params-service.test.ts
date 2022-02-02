@@ -1,7 +1,7 @@
 import { ParamsService } from '../../../src/background/services/params-service';
 import { MockFilteringLog } from '../mock-filtering-log';
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
-import { requestContextStorage } from '../../../src/background/request';
+import { RequestContextState, requestContextStorage } from '../../../src/background/request';
 
 describe('Params service', () => {
     const mockFilteringLog = new MockFilteringLog();
@@ -22,6 +22,7 @@ describe('Params service', () => {
         const requestId = '12345';
 
         requestContextStorage.record(requestId, {
+            state: RequestContextState.BEFORE_REQUEST,
             requestId,
             requestUrl: url,
             referrerUrl: url,

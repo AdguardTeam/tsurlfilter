@@ -1,6 +1,6 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 
-import { requestContextStorage } from '../request-context-storage';
+import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, BrowserRequstEvent } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
 
@@ -19,14 +19,15 @@ export const onBeforeRequest = new RequestEvent(
             requestId,
             frameId,
             tabId,
+            timeStamp,
         } = details;
 
-
         const context = requestContextStorage.record(requestId, {
+            state: RequestContextState.BEFORE_REQUEST,
             requestId,
             frameId,
             tabId,
-            timestamp: Date.now(),
+            timestamp: timeStamp,
         });
 
         return { details, context };
@@ -34,14 +35,6 @@ export const onBeforeRequest = new RequestEvent(
     { urls: ['<all_urls>'] },
     ['blocking', 'requestBody'],
 );
-
-
-
-const handleDetails = <T extends { requestId: string, timeStamp: number }>(details: T) => {
-    const { requestId, timeStamp } = details;
-    const context = requestContextStorage.update(requestId, { timestamp: timeStamp });
-    return { details, context };
-};
 
 
 export type OnBeforeSendHeaders = BrowserRequstEvent<
@@ -57,7 +50,16 @@ if (isChrome){
 
 export const onBeforeSendHeaders = new RequestEvent(
     browser.webRequest.onBeforeSendHeaders as OnBeforeSendHeaders,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.BEFORE_SEND_HEADERS,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
     onBeforeSendHeadersOptions,
 );
@@ -69,7 +71,16 @@ WebRequest.OnSendHeadersOptions
 
 export const onSendHeaders = new RequestEvent(
     browser.webRequest.onSendHeaders as OnSendHeaders,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.SEND_HEADERS,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
 );
 
@@ -94,6 +105,7 @@ export const onHeadersReceived = new RequestEvent(
         } = details;
 
         const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.HEADERS_RECEIVED,
             responseHeaders,
             statusCode,
         });
@@ -111,7 +123,16 @@ WebRequest.OnAuthRequiredOptions
 
 export const onAuthRequired = new RequestEvent(
     browser.webRequest.onAuthRequired as OnAuthRequired,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.AUTH_REQUIRED,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
 );
 
@@ -122,7 +143,16 @@ WebRequest.OnBeforeRedirectOptions
 
 export const onBeforeRedirect = new RequestEvent(
     browser.webRequest.onBeforeRedirect as OnBeforeRedirect,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.BEFORE_REDIRECT,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
 );
 
@@ -133,7 +163,16 @@ WebRequest.OnResponseStartedOptions
 
 export const onResponseStarted = new RequestEvent(
     browser.webRequest.onResponseStarted as OnResponseStarted,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.RESPONSE_STARTED,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
 );
 
@@ -144,7 +183,16 @@ WebRequest.OnCompletedOptions
 
 export const onCompleted = new RequestEvent(
     browser.webRequest.onCompleted as OnCompleted,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.COMPLETED,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
     ['responseHeaders'],
 );
@@ -156,6 +204,15 @@ WebRequest.OnErrorOccurredOptions
 
 export const onErrorOccurred = new RequestEvent(
     browser.webRequest.onErrorOccurred as OnErrorOccurred,
-    handleDetails,
+    (details) => {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, { 
+            state: RequestContextState.ERROR,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
+    },
     { urls: ['<all_urls>'] },
 );

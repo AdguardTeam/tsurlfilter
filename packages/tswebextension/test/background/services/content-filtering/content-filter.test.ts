@@ -1,215 +1,70 @@
-import { TextEncoder, TextDecoder } from 'text-encoding';
-import { ContentFilter } from '../../../../src/background/services/content-filtering/content-filter';
-import { RequestType } from '@adguard/tsurlfilter';
-import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '../../../../src/background/services/content-filtering/charsets';
-import { MockStreamFilter } from './mock-stream-filter';
+import { contentFilter } from '../../../../src/background/services/content-filtering/content-filter';
+import { CosmeticRule, MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import { RequestContextState } from '../../../../src/background/request';
 
 describe('Content filter', () => {
-    const textEncoderUtf8 = new TextEncoder();
-    const textDecoderUtf8 = new TextDecoder();
 
-    const textEncoderWin1251 = new TextEncoder(WIN_1251, { NONSTANDARD_allowLegacyEncoding: true });
-    const textDecoderWin1251 = new TextDecoder(WIN_1251);
+    const context = {
+        state: RequestContextState.HEADERS_RECEIVED,
+        requestId: '1',
+        requestUrl: 'https://example.org',
+        referrerUrl: 'https://example.org',
+        tabId: 0,
+        frameId: 0,
+        timestamp: 1643639355148,
+        requestType: RequestType.Document,
+        method: 'GET',
+        status: 200,
+    };
 
-    const textEncoderIso8859 = new TextEncoder(WIN_1252, { NONSTANDARD_allowLegacyEncoding: true });
-    const textDecoderIso8859 = new TextDecoder(WIN_1252);
+    const content = '<html><head></head><body><h1>test</h1><span>test</span></body></html>';
 
-    const onContentCallback = jest.fn((data: string | null) => {
-        expect(data).not.toBeNull();
-    });
+    it('applies html rules to content', () => {
+        const rules = [
+            new CosmeticRule('$$h1', 1),
+            new CosmeticRule('example.org$$span', 1),
+        ];
 
-    const testData = 'some data';
-
-    it('checks content filter with utf-8 encoding', () => {
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-        filter.setCharset(DEFAULT_CHARSET);
-
-        mockFilter.send(textEncoderUtf8.encode(testData));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(testData);
-
-        filter.write(testData);
-
-        const received = textDecoderUtf8.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(testData);
-    });
-
-    it('checks content filter with win-1251 encoding', () => {
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-        filter.setCharset(WIN_1251);
-
-        mockFilter.send(textEncoderWin1251.encode(testData));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(testData);
-
-        filter.write(testData);
-
-        const received = textDecoderWin1251.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(testData);
-    });
-
-    it('checks content filter with win-1252 encoding', () => {
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-        filter.setCharset(WIN_1252);
-
-        mockFilter.send(textEncoderIso8859.encode(testData));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(testData);
-
-        filter.write(testData);
-
-        const received = textDecoderIso8859.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(testData);
-    });
-
-    it('checks parsing charset from data - utf-8', () => {
-        const data = 'Тест charset in data <meta charset="UTF-8">';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-
-        mockFilter.send(textEncoderUtf8.encode(data));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(data);
-
-        filter.write(data);
-
-        const received = textDecoderUtf8.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(data);
-    });
-
-    it('checks parsing charset from data - utf-8 - http-equiv', () => {
-        const data = 'Тест charset in data <meta content="text/html; charset=utf-8" http-equiv="content-type"/>';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-
-        mockFilter.send(textEncoderUtf8.encode(data));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(data);
-
-        filter.write(data);
-
-        const received = textDecoderUtf8.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(data);
-    });
-
-    it('checks parsing charset from data - win-1251', () => {
-        const data = 'Тест charset in data <meta charset="windows-1251">';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-
-        mockFilter.send(textEncoderWin1251.encode(data));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(data);
-
-        filter.write(data);
-
-        const received = textDecoderWin1251.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(data);
-    });
-
-    it('checks parsing charset from data - iso-8859-1', () => {
-        const data = 'Charset in data <meta charset="iso-8859-1">';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-
-        mockFilter.send(textEncoderIso8859.encode(data));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(data);
-
-        filter.write(data);
-
-        const received = textDecoderIso8859.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(data);
-    });
-
-    it('checks parsing charset from data - win-1251', () => {
-        const data = 'Тест charset in data <meta http-equiv="content-type" content="text/html; charset=windows-1251">';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-
-        mockFilter.send(textEncoderWin1251.encode(data));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(data);
-
-        filter.write(data);
-
-        const received = textDecoderWin1251.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(data);
-    });
-
-    it('checks parsing charset from data - no charset in data', () => {
-        const data = 'No charset in data';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-
-        mockFilter.send(textEncoderIso8859.encode(data));
-        expect(onContentCallback).toHaveBeenCalled();
-        expect(onContentCallback).toHaveBeenLastCalledWith(data);
-
-        filter.write(data);
-
-        const received = textDecoderIso8859.decode(mockFilter.receive());
-
-        expect(received).not.toBeNull();
-        expect(received).toBe(data);
-    });
-
-    it('checks parsing charset from data - unsupported charset in data', () => {
-        const onNullContentCallback = jest.fn((data: string | null) => {
-            expect(data).toBeFalsy();
+        const modified = contentFilter.applyHtmlRules(content, {
+            ...context,
+            htmlRules: rules,
         });
 
-        const data = 'unsupported charset in data <meta charset="koi8-r">';
-
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onNullContentCallback);
-
-        mockFilter.send(textEncoderUtf8.encode(data));
-        expect(onNullContentCallback).toHaveBeenCalled();
-        expect(onNullContentCallback).toHaveBeenLastCalledWith('');
-
-        filter.write(data);
-
-        const received = textDecoderUtf8.decode(mockFilter.receive());
-        expect(received).toBe(data);
+        expect(modified).toBe('<html><head></head><body></body></html>');
     });
 
-    it('checks content filter with empty content', () => {
-        const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, RequestType.Document, onContentCallback);
-        filter.setCharset(DEFAULT_CHARSET);
+    it('applies replace rules to content', () => {
+        // these rules should be sorted alphabetically
+        const rules = [
+            new NetworkRule('||example.org^$replace=/test/b/', 1),
+            new NetworkRule('||example.org^$replace=/test/a/', 1),
+        ];
 
-        mockFilter.send(textEncoderUtf8.encode(''));
-        filter.write(testData);
+        const modified = contentFilter.applyReplaceRules(content, {
+            ...context,
+            matchingResult: new MatchingResult(rules, null),
+        });
 
-        const received = textDecoderUtf8.decode(mockFilter.receive());
+        expect(modified).toBe('<html><head></head><body><h1>a</h1><span>a</span></body></html>');
+    });
 
-        expect(received).not.toBeNull();
-        expect(received).toBe(testData);
+    it('returns original content, if request has unsupported content-type header for replace rule', () => {
+        const rules = [new NetworkRule('||example.org^$replace=/test/smth/', 1)];
+
+        const modified = contentFilter.applyReplaceRules(content, {
+            ...context,
+            matchingResult: new MatchingResult(rules, null),
+            requestType: RequestType.Other,
+            contentTypeHeader: 'multipart/form-data; boundary=something',
+        });
+
+        expect(modified).toBe(content);
+    });
+
+    it('returns original content, if rules does not exist', () => {
+        let modified = contentFilter.applyHtmlRules(content, context);
+        modified = contentFilter.applyReplaceRules(content, context);
+
+        expect(modified).toBe(content);
     });
 });
