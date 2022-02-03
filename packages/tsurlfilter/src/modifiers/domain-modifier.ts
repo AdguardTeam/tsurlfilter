@@ -40,7 +40,7 @@ export class DomainModifier {
 
         const parts = domains.split(sep);
         for (let i = 0; i < parts.length; i += 1) {
-            let domain = parts[i];
+            let domain = parts[i].toLocaleLowerCase();
             let restricted = false;
             if (domain.startsWith('~')) {
                 restricted = true;

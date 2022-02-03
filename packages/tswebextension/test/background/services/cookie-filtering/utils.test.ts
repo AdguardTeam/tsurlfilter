@@ -62,6 +62,24 @@ describe('Cookie utils - Set-Cookie parsing', () => {
         expect(cookie!.domain).toBe('test.com');
     });
 
+    it('parses cookie with path', () => {
+        const cookie = CookieUtils.parseSetCookie(
+            'sample-key=sample-value; path=/',
+            TEST_URL,
+        );
+        expect(cookie!.name).toBe('sample-key');
+        expect(cookie!.value).toBe('sample-value');
+        expect(cookie!.path).toBe('/');
+
+        const cookie2 = CookieUtils.parseSetCookie(
+            'sample-key=sample-value; path=/login',
+            TEST_URL,
+        );
+        expect(cookie2!.name).toBe('sample-key');
+        expect(cookie2!.value).toBe('sample-value');
+        expect(cookie2!.path).toBe('/login');
+    });
+
     it('checks parse invalid', () => {
         let cookie = CookieUtils.parseSetCookie('', TEST_URL);
         expect(cookie).toBeNull();
@@ -154,5 +172,44 @@ describe('Cookie utils - update max age', () => {
         expect(cookie.maxAge).not.toBeDefined();
         expect(cookie.expires).toBeDefined();
         expect(cookie.expires).toBe(date);
+    });
+});
+
+describe('Cookie utils - serialize cookie', () => {
+    it('throws error on invalid cookie', () => {
+        const cookie = {
+            name: 'привет',
+            value: 'я_кука',
+        };
+
+        expect(() => {
+            CookieUtils.serializeCookie(cookie as ParsedCookie);
+        }).toThrow(TypeError);
+    });
+
+    it('serializes simple cookie', () => {
+        const cookie = {
+            name: '_octo',
+            value: 'GH1.1.635223982.1507661197',
+        };
+
+        const setCookieValue = CookieUtils.serializeCookie(cookie as ParsedCookie);
+        expect(setCookieValue).toBe('_octo=GH1.1.635223982.1507661197');
+    });
+
+
+    it('serializes complicated cookie', () => {
+        const cookie = {
+            name: '_octo',
+            value: 'GH1.1.635223982.1507661197',
+            path: '/',
+            expires: new Date('Tue, 23 Oct 2018 13:40:11 -0000'),
+            secure: true,
+            httpOnly: true,
+        };
+
+        const setCookieValue = CookieUtils.serializeCookie(cookie as ParsedCookie);
+        expect(setCookieValue)
+            .toBe('_octo=GH1.1.635223982.1507661197; Path=/; Expires=Tue, 23 Oct 2018 13:40:11 GMT; HttpOnly; Secure');
     });
 });

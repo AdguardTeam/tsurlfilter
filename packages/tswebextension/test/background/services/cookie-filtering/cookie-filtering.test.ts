@@ -1,19 +1,22 @@
 /* eslint-disable max-len */
 import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
+import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+
 import { CookieFiltering } from '../../../../src/background/services/cookie-filtering/cookie-filtering';
 import { MockFilteringLog } from '../../mock-filtering-log';
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import BrowserCookieApi from '../../../../src/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
 import { RequestContext, RequestContextState, requestContextStorage } from '../../../../src/background/request/request-context-storage';
 import { ContentType } from '../../../../src/background/request/request-type';
-import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
-import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
-import HttpHeaders = WebRequest.HttpHeaders;
 import { tabsApi } from '../../../../src/background/tabs';
 import { frameRequestService } from '../../../../src/background/services/frame-request-service';
 
+import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
+import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
+import HttpHeaders = WebRequest.HttpHeaders;
+
 jest.mock('../../../../src/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
+
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
 BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
 
@@ -74,7 +77,7 @@ describe('Cookie filtering', () => {
             ...details,
         } as OnBeforeSendHeadersDetailsType);
 
-        await cookieFiltering.onHeadersReceived({
+        cookieFiltering.onHeadersReceived({
             statusCode: 200,
             statusLine: 'OK',
             responseHeaders,
@@ -109,6 +112,7 @@ describe('Cookie filtering', () => {
         }]);
 
         await runCase(rules, requestHeaders);
+
         expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
             cookieDomain: 'example.org',
             cookieName: 'c_user',
@@ -229,6 +233,8 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders, responseHeaders);
 
+        expect(responseHeaders).toEqual([]);
+
         expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
             cookieDomain: 'example.org',
             cookieName: 'third_party_user',
@@ -278,7 +284,7 @@ describe('Cookie filtering', () => {
             ...details,
         } as OnBeforeSendHeadersDetailsType);
 
-        await cookieFiltering.onHeadersReceived({
+        cookieFiltering.onHeadersReceived({
             statusCode: 200,
             statusLine: 'OK',
             ...details,
@@ -296,7 +302,7 @@ describe('Cookie filtering', () => {
             ...details,
         } as OnBeforeSendHeadersDetailsType);
 
-        await cookieFiltering.onHeadersReceived({
+        cookieFiltering.onHeadersReceived({
             statusCode: 200,
             statusLine: 'OK',
             ...details,

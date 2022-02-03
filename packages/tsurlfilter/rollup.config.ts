@@ -42,7 +42,7 @@ const commonConfig = {
             comments: ['srcmaps'],
         }),
     ],
-}
+};
 
 const esmConfig = {
     input: [

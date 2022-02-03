@@ -22,5 +22,8 @@
   "workspaces": [
     "packages/*",
     "packages/examples/*"
-  ]
+  ],
+  "devDependencies": {
+    "lerna": "4.0.0"
+  }
 }

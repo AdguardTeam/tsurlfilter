@@ -206,7 +206,7 @@ export class WebRequestApi implements WebRequestApiInterface {
     private onHeadersReceived(
         data: RequestData<WebRequest.OnHeadersReceivedDetailsType>,
     ): WebRequestEventResponse {
-        const { context, details } = data;
+        const { context } = data;
 
         if (!context?.matchingResult) {
             return;
@@ -221,10 +221,8 @@ export class WebRequestApi implements WebRequestApiInterface {
             frameId,
         } = context;
 
-        let { responseHeaders } = context;
 
-
-        const contentTypeHeader = findHeaderByName(responseHeaders!, 'content-type')?.value;
+        const contentTypeHeader = findHeaderByName(data.details.responseHeaders!, 'content-type')?.value;
 
         if (contentTypeHeader) {
             requestContextStorage.update(requestId, { contentTypeHeader });
@@ -258,32 +256,27 @@ export class WebRequestApi implements WebRequestApiInterface {
             }
 
             if (cspHeaders.length > 0) {
-                responseHeaders = responseHeaders
-                    ? responseHeaders.concat(cspHeaders)
+                data.details.responseHeaders = data.details.responseHeaders
+                    ? data.details.responseHeaders.concat(cspHeaders)
                     : cspHeaders;
 
                 responseHeadersModified = true;
             }
         }
 
-        cookieFiltering.onHeadersReceived(details);
+        // TODO: it is not obvious that data.details can mutate here
+        // Is better process context instead of details and return a new array in these methods?
+
+        if (cookieFiltering.onHeadersReceived(data.details)){
+            responseHeadersModified = true;
+        }
 
         if (headersService.onHeadersReceived(data)) {
             responseHeadersModified = true;
         }
 
         if (responseHeadersModified) {
-            return { responseHeaders };
-        }
-
-        cookieFiltering.onHeadersReceived(details);
-
-        if (headersService.onHeadersReceived(data)) {
-            responseHeadersModified = true;
-        }
-
-        if (responseHeadersModified) {
-            return { responseHeaders: details.responseHeaders };
+            return { responseHeaders: data.details.responseHeaders };
         }
     }
 

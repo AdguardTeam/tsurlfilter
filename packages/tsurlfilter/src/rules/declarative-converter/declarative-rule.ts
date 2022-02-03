@@ -22,6 +22,7 @@ export enum ResourceType {
     'csp_report' = 'csp_report',
     'media' = 'media',
     'websocket' = 'websocket',
+    'webrtc' = 'webrtc',
     'other' = 'other',
 }
 

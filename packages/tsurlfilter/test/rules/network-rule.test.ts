@@ -623,6 +623,12 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(true);
     });
 
+    it('works when $domain in uppercase', () => {
+        const rule = new NetworkRule('$domain=ExaMple.com', 0);
+        const request = new Request('https://example.com/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+    });
+
     it('works when $denyallow modifier is applied properly', () => {
         let rule: NetworkRule;
         let request: Request;

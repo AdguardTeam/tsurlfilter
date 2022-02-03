@@ -294,6 +294,11 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://another.org/page.html'))).toEqual(false);
     });
 
+    it('works when $domain in uppercase', () => {
+        const rule = new CosmeticRule('[$domain=exAMPle.com]##.textad', 0);
+        expect(rule.match(createRequest('http://example.com/'))).toEqual(true);
+    });
+
     it('work if it matches path modifiers with regex included in the rule', () => {
         const testReString = String.raw`/\\/(sub1|sub2)\\/page\\.html/`;
         const rule = new CosmeticRule(`[$path=${testReString}]##.textad`, 0);

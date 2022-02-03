@@ -28,7 +28,8 @@ import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
  * onHeadersReceived:
  * - parse set-cookie header, only to detect if the cookie in header will be set from third-party request
  * - save third-party flag for this cookie cookie.thirdParty=request.thirdParty
- * - apply rules
+ * - apply rules via removing them from headers and removing them with browser.cookies api
+ * TODO Rewrite/split method for extensions on MV3, because we wont have possibility to remove rules via headers
  *
  * onCompleted
  * - apply rules via content script
@@ -78,15 +79,90 @@ export class CookieFiltering {
     }
 
     /**
+     * Applies cookies to headers
+     * @param details
+     * @private
+     */
+    private applyRulesToCookieHeaders(details: WebRequest.OnHeadersReceivedDetailsType): boolean {
+        let headersModified = false;
+
+        if (!details.responseHeaders) {
+            return headersModified;
+        }
+
+        const context = requestContextStorage.get(details.requestId);
+
+        if (!context?.matchingResult) {
+            return headersModified;
+        }
+
+        const cookieRules = context.matchingResult.getCookieRules();
+
+        for (let i = details.responseHeaders.length - 1; i >= 0; i -= 1) {
+            const header = details.responseHeaders[i];
+            const cookie = CookieUtils.parseSetCookieHeader(header, details.url);
+
+            if (!cookie) {
+                continue;
+            }
+
+            const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, details.thirdParty);
+
+            if (bRule) {
+                if (!bRule.isAllowlist()) {
+                    details.responseHeaders.splice(i, 1);
+                    headersModified = true;
+                }
+
+                this.filteringLog.addCookieEvent({
+                    tabId: context.tabId,
+                    cookieName: cookie.name,
+                    cookieValue: cookie.value,
+                    cookieDomain: cookie.domain,
+                    cookieRule: bRule,
+                    isModifyingCookieRule: false,
+                    thirdParty: details.thirdParty,
+                    timestamp: Date.now(),
+                });
+            }
+
+            const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, details.thirdParty);
+            if (mRules.length > 0) {
+                const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
+                if (appliedRules.length > 0) {
+                    headersModified = true;
+                    details.responseHeaders[i] =  { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
+                    appliedRules.forEach((r) => {
+                        this.filteringLog.addCookieEvent({
+                            tabId: details.tabId,
+                            cookieName: cookie.name,
+                            cookieValue: cookie.value,
+                            cookieDomain: cookie.domain,
+                            cookieRule: r,
+                            isModifyingCookieRule: true,
+                            thirdParty: details.thirdParty,
+                            timestamp: Date.now(),
+                        });
+                    });
+                }
+            }
+        }
+
+        return headersModified;
+    }
+
+    /**
      * Parses set-cookie header
      * looks up third-party cookies
+     * This callback won't work for mv3 extensions
+     * TODO separate or rewrite to mv2 and mv3 methods
      *
      * @param details
      */
-    public async onHeadersReceived(details: OnHeadersReceivedDetailsType): Promise<void> {
+    public onHeadersReceived(details: OnHeadersReceivedDetailsType): boolean {
         const context = requestContextStorage.get(details.requestId);
         if (!context) {
-            return;
+            return false;
         }
 
         if (details.responseHeaders) {
@@ -99,11 +175,17 @@ export class CookieFiltering {
             context.cookies?.push(...newCookies);
         }
 
-        try {
-            await this.applyRules(details.requestId);
-        } catch (e) {
-            logger.error((e as Error).message);
-        }
+        // remove cookie headers
+        // this method won't work in the extension build with manifest v3
+        const headersModified = this.applyRulesToCookieHeaders(details);
+
+        // removes cookies with browser.cookie api
+        this.applyRules(details.requestId)
+            .catch(e => {
+                logger.error((e as Error).message);
+            });
+        
+        return headersModified;
     }
 
     /**

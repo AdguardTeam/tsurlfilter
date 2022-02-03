@@ -7,6 +7,33 @@ import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
  */
 export default class CookieUtils {
     /**
+     * RegExp to match field-content in RFC 7230 sec 3.2
+     *
+     * field-content = field-vchar [ 1*( SP / HTAB ) field-vchar ]
+     * field-vchar   = VCHAR / obs-text
+     * obs-text      = %x80-FF
+     */
+    // eslint-disable-next-line no-control-regex
+    static FIELD_CONTENT_REGEX = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
+
+    /**
+     * Parses set-cookie header from http response header
+     * @param header
+     * @param url
+     */
+    static parseSetCookieHeader(header: HttpHeadersItemType, url: string): ParsedCookie | null {
+        if (!header.name || header.name.toLowerCase() !== 'set-cookie') {
+            return null;
+        }
+
+        if (!header.value) {
+            return null;
+        }
+
+        return CookieUtils.parseSetCookie(header.value, url);
+    }
+
+    /**
      * Parses set-cookie headers for cookie objects
      *
      * @param responseHeaders
@@ -19,20 +46,12 @@ export default class CookieUtils {
         while (iResponseHeaders > 0) {
             iResponseHeaders -= 1;
             const header = responseHeaders[iResponseHeaders];
-            if (!header.name || header.name.toLowerCase() !== 'set-cookie') {
-                continue;
-            }
 
-            if (!header.value) {
-                continue;
-            }
+            const setCookie = CookieUtils.parseSetCookieHeader(header, url);
 
-            const setCookie = CookieUtils.parseSetCookie(header.value, url);
-            if (!setCookie) {
-                continue;
+            if (setCookie) {
+                result.push(setCookie);
             }
-
-            result.push(setCookie);
         }
 
         return result;
@@ -102,7 +121,7 @@ export default class CookieUtils {
             const sides = part.split('=');
             const key = sides
                 .shift()!
-                .trimLeft()
+                .trimStart()
                 .toLowerCase();
             const optionValue = sides.join('=');
             if (key === 'expires') {
@@ -115,6 +134,8 @@ export default class CookieUtils {
                 cookie.httpOnly = true;
             } else if (key === 'samesite') {
                 cookie.sameSite = optionValue;
+            } else if (key === 'path') {
+                cookie.path = optionValue;
             }
         });
 
@@ -149,5 +170,83 @@ export default class CookieUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Serializes cookie data into a string suitable for Set-Cookie header.
+     *
+     * @param cookie A cookie object
+     * @return Set-Cookie string or null if it failed to serialize object
+     * @throws {TypeError} Thrown in case of invalid input data
+     * @public
+     */
+    static serializeCookie(cookie: ParsedCookie): string {
+        if (!cookie) {
+            throw new TypeError('empty cookie data');
+        }
+
+        // 1. Validate fields
+        if (!CookieUtils.FIELD_CONTENT_REGEX.test(cookie.name)) {
+            throw new TypeError(`Cookie name is invalid: ${cookie.name}`);
+        }
+        if (cookie.value && !CookieUtils.FIELD_CONTENT_REGEX.test(cookie.value)) {
+            throw new TypeError(`Cookie value is invalid: ${cookie.value}`);
+        }
+        if (cookie.domain && !CookieUtils.FIELD_CONTENT_REGEX.test(cookie.domain)) {
+            throw new TypeError(`Cookie domain is invalid: ${cookie.domain}`);
+        }
+        if (cookie.path && !CookieUtils.FIELD_CONTENT_REGEX.test(cookie.path)) {
+            throw new TypeError(`Cookie path is invalid: ${cookie.path}`);
+        }
+        if (cookie.expires && typeof cookie.expires.toUTCString !== 'function') {
+            throw new TypeError(`Cookie expires is invalid: ${cookie.expires}`);
+        }
+
+        // 2. Build Set-Cookie header value
+        let setCookieValue = cookie.name + '=' + cookie.value;
+
+        if (typeof cookie.maxAge === 'number' && !Number.isNaN(cookie.maxAge)) {
+            setCookieValue += '; Max-Age=' + Math.floor(cookie.maxAge);
+        }
+        if (cookie.domain) {
+            setCookieValue += '; Domain=' + cookie.domain;
+        }
+        if (cookie.path) {
+            setCookieValue += '; Path=' + cookie.path;
+        }
+        if (cookie.expires) {
+            setCookieValue += '; Expires=' + cookie.expires.toUTCString();
+        }
+        if (cookie.httpOnly) {
+            setCookieValue += '; HttpOnly';
+        }
+        if (cookie.secure) {
+            setCookieValue += '; Secure';
+        }
+        if (cookie.sameSite) {
+            const sameSite = cookie.sameSite.toLowerCase();
+
+            switch (sameSite) {
+                case 'lax':
+                    setCookieValue += '; SameSite=Lax';
+                    break;
+                case 'strict':
+                    setCookieValue += '; SameSite=Strict';
+                    break;
+                case 'none':
+                    setCookieValue += '; SameSite=None';
+                    break;
+                default:
+                    throw new TypeError(`Cookie sameSite is invalid: ${cookie.sameSite}`);
+            }
+        }
+
+        // Don't affected. Let it be here just in case
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=232693
+        if (cookie.priority) {
+            setCookieValue += `; Priority=${cookie.priority}`;
+        }
+
+        return setCookieValue;
     }
 }
