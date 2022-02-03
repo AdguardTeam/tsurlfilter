@@ -1,19 +1,22 @@
-import { FilteringLog } from '../../src/background/filtering-log';
+import { FilteringLogEvent, FilteringLogInterface } from '../../src/background/filtering-log';
+import { EventChannel } from '../../src/background/utils';
 
-export class MockFilteringLog implements FilteringLog {
+export class MockFilteringLog implements FilteringLogInterface {
+    onLogEvent = new EventChannel<FilteringLogEvent>();
+
     addCookieEvent = jest.fn();
 
     addRemoveHeaderEvent = jest.fn();
 
     addRemoveParamEvent = jest.fn();
 
-    onHtmlRuleApplied = jest.fn();
+    addHtmlRuleApplyEvent = jest.fn();
 
-    onModificationFinished = jest.fn();
+    addReplaceRuleApplyEvent = jest.fn();
 
-    onModificationStarted = jest.fn();
+    addContentFilteringStartEvent = jest.fn();
 
-    onReplaceRulesApplied = jest.fn();
+    addContentFilteringFinishEvent = jest.fn();
 
-    bindStealthActionsToHttpRequestEvent = jest.fn();
+    addStealthActionEvent = jest.fn();
 }

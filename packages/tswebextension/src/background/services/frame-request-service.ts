@@ -1,8 +1,7 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../tabs';
-import { requestContextStorage, RequestContext } from '../request';
-import { EventChannelListener } from '../utils';
+import { requestContextStorage, RequestContext, RequestStorageEvent } from '../request';
 
 export interface FrameRequestServiceSearchParams {
     tabId: number,
@@ -13,29 +12,29 @@ export interface FrameRequestServiceSearchParams {
 
 export class FrameRequestService {
     public start() {
-        requestContextStorage.onRecord.subscribe(this.recordFrameRequestContext as EventChannelListener);
-        requestContextStorage.onUpdate.subscribe(this.updateFrameRequestContext as EventChannelListener);
+        requestContextStorage.onRecord.subscribe(this.recordFrameRequestContext);
+        requestContextStorage.onUpdate.subscribe(this.updateFrameRequestContext);
     }
 
     public stop() {
-        requestContextStorage.onRecord.unsubscribe(this.recordFrameRequestContext as EventChannelListener);
-        requestContextStorage.onUpdate.unsubscribe(this.recordFrameRequestContext as EventChannelListener);
+        requestContextStorage.onRecord.unsubscribe(this.recordFrameRequestContext);
+        requestContextStorage.onUpdate.unsubscribe(this.recordFrameRequestContext);
     }
 
-    private recordFrameRequestContext(requestId: string, data: RequestContext): void {
+    private recordFrameRequestContext({ id, data }: RequestStorageEvent): void {
         const frame = tabsApi.getTabFrame(data.tabId, data.frameId);
 
         if (frame) {
-            frame.requests.record(requestId, data);
+            frame.requests.record(id, data);
         }
 
     }
 
-    private updateFrameRequestContext(requestId: string, data: RequestContext): void {
+    private updateFrameRequestContext({ id, data }: RequestStorageEvent): void {
         const frame = tabsApi.getTabFrame(data.tabId, data.frameId);
 
         if (frame) {
-            frame.requests.update(requestId, data);
+            frame.requests.update(id, data);
         }
     }
 

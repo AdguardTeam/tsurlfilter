@@ -1,6 +1,6 @@
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
-import { FilteringLog, mockFilteringLog } from '../../filtering-log';
+import { FilteringLog, defaultFilteringLog } from '../../filtering-log';
 import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
@@ -339,4 +339,4 @@ export class CookieFiltering {
     }
 }
 
-export const cookieFiltering = new CookieFiltering(mockFilteringLog);
+export const cookieFiltering = new CookieFiltering(defaultFilteringLog);

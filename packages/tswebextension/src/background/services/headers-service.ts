@@ -1,6 +1,6 @@
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
-import { FilteringLog, mockFilteringLog } from '../filtering-log';
+import { FilteringLog, defaultFilteringLog } from '../filtering-log';
 import { removeHeader } from '../utils/headers';
 import { RequestData } from '../request/events/request-event';
 
@@ -44,9 +44,12 @@ export class HeadersService {
         rules.forEach((rule) => {
             if (HeadersService.applyRule(data.details.requestHeaders!, rule, true)) {
                 result = true;
-                this.filteringLog.addRemoveHeaderEvent(
-                    data.details.tabId, data.details.url, rule.getAdvancedModifierValue()!, rule,
-                );
+                this.filteringLog.addRemoveHeaderEvent({
+                    tabId: data.details.tabId,
+                    frameUrl: data.details.url,
+                    headerName: rule.getAdvancedModifierValue()!,
+                    rule,
+                });
             }
         });
 
@@ -78,9 +81,12 @@ export class HeadersService {
         rules.forEach((rule) => {
             if (HeadersService.applyRule(data.details.responseHeaders!, rule, false)) {
                 result = true;
-                this.filteringLog.addRemoveHeaderEvent(
-                    data.details.tabId, data.details.url, rule.getAdvancedModifierValue()!, rule,
-                );
+                this.filteringLog.addRemoveHeaderEvent({
+                    tabId: data.details.tabId,
+                    frameUrl: data.details.url,
+                    headerName: rule.getAdvancedModifierValue()!,
+                    rule,
+                });
             }
         });
 
@@ -111,4 +117,4 @@ export class HeadersService {
     }
 }
 
-export const headersService = new HeadersService(mockFilteringLog);
+export const headersService = new HeadersService(defaultFilteringLog);

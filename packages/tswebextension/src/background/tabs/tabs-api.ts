@@ -3,7 +3,7 @@ import browser, { ExtensionTypes, Tabs } from 'webextension-polyfill';
 import { TabContext } from './tab-context';
 import { Frame } from './frame';
 
-import { EventChannel } from '../utils';
+import { EventChannel, EventChannelInterface } from '../utils';
 
 export interface TabsApiInterface {
     start: () => Promise<void>
@@ -27,19 +27,19 @@ export interface TabsApiInterface {
     injectScript: (code: string, tabId: number, frameId?: number) => void
     injectCss: (code: string, tabId: number, frameId?: number) => void
 
-    onCreate: EventChannel
-    onUpdate: EventChannel
-    onDelete: EventChannel
+    onCreate: EventChannelInterface<TabContext>
+    onUpdate: EventChannelInterface<TabContext>
+    onDelete: EventChannelInterface<TabContext>
 }
 
 export class TabsApi implements TabsApiInterface {
     private context = new Map<number, TabContext>();
 
-    public onCreate = new EventChannel();
+    public onCreate = new EventChannel<TabContext>();
 
-    public onUpdate = new EventChannel();
+    public onUpdate = new EventChannel<TabContext>();
 
-    public onDelete = new EventChannel();
+    public onDelete = new EventChannel<TabContext>();
 
     constructor() {
         this.createTabContext = this.createTabContext.bind(this);

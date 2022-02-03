@@ -4,8 +4,7 @@ import { RequestType, CosmeticOption, CosmeticRule, NetworkRule } from '@adguard
 import { engineApi } from '../../engine-api';
 import { RequestContext, requestContextStorage } from '../../request';
 import { ContentStream } from './content-stream';
-import { mockFilteringLog } from '../../filtering-log';
-
+import { defaultFilteringLog } from '../../filtering-log';
 
 /**
  * Content filtering module
@@ -106,7 +105,7 @@ export class ContentFiltering {
                 const contentStream = new ContentStream(
                     context,
                     browser.webRequest.filterResponseData,
-                    mockFilteringLog,
+                    defaultFilteringLog,
                 );
 
                 contentStream.init();

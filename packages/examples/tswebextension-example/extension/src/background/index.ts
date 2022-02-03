@@ -41,6 +41,8 @@ const defaultConfig: Configuration = {
 
 tsWebExtension.start(defaultConfig);
 
+tsWebExtension.onFilteringLogEvent.subscribe(console.log);
+
 (browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, _sender, sendResponse) => {
     switch (message.type) {
         case MessageTypes.GET_CONFIG: {
@@ -57,7 +59,7 @@ tsWebExtension.start(defaultConfig);
             break;
         }
         case MessageTypes.OPEN_ASSISTANT: {
-            chrome.tabs.query({active: true }, (res) => {
+            chrome.tabs.query({ active: true }, (res) => {
                 if (res.length > 0 && res[0].id) {
                     tsWebExtension.openAssistant(res[0].id);
                 }
@@ -65,7 +67,7 @@ tsWebExtension.start(defaultConfig);
             break;
         }
         case MessageTypes.CLOSE_ASSISTANT: {
-            chrome.tabs.query({active: true }, (res) => {
+            chrome.tabs.query({ active: true }, (res) => {
                 if (res.length > 0 && res[0].id) {
                     tsWebExtension.closeAssistant(res[0].id);
                 }

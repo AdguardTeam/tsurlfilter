@@ -1,5 +1,5 @@
 import { NetworkRule, RemoveParamModifier } from '@adguard/tsurlfilter';
-import { FilteringLog, mockFilteringLog } from '../filtering-log';
+import { FilteringLog, defaultFilteringLog } from '../filtering-log';
 import { requestContextStorage } from '../request';
 
 /**
@@ -60,12 +60,12 @@ export class ParamsService {
             const modifiedUrl = modifier.removeParameters(url);
         
             if (url !== modifiedUrl) {
-                this.filteringLog.addRemoveParamEvent(
-                    context.tabId,
-                    modifiedUrl,
-                    modifier.getValue(),
+                this.filteringLog.addRemoveParamEvent({
+                    tabId: context.tabId,
+                    frameUrl: modifiedUrl,
+                    paramName: modifier.getValue(),
                     rule,
-                );
+                });
             }
         
             return modifier.removeParameters(url);
@@ -83,4 +83,4 @@ export class ParamsService {
     }
 }
 
-export const paramsService = new ParamsService(mockFilteringLog);
+export const paramsService = new ParamsService(defaultFilteringLog);

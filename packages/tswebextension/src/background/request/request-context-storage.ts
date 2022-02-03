@@ -19,36 +19,43 @@ export const enum RequestContextState {
 /**
  * Request context data
  */
-export interface RequestContext {
-    state: RequestContextState
-    requestId: string
+export type RequestContext = {
+    state: RequestContextState;
+    requestId: string;
 
-    tabId: number,
-    frameId: number,
-    timestamp: number // record time in ms
+    tabId: number;
+    frameId: number;
+    timestamp: number; // record time in ms
 
-    requestUrl?: string
-    referrerUrl?: string
-    requestType?: RequestType
-    contentType?: ContentType
-    requestFrameId?: number
-    thirdParty?: boolean
-    responseHeaders?: WebRequest.HttpHeaders
-    method?: string
+    requestUrl?: string;
+    referrerUrl?: string;
+    requestType?: RequestType;
+    contentType?: ContentType;
+    requestFrameId?: number;
+    thirdParty?: boolean;
+    responseHeaders?: WebRequest.HttpHeaders;
+    method?: string;
 
     /**
      * filtering data from {@link EngineApi.matchRequest}
      */
-    matchingResult?: MatchingResult | null
-    statusCode?: number
-    cookies?: ParsedCookie[]
-    htmlRules?: CosmeticRule[]
-    contentTypeHeader?: string
-}
+    matchingResult?: MatchingResult | null;
+    statusCode?: number;
+    cookies?: ParsedCookie[];
+    htmlRules?: CosmeticRule[];
+    contentTypeHeader?: string;
+};
+
 /**
  * Managing requests context api.
  * Each request has a {@link RequestContext} with unique key: requestId
  */
+
+export type RequestStorageEvent = {
+    id: string;
+    data: RequestContext;
+};
+
 export interface RequestContextStorageInterface {
     /**
      * Get request by requestId
@@ -74,22 +81,19 @@ export interface RequestContextStorageInterface {
     /**
      * find first request context matching specified url and request type
      */
-    find: (
-        requestUrl: string,
-        requestType: RequestType
-    ) =>  RequestContext | undefined
+    find: (requestUrl: string, requestType: RequestType) => RequestContext | undefined;
 
-    onRecord: EventChannelInterface;
+    onRecord: EventChannelInterface<RequestStorageEvent>;
 
-    onUpdate: EventChannelInterface;
+    onUpdate: EventChannelInterface<RequestStorageEvent>;
 }
 
 export class RequestContextStorage implements RequestContextStorageInterface {
     protected contextStorage = new Map<string, RequestContext>();
 
-    onRecord = new EventChannel();
+    onRecord = new EventChannel<RequestStorageEvent>();
 
-    onUpdate = new EventChannel();
+    onUpdate = new EventChannel<RequestStorageEvent>();
 
     public get(requestId: string): RequestContext | undefined {
         return this.contextStorage.get(requestId);
@@ -97,7 +101,10 @@ export class RequestContextStorage implements RequestContextStorageInterface {
 
     public record(requestId: string, data: RequestContext): RequestContext {
         this.contextStorage.set(requestId, data);
-        this.onRecord.dispatch(requestId, data);
+        this.onRecord.dispatch({
+            id: requestId,
+            data,
+        });
         return data;
     }
 
@@ -107,13 +114,18 @@ export class RequestContextStorage implements RequestContextStorageInterface {
         if (requestContext) {
             const newData = Object.assign(requestContext, data);
             this.contextStorage.set(requestId, newData);
-            this.onUpdate.dispatch(requestId, newData);
+            this.onUpdate.dispatch({
+                id: requestId,
+                data: newData,
+            });
             return newData;
         } else {
             this.contextStorage.set(requestId, data as RequestContext);
-            this.onUpdate.dispatch(requestId, data);
+            this.onUpdate.dispatch({
+                id: requestId,
+                data: data as RequestContext,
+            });
         }
-
     }
 
     public delete(requestId: string): void {
@@ -124,10 +136,7 @@ export class RequestContextStorage implements RequestContextStorageInterface {
 
     public find(requestUrl: string, requestType: RequestType): RequestContext | undefined {
         for (const context of this.contextStorage.values()) {
-            if (
-                context.requestUrl === requestUrl &&
-                context.requestType === requestType
-            ) {
+            if (context.requestUrl === requestUrl && context.requestType === requestType) {
                 return context;
             }
         }

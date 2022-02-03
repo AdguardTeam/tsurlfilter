@@ -10,28 +10,10 @@ import { frameRequestService } from './services/frame-request-service';
 import { messagesApi } from './messages-api';
 import { stealthApi } from './stealth-api';
 import { MessageType } from '../common';
+import { defaultFilteringLog, FilteringLogEvent } from './filtering-log';
+import { EventChannelInterface } from './utils';
 
 export type UnknownFunction = (...args: unknown[]) => unknown;
-
-// TODO complement with other methods
-type RequestMethod = 'POST' | 'GET';
-
-// TODO complement with other types
-type RequestType = 'DOCUMENT' | 'PING' | 'IMAGE' | 'STYLESHEET' | 'SCRIPT';
-
-/**
- * Represents information about rule which blocked ad
- * can be used in the stats of filtering log
- */
-interface RequestRule {
-    filterId: number,
-    ruleText: string,
-    allowlistRule: boolean,
-    cspRule: boolean,
-    modifierValue: string | null,
-    cookieRule: boolean
-    cssRule: boolean,
-}
 
 /*
  * Returns information about state for site
@@ -56,20 +38,6 @@ enum SiteStatus {
  * Represents data of filtering log event, can be used to display events
  * in the filtering log, or collect stats to display on popup
  */
-interface FilteringLogEvent {
-    // TODO complement with required fields
-    tabId: number,
-    eventId: number,
-    // string representation of blocked dom node
-    element?: string,
-    requestUrl?: string,
-    frameUrl: string,
-    requestType: RequestType,
-    timestamp: number,
-    statusCode: number,
-    method: RequestMethod,
-    requestRule: RequestRule,
-}
 
 
 
@@ -84,6 +52,11 @@ export interface TsWebExtensionInterface {
      * Current Configuration object
      */
     configuration?: Configuration;
+
+    /**
+     * Fires on filtering log event
+     */
+    onFilteringLogEvent: EventChannelInterface<FilteringLogEvent>,
 
     /**
      * Starts api
@@ -113,11 +86,6 @@ export interface TsWebExtensionInterface {
     closeAssistant: (tabId: number) => void;
 
     /**
-     * Fires on filtering log event
-     */
-    onFilteringLogEvent(cb: (filteringLogEvent: FilteringLogEvent) => void): void,
-
-    /**
      * Returns current status for site
      */
     getSiteStatus(url: string): SiteStatus,
@@ -128,6 +96,9 @@ export class TsWebExtension implements TsWebExtensionInterface {
     public isStarted = false;
 
     public configuration: Configuration | undefined;
+
+
+    public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
     /**
      * Web accessible resources path in the result bundle
@@ -201,29 +172,6 @@ export class TsWebExtension implements TsWebExtensionInterface {
 
     public getSiteStatus(url: string): SiteStatus {
         return SiteStatus.FilteringEnabled;
-    }
-
-    public onFilteringLogEvent(cb: (filteringLogEvent: FilteringLogEvent) => void) {
-        // TODO implement
-        cb({
-            tabId: 10,
-            eventId: 10,
-            requestUrl: 'https://example.org',
-            frameUrl: 'https://example.org',
-            requestType: 'DOCUMENT' as RequestType,
-            timestamp: 1633960896641,
-            statusCode: 200,
-            method: 'POST' as RequestMethod,
-            requestRule: {
-                filterId: 1,
-                ruleText: '||ad.mail.ru^$domain=~e.mail.ru|~octavius.mail.ru',
-                allowlistRule: false,
-                cspRule: false,
-                modifierValue: null,
-                cookieRule: false,
-                cssRule: false,
-            },
-        });
     }
 
     /**

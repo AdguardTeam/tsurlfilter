@@ -1,5 +1,5 @@
 import { RequestType, NetworkRule, ReplaceModifier } from '@adguard/tsurlfilter';
-import { FilteringLog, mockFilteringLog } from '../../filtering-log';
+import { FilteringLog, defaultFilteringLog } from '../../filtering-log';
 
 import { RequestContext } from '../../request';
 import { documentParser } from './doc-parser';
@@ -63,13 +63,14 @@ export class ContentFilter implements ContentFilterInterface {
                     if (element.parentNode && deleted.indexOf(element) < 0) {
                         element.parentNode.removeChild(element);
 
-                        this.filteringLog.onHtmlRuleApplied(
-                            context.tabId!,
-                            context.requestId,
-                            element.innerHTML,
-                            context.requestUrl!,
+                        this.filteringLog.addHtmlRuleApplyEvent({
+                            tabId: context.tabId!,
+                            requestId: context.requestId,
+                            elementString: element.innerHTML,
+                            frameUrl: context.requestUrl!,
                             rule,
-                        );
+                        });
+
                         deleted.push(element);
                     }
                 }
@@ -144,16 +145,16 @@ export class ContentFilter implements ContentFilterInterface {
         }
 
         if (appliedRules.length > 0) {
-            this.filteringLog.onReplaceRulesApplied(
-                context.tabId!,
-                context.requestId,
-                context.requestUrl!,
-                appliedRules,
-            );
+            this.filteringLog.addReplaceRuleApplyEvent({
+                tabId: context.tabId,
+                requestId: context.requestId,
+                frameUrl: context.requestUrl!,
+                rules: appliedRules,
+            });
         }
 
         return modifiedContent;
     }
 }
 
-export const contentFilter = new ContentFilter(mockFilteringLog);
+export const contentFilter = new ContentFilter(defaultFilteringLog);

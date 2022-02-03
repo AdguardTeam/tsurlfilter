@@ -180,7 +180,9 @@ export class ContentStream {
     private onResponseFinish(): void {
         this.content += this.decoder!.decode(); // finish stream
 
-        this.modificationsListener.onModificationStarted(this.context.requestId);
+        this.modificationsListener.addContentFilteringStartEvent({
+            requestId: this.context.requestId,
+        });
 
 
         const { contentTypeHeader, statusCode } = this.context;
@@ -213,8 +215,9 @@ export class ContentStream {
 
         this.write(this.content);
 
-        this.modificationsListener.onModificationFinished(this.context.requestId);
-
+        this.modificationsListener.addContentFilteringFinishEvent({
+            requestId: this.context.requestId,
+        });
     }
 
     /**

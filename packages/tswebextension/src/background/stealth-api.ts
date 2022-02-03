@@ -8,7 +8,7 @@ import {
     RequestEvents,
     RequestData,
 } from './request';
-import { FilteringLog, mockFilteringLog } from './filtering-log';
+import { FilteringLog, defaultFilteringLog } from './filtering-log';
 
 /**
  * Stealth api
@@ -132,7 +132,11 @@ export class StealthApi implements StealthApiInterface {
         );
 
         if (stealthActions > 0) {
-            this.filteringLog.bindStealthActionsToHttpRequestEvent(context.tabId, context.requestId, stealthActions);
+            this.filteringLog.addStealthActionEvent({
+                tabId: context.tabId,
+                requestId: context.requestId,
+                actions: stealthActions,
+            });
         }
     }
 
@@ -204,4 +208,4 @@ export class StealthApi implements StealthApiInterface {
     }
 }
 
-export const stealthApi = new StealthApi(mockFilteringLog);
+export const stealthApi = new StealthApi(defaultFilteringLog);

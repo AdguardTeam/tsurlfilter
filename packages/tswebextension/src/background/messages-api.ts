@@ -13,7 +13,7 @@ import {
     processShouldCollapsePayloadValidator,
 } from '../common';
 import { cosmeticApi } from './cosmetic-api';
-import { FilteringLog, mockFilteringLog } from './filtering-log';
+import { FilteringLog, defaultFilteringLog } from './filtering-log';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 export interface MessagesApiInterface {
@@ -243,4 +243,4 @@ export class MessagesApi implements MessagesApiInterface {
 
 }
 
-export const messagesApi = new MessagesApi(mockFilteringLog);
+export const messagesApi = new MessagesApi(defaultFilteringLog);
