@@ -5,11 +5,13 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "node -r esbuild-register ./scripts/build/index.ts",
+    "build": "yarn build:chrome && yarn war",
+    "build:chrome": "node -r esbuild-register ./scripts/build/index.ts",
     "build:ff": "BROWSER=firefox node -r esbuild-register ./scripts/build/index.ts",
     "run:ff": "node -r esbuild-register ./scripts/launchFirefoxExtension.ts",
     "test": "node -r esbuild-register ./scripts/browser-test/index.ts",
-    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
+    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'",
+    "war": "tswebextension war"
   },
   "dependencies": {
     "@adguard/tswebextension": "0.0.1",

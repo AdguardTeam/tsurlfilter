@@ -64,11 +64,6 @@ export const config: Configuration = {
                     from: isFFBuild ? 'manifest.firefox.json' : 'manifest.chrome.json',
                     to: 'manifest.json',
                 },
-                {
-                    context: 'extension',
-                    from: 'war',
-                    to: 'war',
-                },
             ],
         }),
     ],

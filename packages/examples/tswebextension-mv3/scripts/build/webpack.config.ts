@@ -3,7 +3,6 @@ import { Configuration } from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 
-const TSWEBEXTENSION_DIST_PATH = path.resolve(__dirname, '../../../../tswebextension/dist');
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const CONTENT_SCRIPT = path.resolve(__dirname, '../../extension/pages/content-script');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
@@ -50,10 +49,6 @@ export const config: Configuration = {
                     context: 'extension',
                     from: 'filters',
                     to: 'filters',
-                },
-                {
-                    from: `${TSWEBEXTENSION_DIST_PATH}/war`,
-                    to: 'war',
                 },
             ],
         }),

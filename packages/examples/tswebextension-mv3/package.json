@@ -5,10 +5,11 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "yarn build:precompile-rules && yarn build:extension",
+    "build": "yarn build:precompile-rules && yarn build:extension && yarn war",
     "build:extension": "node -r esbuild-register ./scripts/build",
     "build:precompile-rules": "node -r esbuild-register ./scripts/precompile-rules.ts",
-    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
+    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'",
+    "war": "tswebextension war"
   },
   "dependencies": {
     "@adguard/tswebextension": "file:../../tswebextension"
