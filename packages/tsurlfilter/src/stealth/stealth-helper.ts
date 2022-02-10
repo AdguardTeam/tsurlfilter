@@ -1,5 +1,5 @@
 /**
- * This class applies stealth actions in page context
+ * This module applies stealth actions in page context
  */
 export default class StealthHelper {
     /**
