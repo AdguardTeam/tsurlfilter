@@ -227,11 +227,30 @@ export class DeclarativeRuleConverter {
         declarativeRule.action = this.getAction(rule);
         declarativeRule.condition = this.getCondition(rule);
 
-        const { regexFilter } = declarativeRule.condition;
+        const { regexFilter, resourceTypes } = declarativeRule.condition;
 
-        // backreference; negative lookahead not supported;
+        // https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
+        if (resourceTypes?.includes(ResourceType.webrtc)) {
+            logger.info(`Error: WebRTC resource type is not supported in Manifest V3: "${rule.getText()}"`);
+            return null;
+        }
+
+        // More complex regex than allowed as part of the "regexFilter" key.
+        if (regexFilter?.match(/\|/g)) {
+            const regexArr = regexFilter.split('|');
+            // TODO Find how exactly the complexity of a rule is calculated.
+            // The values maxGroups & maxGroupLength are obtained by testing.
+            const maxGroups = 15;
+            const maxGroupLength = 31;
+            if (regexArr.length > maxGroups || regexArr.some(i => i.length > maxGroupLength)) {
+                logger.info(`Error: more complex regex than allowed: "${rule.getText()}"`);
+                return null;
+            }
+        }
+
+        // backreference; possessive; negative lookahead not supported;
         // https://github.com/google/re2/wiki/Syntax
-        if (regexFilter && regexFilter.match(/\\[1-9]|(?<!\\)\?/g)) {
+        if (regexFilter?.match(/\\[1-9]|(?<!\\)\?|{\S+}/g)) {
             logger.info(`Error: invalid regex in the: "${rule.getText()}"`);
             return null;
         }
