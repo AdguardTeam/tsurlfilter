@@ -3,7 +3,20 @@
   "version": "0.0.1",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/index.js",
-  "typings": "dist/types/background/index.d.ts",
+  "typings": "dist/types/lib/mv2/background/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./mv3": "./dist/index.mv3.js",
+    "./content-script": "./dist/content-script.js",
+    "./cli": "./dist/cli.js"
+  },
+  "typesVersions": {
+    "*": {
+      "mv3": ["dist/types/lib/mv3/background/index.d.ts"],
+      "content-script": ["dist/types/lib/mv2/content-script/index.d.ts"],
+      "cli": ["dist/types/cli/index.d.ts"]
+    }
+  },
   "bin": {
     "tswebextension": "dist/cli.js"
   },
@@ -28,7 +41,7 @@
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
-    "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
+    "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
@@ -70,7 +83,10 @@
     ],
     "setupFiles": [
       "./setupTests.ts"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^@lib/(.*)$": "<rootDir>/src/lib/$1"
+    }
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.59",
@@ -87,6 +103,7 @@
     "zod": "^3.11.6"
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^21.0.1",
     "@rollup/plugin-typescript": "^8.3.0",
     "@types/jest": "^27.0.3",

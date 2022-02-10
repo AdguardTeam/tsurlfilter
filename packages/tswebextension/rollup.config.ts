@@ -6,18 +6,18 @@ import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 const DEFAULT_OUTPUT_PATH = 'dist';
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
 
-const commonConfig = {
-    plugins: [
-        typescript(),
-        commonjs(),
-        cleanup({
-            comments: ['srcmaps'],
-        }),
-    ],
-};
+const commonPlugins = [
+    typescript({
+        tsconfig: 'tsconfig.build.json',
+    }),
+    commonjs(),
+    cleanup({
+        comments: ['srcmaps'],
+    }),
+];
 
 const contentScriptConfig = {
-    input: 'src/content-script/index.ts',
+    input: 'src/lib/mv2/content-script/index.ts',
     output: [
         {
             file: `${OUTPUT_PATH}/content-script.js`,
@@ -27,25 +27,41 @@ const contentScriptConfig = {
     ],
     external: ['zod', 'webextension-polyfill', 'extended-css', '@adguard/tsurlfilter', '@adguard/assistant'],
     watch: {
-        include: 'src/content-script/**',
+        include: 'src/lib/mv2/content-script/**',
     },
-    ...commonConfig,
+    plugins: commonPlugins,
 };
 
-const backgroundConfig = {
-    input: ['src/background/index.ts'],
+const backgroundMv2Config = {
+    input: ['src/lib/mv2/background/index.ts'],
     output: [
         {
-            dir: OUTPUT_PATH,
+            file: `${OUTPUT_PATH}/index.js`,
             format: 'esm',
             sourcemap: false,
         },
     ],
     watch: {
-        include: 'src/background/**',
+        include: 'src/lib/mv2/background/**',
     },
     external: ['zod', 'webextension-polyfill', '@adguard/tsurlfilter', '@adguard/scriptlets', 'tldts', 'bowser'],
-    ...commonConfig,
+    plugins: commonPlugins,
+};
+
+const backgroundMv3Config = {
+    input: ['src/lib/mv3/background/index.ts'],
+    output: [
+        {
+            file: `${OUTPUT_PATH}/index.mv3.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/lib/mv3/background/**',
+    },
+    external: ['zod', '@adguard/tsurlfilter'],
+    plugins: commonPlugins,
 };
 
 const cliConfig = {
@@ -60,12 +76,8 @@ const cliConfig = {
     watch: {
         include: 'src/cli/**',
     },
-    external: [
-        'path',
-        'fs-extra',
-        'commander',
-    ],
-    plugins: [...commonConfig.plugins, preserveShebangs()],
+    external: ['path', 'fs-extra', 'commander'],
+    plugins: [...commonPlugins, preserveShebangs()],
 };
 
-export default [backgroundConfig, contentScriptConfig, cliConfig];
+export default [backgroundMv2Config, backgroundMv3Config, contentScriptConfig, cliConfig];
