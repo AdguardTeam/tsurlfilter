@@ -1,13 +1,13 @@
 import browser from 'webextension-polyfill';
 import ExtendedCss, { IAffectedElement } from 'extended-css';
-export * from './stealth-helper';
-export * from './cookie-controller';
 import { CssHitsCounter } from './css-hits-counter';
-
 import { elementCollapser } from './element-collapser';
 import { MessageType } from '../../common';
 import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
+
+export * from '../../common/stealth-helper';
+export * from './cookie-controller';
 
 elementCollapser.start();
 

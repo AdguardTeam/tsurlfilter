@@ -3,7 +3,10 @@ import { findHeaderByName, removeHeader } from '../utils/headers';
 import { getHost } from '../utils/url';
 import { RequestType } from '@adguard/tsurlfilter';
 import { isThirdPartyRequest } from '../utils/url';
+import { StealthHelper } from '../../../common';
+
 import HttpHeaders = WebRequest.HttpHeaders;
+
 
 /**
  * Stealth action bitwise masks
@@ -194,6 +197,17 @@ export class StealthService {
         }
 
         return stealthActions;
+    }
+
+    /**
+     * Returns set dom signal script if sendDoNotTrack enabled, otherwise empty string
+     */
+    public getSetDomSignalScript(): string {
+        if (this.config.sendDoNotTrack) {
+            return `(${StealthHelper.setDomSignal.toString()})()`;
+        }
+
+        return '';
     }
 
     /**

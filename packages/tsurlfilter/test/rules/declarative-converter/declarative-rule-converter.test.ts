@@ -274,6 +274,15 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(null);
     });
 
+    // TODO Find how exactly the complexity of a rule is calculated
+    it('More complex regex than allowed', () => {
+        // eslint-disable-next-line max-len
+        const ruleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual(null);
+    });
+
 
     it('converts regex negative lookahead', () => {
         const ruleText = '/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location';
@@ -282,22 +291,12 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(null);
     });
 
+    // WebRTC resource type is not supported in Manifest V3
     it('converts WebRTC connections rules', () => {
         const ruleText = '@@$webrtc,domain=walla.co.il';
         const ruleId = 1;
         const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual({
-            priority: 1,
-            id: ruleId,
-            action: {
-                type: 'allow',
-            },
-            condition: {
-                domains: ['walla.co.il'],
-                isUrlFilterCaseSensitive: false,
-                resourceTypes: ['webrtc'],
-            },
-        });
+        expect(declarativeRule).toEqual(null);
     });
 
     // Cookies rules are not supported
