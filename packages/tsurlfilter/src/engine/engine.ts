@@ -106,7 +106,17 @@ export class Engine {
      * @return matching result
      */
     matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
-        const cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
+        let cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
+
+        /**
+         * Add frame url text to the key to avoid caching,
+         * because allowlist rules are not stored in the engine
+         * AG-12694
+         */
+        if (frameRule) {
+            cacheKey += `#${frameRule.getText()}`;
+        }
+
         const res = this.resultCache.get(cacheKey);
         if (res) {
             return res;
