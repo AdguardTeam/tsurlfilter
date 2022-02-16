@@ -24,9 +24,6 @@ export interface TabsApiInterface {
         requestType: RequestType
     ) => void
 
-    injectScript: (code: string, tabId: number, frameId?: number) => void
-    injectCss: (code: string, tabId: number, frameId?: number) => void
-
     onCreate: EventChannelInterface<TabContext>
     onUpdate: EventChannelInterface<TabContext>
     onDelete: EventChannelInterface<TabContext>
@@ -52,8 +49,6 @@ export class TabsApi implements TabsApiInterface {
         this.getTabFrame = this.getTabFrame.bind(this);
         this.getTabMainFrame = this.getTabMainFrame.bind(this);
         this.recordRequestFrame = this.recordRequestFrame.bind(this);
-        this.injectScript = this.injectScript.bind(this);
-        this.injectCss = this.injectCss.bind(this);
     }
 
     public async start() {
@@ -63,7 +58,6 @@ export class TabsApi implements TabsApiInterface {
         browser.tabs.onRemoved.addListener(this.deleteTabContext);
         browser.tabs.onUpdated.addListener(this.updateTabContextData);
     }
-
 
     public stop() {
         browser.tabs.onCreated.removeListener(this.createTabContext);
@@ -97,7 +91,6 @@ export class TabsApi implements TabsApiInterface {
         return frameRule;
     }
 
-
     public setTabFrame(tabId: number, frameId: number, frameData: Frame) {
         const tabContext = this.context.get(tabId);
 
@@ -128,9 +121,9 @@ export class TabsApi implements TabsApiInterface {
     }
 
     public recordRequestFrame(
-        tabId: number, 
-        frameId: number, 
-        url: string, 
+        tabId: number,
+        frameId: number,
+        url: string,
         requestType: RequestType,
     ) {
         const tabContext = this.context.get(tabId);
@@ -143,34 +136,11 @@ export class TabsApi implements TabsApiInterface {
             tabContext.reloadTabFrameData(url);
         } else {
             tabContext.frames.set(frameId, new Frame({ url }));
-        } 
+        }
     }
 
     public getTabContext(tabId: number): TabContext | undefined {
         return this.context.get(tabId);
-    }
-
-    public injectScript(code: string, tabId: number, frameId?: number): void {
-        const injectDetails = {
-            code,
-            frameId,
-            runAt: 'document_start',
-            matchAboutBlank: true,     
-        } as ExtensionTypes.InjectDetails;
-
-        browser.tabs.executeScript(tabId, injectDetails);
-    }
-
-    public injectCss(code: string, tabId: number, frameId?: number): void {
-        const injectDetails = {
-            code,
-            frameId,
-            runAt: 'document_start',
-            matchAboutBlank: true,
-            cssOrigin: 'user',
-        } as ExtensionTypes.InjectDetails;
-    
-        browser.tabs.insertCSS(tabId, injectDetails);
     }
 
     private createTabContext(tab: Tabs.Tab): void {
@@ -201,13 +171,36 @@ export class TabsApi implements TabsApiInterface {
     private async createCurrentTabsContext(): Promise<void> {
         const currentTabs = await browser.tabs.query({});
 
-        if (!Array.isArray(currentTabs)){
+        if (!Array.isArray(currentTabs)) {
             return;
         }
 
         for (let i = 0; i < currentTabs.length; i += 1) {
             this.createTabContext(currentTabs[i]);
         }
+    }
+
+    public static injectScript(code: string, tabId: number, frameId?: number): void {
+        const injectDetails = {
+            code,
+            frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        } as ExtensionTypes.InjectDetails;
+
+        browser.tabs.executeScript(tabId, injectDetails);
+    }
+
+    public static injectCss(code: string, tabId: number, frameId?: number): void {
+        const injectDetails = {
+            code,
+            frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+            cssOrigin: 'user',
+        } as ExtensionTypes.InjectDetails;
+
+        browser.tabs.insertCSS(tabId, injectDetails);
     }
 }
 

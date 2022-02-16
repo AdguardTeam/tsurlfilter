@@ -190,8 +190,7 @@ export class CookieController {
             cookieRuleText: rule.ruleText,
             thirdParty: rule.isThirdParty,
             filterId: rule.filterId,
-        },
-        );
+        });
     }
 
     /**

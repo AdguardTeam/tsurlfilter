@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
     AppInterface,
@@ -8,11 +9,9 @@ import {
 } from '../../common';
 
 export class TsWebExtensionMv3 implements AppInterface {
-
     public isStarted = false;
 
     public configuration: Configuration | undefined;
-
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 

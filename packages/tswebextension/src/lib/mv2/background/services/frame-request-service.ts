@@ -11,26 +11,25 @@ export interface FrameRequestServiceSearchParams {
 }
 
 export class FrameRequestService {
-    public start() {
-        requestContextStorage.onRecord.subscribe(this.recordFrameRequestContext);
-        requestContextStorage.onUpdate.subscribe(this.updateFrameRequestContext);
+    public static start() {
+        requestContextStorage.onRecord.subscribe(FrameRequestService.recordFrameRequestContext);
+        requestContextStorage.onUpdate.subscribe(FrameRequestService.updateFrameRequestContext);
     }
 
-    public stop() {
-        requestContextStorage.onRecord.unsubscribe(this.recordFrameRequestContext);
-        requestContextStorage.onUpdate.unsubscribe(this.recordFrameRequestContext);
+    public static stop() {
+        requestContextStorage.onRecord.unsubscribe(FrameRequestService.recordFrameRequestContext);
+        requestContextStorage.onUpdate.unsubscribe(FrameRequestService.recordFrameRequestContext);
     }
 
-    private recordFrameRequestContext({ id, data }: RequestStorageEvent): void {
+    private static recordFrameRequestContext({ id, data }: RequestStorageEvent): void {
         const frame = tabsApi.getTabFrame(data.tabId, data.frameId);
 
         if (frame) {
             frame.requests.record(id, data);
         }
-
     }
 
-    private updateFrameRequestContext({ id, data }: RequestStorageEvent): void {
+    private static updateFrameRequestContext({ id, data }: RequestStorageEvent): void {
         const frame = tabsApi.getTabFrame(data.tabId, data.frameId);
 
         if (frame) {
@@ -55,7 +54,7 @@ export class FrameRequestService {
     }
 
     /**
-     * Prepare search data, taking into account the fact 
+     * Prepare search data, taking into account the fact
      * that the iframe may not have its own source url
      */
     public static prepareSearchParams(
@@ -67,9 +66,10 @@ export class FrameRequestService {
 
         if ((requestUrl === 'about:blank'
             || requestUrl === 'about:srcdoc'
+            // eslint-disable-next-line no-script-url
             || requestUrl.indexOf('javascript:') > -1)
             && !isMainFrame) {
-            const mainFrame = tabsApi.getTabMainFrame(tabId); 
+            const mainFrame = tabsApi.getTabMainFrame(tabId);
 
             if (mainFrame) {
                 return {
@@ -91,6 +91,3 @@ export class FrameRequestService {
         };
     }
 }
-
-
-export const frameRequestService = new FrameRequestService();

@@ -1,9 +1,8 @@
+import { buildExtendedCssScriptText, buildScriptText } from '@lib/mv2/background/injection-helper';
+
 const timestamp = Date.now();
 
 jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
-
-import { buildExtendedCssScriptText, buildScriptText } from '@lib/mv2/background/injection-helper';
-
 
 const trim = (str: string) => str.replace(/\s+/g, '');
 
@@ -39,7 +38,6 @@ const expectedScriptTemplate = (text: string) => `(function() {\
 })()`;
 
 describe('Injection Helper', () => {
-
     it('builds script text without escaped symbols', () => {
         const scriptText = 'alert(1);';
 

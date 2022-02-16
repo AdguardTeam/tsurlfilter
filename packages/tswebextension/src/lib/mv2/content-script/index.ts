@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
 import browser from 'webextension-polyfill';
 import ExtendedCss, { IAffectedElement } from 'extended-css';
 import { CssHitsCounter } from './css-hits-counter';
-import { elementCollapser } from './element-collapser';
+import { ElementCollapser } from './element-collapser';
 import { MessageType } from '../../common';
 import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
@@ -9,7 +10,7 @@ import { initAssistant } from './assistant';
 export * from '../../common/stealth-helper';
 export * from './cookie-controller';
 
-elementCollapser.start();
+ElementCollapser.start();
 
 initAssistant();
 
@@ -37,7 +38,7 @@ const applyExtendedCss = (cssText: string) => {
     console.debug('Extended css applied');
 };
 
-(async function () {
+(async () => {
     const res = await browser.runtime.sendMessage({
         type: MessageType.GET_EXTENDED_CSS,
         payload: {

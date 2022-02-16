@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from 'path';
 import { copy } from 'fs-extra';
 
@@ -8,7 +9,6 @@ const REDIRECTS_RESOURCES_DEST_PATH = 'redirects';
 const src = path.resolve(require.resolve('@adguard/scriptlets'), '../..');
 
 export const copyWar = async (dest: string): Promise<void> => {
-
     dest = path.resolve(process.cwd(), dest);
 
     try {

@@ -1,7 +1,7 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 import { StringRuleList, logger } from '@adguard/tsurlfilter';
 import { StealthConfig, StealthService } from './services/stealth-service';
-import { 
+import {
     RequestContext,
     requestContextStorage,
     RequestEvents,
@@ -53,7 +53,7 @@ export class StealthApi implements StealthApiInterface {
      */
     private filteringLog: FilteringLog;
 
-    constructor(filteringLog: FilteringLog){
+    constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
     }
 
@@ -69,10 +69,9 @@ export class StealthApi implements StealthApiInterface {
 
         this.engine = new StealthService(this.configuration);
 
-
         RequestEvents.onBeforeSendHeaders.addListener(this.onBeforeSendHeaders);
 
-        if (this.canBlockWebRTC()) {
+        if (StealthApi.canBlockWebRTC()) {
             let isPermissionsGranted = false;
             try {
                 isPermissionsGranted = await browser.permissions.contains(StealthApi.PRIVACY_PERMISSIONS);
@@ -125,7 +124,7 @@ export class StealthApi implements StealthApiInterface {
             return;
         }
 
-        if (!this.canApplyStealthActionsToContext(context)) {
+        if (!StealthApi.canApplyStealthActionsToContext(context)) {
             return;
         }
 
@@ -142,32 +141,6 @@ export class StealthApi implements StealthApiInterface {
                 actions: stealthActions,
             });
         }
-    }
-
-    private canApplyStealthActionsToContext(context: RequestContext): boolean {
-        // TODO: Missing config field
-        // if (isStealthModeDisabled()) {
-        //     return false;
-        // }
-
-        const matchingResult = context.matchingResult;
-        if (matchingResult) {
-            if (matchingResult.documentRule || matchingResult.stealthRule) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private canBlockWebRTC() {
-        // Edge doesn't support privacy api
-        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/privacy
-        return !!browser.privacy;
-    }
-
-    private logError(e: Error) {
-        logger.error(`Error updating privacy.network settings: ${e.message}`);
     }
 
     /**
@@ -189,7 +162,7 @@ export class StealthApi implements StealthApiInterface {
                     });
                 }
             } catch (e) {
-                this.logError(e as Error);
+                StealthApi.logError(e as Error);
             }
         }
 
@@ -206,9 +179,35 @@ export class StealthApi implements StealthApiInterface {
                     });
                 }
             } catch (e) {
-                this.logError(e as Error);
+                StealthApi.logError(e as Error);
             }
         }
+    }
+
+    private static canApplyStealthActionsToContext(context: RequestContext): boolean {
+        // TODO: Missing config field
+        // if (isStealthModeDisabled()) {
+        //     return false;
+        // }
+
+        const { matchingResult } = context;
+        if (matchingResult) {
+            if (matchingResult.documentRule || matchingResult.stealthRule) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static canBlockWebRTC() {
+        // Edge doesn't support privacy api
+        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/privacy
+        return !!browser.privacy;
+    }
+
+    private static logError(e: Error) {
+        logger.error(`Error updating privacy.network settings: ${e.message}`);
     }
 }
 

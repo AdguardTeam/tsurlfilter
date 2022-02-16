@@ -1,15 +1,12 @@
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
-import { requestBlockingApi } from '@lib/mv2/background/request/request-blocking-api';
+import { RequestBlockingApi } from '@lib/mv2/background/request/request-blocking-api';
 import { engineApi } from '@lib/mv2/background/engine-api';
 
-
 describe('Request Blocking Api', () => {
-
     const mockMatchingResult = (ruleText?: string): void => {
-
         let matchingResult = null;
 
-        if (ruleText){
+        if (ruleText) {
             const rule = new NetworkRule(ruleText, 0);
             matchingResult = new MatchingResult([rule], null);
         }
@@ -21,7 +18,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('||example.org^');
 
         expect(
-            requestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(true);
     });
 
@@ -29,17 +26,15 @@ describe('Request Blocking Api', () => {
         mockMatchingResult();
 
         expect(
-            requestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
-
-    
 
     it('element with allowlist rule match shouldn`t be collapsed', () => {
         mockMatchingResult('@@||example.org^');
 
         expect(
-            requestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 
@@ -47,7 +42,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('||example.org/script.js$script,redirect=noopjs');
 
         expect(
-            requestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 
@@ -55,7 +50,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('||example.org^$replace=/X/Y/');
 
         expect(
-            requestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 });

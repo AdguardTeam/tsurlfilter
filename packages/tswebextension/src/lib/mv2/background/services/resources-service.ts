@@ -54,7 +54,6 @@ export class ResourcesService implements ResourcesServiceInterface {
         return browser.runtime.getURL(`/${this.warDir}/${path}${this.createSecretParam()}`);
     }
 
-
     /**
      * Load war resource by path
      */
@@ -64,6 +63,7 @@ export class ResourcesService implements ResourcesServiceInterface {
         return response.text();
     }
 
+    // eslint-disable-next-line class-methods-use-this
     private generateSecretKey(): string {
         return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
     }
@@ -80,7 +80,6 @@ export class ResourcesService implements ResourcesServiceInterface {
         const secret = this.generateSecretKey();
         this.secrets.push(secret);
         return `?secret=${secret}`;
-
     }
 
     private guardWar(details: WebRequest.OnBeforeRequestDetailsType) {

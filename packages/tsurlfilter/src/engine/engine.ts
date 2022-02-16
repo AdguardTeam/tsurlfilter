@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-promise-executor-return */
 import { LRUMap } from 'lru_map';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
@@ -90,7 +92,6 @@ export class Engine {
                  * Rules creation is rather slow operation so we should
                  * use setTimeout calls to give UI thread some time.
                  */
-                // eslint-disable-next-line @typescript-eslint/no-loop-func
                 await new Promise((resolve) => setTimeout(resolve, 1));
             }
 

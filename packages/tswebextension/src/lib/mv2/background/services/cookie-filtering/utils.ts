@@ -203,19 +203,19 @@ export default class CookieUtils {
         }
 
         // 2. Build Set-Cookie header value
-        let setCookieValue = cookie.name + '=' + cookie.value;
+        let setCookieValue = `${cookie.name}=${cookie.value}`;
 
         if (typeof cookie.maxAge === 'number' && !Number.isNaN(cookie.maxAge)) {
-            setCookieValue += '; Max-Age=' + Math.floor(cookie.maxAge);
+            setCookieValue += `; Max-Age=${Math.floor(cookie.maxAge)}`;
         }
         if (cookie.domain) {
-            setCookieValue += '; Domain=' + cookie.domain;
+            setCookieValue += `; Domain=${cookie.domain}`;
         }
         if (cookie.path) {
-            setCookieValue += '; Path=' + cookie.path;
+            setCookieValue += `; Path=${cookie.path}`;
         }
         if (cookie.expires) {
-            setCookieValue += '; Expires=' + cookie.expires.toUTCString();
+            setCookieValue += `; Expires=${cookie.expires.toUTCString()}`;
         }
         if (cookie.httpOnly) {
             setCookieValue += '; HttpOnly';

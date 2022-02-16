@@ -64,7 +64,7 @@ export class ContentFilter implements ContentFilterInterface {
                         element.parentNode.removeChild(element);
 
                         this.filteringLog.addHtmlRuleApplyEvent({
-                            tabId: context.tabId!,
+                            tabId: context.tabId,
                             requestId: context.requestId,
                             elementString: element.innerHTML,
                             frameUrl: context.requestUrl!,
@@ -83,7 +83,6 @@ export class ContentFilter implements ContentFilterInterface {
         // eslint-disable-next-line no-undef
         const doctype = doc.doctype ? `${new XMLSerializer().serializeToString(doc.doctype)}\r\n` : '';
 
-
         if (deleted.length > 0) {
             return doctype + doc.documentElement.outerHTML;
         }
@@ -98,10 +97,9 @@ export class ContentFilter implements ContentFilterInterface {
             return content;
         }
 
-
         if (requestType === RequestType.Other) {
-            if (!contentTypeHeader ||
-                !this.replaceRuleAllowedContentTypes.some(contentType => {
+            if (!contentTypeHeader
+                || !this.replaceRuleAllowedContentTypes.some((contentType) => {
                     return contentTypeHeader.indexOf(contentType) === 0;
                 })
             ) {

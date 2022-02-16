@@ -1,6 +1,5 @@
 import { messagesApi } from '@lib/mv2/background/messages-api';
 
-
 // TODO
 describe('Messages Api', () => {
     it('start', () => {

@@ -8,9 +8,9 @@ import {
     SUPPORTED_CHARSETS,
     WIN_1252,
     parseCharsetFromHtml,
+    parseCharsetFromHeader,
 } from './charsets';
 import { RequestContext } from '../../request';
-import { parseCharsetFromHeader } from './charsets';
 import { FilteringLog } from '../../../../common';
 import { contentFilter } from './content-filter';
 
@@ -23,7 +23,7 @@ import { contentFilter } from './content-filter';
 export class ContentStream {
     /**
      * Request context
-     * 
+     *
      * This object is mutated during request processing
      */
     private context: RequestContext;
@@ -184,7 +184,6 @@ export class ContentStream {
             requestId: this.context.requestId,
         });
 
-
         const { contentTypeHeader, statusCode } = this.context;
 
         if (statusCode !== 200) {
@@ -205,7 +204,6 @@ export class ContentStream {
             this.setCharset(charset);
         }
 
-
         this.content = contentFilter.applyHtmlRules(this.content, this.context);
 
         // response content is over 3MB, ignore it
@@ -222,7 +220,7 @@ export class ContentStream {
 
     /**
      * Parses charset from data
-     * 
+     *
      * @param data
      * @returns {*}
      */

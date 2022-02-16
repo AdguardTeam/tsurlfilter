@@ -2,8 +2,6 @@ import browser from 'sinon-chrome';
 import { RequestEvent } from '@lib/mv2/background/request/events/request-event';
 
 describe('Request Event', () => {
-
-
     it('subscribes to original event once on initialization', () => {
         const event = new RequestEvent(
             browser.webRequest.onBeforeRequest,
@@ -15,7 +13,7 @@ describe('Request Event', () => {
         expect(browser.webRequest.onBeforeRequest.addListener.calledOnce);
 
         const noop = jest.fn();
-       
+
         event.addListener(noop);
 
         expect(browser.webRequest.onBeforeRequest.addListener.calledOnce);
@@ -57,7 +55,6 @@ describe('Request Event', () => {
         event.addListener(blockingCallback);
         event.addListener(noop);
 
-        
         browser.webRequest.onBeforeRequest.dispatch({
             frameId: 0,
             initiator: 'https://testcases.adguard.com',

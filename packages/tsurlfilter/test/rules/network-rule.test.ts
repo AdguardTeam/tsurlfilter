@@ -962,8 +962,11 @@ describe('NetworkRule.isHigherPriority', () => {
         // domain option count
         compareRulesPriority('||example.org$domain=~example.org', '||example.org$script,stylesheet', false);
         compareRulesPriority('||example.org$domain=~example.org', '||example.org$script,stylesheet,media', false);
-        compareRulesPriority('||example.org$domain=~example.org',
-            '||example.org$script,stylesheet,domain=~example.org', false);
+        compareRulesPriority(
+            '||example.org$domain=~example.org',
+            '||example.org$script,stylesheet,domain=~example.org',
+            false,
+        );
     });
 });
 

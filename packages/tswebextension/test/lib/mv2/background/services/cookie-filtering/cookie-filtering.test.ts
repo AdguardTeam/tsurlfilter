@@ -8,7 +8,7 @@ import BrowserCookieApi from '@lib/mv2/background/services/cookie-filtering/brow
 import { RequestContext, RequestContextState, requestContextStorage } from '@lib/mv2/background/request/request-context-storage';
 import { ContentType } from '@lib/mv2/background/request/request-type';
 import { tabsApi } from '@lib/mv2/background/tabs';
-import { frameRequestService } from '@lib/mv2/background/services/frame-request-service';
+import { FrameRequestService } from '@lib/mv2/background/services/frame-request-service';
 
 import { MockFilteringLog } from '../../../../common/mock-filtering-log';
 
@@ -253,7 +253,7 @@ describe('Cookie filtering', () => {
         ];
 
         await tabsApi.start();
-        frameRequestService.start(); 
+        FrameRequestService.start();
 
         browser.tabs.onCreated.dispatch({ id: 0 });
 
@@ -270,7 +270,7 @@ describe('Cookie filtering', () => {
 
         requestContextStorage.delete(details.requestId);
 
-        frameRequestService.stop();
+        FrameRequestService.stop();
         tabsApi.stop();
     });
 

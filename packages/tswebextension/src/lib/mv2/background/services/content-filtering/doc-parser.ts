@@ -24,7 +24,7 @@ export class DocumentParser {
             return parsedDocument.getElementsByTagName('parsererror').length > 0;
         }
 
-        return parsedDocument.getElementsByTagNameNS(this.parsererrorNS!, 'parsererror').length > 0;
+        return parsedDocument.getElementsByTagNameNS(this.parsererrorNS, 'parsererror').length > 0;
     }
 
     /**

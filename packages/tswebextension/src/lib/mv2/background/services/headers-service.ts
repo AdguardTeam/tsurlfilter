@@ -35,7 +35,7 @@ export class HeadersService {
             return false;
         }
 
-        const rules = data.context!.matchingResult!.getRemoveHeaderRules();
+        const rules = data.context.matchingResult.getRemoveHeaderRules();
         if (rules.length === 0) {
             return false;
         }
@@ -72,7 +72,7 @@ export class HeadersService {
             return false;
         }
 
-        const rules = data.context!.matchingResult!.getRemoveHeaderRules();
+        const rules = data.context.matchingResult.getRemoveHeaderRules();
         if (rules.length === 0) {
             return false;
         }
@@ -101,7 +101,9 @@ export class HeadersService {
      * @param isRequestHeaders
      */
     private static applyRule(
-        headers: WebRequest.HttpHeadersItemType[], rule: NetworkRule, isRequestHeaders: boolean,
+        headers: WebRequest.HttpHeadersItemType[],
+        rule: NetworkRule,
+        isRequestHeaders: boolean,
     ): boolean {
         const modifier = rule.getAdvancedModifier() as RemoveHeaderModifier;
         if (!modifier) {

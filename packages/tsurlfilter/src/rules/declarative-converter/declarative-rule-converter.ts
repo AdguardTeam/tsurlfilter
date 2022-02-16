@@ -242,7 +242,7 @@ export class DeclarativeRuleConverter {
             // The values maxGroups & maxGroupLength are obtained by testing.
             const maxGroups = 15;
             const maxGroupLength = 31;
-            if (regexArr.length > maxGroups || regexArr.some(i => i.length > maxGroupLength)) {
+            if (regexArr.length > maxGroups || regexArr.some((i) => i.length > maxGroupLength)) {
                 logger.info(`Error: more complex regex than allowed: "${rule.getText()}"`);
                 return null;
             }

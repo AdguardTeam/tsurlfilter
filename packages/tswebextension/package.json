@@ -12,9 +12,15 @@
   },
   "typesVersions": {
     "*": {
-      "mv3": ["dist/types/lib/mv3/background/index.d.ts"],
-      "content-script": ["dist/types/lib/mv2/content-script/index.d.ts"],
-      "cli": ["dist/types/cli/index.d.ts"]
+      "mv3": [
+        "dist/types/lib/mv3/background/index.d.ts"
+      ],
+      "content-script": [
+        "dist/types/lib/mv2/content-script/index.d.ts"
+      ],
+      "cli": [
+        "dist/types/cli/index.d.ts"
+      ]
     }
   },
   "bin": {
@@ -113,6 +119,7 @@
     "@typescript-eslint/parser": "5.4.0",
     "coveralls": "^3.1.1",
     "eslint": "^8.3.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^16.0.0",
     "eslint-plugin-import": "^2.25.3",
     "jest": "27.3.1",

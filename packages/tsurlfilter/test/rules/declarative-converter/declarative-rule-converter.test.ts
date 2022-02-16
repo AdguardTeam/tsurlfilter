@@ -88,9 +88,7 @@ describe('DeclarativeRuleConverter', () => {
     it('converts rules with $first-party modifiers', () => {
         const firstPartyRuleText = '||example.org^$first-party';
         const ruleId = 1;
-        const firstPartyDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(firstPartyRuleText, -1), ruleId,
-        );
+        const firstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(firstPartyRuleText, -1), ruleId);
         expect(firstPartyDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -104,9 +102,10 @@ describe('DeclarativeRuleConverter', () => {
         });
 
         const negateFirstPartyRuleText = '||example.org^$~first-party';
-        const negateFirstPartyDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negateFirstPartyRuleText, -1), ruleId,
-        );
+        const negateFirstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(
+            negateFirstPartyRuleText,
+            -1,
+        ), ruleId);
         expect(negateFirstPartyDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -138,7 +137,8 @@ describe('DeclarativeRuleConverter', () => {
 
         const multipleDomainRuleText = '||example.org^$domain=example.com|example2.com|~example3.com|~example4.com';
         const multipleDomainDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(multipleDomainRuleText, -1), ruleId,
+            new NetworkRule(multipleDomainRuleText, -1),
+            ruleId,
         );
         expect(multipleDomainDeclarative).toEqual({
             id: ruleId,
@@ -155,7 +155,8 @@ describe('DeclarativeRuleConverter', () => {
 
         const negateDomainRuleText = '||example.org^$domain=~example.com';
         const negateDomainDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negateDomainRuleText, -1), ruleId,
+            new NetworkRule(negateDomainRuleText, -1),
+            ruleId,
         );
         expect(negateDomainDeclarative).toEqual({
             id: ruleId,
@@ -188,7 +189,8 @@ describe('DeclarativeRuleConverter', () => {
 
         const negatedScriptRule = '||example.org^$~script';
         const negatedScriptRuleDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negatedScriptRule, -1), ruleId,
+            new NetworkRule(negatedScriptRule, -1),
+            ruleId,
         );
         expect(negatedScriptRuleDeclarative).toEqual({
             id: ruleId,
@@ -204,14 +206,16 @@ describe('DeclarativeRuleConverter', () => {
 
         const multipleRequestTypesRule = '||example.org^$script,image,media';
         const multipleDeclarativeRule = DeclarativeRuleConverter.convert(
-            new NetworkRule(multipleRequestTypesRule, -1), ruleId,
+            new NetworkRule(multipleRequestTypesRule, -1),
+            ruleId,
         );
         expect(multipleDeclarativeRule!.condition?.resourceTypes?.sort())
             .toEqual(['script', 'image', 'media'].sort());
 
         const multipleNegatedRequestTypesRule = '||example.org^$~script,~subdocument';
         const multipleNegatedDeclarativeRule = DeclarativeRuleConverter.convert(
-            new NetworkRule(multipleNegatedRequestTypesRule, -1), ruleId,
+            new NetworkRule(multipleNegatedRequestTypesRule, -1),
+            ruleId,
         );
         expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort())
             .toEqual(['script', 'sub_frame'].sort());
@@ -234,7 +238,8 @@ describe('DeclarativeRuleConverter', () => {
 
         const negatedMatchCaseTextRule = '||example.org^$~match-case';
         const negatedMatchCaseDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negatedMatchCaseTextRule, -1), ruleId,
+            new NetworkRule(negatedMatchCaseTextRule, -1),
+            ruleId,
         );
         expect(negatedMatchCaseDeclarative).toEqual({
             id: ruleId,
@@ -283,7 +288,6 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(null);
     });
 
-
     it('converts regex negative lookahead', () => {
         const ruleText = '/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location';
         const ruleId = 1;
@@ -331,14 +335,14 @@ describe('DeclarativeRuleConverter', () => {
                 1,
             );
             expect(declarativeRule).toEqual({
-                'id': 1,
-                'action': {
-                    'type': 'block',
+                id: 1,
+                action: {
+                    type: 'block',
                 },
-                'condition': {
-                    'urlFilter': 'xn--||-8kcdv4aty.xn--^-4tbdh',
-                    'domainType': 'thirdParty',
-                    'isUrlFilterCaseSensitive': false,
+                condition: {
+                    urlFilter: 'xn--||-8kcdv4aty.xn--^-4tbdh',
+                    domainType: 'thirdParty',
+                    isUrlFilterCaseSensitive: false,
                 },
             });
         });

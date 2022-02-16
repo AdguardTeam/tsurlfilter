@@ -109,6 +109,7 @@ export class CosmeticScriptsResult implements CosmeticContentResult {
         // add domainName to reduce log output in the rules with multiple domains
         if (requestDomainName) {
             params.domainName = requestDomainName;
+            // eslint-disable-next-line no-param-reassign
             rule.verboseInvokedForDomain = requestDomainName;
         }
 

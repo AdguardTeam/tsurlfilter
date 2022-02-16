@@ -119,13 +119,12 @@ export class RequestContextStorage implements RequestContextStorageInterface {
                 data: newData,
             });
             return newData;
-        } else {
-            this.contextStorage.set(requestId, data as RequestContext);
-            this.onUpdate.dispatch({
-                id: requestId,
-                data: data as RequestContext,
-            });
         }
+        this.contextStorage.set(requestId, data as RequestContext);
+        this.onUpdate.dispatch({
+            id: requestId,
+            data: data as RequestContext,
+        });
     }
 
     public delete(requestId: string): void {

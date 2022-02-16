@@ -104,8 +104,10 @@ export class CssHitsCounter {
 
             for (const rule of affectedEl.rules) {
                 if (rule.style && rule.style.content) {
-                    const styleInfo = ElementUtils.parseExtendedStyleInfo(rule.style.content,
-                        CssHitsCounter.CONTENT_ATTR_PREFIX);
+                    const styleInfo = ElementUtils.parseExtendedStyleInfo(
+                        rule.style.content,
+                        CssHitsCounter.CONTENT_ATTR_PREFIX,
+                    );
                     if (styleInfo === null) {
                         continue;
                     }
@@ -161,7 +163,8 @@ export class CssHitsCounter {
 
         this.countIsWorking = true;
         const elements = document.querySelectorAll('*');
-        this.countCssHitsBatch(elements,
+        this.countCssHitsBatch(
+            elements,
             0,
             CssHitsCounter.CSS_HITS_BATCH_SIZE,
             CssHitsCounter.CSS_HITS_BATCH_SIZE,
@@ -171,7 +174,8 @@ export class CssHitsCounter {
                     this.onCssHitsFoundCallback(result);
                 }
                 this.countIsWorking = false;
-            });
+            },
+        );
     }
 
     /**
@@ -190,12 +194,14 @@ export class CssHitsCounter {
      * @param callback Finish callback
      */
     // eslint-disable-next-line max-len
-    private countCssHitsBatch(elements: NodeListOf<Element>,
+    private countCssHitsBatch(
+        elements: NodeListOf<Element>,
         start: number,
         end: number,
         step: number,
         result: ICountedElement[],
-        callback: (x: ICountedElement[]) => void): void {
+        callback: (x: ICountedElement[]) => void,
+    ): void {
         const length = Math.min(end, elements.length);
         result = result.concat(this.countCssHitsForElements(elements, start, length));
         if (length === elements.length) {
@@ -219,9 +225,11 @@ export class CssHitsCounter {
      * @param start
      * @param length
      */
-    private countCssHitsForElements(elements: NodeListOf<Element> | Element[],
+    private countCssHitsForElements(
+        elements: NodeListOf<Element> | Element[],
         start: number,
-        length: number | null): { filterId: number; ruleText: string; element: string }[] {
+        length: number | null,
+    ): { filterId: number; ruleText: string; element: string }[] {
         const RULE_FILTER_SEPARATOR = ';';
         start = start || 0;
         length = length || elements.length;

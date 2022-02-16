@@ -224,29 +224,19 @@ describe('Test cosmetic engine', () => {
             '[$path=/subpage(?!1)/]example.org$$div[id="case4"]',
         ]));
 
-        let result = cosmeticEngine.match(
-            createRequest('http://example.org'), CosmeticOption.CosmeticOptionAll,
-        );
+        let result = cosmeticEngine.match(createRequest('http://example.org'), CosmeticOption.CosmeticOptionAll);
         expect(result.Html.specific.length).toEqual(0);
 
-        result = cosmeticEngine.match(
-            createRequest('http://example.org/subpage1'), CosmeticOption.CosmeticOptionAll,
-        );
+        result = cosmeticEngine.match(createRequest('http://example.org/subpage1'), CosmeticOption.CosmeticOptionAll);
         expect(result.Html.specific.length).toEqual(2);
 
-        result = cosmeticEngine.match(
-            createRequest('http://example.org/subpage2'), CosmeticOption.CosmeticOptionAll,
-        );
+        result = cosmeticEngine.match(createRequest('http://example.org/subpage2'), CosmeticOption.CosmeticOptionAll);
         expect(result.Html.specific.length).toEqual(3);
 
-        result = cosmeticEngine.match(
-            createRequest('http://example.org/subpage3'), CosmeticOption.CosmeticOptionAll,
-        );
+        result = cosmeticEngine.match(createRequest('http://example.org/subpage3'), CosmeticOption.CosmeticOptionAll);
         expect(result.Html.specific.length).toEqual(2);
 
-        result = cosmeticEngine.match(
-            createRequest('http://example.org/another'), CosmeticOption.CosmeticOptionAll,
-        );
+        result = cosmeticEngine.match(createRequest('http://example.org/another'), CosmeticOption.CosmeticOptionAll);
         expect(result.Html.specific.length).toEqual(0);
     });
 });

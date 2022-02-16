@@ -1,10 +1,11 @@
+/* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { webRequestApi } from './web-request-api';
+import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects-service';
-import { frameRequestService } from './services/frame-request-service';
+import { FrameRequestService } from './services/frame-request-service';
 import { messagesApi } from './messages-api';
 import { stealthApi } from './stealth-api';
 import {
@@ -17,11 +18,9 @@ import {
 } from '../../common';
 
 export class TsWebExtension implements AppInterface {
-
     public isStarted = false;
 
     public configuration: Configuration | undefined;
-
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
@@ -45,10 +44,10 @@ export class TsWebExtension implements AppInterface {
         resourcesService.start(this.webAccessibleResourcesPath);
         await redirectsService.start();
         await tabsApi.start();
-        frameRequestService.start();
+        FrameRequestService.start();
         await engineApi.startEngine(configuration);
         await stealthApi.start(configuration);
-        webRequestApi.start();
+        WebRequestApi.start();
         messagesApi.start();
 
         this.isStarted = true;
@@ -57,8 +56,8 @@ export class TsWebExtension implements AppInterface {
 
     public async stop(): Promise<void> {
         messagesApi.stop();
-        webRequestApi.stop();
-        frameRequestService.stop();
+        WebRequestApi.stop();
+        FrameRequestService.stop();
         tabsApi.stop();
         resourcesService.stop();
         stealthApi.stop();

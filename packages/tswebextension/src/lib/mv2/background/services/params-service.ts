@@ -6,7 +6,6 @@ import { requestContextStorage } from '../request';
  * Params filtering service module
  */
 export class ParamsService {
-
     private filteringLog: FilteringLog;
 
     /**
@@ -23,11 +22,10 @@ export class ParamsService {
     /**
      * Removes request params from url, stored in request context
      *
-     * @param requestId 
+     * @param requestId
      * @return modified url or null
      */
     public getPurgedUrl(requestId: string): string | null {
-
         const context = requestContextStorage.get(requestId);
 
         if (!context) {
@@ -54,11 +52,11 @@ export class ParamsService {
             if (rule.isAllowlist()) {
                 return url;
             }
-        
+
             const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
-        
+
             const modifiedUrl = modifier.removeParameters(url);
-        
+
             if (url !== modifiedUrl) {
                 this.filteringLog.addRemoveParamEvent({
                     tabId: context.tabId,
@@ -67,7 +65,7 @@ export class ParamsService {
                     rule,
                 });
             }
-        
+
             return modifier.removeParameters(url);
         }, requestUrl);
 

@@ -1,14 +1,14 @@
-import { webRequestApi } from '@lib/mv2/background/web-request-api';
+import { WebRequestApi } from '@lib/mv2/background/web-request-api';
 
 // TODO
 describe('web request api', () => {
     it('start', () => {
-        webRequestApi.start();
+        WebRequestApi.start();
         expect(true).toBe(true);
     });
 
     it('stop', () => {
-        webRequestApi.stop();
+        WebRequestApi.stop();
         expect(true).toBe(true);
     });
 });

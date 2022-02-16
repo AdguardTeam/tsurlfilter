@@ -1,17 +1,17 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { 
+import {
     hideRequestInitiatorElement,
     INITIATOR_TAG_HIDDEN_STYLE,
     BACKGROUND_TAB_ID,
     InitiatorTag,
 } from '@lib/mv2/background/request/request-initiator-element';
 
-import { cosmeticApi } from '@lib/mv2/background/cosmetic-api';
+import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
 
 describe('Request Initiator Element', () => {
     beforeEach(() => {
-        jest.spyOn(cosmeticApi, 'injectCss').mockImplementation(jest.fn);
+        jest.spyOn(CosmeticApi, 'injectCss').mockImplementation(jest.fn);
     });
 
     afterEach(() => {
@@ -28,12 +28,11 @@ describe('Request Initiator Element', () => {
 
         let expectedCode = '';
 
-        for (let i = 0; i < expectedTags.length; i++){
-            expectedCode  += `${expectedTags[i]}[src$="//example.org"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
+        for (let i = 0; i < expectedTags.length; i += 1) {
+            expectedCode += `${expectedTags[i]}[src$="//example.org"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
         }
 
-        expect(cosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
-
+        expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
     });
 
     it('hides image with third party src', () => {
@@ -44,7 +43,7 @@ describe('Request Initiator Element', () => {
 
         const expectedCode = `${InitiatorTag.IMAGE}[src$="//example.org/image.png"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
 
-        expect(cosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
+        expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
     });
 
     it('hides image with first party src', () => {
@@ -55,7 +54,7 @@ describe('Request Initiator Element', () => {
 
         const expectedCode = `${InitiatorTag.IMAGE}[src$="/image.png"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
 
-        expect(cosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
+        expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
     });
 
     it('doesn`t inject css on background tab', () => {
@@ -67,13 +66,12 @@ describe('Request Initiator Element', () => {
             true,
         );
 
-        expect(cosmeticApi.injectCss).toBeCalledTimes(0);
+        expect(CosmeticApi.injectCss).toBeCalledTimes(0);
     });
 
     it('doesn`t inject css for unsupported request types', () => {
-
         hideRequestInitiatorElement(1, 0, 'https://example.org/image.png', RequestType.XmlHttpRequest, true);
 
-        expect(cosmeticApi.injectCss).toBeCalledTimes(0);
+        expect(CosmeticApi.injectCss).toBeCalledTimes(0);
     });
 });

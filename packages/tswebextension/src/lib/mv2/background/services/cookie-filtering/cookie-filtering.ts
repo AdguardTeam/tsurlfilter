@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
 import { FilteringLog, defaultFilteringLog } from '../../../../common';
@@ -11,7 +12,6 @@ import { FrameRequestService } from '../frame-request-service';
 
 import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
 import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
-
 
 /**
  * Cookie filtering
@@ -131,7 +131,7 @@ export class CookieFiltering {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
                 if (appliedRules.length > 0) {
                     headersModified = true;
-                    details.responseHeaders[i] =  { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
+                    details.responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
                     appliedRules.forEach((r) => {
                         this.filteringLog.addCookieEvent({
                             tabId: details.tabId,
@@ -181,10 +181,10 @@ export class CookieFiltering {
 
         // removes cookies with browser.cookie api
         this.applyRules(details.requestId)
-            .catch(e => {
+            .catch((e) => {
                 logger.error((e as Error).message);
             });
-        
+
         return headersModified;
     }
 
@@ -192,14 +192,14 @@ export class CookieFiltering {
      * Looks up blocking rules for content-script in frame context
      */
     public getBlockingRules(
-        frameUrl: string, 
-        tabId: number, 
+        frameUrl: string,
+        tabId: number,
         frameId: number,
     ): NetworkRule[] {
         const searchParams = FrameRequestService.prepareSearchParams(frameUrl, tabId, frameId);
         const requestContext = FrameRequestService.search(searchParams);
 
-        if (!requestContext){
+        if (!requestContext) {
             return [];
         }
 
@@ -211,7 +211,7 @@ export class CookieFiltering {
 
         const cookieRules = matchingResult.getCookieRules();
 
-        return CookieRulesFinder.getBlockingRules(requestUrl, cookieRules);    
+        return CookieRulesFinder.getBlockingRules(requestUrl, cookieRules);
     }
 
     /**
@@ -311,7 +311,7 @@ export class CookieFiltering {
                 appliedRules.push(rule);
                 continue;
             }
-            
+
             const cookieModifier = rule.getAdvancedModifier() as CookieModifier;
 
             let modified = false;

@@ -14,7 +14,7 @@ export class EventChannel<T> implements EventChannelInterface<T> {
     private listeners: EventChannelListener<T>[] = [];
 
     public dispatch(data: T): void {
-        this.listeners.forEach(listener => listener(data));
+        this.listeners.forEach((listener) => listener(data));
     }
 
     public subscribe(listener: EventChannelListener<T>): void {

@@ -11,7 +11,6 @@ WebRequest.OnBeforeRequestDetailsType,
 WebRequest.OnBeforeRequestOptions
 >;
 
-
 export const onBeforeRequest = new RequestEvent(
     browser.webRequest.onBeforeRequest as OnBeforeRequest,
     (details) => {
@@ -36,7 +35,6 @@ export const onBeforeRequest = new RequestEvent(
     ['blocking', 'requestBody'],
 );
 
-
 export type OnBeforeSendHeaders = BrowserRequstEvent<
 WebRequest.OnBeforeSendHeadersDetailsType,
 WebRequest.OnBeforeSendHeadersOptions
@@ -44,7 +42,7 @@ WebRequest.OnBeforeSendHeadersOptions
 
 const onBeforeSendHeadersOptions = ['requestHeaders', 'blocking'];
 
-if (isChrome){
+if (isChrome) {
     onBeforeSendHeadersOptions.push('extraHeaders');
 }
 
@@ -53,7 +51,7 @@ export const onBeforeSendHeaders = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.BEFORE_SEND_HEADERS,
             timestamp: timeStamp,
         });
@@ -74,7 +72,7 @@ export const onSendHeaders = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.SEND_HEADERS,
             timestamp: timeStamp,
         });
@@ -91,20 +89,20 @@ WebRequest.OnHeadersReceivedOptions
 
 const onHeadersReceivedOptions = ['responseHeaders', 'blocking'];
 
-if (isChrome){
+if (isChrome) {
     onHeadersReceivedOptions.push('extraHeaders');
 }
 
 export const onHeadersReceived = new RequestEvent(
     browser.webRequest.onHeadersReceived as OnHeadersReceived,
     (details) => {
-        const { 
+        const {
             requestId,
             responseHeaders,
             statusCode,
         } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.HEADERS_RECEIVED,
             responseHeaders,
             statusCode,
@@ -126,7 +124,7 @@ export const onAuthRequired = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.AUTH_REQUIRED,
             timestamp: timeStamp,
         });
@@ -146,7 +144,7 @@ export const onBeforeRedirect = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.BEFORE_REDIRECT,
             timestamp: timeStamp,
         });
@@ -166,7 +164,7 @@ export const onResponseStarted = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.RESPONSE_STARTED,
             timestamp: timeStamp,
         });
@@ -186,7 +184,7 @@ export const onCompleted = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.COMPLETED,
             timestamp: timeStamp,
         });
@@ -207,7 +205,7 @@ export const onErrorOccurred = new RequestEvent(
     (details) => {
         const { requestId, timeStamp } = details;
 
-        const context = requestContextStorage.update(requestId, { 
+        const context = requestContextStorage.update(requestId, {
             state: RequestContextState.ERROR,
             timestamp: timeStamp,
         });

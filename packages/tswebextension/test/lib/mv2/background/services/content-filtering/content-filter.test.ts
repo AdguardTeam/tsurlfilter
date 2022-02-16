@@ -1,9 +1,13 @@
-import { CosmeticRule, MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import {
+    CosmeticRule,
+    MatchingResult,
+    NetworkRule,
+    RequestType,
+} from '@adguard/tsurlfilter';
 import { RequestContextState } from '@lib/mv2/background/request';
 import { contentFilter } from '@lib/mv2/background/services/content-filtering/content-filter';
 
 describe('Content filter', () => {
-
     const context = {
         state: RequestContextState.HEADERS_RECEIVED,
         requestId: '1',

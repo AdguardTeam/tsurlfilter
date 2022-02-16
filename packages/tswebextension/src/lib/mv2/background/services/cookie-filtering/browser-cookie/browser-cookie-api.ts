@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 /* eslint-disable class-methods-use-this */
 import browser, { Cookies } from 'webextension-polyfill';
-import ParsedCookie from '../parsed-cookie';
 import { logger } from '@adguard/tsurlfilter';
+import ParsedCookie from '../parsed-cookie';
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
 

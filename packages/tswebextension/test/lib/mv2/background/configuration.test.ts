@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { configurationValidator } from '@lib/mv2/background/configuration';
+import { configurationValidator } from '@lib/common';
 
 describe('configuration validator', () => {
     const validConfiguration = {
@@ -26,16 +26,16 @@ describe('configuration validator', () => {
             },
         },
     };
- 
+
     it('passes valid configuration', () => {
         expect(configurationValidator.parse(validConfiguration)).toEqual(validConfiguration);
     });
 
     it('throws error on required field missing', () => {
         expect(() => {
-            configurationValidator.parse({ 
-                ...validConfiguration, 
-                settings: undefined, 
+            configurationValidator.parse({
+                ...validConfiguration,
+                settings: undefined,
             });
         }).toThrow(new ZodError([{
             code: 'invalid_type',

@@ -16,7 +16,7 @@
     js-yaml "^3.13.1"
 
 "@adguard/tsurlfilter@file:packages/tsurlfilter":
-  version "0.7.56"
+  version "0.7.58"
   dependencies:
     "@adguard/scriptlets" "^1.5.14"
     ip6addr "^0.2.3"

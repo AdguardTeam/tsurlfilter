@@ -1,12 +1,10 @@
 import { WebRequest } from 'webextension-polyfill';
-import { findHeaderByName, removeHeader } from '../utils/headers';
-import { getHost } from '../utils/url';
 import { RequestType } from '@adguard/tsurlfilter';
-import { isThirdPartyRequest } from '../utils/url';
+import { findHeaderByName, removeHeader } from '../utils/headers';
+import { getHost, isThirdPartyRequest } from '../utils/url';
 import { StealthHelper } from '../../../common';
 
 import HttpHeaders = WebRequest.HttpHeaders;
-
 
 /**
  * Stealth action bitwise masks
@@ -154,7 +152,9 @@ export class StealthService {
      * @param requestHeaders
      */
     public processRequestHeaders(
-        requestUrl: string, requestType: RequestType, requestHeaders: HttpHeaders,
+        requestUrl: string,
+        requestType: RequestType,
+        requestHeaders: HttpHeaders,
     ): StealthActions {
         let stealthActions = 0;
 
@@ -244,7 +244,6 @@ export class StealthService {
     }
 }
 
-
 // TODO: load stealth config data from context
 export const stealthService = new StealthService({
     blockChromeClientData: true,
@@ -257,4 +256,3 @@ export const stealthService = new StealthService({
     selfDestructFirstPartyCookies: true,
     selfDestructFirstPartyCookiesTime: 3600,
 });
-

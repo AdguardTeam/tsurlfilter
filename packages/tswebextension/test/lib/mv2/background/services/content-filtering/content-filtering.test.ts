@@ -1,12 +1,16 @@
 /**
  * @jest-environment jsdom
  */
-
-/* eslint-disable max-len */
-import { CosmeticRule, NetworkRule, MatchingResult, RequestType, CosmeticResult } from '@adguard/tsurlfilter';
+import {
+    CosmeticRule,
+    NetworkRule,
+    MatchingResult,
+    RequestType,
+    CosmeticResult,
+} from '@adguard/tsurlfilter';
 import { engineApi } from '@lib/mv2/background/engine-api';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
-import { contentFilteringService } from '@lib/mv2/background/services/content-filtering/content-filtering';
+import { ContentFiltering } from '@lib/mv2/background/services/content-filtering/content-filtering';
 import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
 
 describe('Content filtering', () => {
@@ -18,7 +22,7 @@ describe('Content filtering', () => {
         jest.spyOn(engineApi, 'getCosmeticResult').mockImplementation((referrerUrl: string) => {
             const cosmeticResult = new CosmeticResult();
 
-            if (referrerUrl === 'https://hashtmlrules.org'){
+            if (referrerUrl === 'https://hashtmlrules.org') {
                 cosmeticResult.Html.append(new CosmeticRule('hashtmlrules.org$$script[tag-content="test"]', 1));
             }
 
@@ -49,7 +53,7 @@ describe('Content filtering', () => {
             referrerUrl: 'https://hashtmlrules.org',
         });
 
-        contentFilteringService.onBeforeRequest(requestId);
+        ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(1);
     });
@@ -60,7 +64,7 @@ describe('Content filtering', () => {
             requestType: RequestType.Image,
         });
 
-        contentFilteringService.onBeforeRequest(requestId);
+        ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);
     });
@@ -70,7 +74,7 @@ describe('Content filtering', () => {
             matchingResult: new MatchingResult([new NetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
         });
 
-        contentFilteringService.onBeforeRequest(requestId);
+        ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(1);
     });
@@ -81,13 +85,13 @@ describe('Content filtering', () => {
             requestType: RequestType.Image,
         });
 
-        contentFilteringService.onBeforeRequest(requestId);
+        ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);
     });
 
     it('checks empty cases - no rules', () => {
-        contentFilteringService.onBeforeRequest(requestId);
+        ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);
     });
@@ -98,7 +102,7 @@ describe('Content filtering', () => {
             method: 'PUT',
         });
 
-        contentFilteringService.onBeforeRequest(requestId);
+        ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);
     });

@@ -47,8 +47,10 @@ export class DeclarativeConverter {
             }
 
             const dRule = DeclarativeRuleConverter.convert(
-                rule, DeclarativeConverter.createDeclarativeRuleId(iRule.index),
+                rule,
+                DeclarativeConverter.createDeclarativeRuleId(iRule.index),
             );
+
             if (dRule) {
                 result.push(dRule);
             }

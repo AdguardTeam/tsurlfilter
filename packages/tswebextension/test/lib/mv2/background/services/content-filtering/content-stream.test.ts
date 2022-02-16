@@ -36,7 +36,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -57,7 +57,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -78,7 +78,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -102,7 +102,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -123,7 +123,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -144,7 +144,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -165,7 +165,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -186,7 +186,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -207,7 +207,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -228,7 +228,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();
@@ -248,7 +248,7 @@ describe('Content stream', () => {
         const stream = new ContentStream(
             context,
             () => mockFilter,
-            new MockFilteringLog,
+            new MockFilteringLog(),
         );
 
         stream.init();

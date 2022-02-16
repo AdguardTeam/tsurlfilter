@@ -12,10 +12,9 @@ module.exports = {
         '@typescript-eslint',
     ],
     extends: [
-        'eslint:recommended',
-        'plugin:@typescript-eslint/eslint-recommended',
-        'plugin:@typescript-eslint/recommended',
+        'airbnb-base',
         'airbnb-typescript/base',
+        'plugin:@typescript-eslint/eslint-recommended',
     ],
 
     rules: {

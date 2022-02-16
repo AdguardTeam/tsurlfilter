@@ -30,7 +30,6 @@ export const configurationValidator = z.object({
      */
     verbose: z.boolean(),
 
-
     settings: z.object({
         /**
          * Flag specifying if ads for sites would be blocked or allowed

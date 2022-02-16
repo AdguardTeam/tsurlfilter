@@ -61,7 +61,9 @@ export class EngineApi implements EngineApiInterface {
     private engine: Engine | undefined;
 
     public async startEngine(configuration: Configuration): Promise<void> {
-        const { filters, userrules, allowlist, verbose, settings } = configuration;
+        const {
+            filters, userrules, allowlist, verbose, settings,
+        } = configuration;
 
         const lists: StringRuleList[] = [];
 
@@ -76,13 +78,13 @@ export class EngineApi implements EngineApiInterface {
             lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
-        if (allowlist.length > 0){
+        if (allowlist.length > 0) {
             lists.push(new StringRuleList(
                 ALLOWLIST_FILTER_ID,
                 allowlist.map((domain) => {
-                    return (settings.allowlistInverted ? '' : '@@') + `//${domain}$document`;
-                }).join('\n')),
-            );
+                    return `${settings.allowlistInverted ? '' : '@@'}//${domain}$document`;
+                }).join('\n'),
+            ));
         }
 
         const stealthModeList = stealthApi.getStealthModeRuleList();
@@ -137,13 +139,12 @@ export class EngineApi implements EngineApiInterface {
     }
 
     public matchFrame(frameUrl: string): NetworkRule | null {
-        if (!this.engine){
+        if (!this.engine) {
             return null;
         }
 
         return this.engine.matchFrame(frameUrl);
     }
-
 
     public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
         if (!this.engine) {
@@ -156,7 +157,7 @@ export class EngineApi implements EngineApiInterface {
         return this.engine.getCosmeticResult(request, option);
     }
 
-    public getRulesCount(): number{
+    public getRulesCount(): number {
         return this.engine ? this.engine.getRulesCount() : 0;
     }
 }

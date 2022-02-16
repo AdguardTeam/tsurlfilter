@@ -14,7 +14,6 @@ describe('Params service', () => {
         requestContextStorage.clear();
     });
 
-
     const testUrlPurge = (
         url: string,
         method: string,
@@ -29,13 +28,13 @@ describe('Params service', () => {
             requestUrl: url,
             referrerUrl: url,
             method,
-            requestType: requestType,
+            requestType,
             tabId: 0,
             frameId: 0,
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: new MatchingResult(rulesText.map((ruleText => new NetworkRule(ruleText, 1))), null),
+            matchingResult: new MatchingResult(rulesText.map(((ruleText) => new NetworkRule(ruleText, 1))), null),
         });
 
         return paramsService.getPurgedUrl(requestId);
@@ -66,7 +65,6 @@ describe('Params service', () => {
             ['||example.org^$removeparam'],
         );
 
-
         expect(purgedUrl).toBe('https://example.org');
         expect(mockFilteringLog.addRemoveParamEvent).toHaveBeenCalled();
     });
@@ -79,7 +77,6 @@ describe('Params service', () => {
             ['||example.org^$removeparam'],
         );
 
-
         expect(purgedUrl).toBe(null);
     });
 
@@ -90,7 +87,6 @@ describe('Params service', () => {
             RequestType.Document,
             ['@@||example.org^$removeparam'],
         );
-
 
         expect(purgedUrl).toBe(null);
     });
@@ -103,7 +99,6 @@ describe('Params service', () => {
             ['||example.org^$removeparam=param'],
         );
 
-
         expect(purgedUrl).toBe('https://example.org?test=1');
         expect(mockFilteringLog.addRemoveParamEvent).toHaveBeenCalled();
     });
@@ -115,7 +110,6 @@ describe('Params service', () => {
             RequestType.Document,
             ['||example.org^$removeparam=param'],
         );
-
 
         expect(purgedUrl).toBe(null);
         expect(mockFilteringLog.addRemoveParamEvent).toHaveBeenCalled();

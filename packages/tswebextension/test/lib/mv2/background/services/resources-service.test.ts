@@ -7,7 +7,7 @@ global.fetch = jest.fn(() => {
     } as unknown as Response);
 });
 
-browser.runtime.getURL.callsFake((str: string) => str === '/' ? 'test' : `test${str}`);
+browser.runtime.getURL.callsFake((str: string) => (str === '/' ? 'test' : `test${str}`));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.spyOn(ResourcesService.prototype as any, 'generateSecretKey').mockImplementationOnce(() => '12345');

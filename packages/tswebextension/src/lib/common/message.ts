@@ -11,14 +11,12 @@ export enum MessageType {
     ASSISTANT_CREATE_RULE = 'ASSISTANT_CREATE_RULE',
 }
 
-
 export const messageValidator = z.object({
     type: z.nativeEnum(MessageType),
     payload: z.unknown(),
 }).strict();
 
 export type Message = z.infer<typeof messageValidator>;
-
 
 export const processShouldCollapsePayloadValidator = z.object({
     elementUrl: z.string(),
@@ -28,20 +26,19 @@ export const processShouldCollapsePayloadValidator = z.object({
 
 export type ProcessShouldCollapsePayload = z.infer<typeof processShouldCollapsePayloadValidator>;
 
-
-export const  getExtendedCssPayloadValidator = z.object({
+export const getExtendedCssPayloadValidator = z.object({
     documentUrl: z.string(),
 }).strict();
 
 export type GetExtendedCssPayloadValidator = z.infer<typeof getExtendedCssPayloadValidator>;
 
-export const  getCookieRulesPayloadValidator = z.object({
+export const getCookieRulesPayloadValidator = z.object({
     documentUrl: z.string(),
 }).strict();
 
 export type GetCookieRulesPayloadValidator = z.infer<typeof getCookieRulesPayloadValidator>;
 
-export const  getSaveCookieLogEventPayloadValidator = z.object({
+export const getSaveCookieLogEventPayloadValidator = z.object({
     cookieName: z.string(),
     cookieDomain: z.string(),
     cookieValue: z.string(),
@@ -52,7 +49,7 @@ export const  getSaveCookieLogEventPayloadValidator = z.object({
 
 export type GetSaveCookieLogEventPayloadValidator = z.infer<typeof getSaveCookieLogEventPayloadValidator>;
 
-export const  getAssistantCreateRulePayloadValidator = z.object({
+export const getAssistantCreateRulePayloadValidator = z.object({
     ruleText: z.string(),
 }).strict();
 

@@ -15,7 +15,7 @@ export type DetailsHandler<Details> = (
 
 /**
  * Callback function passed as {@link RequestEvent} methods argument
- * 
+ *
  */
 export type EventCallback<Details> = (
     requestData: RequestData<Details>
@@ -58,7 +58,7 @@ export class RequestEvent<Details, Options> {
             /**
              * Execute all registered listeners one by one until a non-empty value is returned
              */
-            for (let i = 0; i < this.listeners.length; i++) {
+            for (let i = 0; i < this.listeners.length; i += 1) {
                 const res = this.listeners[i](data);
                 if (res) {
                     return res;
@@ -66,10 +66,10 @@ export class RequestEvent<Details, Options> {
             }
         };
 
-        if (extraInfoSpec){
+        if (extraInfoSpec) {
             event.addListener(handleBrowserEvent, filter, extraInfoSpec);
         } else {
-            event.addListener(handleBrowserEvent, filter); 
+            event.addListener(handleBrowserEvent, filter);
         }
     }
 

@@ -138,7 +138,6 @@ describe('Request Events', () => {
         browser.webRequest.onHeadersReceived.dispatch(details);
 
         expect(listener).toBeCalledWith({ details, context: expectedContext });
-
     });
 
     it('onAuthRequired', () => {
@@ -164,7 +163,6 @@ describe('Request Events', () => {
             statusLine: 'HTTP/1.1 200',
             timeStamp: timestamp,
         };
-
 
         const expectedContext = {
             state: RequestContextState.RESPONSE_STARTED,
@@ -201,8 +199,8 @@ describe('Request Events', () => {
             ip: '93.184.216.34',
             responseHeaders: [
                 {
-                    'name': 'content-type',
-                    'value': 'text/html; charset=UTF-8',
+                    name: 'content-type',
+                    value: 'text/html; charset=UTF-8',
                 },
             ],
             statusCode: 200,

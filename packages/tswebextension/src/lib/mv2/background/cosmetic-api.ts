@@ -3,13 +3,23 @@ import { engineApi } from './engine-api';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
 import { FrameRequestService } from './services/frame-request-service';
-import { tabsApi } from './tabs/tabs-api';
+import { TabsApi } from './tabs/tabs-api';
 
-export interface CosmeticApiInterface {
+export class CosmeticApi {
+    private static ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
+
+    private static INJECT_HIT_START = " content: 'adguard";
+
+    private static HIT_SEP = encodeURIComponent(';');
+
+    private static HIT_END = "' !important;}\r\n";
+
     /**
      * Applies scripts from cosmetic result
      */
-    injectScript: (scriptText: string, tabId: number, frameId?: number) => void;
+    public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
+        TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+    }
 
     /**
      * Applies css from cosmetic result
@@ -18,42 +28,15 @@ export interface CosmeticApiInterface {
      * Example:
      * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
      */
-    injectCss: (cssText: string, tabId: number, frameId?: number) => void;
-
-    injectExtCss: (extCssText: string, tabId: number, frameId?: number) => void;
-
-    getCssText: (cosmeticResult: CosmeticResult) => string | undefined;
-
-    getExtCssText: (cosmeticResult: CosmeticResult, collectingCosmeticRulesHits?: boolean ) => string | undefined;
-
-    getScriptText: (cosmeticResult: CosmeticResult, collectingCosmeticRulesHits?: boolean ) => string | undefined;
-
-    getFrameExtCssText: (frameUrl: string, tabId: number, frameId: number) => string | undefined;
-}
-
-export class CosmeticApi implements CosmeticApiInterface {
-
-    private ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
-
-    private INJECT_HIT_START = " content: 'adguard";
-
-    private HIT_SEP = encodeURIComponent(';');
-
-    private HIT_END = "' !important;}\r\n";
-
-    public injectScript(scriptText: string, tabId: number, frameId = 0): void {
-        tabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+    public static injectCss(cssText: string, tabId: number, frameId = 0): void {
+        TabsApi.injectCss(cssText, tabId, frameId);
     }
 
-    public injectCss(cssText: string, tabId: number, frameId = 0): void {
-        tabsApi.injectCss(cssText, tabId, frameId);
+    public static injectExtCss(extCssText: string, tabId: number, frameId = 0): void {
+        TabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
     }
 
-    public injectExtCss(extCssText: string, tabId: number, frameId = 0): void {
-        tabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
-    }
-
-    public getCssText(cosmeticResult: CosmeticResult, collectingCosmeticRulesHits = false): string | undefined {
+    public static getCssText(cosmeticResult: CosmeticResult, collectingCosmeticRulesHits = false): string | undefined {
         const { elementHiding, CSS } = cosmeticResult;
 
         const elemhideCss = elementHiding.generic.concat(elementHiding.specific);
@@ -62,19 +45,20 @@ export class CosmeticApi implements CosmeticApiInterface {
         let styles: string[];
 
         if (collectingCosmeticRulesHits) {
-            styles = this.buildStyleSheetWithHits(elemhideCss, injectCss);
+            styles = CosmeticApi.buildStyleSheetWithHits(elemhideCss, injectCss);
         } else {
-            styles = this.buildStyleSheet(elemhideCss, injectCss, true);
+            styles = CosmeticApi.buildStyleSheet(elemhideCss, injectCss, true);
         }
 
-        if (styles.length > 0){
+        if (styles.length > 0) {
             return styles.join('\n');
         }
-
-        return;
     }
 
-    public getExtCssText(cosmeticResult: CosmeticResult, collectingCosmeticRulesHits = false): string | undefined {
+    public static getExtCssText(
+        cosmeticResult: CosmeticResult,
+        collectingCosmeticRulesHits = false,
+    ): string | undefined {
         const { elementHiding, CSS } = cosmeticResult;
 
         const elemhideExtCss = elementHiding.genericExtCss.concat(elementHiding.specificExtCss);
@@ -83,19 +67,17 @@ export class CosmeticApi implements CosmeticApiInterface {
         let extStyles: string[];
 
         if (collectingCosmeticRulesHits) {
-            extStyles = this.buildStyleSheetWithHits(elemhideExtCss, injectExtCss);
+            extStyles = CosmeticApi.buildStyleSheetWithHits(elemhideExtCss, injectExtCss);
         } else {
-            extStyles = this.buildStyleSheet(elemhideExtCss, injectExtCss, false);
+            extStyles = CosmeticApi.buildStyleSheet(elemhideExtCss, injectExtCss, false);
         }
 
-        if (extStyles.length > 0){
+        if (extStyles.length > 0) {
             return extStyles.join('\n');
         }
-
-        return;
     }
 
-    public getScriptText(cosmeticResult: CosmeticResult): string | undefined {
+    public static getScriptText(cosmeticResult: CosmeticResult): string | undefined {
         const rules = cosmeticResult.getScriptRules();
 
         if (rules.length === 0) {
@@ -111,7 +93,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         return scriptText;
     }
 
-    public getFrameExtCssText(frameUrl: string, tabId: number, frameId: number): string | undefined {
+    public static getFrameExtCssText(frameUrl: string, tabId: number, frameId: number): string | undefined {
         const searchParams = FrameRequestService.prepareSearchParams(frameUrl, tabId, frameId);
 
         const requestContext = FrameRequestService.search(searchParams);
@@ -125,7 +107,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         const cosmeticOption = matchingResult.getCosmeticOption();
 
         const cosmeticResult = engineApi.getCosmeticResult(searchParams.requestUrl, cosmeticOption);
-        const extCssText = this.getExtCssText(cosmeticResult);
+        const extCssText = CosmeticApi.getExtCssText(cosmeticResult);
 
         return extCssText;
     }
@@ -133,7 +115,7 @@ export class CosmeticApi implements CosmeticApiInterface {
     /**
      * Builds stylesheet from rules
      */
-    private buildStyleSheet(
+    private static buildStyleSheet(
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
         groupElemhideSelectors: boolean,
@@ -163,7 +145,7 @@ export class CosmeticApi implements CosmeticApiInterface {
         }
 
         const elemHideStyle = elemhides.join('');
-        const cssStyle = injectRules.map(x => x.getContent()).join('\r\n');
+        const cssStyle = injectRules.map((x) => x.getContent()).join('\r\n');
 
         const styles = [];
         if (elemHideStyle) {
@@ -183,7 +165,7 @@ export class CosmeticApi implements CosmeticApiInterface {
      * @param ruleText
      * @return {string}
      */
-    private escapeRule(ruleText: string): string {
+    private static escapeRule(ruleText: string): string {
         return encodeURIComponent(ruleText).replace(
             /['()]/g,
             (match) => ({ "'": '%27', '(': '%28', ')': '%29' }[match] as string),
@@ -195,14 +177,14 @@ export class CosmeticApi implements CosmeticApiInterface {
      * Example:
      * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
      */
-    private addMarkerToElemhideRule(rule: CosmeticRule){
+    private static addMarkerToElemhideRule(rule: CosmeticRule) {
         const result = [];
         result.push(rule.getContent());
-        result.push(this.ELEMHIDE_HIT_START);
+        result.push(CosmeticApi.ELEMHIDE_HIT_START);
         result.push(rule.getFilterListId());
-        result.push(this.HIT_SEP);
-        result.push(this.escapeRule(rule.getText()));
-        result.push(this.HIT_END);
+        result.push(CosmeticApi.HIT_SEP);
+        result.push(CosmeticApi.escapeRule(rule.getText()));
+        result.push(CosmeticApi.HIT_END);
         return result.join('');
     }
 
@@ -211,7 +193,7 @@ export class CosmeticApi implements CosmeticApiInterface {
      * Example:
      * .selector { color: red } -> .selector { color: red, content: 'adguard{filterId};{ruleText} !important;}
      */
-    private addMarkerToInjectRule(rule: CosmeticRule){
+    private static addMarkerToInjectRule(rule: CosmeticRule) {
         const result = [];
         const ruleContent = rule.getContent();
         // if rule text has content attribute we don't add rule marker
@@ -227,11 +209,11 @@ export class CosmeticApi implements CosmeticApiInterface {
             ? ruleTextWithoutCloseBrace
             : `${ruleTextWithoutCloseBrace};`;
         result.push(ruleTextWithSemicolon);
-        result.push(this.INJECT_HIT_START);
+        result.push(CosmeticApi.INJECT_HIT_START);
         result.push(rule.getFilterListId());
-        result.push(this.HIT_SEP);
-        result.push(this.escapeRule(rule.getText()));
-        result.push(this.HIT_END);
+        result.push(CosmeticApi.HIT_SEP);
+        result.push(CosmeticApi.escapeRule(rule.getText()));
+        result.push(CosmeticApi.HIT_END);
 
         return result.join('');
     }
@@ -239,15 +221,13 @@ export class CosmeticApi implements CosmeticApiInterface {
     /**
      * Builds stylesheet with css-hits marker
      */
-    private buildStyleSheetWithHits = (
+    private static buildStyleSheetWithHits = (
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
     ) => {
-        const elemhideStyles = elemhideRules.map(x => this.addMarkerToElemhideRule(x));
-        const injectStyles = injectRules.map(x => this.addMarkerToInjectRule(x));
+        const elemhideStyles = elemhideRules.map((x) => CosmeticApi.addMarkerToElemhideRule(x));
+        const injectStyles = injectRules.map((x) => CosmeticApi.addMarkerToInjectRule(x));
 
         return [...elemhideStyles, ...injectStyles];
     };
 }
-
-export const cosmeticApi = new CosmeticApi();

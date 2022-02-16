@@ -1,5 +1,7 @@
 import browser from 'webextension-polyfill';
-import { RequestType, CosmeticOption, CosmeticRule, NetworkRule } from '@adguard/tsurlfilter';
+import {
+    RequestType, CosmeticOption, CosmeticRule, NetworkRule,
+} from '@adguard/tsurlfilter';
 
 import { engineApi } from '../../engine-api';
 import { RequestContext, requestContextStorage } from '../../request';
@@ -31,20 +33,17 @@ export class ContentFiltering {
         RequestType.Subdocument,
     ];
 
-
     private static getHtmlRules(context: RequestContext): CosmeticRule[] | null {
         const { referrerUrl, requestType } = context;
 
-        if (!referrerUrl ||
-            !requestType ||
-            !ContentFiltering.supportedHtmlRulesRequestTypes.includes(requestType)
+        if (!referrerUrl
+            || !requestType
+            || !ContentFiltering.supportedHtmlRulesRequestTypes.includes(requestType)
         ) {
             return null;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(
-            referrerUrl, CosmeticOption.CosmeticOptionHtml,
-        );
+        const cosmeticResult = engineApi.getCosmeticResult(referrerUrl, CosmeticOption.CosmeticOptionHtml);
 
         const htmlRules = cosmeticResult.Html.getRules();
 
@@ -58,9 +57,9 @@ export class ContentFiltering {
     private static getReplaceRules(context: RequestContext): NetworkRule[] | null {
         const { requestType, matchingResult } = context;
 
-        if (!requestType ||
-            !matchingResult ||
-            !ContentFiltering.supportedReplaceRulesRequestTypes.includes(requestType)
+        if (!requestType
+            || !matchingResult
+            || !ContentFiltering.supportedReplaceRulesRequestTypes.includes(requestType)
         ) {
             return null;
         }
@@ -74,7 +73,7 @@ export class ContentFiltering {
         return replaceRules;
     }
 
-    public onBeforeRequest(requestId: string): void {
+    public static onBeforeRequest(requestId: string): void {
         if (!browser.webRequest.filterResponseData) {
             return;
         }
@@ -96,7 +95,6 @@ export class ContentFiltering {
         const replaceRules = ContentFiltering.getReplaceRules(context);
 
         if (htmlRules || replaceRules) {
-
             if (htmlRules) {
                 requestContextStorage.update(requestId, { htmlRules });
             }
@@ -113,5 +111,3 @@ export class ContentFiltering {
         }
     }
 }
-
-export const contentFilteringService = new ContentFiltering();

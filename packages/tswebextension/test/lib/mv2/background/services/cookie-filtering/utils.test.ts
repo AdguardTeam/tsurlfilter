@@ -197,7 +197,6 @@ describe('Cookie utils - serialize cookie', () => {
         expect(setCookieValue).toBe('_octo=GH1.1.635223982.1507661197');
     });
 
-
     it('serializes complicated cookie', () => {
         const cookie = {
             name: '_octo',

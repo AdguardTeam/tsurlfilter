@@ -1,7 +1,6 @@
 import { RequestType } from '@adguard/tsurlfilter';
 import { WebRequest } from 'webextension-polyfill';
 
-
 /**
  * TODO: move contentType to frontend or delete?
  */
@@ -29,15 +28,14 @@ export interface RequestTypeData {
     requestType: RequestType;
 }
 
-
 export function getRequestType(resourceType: WebRequest.ResourceType): RequestTypeData {
-    switch (resourceType){
+    switch (resourceType) {
         case 'main_frame':
             return {
                 contentType: ContentType.DOCUMENT,
                 requestType: RequestType.Document,
             };
-        case 'sub_frame': 
+        case 'sub_frame':
             return {
                 contentType: ContentType.SUBDOCUMENT,
                 requestType: RequestType.Subdocument,
@@ -53,17 +51,17 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
                 requestType: RequestType.Script,
             };
         case 'image':
-        case 'imageset': 
+        case 'imageset':
             return {
                 contentType: ContentType.IMAGE,
                 requestType: RequestType.Image,
             };
-        case 'object': 
+        case 'object':
             return {
                 contentType: ContentType.OBJECT,
                 requestType: RequestType.Object,
             };
-        case 'xmlhttprequest': 
+        case 'xmlhttprequest':
             return {
                 contentType: ContentType.XMLHTTPREQUEST,
                 requestType: RequestType.XmlHttpRequest,
@@ -89,7 +87,7 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
                 contentType: ContentType.WEBSOCKET,
                 requestType: RequestType.Websocket,
             };
-        case 'csp_report': 
+        case 'csp_report':
             return {
                 contentType: ContentType.CSP_REPORT,
                 requestType: RequestType.Other,
@@ -98,6 +96,6 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
             return {
                 contentType: ContentType.OTHER,
                 requestType: RequestType.Other,
-            };      
+            };
     }
 }

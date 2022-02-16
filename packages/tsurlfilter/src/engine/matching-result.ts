@@ -278,8 +278,10 @@ export class MatchingResult {
 
         // TODO: Look up for allowlist $content rule
 
-        return MatchingResult.filterAdvancedModifierRules(this.replaceRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+        return MatchingResult.filterAdvancedModifierRules(
+            this.replaceRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+        );
     }
 
     /**
@@ -291,7 +293,8 @@ export class MatchingResult {
      * This function result will be called for testing if rule `x` allowlists rule `r`
      */
     private static filterAdvancedModifierRules(
-        rules: NetworkRule[], allowlistPredicate: (r: NetworkRule) => ((x: NetworkRule) => boolean),
+        rules: NetworkRule[],
+        allowlistPredicate: (r: NetworkRule) => ((x: NetworkRule) => boolean),
     ): NetworkRule[] {
         const blockingRules: NetworkRule[] = [];
         const allowlistRules: NetworkRule[] = [];
@@ -335,7 +338,7 @@ export class MatchingResult {
                 }
             });
 
-            return result.filter((item, pos) => result.indexOf(item) == pos);
+            return result.filter((item, pos) => result.indexOf(item) === pos);
         }
 
         return blockingRules;
@@ -385,8 +388,10 @@ export class MatchingResult {
             return null;
         }
 
-        let result = MatchingResult.filterAdvancedModifierRules(this.redirectRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+        let result = MatchingResult.filterAdvancedModifierRules(
+            this.redirectRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+        );
 
         result = result.filter((r) => !r.isAllowlist());
 
@@ -453,7 +458,7 @@ export class MatchingResult {
         );
 
         const filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
-        return filtered.concat([...this.cookieRules.filter((r) => r.isAllowlist())] );
+        return filtered.concat([...this.cookieRules.filter((r) => r.isAllowlist())]);
     }
 
     /**
@@ -464,11 +469,13 @@ export class MatchingResult {
             return [];
         }
 
-        return MatchingResult.filterAdvancedModifierRules(this.removeParamRules,
+        return MatchingResult.filterAdvancedModifierRules(
+            this.removeParamRules,
             // eslint-disable-next-line arrow-body-style
             (rule) => ((x): boolean => {
                 return x.isHigherPriority(rule) && x.getAdvancedModifierValue() === rule.getAdvancedModifierValue();
-            }));
+            }),
+        );
     }
 
     /**
@@ -485,8 +492,10 @@ export class MatchingResult {
             return [];
         }
 
-        return MatchingResult.filterAdvancedModifierRules(this.removeHeaderRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()));
+        return MatchingResult.filterAdvancedModifierRules(
+            this.removeHeaderRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+        );
     }
 
     /**

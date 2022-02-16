@@ -8,7 +8,6 @@ program
     .description('CLI to some development utils')
     .version('0.0.1');
 
-
 async function main() {
     program
         .command('war')

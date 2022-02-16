@@ -1,3 +1,4 @@
+/* eslint-disable prefer-regex-literals */
 import * as utils from '../utils/utils';
 
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/regexp

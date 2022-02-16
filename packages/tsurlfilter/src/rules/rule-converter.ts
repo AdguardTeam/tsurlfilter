@@ -523,7 +523,8 @@ export class RuleConverter {
         if (RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX.test(ruleText)) {
             return `@@||${
                 ruleText.replace(
-                    RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX, RuleConverter.UBO_RESPONSE_HEADER_REPLACEMENT,
+                    RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX,
+                    RuleConverter.UBO_RESPONSE_HEADER_REPLACEMENT,
                 ).slice(0, -1)
             }`;
         }

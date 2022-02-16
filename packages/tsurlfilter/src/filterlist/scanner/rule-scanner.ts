@@ -128,7 +128,11 @@ export class RuleScanner {
 
             if (line) {
                 const rule = RuleFactory.createRule(
-                    line, this.listId, this.ignoreNetwork, this.ignoreCosmetic, this.ignoreHost,
+                    line,
+                    this.listId,
+                    this.ignoreNetwork,
+                    this.ignoreCosmetic,
+                    this.ignoreHost,
                 );
 
                 if (rule && !this.isIgnored(rule)) {

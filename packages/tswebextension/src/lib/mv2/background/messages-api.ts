@@ -1,8 +1,9 @@
+/* eslint-disable class-methods-use-this */
 import browser, { Runtime } from 'webextension-polyfill';
 import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
-import { requestBlockingApi } from './request';
-import { cosmeticApi } from './cosmetic-api';
+import { RequestBlockingApi } from './request';
+import { CosmeticApi } from './cosmetic-api';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 import {
@@ -26,13 +27,12 @@ export interface MessagesApiInterface {
 }
 // TODO: add long live connection
 export class MessagesApi implements MessagesApiInterface {
-
     filteringLog: FilteringLog;
 
     /**
      * Assistant event listener
      */
-    onAssistantCreateRuleListener: undefined | ((ruleText: string) => void) ;
+    onAssistantCreateRuleListener: undefined | ((ruleText: string) => void);
 
     constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
@@ -102,7 +102,6 @@ export class MessagesApi implements MessagesApiInterface {
                 );
             }
             default:
-                return;
         }
     }
 
@@ -124,7 +123,7 @@ export class MessagesApi implements MessagesApiInterface {
 
         const { elementUrl, documentUrl, requestType } = res.data;
 
-        return requestBlockingApi.processShouldCollapse(tabId, elementUrl, documentUrl, requestType);
+        return RequestBlockingApi.processShouldCollapse(tabId, elementUrl, documentUrl, requestType);
     }
 
     private handleGetExtendedCssMessage(
@@ -146,7 +145,7 @@ export class MessagesApi implements MessagesApiInterface {
 
         const { documentUrl } = res.data;
 
-        return cosmeticApi.getFrameExtCssText(documentUrl, tabId, frameId);
+        return CosmeticApi.getFrameExtCssText(documentUrl, tabId, frameId);
     }
 
     /**
@@ -204,7 +203,7 @@ export class MessagesApi implements MessagesApiInterface {
             return false;
         }
 
-        const data = res.data;
+        const { data } = res;
 
         this.filteringLog.addCookieEvent({
             tabId: sender.tab.id,
@@ -233,7 +232,7 @@ export class MessagesApi implements MessagesApiInterface {
         }
 
         const res = getAssistantCreateRulePayloadValidator.safeParse(payload);
-        if (!res.success){
+        if (!res.success) {
             return false;
         }
 
@@ -242,7 +241,6 @@ export class MessagesApi implements MessagesApiInterface {
             this.onAssistantCreateRuleListener(ruleText);
         }
     }
-
 }
 
 export const messagesApi = new MessagesApi(defaultFilteringLog);

@@ -119,12 +119,64 @@ export class Request {
     public clientIP: string | undefined;
 
     /**
+     * Creates an instance of a Request
+     *
+     * @param url - request URL
+     * @param sourceUrl - source URL
+     * @param requestType - request type
+     *
+     * @throws
+     */
+    constructor(url: string, sourceUrl: string | null, requestType: RequestType) {
+        this.url = url;
+        this.requestType = requestType;
+
+        this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
+        this.sourceUrl = Request.compactUrl(sourceUrl);
+
+        const tldResult = parse(url);
+        this.hostname = tldResult.hostname!;
+        this.domain = tldResult.domain!;
+        this.subdomains = Request.getSubdomains(tldResult);
+
+        if (sourceUrl) {
+            const sourceTldResult = parse(sourceUrl);
+            this.sourceHostname = sourceTldResult.hostname!;
+            this.sourceDomain = sourceTldResult.domain!;
+            this.sourceSubdomains = Request.getSubdomains(sourceTldResult);
+        } else {
+            this.sourceHostname = null;
+            this.sourceDomain = null;
+            this.sourceSubdomains = [];
+        }
+
+        if (this.sourceDomain) {
+            this.thirdParty = this.domain !== this.sourceDomain;
+        } else {
+            this.thirdParty = null;
+        }
+    }
+
+    /**
+     * We cut the url in performance purposes
+     * @param url
+     */
+    private static compactUrl(url: string | null): string | null {
+        let compacted = url;
+        if (compacted && compacted.length > Request.MAX_URL_MATCH_LENGTH) {
+            compacted = compacted.substring(0, Request.MAX_URL_MATCH_LENGTH);
+        }
+
+        return compacted;
+    }
+
+    /**
     * Splits subdomains and returns all subdomains (including the hostname itself)
     *
     * @param tldResult
     * @returns array of subdomains
     */
-    private getSubdomains = (tldResult: IResult): string[] => {
+    private static getSubdomains(tldResult: IResult): string[] {
         const {
             domain,
             hostname,
@@ -161,57 +213,5 @@ export class Request {
         }
 
         return subdomainsResult;
-    };
-
-    /**
-     * Creates an instance of a Request
-     *
-     * @param url - request URL
-     * @param sourceUrl - source URL
-     * @param requestType - request type
-     *
-     * @throws
-     */
-    constructor(url: string, sourceUrl: string | null, requestType: RequestType) {
-        this.url = url;
-        this.requestType = requestType;
-
-        this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
-        this.sourceUrl = Request.compactUrl(sourceUrl);
-
-        const tldResult = parse(url);
-        this.hostname = tldResult.hostname!;
-        this.domain = tldResult.domain!;
-        this.subdomains = this.getSubdomains(tldResult);
-
-        if (sourceUrl) {
-            const sourceTldResult = parse(sourceUrl);
-            this.sourceHostname = sourceTldResult.hostname!;
-            this.sourceDomain = sourceTldResult.domain!;
-            this.sourceSubdomains = this.getSubdomains(sourceTldResult);
-        } else {
-            this.sourceHostname = null;
-            this.sourceDomain = null;
-            this.sourceSubdomains = [];
-        }
-
-        if (this.sourceDomain) {
-            this.thirdParty = this.domain !== this.sourceDomain;
-        } else {
-            this.thirdParty = null;
-        }
-    }
-
-    /**
-     * We cut the url in performance purposes
-     * @param url
-     */
-    private static compactUrl(url: string | null): string | null {
-        let compacted = url;
-        if (compacted && compacted.length > Request.MAX_URL_MATCH_LENGTH) {
-            compacted = compacted.substring(0, Request.MAX_URL_MATCH_LENGTH);
-        }
-
-        return compacted;
     }
 }

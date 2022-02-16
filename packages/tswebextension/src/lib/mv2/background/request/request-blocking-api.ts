@@ -5,36 +5,14 @@ import { redirectsService } from '../services/redirects-service';
 import { tabsApi } from '../tabs';
 
 export type WebRequestBlockingResponse = WebRequest.BlockingResponse | void;
-export interface RequestBlockingApiInterface {
-    processShouldCollapse: (
-        tabId: number,
-        url: string,
-        referrerUrl: string,
-        requestType: RequestType
-    ) => boolean;
 
-    isRequestBlockedByRule: (
-        requestRule: NetworkRule | null
-    ) => boolean;
-
-    isDocumentBlockingRule: (
-        requestRule: NetworkRule | null
-    ) => boolean;
-
-    getBlockedResponseByRule: (
-        requestRule: NetworkRule | null,
-        requestType: RequestType,
-    ) => WebRequestBlockingResponse;
-}
-
-export class RequestBlockingApi implements RequestBlockingApiInterface {
-    public processShouldCollapse(
+export class RequestBlockingApi {
+    public static processShouldCollapse(
         tabId: number,
         url: string,
         referrerUrl: string,
         requestType: RequestType,
     ): boolean {
-
         const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: referrerUrl,
@@ -46,17 +24,17 @@ export class RequestBlockingApi implements RequestBlockingApiInterface {
             return false;
         }
 
-        return this.isRequestBlockedByRule(result.getBasicResult());
+        return RequestBlockingApi.isRequestBlockedByRule(result.getBasicResult());
     }
 
-    public isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
+    public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
         return !!requestRule
             && !requestRule.isAllowlist()
             && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
             && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
     }
 
-    public isDocumentBlockingRule(requestRule: NetworkRule | null): boolean {
+    public static isDocumentBlockingRule(requestRule: NetworkRule | null): boolean {
         return !!requestRule
             && !requestRule.isAllowlist()
             && requestRule.isOptionEnabled(NetworkRuleOption.Elemhide)
@@ -64,15 +42,15 @@ export class RequestBlockingApi implements RequestBlockingApiInterface {
             && requestRule.isOptionEnabled(NetworkRuleOption.Urlblock);
     }
 
-    public getBlockedResponseByRule(
+    public static getBlockedResponseByRule(
         requestRule: NetworkRule | null,
         requestType: RequestType,
     ): WebRequestBlockingResponse {
-        if (this.isRequestBlockedByRule(requestRule)) {
+        if (RequestBlockingApi.isRequestBlockedByRule(requestRule)) {
             const isDocumentLevel = requestType === RequestType.Document
                 || requestType === RequestType.Subdocument;
 
-            if (isDocumentLevel && this.isDocumentBlockingRule(requestRule)) {
+            if (isDocumentLevel && RequestBlockingApi.isDocumentBlockingRule(requestRule)) {
                 // TODO: redirect to blocking page
                 // TODO: trusted domains cache
                 return { cancel: true };
@@ -92,9 +70,5 @@ export class RequestBlockingApi implements RequestBlockingApiInterface {
                 }
             }
         }
-
-        return;
     }
 }
-
-export const requestBlockingApi = new RequestBlockingApi();

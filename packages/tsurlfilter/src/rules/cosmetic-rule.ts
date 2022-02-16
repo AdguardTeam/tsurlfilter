@@ -483,9 +483,9 @@ export class CosmeticRule implements rule.IRule {
 
         // discard css inject rules containing other unsafe selectors
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1920
-        if (/{.*image-set\(.*\)/gi.test(ruleContent) ||
-            /{.*image\(.*\)/gi.test(ruleContent) ||
-            /{.*cross-fade\(.*\)/gi.test(ruleContent)) {
+        if (/{.*image-set\(.*\)/gi.test(ruleContent)
+            || /{.*image\(.*\)/gi.test(ruleContent)
+            || /{.*cross-fade\(.*\)/gi.test(ruleContent)) {
             throw new SyntaxError('CSS modifying rule with unsafe style was omitted');
         }
 
@@ -535,9 +535,7 @@ export class CosmeticRule implements rule.IRule {
      * @param isExtCss
      * @private
      */
-    private static validate(
-        ruleText: string, type: CosmeticRuleType, content: string, isExtCss: boolean,
-    ): void {
+    private static validate(ruleText: string, type: CosmeticRuleType, content: string, isExtCss: boolean): void {
         if (type !== CosmeticRuleType.Css
             && type !== CosmeticRuleType.Js
             && type !== CosmeticRuleType.Html) {
@@ -560,9 +558,9 @@ export class CosmeticRule implements rule.IRule {
             CosmeticRule.validateJsRules(ruleText, content);
         }
 
-        if ((!isExtCss && utils.hasUnquotedSubstring(content, '/*')) ||
-            utils.hasUnquotedSubstring(content, ' /*') ||
-            utils.hasUnquotedSubstring(content, ' //')
+        if ((!isExtCss && utils.hasUnquotedSubstring(content, '/*'))
+            || utils.hasUnquotedSubstring(content, ' /*')
+            || utils.hasUnquotedSubstring(content, ' //')
         ) {
             throw new SyntaxError('Cosmetic rule should not contain comments');
         }

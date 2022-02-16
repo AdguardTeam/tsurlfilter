@@ -26,16 +26,16 @@ describe('configuration validator', () => {
             },
         },
     };
- 
+
     it('passes valid configuration', () => {
         expect(configurationValidator.parse(validConfiguration)).toEqual(validConfiguration);
     });
 
     it('throws error on required field missing', () => {
         expect(() => {
-            configurationValidator.parse({ 
-                ...validConfiguration, 
-                settings: undefined, 
+            configurationValidator.parse({
+                ...validConfiguration,
+                settings: undefined,
             });
         }).toThrow(new ZodError([{
             code: 'invalid_type',

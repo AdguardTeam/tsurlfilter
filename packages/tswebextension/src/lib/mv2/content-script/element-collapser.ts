@@ -8,28 +8,23 @@ type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
  * Hides broken items after blocking a network request
  */
 export class ElementCollapser {
-
-    constructor(){
-        this.shouldCollapseElement = this.shouldCollapseElement.bind(this);
-    }
-
-    public start() {
-        document.addEventListener('error', this.shouldCollapseElement, true);
+    public static start() {
+        document.addEventListener('error', ElementCollapser.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
-        document.addEventListener('load', this.shouldCollapseElement, true);
+        document.addEventListener('load', ElementCollapser.shouldCollapseElement, true);
     }
 
-    public stop() {
-        document.removeEventListener('error', this.shouldCollapseElement, true);
+    public static stop() {
+        document.removeEventListener('error', ElementCollapser.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
-        document.removeEventListener('load', this.shouldCollapseElement, true);
+        document.removeEventListener('load', ElementCollapser.shouldCollapseElement, true);
     }
 
-    private async sendMessage(message: Message) {
+    private static async sendMessage(message: Message) {
         return browser.runtime.sendMessage(message);
     }
 
-    private getRequestTypeByInitiatorTagName(tagName: string): RequestType | null {
+    private static getRequestTypeByInitiatorTagName(tagName: string): RequestType | null {
         switch (tagName) {
             case 'img':
             case 'input': {
@@ -54,7 +49,7 @@ export class ElementCollapser {
     /**
      * Extracts element URL from the dom node
      */
-    private getElementUrl(element: RequestInitiatorElement): string | null {
+    private static getElementUrl(element: RequestInitiatorElement): string | null {
         let elementUrl = element.src || element.data;
         if (!elementUrl
             || elementUrl.indexOf('http') !== 0
@@ -75,13 +70,12 @@ export class ElementCollapser {
         return elementUrl;
     }
 
-
-    private isElementCollapsed(element: HTMLElement): boolean {
+    private static isElementCollapsed(element: HTMLElement): boolean {
         const computedStyle = window.getComputedStyle(element);
         return (computedStyle && computedStyle.display === 'none');
     }
 
-    private async shouldCollapseElement(event: Event) {
+    private static async shouldCollapseElement(event: Event) {
         const eventType = event.type;
         const element = event.target as RequestInitiatorElement;
 
@@ -96,19 +90,19 @@ export class ElementCollapser {
             return;
         }
 
-        const requestType = this.getRequestTypeByInitiatorTagName(element.localName);
+        const requestType = ElementCollapser.getRequestTypeByInitiatorTagName(element.localName);
 
         if (!requestType) {
             return;
         }
 
-        const elementUrl = this.getElementUrl(element);
+        const elementUrl = ElementCollapser.getElementUrl(element);
 
         if (!elementUrl) {
             return;
         }
 
-        if (this.isElementCollapsed(element)) {
+        if (ElementCollapser.isElementCollapsed(element)) {
             return;
         }
 
@@ -118,7 +112,7 @@ export class ElementCollapser {
             requestType,
         } as ProcessShouldCollapsePayload;
 
-        const shouldCollapse = await this.sendMessage({
+        const shouldCollapse = await ElementCollapser.sendMessage({
             type: MessageType.PROCESS_SHOULD_COLLAPSE,
             payload,
         });
@@ -133,5 +127,3 @@ export class ElementCollapser {
         );
     }
 }
-
-export const elementCollapser = new ElementCollapser();

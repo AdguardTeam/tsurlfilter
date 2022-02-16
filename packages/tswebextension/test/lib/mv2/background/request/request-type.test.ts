@@ -1,10 +1,10 @@
+/* eslint-disable guard-for-in */
 import { WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
 import { getRequestType, ContentType, RequestTypeData } from '@lib/mv2/background/request/request-type';
 
 describe('Request Type', () => {
-    
     it('correctly maps resource type with Request and Content Type', () => {
         const types: Record<WebRequest.ResourceType, RequestTypeData> = {
             main_frame: {
@@ -66,11 +66,11 @@ describe('Request Type', () => {
             object_subrequest: {
                 contentType: ContentType.OTHER,
                 requestType: RequestType.Other,
-            }, 
+            },
             xslt: {
                 contentType: ContentType.OTHER,
                 requestType: RequestType.Other,
-            }, 
+            },
             xml_dtd: {
                 contentType: ContentType.OTHER,
                 requestType: RequestType.Other,
@@ -89,10 +89,10 @@ describe('Request Type', () => {
             },
         };
 
-        for (const key in types){
+        for (const key in types) {
             expect(
                 getRequestType(key as WebRequest.ResourceType),
             ).toEqual(types[key as WebRequest.ResourceType]);
-        }     
+        }
     });
 });
