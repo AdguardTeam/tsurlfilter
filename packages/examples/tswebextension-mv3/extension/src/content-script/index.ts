@@ -1,1 +1,1 @@
-import '@adguard/tswebextension/dist/content-script';
+import '@adguard/tswebextension/content-script';

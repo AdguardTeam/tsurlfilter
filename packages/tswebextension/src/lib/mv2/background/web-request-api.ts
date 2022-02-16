@@ -15,6 +15,7 @@ import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
+import { CspService } from './services/csp-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -27,7 +28,6 @@ import {
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
 const MAX_URL_LENGTH = 1024 * 16;
-const CSP_HEADER_NAME = 'Content-Security-Policy';
 
 export class WebRequestApi {
     public static start(): void {
@@ -91,29 +91,19 @@ export class WebRequestApi {
 
         const { requestType, contentType } = getRequestType(type);
 
-        let requestFrameId = type === 'main_frame'
-            ? frameId
-            : parentFrameId;
+        let requestFrameId = type === 'main_frame' ? frameId : parentFrameId;
 
         // Relate request to main_frame
         if (requestFrameId === -1) {
             requestFrameId = 0;
         }
 
-        const referrerUrl = originUrl
-            || initiator
-            || getDomain(url)
-            || url;
+        const referrerUrl = originUrl || initiator || getDomain(url) || url;
 
         const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
         if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
-            tabsApi.recordRequestFrame(
-                tabId,
-                frameId,
-                url,
-                requestType,
-            );
+            tabsApi.recordRequestFrame(tabId, frameId, url, requestType);
         }
 
         requestContextStorage.update(requestId, {
@@ -126,8 +116,7 @@ export class WebRequestApi {
             method,
         });
 
-        if (isOwnUrl(referrerUrl)
-            || !isHttpOrWsRequest(url)) {
+        if (isOwnUrl(referrerUrl) || !isHttpOrWsRequest(url)) {
             return;
         }
 
@@ -172,30 +161,28 @@ export class WebRequestApi {
         return response;
     }
 
-    private static onBeforeSendHeaders(
-        data: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>,
-    ): WebRequestEventResponse {
-        if (!data.context?.matchingResult) {
+    private static onBeforeSendHeaders({
+        context,
+    }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): WebRequestEventResponse {
+        if (!context?.matchingResult) {
             return;
         }
 
-        cookieFiltering.onBeforeSendHeaders(data.details);
+        cookieFiltering.onBeforeSendHeaders(context);
 
         let requestHeadersModified = false;
-        if (headersService.onBeforeSendHeaders(data)) {
+        if (headersService.onBeforeSendHeaders(context)) {
             requestHeadersModified = true;
         }
 
         if (requestHeadersModified) {
-            return { requestHeaders: data.details.requestHeaders };
+            return { requestHeaders: context.requestHeaders };
         }
     }
 
-    private static onHeadersReceived(
-        data: RequestData<WebRequest.OnHeadersReceivedDetailsType>,
-    ): WebRequestEventResponse {
-        const { context } = data;
-
+    private static onHeadersReceived({
+        context,
+    }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
         if (!context?.matchingResult) {
             return;
         }
@@ -207,9 +194,10 @@ export class WebRequestApi {
             requestType,
             tabId,
             frameId,
+            responseHeaders,
         } = context;
 
-        const contentTypeHeader = findHeaderByName(data.details.responseHeaders!, 'content-type')?.value;
+        const contentTypeHeader = findHeaderByName(responseHeaders!, 'content-type')?.value;
 
         if (contentTypeHeader) {
             requestContextStorage.update(requestId, { contentTypeHeader });
@@ -221,79 +209,47 @@ export class WebRequestApi {
             const cosmeticOption = matchingResult.getCosmeticOption();
             WebRequestApi.recordFrameInjection(requestUrl, tabId, frameId, cosmeticOption);
 
-            // TODO: replace to separate method
-            const cspHeaders = [];
-
-            const cspRules = matchingResult.getCspRules();
-
-            for (let i = 0; i < cspRules.length; i += 1) {
-                const rule = cspRules[i];
-                // Don't forget: getCspRules returns all $csp rules, we must directly check that the rule is blocking.
-                if (RequestBlockingApi.isRequestBlockedByRule(rule)) {
-                    const cspHeaderValue = rule.getAdvancedModifierValue();
-
-                    if (cspHeaderValue) {
-                        cspHeaders.push({
-                            name: CSP_HEADER_NAME,
-                            value: cspHeaderValue,
-                        });
-                    }
-                }
-            }
-
-            if (cspHeaders.length > 0) {
-                // eslint-disable-next-line no-param-reassign
-                data.details.responseHeaders = data.details.responseHeaders
-                    ? data.details.responseHeaders.concat(cspHeaders)
-                    : cspHeaders;
-
+            if (CspService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
         }
 
-        // TODO: it is not obvious that data.details can mutate here
-        // Is better process context instead of details and return a new array in these methods?
-
-        if (cookieFiltering.onHeadersReceived(data.details)) {
+        if (cookieFiltering.onHeadersReceived(context)) {
             responseHeadersModified = true;
         }
 
-        if (headersService.onHeadersReceived(data)) {
+        if (headersService.onHeadersReceived(context)) {
             responseHeadersModified = true;
         }
 
         if (responseHeadersModified) {
-            return { responseHeaders: data.details.responseHeaders };
+            return { responseHeaders: context.responseHeaders };
         }
     }
 
-    private static onResponseStarted({ context }: RequestData<
-    WebRequest.OnResponseStartedDetailsType
-    >): WebRequestEventResponse {
+    private static onResponseStarted({
+        context,
+    }: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
         if (!context?.matchingResult) {
             return;
         }
 
-        const {
-            requestType,
-            tabId,
-            frameId,
-        } = context;
+        const { requestType, tabId, frameId } = context;
 
         if (requestType === RequestType.Document) {
             WebRequestApi.injectJsScript(tabId, frameId);
         }
     }
 
-    private static onCompleted({ details }: RequestData<
-    WebRequest.OnCompletedDetailsType
-    >): WebRequestEventResponse {
+    private static onCompleted({
+        details,
+    }: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
-    private static onErrorOccurred({ details }: RequestData<
-    WebRequest.OnErrorOccurredDetailsType
-    >): WebRequestEventResponse {
+    private static onErrorOccurred({
+        details,
+    }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
         const { requestId, tabId, frameId } = details;
 
         const frame = tabsApi.getTabFrame(tabId, frameId);

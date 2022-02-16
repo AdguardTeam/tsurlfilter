@@ -5,17 +5,17 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "yarn build:precompile-rules && yarn build:extension && yarn war",
+    "build": "yarn build:precompile-rules && yarn build:extension",
     "build:extension": "node -r esbuild-register ./scripts/build",
     "build:precompile-rules": "node -r esbuild-register ./scripts/precompile-rules.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'",
-    "war": "tswebextension war"
+    "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/tswebextension": "file:../../tswebextension"
+    "@adguard/tswebextension":  "0.0.1"
   },
   "devDependencies": {
-    "@adguard/tsurlfilter": "file:../../tsurlfilter",
+    "@adguard/tsurlfilter": "^0.7.58",
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-class-properties": "^7.16.0",
     "@babel/plugin-transform-runtime": "^7.16.4",

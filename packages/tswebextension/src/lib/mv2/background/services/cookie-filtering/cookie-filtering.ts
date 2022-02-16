@@ -1,5 +1,4 @@
 /* eslint-disable class-methods-use-this */
-import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
 import { FilteringLog, defaultFilteringLog } from '../../../../common';
 import CookieRulesFinder from './cookie-rules-finder';
@@ -7,11 +6,8 @@ import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { findHeaderByName } from '../../utils/headers';
-import { requestContextStorage } from '../../request';
+import { RequestContext, requestContextStorage } from '../../request';
 import { FrameRequestService } from '../frame-request-service';
-
-import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
-import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
 
 /**
  * Cookie filtering
@@ -53,64 +49,68 @@ export class CookieFiltering {
 
     /**
      * Parses cookies from headers
-     * @param details
+     * @param context
      */
-    public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType): void {
-        if (!details.requestHeaders) {
+    public onBeforeSendHeaders(context: RequestContext): void {
+        const { requestHeaders, requestUrl, requestId } = context;
+        if (!requestHeaders || !requestUrl) {
             return;
         }
 
-        const context = requestContextStorage.get(details.requestId);
-        if (!context) {
+        const cookieHeader = findHeaderByName(requestHeaders, 'Cookie');
+
+        if (!cookieHeader?.value) {
             return;
         }
 
-        const cookieHeader = findHeaderByName(details.requestHeaders, 'Cookie');
-        if (!cookieHeader || !cookieHeader.value) {
-            return;
-        }
-
-        const cookies = CookieUtils.parseCookies(cookieHeader.value, context.requestUrl!);
+        const cookies = CookieUtils.parseCookies(cookieHeader.value, requestUrl);
         if (cookies.length === 0) {
             return;
         }
 
-        context.cookies = cookies;
+        requestContextStorage.update(requestId, { cookies });
     }
 
     /**
      * Applies cookies to headers
-     * @param details
+     * @param context
      * @private
      */
-    private applyRulesToCookieHeaders(details: WebRequest.OnHeadersReceivedDetailsType): boolean {
+    private applyRulesToCookieHeaders(context: RequestContext): boolean {
         let headersModified = false;
 
-        if (!details.responseHeaders) {
+        const {
+            responseHeaders,
+            matchingResult,
+            requestUrl,
+            thirdParty,
+            tabId,
+            requestId,
+        } = context;
+
+        if (!responseHeaders
+            || !matchingResult
+            || !requestUrl
+            || typeof thirdParty !== 'boolean'
+        ) {
             return headersModified;
         }
 
-        const context = requestContextStorage.get(details.requestId);
+        const cookieRules = matchingResult.getCookieRules();
 
-        if (!context?.matchingResult) {
-            return headersModified;
-        }
-
-        const cookieRules = context.matchingResult.getCookieRules();
-
-        for (let i = details.responseHeaders.length - 1; i >= 0; i -= 1) {
-            const header = details.responseHeaders[i];
-            const cookie = CookieUtils.parseSetCookieHeader(header, details.url);
+        for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
+            const header = responseHeaders[i];
+            const cookie = CookieUtils.parseSetCookieHeader(header, requestUrl);
 
             if (!cookie) {
                 continue;
             }
 
-            const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, details.thirdParty);
+            const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, thirdParty);
 
             if (bRule) {
                 if (!bRule.isAllowlist()) {
-                    details.responseHeaders.splice(i, 1);
+                    responseHeaders.splice(i, 1);
                     headersModified = true;
                 }
 
@@ -121,31 +121,35 @@ export class CookieFiltering {
                     cookieDomain: cookie.domain,
                     cookieRule: bRule,
                     isModifyingCookieRule: false,
-                    thirdParty: details.thirdParty,
+                    thirdParty,
                     timestamp: Date.now(),
                 });
             }
 
-            const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, details.thirdParty);
+            const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
             if (mRules.length > 0) {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
                 if (appliedRules.length > 0) {
                     headersModified = true;
-                    details.responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
+                    responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
                     appliedRules.forEach((r) => {
                         this.filteringLog.addCookieEvent({
-                            tabId: details.tabId,
+                            tabId,
                             cookieName: cookie.name,
                             cookieValue: cookie.value,
                             cookieDomain: cookie.domain,
                             cookieRule: r,
                             isModifyingCookieRule: true,
-                            thirdParty: details.thirdParty,
+                            thirdParty,
                             timestamp: Date.now(),
                         });
                     });
                 }
             }
+        }
+
+        if (headersModified) {
+            requestContextStorage.update(requestId, { responseHeaders });
         }
 
         return headersModified;
@@ -157,30 +161,37 @@ export class CookieFiltering {
      * This callback won't work for mv3 extensions
      * TODO separate or rewrite to mv2 and mv3 methods
      *
-     * @param details
+     * @param context
      */
-    public onHeadersReceived(details: OnHeadersReceivedDetailsType): boolean {
-        const context = requestContextStorage.get(details.requestId);
-        if (!context) {
-            return false;
-        }
+    public onHeadersReceived(context: RequestContext): boolean {
+        const {
+            responseHeaders,
+            requestUrl,
+            thirdParty,
+            requestId,
+        } = context;
 
-        if (details.responseHeaders) {
-            const cookies = CookieUtils.parseSetCookieHeaders(details.responseHeaders, context.requestUrl!);
+        if (responseHeaders
+            && requestUrl
+            && typeof thirdParty === 'boolean'
+        ) {
+            const cookies = CookieUtils.parseSetCookieHeaders(responseHeaders, requestUrl);
             const newCookies = cookies.filter((c) => !context.cookies?.includes(c));
             for (const cookie of newCookies) {
-                cookie.thirdParty = details.thirdParty;
+                cookie.thirdParty = thirdParty;
             }
 
-            context.cookies?.push(...newCookies);
+            requestContextStorage.update(requestId, {
+                cookies: context.cookies ? [...context.cookies, ...newCookies] : newCookies,
+            });
         }
 
         // remove cookie headers
         // this method won't work in the extension build with manifest v3
-        const headersModified = this.applyRulesToCookieHeaders(details);
+        const headersModified = this.applyRulesToCookieHeaders(context);
 
         // removes cookies with browser.cookie api
-        this.applyRules(details.requestId)
+        this.applyRules(context)
             .catch((e) => {
                 logger.error((e as Error).message);
             });
@@ -216,22 +227,19 @@ export class CookieFiltering {
 
     /**
      * Applies rules
-     * @param requestId
+     * @param context
      */
-    private async applyRules(requestId: string): Promise<void> {
-        const context = requestContextStorage.get(requestId);
-        if (!context || !context.matchingResult) {
+    private async applyRules(context: RequestContext): Promise<void> {
+        const { matchingResult, cookies, tabId } = context;
+
+        if (!matchingResult || !cookies) {
             return;
         }
 
-        const cookieRules = context.matchingResult.getCookieRules();
-        const { cookies } = context;
-        if (!cookies) {
-            return;
-        }
+        const cookieRules = matchingResult.getCookieRules();
 
         const promises = cookies.map(async (cookie) => {
-            await this.applyRulesToCookie(cookie, cookieRules, context!.tabId);
+            await this.applyRulesToCookie(cookie, cookieRules, tabId);
         });
 
         await Promise.all(promises);

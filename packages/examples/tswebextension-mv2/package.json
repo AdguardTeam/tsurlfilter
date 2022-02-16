@@ -5,7 +5,7 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "yarn build:chrome && yarn tswebextension war",
+    "build": "yarn build:chrome",
     "build:chrome": "node -r esbuild-register ./scripts/build/index.ts",
     "build:ff": "BROWSER=firefox node -r esbuild-register ./scripts/build/index.ts",
     "run:ff": "node -r esbuild-register ./scripts/launchFirefoxExtension.ts",

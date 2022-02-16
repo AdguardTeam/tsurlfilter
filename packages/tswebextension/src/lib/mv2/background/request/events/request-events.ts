@@ -49,11 +49,12 @@ if (isChrome) {
 export const onBeforeSendHeaders = new RequestEvent(
     browser.webRequest.onBeforeSendHeaders as OnBeforeSendHeaders,
     (details) => {
-        const { requestId, timeStamp } = details;
+        const { requestId, timeStamp, requestHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.BEFORE_SEND_HEADERS,
             timestamp: timeStamp,
+            requestHeaders,
         });
 
         return { details, context };

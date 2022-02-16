@@ -33,6 +33,7 @@ export type RequestContext = {
     contentType?: ContentType;
     requestFrameId?: number;
     thirdParty?: boolean;
+    requestHeaders?: WebRequest.HttpHeaders;
     responseHeaders?: WebRequest.HttpHeaders;
     method?: string;
 

@@ -12,8 +12,6 @@ import { FrameRequestService } from '@lib/mv2/background/services/frame-request-
 
 import { MockFilteringLog } from '../../../../common/mock-filtering-log';
 
-import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
-import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
 import HttpHeaders = WebRequest.HttpHeaders;
 
 jest.mock('@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
@@ -30,16 +28,18 @@ describe('Cookie filtering', () => {
     let cookieFiltering: CookieFiltering;
     let mockFilteringLog: MockFilteringLog;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let details: any;
+    let requestId: string;
     let context: RequestContext;
 
     beforeEach(() => {
         mockFilteringLog = new MockFilteringLog();
         cookieFiltering = new CookieFiltering(mockFilteringLog);
 
+        requestId = '1';
+
         context = {
             state: RequestContextState.HEADERS_RECEIVED,
-            requestId: '1',
+            requestId,
             requestUrl: 'https://example.org',
             referrerUrl: 'https://example.org',
             requestType: RequestType.Document,
@@ -55,37 +55,20 @@ describe('Cookie filtering', () => {
             htmlRules: undefined,
             contentTypeHeader: undefined,
         };
-
-        details = {
-            frameId: 0,
-            method: 'GET',
-            parentFrameId: 0,
-            requestId: '1',
-            tabId: 0,
-            thirdParty: false,
-            timeStamp: 0,
-            type: 'main_frame',
-            url: 'https://example.org',
-        };
     });
 
     const runCase = async (rules: NetworkRule[], requestHeaders: HttpHeaders, responseHeaders?: HttpHeaders): Promise<void> => {
         context.matchingResult = new MatchingResult(rules, null);
-        requestContextStorage.record(details.requestId, context);
+        context.requestHeaders = requestHeaders;
+        context.responseHeaders = responseHeaders;
 
-        cookieFiltering.onBeforeSendHeaders({
-            requestHeaders,
-            ...details,
-        } as OnBeforeSendHeadersDetailsType);
+        requestContextStorage.record(requestId, context);
 
-        cookieFiltering.onHeadersReceived({
-            statusCode: 200,
-            statusLine: 'OK',
-            responseHeaders,
-            ...details,
-        } as OnHeadersReceivedDetailsType);
+        cookieFiltering.onBeforeSendHeaders(context);
 
-        requestContextStorage.delete(details.requestId);
+        cookieFiltering.onHeadersReceived(context);
+
+        requestContextStorage.delete(requestId);
     };
 
     it('checks empty', async () => {
@@ -216,7 +199,7 @@ describe('Cookie filtering', () => {
     });
 
     it('checks remove rule - third-party cases', async () => {
-        details.thirdParty = true;
+        context.thirdParty = true;
 
         const thirdPartyCookieRule = new NetworkRule('||example.org^$third-party,cookie=third_party_user', 1);
         const rules = [
@@ -260,7 +243,7 @@ describe('Cookie filtering', () => {
         tabsApi.recordRequestFrame(0, 0, 'https://example.org', RequestType.Document);
 
         context.matchingResult = new MatchingResult(rules, null);
-        requestContextStorage.record(details.requestId, context);
+        requestContextStorage.record(requestId, context);
 
         let result = cookieFiltering.getBlockingRules('https://example.org', 0, 0);
         expect(result).toHaveLength(2);
@@ -268,7 +251,7 @@ describe('Cookie filtering', () => {
         result = cookieFiltering.getBlockingRules('https://another.org', 0, 0);
         expect(result).toHaveLength(0);
 
-        requestContextStorage.delete(details.requestId);
+        requestContextStorage.delete(requestId);
 
         FrameRequestService.stop();
         tabsApi.stop();
@@ -278,39 +261,25 @@ describe('Cookie filtering', () => {
         const rules: NetworkRule[] = [];
 
         context.matchingResult = new MatchingResult(rules, null);
-        requestContextStorage.record(details.requestId, context);
+        requestContextStorage.record(requestId, context);
 
-        cookieFiltering.onBeforeSendHeaders({
-            requestHeaders: undefined,
-            ...details,
-        } as OnBeforeSendHeadersDetailsType);
+        cookieFiltering.onBeforeSendHeaders(context);
 
-        cookieFiltering.onHeadersReceived({
-            statusCode: 200,
-            statusLine: 'OK',
-            ...details,
-        } as OnHeadersReceivedDetailsType);
+        cookieFiltering.onHeadersReceived(context);
 
         expect(mockFilteringLog.addCookieEvent).not.toHaveBeenCalled();
 
-        requestContextStorage.delete(details.requestId);
+        requestContextStorage.delete(requestId);
 
-        details.requestId += 1;
-        requestContextStorage.record(details.requestId, context);
+        requestId += 1;
+        requestContextStorage.record(requestId, context);
 
-        cookieFiltering.onBeforeSendHeaders({
-            requestHeaders: [],
-            ...details,
-        } as OnBeforeSendHeadersDetailsType);
+        cookieFiltering.onBeforeSendHeaders(context);
 
-        cookieFiltering.onHeadersReceived({
-            statusCode: 200,
-            statusLine: 'OK',
-            ...details,
-        } as OnHeadersReceivedDetailsType);
+        cookieFiltering.onHeadersReceived(context);
 
         expect(mockFilteringLog.addCookieEvent).not.toHaveBeenCalled();
 
-        requestContextStorage.delete(details.requestId);
+        requestContextStorage.delete(requestId);
     });
 });

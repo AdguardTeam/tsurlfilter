@@ -2,7 +2,7 @@ import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
 import { FilteringLog, defaultFilteringLog } from '../../../common';
 import { removeHeader } from '../utils/headers';
-import { RequestData } from '../request/events/request-event';
+import { RequestContext, requestContextStorage } from '../request';
 
 /**
  * Headers filtering service module
@@ -23,74 +23,98 @@ export class HeadersService {
      * On before send headers handler.
      * Removes request headers.
      *
-     * @param data request data
+     * @param context request context
      * @return if headers modified
      */
-    public onBeforeSendHeaders(data: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): boolean {
-        if (!data.details.requestHeaders) {
+    public onBeforeSendHeaders(context: RequestContext): boolean {
+        const {
+            requestHeaders,
+            matchingResult,
+            tabId,
+            requestUrl,
+            requestId,
+        } = context;
+
+        if (!requestHeaders
+            || !matchingResult
+            || !requestUrl
+        ) {
             return false;
         }
 
-        if (!data.context?.matchingResult) {
-            return false;
-        }
+        const rules = matchingResult.getRemoveHeaderRules();
 
-        const rules = data.context.matchingResult.getRemoveHeaderRules();
         if (rules.length === 0) {
             return false;
         }
 
-        let result = false;
+        let isModified = false;
         rules.forEach((rule) => {
-            if (HeadersService.applyRule(data.details.requestHeaders!, rule, true)) {
-                result = true;
+            if (HeadersService.applyRule(requestHeaders, rule, true)) {
+                isModified = true;
                 this.filteringLog.addRemoveHeaderEvent({
-                    tabId: data.details.tabId,
-                    frameUrl: data.details.url,
+                    tabId,
+                    frameUrl: requestUrl,
                     headerName: rule.getAdvancedModifierValue()!,
                     rule,
                 });
             }
         });
 
-        return result;
+        if (isModified) {
+            requestContextStorage.update(requestId, { requestHeaders });
+        }
+
+        return isModified;
     }
 
     /**
      * On headers received handler.
      * Remove response headers.
      *
-     * @param data request data
+     * @param context request context
      * @return if headers modified
      */
-    public onHeadersReceived(data: RequestData<WebRequest.OnHeadersReceivedDetailsType>): boolean {
-        if (!data.details.responseHeaders) {
+    public onHeadersReceived(context: RequestContext): boolean {
+        const {
+            responseHeaders,
+            matchingResult,
+            tabId,
+            requestUrl,
+            requestId,
+        } = context;
+
+        if (!responseHeaders
+            || !matchingResult
+            || !requestUrl
+        ) {
             return false;
         }
 
-        if (!data.context?.matchingResult) {
-            return false;
-        }
-
-        const rules = data.context.matchingResult.getRemoveHeaderRules();
+        const rules = matchingResult.getRemoveHeaderRules();
         if (rules.length === 0) {
             return false;
         }
 
-        let result = false;
+        let isModified = false;
+
         rules.forEach((rule) => {
-            if (HeadersService.applyRule(data.details.responseHeaders!, rule, false)) {
-                result = true;
+            if (HeadersService.applyRule(responseHeaders, rule, false)) {
+                isModified = true;
                 this.filteringLog.addRemoveHeaderEvent({
-                    tabId: data.details.tabId,
-                    frameUrl: data.details.url,
+                    tabId,
+                    frameUrl: requestUrl,
                     headerName: rule.getAdvancedModifierValue()!,
                     rule,
                 });
             }
         });
 
-        return result;
+        if (isModified) {
+            requestContextStorage.update(requestId, { responseHeaders });
+        }
+
+        return isModified;
     }
 
     /**

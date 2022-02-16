@@ -1,27 +1,11 @@
-import { WebRequest } from 'webextension-polyfill';
-import { HeadersService } from '@lib/mv2/background/services/headers-service';
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
-import { RequestData } from '@lib/mv2/background/request/events/request-event';
-import { ContentType } from '@lib/mv2/background/request';
+import { HeadersService } from '@lib/mv2/background/services/headers-service';
+import { ContentType, RequestContext } from '@lib/mv2/background/request';
 import { MockFilteringLog } from '../../../common/mock-filtering-log';
-import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
-import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
 
 describe('Headers service', () => {
     const mockFilteringLog = new MockFilteringLog();
     const headersService = new HeadersService(mockFilteringLog);
-
-    const details = {
-        frameId: 0,
-        method: 'GET',
-        parentFrameId: 0,
-        requestId: '1',
-        tabId: 0,
-        thirdParty: false,
-        timeStamp: 0,
-        type: 'main_frame',
-        url: 'https://example.org',
-    };
 
     const context = {
         requestUrl: 'https://example.org',
@@ -34,30 +18,22 @@ describe('Headers service', () => {
         timestamp: Date.now(),
         thirdParty: false,
         matchingResult: new MatchingResult([], null),
+        requestHeaders: [{
+            name: 'test_name',
+            value: 'test_value',
+        }],
+        responseHeaders: [{
+            name: 'test_name',
+            value: 'test_value',
+        }],
     };
-
-    const requestHeaders = [{
-        name: 'test_name',
-        value: 'test_value',
-    }];
 
     const runOnBeforeSendHeaders = () => {
-        return headersService.onBeforeSendHeaders({
-            context,
-            details: { ...details, requestHeaders },
-        } as RequestData<OnBeforeSendHeadersDetailsType>);
+        return headersService.onBeforeSendHeaders(context as RequestContext);
     };
 
-    const responseHeaders = [{
-        name: 'test_name',
-        value: 'test_value',
-    }];
-
     const runOnHeadersReceived = () => {
-        return headersService.onHeadersReceived({
-            context,
-            details: { ...details, responseHeaders },
-        } as RequestData<OnHeadersReceivedDetailsType>);
+        return headersService.onHeadersReceived(context as RequestContext);
     };
 
     beforeEach(() => {
@@ -65,10 +41,7 @@ describe('Headers service', () => {
     });
 
     it('checks removing request headers', () => {
-        let headersModified = headersService.onBeforeSendHeaders({
-            context,
-            details: { ...details },
-        } as RequestData<OnBeforeSendHeadersDetailsType>);
+        let headersModified = headersService.onBeforeSendHeaders(context as RequestContext);
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
 
@@ -99,10 +72,7 @@ describe('Headers service', () => {
     });
 
     it('checks removing response headers', () => {
-        let headersModified = headersService.onHeadersReceived({
-            context,
-            details: { ...details },
-        } as RequestData<OnHeadersReceivedDetailsType>);
+        let headersModified = headersService.onHeadersReceived(context as RequestContext);
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
 
