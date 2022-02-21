@@ -2,131 +2,133 @@
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-DomainType
  */
 export enum DomainType {
-    'firstParty' = 'firstParty',
-    'thirdParty' = 'thirdParty',
+    FIRST_PARTY = 'firstParty',
+    THIRD_PARTY = 'thirdParty',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
  */
 export enum ResourceType {
-    'main_frame' = 'main_frame',
-    'sub_frame' = 'sub_frame',
-    'stylesheet' = 'stylesheet',
-    'script' = 'script',
-    'image' = 'image',
-    'font' = 'font',
-    'object' = 'object',
-    'xmlhttprequest' = 'xmlhttprequest',
-    'ping' = 'ping',
-    'csp_report' = 'csp_report',
-    'media' = 'media',
-    'websocket' = 'websocket',
-    'webrtc' = 'webrtc',
-    'other' = 'other',
+    MAIN_FRAME = 'main_frame',
+    SUB_FRAME = 'sub_frame',
+    STYLESHEET = 'stylesheet',
+    SCRIPT = 'script',
+    IMAGE = 'image',
+    FONT = 'font',
+    OBJECT = 'object',
+    XMLHTTPREQUEST = 'xmlhttprequest',
+    PING = 'ping',
+    CSP_REPORT = 'csp_report',
+    MEDIA = 'media',
+    WEBSOCKET = 'websocket',
+    OTHER = 'other',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryKeyValue
  */
-export type QueryKeyValue = {
+export interface QueryKeyValue {
     key: string;
     value: string;
-};
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform
  */
-export type QueryTransform = {
-    addOrReplaceParams?: QueryKeyValue[];
-    removeParams?: string[];
-};
+export interface QueryTransform {
+    addOrReplaceParams?: QueryKeyValue[] | undefined;
+    removeParams?: string[] | undefined;
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-URLTransform
  */
-export type URLTransform = {
-    fragment?: string;
-    host?: string;
-    password?: string;
-    path?: string;
-    port?: string;
-    query?: string;
-    queryTransform?: QueryTransform;
-    scheme?: string;
-    username?: string;
-};
+export interface URLTransform {
+    fragment?: string | undefined;
+    host?: string | undefined;
+    password?: string | undefined;
+    path?: string | undefined;
+    port?: string | undefined;
+    query?: string | undefined;
+    queryTransform?: QueryTransform | undefined;
+    scheme?: string | undefined;
+    username?: string | undefined;
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-Redirect
  */
-export type Redirect = {
-    extensionPath?: string;
-    regexSubstitution?: string;
-    transform?: URLTransform;
-    url?: string;
-};
+export interface Redirect {
+    extensionPath?: string | undefined;
+    regexSubstitution?: string | undefined;
+    transform?: URLTransform | undefined;
+    url?: string | undefined;
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-HeaderOperation
  */
 export enum HeaderOperation {
-    append = 'append',
-    set = 'set',
-    remove = 'remove',
+    APPEND = 'append',
+    SET = 'set',
+    REMOVE = 'remove',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ModifyHeaderInfo
  */
-export type ModifyHeaderInfo = {
+export interface ModifyHeaderInfo {
     header: string;
     operation: HeaderOperation;
-    value?: string;
-};
+    value?: string | undefined;
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleActionType
  */
 export enum RuleActionType {
-    'block' = 'block',
-    'redirect' = 'redirect',
-    'allow' = 'allow',
-    'upgradeScheme' = 'upgradeScheme',
-    'modifyHeaders' = 'modifyHeaders',
-    'allowAllRequests' = 'allowAllRequests',
+    BLOCK = 'block',
+    REDIRECT = 'redirect',
+    ALLOW = 'allow',
+    UPGRADE_SCHEME = 'upgradeScheme',
+    MODIFY_HEADERS = 'modifyHeaders',
+    ALLOW_ALL_REQUESTS = 'allowAllRequests',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleAction
  */
-export type RuleAction = {
-    redirect?: Redirect;
-    requestHeaders?: ModifyHeaderInfo[];
-    responseHeaders?: ModifyHeaderInfo[];
+export interface RuleAction {
+    redirect?: Redirect | undefined;
+    requestHeaders?: ModifyHeaderInfo[] | undefined;
+    responseHeaders?: ModifyHeaderInfo[] | undefined;
     type: RuleActionType;
-};
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleCondition
  */
-export type RuleCondition = {
-    domainType?: DomainType;
-    domains?: string[];
-    excludedDomains?: string[];
-    excludedResourceTypes?: ResourceType[];
-    isUrlFilterCaseSensitive?: boolean;
-    regexFilter?: string;
-    resourceTypes?: ResourceType[];
-    urlFilter?: string;
-};
+export interface RuleCondition {
+    domainType?: DomainType | undefined;
+    domains?: string[] | undefined;
+    excludedDomains?: string[] | undefined;
+    excludedResourceTypes?: ResourceType[] | undefined;
+    isUrlFilterCaseSensitive?: boolean | undefined;
+    regexFilter?: string | undefined;
+    resourceTypes?: ResourceType[] | undefined;
+    urlFilter?: string | undefined;
+}
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-Rule
  */
-export type DeclarativeRule = {
-    id: number;
-    priority?: number;
+
+export interface DeclarativeRule {
     action: RuleAction;
     condition: RuleCondition;
-};
+    id: number;
+    // In chrome.declarativeNetRequest.Rule priority is not optional, although in the documentation it is.
+    // TODO fix when it will correct.
+    priority: number;
+}

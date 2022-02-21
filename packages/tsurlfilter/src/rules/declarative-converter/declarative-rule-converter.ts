@@ -16,20 +16,19 @@ import {
  * Map request types to declarative types
  */
 const DECLARATIVE_RESOURCE_TYPES_MAP = {
-    [ResourceType.main_frame]: RequestType.Document,
-    [ResourceType.sub_frame]: RequestType.Subdocument,
-    [ResourceType.stylesheet]: RequestType.Stylesheet,
-    [ResourceType.script]: RequestType.Script,
-    [ResourceType.image]: RequestType.Image,
-    [ResourceType.font]: RequestType.Font,
-    [ResourceType.object]: RequestType.Object,
-    [ResourceType.xmlhttprequest]: RequestType.XmlHttpRequest,
-    [ResourceType.ping]: RequestType.Ping,
-    // [ResourceType.csp_report]: RequestType.Document, // TODO what should match this resource type?
-    [ResourceType.media]: RequestType.Media,
-    [ResourceType.websocket]: RequestType.Websocket,
-    [ResourceType.webrtc]: RequestType.Webrtc,
-    [ResourceType.other]: RequestType.Other,
+    [ResourceType.MAIN_FRAME]: RequestType.Document,
+    [ResourceType.SUB_FRAME]: RequestType.Subdocument,
+    [ResourceType.STYLESHEET]: RequestType.Stylesheet,
+    [ResourceType.SCRIPT]: RequestType.Script,
+    [ResourceType.IMAGE]: RequestType.Image,
+    [ResourceType.FONT]: RequestType.Font,
+    [ResourceType.OBJECT]: RequestType.Object,
+    [ResourceType.XMLHTTPREQUEST]: RequestType.XmlHttpRequest,
+    [ResourceType.PING]: RequestType.Ping,
+    // [ResourceType.CSP_REPORT]: RequestType.Document, // TODO what should match this resource type?
+    [ResourceType.MEDIA]: RequestType.Media,
+    [ResourceType.WEBSOCKET]: RequestType.Websocket,
+    [ResourceType.OTHER]: RequestType.Other,
 };
 
 /**
@@ -58,7 +57,7 @@ export class DeclarativeRuleConverter {
         return Object.entries(DECLARATIVE_RESOURCE_TYPES_MAP)
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .filter(([, requestType]) => (requestTypes & requestType) === requestType)
-            .map(([resourceTypeKey]) => ResourceType[resourceTypeKey as ResourceType]);
+            .map(([resourceTypeKey]) => resourceTypeKey) as ResourceType[];
     }
 
     private static isASCII(str: string) {
@@ -135,9 +134,9 @@ export class DeclarativeRuleConverter {
         //  - 'allowAllRequests' = 'allowAllRequests',
 
         if (rule.isAllowlist()) {
-            action.type = RuleActionType.allow;
+            action.type = RuleActionType.ALLOW;
         } else {
-            action.type = RuleActionType.block;
+            action.type = RuleActionType.BLOCK;
         }
 
         return action;
@@ -168,9 +167,9 @@ export class DeclarativeRuleConverter {
 
         // set domainType
         if (rule.isOptionEnabled(NetworkRuleOption.ThirdParty)) {
-            condition.domainType = DomainType.thirdParty;
+            condition.domainType = DomainType.THIRD_PARTY;
         } else if (rule.isOptionDisabled(NetworkRuleOption.ThirdParty)) {
-            condition.domainType = DomainType.firstParty;
+            condition.domainType = DomainType.FIRST_PARTY;
         }
 
         // set domains
@@ -230,8 +229,8 @@ export class DeclarativeRuleConverter {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         // https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
-        if (resourceTypes?.includes(ResourceType.webrtc)) {
-            logger.info(`Error: WebRTC resource type is not supported in Manifest V3: "${rule.getText()}"`);
+        if (resourceTypes?.length === 0) {
+            logger.info(`Error: resourceTypes cannot be empty: "${rule.getText()}"`);
             return null;
         }
 
