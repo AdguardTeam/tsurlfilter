@@ -14,11 +14,11 @@ import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 import {
-    NETWORK_RULE_OPTIONS,
-    OPTIONS_DELIMITER,
-    MASK_ALLOWLIST,
-    NOT_MARK,
     ESCAPE_CHARACTER,
+    MASK_ALLOWLIST,
+    NETWORK_RULE_OPTIONS,
+    NOT_MARK,
+    OPTIONS_DELIMITER,
 } from './network-rule-options';
 import { RequestType } from '../request-type';
 import { ClientModifier } from '../modifiers/dns/client-modifier';
@@ -411,27 +411,8 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (!this.matchDomain(request.sourceHostname || '')) {
-            /**
-             * We make an exception for HTML documents and also check $domain against the request URL hostname.
-             * We do this in order to simplify creating rules like this: $cookie,domain=example.org|example.com
-             * as otherwise, you'd need to create an additional rule for each of these domains.
-             */
-            if (request.requestType !== RequestType.Document && request.requestType !== RequestType.Subdocument) {
-                return false;
-            }
-
-            /**
-             * Skipping patterns with domain specified
-             * https://github.com/AdguardTeam/CoreLibs/issues/1354#issuecomment-704226271
-             */
-            if (this.pattern.isPatternDomainSpecific()) {
-                return false;
-            }
-
-            if (!this.matchDomain(request.hostname || '')) {
-                return false;
-            }
+        if (!this.matchDomainModifier(request)) {
+            return false;
         }
 
         if (this.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
@@ -472,10 +453,6 @@ export class NetworkRule implements rule.IRule {
      * @param domain - domain to check.
      */
     private matchDomain(domain: string): boolean {
-        if (!this.permittedDomains && !this.restrictedDomains) {
-            return true;
-        }
-
         if (this.hasRestrictedDomains()) {
             if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains!)) {
                 // Domain or host is restricted
@@ -493,6 +470,47 @@ export class NetworkRule implements rule.IRule {
         }
 
         return true;
+    }
+
+    /**
+     * Check if request matches domain modifier by request referrer (general case) or by request target
+     *
+     * In some cases the $domain modifier can match not only the referrer domain, but also the target domain.
+     * This happens when the following is true (1 AND ((2 AND 3) OR 4):
+     *
+     * 1) The request has document type
+     * 2) The rule's pattern doesn't match any particular domain(s)
+     * 3) The rule's pattern doesn't contain regular expressions
+     * 4) The $domain modifier contains only excluded domains (e.g., $domain=~example.org|~example.com)
+     *
+     * When all these conditions are met, the domain modifier will match both the referrer domain and the target domain.
+     * https://github.com/AdguardTeam/tsurlfilter/issues/45
+     * @param request
+     */
+    matchDomainModifier(request: Request): boolean {
+        if (!this.permittedDomains && !this.restrictedDomains) {
+            return true;
+        }
+
+        const isDocumentType = request.requestType === RequestType.Document
+            || request.requestType === RequestType.Subdocument;
+
+        const hasOnlyExcludedDomains = (!this.permittedDomains || this.permittedDomains.length === 0)
+            && this.restrictedDomains
+            && this.restrictedDomains.length > 0;
+
+        const patternIsRegex = this.isRegexRule();
+        const patternIsDomainSpecific = this.pattern.isPatternDomainSpecific();
+
+        const matchesTargetByPatternCondition = !patternIsRegex && !patternIsDomainSpecific;
+
+        if (isDocumentType && (hasOnlyExcludedDomains || matchesTargetByPatternCondition)) {
+            // check if matches source hostname if exists or if matches target hostname
+            return (request.sourceHostname && this.matchDomain(request.sourceHostname))
+                || this.matchDomain(request.hostname);
+        }
+
+        return this.matchDomain(request.sourceHostname || '');
     }
 
     /**
