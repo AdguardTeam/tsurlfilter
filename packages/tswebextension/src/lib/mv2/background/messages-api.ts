@@ -20,15 +20,16 @@ import {
 } from '../../common';
 
 export interface MessagesApiInterface {
-    start: () => void;
-    stop: () => void;
     sendMessage: (tabId: number, message: unknown) => void;
+    handleMessage: (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
     addAssistantCreateRuleListener: (listener: (ruleText: string) => void) => void;
 }
 // TODO: add long live connection
+// TODO: CollectHitStats
 export class MessagesApi implements MessagesApiInterface {
     filteringLog: FilteringLog;
 
+    // TODO: use IoC container?
     /**
      * Assistant event listener
      */
@@ -37,14 +38,6 @@ export class MessagesApi implements MessagesApiInterface {
     constructor(filteringLog: FilteringLog) {
         this.filteringLog = filteringLog;
         this.handleMessage = this.handleMessage.bind(this);
-    }
-
-    public start(): void {
-        browser.runtime.onMessage.addListener(this.handleMessage);
-    }
-
-    public stop(): void {
-        browser.runtime.onMessage.removeListener(this.handleMessage);
     }
 
     public sendMessage(tabId: number, message: unknown) {
@@ -60,7 +53,7 @@ export class MessagesApi implements MessagesApiInterface {
         this.onAssistantCreateRuleListener = listener;
     }
 
-    private async handleMessage(message: Message, sender: Runtime.MessageSender) {
+    public async handleMessage(message: Message, sender: Runtime.MessageSender) {
         try {
             message = messageValidator.parse(message);
         } catch (e) {

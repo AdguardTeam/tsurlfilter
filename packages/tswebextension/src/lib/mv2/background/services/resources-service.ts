@@ -1,8 +1,7 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 
 export interface ResourcesServiceInterface {
-    start: (warDir?: string) => void;
-    stop: () => void;
+    init: (warDir: string) => void;
 
     createResourceUrl: (path: string) => string;
     loadResource: (path: string) => Promise<string>;
@@ -21,26 +20,22 @@ export class ResourcesService implements ResourcesServiceInterface {
 
     private lastSecretTime = 0;
 
-    /**
-     * Resources directory
-     */
     private warDir: string | undefined;
 
     constructor() {
         this.guardWar = this.guardWar.bind(this);
     }
 
-    public start(warDir?: string): void {
-        if (warDir) {
-            this.warDir = warDir;
-            this.initGuard();
-        }
-    }
+    public init(warDir: string): void {
+        this.warDir = warDir;
 
-    public stop(): void {
-        browser.webRequest.onBeforeRequest.removeListener(this.guardWar);
+        const filter: WebRequest.RequestFilter = {
+            urls: [`${this.root}${this.warDir}/*`],
+        };
 
-        delete this.warDir;
+        const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
+
+        browser.webRequest.onBeforeRequest.addListener(this.guardWar, filter, extraInfoSpec);
     }
 
     /**
@@ -48,7 +43,7 @@ export class ResourcesService implements ResourcesServiceInterface {
      */
     public createResourceUrl(path: string): string {
         if (!this.warDir) {
-            throw new Error('Resources path is not defined');
+            throw new Error('Resources path is not defined. Did you init the service?');
         }
 
         return browser.runtime.getURL(`/${this.warDir}/${path}${this.createSecretParam()}`);
@@ -63,11 +58,6 @@ export class ResourcesService implements ResourcesServiceInterface {
         return response.text();
     }
 
-    // eslint-disable-next-line class-methods-use-this
-    private generateSecretKey(): string {
-        return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
-    }
-
     private createSecretParam(): string {
         if (this.secrets.length !== 0) {
             if ((Date.now() - this.lastSecretTime) > 5000) {
@@ -77,7 +67,7 @@ export class ResourcesService implements ResourcesServiceInterface {
             }
         }
         this.lastSecretTime = Date.now();
-        const secret = this.generateSecretKey();
+        const secret = ResourcesService.generateSecretKey();
         this.secrets.push(secret);
         return `?secret=${secret}`;
     }
@@ -92,14 +82,8 @@ export class ResourcesService implements ResourcesServiceInterface {
         this.secrets.splice(pos, 1);
     }
 
-    private initGuard() {
-        const filter: WebRequest.RequestFilter = {
-            urls: [`${this.root}${this.warDir}/*`],
-        };
-
-        const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
-
-        browser.webRequest.onBeforeRequest.addListener(this.guardWar, filter, extraInfoSpec);
+    private static generateSecretKey(): string {
+        return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
     }
 }
 

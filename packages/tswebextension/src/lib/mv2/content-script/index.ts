@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
-import browser from 'webextension-polyfill';
 import ExtendedCss, { IAffectedElement } from 'extended-css';
 import { CssHitsCounter } from './css-hits-counter';
 import { ElementCollapser } from './element-collapser';
 import { MessageType } from '../../common';
 import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
+import { sendAppMessage } from './sendAppMessage';
 
 export * from '../../common/stealth-helper';
 export * from './cookie-controller';
@@ -39,7 +39,7 @@ const applyExtendedCss = (cssText: string) => {
 };
 
 (async () => {
-    const res = await browser.runtime.sendMessage({
+    const res = await sendAppMessage({
         type: MessageType.GET_EXTENDED_CSS,
         payload: {
             documentUrl: window.location.href,
@@ -66,7 +66,7 @@ const applyExtendedCss = (cssText: string) => {
  * for each frame.
  */
 (async () => {
-    const response = await browser.runtime.sendMessage({
+    const response = await sendAppMessage({
         type: MessageType.GET_COOKIE_RULES,
         payload: {
             documentUrl: window.location.href,
@@ -83,9 +83,9 @@ const applyExtendedCss = (cssText: string) => {
                 ({
                     cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId,
                 }) => {
-                    browser.runtime.sendMessage({
+                    sendAppMessage({
                         type: MessageType.SAVE_COOKIE_LOG_EVENT,
-                        data: {
+                        payload: {
                             cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId,
                         },
                     });

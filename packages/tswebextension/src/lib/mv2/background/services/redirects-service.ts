@@ -3,6 +3,7 @@ import { redirects, Redirect } from '@adguard/scriptlets';
 import { resourcesService } from './resources-service';
 
 // TODO: Update Redirect export
+// TODO: click to load
 const { Redirects } = redirects as any;
 export interface RedirectsServiceInterface {
     start: () => void;

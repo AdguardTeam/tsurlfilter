@@ -69,4 +69,9 @@ export interface AppInterface {
      * Returns current status for site
      */
     getSiteStatus(url: string): SiteStatus,
+
+    /**
+     * Returns number of active rules
+     */
+    getRulesCount(): number,
 }

@@ -1,5 +1,5 @@
 import browser, { Events } from 'webextension-polyfill';
-import { TsWebExtension, Configuration } from '@adguard/tswebextension';
+import { TsWebExtension, Configuration, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 
 import { MessageTypes } from '../common/message-types';
 
@@ -43,7 +43,13 @@ tsWebExtension.start(defaultConfig);
 
 tsWebExtension.onFilteringLogEvent.subscribe(console.log);
 
-(browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, _sender, sendResponse) => {
+const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
+
+(browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, sender, sendResponse) => {
+    if (message.handlerName === MESSAGE_HANDLER_NAME) {
+        return tsWebExtensionMessageHandler(message, sender);
+    }
+
     switch (message.type) {
         case MessageTypes.GET_CONFIG: {
             const config = tsWebExtension.configuration;

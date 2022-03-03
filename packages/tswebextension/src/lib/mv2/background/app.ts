@@ -17,7 +17,11 @@ import {
     Configuration,
 } from '../../common';
 
-export class TsWebExtension implements AppInterface {
+export interface ManifestV2AppInterface extends AppInterface {
+    getMessageHandler: () => typeof messagesApi.handleMessage
+}
+
+export class TsWebExtension implements ManifestV2AppInterface {
     public isStarted = false;
 
     public configuration: Configuration | undefined;
@@ -25,41 +29,32 @@ export class TsWebExtension implements AppInterface {
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
     /**
-     * Web accessible resources path in the result bundle
-     */
-    private readonly webAccessibleResourcesPath: string | undefined;
-
-    /**
      * Constructor
      *
-     * @param webAccessibleResourcesPath optional
+     * @param webAccessibleResourcesPath
      */
-    constructor(webAccessibleResourcesPath?: string) {
-        this.webAccessibleResourcesPath = webAccessibleResourcesPath;
+    constructor(webAccessibleResourcesPath: string) {
+        resourcesService.init(webAccessibleResourcesPath);
     }
 
     public async start(configuration: Configuration): Promise<void> {
         configurationValidator.parse(configuration);
 
-        resourcesService.start(this.webAccessibleResourcesPath);
         await redirectsService.start();
         await tabsApi.start();
         FrameRequestService.start();
         await engineApi.startEngine(configuration);
         await stealthApi.start(configuration);
         WebRequestApi.start();
-        messagesApi.start();
 
         this.isStarted = true;
         this.configuration = configuration;
     }
 
     public async stop(): Promise<void> {
-        messagesApi.stop();
         WebRequestApi.stop();
         FrameRequestService.stop();
         tabsApi.stop();
-        resourcesService.stop();
         stealthApi.stop();
         this.isStarted = false;
     }
@@ -96,6 +91,14 @@ export class TsWebExtension implements AppInterface {
 
     public getSiteStatus(url: string): SiteStatus {
         return SiteStatus.FilteringEnabled;
+    }
+
+    public getRulesCount(): number {
+        return engineApi.getRulesCount();
+    }
+
+    public getMessageHandler() {
+        return messagesApi.handleMessage;
     }
 
     /**

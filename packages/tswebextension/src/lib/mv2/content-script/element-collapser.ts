@@ -1,6 +1,6 @@
-import browser from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
-import { MessageType, Message, ProcessShouldCollapsePayload } from '../../common';
+import { ProcessShouldCollapsePayload, MessageType } from '../../common';
+import { sendAppMessage } from './sendAppMessage';
 
 type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 
@@ -18,10 +18,6 @@ export class ElementCollapser {
         document.removeEventListener('error', ElementCollapser.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
         document.removeEventListener('load', ElementCollapser.shouldCollapseElement, true);
-    }
-
-    private static async sendMessage(message: Message) {
-        return browser.runtime.sendMessage(message);
     }
 
     private static getRequestTypeByInitiatorTagName(tagName: string): RequestType | null {
@@ -112,7 +108,7 @@ export class ElementCollapser {
             requestType,
         } as ProcessShouldCollapsePayload;
 
-        const shouldCollapse = await ElementCollapser.sendMessage({
+        const shouldCollapse = await sendAppMessage({
             type: MessageType.PROCESS_SHOULD_COLLAPSE,
             payload,
         });

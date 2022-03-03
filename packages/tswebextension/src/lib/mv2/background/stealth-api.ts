@@ -14,6 +14,7 @@ import {
     Configuration,
 } from '../../common';
 
+// TODO: Privacy permission for block webrtc stealth setting
 /**
  * Stealth api
  */

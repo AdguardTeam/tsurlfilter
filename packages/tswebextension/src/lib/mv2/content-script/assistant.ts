@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill';
 import { adguardAssistant, Assistant } from '@adguard/assistant';
 import { MessageType } from '../../common';
+import { sendAppMessage } from './sendAppMessage';
 
 /**
  * Initializes assistant object
@@ -22,7 +23,7 @@ export const initAssistant = () => {
                 }
 
                 assistant.start(null, (rules) => {
-                    browser.runtime.sendMessage({
+                    sendAppMessage({
                         type: MessageType.ASSISTANT_CREATE_RULE,
                         payload: { ruleText: rules },
                     });

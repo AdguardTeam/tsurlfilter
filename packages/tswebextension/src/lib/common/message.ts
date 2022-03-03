@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { RequestType } from '@adguard/tsurlfilter';
 
+export const MESSAGE_HANDLER_NAME = 'tsWebExtension' as const;
+
 export enum MessageType {
     PROCESS_SHOULD_COLLAPSE = 'PROCESS_SHOULD_COLLAPSE',
     GET_EXTENDED_CSS = 'GET_EXTENDED_CSS',
@@ -12,6 +14,7 @@ export enum MessageType {
 }
 
 export const messageValidator = z.object({
+    handlerName: z.literal(MESSAGE_HANDLER_NAME),
     type: z.nativeEnum(MessageType),
     payload: z.unknown(),
 }).strict();

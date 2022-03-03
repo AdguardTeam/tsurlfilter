@@ -10,7 +10,8 @@ Table of content:
   - [Usage](#usage)
   - [Api](#api)
     - [CLI Api](#cli-api)
-    - [Background Api](#background-api)
+    - [Background common Api](#background-common-api)
+    - [Background manifest v2 Api](#background-manifest-v2-api)
     - [Configuration](#configuration)
   - [Development](#development)
 
@@ -33,10 +34,24 @@ You can find examples in `packages/examples/tswebextension-*`
 
 **Note:**
  
-Before running compiled app, load the web accessible resources for redirect rules via built-in cli
+Before running compiled app, load the web accessible resources for redirect rules
+
+via built-in cli:
 
 ```sh
  tswebextension war [path]
+```
+
+or intergrate loading in your build pipeline:
+
+```ts
+import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
+
+const build = async () => {
+  ...
+  await copyWar(DEFAULT_WAR_PATH);
+  ...
+};
 ```
 
 If path is not defined, the resources will be loaded to `build/war` relative to your current working directory by default
@@ -60,12 +75,12 @@ Commands:
   help [command]  display help for command
 ```
 
-### Background Api
+### Background common Api
 
 ```ts
-// source: src/background/app.ts
+// source: src/lib/common/app.ts
 
-export interface TsWebExtensionInterface {
+export interface AppInterface {
 
     /**
      * Is app started
@@ -113,13 +128,27 @@ export interface TsWebExtensionInterface {
      * Returns current status for site
      */
     getSiteStatus(url: string): SiteStatus,
+
+    /**
+     * Returns number of active rules
+     */
+    getRulesCount(): number,
 }
 ```
 
+### Background manifest v2 Api
+
+```ts
+  // source: src/lib/mv2/background/app.ts
+
+  export interface ManifestV2AppInterface extends AppInterface {
+      getMessageHandler: () => typeof messagesApi.handleMessage
+  }
+```
 ### Configuration
 
 ```ts
-// source: src/background/configuration.ts
+// source: src/lib/common/configuration.ts
 
 type Configuration = {
     /**

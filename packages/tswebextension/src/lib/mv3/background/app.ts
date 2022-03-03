@@ -8,6 +8,7 @@ import {
     Configuration,
 } from '../../common';
 
+// TODO: implement
 export class TsWebExtensionMv3 implements AppInterface {
     public isStarted = false;
 
@@ -57,5 +58,9 @@ export class TsWebExtensionMv3 implements AppInterface {
 
     public getSiteStatus(url: string): SiteStatus {
         return SiteStatus.FilteringEnabled;
+    }
+
+    public getRulesCount(): number {
+        return 0;
     }
 }
