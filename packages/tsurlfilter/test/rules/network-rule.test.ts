@@ -582,6 +582,66 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(false);
     });
 
+    describe('$domain modifier semantics', () => {
+        it('matches target domain only if rule has excluded domains', () => {
+            let request;
+            let rule;
+
+            // rule only with excluded domains
+            rule = new NetworkRule('||example.*^$domain=~example.org|~example.com', 0);
+
+            request = new Request('https://example.org', null, RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+
+            request = new Request('https://example.com', null, RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+
+            request = new Request('https://example.eu', null, RequestType.Document);
+            expect(rule.match(request)).toBeTruthy();
+
+            // rule with permitted and excluded domains
+            rule = new NetworkRule('||example.*^$domain=example.org|~example.com', 0);
+
+            request = new Request('https://example.org', null, RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+
+            request = new Request('https://example.com', null, RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+
+            request = new Request('https://example.com', 'https://example.org', RequestType.Document);
+            expect(rule.match(request)).toBeTruthy();
+
+            request = new Request('https://example.com', 'https://example.com', RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+        });
+
+        it('matches target domain only for document type requests', () => {
+            let request;
+
+            const rule = new NetworkRule('||example.*^$domain=~example.com', 0);
+
+            request = new Request('https://example.com', null, RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+
+            request = new Request('https://example.com', null, RequestType.Script);
+            expect(rule.match(request)).toBeTruthy();
+
+            request = new Request('https://example.org', 'https://example.com', RequestType.Script);
+            expect(rule.match(request)).toBeFalsy();
+        });
+
+        it('matches target domain if pattern is not domain specific and not regex', () => {
+            let request;
+            const rule = new NetworkRule('com$domain=example.com', 0);
+
+            request = new Request('https://example.com', null, RequestType.Document);
+            expect(rule.match(request)).toBeTruthy();
+
+            request = new Request('https://example.org/com', null, RequestType.Document);
+            expect(rule.match(request)).toBeFalsy();
+        });
+    });
+
     it('works $removeparam modifier with content types logic', () => {
         let rule: NetworkRule;
         let request: Request;

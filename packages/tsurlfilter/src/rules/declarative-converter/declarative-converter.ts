@@ -14,9 +14,10 @@ export class DeclarativeConverter {
      * Converts a set of rules to declarative rules array
      *
      * @param ruleList
+     * @param maxLimit - max allowed number of rules in the list
      */
     // eslint-disable-next-line class-methods-use-this
-    public convert(ruleList: IRuleList): DeclarativeRule[] {
+    public convert(ruleList: IRuleList, maxLimit = Number.MAX_SAFE_INTEGER): DeclarativeRule[] {
         const indexedRules: IndexedRule[] = [];
         const badfilterRules: NetworkRule[] = [];
 
@@ -53,6 +54,9 @@ export class DeclarativeConverter {
 
             if (dRule) {
                 result.push(dRule);
+            }
+            if (result.length > maxLimit) {
+                throw new Error(`Maximum allowed rules count reached: ${maxLimit}`);
             }
         });
 
