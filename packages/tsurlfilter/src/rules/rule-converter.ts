@@ -154,9 +154,9 @@ export class RuleConverter {
             return scriptletRules;
         }
 
-        const abpRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
-        if (abpRedirectRule) {
-            return [abpRedirectRule];
+        const adgRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
+        if (adgRedirectRule) {
+            return [adgRedirectRule];
         }
 
         const ruleWithConvertedOptions = RuleConverter.convertOptions(converted, conversionOptions);

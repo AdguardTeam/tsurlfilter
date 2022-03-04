@@ -438,6 +438,15 @@ describe('Redirects', () => {
         expect(res[0]).toBe(exp);
     });
 
+    it('works if redirect-rule value is converted', () => {
+        const rule = '*$image,redirect-rule=1x1.gif,domain=seznamzpravy.cz';
+        const exp = '*$image,redirect-rule=1x1-transparent.gif,domain=seznamzpravy.cz';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(exp);
+    });
+
     it('works if abp rewrite is converted', () => {
         const rule = '||example.com^$script,rewrite=abp-resource:blank-js';
         const exp = '||example.com^$script,redirect=noopjs';
