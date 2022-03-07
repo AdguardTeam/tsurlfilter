@@ -41,19 +41,23 @@ Test pages:
 ## Development
 
 ```
-$ lerna bootstrap
+npm install -g lerna
+```
+
+```
+lerna bootstrap
 ```
 
 Bootstrap the packages in the current repo. Installing all their dependencies and linking any cross-dependencies.
 
 ```
-$ lerna run test
+lerna run test
 ```
 
 Runs tests in all packages.
 
 ```
-$ lerna run build
+lerna run build
 ```
 
 Builds the packages in the current repo.

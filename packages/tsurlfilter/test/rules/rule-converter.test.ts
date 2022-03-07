@@ -167,6 +167,16 @@ describe('General', () => {
         expect(result).toHaveLength(1);
         expect(result).toContain('! ya.ru#@#^responseheader(header-name)');
     });
+
+    it('keeps cosmetic rules as is', () => {
+        let ruleText = 'ferra.ru##div[data-render-state] + div[class^="jsx-"][class$=" undefined"]';
+        let result = RuleConverter.convertRule(ruleText);
+        expect(result).toEqual([ruleText]);
+
+        ruleText = 'example.org#%#var str = /[class$=" undefined"]/; console.log(str);';
+        result = RuleConverter.convertRule(ruleText);
+        expect(result).toEqual([ruleText]);
+    });
 });
 
 describe('Converts pseudo elements', () => {
