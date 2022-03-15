@@ -404,6 +404,12 @@ describe('CosmeticRule.CSS', () => {
         cssRule = new CosmeticRule(ruleText, 0);
         expect(cssRule).toBeDefined();
         expect(cssRule.getContent()).toBe(selector);
+
+        selector = 'div > :where(h1, p)';
+        ruleText = `example.org##${selector}`;
+        cssRule = new CosmeticRule(ruleText, 0);
+        expect(cssRule).toBeDefined();
+        expect(cssRule.getContent()).toBe(selector);
     });
 
     it('throws error on invalid pseudo class', () => {
