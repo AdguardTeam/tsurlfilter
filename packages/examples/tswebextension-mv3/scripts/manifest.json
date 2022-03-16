@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "TSWebExtension on Manifest-v3",
+    "author": "AdGuard Software Ltd.",
+    "version": "0.0.1",
+    "description": "An example of extension built with TSUrlFilter on Manifest-v3",
+    "permissions": [
+        "declarativeNetRequest",
+        "declarativeNetRequestFeedback",
+        "scripting",
+        "activeTab",
+        "webNavigation"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    }
+}
+

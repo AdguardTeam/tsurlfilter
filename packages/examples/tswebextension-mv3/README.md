@@ -1,9 +1,9 @@
-# TSWebExtension - Manifest v3 Sample Extension 
+# TSWebExtension - Manifest v3 Sample Extension
 
 This is a sample extension, presenting common usages of TSWebExtension library in manifest v3 extensions.
 
 ## <a id="idea"></a> Idea
-The idea is to provide an operative scheme of extension and to show some cases with manifest v3 limitations: 
+The idea is to provide an operative scheme of extension and to show some cases with manifest v3 limitations:
 
 -   Precompile rules to json [See more](#precompile)
 
@@ -20,3 +20,13 @@ Converts rules in `/extension/filters/static.txt` to a set of declarative rules 
 ```
 yarn build:precompile-rules
 ```
+
+### Build and compile rules
+```
+yarn build:precompile-rules
+```
+
+### Using filters
+After extension was installed - it will apply filters for 5 seconds.
+To test work of filters, you can go to https://example.org - and you cannot open this domain.
+After 5 seconds, all filters will be deactivated.

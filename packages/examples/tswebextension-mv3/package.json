@@ -12,7 +12,7 @@
     "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/tswebextension":  "0.0.1"
+    "@adguard/tswebextension": "0.0.1"
   },
   "devDependencies": {
     "@adguard/tsurlfilter": "^0.7.58",
@@ -21,6 +21,7 @@
     "@babel/plugin-transform-runtime": "^7.16.4",
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-typescript": "^7.16.0",
+    "axios": "^0.26.0",
     "babel-loader": "^8.2.3",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^10.0.0",

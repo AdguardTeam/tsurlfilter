@@ -11,7 +11,7 @@ import {
 import {
     FilteringLog,
     defaultFilteringLog,
-    Configuration,
+    ConfigurationMV2,
 } from '../../common';
 
 // TODO: Privacy permission for block webrtc stealth setting
@@ -19,7 +19,7 @@ import {
  * Stealth api
  */
 export interface StealthApiInterface {
-    start: (configuration: Configuration) => void;
+    start: (configuration: ConfigurationMV2) => void;
     stop: () => void;
 }
 
@@ -63,7 +63,7 @@ export class StealthApi implements StealthApiInterface {
      *
      * @param configuration
      */
-    public async start(configuration: Configuration): Promise<void> {
+    public async start(configuration: ConfigurationMV2): Promise<void> {
         this.configuration = {
             ...configuration.settings.stealth,
         } as StealthConfig;

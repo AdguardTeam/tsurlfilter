@@ -1,18 +1,19 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import merge from 'deepmerge';
 import {
-    AppInterface,
+    AppInterfaceMV3,
     SiteStatus,
     defaultFilteringLog,
-    configurationValidator,
-    Configuration,
+    configurationValidatorMV3,
+    ConfigurationMV3,
 } from '../../common';
 
 // TODO: implement
-export class TsWebExtensionMv3 implements AppInterface {
+export class TsWebExtensionMv3 implements AppInterfaceMV3 {
     public isStarted = false;
 
-    public configuration: Configuration | undefined;
+    public configuration: ConfigurationMV3 | undefined;
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
@@ -30,11 +31,28 @@ export class TsWebExtensionMv3 implements AppInterface {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
     }
 
-    public async start(configuration: Configuration): Promise<void> {
-        configurationValidator.parse(configuration);
+    public async start(configuration: ConfigurationMV3): Promise<void> {
+        configurationValidatorMV3.parse(configuration);
 
         this.isStarted = true;
-        this.configuration = configuration;
+        this.configure(configuration);
+    }
+
+    // TODO: Move to separate module
+    private async updateFiltering(
+        enableFiltersIds: number[],
+        disableFiltersIds: number[],
+    ): Promise<void> {
+        chrome.declarativeNetRequest.updateEnabledRulesets({
+            enableRulesetIds: enableFiltersIds
+                .map((filterId) => {
+                    return `ruleset_${filterId}`;
+                }),
+            disableRulesetIds: disableFiltersIds
+                .map((filterId) => {
+                    return `ruleset_${filterId}`;
+                }),
+        });
     }
 
     public async stop(): Promise<void> {
@@ -42,14 +60,21 @@ export class TsWebExtensionMv3 implements AppInterface {
     }
 
     /* TODO: merge update */
-    public async configure(configuration: Configuration): Promise<void> {
-        configurationValidator.parse(configuration);
+    public async configure(configuration: ConfigurationMV3): Promise<void> {
+        configurationValidatorMV3.parse(configuration);
 
         if (!this.isStarted) {
             throw new Error('App is not started!');
         }
 
-        this.configuration = configuration;
+        const enableFiltersIds = configuration.filters;
+        const disableFiltersIds = this.configuration
+            ? this.configuration.filters
+                .filter((f) => !enableFiltersIds.includes(f))
+            : [];
+
+        this.configuration = merge({}, configuration);
+        this.updateFiltering(enableFiltersIds, disableFiltersIds);
     }
 
     public openAssistant(tabId: number): void {}

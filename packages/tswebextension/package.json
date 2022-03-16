@@ -100,6 +100,7 @@
     "@adguard/tsurlfilter": "^0.7.37",
     "bowser": "^2.11.0",
     "commander": "^9.0.0",
+    "deepmerge": "^4.2.2",
     "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13",
     "fs-extra": "^10.0.0",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1",

@@ -13,7 +13,7 @@ import {
     RuleConverter,
 } from '@adguard/tsurlfilter';
 
-import { Configuration } from '../../common';
+import { ConfigurationMV2 } from '../../common';
 import { getHost } from './utils';
 import { stealthApi } from './stealth-api';
 
@@ -28,7 +28,7 @@ export interface MatchQuery{
 }
 
 export interface EngineApiInterface {
-    startEngine: (configuration: Configuration) => Promise<void>;
+    startEngine: (configuration: ConfigurationMV2) => Promise<void>;
 
     /**
      * Gets matching result for request.
@@ -60,7 +60,7 @@ const USER_FILTER_ID = 0;
 export class EngineApi implements EngineApiInterface {
     private engine: Engine | undefined;
 
-    public async startEngine(configuration: Configuration): Promise<void> {
+    public async startEngine(configuration: ConfigurationMV2): Promise<void> {
         const {
             filters, userrules, allowlist, verbose, settings,
         } = configuration;

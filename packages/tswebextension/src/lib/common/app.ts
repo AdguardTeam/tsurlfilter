@@ -1,4 +1,4 @@
-import { Configuration } from './configuration';
+import { ConfigurationMV2, ConfigurationMV3 } from './configuration';
 import { FilteringLogEvent } from './filtering-log';
 import { EventChannelInterface } from './utils';
 
@@ -21,17 +21,11 @@ export const enum SiteStatus {
     FilteringEnabled = 'FILTERING_ENABLED',
 }
 
-export interface AppInterface {
-
+interface AppInterface {
     /**
      * Is app started
      */
     isStarted: boolean;
-
-    /**
-     * Current Configuration object
-     */
-    configuration?: Configuration;
 
     /**
      * Fires on filtering log event
@@ -39,21 +33,9 @@ export interface AppInterface {
     onFilteringLogEvent: EventChannelInterface<FilteringLogEvent>,
 
     /**
-     * Starts api
-     * @param configuration
-     */
-    start: (configuration: Configuration) => Promise<void>;
-
-    /**
      * Stops api
      */
     stop: () => Promise<void>;
-
-    /**
-     * Updates configuration
-     * @param configuration
-     */
-    configure: (configuration: Configuration) => Promise<void>;
 
     /**
      * Launches assistant in the current tab
@@ -75,3 +57,41 @@ export interface AppInterface {
      */
     getRulesCount(): number,
 }
+
+export type AppInterfaceMV2 = AppInterface & {
+    /**
+     * Current Configuration object
+     */
+    configuration?: ConfigurationMV2;
+
+    /**
+      * Starts api
+      * @param configuration
+      */
+    start: (configuration: ConfigurationMV2) => Promise<void>;
+
+    /**
+      * Updates configuration
+      * @param configuration
+      */
+    configure: (configuration: ConfigurationMV2) => Promise<void>;
+};
+
+export type AppInterfaceMV3 = AppInterface & {
+    /**
+     * Current Configuration object
+     */
+    configuration?: ConfigurationMV3;
+
+    /**
+      * Starts api
+      * @param configuration
+      */
+    start: (configuration: ConfigurationMV3) => Promise<void>;
+
+    /**
+      * Updates configuration
+      * @param configuration
+      */
+    configure: (configuration: ConfigurationMV3) => Promise<void>;
+};

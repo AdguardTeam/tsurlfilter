@@ -1,6 +1,6 @@
 # TSWebExtension
 
-TypeScript library that wraps webextension api for tsurlfilter library. 
+TypeScript library that wraps webextension api for tsurlfilter library.
 
 Table of content:
 
@@ -33,7 +33,7 @@ You can find examples in `packages/examples/tswebextension-*`
 
 
 **Note:**
- 
+
 Before running compiled app, load the web accessible resources for redirect rules
 
 via built-in cli:
@@ -145,8 +145,8 @@ export interface AppInterface {
       getMessageHandler: () => typeof messagesApi.handleMessage
   }
 ```
-### Configuration
 
+### Configuration
 ```ts
 // source: src/lib/common/configuration.ts
 

@@ -1,0 +1,15 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||example.org",
+			"resourceTypes": [
+				"main_frame"
+			],
+			"isUrlFilterCaseSensitive": false
+		}
+	}
+]

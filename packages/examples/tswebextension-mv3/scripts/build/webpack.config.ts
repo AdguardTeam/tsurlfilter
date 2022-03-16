@@ -1,11 +1,38 @@
 import path from 'path';
+import fs from 'fs';
 import { Configuration } from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import packageJson from '../../package.json';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
-const CONTENT_SCRIPT = path.resolve(__dirname, '../../extension/pages/content-script');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
+const DECLARATIVE_FILTERS_DIR = path.resolve(__dirname, '../../extension/filters/declarative');
+
+const updateManifest = (content: Buffer) => {
+    const manifest = JSON.parse(content.toString());
+
+    manifest.version = packageJson.version;
+
+    if (fs.existsSync(DECLARATIVE_FILTERS_DIR)) {
+        const nameList = fs.readdirSync(DECLARATIVE_FILTERS_DIR);
+
+        const rules = {
+            rule_resources: nameList.map((name: string) => {
+                const rulesetIndex = name.match(/\d+/);
+                return {
+                    id: `ruleset_${rulesetIndex}`,
+                    enabled: true,
+                    path: `filters/declarative/${name}`,
+                };
+            }),
+        };
+
+        manifest.declarative_net_request = rules;
+    }
+
+    return JSON.stringify(manifest, null, 4);
+};
 
 export const config: Configuration = {
     mode: 'development',
@@ -15,7 +42,6 @@ export const config: Configuration = {
     },
     entry: {
         background: BACKGROUND_PATH,
-        'content-script': CONTENT_SCRIPT,
     },
     output: {
         path: BUILD_PATH,
@@ -42,8 +68,9 @@ export const config: Configuration = {
             patterns: [
                 {
                     context: 'extension',
-                    from: 'manifest.json',
+                    from: '../scripts/manifest.json',
                     to: 'manifest.json',
+                    transform: updateManifest,
                 },
                 {
                     context: 'extension',
