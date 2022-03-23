@@ -9,13 +9,17 @@
         "declarativeNetRequestFeedback",
         "scripting",
         "activeTab",
-        "webNavigation"
+        "webNavigation",
+        "storage"
     ],
     "host_permissions": [
         "<all_urls>"
     ],
     "background": {
         "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "pages/popup.html"
     }
 }
 

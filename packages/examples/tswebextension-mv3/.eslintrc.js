@@ -17,7 +17,13 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'airbnb-typescript/base',
     ],
-
+    settings: {
+        'import/resolver': {
+            'node': {
+                'extensions': ['.ts', '.tsx']
+            }
+        }
+    },
     rules: {
         'indent': 'off',
         '@typescript-eslint/indent': ['error', 4],
@@ -32,5 +38,13 @@ module.exports = {
         'no-constant-condition': ['error', { 'checkLoops': false }],
         '@typescript-eslint/interface-name-prefix': 'off',
         'arrow-body-style': 'off',
+        'import/extensions': [
+            'error',
+            'ignorePackages',
+            {
+                'ts': 'never',
+                'tsx': 'never'
+            }
+        ],
     },
 };

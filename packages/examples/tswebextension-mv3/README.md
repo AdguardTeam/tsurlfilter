@@ -26,7 +26,14 @@ yarn build:precompile-rules
 yarn build:precompile-rules
 ```
 
-### Using filters
-After extension was installed - it will apply filters for 5 seconds.
-To test work of filters, you can go to https://example.org - and you cannot open this domain.
-After 5 seconds, all filters will be deactivated.
+### Demo example
+1. Extension will be automatically turned on filtering after installed.
+To check work of filters - go to https://canyoublockit.com/testing/. Site will be blocked.
+
+2. Filters
+You can toggle any of filters.
+For example, you can turn off "Filter 2", go to https://canyoublockit.com/testing/ - site will open.
+
+3. Userrules
+You can apply any custom user rules, for example rule `||example.org$document`.
+Then, click "Apply" and go to https://example.org - site will be blocked.

@@ -1,12 +1,14 @@
 import path from 'path';
 import fs from 'fs';
 import { Configuration } from 'webpack';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import packageJson from '../../package.json';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
+const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');
 const DECLARATIVE_FILTERS_DIR = path.resolve(__dirname, '../../extension/filters/declarative');
 
 const updateManifest = (content: Buffer) => {
@@ -42,6 +44,7 @@ export const config: Configuration = {
     },
     entry: {
         background: BACKGROUND_PATH,
+        'pages/popup': POPUP_PATH,
     },
     output: {
         path: BUILD_PATH,
@@ -60,10 +63,20 @@ export const config: Configuration = {
                     options: { babelrc: true },
                 }],
             },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader'],
+            },
         ],
     },
     plugins: [
         new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            template: path.join(POPUP_PATH, 'index.html'),
+            filename: 'pages/popup.html',
+            chunks: ['pages/popup'],
+            cache: false,
+        }),
         new CopyWebpackPlugin({
             patterns: [
                 {

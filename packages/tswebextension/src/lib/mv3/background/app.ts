@@ -1,6 +1,10 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import merge from 'deepmerge';
+
+import FiltersApi from './filters-api';
+import UserRulesAPI from './user-rules-api';
+
 import {
     AppInterfaceMV3,
     SiteStatus,
@@ -35,28 +39,23 @@ export class TsWebExtensionMv3 implements AppInterfaceMV3 {
         configurationValidatorMV3.parse(configuration);
 
         this.isStarted = true;
-        this.configure(configuration);
-    }
-
-    // TODO: Move to separate module
-    private async updateFiltering(
-        enableFiltersIds: number[],
-        disableFiltersIds: number[],
-    ): Promise<void> {
-        chrome.declarativeNetRequest.updateEnabledRulesets({
-            enableRulesetIds: enableFiltersIds
-                .map((filterId) => {
-                    return `ruleset_${filterId}`;
-                }),
-            disableRulesetIds: disableFiltersIds
-                .map((filterId) => {
-                    return `ruleset_${filterId}`;
-                }),
-        });
+        await this.configure(configuration);
     }
 
     public async stop(): Promise<void> {
         this.isStarted = false;
+
+        const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+        const existingRulesIds = existingRules.map((rule) => rule.id);
+
+        await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: existingRulesIds });
+
+        await chrome.declarativeNetRequest.updateEnabledRulesets({
+            disableRulesetIds: this.configuration?.filters
+                .map((filterId) => {
+                    return `ruleset_${filterId}`;
+                }),
+        });
     }
 
     /* TODO: merge update */
@@ -74,7 +73,9 @@ export class TsWebExtensionMv3 implements AppInterfaceMV3 {
             : [];
 
         this.configuration = merge({}, configuration);
-        this.updateFiltering(enableFiltersIds, disableFiltersIds);
+
+        await FiltersApi.updateFiltering(enableFiltersIds, disableFiltersIds);
+        await UserRulesAPI.updateDynamicFiltering(this.configuration.userrules);
     }
 
     public openAssistant(tabId: number): void {}
