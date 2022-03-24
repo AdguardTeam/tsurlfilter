@@ -11339,9 +11339,9 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-"text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1":
-  version "0.7.0"
-  resolved "git+https://github.com/AdguardTeam/text-encoding.git#80dbd7df2b17858e8e9e2da00e9134d4ca63d8ad"
+"text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2":
+  version "0.7.2"
+  resolved "git+https://github.com/AdguardTeam/text-encoding.git#4268d6b7dc0e15f57134545ae1c8c59e9c5ced70"
 
 text-extensions@^1.0.0:
   version "1.9.0"
