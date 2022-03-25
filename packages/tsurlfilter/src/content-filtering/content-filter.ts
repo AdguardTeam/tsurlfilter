@@ -9,6 +9,7 @@ import {
     parseCharsetFromHtml,
 } from './charsets';
 import { logger } from '../utils/logger';
+import { RequestContext } from './request-context';
 
 /**
  * Content Filter class
@@ -23,9 +24,9 @@ export class ContentFilter {
     filter: StreamFilter;
 
     /**
-     * Request type
+     * Request context
      */
-    requestType: RequestType;
+    context: RequestContext;
 
     /**
      * Request charset
@@ -50,24 +51,22 @@ export class ContentFilter {
     /**
      * Result callback
      */
-    onContentCallback: (data: string) => void;
+    onContentCallback: (content: string, context: RequestContext) => void;
 
     /**
      * Constructor
      *
      * @param filter implementation
-     * @param requestId Request identifier
-     * @param requestType Request type
+     * @param context request context
      * @param onContentCallback
      */
     constructor(
         filter: StreamFilter,
-        requestId: number,
-        requestType: RequestType,
-        onContentCallback: (data: string) => void,
+        context: RequestContext,
+        onContentCallback: (data: string, context: RequestContext) => void,
     ) {
         this.filter = filter;
-        this.requestType = requestType;
+        this.context = context;
 
         this.content = '';
         this.onContentCallback = onContentCallback;
@@ -107,8 +106,8 @@ export class ContentFilter {
                      * If this.charset is undefined and requestType is DOCUMENT or SUBDOCUMENT, we try
                      * to detect charset from page <meta> tags
                      */
-                    if (this.requestType === RequestType.Subdocument
-                        || this.requestType === RequestType.Document) {
+                    if (this.context.engineRequestType === RequestType.Subdocument
+                        || this.context.engineRequestType  === RequestType.Document) {
                         charset = ContentFilter.parseCharset(event.data);
                     }
 
@@ -136,7 +135,7 @@ export class ContentFilter {
 
         this.filter.onstop = (): void => {
             this.content += this.decoder!.decode(); // finish stream
-            this.onContentCallback(this.content);
+            this.onContentCallback(this.content, this.context);
         };
 
         this.filter.onerror = (): void => {

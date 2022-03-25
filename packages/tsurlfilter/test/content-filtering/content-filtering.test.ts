@@ -5,10 +5,11 @@
 import { TextDecoder, TextEncoder } from 'text-encoding';
 import { MockStreamFilter } from './mock-stream-filter';
 import {
-    ContentFiltering, IRule, NetworkRule, Request, RequestType,
+    ContentFiltering, IRule, NetworkRule, RequestType,
 } from '../../src';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { ModificationsListener } from '../../src/content-filtering/modifications-listener';
+import { RequestContext } from '../../src/content-filtering/request-context';
 
 class MockFilteringLog implements ModificationsListener {
     onHtmlRuleApplied = jest.fn(
@@ -36,15 +37,18 @@ class MockFilteringLog implements ModificationsListener {
     });
 }
 
-const createTestRequest = (requestType?: RequestType): Request => {
-    const type = requestType ? requestType! : RequestType.Document;
-    const request = new Request('https://example.org', '', type);
-    request.requestId = 1;
-    request.tabId = 1;
-    request.statusCode = 200;
-    request.method = 'GET';
-
-    return request;
+const createTestRequest = (requestType?: RequestType): RequestContext => {
+    return {
+        requestId: '1',
+        requestUrl: 'https://example.org',
+        engineRequestType: requestType ? requestType! : RequestType.Document,
+        contentType: 'text/html',
+        statusCode: 200,
+        method: 'GET',
+        tab: {
+            tabId: 1,
+        },
+    };
 };
 
 describe('Content filtering', () => {
@@ -66,13 +70,7 @@ describe('Content filtering', () => {
         const request = createTestRequest();
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         const rules = [
             new CosmeticRule('example.org$$script[tag-content="test"]', 1),
@@ -88,13 +86,7 @@ describe('Content filtering', () => {
         const request = createTestRequest();
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         const rules = [
             new NetworkRule('||example.org^$replace=/test/test1/g', 1),
@@ -115,13 +107,7 @@ describe('Content filtering', () => {
         const request = createTestRequest();
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         const rules = [
             new NetworkRule('||example.org^$replace=/smth/smth1/g', 1),
@@ -138,13 +124,7 @@ describe('Content filtering', () => {
         const request = createTestRequest(RequestType.Other);
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'application/json; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         const rules = [
             new NetworkRule('||example.org^$replace=/test/test1/g', 1),
@@ -160,13 +140,7 @@ describe('Content filtering', () => {
         const request = createTestRequest();
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         contentFiltering.onBeforeRequest(mockFilter, request, [], []);
 
@@ -178,13 +152,7 @@ describe('Content filtering', () => {
         request.statusCode = 304;
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         contentFiltering.onBeforeRequest(mockFilter, request, [], []);
 
@@ -196,13 +164,7 @@ describe('Content filtering', () => {
         request.method = 'PUT';
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
         contentFiltering.onBeforeRequest(mockFilter, request, [], []);
 
@@ -210,37 +172,25 @@ describe('Content filtering', () => {
     });
 
     it('checks empty cases - requestId', () => {
-        const request = createTestRequest();
+        const request = createTestRequest() as Partial<RequestContext>;
         delete request.requestId;
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=utf-8',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
-        contentFiltering.onBeforeRequest(mockFilter, request, [], []);
+        contentFiltering.onBeforeRequest(mockFilter, request as RequestContext, [], []);
 
         checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, '');
     });
 
     it('checks empty cases - unsupported charset', () => {
-        const request = createTestRequest();
+        const request = createTestRequest() as Partial<RequestContext>;
         delete request.requestId;
 
         const mockFilter = new MockStreamFilter();
-        const contentFiltering = new ContentFiltering(new MockFilteringLog(), () => {
-            return {
-                request,
-                contentType: 'text/html; charset=koi8-r',
-                statusCode: request.statusCode!,
-            };
-        });
+        const contentFiltering = new ContentFiltering(new MockFilteringLog());
 
-        contentFiltering.onBeforeRequest(mockFilter, request, [], []);
+        contentFiltering.onBeforeRequest(mockFilter, request as RequestContext, [], []);
 
         checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, '');
     });
