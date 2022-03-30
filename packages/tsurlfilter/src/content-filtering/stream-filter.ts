@@ -7,6 +7,7 @@ export interface StreamFilter {
      */
     error: Error | undefined;
 
+    onstart: () => void;
     /**
      * On data
      *

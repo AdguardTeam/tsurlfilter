@@ -8,6 +8,8 @@ export class MockStreamFilter implements StreamFilter {
 
     error: Error | undefined;
 
+    onstart = (): void => {};
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ondata = (event: { data: BufferSource }): void => {};
 
@@ -33,6 +35,7 @@ export class MockStreamFilter implements StreamFilter {
      * @param data
      */
     send(data: BufferSource): void {
+        this.onstart();
         this.ondata({ data });
 
         this.onstop();

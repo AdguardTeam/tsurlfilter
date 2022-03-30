@@ -9,7 +9,6 @@ import { NetworkRule } from '../rules/network-rule';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { ModificationsListener } from './modifications-listener';
 import { logger } from '../utils/logger';
-import { RequestType } from '../request-type';
 import { RequestContext } from './request-context';
 
 /**
@@ -34,29 +33,6 @@ export class ContentFiltering {
     }
 
     /**
-     * Contains collection of accepted request types for replace rules
-     */
-    private static replaceRulesRequestTypes = [
-        RequestType.Document,
-        RequestType.Subdocument,
-        RequestType.Script,
-        RequestType.Stylesheet,
-        RequestType.XmlHttpRequest,
-    ];
-
-    /**
-     * Contains collection of accepted content types for replace rules
-     */
-    private static replaceRuleAllowedContentTypes = [
-        'text/',
-        'application/json',
-        'application/xml',
-        'application/xhtml+xml',
-        'application/javascript',
-        'application/x-javascript',
-    ];
-
-    /**
      * Document parser
      */
     private documentParser = new DocumentParser();
@@ -74,34 +50,41 @@ export class ContentFiltering {
     private handleResponse(
         requestContext: RequestContext,
         streamFilter: StreamFilter,
+        htmlRules: CosmeticRule[],
+        replaceRules: NetworkRule[],
         callback: (x: string, context: RequestContext | null) => string,
     ): void {
         try {
             // eslint-disable-next-line max-len
-            const contentFilter = new ContentFilter(streamFilter, requestContext, (content, context) => {
-                const {
-                    requestId,
-                    requestUrl,
-                    contentType,
-                } = context;
+            const contentFilter = new ContentFilter(
+                streamFilter,
+                requestContext,
+                htmlRules,
+                replaceRules,
+                (content, context) => {
+                    const {
+                        requestId,
+                        requestUrl,
+                        contentType,
+                    } = context;
 
-                this.modificationsListener.onModificationStarted(Number(requestId));
+                    this.modificationsListener.onModificationStarted(Number(requestId));
 
-                try {
-                    const charset = parseCharsetFromHeader(contentType);
-                    if (ContentFiltering.shouldProcessRequest(context, charset)) {
-                        contentFilter.setCharset(charset);
-                        // eslint-disable-next-line no-param-reassign
-                        content = callback(content, context);
+                    try {
+                        const charset = parseCharsetFromHeader(contentType);
+                        if (ContentFiltering.shouldProcessRequest(context, charset)) {
+                            contentFilter.setCharset(charset);
+                            // eslint-disable-next-line no-param-reassign
+                            content = callback(content, context);
+                        }
+                    } catch (ex) {
+                        logger.error(`Error while applying content filter to ${requestUrl}. Error: ${ex}`);
+                    } finally {
+                        this.modificationsListener.onModificationFinished(Number(requestId));
                     }
-                } catch (ex) {
-                    logger.error(`Error while applying content filter to ${requestUrl}. Error: ${ex}`);
-                } finally {
-                    this.modificationsListener.onModificationFinished(Number(requestId));
-                }
 
-                contentFilter.write(content!);
-            });
+                    contentFilter.write(content!);
+                });
         } catch (e) {
             // eslint-disable-next-line max-len
             logger.error(`An error has occurred in content filter for request ${requestContext.requestId} to ${requestContext.requestUrl}. Error: ${e}`);
@@ -226,36 +209,6 @@ export class ContentFiltering {
     }
 
     /**
-     * Checks if $replace rule should be applied to this request
-     *
-     * @returns {boolean}
-     */
-    private static shouldApplyReplaceRule(requestType: RequestType, contentType: string): boolean {
-        if (ContentFiltering.replaceRulesRequestTypes.indexOf(requestType) >= 0) {
-            return true;
-        }
-
-        if (requestType === RequestType.Other && contentType) {
-            for (let i = 0; i < ContentFiltering.replaceRuleAllowedContentTypes.length; i += 1) {
-                if (contentType.indexOf(ContentFiltering.replaceRuleAllowedContentTypes[i]) === 0) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if content filtration rules should by applied to this request
-     * @param requestType Request type
-     */
-    private static shouldApplyHtmlRules(requestType: RequestType): boolean {
-        return requestType === RequestType.Document
-            || requestType === RequestType.Subdocument;
-    }
-
-    /**
      * Applies replace/content rules to the content
      *
      * @param context
@@ -276,26 +229,13 @@ export class ContentFiltering {
             return content;
         }
 
-        let htmlRulesToApply: CosmeticRule[] | null = null;
-        if (ContentFiltering.shouldApplyHtmlRules(context.engineRequestType)) {
-            htmlRulesToApply = htmlRules;
-        }
-
-        let replaceRulesToApply: NetworkRule[] | null = null;
-        if (ContentFiltering.shouldApplyReplaceRule(context.engineRequestType, context.contentType!)) {
-            replaceRulesToApply = replaceRules;
-        }
-
-        if (!htmlRulesToApply && !replaceRulesToApply) {
-            return content;
-        }
 
         let result = content;
 
-        if (htmlRulesToApply && htmlRulesToApply.length > 0) {
+        if (htmlRules && htmlRules.length > 0) {
             const doc = this.documentParser.parse(content);
             if (doc !== null) {
-                const modified = this.applyHtmlRules(context, doc, htmlRulesToApply);
+                const modified = this.applyHtmlRules(context, doc, htmlRules);
                 if (modified !== null) {
                     result = modified;
                 }
@@ -307,8 +247,8 @@ export class ContentFiltering {
             return result;
         }
 
-        if (replaceRulesToApply) {
-            result = this.applyReplaceRules(context, result, replaceRulesToApply);
+        if (replaceRules) {
+            result = this.applyReplaceRules(context, result, replaceRules);
         }
 
         return result;
@@ -329,6 +269,7 @@ export class ContentFiltering {
         htmlRules: CosmeticRule[],
     ): void {
         if (!requestContext.requestId) {
+            streamFilter.disconnect();
             return;
         }
 
@@ -337,16 +278,20 @@ export class ContentFiltering {
         } = requestContext;
 
         if (!tab.tabId) {
+            streamFilter.disconnect();
             return;
         }
 
         if (method !== 'GET' && method !== 'POST') {
+            streamFilter.disconnect();
             return;
         }
 
         this.handleResponse(
             requestContext,
             streamFilter,
+            htmlRules,
+            replaceRules,
             (content, context) => this.applyRulesToContent(context, content!, replaceRules, htmlRules),
         );
     }

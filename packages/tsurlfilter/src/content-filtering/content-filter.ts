@@ -7,9 +7,12 @@ import {
     SUPPORTED_CHARSETS,
     WIN_1252,
     parseCharsetFromHtml,
+    parseCharsetFromCss,
 } from './charsets';
 import { logger } from '../utils/logger';
 import { RequestContext } from './request-context';
+import { NetworkRule } from '../rules/network-rule';
+import { CosmeticRule } from '../rules/cosmetic-rule';
 
 /**
  * Content Filter class
@@ -18,6 +21,37 @@ import { RequestContext } from './request-context';
  * https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
  */
 export class ContentFilter {
+    /**
+     * Contains collection of accepted content types
+     */
+    private static supportedContentTypes = [
+        'text/',
+        'application/json',
+        'application/xml',
+        'application/xhtml+xml',
+        'application/javascript',
+        'application/x-javascript',
+    ];
+
+    /**
+     * Contains collection of accepted request types for replace rules
+     */
+    private static replaceRulesRequestTypes = [
+        RequestType.Document,
+        RequestType.Subdocument,
+        RequestType.Script,
+        RequestType.Stylesheet,
+        RequestType.XmlHttpRequest,
+    ];
+
+    /**
+     * Contains collection of accepted request types for html rules
+     */
+    private static htmlRulesRequestTypes = [
+        RequestType.Document,
+        RequestType.Subdocument,
+    ];
+
     /**
      * Web request filter
      */
@@ -49,6 +83,16 @@ export class ContentFilter {
     encoder: TextEncoder | undefined;
 
     /**
+     * Replace rules for request
+     */
+    replaceRules: NetworkRule[];
+
+    /**
+     * Html rules for request
+     */
+    htmlRules: CosmeticRule[];
+
+    /**
      * Result callback
      */
     onContentCallback: (content: string, context: RequestContext) => void;
@@ -63,10 +107,14 @@ export class ContentFilter {
     constructor(
         filter: StreamFilter,
         context: RequestContext,
+        htmlRules: CosmeticRule[],
+        replaceRules: NetworkRule[],
         onContentCallback: (data: string, context: RequestContext) => void,
     ) {
         this.filter = filter;
         this.context = context;
+        this.htmlRules = htmlRules;
+        this.replaceRules = replaceRules;
 
         this.content = '';
         this.onContentCallback = onContentCallback;
@@ -98,6 +146,27 @@ export class ContentFilter {
      * Initializes inner filter
      */
     private initFilter(): void {
+        this.filter.onstart = () => {
+            let htmlRulesToApply: CosmeticRule[] | null = null;
+            if (this.htmlRules.length > 0
+                && ContentFilter.shouldApplyHtmlRules(this.context.engineRequestType)
+            ) {
+                htmlRulesToApply = this.htmlRules;
+            }
+    
+            let replaceRulesToApply: NetworkRule[] | null = null;
+            if (this.replaceRules.length > 0
+                && ContentFilter.shouldApplyReplaceRule(this.context.engineRequestType, this.context.contentType!)
+            ) {
+                replaceRulesToApply = this.replaceRules;
+            }
+    
+            if (!htmlRulesToApply && !replaceRulesToApply) {
+                this.filter.disconnect();
+                return;
+            }
+        };
+
         this.filter.ondata = (event): void => {
             if (!this.charset) {
                 try {
@@ -108,7 +177,15 @@ export class ContentFilter {
                      */
                     if (this.context.engineRequestType === RequestType.Subdocument
                         || this.context.engineRequestType  === RequestType.Document) {
-                        charset = ContentFilter.parseCharset(event.data);
+                        charset = ContentFilter.parseHtmlCharset(event.data);
+                    }
+
+                    /**
+                     * If this.charset is undefined and requestType is Stylesheet, we try
+                     * to detect charset from '@charset' directive
+                     */
+                    if (this.context.engineRequestType === RequestType.Stylesheet) {
+                        charset = ContentFilter.parseCssCharset(event.data);
                     }
 
                     if (!charset) {
@@ -178,13 +255,48 @@ export class ContentFilter {
     }
 
     /**
-     * Parses charset from data
-     *
-     * @param data
-     * @returns {*}
+     * Parses charset from html
      */
-    private static parseCharset(data: BufferSource): string | null {
+    private static parseHtmlCharset(data: BufferSource): string | null {
         const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
         return parseCharsetFromHtml(decoded);
+    }
+
+    /**
+     * Parses charset from css
+     */
+    private static parseCssCharset(data: BufferSource): string | null {
+        const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
+        return parseCharsetFromCss(decoded);
+    }
+
+    /**
+     * Checks if $replace rule should be applied to this request
+     *
+     * @returns {boolean}
+     */
+    private static shouldApplyReplaceRule(requestType: RequestType, contentType: string): boolean {
+        if (ContentFilter.replaceRulesRequestTypes.indexOf(requestType) >= 0) {
+            return true;
+        }
+
+        if (requestType === RequestType.Other && contentType) {
+            for (let i = 0; i < ContentFilter.supportedContentTypes.length; i += 1) {
+                if (contentType.indexOf(ContentFilter.supportedContentTypes[i]) === 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if content filtration rules should by applied to this request
+     * @param requestType Request type
+     */
+    private static shouldApplyHtmlRules(requestType: RequestType): boolean {
+        return requestType === RequestType.Document
+            || requestType === RequestType.Subdocument;
     }
 }

@@ -51,7 +51,9 @@ export class ReplaceModifier implements IAdvancedModifier {
         }
 
         const pattern = new RegExp(parts[0], modifiers);
-        const replacement = parts[1];
+
+        // unescape replacement alias 
+        const replacement = parts[1].replace(/\\\$/g, '$');
 
         const apply = (input: string): string => input.replace(pattern, replacement);
 
