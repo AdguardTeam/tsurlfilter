@@ -102,6 +102,8 @@ export class ContentFilter {
      *
      * @param filter implementation
      * @param context request context
+     * @param htmlRules
+     * @param replaceRules
      * @param onContentCallback
      */
     constructor(
@@ -146,28 +148,31 @@ export class ContentFilter {
      * Initializes inner filter
      */
     private initFilter(): void {
-        this.filter.onstart = () => {
+        this.filter.ondata = (event): void => {
+            // check if app should apply decoding/encoding,
+            // applications is checking ondata event,
+            // because disconnecting onstart event is crashing loading of some requests
             let htmlRulesToApply: CosmeticRule[] | null = null;
             if (this.htmlRules.length > 0
                 && ContentFilter.shouldApplyHtmlRules(this.context.engineRequestType)
             ) {
                 htmlRulesToApply = this.htmlRules;
             }
-    
+
             let replaceRulesToApply: NetworkRule[] | null = null;
             if (this.replaceRules.length > 0
                 && ContentFilter.shouldApplyReplaceRule(this.context.engineRequestType, this.context.contentType!)
             ) {
                 replaceRulesToApply = this.replaceRules;
             }
-    
+
             if (!htmlRulesToApply && !replaceRulesToApply) {
+                // disconnect on data
+                this.filter.write(event.data);
                 this.filter.disconnect();
                 return;
             }
-        };
 
-        this.filter.ondata = (event): void => {
             if (!this.charset) {
                 try {
                     let charset;
@@ -216,8 +221,9 @@ export class ContentFilter {
         };
 
         this.filter.onerror = (): void => {
-            if (this.filter.error && this.filter.error.message) {
-                logger.info(this.filter.error.message);
+            if (this.filter.error) {
+                // eslint-disable-next-line max-len
+                logger.debug(`An error in the content filtering occurred: ${this.filter.error}, request id: ${this.context.requestId}`);
             }
         };
     }
@@ -249,7 +255,7 @@ export class ContentFilter {
      *
      * @param data
      */
-    private disconnect(data: BufferSource): void {
+    private disconnect(data: ArrayBuffer): void {
         this.filter.write(data);
         this.filter.disconnect();
     }

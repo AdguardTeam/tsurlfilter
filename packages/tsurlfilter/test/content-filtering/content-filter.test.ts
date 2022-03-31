@@ -1,6 +1,6 @@
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { ContentFilter } from '../../src/content-filtering/content-filter';
-import { RequestType } from '../../src';
+import { NetworkRule, RequestType } from '../../src';
 import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '../../src/content-filtering/charsets';
 import { MockStreamFilter } from './mock-stream-filter';
 
@@ -38,7 +38,9 @@ describe('Content filter', () => {
 
     it('checks content filter with utf-8 encoding', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
         filter.setCharset(DEFAULT_CHARSET);
 
         mockFilter.send(textEncoderUtf8.encode(testData));
@@ -55,7 +57,9 @@ describe('Content filter', () => {
 
     it('checks content filter with win-1251 encoding', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
         filter.setCharset(WIN_1251);
 
         mockFilter.send(textEncoderWin1251.encode(testData));
@@ -72,7 +76,9 @@ describe('Content filter', () => {
 
     it('checks content filter with win-1252 encoding', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
         filter.setCharset(WIN_1252);
 
         mockFilter.send(textEncoderIso8859.encode(testData));
@@ -91,7 +97,9 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta charset="UTF-8">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
 
         mockFilter.send(textEncoderUtf8.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -109,7 +117,9 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta content="text/html; charset=utf-8" http-equiv="content-type"/>';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
 
         mockFilter.send(textEncoderUtf8.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -127,7 +137,9 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta charset="windows-1251">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
 
         mockFilter.send(textEncoderWin1251.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -145,7 +157,9 @@ describe('Content filter', () => {
         const data = 'Charset in data <meta charset="iso-8859-1">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
 
         mockFilter.send(textEncoderIso8859.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -163,7 +177,9 @@ describe('Content filter', () => {
         const data = 'Тест charset in data <meta http-equiv="content-type" content="text/html; charset=windows-1251">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
 
         mockFilter.send(textEncoderWin1251.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -181,7 +197,9 @@ describe('Content filter', () => {
         const data = 'No charset in data';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
 
         mockFilter.send(textEncoderIso8859.encode(data));
         expect(onContentCallback).toHaveBeenCalled();
@@ -203,7 +221,9 @@ describe('Content filter', () => {
         const data = 'unsupported charset in data <meta charset="koi8-r">';
 
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onNullContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onNullContentCallback);
 
         mockFilter.send(textEncoderUtf8.encode(data));
         expect(onNullContentCallback).toHaveBeenCalled();
@@ -217,7 +237,9 @@ describe('Content filter', () => {
 
     it('checks content filter with empty content', () => {
         const mockFilter = new MockStreamFilter();
-        const filter = new ContentFilter(mockFilter, requestContext, [], [], onContentCallback);
+        const filter = new ContentFilter(mockFilter, requestContext, [], [
+            new NetworkRule('replace-rule', 1),
+        ], onContentCallback);
         filter.setCharset(DEFAULT_CHARSET);
 
         mockFilter.send(textEncoderUtf8.encode(''));

@@ -144,7 +144,7 @@ describe('Content filtering', () => {
 
         contentFiltering.onBeforeRequest(mockFilter, request, [], []);
 
-        checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, testData);
+        checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, '');
     });
 
     it('checks empty cases - status code', () => {
@@ -156,7 +156,7 @@ describe('Content filtering', () => {
 
         contentFiltering.onBeforeRequest(mockFilter, request, [], []);
 
-        checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, testData);
+        checkResult(mockFilter, textEncoderUtf8, textDecoderUtf8, testData, '');
     });
 
     it('checks empty cases - method', () => {

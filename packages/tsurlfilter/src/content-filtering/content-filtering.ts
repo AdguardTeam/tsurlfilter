@@ -44,6 +44,8 @@ export class ContentFiltering {
      *
      * @param requestContext
      * @param streamFilter
+     * @param htmlRules
+     * @param replaceRules
      * @param callback
      */
     // eslint-disable-next-line consistent-return
@@ -161,7 +163,7 @@ export class ContentFiltering {
     /**
      * Applies replace rules to content
      *
-     * @param request
+     * @param context
      * @param content
      * @param replaceRules
      */
@@ -258,7 +260,7 @@ export class ContentFiltering {
      * OnBeforeRequest handler
      *
      * @param streamFilter
-     * @param request
+     * @param requestContext
      * @param replaceRules
      * @param htmlRules
      */

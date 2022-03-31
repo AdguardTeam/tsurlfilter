@@ -1,12 +1,15 @@
+import { WebRequest } from 'webextension-polyfill';
 import { StreamFilter } from '../../src/content-filtering/stream-filter';
 
 /**
  * Mock filter implementation
  */
 export class MockStreamFilter implements StreamFilter {
+    status: WebRequest.StreamFilterStatus = 'uninitialized';
+
     content: BufferSource | undefined;
 
-    error: Error | undefined;
+    error = '';
 
     onstart = (): void => {};
 
@@ -17,12 +20,20 @@ export class MockStreamFilter implements StreamFilter {
 
     onstop = (): void => {};
 
-    // eslint-disable-next-line class-methods-use-this
     close(): void {
     }
 
-    // eslint-disable-next-line class-methods-use-this
     disconnect(): void {
+    }
+
+    resume(): void {    
+    }
+
+    suspend(): void {
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    create(requestId: number, addonId: string): void {
     }
 
     write(data: ArrayBufferView | ArrayBuffer): void {
