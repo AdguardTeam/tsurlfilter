@@ -11,7 +11,7 @@ describe('Start Engine Benchmark', () => {
             },
             info(): void {
             },
-            log(): void {
+            debug(): void {
             },
             warn(): void {
             },

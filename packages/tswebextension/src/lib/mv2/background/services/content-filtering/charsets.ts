@@ -28,7 +28,7 @@ export function parseCharsetFromHeader(contentType: string | undefined): string 
 }
 
 /**
- * Parses charset from data, looking for:
+ * Parses charset from html, looking for:
  * <meta charset="utf-8" />
  * <meta charset=utf-8 />
  * <meta charset=utf-8>
@@ -51,6 +51,21 @@ export function parseCharsetFromHtml(text: string): string | null {
 
     // eslint-disable-next-line max-len
     match = /<meta\s*content\s*=\s*[\\]?['"]text\/html;\s*charset=(.*?)[\\]?['"]\s*http-equiv\s*=\s*['"]?content-type['"]?/.exec(text.toLowerCase());
+    if (match && match.length > 1) {
+        return match[1].trim().toLowerCase();
+    }
+
+    return null;
+}
+
+/**
+ * Parses charset from css
+ *
+ * @param text
+ */
+export function parseCharsetFromCss(text: string): string | null {
+    const match = /^@charset\s*['"](.*?)['"]/.exec(text.toLowerCase());
+
     if (match && match.length > 1) {
         return match[1].trim().toLowerCase();
     }

@@ -132,7 +132,7 @@ export class CosmeticRule implements rule.IRule {
         ':only-child', ':only-of-type', ':optional', ':out-of-range', ':read-only',
         ':read-write', ':required', ':root', ':target', ':valid', ':visited',
         ':-abp-has', ':-abp-contains', ':xpath', ':nth-ancestor', ':upward', ':remove',
-        ':matches-attr', ':matches-property', ':is'];
+        ':matches-attr', ':matches-property', ':is', ':where'];
 
     /**
      * Parses first pseudo class from the specified CSS selector

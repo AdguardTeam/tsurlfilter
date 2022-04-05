@@ -120,4 +120,16 @@ describe('General', () => {
         expect(result.basicRule).toBeNull();
         expect(result.hostRules).toHaveLength(0);
     });
+
+    it('checks match for dnsrewrite rules', () => {
+        const engine = new DnsEngine(createTestRuleStorage(1, [
+            '||example.org^',
+            '||example.org^$dnsrewrite=1.2.3.4',
+        ]));
+
+        const result = engine.match('example.org');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getAdvancedModifier()).not.toBeNull();
+        expect(result.hostRules).toHaveLength(0);
+    });
 });

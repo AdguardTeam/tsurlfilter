@@ -8,11 +8,12 @@ import {
     SUPPORTED_CHARSETS,
     WIN_1252,
     parseCharsetFromHtml,
+    parseCharsetFromCss,
     parseCharsetFromHeader,
 } from './charsets';
 import { RequestContext } from '../../request';
 import { FilteringLog } from '../../../../common';
-import { contentFilter } from './content-filter';
+import { ContentStringFilterInterface } from './content-string-filter';
 
 /**
  * Content Stream Filter class
@@ -27,6 +28,13 @@ export class ContentStream {
      * This object is mutated during request processing
      */
     private context: RequestContext;
+
+    /**
+     * Content Filter
+     *
+     * Modify content with specified rules
+     */
+    private contentStringFilter: ContentStringFilterInterface;
 
     /**
      * Web request filter
@@ -56,18 +64,32 @@ export class ContentStream {
     /**
      * Filtering log
      */
-    private readonly modificationsListener: FilteringLog;
+    private readonly filteringLog: FilteringLog;
+
+    /**
+     * Contains collection of accepted content types for stream filtering
+     */
+    private readonly allowedContentTypes = [
+        'text/',
+        'application/json',
+        'application/xml',
+        'application/xhtml+xml',
+        'application/javascript',
+        'application/x-javascript',
+    ];
 
     constructor(
         context: RequestContext,
-        filterCreator: (id: string) => WebRequest.StreamFilter,
-        modificationsListener: FilteringLog,
+        contentStringFilter: ContentStringFilterInterface,
+        streamFilterCreator: (id: string) => WebRequest.StreamFilter,
+        filteringLog: FilteringLog,
     ) {
         this.content = '';
         this.context = context;
+        this.contentStringFilter = contentStringFilter;
 
-        this.modificationsListener = modificationsListener;
-        this.filter = filterCreator(context.requestId);
+        this.filteringLog = filteringLog;
+        this.filter = streamFilterCreator(context.requestId);
 
         this.onResponseData = this.onResponseData.bind(this);
         this.onResponseFinish = this.onResponseFinish.bind(this);
@@ -136,17 +158,41 @@ export class ContentStream {
         this.filter.onerror = this.onResponseError;
     }
 
+    private shouldProccessFiltering(): boolean {
+        const { requestType, contentTypeHeader } = this.context;
+        if (requestType === RequestType.Other || requestType === RequestType.XmlHttpRequest) {
+            return !!contentTypeHeader && this.allowedContentTypes.some((contentType) => {
+                return contentTypeHeader.indexOf(contentType) === 0;
+            });
+        }
+
+        return true;
+    }
+
     private onResponseData(event: WebRequest.StreamFilterEventData): void {
+        if (!this.shouldProccessFiltering()) {
+            this.disconnect(event.data);
+            return;
+        }
+
         if (!this.charset) {
             try {
                 let charset;
                 /**
-                 * If this.charset is undefined and requestType is DOCUMENT or SUBDOCUMENT, we try
+                 * If this.charset is undefined and requestType is Document or Subdocument, we try
                  * to detect charset from page <meta> tags
                  */
                 if (this.context.requestType === RequestType.Subdocument
                     || this.context.requestType === RequestType.Document) {
-                    charset = ContentStream.parseCharset(event.data);
+                    charset = ContentStream.parseHtmlCharset(event.data);
+                }
+
+                /**
+                 * If this.charset is undefined and requestType is Stylesheet, we try
+                 * to detect charset from css directive
+                 */
+                if (this.context.requestType === RequestType.Stylesheet) {
+                    charset = ContentStream.parseCssCharset(event.data);
                 }
 
                 if (!charset) {
@@ -180,7 +226,7 @@ export class ContentStream {
     private onResponseFinish(): void {
         this.content += this.decoder!.decode(); // finish stream
 
-        this.modificationsListener.addContentFilteringStartEvent({
+        this.filteringLog.addContentFilteringStartEvent({
             requestId: this.context.requestId,
         });
 
@@ -204,28 +250,34 @@ export class ContentStream {
             this.setCharset(charset);
         }
 
-        this.content = contentFilter.applyHtmlRules(this.content, this.context);
-
-        // response content is over 3MB, ignore it
-        if (this.content.length <= 3 * 1024 * 1024) {
-            this.content = contentFilter.applyReplaceRules(this.content, this.context);
-        }
+        this.content = this.contentStringFilter.applyRules(this.content);
 
         this.write(this.content);
 
-        this.modificationsListener.addContentFilteringFinishEvent({
+        this.filteringLog.addContentFilteringFinishEvent({
             requestId: this.context.requestId,
         });
     }
 
     /**
-     * Parses charset from data
+     * Parses charset from html
      *
      * @param data
      * @returns {*}
      */
-    private static parseCharset(data: BufferSource): string | null {
+    private static parseHtmlCharset(data: BufferSource): string | null {
         const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
         return parseCharsetFromHtml(decoded);
+    }
+
+    /**
+     * Parses charset from html
+     *
+     * @param data
+     * @returns {*}
+     */
+    private static parseCssCharset(data: BufferSource): string | null {
+        const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
+        return parseCharsetFromCss(decoded);
     }
 }

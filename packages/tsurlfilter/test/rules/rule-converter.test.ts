@@ -167,6 +167,16 @@ describe('General', () => {
         expect(result).toHaveLength(1);
         expect(result).toContain('! ya.ru#@#^responseheader(header-name)');
     });
+
+    it('keeps cosmetic rules as is', () => {
+        let ruleText = 'ferra.ru##div[data-render-state] + div[class^="jsx-"][class$=" undefined"]';
+        let result = RuleConverter.convertRule(ruleText);
+        expect(result).toEqual([ruleText]);
+
+        ruleText = 'example.org#%#var str = /[class$=" undefined"]/; console.log(str);';
+        result = RuleConverter.convertRule(ruleText);
+        expect(result).toEqual([ruleText]);
+    });
 });
 
 describe('Converts pseudo elements', () => {
@@ -432,6 +442,15 @@ describe('Redirects', () => {
     it('works if redirect value is converted', () => {
         const rule = '||example.com/banner$image,redirect=1x1.gif';
         const exp = '||example.com/banner$image,redirect=1x1-transparent.gif';
+        const res = RuleConverter.convertRule(rule);
+
+        expect(res).toHaveLength(1);
+        expect(res[0]).toBe(exp);
+    });
+
+    it('works if redirect-rule value is converted', () => {
+        const rule = '*$image,redirect-rule=1x1.gif,domain=seznamzpravy.cz';
+        const exp = '*$image,redirect-rule=1x1-transparent.gif,domain=seznamzpravy.cz';
         const res = RuleConverter.convertRule(rule);
 
         expect(res).toHaveLength(1);

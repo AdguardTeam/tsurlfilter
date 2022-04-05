@@ -1,10 +1,10 @@
 import browser from 'webextension-polyfill';
 import {
-    RequestType, CosmeticOption, CosmeticRule, NetworkRule,
+    RequestType, CosmeticRule, NetworkRule,
 } from '@adguard/tsurlfilter';
 
-import { engineApi } from '../../engine-api';
 import { RequestContext, requestContextStorage } from '../../request';
+import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';
 import { defaultFilteringLog } from '../../../../common';
 
@@ -25,25 +25,16 @@ export class ContentFiltering {
         RequestType.Other,
     ];
 
-    /**
-     * Contains collection of supported request types for html rules
-     */
-    private static supportedHtmlRulesRequestTypes = [
-        RequestType.Document,
-        RequestType.Subdocument,
-    ];
-
     private static getHtmlRules(context: RequestContext): CosmeticRule[] | null {
-        const { referrerUrl, requestType } = context;
+        const { cosmeticResult } = context;
 
-        if (!referrerUrl
-            || !requestType
-            || !ContentFiltering.supportedHtmlRulesRequestTypes.includes(requestType)
-        ) {
+        /**
+         * cosmeticResult is defined only for Document and Subdocument request types
+         * do not need extra request type checking
+         */
+        if (!cosmeticResult) {
             return null;
         }
-
-        const cosmeticResult = engineApi.getCosmeticResult(referrerUrl, CosmeticOption.CosmeticOptionHtml);
 
         const htmlRules = cosmeticResult.Html.getRules();
 
@@ -70,7 +61,19 @@ export class ContentFiltering {
             return null;
         }
 
-        return replaceRules;
+        // Sort replace rules alphabetically as noted here
+        // https://github.com/AdguardTeam/CoreLibs/issues/45
+        return replaceRules.sort((prev: NetworkRule, next: NetworkRule) => {
+            if (prev.getText() > next.getText()) {
+                return 1;
+            }
+
+            if (prev.getText() < next.getText()) {
+                return -1;
+            }
+
+            return 0;
+        });
     }
 
     public static onBeforeRequest(requestId: string): void {
@@ -95,19 +98,21 @@ export class ContentFiltering {
         const replaceRules = ContentFiltering.getReplaceRules(context);
 
         if (htmlRules || replaceRules) {
-            if (htmlRules) {
-                requestContextStorage.update(requestId, { htmlRules });
-            }
+            const contentStringFilter = new ContentStringFilter(
+                context,
+                htmlRules,
+                replaceRules,
+                defaultFilteringLog,
+            );
 
-            if (context.requestType) {
-                const contentStream = new ContentStream(
-                    context,
-                    browser.webRequest.filterResponseData,
-                    defaultFilteringLog,
-                );
+            const contentStream = new ContentStream(
+                context,
+                contentStringFilter,
+                browser.webRequest.filterResponseData,
+                defaultFilteringLog,
+            );
 
-                contentStream.init();
-            }
+            contentStream.init();
         }
     }
 }

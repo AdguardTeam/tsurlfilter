@@ -52,7 +52,6 @@ describe('Cookie filtering', () => {
             thirdParty: false,
             matchingResult: new MatchingResult([], null),
             cookies: undefined,
-            htmlRules: undefined,
             contentTypeHeader: undefined,
         };
     });

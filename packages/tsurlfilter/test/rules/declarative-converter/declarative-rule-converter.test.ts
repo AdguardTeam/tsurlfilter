@@ -284,8 +284,9 @@ describe('DeclarativeRuleConverter', () => {
         // eslint-disable-next-line max-len
         const ruleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
         const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual(null);
+        expect(() => {
+            DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        }).toThrowError();
     });
 
     it('converts regex negative lookahead', () => {

@@ -1,5 +1,4 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
-import { engineApi } from './engine-api';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
 import { FrameRequestService } from './services/frame-request-service';
@@ -98,15 +97,12 @@ export class CosmeticApi {
 
         const requestContext = FrameRequestService.search(searchParams);
 
-        const matchingResult = requestContext?.matchingResult;
+        const cosmeticResult = requestContext?.cosmeticResult;
 
-        if (!matchingResult) {
+        if (!cosmeticResult) {
             return;
         }
 
-        const cosmeticOption = matchingResult.getCosmeticOption();
-
-        const cosmeticResult = engineApi.getCosmeticResult(searchParams.requestUrl, cosmeticOption);
         const extCssText = CosmeticApi.getExtCssText(cosmeticResult);
 
         return extCssText;

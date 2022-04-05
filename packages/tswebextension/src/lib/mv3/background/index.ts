@@ -1,2 +1,2 @@
 export * from './app';
-export { ConfigurationMV3 } from '../../common';
+export { Configuration } from '../common';

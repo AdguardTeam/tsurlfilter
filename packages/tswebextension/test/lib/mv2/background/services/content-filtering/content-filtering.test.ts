@@ -2,13 +2,12 @@
  * @jest-environment jsdom
  */
 import {
-    CosmeticRule,
     NetworkRule,
     MatchingResult,
     RequestType,
     CosmeticResult,
+    CosmeticRule,
 } from '@adguard/tsurlfilter';
-import { engineApi } from '@lib/mv2/background/engine-api';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
 import { ContentFiltering } from '@lib/mv2/background/services/content-filtering/content-filtering';
 import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
@@ -16,25 +15,17 @@ import { ContentStream } from '@lib/mv2/background/services/content-filtering/co
 describe('Content filtering', () => {
     const requestId = '1';
 
+    const getCosmeticResult = () => {
+        const cosmeticResult = new CosmeticResult();
+
+        cosmeticResult.Html.append(new CosmeticRule('example.org$$script[tag-content="test"]', 1));
+
+        return cosmeticResult;
+    };
+
     beforeEach(() => {
         jest.spyOn(ContentStream.prototype, 'init').mockImplementation(jest.fn);
 
-        jest.spyOn(engineApi, 'getCosmeticResult').mockImplementation((referrerUrl: string) => {
-            const cosmeticResult = new CosmeticResult();
-
-            if (referrerUrl === 'https://hashtmlrules.org') {
-                cosmeticResult.Html.append(new CosmeticRule('hashtmlrules.org$$script[tag-content="test"]', 1));
-            }
-
-            return cosmeticResult;
-        });
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
-    beforeEach(() => {
         requestContextStorage.record(requestId, {
             state: RequestContextState.BEFORE_REQUEST,
             requestId,
@@ -48,25 +39,18 @@ describe('Content filtering', () => {
         });
     });
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it('checks html rules', () => {
         requestContextStorage.update(requestId, {
-            referrerUrl: 'https://hashtmlrules.org',
+            cosmeticResult: getCosmeticResult(),
         });
 
         ContentFiltering.onBeforeRequest(requestId);
 
         expect(ContentStream.prototype.init).toBeCalledTimes(1);
-    });
-
-    it('checks html rules - invalid request type', () => {
-        requestContextStorage.update(requestId, {
-            referrerUrl: 'https://hashtmlrules.org',
-            requestType: RequestType.Image,
-        });
-
-        ContentFiltering.onBeforeRequest(requestId);
-
-        expect(ContentStream.prototype.init).toBeCalledTimes(0);
     });
 
     it('checks replace rules', () => {

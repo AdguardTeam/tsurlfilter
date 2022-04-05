@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { configurationValidator } from '@lib/common';
+import { configurationValidator } from '@lib/mv2/common';
 
 describe('configuration validator', () => {
     const validConfiguration = {

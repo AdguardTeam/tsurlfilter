@@ -1,3 +1,4 @@
+import { ERROR_STATUS_CODES } from '../../common/constants';
 import { DeclarativeRule } from './declarative-rule';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { DeclarativeRuleConverter } from './declarative-rule-converter';
@@ -15,9 +16,14 @@ export class DeclarativeConverter {
      *
      * @param ruleList
      * @param maxLimit - max allowed number of rules in the list
+     * @param maxRegexLimit - max allowed number of regular expression rules in the list
      */
     // eslint-disable-next-line class-methods-use-this
-    public convert(ruleList: IRuleList, maxLimit = Number.MAX_SAFE_INTEGER): DeclarativeRule[] {
+    public convert(
+        ruleList: IRuleList,
+        maxLimit = Number.MAX_SAFE_INTEGER,
+        maxRegexLimit = Number.MAX_SAFE_INTEGER,
+    ): DeclarativeRule[] {
         const indexedRules: IndexedRule[] = [];
         const badfilterRules: NetworkRule[] = [];
 
@@ -38,6 +44,9 @@ export class DeclarativeConverter {
         }
 
         const result: DeclarativeRule[] = [];
+
+        let regexpRulesCounter = 0;
+
         indexedRules.forEach((iRule) => {
             const rule = iRule.rule as NetworkRule;
 
@@ -55,8 +64,19 @@ export class DeclarativeConverter {
             if (dRule) {
                 result.push(dRule);
             }
+
+            if (dRule?.condition.regexFilter) {
+                regexpRulesCounter += 1;
+            }
+
             if (result.length > maxLimit) {
-                throw new Error(`Maximum allowed rules count reached: ${maxLimit}`);
+                // eslint-disable-next-line max-len
+                throw new Error(`Status: ${ERROR_STATUS_CODES.RULE_LIMIT} Message: Maximum allowed rules count reached: ${maxLimit}`);
+            }
+
+            if (regexpRulesCounter > maxRegexLimit) {
+                // eslint-disable-next-line max-len
+                throw new Error(`Status: ${ERROR_STATUS_CODES.REGEXP_RULE_LIMIT} Message: Maximum allowed regex rules count reached: ${maxRegexLimit}`);
             }
         });
 

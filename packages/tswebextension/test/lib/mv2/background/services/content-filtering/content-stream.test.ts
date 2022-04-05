@@ -2,7 +2,8 @@ import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
 import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '@lib/mv2/background/services/content-filtering/charsets';
-import { RequestContextState } from '@lib/mv2/background/request';
+import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
+import { ContentStringFilterInterface } from '@lib/mv2/background/services/content-filtering/content-string-filter';
 import { MockStreamFilter } from './mock-stream-filter';
 import { MockFilteringLog } from '../../../../common/mock-filtering-log';
 
@@ -18,6 +19,10 @@ describe('Content stream', () => {
 
     const testData = 'some data';
 
+    const contentStringFilter: ContentStringFilterInterface = {
+        applyRules: (content: string) => content,
+    };
+
     const context = {
         state: RequestContextState.HEADERS_RECEIVED,
         requestId: '1',
@@ -28,13 +33,14 @@ describe('Content stream', () => {
         timestamp: 1643639355148,
         requestType: RequestType.Document,
         method: 'GET',
-        status: 200,
-    };
+        statusCode: 200,
+    } as RequestContext;
 
     it('checks content stream with utf-8 encoding', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -56,6 +62,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -77,6 +84,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -101,6 +109,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -122,6 +131,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -143,6 +153,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -164,6 +175,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -185,6 +197,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -206,6 +219,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -227,6 +241,7 @@ describe('Content stream', () => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -247,6 +262,7 @@ describe('Content stream', () => {
 
         const stream = new ContentStream(
             context,
+            contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
@@ -261,5 +277,35 @@ describe('Content stream', () => {
         const received = textDecoderUtf8.decode(mockFilter.receive());
 
         expect(received).toBe(testData);
+    });
+
+    it('checks content stream with unsupported content type', () => {
+        const mockFilter = new MockStreamFilter();
+
+        const unsupportedRequestContext = {
+            ...context,
+            requestType: RequestType.XmlHttpRequest,
+            contentTypeHeader: 'multipart/form-data; boundary=something',
+        } as RequestContext;
+
+        const stream = new ContentStream(
+            unsupportedRequestContext,
+            contentStringFilter,
+            () => mockFilter,
+            new MockFilteringLog(),
+        );
+
+        stream.init();
+
+        stream.setCharset(DEFAULT_CHARSET);
+
+        const spyDisconnect = jest.spyOn(mockFilter, 'disconnect').mockImplementation();
+        const spyWrite = jest.spyOn(mockFilter, 'write').mockImplementation();
+
+        const data = textEncoderUtf8.encode('qwerty');
+        mockFilter.send(data);
+
+        expect(spyWrite).toBeCalledWith(data);
+        expect(spyDisconnect).toBeCalledTimes(1);
     });
 });

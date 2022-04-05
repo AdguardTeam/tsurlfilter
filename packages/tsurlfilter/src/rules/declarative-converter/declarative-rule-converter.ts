@@ -1,4 +1,5 @@
 import punycode from 'punycode/';
+import { ERROR_STATUS_CODES } from '../../common/constants';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { CookieModifier } from '../../modifiers/cookie-modifier';
 import { RequestType } from '../../request-type';
@@ -242,8 +243,8 @@ export class DeclarativeRuleConverter {
             const maxGroups = 15;
             const maxGroupLength = 31;
             if (regexArr.length > maxGroups || regexArr.some((i) => i.length > maxGroupLength)) {
-                logger.info(`Error: more complex regex than allowed: "${rule.getText()}"`);
-                return null;
+                // eslint-disable-next-line max-len
+                throw new Error(`Status: ${ERROR_STATUS_CODES.COMPLEX_REGEX} Message: More complex regex than allowed: "${rule.getText()}"`);
             }
         }
 

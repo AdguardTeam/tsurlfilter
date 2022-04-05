@@ -161,7 +161,7 @@ describe('Benchmarks', () => {
             },
             info(message?: string): void {
             },
-            log(message?: string): void {
+            debug(message?: string): void {
             },
             warn(message?: string): void {
             },

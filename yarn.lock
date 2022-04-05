@@ -7,10 +7,18 @@
   resolved "https://registry.yarnpkg.com/@adguard/assistant/-/assistant-4.3.61.tgz#b688e41c478f28e850ba4e553e107ae704e9f9ad"
   integrity sha512-etUFYD5thPYBJdUimj/VczuCC3MwD4i3XcOLF237RAfDQkLshv1v2ahG6BHkbc9V2BKkAxG1Sd2Gsqa3nIvkaA==
 
-"@adguard/scriptlets@^1.4.26", "@adguard/scriptlets@^1.4.4", "@adguard/scriptlets@^1.5.18":
+"@adguard/scriptlets@^1.4.4":
   version "1.5.23"
   resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.5.23.tgz#8019adc1208bf2e313150a548d39052b7d3b7f35"
   integrity sha512-Sf1QAs9vaUG0ADSJliNyp85h2vSc02WaD6gOwpxissWc6T7ICWqtUTOGG4sAyye4s7p5rLcr8SP88RiKAfQyVg==
+  dependencies:
+    "@babel/runtime" "^7.7.2"
+    js-yaml "^3.13.1"
+
+"@adguard/scriptlets@^1.6.4":
+  version "1.6.4"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.4.tgz#081c7cb199ab65ba35573b4ea70c8bca34ee652b"
+  integrity sha512-wIMU7Z+ggn/qU525/wvqQZ4ws3Xz+a3ZYIhJmNmAEF0yFbdrKH8g1WQfvQSLSuJJpTcFFeCiCJqIzo9CsAUz6g==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
@@ -10873,9 +10881,9 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-"text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.1":
-  version "0.7.0"
-  resolved "git+https://github.com/AdguardTeam/text-encoding.git#80dbd7df2b17858e8e9e2da00e9134d4ca63d8ad"
+"text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2":
+  version "0.7.2"
+  resolved "git+https://github.com/AdguardTeam/text-encoding.git#4268d6b7dc0e15f57134545ae1c8c59e9c5ced70"
 
 text-extensions@^1.0.0:
   version "1.9.0"

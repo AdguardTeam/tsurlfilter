@@ -6,18 +6,21 @@ import FiltersApi from './filters-api';
 import UserRulesAPI from './user-rules-api';
 
 import {
-    AppInterfaceMV3,
+    configurationValidator,
+    Configuration,
+} from '../common';
+
+import {
+    AppInterface,
     SiteStatus,
     defaultFilteringLog,
-    configurationValidatorMV3,
-    ConfigurationMV3,
 } from '../../common';
 
 // TODO: implement
-export class TsWebExtensionMv3 implements AppInterfaceMV3 {
+export class TsWebExtensionMv3 implements AppInterface<Configuration> {
     public isStarted = false;
 
-    public configuration: ConfigurationMV3 | undefined;
+    public configuration: Configuration | undefined;
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
@@ -35,8 +38,8 @@ export class TsWebExtensionMv3 implements AppInterfaceMV3 {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
     }
 
-    public async start(configuration: ConfigurationMV3): Promise<void> {
-        configurationValidatorMV3.parse(configuration);
+    public async start(configuration: Configuration): Promise<void> {
+        configurationValidator.parse(configuration);
 
         this.isStarted = true;
         await this.configure(configuration);
@@ -59,8 +62,8 @@ export class TsWebExtensionMv3 implements AppInterfaceMV3 {
     }
 
     /* TODO: merge update */
-    public async configure(configuration: ConfigurationMV3): Promise<void> {
-        configurationValidatorMV3.parse(configuration);
+    public async configure(configuration: Configuration): Promise<void> {
+        configurationValidator.parse(configuration);
 
         if (!this.isStarted) {
             throw new Error('App is not started!');

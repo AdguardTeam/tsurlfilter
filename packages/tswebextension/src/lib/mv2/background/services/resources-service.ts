@@ -2,6 +2,7 @@ import browser, { WebRequest } from 'webextension-polyfill';
 
 export interface ResourcesServiceInterface {
     init: (warDir: string) => void;
+    stop: () => void;
 
     createResourceUrl: (path: string) => string;
     loadResource: (path: string) => Promise<string>;
@@ -22,7 +23,10 @@ export class ResourcesService implements ResourcesServiceInterface {
 
     private warDir: string | undefined;
 
-    constructor() {
+    private generateSecretKey: () => string;
+
+    constructor(generateSecretKey: () => string) {
+        this.generateSecretKey = generateSecretKey;
         this.guardWar = this.guardWar.bind(this);
     }
 
@@ -36,6 +40,12 @@ export class ResourcesService implements ResourcesServiceInterface {
         const extraInfoSpec: WebRequest.OnBeforeRequestOptions[] = ['blocking'];
 
         browser.webRequest.onBeforeRequest.addListener(this.guardWar, filter, extraInfoSpec);
+    }
+
+    public stop(): void {
+        this.warDir = undefined;
+        this.secrets = [];
+        browser.webRequest.onBeforeRequest.removeListener(this.guardWar);
     }
 
     /**
@@ -67,7 +77,7 @@ export class ResourcesService implements ResourcesServiceInterface {
             }
         }
         this.lastSecretTime = Date.now();
-        const secret = ResourcesService.generateSecretKey();
+        const secret = this.generateSecretKey();
         this.secrets.push(secret);
         return `?secret=${secret}`;
     }
@@ -81,10 +91,8 @@ export class ResourcesService implements ResourcesServiceInterface {
 
         this.secrets.splice(pos, 1);
     }
-
-    private static generateSecretKey(): string {
-        return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
-    }
 }
 
-export const resourcesService = new ResourcesService();
+export const resourcesService = new ResourcesService(() => {
+    return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
+});

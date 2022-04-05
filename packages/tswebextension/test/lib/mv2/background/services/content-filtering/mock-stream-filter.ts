@@ -24,11 +24,9 @@ export class MockStreamFilter implements WebRequest.StreamFilter {
 
     resume(): void {}
 
-    // eslint-disable-next-line class-methods-use-this
     close(): void {
     }
 
-    // eslint-disable-next-line class-methods-use-this
     disconnect(): void {
     }
 

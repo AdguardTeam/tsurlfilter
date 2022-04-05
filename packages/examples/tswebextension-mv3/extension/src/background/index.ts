@@ -1,9 +1,9 @@
-import { TsWebExtensionMv3, ConfigurationMV3 } from '@adguard/tswebextension/mv3';
+import { TsWebExtensionMv3, Configuration } from '@adguard/tswebextension/mv3';
 import { Message } from '../message';
 
 const tsWebExtension = new TsWebExtensionMv3(undefined);
 
-const defaultConfig: ConfigurationMV3 = {
+const defaultConfig: Configuration = {
     filters: [ 1, 2, 3, 4, 9, 14 ],
     allowlist: [],
     userrules: [],

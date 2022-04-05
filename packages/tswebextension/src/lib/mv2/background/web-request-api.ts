@@ -1,5 +1,5 @@
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { CosmeticOption, RequestType } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
@@ -23,6 +23,7 @@ import {
     requestContextStorage,
     getRequestType,
     RequestBlockingApi,
+    RequestContext,
 } from './request';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -135,6 +136,16 @@ export class WebRequestApi {
             matchingResult: result,
         });
 
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+            const cosmeticOption = result.getCosmeticOption();
+
+            const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOption);
+
+            requestContextStorage.update(requestId, {
+                cosmeticResult,
+            });
+        }
+
         const basicResult = result.getBasicResult();
 
         const response = RequestBlockingApi.getBlockedResponseByRule(basicResult, requestType);
@@ -154,9 +165,9 @@ export class WebRequestApi {
 
         if (response?.cancel) {
             hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
+        } else {
+            ContentFiltering.onBeforeRequest(requestId);
         }
-
-        ContentFiltering.onBeforeRequest(requestId);
 
         return response;
     }
@@ -190,10 +201,7 @@ export class WebRequestApi {
         const {
             requestId,
             requestUrl,
-            matchingResult,
             requestType,
-            tabId,
-            frameId,
             responseHeaders,
         } = context;
 
@@ -206,8 +214,7 @@ export class WebRequestApi {
         let responseHeadersModified = false;
 
         if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)) {
-            const cosmeticOption = matchingResult.getCosmeticOption();
-            WebRequestApi.recordFrameInjection(requestUrl, tabId, frameId, cosmeticOption);
+            WebRequestApi.recordFrameInjection(context);
 
             if (CspService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
@@ -266,13 +273,16 @@ export class WebRequestApi {
         WebRequestApi.injectCosmetic(tabId, frameId);
     }
 
-    private static recordFrameInjection(
-        url: string,
-        tabId: number,
-        frameId: number,
-        cosmeticOption: CosmeticOption,
-    ): void {
-        const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOption);
+    private static recordFrameInjection(context: RequestContext): void {
+        const {
+            cosmeticResult,
+            tabId,
+            frameId,
+        } = context;
+
+        if (!cosmeticResult) {
+            return;
+        }
 
         const cssText = CosmeticApi.getCssText(cosmeticResult);
         const extCssText = CosmeticApi.getExtCssText(cosmeticResult);

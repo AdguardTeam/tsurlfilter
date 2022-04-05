@@ -1,2 +1,3 @@
 export * from './app';
-export { ConfigurationMV2, MESSAGE_HANDLER_NAME } from '../../common';
+export { Configuration } from '../common';
+export { MESSAGE_HANDLER_NAME } from '../../common';

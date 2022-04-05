@@ -9,22 +9,25 @@ import { FrameRequestService } from './services/frame-request-service';
 import { messagesApi } from './messages-api';
 import { stealthApi } from './stealth-api';
 import {
-    AppInterfaceMV2,
+    AppInterface,
     SiteStatus,
     defaultFilteringLog,
     MessageType,
-    configurationValidatorMV2,
-    ConfigurationMV2,
 } from '../../common';
 
-export interface ManifestV2AppInterface extends AppInterfaceMV2 {
+import {
+    configurationValidator,
+    Configuration,
+} from '../common';
+
+export interface ManifestV2AppInterface extends AppInterface<Configuration> {
     getMessageHandler: () => typeof messagesApi.handleMessage
 }
 
 export class TsWebExtension implements ManifestV2AppInterface {
     public isStarted = false;
 
-    public configuration: ConfigurationMV2 | undefined;
+    public configuration: Configuration | undefined;
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
@@ -37,8 +40,8 @@ export class TsWebExtension implements ManifestV2AppInterface {
         resourcesService.init(webAccessibleResourcesPath);
     }
 
-    public async start(configuration: ConfigurationMV2): Promise<void> {
-        configurationValidatorMV2.parse(configuration);
+    public async start(configuration: Configuration): Promise<void> {
+        configurationValidator.parse(configuration);
 
         await redirectsService.start();
         await tabsApi.start();
@@ -60,8 +63,8 @@ export class TsWebExtension implements ManifestV2AppInterface {
     }
 
     /* TODO: merge update */
-    public async configure(configuration: ConfigurationMV2): Promise<void> {
-        configurationValidatorMV2.parse(configuration);
+    public async configure(configuration: Configuration): Promise<void> {
+        configurationValidator.parse(configuration);
 
         if (!this.isStarted) {
             throw new Error('App is not started!');

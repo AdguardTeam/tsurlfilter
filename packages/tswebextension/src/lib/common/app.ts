@@ -1,4 +1,3 @@
-import { ConfigurationMV2, ConfigurationMV3 } from './configuration';
 import { FilteringLogEvent } from './filtering-log';
 import { EventChannelInterface } from './utils';
 
@@ -21,7 +20,12 @@ export const enum SiteStatus {
     FilteringEnabled = 'FILTERING_ENABLED',
 }
 
-interface AppInterface {
+export interface AppInterface<T> {
+    /**
+     * Current Configuration object
+     */
+    configuration?: T;
+
     /**
      * Is app started
      */
@@ -31,6 +35,18 @@ interface AppInterface {
      * Fires on filtering log event
      */
     onFilteringLogEvent: EventChannelInterface<FilteringLogEvent>,
+
+    /**
+      * Starts api
+      * @param configuration
+      */
+    start: (configuration: T) => Promise<void>;
+
+    /**
+     * Updates configuration
+     * @param configuration
+     */
+    configure: (configuration: T) => Promise<void>;
 
     /**
      * Stops api
@@ -57,41 +73,3 @@ interface AppInterface {
      */
     getRulesCount(): number,
 }
-
-export type AppInterfaceMV2 = AppInterface & {
-    /**
-     * Current Configuration object
-     */
-    configuration?: ConfigurationMV2;
-
-    /**
-      * Starts api
-      * @param configuration
-      */
-    start: (configuration: ConfigurationMV2) => Promise<void>;
-
-    /**
-      * Updates configuration
-      * @param configuration
-      */
-    configure: (configuration: ConfigurationMV2) => Promise<void>;
-};
-
-export type AppInterfaceMV3 = AppInterface & {
-    /**
-     * Current Configuration object
-     */
-    configuration?: ConfigurationMV3;
-
-    /**
-      * Starts api
-      * @param configuration
-      */
-    start: (configuration: ConfigurationMV3) => Promise<void>;
-
-    /**
-      * Updates configuration
-      * @param configuration
-      */
-    configure: (configuration: ConfigurationMV3) => Promise<void>;
-};

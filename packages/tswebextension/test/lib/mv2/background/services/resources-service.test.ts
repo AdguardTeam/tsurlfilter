@@ -1,5 +1,5 @@
 import browser from 'sinon-chrome';
-import { ResourcesService, resourcesService } from '@lib/mv2/background/services/resources-service';
+import { ResourcesService } from '@lib/mv2/background/services/resources-service';
 
 global.fetch = jest.fn(() => {
     return Promise.resolve({
@@ -9,16 +9,11 @@ global.fetch = jest.fn(() => {
 
 browser.runtime.getURL.callsFake((str: string) => (str === '/' ? 'test' : `test${str}`));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-jest.spyOn(ResourcesService.prototype as any, 'generateSecretKey').mockImplementationOnce(() => '12345');
+const resourcesService = new ResourcesService(() => '12345');
 
 describe('Resources Service', () => {
     it('guards web accessible resources', () => {
-        resourcesService.start();
-
-        expect(browser.webRequest.onBeforeRequest.addListener.notCalled);
-
-        resourcesService.start('war');
+        resourcesService.init('war');
 
         expect(browser.webRequest.onBeforeRequest.addListener.calledOnce);
 
@@ -42,7 +37,7 @@ describe('Resources Service', () => {
             resourcesService.createResourceUrl('resources/path');
         }).toThrow();
 
-        resourcesService.start('war');
+        resourcesService.init('war');
         expect(resourcesService.createResourceUrl('resources/path'))
             .toBe('test/war/resources/path?secret=12345');
         resourcesService.stop();
@@ -51,7 +46,7 @@ describe('Resources Service', () => {
     it('loads Resource', async () => {
         await expect(resourcesService.loadResource('test')).rejects.toThrow();
 
-        resourcesService.start('war');
+        resourcesService.init('war');
         expect(await resourcesService.loadResource('test'))
             .toBe('test response');
         resourcesService.stop();

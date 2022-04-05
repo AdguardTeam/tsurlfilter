@@ -1,5 +1,9 @@
 import { WebRequest } from 'webextension-polyfill';
-import { CosmeticRule, MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import {
+    CosmeticResult,
+    MatchingResult,
+    RequestType,
+} from '@adguard/tsurlfilter';
 import { ContentType } from './request-type';
 import ParsedCookie from '../services/cookie-filtering/parsed-cookie';
 import { EventChannel, EventChannelInterface } from '../../../common';
@@ -36,15 +40,19 @@ export type RequestContext = {
     requestHeaders?: WebRequest.HttpHeaders;
     responseHeaders?: WebRequest.HttpHeaders;
     method?: string;
+    statusCode?: number;
+    cookies?: ParsedCookie[];
+    contentTypeHeader?: string;
 
     /**
      * filtering data from {@link EngineApi.matchRequest}
      */
     matchingResult?: MatchingResult | null;
-    statusCode?: number;
-    cookies?: ParsedCookie[];
-    htmlRules?: CosmeticRule[];
-    contentTypeHeader?: string;
+
+    /**
+     * filtering data from {@link EngineApi.getCosmeticResult}
+     */
+    cosmeticResult?: CosmeticResult
 };
 
 /**
