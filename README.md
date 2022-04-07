@@ -50,6 +50,8 @@ lerna bootstrap
 
 Bootstrap the packages in the current repo. Installing all their dependencies and linking any cross-dependencies.
 
+**Note**: If you want to use another linked packages in monorepo workspace, link it in root folder
+
 ```
 lerna run test
 ```

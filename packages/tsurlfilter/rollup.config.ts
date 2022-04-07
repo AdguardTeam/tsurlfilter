@@ -17,32 +17,10 @@ const contentScriptLibraryName = 'TSUrlFilterContentScript';
 
 
 const commonConfig = {
+    cache: false,
     watch: {
         include: 'src/**',
-    },
-    plugins: [
-        // Allow json resolution
-        json(),
-
-        // Compile TypeScript files
-        typescript(),
-
-        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-        commonjs({
-            sourceMap: false,
-        }),
-        globals(),
-        nodePolyfills(),
-
-        // Allow node_modules resolution, so you can use 'external' to control
-        // which external modules to include in the bundle
-        // https://github.com/rollup/rollup-plugin-node-resolve#usage
-        resolve({ preferBuiltins: false }),
-
-        cleanup({
-            comments: ['srcmaps'],
-        }),
-    ],
+    }, 
 };
 
 const contentScriptConfig = {
@@ -60,9 +38,6 @@ const contentScriptConfig = {
             sourcemap: false,
         },
     ],
-    watch: {
-        include: 'src/**',
-    },
     plugins: [
         typescript(),
         commonjs({
@@ -73,6 +48,7 @@ const contentScriptConfig = {
             comments: ['srcmaps'],
         }),
     ],
+    ...commonConfig,
 };
 
 const esmConfig = {
@@ -90,9 +66,6 @@ const esmConfig = {
             sourcemap: false,
         },
     ],
-    watch: {
-        include: 'src/**',
-    },
     plugins: [
         json(),
         typescript(),
@@ -106,6 +79,7 @@ const esmConfig = {
             comments: ['srcmaps'],
         }),
     ],
+    ...commonConfig,
 };
 
 const browserConfig = {
@@ -124,9 +98,6 @@ const browserConfig = {
             sourcemap: false,
         },
     ],
-    watch: {
-        include: 'src/**',
-    },
     plugins: [
         json(),
         typescript(),
@@ -140,29 +111,45 @@ const browserConfig = {
             comments: ['srcmaps'],
         }),
     ],
+    ...commonConfig,
+};
+
+const umdConfig = {
+    input: 'src/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
+            name: camelCase(libraryName),
+            format: 'umd',
+            sourcemap: false,
+        },
+        {
+            file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
+            name: camelCase(libraryName),
+            format: 'umd',
+            sourcemap: false,
+            plugins: [terser()],
+        },
+    ],
+    plugins: [
+        json(),
+        typescript(),
+        commonjs({
+            sourceMap: false,
+        }),
+        globals(),
+        nodePolyfills(),
+        resolve({ preferBuiltins: false }), 
+        cleanup({
+            comments: ['srcmaps'],
+        }),
+    ],
+    ...commonConfig,
 };
 
 export default [
     contentScriptConfig,
     esmConfig,
     browserConfig,
-    {
-        input: 'src/index.ts',
-        output: [
-            {
-                file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
-                name: camelCase(libraryName),
-                format: 'umd',
-                sourcemap: false,
-            },
-            {
-                file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
-                name: camelCase(libraryName),
-                format: 'umd',
-                sourcemap: false,
-                plugins: [terser()],
-            },
-        ],
-        ...commonConfig,
-    },
+    umdConfig,
 ];
