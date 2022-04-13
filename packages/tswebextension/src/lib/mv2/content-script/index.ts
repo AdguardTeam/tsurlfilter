@@ -2,10 +2,9 @@
 import ExtendedCss, { IAffectedElement } from 'extended-css';
 import { CssHitsCounter } from './css-hits-counter';
 import { ElementCollapser } from './element-collapser';
-import { MessageType } from '../../common';
+import { MessageType, sendAppMessage } from '../../common';
 import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
-import { sendAppMessage } from './sendAppMessage';
 
 export * from '../../common/stealth-helper';
 export * from './cookie-controller';

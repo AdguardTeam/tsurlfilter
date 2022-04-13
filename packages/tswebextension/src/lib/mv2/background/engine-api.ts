@@ -13,8 +13,7 @@ import {
     RuleConverter,
 } from '@adguard/tsurlfilter';
 
-import { Configuration } from '../common';
-import { getHost } from './utils';
+import { Configuration, getHost } from '../../common';
 import { stealthApi } from './stealth-api';
 
 /**

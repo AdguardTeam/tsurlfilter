@@ -1,17 +1,24 @@
 export default class FiltersApi {
-    public static async updateFiltering(
-        enableFiltersIds: number[],
+    /**
+     * Updates filtering rulesets via declarativeNetRequest
+     * @param enableFiltersIds rulesets to enable
+     * @param disableFiltersIds rulesets to diable
+     */
+    static async updateFiltering(
         disableFiltersIds: number[],
+        enableFiltersIds?: number[],
     ): Promise<void> {
         await chrome.declarativeNetRequest.updateEnabledRulesets({
-            enableRulesetIds: enableFiltersIds
-                .map((filterId) => {
-                    return `ruleset_${filterId}`;
-                }),
-            disableRulesetIds: disableFiltersIds
-                .map((filterId) => {
-                    return `ruleset_${filterId}`;
-                }),
+            enableRulesetIds: enableFiltersIds?.map((filterId) => `ruleset_${filterId}`) || [],
+            disableRulesetIds: disableFiltersIds?.map((filterId) => `ruleset_${filterId}`) || [],
         });
+    }
+
+    /**
+     * Gets current enabled filters IDs
+     */
+    static async getEnabledRulesets(): Promise<number[]> {
+        const rulesets = await chrome.declarativeNetRequest.getEnabledRulesets();
+        return rulesets.map((f) => Number.parseInt(f.slice('ruleset_'.length), 10));
     }
 }

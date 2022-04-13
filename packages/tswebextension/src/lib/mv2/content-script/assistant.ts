@@ -1,7 +1,6 @@
 import browser from 'webextension-polyfill';
 import { adguardAssistant, Assistant } from '@adguard/assistant';
-import { MessageType } from '../../common';
-import { sendAppMessage } from './sendAppMessage';
+import { MessageType, sendAppMessage } from '../../common';
 
 /**
  * Initializes assistant object

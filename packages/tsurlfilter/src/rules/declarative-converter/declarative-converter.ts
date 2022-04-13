@@ -1,4 +1,5 @@
 import { ERROR_STATUS_CODES } from '../../common/constants';
+import { logger } from '../../utils/logger';
 import { DeclarativeRule } from './declarative-rule';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { DeclarativeRuleConverter } from './declarative-rule-converter';
@@ -56,10 +57,15 @@ export class DeclarativeConverter {
                 }
             }
 
-            const dRule = DeclarativeRuleConverter.convert(
-                rule,
-                DeclarativeConverter.createDeclarativeRuleId(iRule.index),
-            );
+            let dRule;
+            try {
+                dRule = DeclarativeRuleConverter.convert(
+                    rule,
+                    DeclarativeConverter.createDeclarativeRuleId(iRule.index),
+                );
+            } catch (e: any) {
+                logger.info(e.message);
+            }
 
             if (dRule) {
                 result.push(dRule);

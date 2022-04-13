@@ -1,6 +1,18 @@
 import { z } from 'zod';
 
-export const baseConfigurationValidator = z.object({
+export const configurationValidator = z.object({
+    /**
+     * Specifies filter lists that will be used to filter content.
+     * filterId should uniquely identify the filter so that the API user
+     * may match it with the source lists in the filtering log callbacks.
+     * content is a string with the full filter list content. The API will
+     * parse it into a list of individual rules.
+     */
+    filters: z.object({
+        filterId: z.number(),
+        content: z.string(),
+    }).array(),
+
     /**
      * List of domain names of sites, which should be excluded from blocking
      * or which should be included in blocking depending on the value of
@@ -43,3 +55,5 @@ export const baseConfigurationValidator = z.object({
     }),
 
 }).strict();
+
+export type Configuration = z.infer<typeof configurationValidator>;

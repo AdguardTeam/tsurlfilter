@@ -13,12 +13,9 @@ import {
     SiteStatus,
     defaultFilteringLog,
     MessageType,
-} from '../../common';
-
-import {
     configurationValidator,
     Configuration,
-} from '../common';
+} from '../../common';
 
 export interface ManifestV2AppInterface extends AppInterface<Configuration> {
     getMessageHandler: () => typeof messagesApi.handleMessage

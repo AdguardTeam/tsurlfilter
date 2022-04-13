@@ -37,3 +37,5 @@ For example, you can turn off "Filter 2", go to https://canyoublockit.com/testin
 3. Userrules
 You can apply any custom user rules, for example rule `||example.org$document`.
 Then, click "Apply" and go to https://example.org - site will be blocked.
+
+4. Cosmetic rules at now applies with huge (about 2 seconds) latency

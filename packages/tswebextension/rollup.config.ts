@@ -32,6 +32,22 @@ const contentScriptConfig = {
     plugins: commonPlugins,
 };
 
+const contentScriptMv3Config = {
+    input: 'src/lib/mv3/content-script/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/content-script.mv3.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    external: ['zod', 'extended-css', '@adguard/tsurlfilter', '@adguard/assistant'],
+    watch: {
+        include: 'src/lib/mv3/content-script/**',
+    },
+    plugins: commonPlugins,
+};
+
 const backgroundMv2Config = {
     input: ['src/lib/mv2/background/index.ts'],
     output: [
@@ -80,4 +96,10 @@ const cliConfig = {
     plugins: [...commonPlugins, preserveShebangs()],
 };
 
-export default [backgroundMv2Config, backgroundMv3Config, contentScriptConfig, cliConfig];
+export default [
+    backgroundMv2Config,
+    backgroundMv3Config,
+    contentScriptConfig,
+    contentScriptMv3Config,
+    cliConfig,
+];

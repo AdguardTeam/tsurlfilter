@@ -1,6 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter';
-import { ProcessShouldCollapsePayload, MessageType } from '../../common';
-import { sendAppMessage } from './sendAppMessage';
+import { ProcessShouldCollapsePayload, MessageType, sendAppMessage } from '../../common';
 
 type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 

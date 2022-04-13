@@ -1,95 +1,129 @@
 /* eslint-disable class-methods-use-this */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import merge from 'deepmerge';
-
+// TODO: Remove call to console
+/* eslint-disable no-console */
 import FiltersApi from './filters-api';
-import UserRulesAPI from './user-rules-api';
-
-import {
-    configurationValidator,
-    Configuration,
-} from '../common';
+import UserRulesApi from './user-rules-api';
+import MessagesApi from './messages-api';
 
 import {
     AppInterface,
     SiteStatus,
     defaultFilteringLog,
+    configurationValidator,
+    Configuration,
 } from '../../common';
+import { engineApi } from './engine-api';
 
 // TODO: implement
-export class TsWebExtensionMv3 implements AppInterface<Configuration> {
-    public isStarted = false;
+export class TsWebExtension implements AppInterface<Configuration> {
+    onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
-    public configuration: Configuration | undefined;
+    configuration: Configuration | undefined;
 
-    public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
+    isStarted = false;
 
-    /**
-     * Web accessible resources path in the result bundle
-     */
-    private readonly webAccessibleResourcesPath: string | undefined;
+    private startPromise: Promise<void> | undefined;
 
     /**
-     * Constructor
-     *
-     * @param webAccessibleResourcesPath optional
+     * Runs configuration process via saving promise to inner startPromise
      */
-    constructor(webAccessibleResourcesPath?: string) {
-        this.webAccessibleResourcesPath = webAccessibleResourcesPath;
-    }
+    private async innerStart(config: Configuration): Promise<void> {
+        this.configuration = configurationValidator.parse(config);
 
-    public async start(configuration: Configuration): Promise<void> {
-        configurationValidator.parse(configuration);
+        console.debug('[START]: start');
 
-        this.isStarted = true;
-        await this.configure(configuration);
-    }
+        try {
+            await this.configure(this.configuration);
+        } catch (e) {
+            this.startPromise = undefined;
+            console.debug('[START]: failed');
 
-    public async stop(): Promise<void> {
-        this.isStarted = false;
-
-        const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-        const existingRulesIds = existingRules.map((rule) => rule.id);
-
-        await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: existingRulesIds });
-
-        await chrome.declarativeNetRequest.updateEnabledRulesets({
-            disableRulesetIds: this.configuration?.filters
-                .map((filterId) => {
-                    return `ruleset_${filterId}`;
-                }),
-        });
-    }
-
-    /* TODO: merge update */
-    public async configure(configuration: Configuration): Promise<void> {
-        configurationValidator.parse(configuration);
-
-        if (!this.isStarted) {
-            throw new Error('App is not started!');
+            return;
         }
 
-        const enableFiltersIds = configuration.filters;
-        const disableFiltersIds = this.configuration
-            ? this.configuration.filters
-                .filter((f) => !enableFiltersIds.includes(f))
-            : [];
-
-        this.configuration = merge({}, configuration);
-
-        await FiltersApi.updateFiltering(enableFiltersIds, disableFiltersIds);
-        await UserRulesAPI.updateDynamicFiltering(this.configuration.userrules);
+        this.isStarted = true;
+        this.startPromise = undefined;
+        console.debug('[START]: started');
     }
 
-    public openAssistant(tabId: number): void {}
+    /**
+     * Starts filtering
+     */
+    public async start(config: Configuration): Promise<void> {
+        console.debug('[START]: is started ', this.isStarted);
 
-    public closeAssistant(tabId: number): void {}
+        if (this.isStarted) {
+            return;
+        }
 
-    public getSiteStatus(url: string): SiteStatus {
+        if (this.startPromise) {
+            console.debug('[START]: already called start, waiting');
+            await this.startPromise;
+            console.debug('[START]: awaited start');
+            return;
+        }
+
+        // Call and wait for promise for allow multiple calling start
+        this.startPromise = this.innerStart(config);
+        await this.startPromise;
+    }
+
+    /**
+     * Stops service, disables all user rules and filters
+     */
+    public async stop(): Promise<void> {
+        await UserRulesApi.removeAllRules();
+
+        const disableFiltersIds = await FiltersApi.getEnabledRulesets();
+        await FiltersApi.updateFiltering(disableFiltersIds);
+
+        await engineApi.stopEngine();
+
+        this.isStarted = false;
+    }
+
+    /**
+     * Uses configuration to pass params to filters, user rules and filter engine
+     */
+    public async configure(config: Configuration): Promise<void> {
+        console.debug('[CONFIGURE]: start with ', config);
+
+        this.configuration = configurationValidator.parse(config);
+
+        const enableFiltersIds = this.configuration.filters
+            .map(({ filterId }) => filterId);
+        const currentFiltersIds = await FiltersApi.getEnabledRulesets();
+        const disableFiltersIds = currentFiltersIds
+            .filter((f) => !enableFiltersIds.includes(f)) || [];
+
+        await FiltersApi.updateFiltering(disableFiltersIds, enableFiltersIds);
+        await UserRulesApi.updateDynamicFiltering(this.configuration.userrules);
+        await engineApi.startEngine({
+            filters: this.configuration.filters,
+            userrules: this.configuration.userrules,
+            verbose: this.configuration.verbose,
+        });
+
+        console.debug('[CONFIGURE]: end');
+    }
+
+    public openAssistant(): void {}
+
+    public closeAssistant(): void {}
+
+    public getSiteStatus(): SiteStatus {
         return SiteStatus.FilteringEnabled;
     }
 
     public getRulesCount(): number {
         return 0;
+    }
+
+    /**
+     * @returns messages handler
+     */
+    public getMessageHandler() {
+        const messagesApi = new MessagesApi(this);
+        return messagesApi.handleMessage;
     }
 }

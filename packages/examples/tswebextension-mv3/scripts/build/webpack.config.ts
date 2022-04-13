@@ -7,8 +7,9 @@ import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import packageJson from '../../package.json';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
-const BUILD_PATH = path.resolve(__dirname, '../../build');
 const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');
+const CONTENT_SCRIPT = path.join(__dirname, '../../extension/pages/content-script');
+const BUILD_PATH = path.resolve(__dirname, '../../build');
 const DECLARATIVE_FILTERS_DIR = path.resolve(__dirname, '../../extension/filters/declarative');
 
 const updateManifest = (content: Buffer) => {
@@ -24,7 +25,7 @@ const updateManifest = (content: Buffer) => {
                 const rulesetIndex = name.match(/\d+/);
                 return {
                     id: `ruleset_${rulesetIndex}`,
-                    enabled: true,
+                    enabled: false,
                     path: `filters/declarative/${name}`,
                 };
             }),
@@ -45,6 +46,7 @@ export const config: Configuration = {
     entry: {
         background: BACKGROUND_PATH,
         'pages/popup': POPUP_PATH,
+        'content-script': CONTENT_SCRIPT,
     },
     output: {
         path: BUILD_PATH,
@@ -52,6 +54,11 @@ export const config: Configuration = {
     },
     resolve: {
         extensions: ['*', '.tsx', '.ts', '.js'],
+        fallback: {
+            url: false,
+            path: false,
+            fs: false,
+        },
     },
     module: {
         rules: [

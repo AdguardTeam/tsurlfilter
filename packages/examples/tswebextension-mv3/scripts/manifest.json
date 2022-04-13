@@ -5,12 +5,15 @@
     "version": "0.0.1",
     "description": "An example of extension built with TSUrlFilter on Manifest-v3",
     "permissions": [
+        "tabs",
         "declarativeNetRequest",
         "declarativeNetRequestFeedback",
         "scripting",
         "activeTab",
+        "webRequest",
         "webNavigation",
-        "storage"
+        "storage",
+        "unlimitedStorage"
     ],
     "host_permissions": [
         "<all_urls>"
@@ -20,6 +23,20 @@
     },
     "action": {
         "default_popup": "pages/popup.html"
-    }
+    },
+    "content_scripts": [
+        {
+            "js": [
+                "content-script.js"
+            ],
+            "all_frames": true,
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "match_about_blank": true,
+            "run_at": "document_start"
+        }
+    ]
 }
 

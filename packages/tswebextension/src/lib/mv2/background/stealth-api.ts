@@ -8,8 +8,7 @@ import {
     RequestData,
 } from './request';
 
-import { Configuration } from '../common';
-import { FilteringLog, defaultFilteringLog } from '../../common';
+import { Configuration, FilteringLog, defaultFilteringLog } from '../../common';
 
 // TODO: Privacy permission for block webrtc stealth setting
 /**

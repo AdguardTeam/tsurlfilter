@@ -7,6 +7,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./mv3": "./dist/index.mv3.js",
+    "./mv3/content-script": "./dist/content-script.mv3.js",
     "./content-script": "./dist/content-script.js",
     "./cli": "./dist/cli.js"
   },
@@ -14,6 +15,9 @@
     "*": {
       "mv3": [
         "dist/types/lib/mv3/background/index.d.ts"
+      ],
+      "mv3/content-script": [
+        "dist/types/lib/mv3/content-script/index.d.ts"
       ],
       "content-script": [
         "dist/types/lib/mv2/content-script/index.d.ts"
@@ -96,6 +100,7 @@
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.59",
+    "@adguard/filters-downloader": "^1.1.13",
     "@adguard/scriptlets": "^1.6.4",
     "@adguard/tsurlfilter": "^0.7.37",
     "bowser": "^2.11.0",
