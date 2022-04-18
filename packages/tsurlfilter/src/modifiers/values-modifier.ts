@@ -3,7 +3,7 @@ import { IAdvancedModifier } from './advanced-modifier';
 /**
  * Permitted/restricted values modifier
  */
-export interface IValuesModifier extends IAdvancedModifier{
+export interface IValuesModifier extends IAdvancedModifier {
     /**
      * Permitted values
      */

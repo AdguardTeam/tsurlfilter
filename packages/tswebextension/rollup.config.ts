@@ -6,6 +6,8 @@ import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 const DEFAULT_OUTPUT_PATH = 'dist';
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
 
+const cache = false;
+
 const commonPlugins = [
     typescript({
         tsconfig: 'tsconfig.build.json',
@@ -17,6 +19,7 @@ const commonPlugins = [
 ];
 
 const contentScriptConfig = {
+    cache,
     input: 'src/lib/mv2/content-script/index.ts',
     output: [
         {
@@ -33,6 +36,7 @@ const contentScriptConfig = {
 };
 
 const contentScriptMv3Config = {
+    cache,
     input: 'src/lib/mv3/content-script/index.ts',
     output: [
         {
@@ -49,6 +53,7 @@ const contentScriptMv3Config = {
 };
 
 const backgroundMv2Config = {
+    cache,
     input: ['src/lib/mv2/background/index.ts'],
     output: [
         {
@@ -65,6 +70,7 @@ const backgroundMv2Config = {
 };
 
 const backgroundMv3Config = {
+    cache,
     input: ['src/lib/mv3/background/index.ts'],
     output: [
         {
@@ -76,11 +82,12 @@ const backgroundMv3Config = {
     watch: {
         include: 'src/lib/mv3/background/**',
     },
-    external: ['zod', '@adguard/tsurlfilter'],
+    external: ['zod', '@adguard/tsurlfilter', 'deepmerge'],
     plugins: commonPlugins,
 };
 
 const cliConfig = {
+    cache,
     input: 'src/cli/index.ts',
     output: [
         {

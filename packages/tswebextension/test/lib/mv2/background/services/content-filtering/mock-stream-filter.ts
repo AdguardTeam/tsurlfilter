@@ -5,14 +5,16 @@ import { WebRequest } from 'webextension-polyfill';
  * Mock filter implementation
  */
 export class MockStreamFilter implements WebRequest.StreamFilter {
-    content: BufferSource | undefined;
-
     status: WebRequest.StreamFilterStatus = 'uninitialized';
+
+    content: BufferSource | undefined;
 
     error = '';
 
+    onstart(): void {}
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ondata = (event: { data: BufferSource }): void => {};
+    ondata(event: { data: BufferSource }): void {}
 
     onerror(): void {}
 
@@ -40,8 +42,8 @@ export class MockStreamFilter implements WebRequest.StreamFilter {
      * @param data
      */
     send(data: BufferSource): void {
+        this.onstart();
         this.ondata({ data });
-
         this.onstop();
     }
 

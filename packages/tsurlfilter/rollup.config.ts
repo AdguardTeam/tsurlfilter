@@ -14,8 +14,8 @@ const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUT
 
 const libraryName = 'TSUrlFilter';
 
-
 const commonConfig = {
+    cache: false,
     watch: {
         include: 'src/**',
     },
@@ -59,43 +59,30 @@ const esmConfig = {
             sourcemap: false,
         },
     ],
-    watch: {
-        include: 'src/**',
-    },
-    plugins: [
-        json(),
-        typescript(),
-        commonjs({
-            sourceMap: false,
-        }),
-        globals(),
-        nodePolyfills(),
-        resolve({ preferBuiltins: false }),
-        cleanup({
-            comments: ['srcmaps'],
-        }),
+    ...commonConfig,
+};
+
+const umdConfig = {
+    input: 'src/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
+            name: camelCase(libraryName),
+            format: 'umd',
+            sourcemap: false,
+        },
+        {
+            file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
+            name: camelCase(libraryName),
+            format: 'umd',
+            sourcemap: false,
+            plugins: [terser()],
+        },
     ],
+    ...commonConfig,
 };
 
 export default [
     esmConfig,
-    {
-        input: 'src/index.ts',
-        output: [
-            {
-                file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
-                name: camelCase(libraryName),
-                format: 'umd',
-                sourcemap: false,
-            },
-            {
-                file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
-                name: camelCase(libraryName),
-                format: 'umd',
-                sourcemap: false,
-                plugins: [terser()],
-            },
-        ],
-        ...commonConfig,
-    },
+    umdConfig,
 ];

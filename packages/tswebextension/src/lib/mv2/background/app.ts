@@ -1,5 +1,6 @@
 /* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import merge from 'deepmerge';
 import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
@@ -59,13 +60,12 @@ export class TsWebExtension implements ManifestV2AppInterface {
         this.isStarted = false;
     }
 
-    /* TODO: merge update */
     public async configure(configuration: Configuration): Promise<void> {
-        configurationValidator.parse(configuration);
-
         if (!this.isStarted) {
             throw new Error('App is not started!');
         }
+
+        configurationValidator.parse(configuration);
 
         await engineApi.startEngine(configuration);
         this.configuration = configuration;
@@ -113,5 +113,23 @@ export class TsWebExtension implements ManifestV2AppInterface {
 
         this.configuration.userrules.push(ruleText);
         this.configure(this.configuration);
+    }
+
+    /**
+     * recursively merge changes to passed confuguration
+     * @returns new confuguration
+     *
+     * using for immutably update the config object
+     * and pass it to {@link configure} or {@link start} method
+     * which will validate the configuration
+     */
+    static mergeConfiguration(
+        configuration: Configuration,
+        changes: Partial<Configuration>,
+    ) {
+        return merge<Configuration>(configuration, changes, {
+            // Arrays will be replaced
+            arrayMerge: (_, source) => source,
+        });
     }
 }

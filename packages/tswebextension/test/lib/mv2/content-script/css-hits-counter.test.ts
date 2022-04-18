@@ -68,6 +68,7 @@ describe('CssHitsCounter', () => {
                 this.callback = callback;
 
                 // Keep the link to current instance
+                // eslint-disable-next-line @typescript-eslint/no-this-alias
                 mutationObserverRef = this;
             }
 
