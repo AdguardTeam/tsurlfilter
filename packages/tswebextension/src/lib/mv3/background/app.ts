@@ -36,7 +36,7 @@ export class TsWebExtension implements AppInterface<Configuration> {
             await this.configure(this.configuration);
         } catch (e) {
             this.startPromise = undefined;
-            console.debug('[START]: failed');
+            console.debug('[START]: failed', e);
 
             return;
         }

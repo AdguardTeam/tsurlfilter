@@ -9,6 +9,7 @@ import {
 } from '../../common';
 import { engineApi } from './engine-api';
 import { TsWebExtension } from './app';
+import isHttpOrWsRequest from './utils/is-http-or-webrequest';
 
 export default class MessagesApi {
     private tsWebExtension: TsWebExtension;
@@ -20,10 +21,11 @@ export default class MessagesApi {
 
     /**
      * Handles message
-     * @param message
-     * @returns
+     * @param message message
+     * @param sender sender of message
+     * @returns data according to the received message
      */
-    public async handleMessage(message: Message) {
+    public async handleMessage(message: Message, sender: chrome.runtime.MessageSender) {
         console.debug('[HANDLE MESSAGE]: ', message);
 
         try {
@@ -39,7 +41,21 @@ export default class MessagesApi {
         switch (type) {
             case MessageType.GET_CSS: {
                 console.debug('[HANDLE MESSAGE]: call getCss');
-                return this.getCss(message.payload);
+
+                const res = getCssPayloadValidator.safeParse(message.payload);
+                if (!res.success) {
+                    return;
+                }
+
+                let { url } = res.data;
+
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
+                // when document url for iframe is about:blank then we use tab url
+                if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
+                    url = sender.tab.url;
+                }
+
+                return this.getCss(url);
             }
             default: {
                 console.error('Did not found handler for message');
@@ -49,22 +65,15 @@ export default class MessagesApi {
 
     /**
      * Builds css for specified url
-     * @param payload object which contains
+     * @param url url for which build css
      * @returns cosmetic css
      */
-    private getCss(payload?: unknown) {
-        console.debug('[GET CSS]: received call');
-        const res = getCssPayloadValidator.safeParse(payload);
+    private getCss(url: string) {
+        console.debug('[GET CSS]: received call', url);
 
-        if (!res.success) {
-            return;
-        }
-
-        const isFilteringOn = this.tsWebExtension.isStarted;
-
-        if (isFilteringOn) {
+        if (this.tsWebExtension.isStarted) {
             return engineApi.buildCosmeticCss(
-                res.data.url,
+                url,
                 CosmeticOption.CosmeticOptionAll,
                 false,
                 false,

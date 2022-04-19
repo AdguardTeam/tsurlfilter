@@ -122,7 +122,10 @@ const checkConfigAndStart = async () => {
     await startIfNeed();
 };
 
-const proxyHandler = async (message: IMessage | IMessageInner) => {
+const proxyHandler = async (
+    message: IMessage | IMessageInner,
+    sender: chrome.runtime.MessageSender,
+) => {
     const id = 'id_' + Math.random().toString(16).slice(2);
     console.debug('[PROXY HANDLER]: start check config', id, message);
 
@@ -135,7 +138,7 @@ const proxyHandler = async (message: IMessage | IMessageInner) => {
     console.debug('[PROXY HANDLER]: after check config ', id, message);
 
     if ((message as IMessageInner)?.handlerName === 'tsWebExtension') {
-        return tsWebExtensionMessageHandler(message as IMessageInner);
+        return tsWebExtensionMessageHandler(message as IMessageInner, sender);
     } else {
         return messageHandler(message as IMessage);
     }
@@ -152,12 +155,12 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onMessage
     .addListener((
         message: IMessage | IMessageInner,
-        sender,
+        sender: chrome.runtime.MessageSender,
         sendResponse,
     ) => {
         console.debug('chrome.runtime.onMessage: ', message);
 
-        proxyHandler(message).then(sendResponse);
+        proxyHandler(message, sender).then(sendResponse);
 
         return true;
     });

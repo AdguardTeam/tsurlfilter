@@ -1,3 +1,5 @@
+import ExtendedCss from 'extended-css';
+
 /* eslint-disable no-console */
 import { MessageType, sendAppMessage } from '../../common';
 
@@ -14,6 +16,22 @@ const applyCss = (cssContent: string) => {
     styleEl.textContent = cssContent;
 
     (document.head || document.documentElement).appendChild(styleEl);
+    console.debug('[COSMETIC CSS]: applied');
+};
+
+const applyExtendedCss = (cssText: string) => {
+    if (!cssText || cssText.length === 0) {
+        return;
+    }
+
+    // Apply extended css stylesheets
+    const extendedCss = new ExtendedCss({
+        styleSheet: cssText,
+    });
+
+    extendedCss.apply();
+
+    console.debug('[EXTENDED CSS]: applied');
 };
 
 (async () => {
@@ -24,9 +42,11 @@ const applyCss = (cssContent: string) => {
         },
     });
 
-    console.debug('GET_CSS result: ', res);
+    console.debug('[GET_CSS]: result ', res);
 
     if (res) {
-        applyCss(res?.css.join(''));
+        const { css, extendedCss } = res;
+        applyCss(css?.join(''));
+        applyExtendedCss(extendedCss?.join(''));
     }
 })();
