@@ -1,7 +1,8 @@
 import punycode from 'punycode/';
-import { ERROR_STATUS_CODES } from './../../common/constants';
+import { ErrorStatusCodes, SEPARATOR } from './../../common/constants';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { CookieModifier } from '../../modifiers/cookie-modifier';
+import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
 import { RequestType } from '../../request-type';
 import { logger } from '../../utils/logger';
 import {
@@ -11,6 +12,7 @@ import {
     RuleActionType,
     RuleCondition,
     DomainType,
+    Redirect,
 } from './declarative-rule';
 
 /**
@@ -53,6 +55,7 @@ export class DeclarativeRuleConverter {
      * Gets resource type matching request type
      *
      * @param requestTypes
+     * @param returnAll
      */
     private static getResourceTypes(requestTypes: RequestType): ResourceType[] {
         return Object.entries(DECLARATIVE_RESOURCE_TYPES_MAP)
@@ -116,6 +119,21 @@ export class DeclarativeRuleConverter {
     }
 
     /**
+     * Rule redirect action
+     *
+     * @param rule
+     */
+    private static getRedirectAction(rule: NetworkRule): Redirect {
+        const removeParamModifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        const removeParams = removeParamModifier.getValueList();
+        if (removeParamModifier.getValue() === '') {
+            return { transform: { query: '' } };
+        } else {
+            return { transform: { queryTransform: { removeParams } } };
+        }
+    }
+
+    /**
      * Rule action
      *
      * @param rule
@@ -136,6 +154,9 @@ export class DeclarativeRuleConverter {
 
         if (rule.isAllowlist()) {
             action.type = RuleActionType.ALLOW;
+        } else if (rule.getAdvancedModifier() instanceof RemoveParamModifier) {
+            action.type = RuleActionType.REDIRECT;
+            action.redirect = this.getRedirectAction(rule);
         } else {
             action.type = RuleActionType.BLOCK;
         }
@@ -198,6 +219,13 @@ export class DeclarativeRuleConverter {
             condition.resourceTypes = this.getResourceTypes(permittedRequestTypes);
         }
 
+        // if no resourceTypes are explicit in $removeparam, we set main_frame by default,
+        // otherwise the rule will not work
+        if (rule.getAdvancedModifier() instanceof RemoveParamModifier
+            && !hasExcludedResourceTypes && permittedRequestTypes === 0) {
+            condition.resourceTypes = [ResourceType.MAIN_FRAME];
+        }
+
         // set isUrlFilterCaseSensitive
         condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
 
@@ -224,6 +252,15 @@ export class DeclarativeRuleConverter {
             declarativeRule.priority = priority;
         }
         declarativeRule.id = id;
+
+        const removeParamModifier = rule.getAdvancedModifier() as RemoveParamModifier;
+        if (rule.getAdvancedModifier() instanceof RemoveParamModifier
+            && removeParamModifier.getErrorMv3()) {
+            // eslint-disable-next-line max-len
+            logger.info(`Status: ${removeParamModifier.getErrorMv3()} Message: regexp is not supported: "${rule.getText()}"`);
+            return null;
+        }
+
         declarativeRule.action = this.getAction(rule);
         declarativeRule.condition = this.getCondition(rule);
 
@@ -237,14 +274,14 @@ export class DeclarativeRuleConverter {
 
         // More complex regex than allowed as part of the "regexFilter" key.
         if (regexFilter?.match(/\|/g)) {
-            const regexArr = regexFilter.split('|');
+            const regexArr = regexFilter.split(SEPARATOR);
             // TODO Find how exactly the complexity of a rule is calculated.
             // The values maxGroups & maxGroupLength are obtained by testing.
             const maxGroups = 15;
             const maxGroupLength = 31;
             if (regexArr.length > maxGroups || regexArr.some(i => i.length > maxGroupLength)) {
                 // eslint-disable-next-line max-len
-                throw new Error(`Status: ${ERROR_STATUS_CODES.COMPLEX_REGEX} Message: More complex regex than allowed: "${rule.getText()}"`);
+                throw new Error(`Status: ${ErrorStatusCodes.ComplexRegex} Message: More complex regex than allowed: "${rule.getText()}"`);
             }
         }
 

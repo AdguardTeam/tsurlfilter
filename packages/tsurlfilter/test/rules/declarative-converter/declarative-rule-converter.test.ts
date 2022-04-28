@@ -54,6 +54,121 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
+    it('converts $removeparam rules', () => {
+        const ruleText = '||example.com$removeparam=param';
+        const ruleId = 1;
+        const networkRule = new NetworkRule(ruleText, -1);
+        const declarativeRule = DeclarativeRuleConverter.convert(networkRule, ruleId);
+        expect(declarativeRule).toEqual({
+            id: ruleId,
+            action: {
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: ['param'],
+                        },
+                    },
+                },
+            },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: [ 'main_frame' ],
+                urlFilter: '||example.com',
+            },
+        });
+    });
+
+    it('converts $removeparam several params', () => {
+        const ruleText = '||example.com$removeparam=param|another';
+        const ruleId = 1;
+        const networkRule = new NetworkRule(ruleText, -1);
+        const declarativeRule = DeclarativeRuleConverter.convert(networkRule, ruleId);
+        expect(declarativeRule).toEqual({
+            id: ruleId,
+            action: {
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: ['param', 'another'],
+                        },
+                    },
+                },
+            },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: [ 'main_frame' ],
+                urlFilter: '||example.com',
+            },
+        });
+    });
+
+    // Inversion is not supported
+    // https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform
+    it('inversion in $removeparam is not supported', () => {
+        const ruleText = '||example.com$removeparam=~param';
+        const ruleId = 1;
+        const networkRule = new NetworkRule(ruleText, -1);
+        const declarativeRule = DeclarativeRuleConverter.convert(networkRule, ruleId);
+        expect(declarativeRule).toEqual(null);
+    });
+
+    it('converts empty $removeparam rule', () => {
+        const ruleText = '||example.com$removeparam';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual({
+            id: ruleId,
+            action: {
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        query: '',
+                    },
+                },
+            },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: ['main_frame'],
+                urlFilter: '||example.com',
+            },
+        });
+    });
+
+    it('converts $removeparam resource type xmlhttprequest', () => {
+        const ruleText = '||testcases.adguard.com$xmlhttprequest,removeparam=p2case2';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual({
+            id: ruleId,
+            action: {
+                type: 'redirect',
+                redirect: {
+                    transform: {
+                        queryTransform: {
+                            removeParams: ['p2case2'],
+                        },
+                    },
+                },
+            },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: ['xmlhttprequest'],
+                urlFilter: '||testcases.adguard.com',
+            },
+        });
+    });
+
+    // Regexp is not supported
+    // https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform
+    it('converts $removeparam with regexp', () => {
+        const ruleText = '||testcases.adguard.com$xmlhttprequest,removeparam=/P2CASE2/i';
+        const ruleId = 1;
+        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        expect(declarativeRule).toEqual(null);
+    });
+
     it('converts rules with $third-party modifiers', () => {
         const thirdPartyRuleText = '||example.org^$third-party';
         const ruleId = 1;

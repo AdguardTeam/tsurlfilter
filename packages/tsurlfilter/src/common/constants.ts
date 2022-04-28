@@ -1,5 +1,9 @@
-export const ERROR_STATUS_CODES = {
-    COMPLEX_REGEX: 1001,
-    RULE_LIMIT: 1002,
-    REGEXP_RULE_LIMIT: 1003,
-};
+export enum ErrorStatusCodes {
+    ComplexRegex = 1001,
+    RuleLimit = 1002,
+    RegexpRuleLimit = 1003,
+    RemoveparamRegexpIsNotSupported = 1004,
+    RemoveparamInversionIsNotSupported = 1005,
+}
+
+export const SEPARATOR = '|';

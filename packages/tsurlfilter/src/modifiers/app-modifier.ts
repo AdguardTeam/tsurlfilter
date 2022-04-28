@@ -1,3 +1,5 @@
+import { SEPARATOR } from '../common/constants';
+
 export interface IAppModifier {
     permittedApps: string[] | null;
     restrictedApps: string[] | null;
@@ -20,11 +22,6 @@ export class AppModifier implements IAppModifier {
     public readonly restrictedApps: string[] | null;
 
     /**
-     * Separator between apps
-     */
-    private readonly APPS_SEPARATOR: string = '|';
-
-    /**
      * Parses the `apps` string
      *
      * @param apps - apps string
@@ -39,7 +36,7 @@ export class AppModifier implements IAppModifier {
         const permittedApps: string[] = [];
         const restrictedApps: string[] = [];
 
-        const parts = apps.split(this.APPS_SEPARATOR);
+        const parts = apps.split(SEPARATOR);
         for (let i = 0; i < parts.length; i += 1) {
             let app = parts[i];
             let restricted = false;

@@ -1,4 +1,4 @@
-import { ERROR_STATUS_CODES } from './../../common/constants';
+import { ErrorStatusCodes } from './../../common/constants';
 import { DeclarativeRule } from './declarative-rule';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { DeclarativeRuleConverter } from './declarative-rule-converter';
@@ -62,14 +62,14 @@ export class DeclarativeConverter {
 
             if (result.length > maxLimit) {
                 // eslint-disable-next-line max-len
-                throw new Error(`Status: ${ERROR_STATUS_CODES.RULE_LIMIT} Message: Maximum allowed rules count reached: ${maxLimit}`);
+                throw new Error(`Status: ${ErrorStatusCodes.RuleLimit} Message: Maximum allowed rules count reached: ${maxLimit}`);
             }
 
             const regexpRules = result.filter((i) => i.condition.regexFilter);
 
             if (regexpRules.length > maxRegexLimit) {
                 // eslint-disable-next-line max-len
-                throw new Error(`Status: ${ERROR_STATUS_CODES.REGEXP_RULE_LIMIT} Message: Maximum allowed regex rules count reached: ${maxRegexLimit}`);
+                throw new Error(`Status: ${ErrorStatusCodes.RegexpRuleLimit} Message: Maximum allowed regex rules count reached: ${maxRegexLimit}`);
             }
         });
 

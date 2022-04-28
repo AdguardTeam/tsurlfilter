@@ -300,6 +300,13 @@ describe('NetworkRule - redirect-rule rules', () => {
 });
 
 describe('NetworkRule - removeparam rules', () => {
+    it('check removeparam value list is correct', () => {
+        const modifier = new RemoveParamModifier('param|another');
+        expect(modifier).toBeTruthy();
+        const getValueList = modifier.getValueList();
+        expect(getValueList).toBeTruthy();
+        expect(getValueList).toEqual(['param', 'another']);
+    });
     it('works if removeparam modifier is correctly parsed', () => {
         let rule = new NetworkRule('$removeparam=param', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);

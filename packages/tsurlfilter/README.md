@@ -536,6 +536,18 @@ Provides a functionality of conversion AG rules to manifest v3 declarative synta
      */
     public convert(ruleList: IRuleList): DeclarativeRule[] {
 ```
+##### Problems
+[QueryTransform](https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform)
+- Regexp is not supported in remove params
+- We cannot implement inversion in remove params
+- We cannot filter by request methods
+- Only one rule applies for a redirect. For this reason, different rules with the same url may not work. Example below:
+```
+Works   ||testcases.adguard.com$removeparam=p1case6|p2case6
+
+Failed  ||testcases.adguard.com$removeparam=p1case6
+Works   ||testcases.adguard.com$removeparam=p2case6
+```
 
 #### <a id="content-script-classes"></a> Content script classes
 Classes provided for page context:
