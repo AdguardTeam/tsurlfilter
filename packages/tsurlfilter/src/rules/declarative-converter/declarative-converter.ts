@@ -7,6 +7,17 @@ import { IRuleList } from '../../filterlist/rule-list';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { IndexedRule } from '../rule';
 
+interface IConvertOptions {
+    resoursesPath?: string,
+    maxLimit?: number,
+    maxRegexLimit?: number,
+}
+
+const defaultOptions: IConvertOptions = {
+    maxLimit: Number.MAX_SAFE_INTEGER,
+    maxRegexLimit: Number.MAX_SAFE_INTEGER,
+};
+
 /**
  * Converter class
  * Provides a functionality of conversion AG rules to declarative rules.
@@ -22,9 +33,16 @@ export class DeclarativeConverter {
     // eslint-disable-next-line class-methods-use-this
     public convert(
         ruleList: IRuleList,
-        maxLimit = Number.MAX_SAFE_INTEGER,
-        maxRegexLimit = Number.MAX_SAFE_INTEGER,
+        options?: IConvertOptions,
     ): DeclarativeRule[] {
+        const resoursesPath = options?.resoursesPath;
+        const maxLimit = options?.maxLimit || defaultOptions.maxLimit!;
+        const maxRegexLimit = options?.maxRegexLimit || defaultOptions.maxRegexLimit!;
+
+        if (resoursesPath) {
+            DeclarativeRuleConverter.WebAccesibleResoursesPath = resoursesPath;
+        }
+
         const indexedRules: IndexedRule[] = [];
         const badfilterRules: NetworkRule[] = [];
 

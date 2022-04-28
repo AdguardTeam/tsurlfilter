@@ -52,21 +52,23 @@ const startConvert = () => {
             const list = new TSUrlFilter.StringRuleList(
                 +rulesetIndex, data, false,
             );
-            const result = converter.convert(list);
+            const result = converter.convert(list, {
+                resoursesPath: '/war/redirects',
+            });
 
             const fileDeclarative = filePath.replace('.txt', '.json');
             fs.writeFileSync(
                 `${DECLARATIVE_FILTERS_DIR}/${fileDeclarative}`,
                 JSON.stringify(result, null, '\t'),
             );
-        }
 
-        console.info(`Convert ${filePath} done`);
+            console.info(`Convert ${filePath} done`);
+        } else {
+            console.info(`Convert ${filePath} skipped`);
+        }
     };
 
-    files.forEach(file => {
-        prepareDeclarativeFilter(file);
-    });
+    files.forEach(prepareDeclarativeFilter);
 };
 
 const downloadFilter = async (url: UrlType, filtersDir: string) => {

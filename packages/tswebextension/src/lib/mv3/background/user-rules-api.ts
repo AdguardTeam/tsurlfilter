@@ -9,11 +9,18 @@ export default class UserRulesApi {
     /**
      * Updates dynamic rules via declarativeNetRequest
      * @param userrules string[] contains custom user rules
+     * @param resoursesPath string path to web accessible resourses,
+     * relative to the extension root dir. Should start with leading slash '/'
      */
-    public static async updateDynamicFiltering(userrules: string[]): Promise<void> {
+    public static async updateDynamicFiltering(
+        userrules: string[],
+        resoursesPath?: string,
+    ): Promise<void> {
         const converter = new DeclarativeConverter();
         const list = new StringRuleList(USER_FILTER_ID, userrules.join('\n'), false);
-        const convertedRules = converter.convert(list);
+        const convertedRules = converter.convert(list, {
+            resoursesPath,
+        });
 
         // remove existing dynamic rules, in order their ids not interfere with new
         await this.removeAllRules();

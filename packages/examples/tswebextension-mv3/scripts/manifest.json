@@ -37,6 +37,13 @@
             "match_about_blank": true,
             "run_at": "document_start"
         }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["/war/*"],
+            "matches": [ "http://*/*", "https://*/*" ],
+            "use_dynamic_url": true
+        }
     ]
 }
 

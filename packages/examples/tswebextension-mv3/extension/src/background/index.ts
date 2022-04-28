@@ -5,7 +5,7 @@ import { StorageKeys, storage } from './storage';
 import { loadFilterContent } from './loadFilterContent';
 import { loadDefaultConfig } from './loadDefaultConfig';
 
-const tsWebExtension = new TsWebExtension();
+const tsWebExtension = new TsWebExtension('/war/redirects');
 const defaultUxConfig = {
     isStarted: true,
 };

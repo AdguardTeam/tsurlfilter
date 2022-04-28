@@ -14,26 +14,10 @@
   dependencies:
     axios "^0.21.1"
 
-"@adguard/scriptlets@^1.4.4":
-  version "1.5.23"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.5.23.tgz#8019adc1208bf2e313150a548d39052b7d3b7f35"
-  integrity sha512-Sf1QAs9vaUG0ADSJliNyp85h2vSc02WaD6gOwpxissWc6T7ICWqtUTOGG4sAyye4s7p5rLcr8SP88RiKAfQyVg==
-  dependencies:
-    "@babel/runtime" "^7.7.2"
-    js-yaml "^3.13.1"
-
-"@adguard/scriptlets@^1.6.4":
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.4.tgz#081c7cb199ab65ba35573b4ea70c8bca34ee652b"
-  integrity sha512-wIMU7Z+ggn/qU525/wvqQZ4ws3Xz+a3ZYIhJmNmAEF0yFbdrKH8g1WQfvQSLSuJJpTcFFeCiCJqIzo9CsAUz6g==
-  dependencies:
-    "@babel/runtime" "^7.7.2"
-    js-yaml "^3.13.1"
-
-"@adguard/scriptlets@^1.6.6":
-  version "1.6.6"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.6.tgz#32cca5a9133b995fd40bbca9c576f1c66aa91d95"
-  integrity sha512-fIzw5iv1iorHV58drGn+vUXKeT0Fun84Q5DnXbo2T1jPasuNgS6TI/w1wEVhdXyNSTfRbFnCCZQ9FaDMUfebAg==
+"@adguard/scriptlets@^1.4.4", "@adguard/scriptlets@^1.6.11":
+  version "1.6.11"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.11.tgz#7a3c4e4fb4b45a0ba749822f135ff70ef43a50cf"
+  integrity sha512-cHGOUKLVym2k/NLGC+6NIjKSJJftQxFACiWmg57P99NOX6DTk5dlsqJ7xwFmh6/z0lgrEVkDF22MuVFDrbRMcg==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
@@ -1032,10 +1016,17 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.13.10", "@babel/runtime@^7.7.2", "@babel/runtime@^7.8.4":
+"@babel/runtime@^7.13.10", "@babel/runtime@^7.8.4":
   version "7.17.2"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.17.2.tgz#66f68591605e59da47523c631416b18508779941"
   integrity sha512-hzeyJyMA1YGdJTuWU0e/j4wKXrU4OMFvY2MSlaI9B7VQb0r5cxTE3EAIS2Q7Tn2RIcDkRvTA/v2JsAEhxe99uw==
+  dependencies:
+    regenerator-runtime "^0.13.4"
+
+"@babel/runtime@^7.7.2":
+  version "7.17.9"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.17.9.tgz#d19fbf802d01a8cb6cf053a64e472d42c434ba72"
+  integrity sha512-lSiBBvodq29uShpWGNbgFdKYNiFDo5/HIYsaCEY9ff4sb10x9jizo2+pRrSyF4jKZCXqgzuqBOQKbUm90gQwJg==
   dependencies:
     regenerator-runtime "^0.13.4"
 

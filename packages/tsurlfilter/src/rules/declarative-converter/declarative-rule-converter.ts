@@ -1,4 +1,5 @@
 import punycode from 'punycode/';
+import { redirects } from '@adguard/scriptlets';
 import { ERROR_STATUS_CODES } from '../../common/constants';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { CookieModifier } from '../../modifiers/cookie-modifier';
@@ -67,6 +68,33 @@ export class DeclarativeRuleConverter {
     }
 
     /**
+     * String path to web accessible resourses,
+     * relative to the extension root dir.
+     * Should start with leading slash '/'
+     */
+    private static webAccesibleResoursesPath: string;
+
+    /**
+     * String path to web accessible resourses,
+     * relative to the extension root dir.
+     * Should start with leading slash '/'
+     */
+    public static set WebAccesibleResoursesPath(value: string) {
+        const firstChar = 0;
+        const lastChar = value.length > 0 ? value.length - 1 : 0;
+
+        if (value[firstChar] !== '/') {
+            throw new Error(`Path to web accesible resourses should be started with leading slash: ${value}`);
+        }
+
+        if (value[lastChar] === '/') {
+            throw new Error(`Path to web accesible resourses should not be ended with slash: ${value}`);
+        }
+
+        this.webAccesibleResoursesPath = value;
+    }
+
+    /**
      * Converts to punycode non if string contains non ASCII characters
      * @param str
      * @private
@@ -123,7 +151,7 @@ export class DeclarativeRuleConverter {
     private static getAction(rule: NetworkRule): RuleAction {
         const action = {} as RuleAction;
 
-        // TODO RuleAction
+        // TODO: RuleAction
         //  - redirect?: Redirect;
         //  - requestHeaders?: ModifyHeaderInfo[];
         //  - responseHeaders?: ModifyHeaderInfo[];
@@ -134,7 +162,17 @@ export class DeclarativeRuleConverter {
         //  - 'modifyHeaders' = 'modifyHeaders',
         //  - 'allowAllRequests' = 'allowAllRequests',
 
-        if (rule.isAllowlist()) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            const resoursesPath = DeclarativeRuleConverter.webAccesibleResoursesPath;
+            if (!resoursesPath) {
+                throw new Error(`Error: empty web accessible resourses path: ${rule.getText()}`);
+            }
+            const filename = redirects.getRedirectFilename(rule.getAdvancedModifierValue()!);
+            action.redirect = {
+                extensionPath: `${resoursesPath}/${filename}`,
+            };
+            action.type = RuleActionType.REDIRECT;
+        } else if (rule.isAllowlist()) {
             action.type = RuleActionType.ALLOW;
         } else {
             action.type = RuleActionType.BLOCK;

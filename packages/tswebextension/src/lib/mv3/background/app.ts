@@ -25,6 +25,22 @@ export class TsWebExtension implements AppInterface<Configuration> {
     private startPromise: Promise<void> | undefined;
 
     /**
+     * Web accessible resources path in the result bundle
+     * relative to the root dir. Should start with leading slash '/'
+     */
+    private readonly webAccessibleResourcesPath: string | undefined;
+
+    /**
+     * Constructor
+     *
+     * @param webAccessibleResourcesPath string path to web accessible resourses,
+     * relative to the extension root dir. Should start with leading slash '/'
+     */
+    constructor(webAccessibleResourcesPath?: string) {
+        this.webAccessibleResourcesPath = webAccessibleResourcesPath;
+    }
+
+    /**
      * Runs configuration process via saving promise to inner startPromise
      */
     private async innerStart(config: Configuration): Promise<void> {
@@ -97,7 +113,10 @@ export class TsWebExtension implements AppInterface<Configuration> {
             .filter((f) => !enableFiltersIds.includes(f)) || [];
 
         await FiltersApi.updateFiltering(disableFiltersIds, enableFiltersIds);
-        await UserRulesApi.updateDynamicFiltering(this.configuration.userrules);
+        await UserRulesApi.updateDynamicFiltering(
+            this.configuration.userrules,
+            this.webAccessibleResourcesPath,
+        );
         await engineApi.startEngine({
             filters: this.configuration.filters,
             userrules: this.configuration.userrules,
