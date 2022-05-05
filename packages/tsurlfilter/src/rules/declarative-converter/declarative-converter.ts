@@ -95,6 +95,7 @@ export class DeclarativeConverter {
             || rule.isSingleOptionEnabled(NetworkRuleOption.Replace)
             || rule.isSingleOptionEnabled(NetworkRuleOption.Generichide)
             || rule.isSingleOptionEnabled(NetworkRuleOption.Stealth)
+            || rule.isSingleOptionEnabled(NetworkRuleOption.Specifichide)
             || rule.isSingleOptionEnabled(NetworkRuleOption.Mp4)) {
             return false;
         }
