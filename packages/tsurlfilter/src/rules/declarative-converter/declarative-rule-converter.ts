@@ -285,11 +285,25 @@ export class DeclarativeRuleConverter {
             }
         }
 
-        // backreference; possessive; negative lookahead not supported;
-        // https://github.com/google/re2/wiki/Syntax
-        if (regexFilter?.match(/\\[1-9]|(?<!\\)\?|{\S+}/g)) {
-            logger.info(`Error: invalid regex in the: "${rule.getText()}"`);
-            return null;
+
+        // TODO move declarative rule converter to another entry point,
+        //  as it may be not used in the tsurlfilter by tswebextension in safari
+        let regex;
+        try {
+            // TODO after tests are made refactor this regexp to work in safari
+            regex = new RegExp('\\\\[1-9]|(?<!\\\\)\\?|{\\S+}', 'g');
+        } catch (e) {
+            // ignore
+        }
+
+        // TODO add testcases where this condition would be checked
+        if (regex) {
+            // backreference; possessive; negative lookahead not supported;
+            // https://github.com/google/re2/wiki/Syntax
+            if (regexFilter?.match(regex)) {
+                logger.info(`Error: invalid regex in the: "${rule.getText()}"`);
+                return null;
+            }
         }
 
         return declarativeRule;
