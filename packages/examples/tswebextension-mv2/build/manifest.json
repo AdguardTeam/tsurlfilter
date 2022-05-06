@@ -1,0 +1,47 @@
+{
+    "manifest_version": 2,
+    "name": "TSWebExtension on Manifest-v2",
+    "author": "AdGuard Software Ltd.",
+    "version": "0.0.1",
+    "description": "An example of extension built with TSUrlFilter on Manifest-v2",
+    "permissions": [
+        "tabs",
+        "<all_urls>",
+        "webRequest",
+        "webRequestBlocking",
+        "webNavigation",
+        "storage",
+        "unlimitedStorage",
+        "contextMenus",
+        "cookies"
+    ],
+    "optional_permissions": [
+        "privacy"
+    ],
+    "background": {
+        "page": "background.html",
+        "persistent": true
+    },
+    "browser_action": {
+        "default_popup": "pages/popup.html"
+    },
+    "content_scripts": [
+        {
+            "js": [
+                "content-script.js"
+            ],
+            "all_frames": true,
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "match_about_blank": true,
+            "run_at": "document_start"
+        }
+    ],
+    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+    "web_accessible_resources": [
+        "/war/*"
+    ]
+}
+

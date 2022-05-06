@@ -273,7 +273,7 @@ describe('Test cosmetic engine - JS rules', () => {
         expect(scriptRules).toHaveLength(2);
 
         expect(scriptRules[0].getScript()).toBe(jsRuleText);
-        expect(scriptRules[0].getScript(true)).toBe(jsRuleText);
+        expect(scriptRules[0].getScript({ debug: true })).toBe(jsRuleText);
     });
 
     it('checks cosmetic JS exceptions', () => {
@@ -304,6 +304,27 @@ describe('Test cosmetic engine - JS rules', () => {
         expect(result.JS.generic.length).toBe(1);
         expect(result.JS.specific[0].getContent()).toContain(ruleContent);
         expect(result.JS.generic[0].getContent()).toContain(ruleContent);
+    });
+
+    it('returns function and params for scriptlets', () => {
+        const ruleContent = "//scriptlet('log')";
+        const genericScriptletRule = `#%#${ruleContent}`;
+        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+            genericScriptletRule,
+        ]));
+
+        const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        const scriptletData = result.JS.generic[0].getScriptletData()!;
+        expect(scriptletData.params).toMatchObject({
+            'args': [],
+            'engine': '',
+            'name': 'log',
+            'ruleText': genericScriptletRule,
+            'verbose': false,
+            'version': '',
+        });
+        expect(typeof scriptletData.func).toBe('function');
+        expect(scriptletData.func.name).toBe('log');
     });
 
     it('checks scriptlet exceptions', () => {

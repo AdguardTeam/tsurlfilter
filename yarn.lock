@@ -10,6 +10,14 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
+"@adguard/scriptlets@^1.6.15":
+  version "1.6.15"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.15.tgz#d9b1ef573004d5ec513a312321e599cc3253da0f"
+  integrity sha512-9ltcuFAnmdWvHJnkOVQtH/FZl6dY7MRUYvmoZNz9uyR7JdwHtHi7A+N5JTsWcXf4Wc28ymHNnn43CL94H/wnyg==
+  dependencies:
+    "@babel/runtime" "^7.7.2"
+    js-yaml "^3.13.1"
+
 "@adguard/scriptlets@^1.6.8":
   version "1.6.8"
   resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.8.tgz#9eb3b6a62b774ee5d08768549c177ed2225ad82b"
@@ -17,6 +25,23 @@
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
+
+"@adguard/tsurlfilter@^0.7.37":
+  version "0.7.78"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.78.tgz#66b73bfb95f9bd8df389dbe7f6bea09a1cb409cc"
+  integrity sha512-0H2kRkg8BK17BDf1lGLsWQqWNHI7488WCM/B0Q7Nx/NYjKfG9XbEIIAEiUr5g7rGHPFBxDmD9oiavp0GkCS0Gg==
+  dependencies:
+    "@adguard/scriptlets" "^1.6.8"
+    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.14"
+    ip6addr "^0.2.3"
+    is-cidr "^4.0.2"
+    is-ip "^3.1.0"
+    lru_map "^0.4.1"
+    netmask "^2.0.2"
+    punycode "^2.1.1"
+    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2"
+    tldts "^5.6.45"
+    webextension-polyfill "^0.8.0"
 
 "@ampproject/remapping@^2.1.0":
   version "2.1.2"
@@ -6823,6 +6848,11 @@ jest-mock@^27.5.1:
     "@jest/types" "^27.5.1"
     "@types/node" "*"
 
+jest-node-exports-resolver@^1.1.6:
+  version "1.1.6"
+  resolved "https://registry.yarnpkg.com/jest-node-exports-resolver/-/jest-node-exports-resolver-1.1.6.tgz#2bc4d755590a94c76ff0369d5ca14bea7e21332a"
+  integrity sha512-NU412Qcb6WSRetCyEGMCC7IWHzO12LhSKaF1s9cyfM+EOYs4YN2gcNUT8hgu22X0oPFYNwLSPevgstBgLbD9ig==
+
 jest-pnp-resolver@^1.2.1, jest-pnp-resolver@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/jest-pnp-resolver/-/jest-pnp-resolver-1.2.2.tgz#b704ac0ae028a89108a4d040b3f919dfddc8e33c"
@@ -10568,10 +10598,10 @@ trim-newlines@^3.0.0:
   resolved "https://registry.yarnpkg.com/trim-newlines/-/trim-newlines-3.0.1.tgz#260a5d962d8b752425b32f3a7db0dcacd176c144"
   integrity sha512-c1PTsA3tYrIsLGkJkzHF+w9F2EyxfXGo4UyJc4pFL++FMjnq0HJS69T3M7d//gKrFKwy429bouPescbjecU+Zw==
 
-ts-jest@27.0.7:
-  version "27.0.7"
-  resolved "https://registry.yarnpkg.com/ts-jest/-/ts-jest-27.0.7.tgz#fb7c8c8cb5526ab371bc1b23d06e745652cca2d0"
-  integrity sha512-O41shibMqzdafpuP+CkrOL7ykbmLh+FqQrXEmV9CydQ5JBk0Sj0uAEF5TNNe94fZWKm3yYvWa/IbyV4Yg1zK2Q==
+ts-jest@27.1.4:
+  version "27.1.4"
+  resolved "https://registry.yarnpkg.com/ts-jest/-/ts-jest-27.1.4.tgz#84d42cf0f4e7157a52e7c64b1492c46330943e00"
+  integrity sha512-qjkZlVPWVctAezwsOD1OPzbZ+k7zA5z3oxII4dGdZo5ggX/PL7kvwTM0pXTr10fAtbiVpJaL3bWd502zAhpgSQ==
   dependencies:
     bs-logger "0.x"
     fast-json-stable-stringify "2.x"
@@ -10582,7 +10612,7 @@ ts-jest@27.0.7:
     semver "7.x"
     yargs-parser "20.x"
 
-ts-node@^10.4.0:
+ts-node@^10.7.0:
   version "10.7.0"
   resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-10.7.0.tgz#35d503d0fab3e2baa672a0e94f4b40653c2463f5"
   integrity sha512-TbIGS4xgJoX2i3do417KSaep1uRAW/Lu+WAL2doDHC0D6ummjirVOXU5/7aiZotbQ5p1Zp9tP7U6cYhA0O7M8A==

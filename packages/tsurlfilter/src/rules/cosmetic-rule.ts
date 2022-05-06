@@ -1,4 +1,5 @@
-import scriptlets from '@adguard/scriptlets';
+import scriptlets, { IConfiguration } from '@adguard/scriptlets';
+
 import * as rule from './rule';
 import {
     CosmeticRuleMarker,
@@ -12,6 +13,8 @@ import { SimpleRegex } from './simple-regex';
 import { CosmeticRuleParser } from './cosmetic-rule-parser';
 import { Request } from '../request';
 import { Pattern } from './pattern';
+import { ScriptletParser } from '../engine/cosmetic-engine/scriptlet-parser';
+import { config } from '../configuration';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -54,6 +57,31 @@ export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ex
     ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
     ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
     ':matches-attr(', ':matches-property(', ':is('];
+
+/**
+ * Init script params
+ */
+interface InitScriptParams {
+    debug?: boolean,
+    request?: Request,
+}
+
+/**
+ * Get scriptlet data response type
+ */
+type ScriptletData = {
+    params: IConfiguration,
+    func: (source: scriptlets.IConfiguration, args: string[]) => void
+};
+
+/**
+ * Script data type
+ */
+type ScriptData = {
+    code: string | null,
+    debug?: boolean,
+    domain?: string
+};
 
 /**
  * Implements a basic cosmetic rule.
@@ -104,14 +132,16 @@ export class CosmeticRule implements rule.IRule {
     public script: string | undefined = undefined;
 
     /**
-     * Js script to execute - debug
+     * Object with script code ready to execute and debug, domain values
+     * @private
      */
-    public scriptVerbose: string | undefined = undefined;
+    private scriptData: ScriptData | null = null;
 
     /**
-     * Needed to avoid reinvoking scriptVerbose for scriptlets rules
+     * Object with scriptlet function and params
+     * @private
      */
-    public verboseInvokedForDomain?: string | undefined = undefined;
+    private scriptletData: ScriptletData | null = null;
 
     /**
      * If the rule contains scriptlet content
@@ -232,11 +262,88 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Get rule script string
-     * @param debug
+     * Returns the script ready to be executed or null (if it failed to prepare a scriptlet/script to be executed)
+     * This function initializes and caches the scriptlet's code in a lazy manner.
+     * If it receives a new `InitScriptParams` argument afterwards, it will rebuild the
+     * scriptlet data.
+     * @param options
      */
-    getScript(debug = false): string | undefined {
-        return debug ? this.scriptVerbose : this.script;
+    getScript(options: InitScriptParams = {}): string | null {
+        const { debug = false, request = null } = options;
+        const scriptData = this.scriptData;
+
+        if (scriptData && !this.isScriptlet) {
+            return scriptData.code;
+        }
+
+        if (scriptData && scriptData.debug === debug) {
+            if (request) {
+                if (request.domain === scriptData.domain) {
+                    return scriptData.code;
+                }
+            } else {
+                return scriptData.code;
+            }
+        }
+
+        this.initScript(options);
+
+        return this.scriptData?.code ?? null;
+    }
+
+    /**
+     * Returns the scriptlet's data consisting of the scriptlet function and its arguments.
+     * This method is supposed to be used in the manifest V3 extension.
+     */
+    getScriptletData(): ScriptletData | null {
+        if (this.scriptletData) {
+            return this.scriptletData;
+        }
+
+        this.initScript();
+
+        return this.scriptletData;
+    }
+
+    /**
+     * Updates this.scriptData and if scriptlet this.scriptletData with js ready to execute
+     *
+     * @param options
+     */
+    initScript(options: InitScriptParams = {}) {
+        const { debug = false, request = null } = options;
+
+        const ruleContent = this.getContent();
+        if (!this.isScriptlet) {
+            this.scriptData = {
+                code: ruleContent,
+            };
+            return;
+        }
+
+        const scriptletContent = ruleContent.substring(ADG_SCRIPTLET_MASK.length);
+        const scriptletParams = ScriptletParser.parseRule(scriptletContent);
+
+        const params: scriptlets.IConfiguration = {
+            args: scriptletParams.args,
+            engine: config.engine || '',
+            name: scriptletParams.name,
+            ruleText: this.getText(),
+            verbose: debug,
+            domainName: request?.domain,
+            version: config.version || '',
+        };
+
+        this.scriptData = {
+            code: scriptlets.invoke(params) ?? null,
+            debug,
+            domain: request?.domain,
+        };
+
+        this.scriptletData = {
+            func: scriptlets.getScriptletFunction(params.name),
+            params: params,
+        };
     }
 
     /**
