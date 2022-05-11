@@ -1,4 +1,5 @@
 import punycode from 'punycode/';
+import { redirects } from '@adguard/scriptlets';
 import { ErrorStatusCodes, SEPARATOR } from './../../common/constants';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { CookieModifier } from '../../modifiers/cookie-modifier';
@@ -67,6 +68,33 @@ export class DeclarativeRuleConverter {
     private static isASCII(str: string) {
         // eslint-disable-next-line no-control-regex
         return /^[\x00-\x7F]+$/.test(str);
+    }
+
+    /**
+     * String path to web accessible resourses,
+     * relative to the extension root dir.
+     * Should start with leading slash '/'
+     */
+    private static validatedWebAccesibleResoursesPath: string;
+
+    /**
+     * String path to web accessible resourses,
+     * relative to the extension root dir.
+     * Should start with leading slash '/'
+     */
+    public static set webAccesibleResoursesPath(value: string) {
+        const firstChar = 0;
+        const lastChar = value.length > 0 ? value.length - 1 : 0;
+
+        if (value[firstChar] !== '/') {
+            throw new Error(`Path to web accesible resourses should be started with leading slash: ${value}`);
+        }
+
+        if (value[lastChar] === '/') {
+            throw new Error(`Path to web accesible resourses should not be ended with slash: ${value}`);
+        }
+
+        this.validatedWebAccesibleResoursesPath = value;
     }
 
     /**
@@ -152,7 +180,17 @@ export class DeclarativeRuleConverter {
         //  - 'modifyHeaders' = 'modifyHeaders',
         //  - 'allowAllRequests' = 'allowAllRequests',
 
-        if (rule.isAllowlist()) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            const resoursesPath = DeclarativeRuleConverter.validatedWebAccesibleResoursesPath;
+            if (!resoursesPath) {
+                throw new Error(`Error: empty web accessible resourses path: ${rule.getText()}`);
+            }
+            const filename = redirects.getRedirectFilename(rule.getAdvancedModifierValue()!);
+            action.redirect = {
+                extensionPath: `${resoursesPath}/${filename}`,
+            };
+            action.type = RuleActionType.REDIRECT;
+        } else if (rule.isAllowlist()) {
             action.type = RuleActionType.ALLOW;
         } else if (rule.getAdvancedModifier() instanceof RemoveParamModifier) {
             action.type = RuleActionType.REDIRECT;

@@ -363,6 +363,33 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
+    it('converts redirect rules', () => {
+        const resourcesPath = '/war/redirects';
+        const ruleId = 1;
+
+        DeclarativeRuleConverter.webAccesibleResoursesPath = resourcesPath;
+        const result = DeclarativeRuleConverter.convert(
+            new NetworkRule('||example.org/script.js$script,redirect=noopjs', -1),
+            ruleId,
+        );
+        expect(result).toStrictEqual({
+            action: {
+                type: 'redirect',
+                redirect: {
+                    extensionPath: `${resourcesPath}/noopjs.js`,
+                },
+            },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: [
+                    'script',
+                ],
+                urlFilter: '||example.org/script.js',
+            },
+            id: 1,
+        });
+    });
+
     it('converts wildcard blocking rules', () => {
         const ruleText = '||*example.org^';
         const ruleId = 1;
