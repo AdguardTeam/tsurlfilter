@@ -2,6 +2,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../tabs';
 import { requestContextStorage, RequestContext, RequestStorageEvent } from '../request';
+import { isHttpOrWsRequest } from '../utils';
 
 export interface FrameRequestServiceSearchParams {
     tabId: number,
@@ -64,11 +65,9 @@ export class FrameRequestService {
     ): FrameRequestServiceSearchParams {
         const isMainFrame = frameId === 0;
 
-        if ((requestUrl === 'about:blank'
-            || requestUrl === 'about:srcdoc'
-            // eslint-disable-next-line no-script-url
-            || requestUrl.indexOf('javascript:') > -1)
-            && !isMainFrame) {
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
+        // when document url for iframe is about:blank then we use tab url
+        if (!isHttpOrWsRequest(requestUrl) && !isMainFrame) {
             const mainFrame = tabsApi.getTabMainFrame(tabId);
 
             if (mainFrame) {
