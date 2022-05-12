@@ -248,12 +248,19 @@ export class DeclarativeRuleConverter {
      *
      * @param rule - network rule
      * @param id - rule identifier
+     * @param getExtraIdFn - function that returns extra id for created additional rules
      */
-    static convert(rule: NetworkRule, id: number): DeclarativeRule | null {
+    static convert(
+        rule: NetworkRule,
+        id: number,
+        getExtraIdFn?: () => number,
+    ): DeclarativeRule[] | null {
         if (rule.getAdvancedModifier() instanceof CookieModifier) {
             logger.info(`Error: cookies rules are not supported: "${rule.getText()}"`);
             return null;
         }
+
+        const res = [];
 
         const declarativeRule = {} as DeclarativeRule;
 
@@ -266,6 +273,25 @@ export class DeclarativeRuleConverter {
         declarativeRule.condition = this.getCondition(rule);
 
         const { regexFilter, resourceTypes } = declarativeRule.condition;
+
+        res.push(declarativeRule);
+
+        if (rule.getDenyallowDomains() !== null) {
+            if (!getExtraIdFn) {
+                throw new Error("Function for generate extra ID's should provided when rule has $denyallow modifier");
+            }
+
+            const denyAllowDomains = rule.getDenyallowDomains() || [];
+            const declarativeSynthenicRules = denyAllowDomains
+                .map((d) => this.createDenyallowRule(
+                    getExtraIdFn(),
+                    d,
+                    declarativeRule,
+                    rule,
+                ));
+
+            res.push(...declarativeSynthenicRules);
+        }
 
         // https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
         if (resourceTypes?.length === 0) {
@@ -293,6 +319,42 @@ export class DeclarativeRuleConverter {
             return null;
         }
 
-        return declarativeRule;
+        return res;
+    }
+
+    /**
+     * Create additional denyallow declarative rule for provided one
+     * @param id id for new synthenic declarative rule
+     * @param denyAllowDomain domain for create exclusion
+     * @param declarativeRule will be descruct to priority, action and condition
+     * @param rule need to create copy of condition
+     * @returns Additional denyallow declarative rule
+     */
+    static createDenyallowRule(
+        id: number,
+        denyAllowDomain: string,
+        { priority, action, condition }: DeclarativeRule,
+        rule: NetworkRule,
+    ): DeclarativeRule {
+        const denyAllowRule = {
+            id,
+            priority: priority ? priority + 1 : 1,
+            // Create new condition to not overwrite past item
+            condition: this.getCondition(rule),
+            action: {
+                // Create mirror action
+                // ALLOW -> BLOCK and BLOCK -> ALLOW
+                type: action.type === RuleActionType.ALLOW
+                    ? RuleActionType.BLOCK
+                    : RuleActionType.ALLOW,
+            },
+        };
+        const { urlFilter } = condition;
+
+        denyAllowRule.condition.urlFilter = urlFilter
+            ? `||${denyAllowDomain}*${urlFilter || ''}`
+            : `||${denyAllowDomain}`;
+
+        return denyAllowRule;
     }
 }

@@ -8,7 +8,7 @@ describe('DeclarativeRuleConverter', () => {
         const ruleText = '||example.org^';
         const ruleId = 1;
         const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual({
+        expect(declarativeRule).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -17,14 +17,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts simple allowlist rules', () => {
         const ruleText = '@@||example.org^';
         const ruleId = 1;
         const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual({
+        expect(declarativeRule).toEqual([{
             id: ruleId,
             priority: DeclarativeRulePriority.Exception,
             action: {
@@ -34,14 +34,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts important allowlist rules', () => {
         const ruleText = '@@||example.org^$important';
         const ruleId = 1;
         const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual({
+        expect(declarativeRule).toEqual([{
             id: ruleId,
             priority: DeclarativeRulePriority.ImportantException,
             action: {
@@ -51,14 +51,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts rules with $third-party modifiers', () => {
         const thirdPartyRuleText = '||example.org^$third-party';
         const ruleId = 1;
         const thirdPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(thirdPartyRuleText, -1), ruleId);
-        expect(thirdPartyDeclarative).toEqual({
+        expect(thirdPartyDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -68,11 +68,11 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
 
         const firstPartyRuleText = '||example.org^$~third-party';
         const firstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(firstPartyRuleText, -1), ruleId);
-        expect(firstPartyDeclarative).toEqual({
+        expect(firstPartyDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -82,14 +82,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts rules with $first-party modifiers', () => {
         const firstPartyRuleText = '||example.org^$first-party';
         const ruleId = 1;
         const firstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(firstPartyRuleText, -1), ruleId);
-        expect(firstPartyDeclarative).toEqual({
+        expect(firstPartyDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -99,14 +99,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
 
         const negateFirstPartyRuleText = '||example.org^$~first-party';
         const negateFirstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(
             negateFirstPartyRuleText,
             -1,
         ), ruleId);
-        expect(negateFirstPartyDeclarative).toEqual({
+        expect(negateFirstPartyDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -116,14 +116,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts rules with $domain modifiers', () => {
         const domainRuleText = '||example.org^$domain=example.com';
         const ruleId = 1;
         const domainDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(domainRuleText, -1), ruleId);
-        expect(domainDeclarative).toEqual({
+        expect(domainDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -133,14 +133,14 @@ describe('DeclarativeRuleConverter', () => {
                 domains: ['example.com'],
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
 
         const multipleDomainRuleText = '||example.org^$domain=example.com|example2.com|~example3.com|~example4.com';
         const multipleDomainDeclarative = DeclarativeRuleConverter.convert(
             new NetworkRule(multipleDomainRuleText, -1),
             ruleId,
         );
-        expect(multipleDomainDeclarative).toEqual({
+        expect(multipleDomainDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -151,14 +151,14 @@ describe('DeclarativeRuleConverter', () => {
                 excludedDomains: ['example3.com', 'example4.com'],
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
 
         const negateDomainRuleText = '||example.org^$domain=~example.com';
         const negateDomainDeclarative = DeclarativeRuleConverter.convert(
             new NetworkRule(negateDomainRuleText, -1),
             ruleId,
         );
-        expect(negateDomainDeclarative).toEqual({
+        expect(negateDomainDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -168,14 +168,14 @@ describe('DeclarativeRuleConverter', () => {
                 excludedDomains: ['example.com'],
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts rules with specified request types', () => {
         const scriptRuleText = '||example.org^$script';
         const ruleId = 1;
         const scriptRuleDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(scriptRuleText, -1), ruleId);
-        expect(scriptRuleDeclarative).toEqual({
+        expect(scriptRuleDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -185,14 +185,14 @@ describe('DeclarativeRuleConverter', () => {
                 resourceTypes: ['script'],
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
 
         const negatedScriptRule = '||example.org^$~script';
         const negatedScriptRuleDeclarative = DeclarativeRuleConverter.convert(
             new NetworkRule(negatedScriptRule, -1),
             ruleId,
         );
-        expect(negatedScriptRuleDeclarative).toEqual({
+        expect(negatedScriptRuleDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -202,21 +202,23 @@ describe('DeclarativeRuleConverter', () => {
                 excludedResourceTypes: ['script'],
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
 
         const multipleRequestTypesRule = '||example.org^$script,image,media';
-        const multipleDeclarativeRule = DeclarativeRuleConverter.convert(
+        const multipleDeclarativeRes = DeclarativeRuleConverter.convert(
             new NetworkRule(multipleRequestTypesRule, -1),
             ruleId,
         );
+        const [multipleDeclarativeRule] = multipleDeclarativeRes || [];
         expect(multipleDeclarativeRule!.condition?.resourceTypes?.sort())
             .toEqual(['script', 'image', 'media'].sort());
 
         const multipleNegatedRequestTypesRule = '||example.org^$~script,~subdocument';
-        const multipleNegatedDeclarativeRule = DeclarativeRuleConverter.convert(
+        const multipleNegatedDeclarativeRes = DeclarativeRuleConverter.convert(
             new NetworkRule(multipleNegatedRequestTypesRule, -1),
             ruleId,
         );
+        const [multipleNegatedDeclarativeRule] = multipleNegatedDeclarativeRes || [];
         expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort())
             .toEqual(['script', 'sub_frame'].sort());
     });
@@ -225,7 +227,7 @@ describe('DeclarativeRuleConverter', () => {
         const matchCaseRuleText = '||example.org^$match-case';
         const ruleId = 1;
         const matchCaseDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(matchCaseRuleText, -1), ruleId);
-        expect(matchCaseDeclarative).toEqual({
+        expect(matchCaseDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -234,14 +236,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: true,
             },
-        });
+        }]);
 
         const negatedMatchCaseTextRule = '||example.org^$~match-case';
         const negatedMatchCaseDeclarative = DeclarativeRuleConverter.convert(
             new NetworkRule(negatedMatchCaseTextRule, -1),
             ruleId,
         );
-        expect(negatedMatchCaseDeclarative).toEqual({
+        expect(negatedMatchCaseDeclarative).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -250,14 +252,14 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     it('converts wildcard blocking rules', () => {
         const ruleText = '||*example.org^';
         const ruleId = 1;
         const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual({
+        expect(declarativeRule).toEqual([{
             id: ruleId,
             action: {
                 type: 'block',
@@ -266,7 +268,7 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '*example.org^',
                 isUrlFilterCaseSensitive: false,
             },
-        });
+        }]);
     });
 
     // backreference; negative lookahead not supported;
@@ -315,7 +317,7 @@ describe('DeclarativeRuleConverter', () => {
     describe('converts cyrillic domain rules', () => {
         it('converts domains section', () => {
             const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule('path$domain=меил.рф', -1), 2);
-            expect(declarativeRule).toEqual({
+            expect(declarativeRule).toEqual([{
                 id: 2,
                 action: {
                     type: 'block',
@@ -327,7 +329,7 @@ describe('DeclarativeRuleConverter', () => {
                         'xn--e1agjb.xn--p1ai',
                     ],
                 },
-            });
+            }]);
         });
 
         it('converts urlFilterSection', () => {
@@ -335,7 +337,7 @@ describe('DeclarativeRuleConverter', () => {
                 new NetworkRule('||банрек.рус^$third-party', -1),
                 1,
             );
-            expect(declarativeRule).toEqual({
+            expect(declarativeRule).toEqual([{
                 id: 1,
                 action: {
                     type: 'block',
@@ -345,7 +347,7 @@ describe('DeclarativeRuleConverter', () => {
                     domainType: 'thirdParty',
                     isUrlFilterCaseSensitive: false,
                 },
-            });
+            }]);
         });
     });
 
@@ -358,7 +360,7 @@ describe('DeclarativeRuleConverter', () => {
             new NetworkRule('||example.org/script.js$script,redirect=noopjs', -1),
             ruleId,
         );
-        expect(result).toStrictEqual({
+        expect(result).toStrictEqual([{
             action: {
                 type: 'redirect',
                 redirect: {
@@ -372,7 +374,114 @@ describe('DeclarativeRuleConverter', () => {
                 ],
                 urlFilter: '||example.org/script.js',
             },
-            id: 1,
+            id: ruleId,
+        }]);
+    });
+
+    describe('converts denyallow rules', () => {
+        it('converts denyallow simple rule', () => {
+            const ruleId = 1;
+            const syntheticRuleId = 2;
+
+            const result = DeclarativeRuleConverter.convert(
+                new NetworkRule(
+                    '/adguard_circle.png$image,denyallow=cdn.adguard.com,domain=testcases.adguard.com|surge.sh',
+                    -1,
+                ),
+                ruleId,
+                () => syntheticRuleId,
+            );
+            expect(result).toStrictEqual([
+                {
+                    id: ruleId,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '/adguard_circle.png',
+                        domains: [
+                            'testcases.adguard.com',
+                            'surge.sh',
+                        ],
+                        resourceTypes: ['image'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                },
+                {
+                    priority: 1,
+                    id: syntheticRuleId,
+                    action: { type: 'allow' },
+                    condition: {
+                        urlFilter: '||cdn.adguard.com*/adguard_circle.png',
+                        domains: [
+                            'testcases.adguard.com',
+                            'surge.sh',
+                        ],
+                        resourceTypes: ['image'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                },
+            ]);
+        });
+
+        it('converts denyallow exclude rule', () => {
+            const ruleId = 1;
+            let syntheticRuleId = ruleId + 1;
+
+            const result = DeclarativeRuleConverter.convert(
+                new NetworkRule(
+                    // eslint-disable-next-line max-len
+                    '@@/adguard_dns_map.png$image,denyallow=cdn.adguard.com|fastcdn.adguard.com,domain=testcases.adguard.com|surge.sh',
+                    -1,
+                ),
+                ruleId,
+                () => {
+                    syntheticRuleId += 1;
+                    return syntheticRuleId;
+                },
+            );
+            expect(result).toStrictEqual([
+                {
+                    priority: 1,
+                    id: ruleId,
+                    action: { type: 'allow' },
+                    condition: {
+                        urlFilter: '/adguard_dns_map.png',
+                        domains: [
+                            'testcases.adguard.com',
+                            'surge.sh',
+                        ],
+                        resourceTypes: ['image'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                },
+                {
+                    id: 3,
+                    priority: 2,
+                    condition: {
+                        urlFilter: '||cdn.adguard.com*/adguard_dns_map.png',
+                        domains: [
+                            'testcases.adguard.com',
+                            'surge.sh',
+                        ],
+                        resourceTypes: ['image'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                    action: { type: 'block' },
+                },
+                {
+                    id: 4,
+                    priority: 2,
+                    condition: {
+                        urlFilter: '||fastcdn.adguard.com*/adguard_dns_map.png',
+                        domains: [
+                            'testcases.adguard.com',
+                            'surge.sh',
+                        ],
+                        resourceTypes: ['image'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                    action: { type: 'block' },
+                },
+            ]);
         });
     });
 });

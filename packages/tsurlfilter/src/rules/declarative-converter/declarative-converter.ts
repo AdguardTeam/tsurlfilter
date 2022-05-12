@@ -23,6 +23,10 @@ const defaultOptions: IConvertOptions = {
  * Provides a functionality of conversion AG rules to declarative rules.
  */
 export class DeclarativeConverter {
+    /** Storages current extra id which can be used
+     * for extra dynamic-created rules, like $denyallow */
+    private extraIndex = 0;
+
     /**
      * Converts a set of rules to declarative rules array
      *
@@ -62,10 +66,23 @@ export class DeclarativeConverter {
             }
         }
 
-        const result: DeclarativeRule[] = [];
+        // Remembers maximum possible index from all indexed rules
+        // for allocate extra id's after these indexes
+        if (indexedRules.length > 0) {
+            const maxIndex = indexedRules[indexedRules.length - 1].index;
+            this.extraIndex = DeclarativeConverter.createDeclarativeRuleId(maxIndex);
+        }
+
+        // This function used for allocate extra unique id's for synthetic-created declarative rules
+        // for network rules with modificator $denyallow
+        const getExtraIndex = (): number => {
+            this.extraIndex += 1;
+            return this.extraIndex;
+        };
 
         let regexpRulesCounter = 0;
 
+        const result: DeclarativeRule[] = [];
         indexedRules.forEach((iRule) => {
             const rule = iRule.rule as NetworkRule;
 
@@ -75,22 +92,25 @@ export class DeclarativeConverter {
                 }
             }
 
-            let dRule;
+            let dRules;
             try {
-                dRule = DeclarativeRuleConverter.convert(
+                dRules = DeclarativeRuleConverter.convert(
                     rule,
                     DeclarativeConverter.createDeclarativeRuleId(iRule.index),
+                    getExtraIndex,
                 );
             } catch (e: any) {
                 logger.info(e.message);
             }
 
-            if (dRule) {
-                result.push(dRule);
-            }
+            if (dRules) {
+                dRules.forEach((dRule) => {
+                    result.push(dRule);
 
-            if (dRule?.condition.regexFilter) {
-                regexpRulesCounter += 1;
+                    if (dRule.condition.regexFilter) {
+                        regexpRulesCounter += 1;
+                    }
+                });
             }
 
             if (result.length > maxLimit) {

@@ -314,6 +314,14 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Gets list of denyallow domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#denyallow-modifier
+     */
+    getDenyallowDomains(): string[] | null {
+        return this.denyAllowDomains;
+    }
+
+    /**
      * Gets list of restricted domains.
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
      */
