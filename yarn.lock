@@ -14,10 +14,18 @@
   dependencies:
     axios "^0.21.1"
 
-"@adguard/scriptlets@^1.4.4", "@adguard/scriptlets@^1.6.11":
+"@adguard/scriptlets@^1.4.4":
   version "1.6.11"
   resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.11.tgz#7a3c4e4fb4b45a0ba749822f135ff70ef43a50cf"
   integrity sha512-cHGOUKLVym2k/NLGC+6NIjKSJJftQxFACiWmg57P99NOX6DTk5dlsqJ7xwFmh6/z0lgrEVkDF22MuVFDrbRMcg==
+  dependencies:
+    "@babel/runtime" "^7.7.2"
+    js-yaml "^3.13.1"
+
+"@adguard/scriptlets@^1.6.11":
+  version "1.6.15"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.15.tgz#d9b1ef573004d5ec513a312321e599cc3253da0f"
+  integrity sha512-9ltcuFAnmdWvHJnkOVQtH/FZl6dY7MRUYvmoZNz9uyR7JdwHtHi7A+N5JTsWcXf4Wc28ymHNnn43CL94H/wnyg==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"

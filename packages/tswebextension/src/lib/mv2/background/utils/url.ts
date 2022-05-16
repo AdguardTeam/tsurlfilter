@@ -11,10 +11,6 @@ export const isOwnUrl = (referrerUrl: string): boolean => {
     return referrerUrl.indexOf(browser.runtime.getURL('')) === 0;
 };
 
-export const isHttpOrWsRequest = (url: string): boolean => {
-    return !!url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
-};
-
 export const getDomain = (url: string): string | undefined => {
     let firstIdx = url.indexOf('//');
 

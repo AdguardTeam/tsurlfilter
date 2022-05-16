@@ -5,11 +5,11 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import {
     isOwnUrl,
-    isHttpOrWsRequest,
     getDomain,
     isThirdPartyRequest,
     findHeaderByName,
 } from './utils';
+import { isHttpOrWsRequest } from '../../common/utils';
 import { CosmeticApi } from './cosmetic-api';
 import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';

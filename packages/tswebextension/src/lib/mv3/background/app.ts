@@ -4,6 +4,8 @@
 import FiltersApi from './filters-api';
 import UserRulesApi from './user-rules-api';
 import MessagesApi from './messages-api';
+import TabsApi from './tabs-api';
+import { getAndExecuteScripts } from './scriptlets';
 
 import {
     AppInterface,
@@ -82,6 +84,8 @@ export class TsWebExtension implements AppInterface<Configuration> {
         // Call and wait for promise for allow multiple calling start
         this.startPromise = this.innerStart(config);
         await this.startPromise;
+
+        await this.executeScriptlets();
     }
 
     /**
@@ -144,5 +148,26 @@ export class TsWebExtension implements AppInterface<Configuration> {
     public getMessageHandler() {
         const messagesApi = new MessagesApi(this);
         return messagesApi.handleMessage;
+    }
+
+    async executeScriptlets() {
+        const activeTab = await TabsApi.getActiveTab();
+
+        if (this.isStarted && this.configuration && activeTab?.url && activeTab?.id) {
+            const { url, id } = activeTab;
+            const { filters, userrules, verbose } = this.configuration;
+            await engineApi.startEngine({ filters, userrules, verbose });
+            await getAndExecuteScripts(id, url, verbose);
+        }
+
+        chrome.webNavigation.onCommitted.addListener(
+            async (details) => {
+                if (this.isStarted && this.configuration) {
+                    const { filters, userrules, verbose } = this.configuration;
+                    await engineApi.startEngine({ filters, userrules, verbose });
+                    await getAndExecuteScripts(details.tabId, details.url, verbose);
+                }
+            },
+        );
     }
 }

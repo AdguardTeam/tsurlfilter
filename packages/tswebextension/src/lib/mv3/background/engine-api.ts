@@ -150,6 +150,63 @@ class EngineApi {
             extendedCss: extStyles,
         };
     }
+
+    /**
+     * Builds domain-specific JS injection for the specified page.
+     * http://adguard.com/en/filterrules.html#javascriptInjection
+     *
+     * @param url
+     * @param option
+     * @returns Javascript for the specified URL
+     */
+    getScriptsForUrl = (url: string, option: CosmeticOption) => {
+        const cosmeticResult = this.getCosmeticResult(url, option);
+
+        return cosmeticResult.getScriptRules();
+    };
+
+    /**
+     * Returns scriptlets data by url
+     * @param url
+     * @param option
+     */
+    getScriptletsDataForUrl(url: string, option: CosmeticOption) {
+        const scriptRules = this.getScriptsForUrl(url, option);
+        const scriptletDataList = scriptRules
+            .filter((rule) => rule.isScriptlet)
+            .map((scriptletRule) => scriptletRule.getScriptletData());
+        return scriptletDataList;
+    }
+
+    /**
+     * Builds the final output string for the specified page.
+     * Depending on the browser we either allow or forbid the new remote rules
+     * grep "localScriptRulesService" for details about script source
+     *
+     * @param url
+     * @param option
+     * @returns Script to be applied
+     */
+    getScriptsStringForUrl(url: string, option: CosmeticOption) {
+        const scriptRules = this.getScriptsForUrl(url, option);
+
+        // scriptlet rules would are handled separately
+        const scripts = scriptRules
+            .filter((rule) => !rule.isScriptlet)
+            .map((scriptRule) => scriptRule.getScript());
+        // remove repeating scripts
+        const scriptsCode = [...new Set(scripts)].join('\r\n');
+
+        return `
+                (function () {
+                    try {
+                        ${scriptsCode}
+                    } catch (ex) {
+                        console.error('Error executing AG js: ' + ex);
+                    }
+                })();
+            `;
+    }
 }
 
 export const engineApi = new EngineApi();

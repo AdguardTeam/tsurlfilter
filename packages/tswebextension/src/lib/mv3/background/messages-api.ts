@@ -9,7 +9,7 @@ import {
 } from '../../common';
 import { engineApi } from './engine-api';
 import { TsWebExtension } from './app';
-import isHttpOrWsRequest from './utils/is-http-or-webrequest';
+import { isHttpOrWsRequest } from '../../common/utils';
 
 export default class MessagesApi {
     private tsWebExtension: TsWebExtension;

@@ -13,7 +13,8 @@
         "webRequest",
         "webNavigation",
         "storage",
-        "unlimitedStorage"
+        "unlimitedStorage",
+        "scripting"
     ],
     "host_permissions": [
         "<all_urls>"

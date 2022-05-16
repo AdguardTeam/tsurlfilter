@@ -2,7 +2,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../tabs';
 import { requestContextStorage, RequestContext, RequestStorageEvent } from '../request';
-import { isHttpOrWsRequest } from '../utils';
+import { isHttpOrWsRequest } from '../../../common/utils';
 
 export interface FrameRequestServiceSearchParams {
     tabId: number,

@@ -102,7 +102,7 @@
     "@adguard/assistant": "^4.3.59",
     "@adguard/filters-downloader": "^1.1.13",
     "@adguard/scriptlets": "^1.6.11",
-    "@adguard/tsurlfilter": "^0.7.37",
+    "@adguard/tsurlfilter": "^0.7.75",
     "bowser": "^2.11.0",
     "commander": "^9.0.0",
     "deepmerge": "^4.2.2",

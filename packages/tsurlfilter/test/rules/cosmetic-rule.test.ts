@@ -1,7 +1,17 @@
 /* eslint-disable max-len */
+import { IConfiguration } from '@adguard/scriptlets';
 import { CosmeticRule, CosmeticRuleType } from '../../src/rules/cosmetic-rule';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
+
+const parseParamsFromScript = (script: string): IConfiguration | null => {
+    const matchArr = script.match(/\{"args.+"}/);
+    if (!matchArr) {
+        return null;
+    }
+
+    return JSON.parse(matchArr[0]);
+};
 
 describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
@@ -584,6 +594,107 @@ describe('Javascript rules', () => {
         expect(allowlistRule.getType()).toBe(CosmeticRuleType.Js);
         expect(allowlistRule.getContent()).toBe(jsContent);
         expect(rule.isScriptlet).toBeTruthy();
+    });
+
+    it('returns script for js rule', () => {
+        const jsRuleContent = 'console.log(\'test\')';
+        const jsRule = `example.org#%#${jsRuleContent}`;
+        const rule = new CosmeticRule(jsRule, 0);
+
+        expect(rule.getScript()).toBe(jsRuleContent);
+    });
+
+    it('returns script for scriptlet rule', () => {
+        const jsRuleContent = "//scriptlet('log', 'arg')";
+        const jsRule = `example.org#%#${jsRuleContent}`;
+        const rule = new CosmeticRule(jsRule, 0);
+        const verbose = true;
+        const domainName = 'example.com';
+
+        const script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        const params = parseParamsFromScript(script)!;
+        expect(params.ruleText).toBe(jsRule);
+        expect(params.domainName).toBe(domainName);
+        expect(params.verbose).toBe(verbose);
+    });
+
+    it('rebuilds scriptlet script if debug changes', () => {
+        const jsRuleContent = "//scriptlet('log', 'arg')";
+        const jsRule = `example.org#%#${jsRuleContent}`;
+        const rule = new CosmeticRule(jsRule, 0);
+        let verbose = true;
+
+        jest.spyOn(rule, 'initScript');
+
+        expect(rule.initScript).toBeCalledTimes(0);
+
+        // after first get script call
+        let script = rule.getScript({ debug: verbose })!;
+        let params = parseParamsFromScript(script)!;
+        expect(params.ruleText).toBe(jsRule);
+        expect(params.verbose).toBe(verbose);
+        expect(rule.initScript).toBeCalledTimes(1);
+
+        // after second get script call
+        script = rule.getScript({ debug: verbose })!;
+        params = parseParamsFromScript(script)!;
+        expect(params.ruleText).toBe(jsRule);
+        expect(params.verbose).toBe(verbose);
+        expect(rule.initScript).toBeCalledTimes(1);
+
+        // after third get script call with other debug param
+        verbose = false;
+        script = rule.getScript({ debug: verbose })!;
+        params = parseParamsFromScript(script)!;
+        expect(params.ruleText).toBe(jsRule);
+        expect(params.verbose).toBe(verbose);
+        expect(rule.initScript).toBeCalledTimes(2);
+    });
+
+    it('rebuilds scriptlet script if domain name changes', () => {
+        const jsRuleContent = "//scriptlet('log', 'arg')";
+        const jsRule = `example.org#%#${jsRuleContent}`;
+        const rule = new CosmeticRule(jsRule, 0);
+        const verbose = false;
+        let domainName = 'example.com';
+
+        jest.spyOn(rule, 'initScript');
+
+        expect(rule.initScript).toBeCalledTimes(0);
+
+        // after first get script call
+        let script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        let params = parseParamsFromScript(script)!;
+        expect(params.domainName).toBe(domainName);
+        expect(rule.initScript).toBeCalledTimes(1);
+
+        // after second get script call
+        script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        params = parseParamsFromScript(script)!;
+        expect(params.domainName).toBe(domainName);
+        expect(rule.initScript).toBeCalledTimes(1);
+
+        // after third get script call with other domain name
+        domainName = 'example.org';
+        script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        params = parseParamsFromScript(script)!;
+        expect(params.domainName).toBe(domainName);
+        expect(rule.initScript).toBeCalledTimes(2);
+    });
+
+    it('returns scriptlet function and params for scriptlet', () => {
+        const jsRuleContent = "//scriptlet('log', 'arg')";
+        const jsRule = `example.org#%#${jsRuleContent}`;
+        const rule = new CosmeticRule(jsRule, 0);
+
+        const scriptletData = rule.getScriptletData()!;
+        expect(typeof scriptletData.func).toBe('function');
+        expect(scriptletData.func.name).toBe('log');
+        expect(scriptletData.params).toMatchObject({
+            ruleText: jsRule,
+            name: 'log',
+            args: ['arg'],
+        });
     });
 });
 
