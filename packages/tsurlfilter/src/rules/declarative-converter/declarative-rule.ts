@@ -100,9 +100,9 @@ export enum RuleActionType {
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleAction
  */
 export interface RuleAction {
-    redirect?: Redirect | undefined;
-    requestHeaders?: ModifyHeaderInfo[] | undefined;
-    responseHeaders?: ModifyHeaderInfo[] | undefined;
+    redirect?: Redirect;
+    requestHeaders?: ModifyHeaderInfo[];
+    responseHeaders?: ModifyHeaderInfo[];
     type: RuleActionType;
 }
 
@@ -110,14 +110,15 @@ export interface RuleAction {
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleCondition
  */
 export interface RuleCondition {
-    domainType?: DomainType | undefined;
-    domains?: string[] | undefined;
-    excludedDomains?: string[] | undefined;
-    excludedResourceTypes?: ResourceType[] | undefined;
-    isUrlFilterCaseSensitive?: boolean | undefined;
-    regexFilter?: string | undefined;
-    resourceTypes?: ResourceType[] | undefined;
-    urlFilter?: string | undefined;
+    domainType?: DomainType;
+    initiatorDomains?: string[];
+    excludedInitiatorDomains?: string[];
+    excludedRequestDomains?: string [];
+    excludedResourceTypes?: ResourceType[];
+    isUrlFilterCaseSensitive?: boolean;
+    regexFilter?: string;
+    resourceTypes?: ResourceType[];
+    urlFilter?: string;
 }
 
 /**
