@@ -9,7 +9,7 @@ import { loadFilterContent } from './loadFilterContent';
 export const loadDefaultConfig = async (filtersDir: string): Promise<Configuration> => {
     console.debug('[LOAD DEFAULT CONFIG]: start');
 
-    const defaultFilters = [ 1, 2, 3, 4, 9, 14 ];
+    const defaultFilters = [1, 2, 3, 4, 9, 14];
     const defaultConfig: Configuration = {
         filters: [],
         allowlist: [],

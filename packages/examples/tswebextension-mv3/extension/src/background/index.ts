@@ -5,7 +5,15 @@ import { StorageKeys, storage } from './storage';
 import { loadFilterContent } from './loadFilterContent';
 import { loadDefaultConfig } from './loadDefaultConfig';
 
+declare global {
+    interface Window {
+        tsWebExtension: TsWebExtension;
+    }
+}
+
+
 const tsWebExtension = new TsWebExtension('/war/redirects');
+self.tsWebExtension = tsWebExtension;
 const defaultUxConfig = {
     isStarted: true,
 };
