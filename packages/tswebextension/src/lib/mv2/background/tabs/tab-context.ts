@@ -3,10 +3,11 @@ import { NetworkRule } from '@adguard/tsurlfilter';
 import { engineApi } from '../engine-api';
 import { Frame } from './frame';
 
-export interface TabMetadata {
+export type TabMetadata = {
     mainFrameRule?: NetworkRule | null
     previousUrl?: string
-}
+    blockedRequestCount?: number
+};
 export interface TabContextInterface {
     info: Tabs.Tab
     frames: Map<number, Frame>
@@ -37,6 +38,13 @@ export class TabContext implements TabContextInterface {
 
     updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType): void {
         this.info = Object.assign(this.info, changeInfo);
+    }
+
+    updateBlockedRequestCount(increment: number) {
+        const blockedRequestCount = (this.metadata.blockedRequestCount || 0) + increment;
+        this.metadata.blockedRequestCount = blockedRequestCount;
+
+        return blockedRequestCount;
     }
 
     reloadTabFrameData(url: string): void {

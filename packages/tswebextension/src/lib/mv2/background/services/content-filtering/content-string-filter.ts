@@ -3,7 +3,7 @@ import {
     ReplaceModifier,
     CosmeticRule,
 } from '@adguard/tsurlfilter';
-import { FilteringLog } from '../../../../common';
+import { FilteringEventType, FilteringLog } from '../../../../common';
 
 import { RequestContext } from '../../request';
 import { documentParser } from './doc-parser';
@@ -76,12 +76,15 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
                         const { tabId, requestId, requestUrl } = this.context;
 
-                        this.filteringLog.addHtmlRuleApplyEvent({
-                            tabId,
-                            requestId,
-                            elementString: element.innerHTML,
-                            frameUrl: requestUrl!,
-                            rule,
+                        this.filteringLog.publishEvent({
+                            type: FilteringEventType.HTTP_RULE_APPLY,
+                            data: {
+                                tabId,
+                                requestId,
+                                elementString: element.innerHTML,
+                                frameUrl: requestUrl!,
+                                rule,
+                            },
                         });
 
                         deleted.push(element);
@@ -122,11 +125,14 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         const { tabId, requestId, requestUrl } = this.context;
 
         if (appliedRules.length > 0) {
-            this.filteringLog.addReplaceRuleApplyEvent({
-                tabId,
-                requestId,
-                frameUrl: requestUrl!,
-                rules: appliedRules,
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.REPLACE_RULE_APPLY,
+                data: {
+                    tabId,
+                    requestId,
+                    frameUrl: requestUrl!,
+                    rules: appliedRules,
+                },
             });
         }
 

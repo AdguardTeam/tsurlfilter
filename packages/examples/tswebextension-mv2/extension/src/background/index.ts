@@ -43,6 +43,8 @@ tsWebExtension.start(defaultConfig);
 
 tsWebExtension.onFilteringLogEvent.subscribe(console.log);
 
+tsWebExtension.onAssistantCreateRule.subscribe((rule) => console.log(`assistant create rule ${rule}`));
+
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 (browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, sender, sendResponse) => {

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/**
+ * App configuration data schema
+ */
 export const configurationValidator = z.object({
     /**
      * Specifies filter lists that will be used to filter content.
@@ -57,3 +60,13 @@ export const configurationValidator = z.object({
 }).strict();
 
 export type Configuration = z.infer<typeof configurationValidator>;
+
+/**
+ * Current configuration data, stored in app context
+ *
+ * We don't save whole {@link Configuration} object,
+ * because filter rule strings are heavyweight
+ */
+export type ConfigurationContext =
+    & Omit<Configuration, 'filters' | 'allowlist' | 'userrules'>
+    & { filters: number[] };

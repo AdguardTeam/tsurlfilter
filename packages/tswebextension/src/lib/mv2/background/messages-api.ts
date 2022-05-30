@@ -17,12 +17,13 @@ import {
     processShouldCollapsePayloadValidator,
     FilteringLog,
     defaultFilteringLog,
+    FilteringEventType,
 } from '../../common';
+import { Assistant } from './assistant';
 
 export interface MessagesApiInterface {
     sendMessage: (tabId: number, message: unknown) => void;
     handleMessage: (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
-    addAssistantCreateRuleListener: (listener: (ruleText: string) => void) => void;
 }
 // TODO: add long live connection
 // TODO: CollectHitStats
@@ -198,15 +199,18 @@ export class MessagesApi implements MessagesApiInterface {
 
         const { data } = res;
 
-        this.filteringLog.addCookieEvent({
-            tabId: sender.tab.id,
-            cookieName: data.cookieName,
-            cookieDomain: data.cookieDomain,
-            cookieValue: data.cookieValue,
-            cookieRule: new NetworkRule(data.ruleText, data.filterId),
-            isModifyingCookieRule: false,
-            thirdParty: data.thirdParty,
-            timestamp: Date.now(),
+        this.filteringLog.publishEvent({
+            type: FilteringEventType.COOKIE,
+            data: {
+                tabId: sender.tab.id,
+                cookieName: data.cookieName,
+                cookieDomain: data.cookieDomain,
+                cookieValue: data.cookieValue,
+                cookieRule: new NetworkRule(data.ruleText, data.filterId),
+                isModifyingCookieRule: false,
+                thirdParty: data.thirdParty,
+                timestamp: Date.now(),
+            },
         });
     }
 
@@ -230,9 +234,8 @@ export class MessagesApi implements MessagesApiInterface {
         }
 
         const { ruleText } = res.data;
-        if (this.onAssistantCreateRuleListener) {
-            this.onAssistantCreateRuleListener(ruleText);
-        }
+
+        Assistant.onCreateRule.dispatch(ruleText);
     }
 }
 

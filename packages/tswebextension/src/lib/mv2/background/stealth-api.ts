@@ -8,7 +8,12 @@ import {
     RequestData,
 } from './request';
 
-import { Configuration, FilteringLog, defaultFilteringLog } from '../../common';
+import {
+    Configuration,
+    FilteringLog,
+    defaultFilteringLog,
+    FilteringEventType,
+} from '../../common';
 
 // TODO: Privacy permission for block webrtc stealth setting
 /**
@@ -132,10 +137,13 @@ export class StealthApi implements StealthApiInterface {
         );
 
         if (stealthActions > 0) {
-            this.filteringLog.addStealthActionEvent({
-                tabId: context.tabId,
-                requestId: context.requestId,
-                actions: stealthActions,
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.STEALTH_ACTION,
+                data: {
+                    tabId: context.tabId,
+                    requestId: context.requestId,
+                    actions: stealthActions,
+                },
             });
         }
     }

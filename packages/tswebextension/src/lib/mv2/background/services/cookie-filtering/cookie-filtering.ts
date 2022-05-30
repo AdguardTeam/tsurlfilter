@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
-import { FilteringLog, defaultFilteringLog } from '../../../../common';
+import { FilteringLog, defaultFilteringLog, FilteringEventType } from '../../../../common';
 import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
@@ -114,15 +114,19 @@ export class CookieFiltering {
                     headersModified = true;
                 }
 
-                this.filteringLog.addCookieEvent({
-                    tabId: context.tabId,
-                    cookieName: cookie.name,
-                    cookieValue: cookie.value,
-                    cookieDomain: cookie.domain,
-                    cookieRule: bRule,
-                    isModifyingCookieRule: false,
-                    thirdParty,
-                    timestamp: Date.now(),
+                this.filteringLog.publishEvent({
+                    type: FilteringEventType.COOKIE,
+                    data: {
+                        tabId: context.tabId,
+                        cookieName: cookie.name,
+                        cookieValue: cookie.value,
+                        cookieDomain: cookie.domain,
+                        cookieRule: bRule,
+                        isModifyingCookieRule: false,
+                        thirdParty,
+                        timestamp: Date.now(),
+                    },
+
                 });
             }
 
@@ -133,15 +137,18 @@ export class CookieFiltering {
                     headersModified = true;
                     responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
                     appliedRules.forEach((r) => {
-                        this.filteringLog.addCookieEvent({
-                            tabId,
-                            cookieName: cookie.name,
-                            cookieValue: cookie.value,
-                            cookieDomain: cookie.domain,
-                            cookieRule: r,
-                            isModifyingCookieRule: true,
-                            thirdParty,
-                            timestamp: Date.now(),
+                        this.filteringLog.publishEvent({
+                            type: FilteringEventType.COOKIE,
+                            data: {
+                                tabId,
+                                cookieName: cookie.name,
+                                cookieValue: cookie.value,
+                                cookieDomain: cookie.domain,
+                                cookieRule: r,
+                                isModifyingCookieRule: true,
+                                thirdParty,
+                                timestamp: Date.now(),
+                            },
                         });
                     });
                 }
@@ -264,15 +271,18 @@ export class CookieFiltering {
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
             if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
-                this.filteringLog.addCookieEvent({
-                    tabId,
-                    cookieName: cookie.name,
-                    cookieValue: cookie.value,
-                    cookieDomain: cookie.domain,
-                    cookieRule: bRule,
-                    isModifyingCookieRule: false,
-                    thirdParty: isThirdPartyCookie,
-                    timestamp: Date.now(),
+                this.filteringLog.publishEvent({
+                    type: FilteringEventType.COOKIE,
+                    data: {
+                        tabId,
+                        cookieName: cookie.name,
+                        cookieValue: cookie.value,
+                        cookieDomain: cookie.domain,
+                        cookieRule: bRule,
+                        isModifyingCookieRule: false,
+                        thirdParty: isThirdPartyCookie,
+                        timestamp: Date.now(),
+                    },
                 });
             }
 
@@ -285,15 +295,18 @@ export class CookieFiltering {
             if (appliedRules.length > 0) {
                 if (await this.browserCookieApi.modifyCookie(cookie)) {
                     appliedRules.forEach((r) => {
-                        this.filteringLog.addCookieEvent({
-                            tabId,
-                            cookieName: cookie.name,
-                            cookieValue: cookie.value,
-                            cookieDomain: cookie.domain,
-                            cookieRule: r,
-                            isModifyingCookieRule: true,
-                            thirdParty: isThirdPartyCookie,
-                            timestamp: Date.now(),
+                        this.filteringLog.publishEvent({
+                            type: FilteringEventType.COOKIE,
+                            data: {
+                                tabId,
+                                cookieName: cookie.name,
+                                cookieValue: cookie.value,
+                                cookieDomain: cookie.domain,
+                                cookieRule: r,
+                                isModifyingCookieRule: true,
+                                thirdParty: isThirdPartyCookie,
+                                timestamp: Date.now(),
+                            },
                         });
                     });
                 }

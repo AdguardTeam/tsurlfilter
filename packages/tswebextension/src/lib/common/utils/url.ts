@@ -1,9 +1,9 @@
-export const isHttpRequest = (url: string) => {
-    return url && url.indexOf('http') === 0;
+export const isHttpRequest = (url: string): boolean => {
+    return !!url && url.indexOf('http') === 0;
 };
 
-export const isHttpOrWsRequest = (url: string) => {
-    return url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
+export const isHttpOrWsRequest = (url: string): boolean => {
+    return !!url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
 };
 
 /**

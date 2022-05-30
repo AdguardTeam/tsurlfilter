@@ -9,7 +9,13 @@ import {
     isThirdPartyRequest,
     findHeaderByName,
 } from './utils';
-import { isHttpOrWsRequest } from '../../common/utils';
+
+import {
+    isHttpOrWsRequest,
+    defaultFilteringLog,
+    FilteringEventType,
+} from '../../common';
+
 import { CosmeticApi } from './cosmetic-api';
 import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';
@@ -164,6 +170,20 @@ export class WebRequestApi {
         }
 
         if (response?.cancel) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.BLOCK_REQUEST,
+                data: {
+                    tabId,
+                    requestUrl: url,
+                    referrerUrl,
+                    requestType,
+                    rule: basicResult!.getText(),
+                    filterId: basicResult!.getFilterListId(),
+                },
+            });
+
+            tabsApi.updateTabBlockedRequestCount(tabId, 1);
+
             hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
         } else {
             ContentFiltering.onBeforeRequest(requestId);

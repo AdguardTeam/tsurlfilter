@@ -20,11 +20,11 @@ export const enum SiteStatus {
     FilteringEnabled = 'FILTERING_ENABLED',
 }
 
-export interface AppInterface<T> {
+export interface AppInterface<TConfiguration, TConfigurationContext = TConfiguration> {
     /**
-     * Current Configuration object
+     * Configuration context
      */
-    configuration?: T;
+    configuration?: TConfigurationContext;
 
     /**
      * Is app started
@@ -40,13 +40,13 @@ export interface AppInterface<T> {
       * Starts api
       * @param configuration
       */
-    start: (configuration: T) => Promise<void>;
+    start: (configuration: TConfiguration) => Promise<void>;
 
     /**
      * Updates configuration
      * @param configuration
      */
-    configure: (configuration: T) => Promise<void>;
+    configure: (configuration: TConfiguration) => Promise<void>;
 
     /**
      * Stops api

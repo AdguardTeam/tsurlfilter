@@ -143,6 +143,16 @@ export class TabsApi implements TabsApiInterface {
         return this.context.get(tabId);
     }
 
+    public updateTabBlockedRequestCount(tabId: number, increment: number): number | undefined {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        return tabContext.updateBlockedRequestCount(increment);
+    }
+
     private createTabContext(tab: Tabs.Tab): void {
         if (typeof tab.id === 'number') {
             const tabContext = new TabContext(tab);

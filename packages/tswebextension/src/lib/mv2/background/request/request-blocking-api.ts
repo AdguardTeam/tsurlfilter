@@ -47,15 +47,6 @@ export class RequestBlockingApi {
         requestType: RequestType,
     ): WebRequestBlockingResponse {
         if (RequestBlockingApi.isRequestBlockedByRule(requestRule)) {
-            const isDocumentLevel = requestType === RequestType.Document
-                || requestType === RequestType.Subdocument;
-
-            if (isDocumentLevel && RequestBlockingApi.isDocumentBlockingRule(requestRule)) {
-                // TODO: redirect to blocking page
-                // TODO: trusted domains cache
-                return { cancel: true };
-            }
-
             // Don't block main_frame request
             if (requestType !== RequestType.Document) {
                 return { cancel: true };

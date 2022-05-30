@@ -13,21 +13,28 @@ import {
     AppInterface,
     SiteStatus,
     defaultFilteringLog,
-    MessageType,
     configurationValidator,
     Configuration,
+    ConfigurationContext,
 } from '../../common';
 
-export interface ManifestV2AppInterface extends AppInterface<Configuration> {
+import { Assistant } from './assistant';
+
+export interface ManifestV2AppInterface extends AppInterface<Configuration, ConfigurationContext> {
     getMessageHandler: () => typeof messagesApi.handleMessage
 }
 
 export class TsWebExtension implements ManifestV2AppInterface {
     public isStarted = false;
 
-    public configuration: Configuration | undefined;
+    /**
+     * MV2 Configuration context excludes heavyweight fields with rules
+     */
+    public configuration: ConfigurationContext | undefined;
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
+
+    public onAssistantCreateRule = Assistant.onCreateRule;
 
     /**
      * Constructor
@@ -49,7 +56,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
         WebRequestApi.start();
 
         this.isStarted = true;
-        this.configuration = configuration;
+        this.configuration = TsWebExtension.createConfigurationContext(configuration);
     }
 
     public async stop(): Promise<void> {
@@ -68,7 +75,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
         configurationValidator.parse(configuration);
 
         await engineApi.startEngine(configuration);
-        this.configuration = configuration;
+        this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         /* TODO: this.stop */
         stealthApi.stop();
@@ -76,17 +83,11 @@ export class TsWebExtension implements ManifestV2AppInterface {
     }
 
     public openAssistant(tabId: number): void {
-        messagesApi.addAssistantCreateRuleListener(this.addUserRule.bind(this));
-
-        messagesApi.sendMessage(tabId, {
-            type: MessageType.INIT_ASSISTANT,
-        });
+        Assistant.openAssistant(tabId);
     }
 
     public closeAssistant(tabId: number): void {
-        messagesApi.sendMessage(tabId, {
-            type: MessageType.CLOSE_ASSISTANT,
-        });
+        Assistant.closeAssistant(tabId);
     }
 
     public getSiteStatus(url: string): SiteStatus {
@@ -99,20 +100,6 @@ export class TsWebExtension implements ManifestV2AppInterface {
 
     public getMessageHandler() {
         return messagesApi.handleMessage;
-    }
-
-    /**
-     * Adds ruleText to user rules
-     *
-     * @param ruleText
-     */
-    private addUserRule(ruleText: string): void {
-        if (!this.configuration || !this.isStarted) {
-            return;
-        }
-
-        this.configuration.userrules.push(ruleText);
-        this.configure(this.configuration);
     }
 
     /**
@@ -131,5 +118,15 @@ export class TsWebExtension implements ManifestV2AppInterface {
             // Arrays will be replaced
             arrayMerge: (_, source) => source,
         });
+    }
+
+    private static createConfigurationContext(configuration: Configuration): ConfigurationContext {
+        const { filters, verbose, settings } = configuration;
+
+        return {
+            filters: filters.map(({ filterId }) => filterId),
+            verbose,
+            settings,
+        };
     }
 }

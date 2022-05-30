@@ -1,6 +1,6 @@
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
-import { FilteringLog, defaultFilteringLog } from '../../../common';
+import { FilteringLog, defaultFilteringLog, FilteringEventType } from '../../../common';
 import { removeHeader } from '../utils/headers';
 import { RequestContext, requestContextStorage } from '../request';
 
@@ -52,11 +52,14 @@ export class HeadersService {
         rules.forEach((rule) => {
             if (HeadersService.applyRule(requestHeaders, rule, true)) {
                 isModified = true;
-                this.filteringLog.addRemoveHeaderEvent({
-                    tabId,
-                    frameUrl: requestUrl,
-                    headerName: rule.getAdvancedModifierValue()!,
-                    rule,
+                this.filteringLog.publishEvent({
+                    type: FilteringEventType.REMOVE_HEADER,
+                    data: {
+                        tabId,
+                        frameUrl: requestUrl,
+                        headerName: rule.getAdvancedModifierValue()!,
+                        rule,
+                    },
                 });
             }
         });
@@ -101,11 +104,14 @@ export class HeadersService {
         rules.forEach((rule) => {
             if (HeadersService.applyRule(responseHeaders, rule, false)) {
                 isModified = true;
-                this.filteringLog.addRemoveHeaderEvent({
-                    tabId,
-                    frameUrl: requestUrl,
-                    headerName: rule.getAdvancedModifierValue()!,
-                    rule,
+                this.filteringLog.publishEvent({
+                    type: FilteringEventType.REMOVE_HEADER,
+                    data: {
+                        tabId,
+                        frameUrl: requestUrl,
+                        headerName: rule.getAdvancedModifierValue()!,
+                        rule,
+                    },
                 });
             }
         });

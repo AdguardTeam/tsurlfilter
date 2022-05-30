@@ -12,7 +12,7 @@ import {
     parseCharsetFromHeader,
 } from './charsets';
 import { RequestContext } from '../../request';
-import { FilteringLog } from '../../../../common';
+import { FilteringEventType, FilteringLog } from '../../../../common';
 import { ContentStringFilterInterface } from './content-string-filter';
 
 /**
@@ -226,8 +226,11 @@ export class ContentStream {
     private onResponseFinish(): void {
         this.content += this.decoder!.decode(); // finish stream
 
-        this.filteringLog.addContentFilteringStartEvent({
-            requestId: this.context.requestId,
+        this.filteringLog.publishEvent({
+            type: FilteringEventType.CONTENT_FILTERING_START,
+            data: {
+                requestId: this.context.requestId,
+            },
         });
 
         const { contentTypeHeader, statusCode } = this.context;
@@ -254,8 +257,11 @@ export class ContentStream {
 
         this.write(this.content);
 
-        this.filteringLog.addContentFilteringFinishEvent({
-            requestId: this.context.requestId,
+        this.filteringLog.publishEvent({
+            type: FilteringEventType.CONTENT_FILTERING_FINISH,
+            data: {
+                requestId: this.context.requestId,
+            },
         });
     }
 
