@@ -3,6 +3,7 @@ import { redirects } from '@adguard/scriptlets';
 import { ERROR_STATUS_CODES } from '../../common/constants';
 import { NetworkRule, NetworkRuleOption } from '../network-rule';
 import { CookieModifier } from '../../modifiers/cookie-modifier';
+import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
 import { RequestType } from '../../request-type';
 import { logger } from '../../utils/logger';
 import {
@@ -12,6 +13,7 @@ import {
     RuleActionType,
     RuleCondition,
     DomainType,
+    Redirect,
 } from './declarative-rule';
 
 /**
@@ -144,6 +146,42 @@ export class DeclarativeRuleConverter {
     }
 
     /**
+     * Rule redirect action
+     *
+     * @param rule
+     */
+    private static getRedirectAction(rule: NetworkRule): Redirect {
+        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            const resoursesPath = DeclarativeRuleConverter.webAccesibleResoursesPath;
+            if (!resoursesPath) {
+                throw new Error(`Error: empty web accessible resourses path: ${rule.getText()}`);
+            }
+            const filename = redirects.getRedirectFilename(rule.getAdvancedModifierValue()!);
+
+            return { extensionPath: `${resoursesPath}/${filename}` };
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+            const removeParamModifier = rule.getAdvancedModifier() as RemoveParamModifier;
+            const value = removeParamModifier.getValue();
+
+            if (value === '') {
+                return { transform: { query: '' } };
+            }
+
+            return {
+                transform: {
+                    queryTransform: {
+                        removeParams: this.prepareDomains([value]),
+                    },
+                },
+            };
+        }
+
+        return {};
+    }
+
+    /**
      * Rule action
      *
      * @param rule
@@ -162,16 +200,11 @@ export class DeclarativeRuleConverter {
         //  - 'modifyHeaders' = 'modifyHeaders',
         //  - 'allowAllRequests' = 'allowAllRequests',
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-            const resoursesPath = DeclarativeRuleConverter.webAccesibleResoursesPath;
-            if (!resoursesPath) {
-                throw new Error(`Error: empty web accessible resourses path: ${rule.getText()}`);
-            }
-            const filename = redirects.getRedirectFilename(rule.getAdvancedModifierValue()!);
-            action.redirect = {
-                extensionPath: `${resoursesPath}/${filename}`,
-            };
+        if (rule.isOptionEnabled(NetworkRuleOption.Redirect)
+         || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
+        ) {
             action.type = RuleActionType.REDIRECT;
+            action.redirect = this.getRedirectAction(rule);
         } else if (rule.isAllowlist()) {
             action.type = RuleActionType.ALLOW;
         } else {
@@ -249,6 +282,9 @@ export class DeclarativeRuleConverter {
         return condition;
     }
 
+    // TODO: Must go from scheme "1 network rule === 1 declarative rule"
+    // to "many network rules === many declarative rule".
+    // It needs for example in $removeparam to collapse many remove-params into one array
     /**
      * Converts a rule to declarative rule
      *

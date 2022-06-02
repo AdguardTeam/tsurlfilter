@@ -13,6 +13,11 @@ export class RemoveParamModifier implements IAdvancedModifier {
     private readonly value: string;
 
     /**
+     * Is modifier valid for MV3 or not
+     */
+    private readonly mv3Valid: boolean = true;
+
+    /**
      * RegExp to apply
      */
     private readonly valueRegExp: RegExp;
@@ -26,13 +31,20 @@ export class RemoveParamModifier implements IAdvancedModifier {
         this.value = value;
 
         let rawValue = value;
+        // TODO: Seems like negation not using in valueRegExp
         if (value.startsWith('~')) {
             rawValue = value.substring(1);
+            this.mv3Valid = false;
         }
 
         if (rawValue.startsWith('/')) {
             this.valueRegExp = SimpleRegex.patternFromString(rawValue);
+            this.mv3Valid = false;
         } else {
+            if (rawValue.includes('|')) {
+                throw new Error('Unsupported option in $removeparam: multiple values are not allowed');
+            }
+
             this.valueRegExp = new RegExp(`((^|&)(${SimpleRegex.escapeRegexSpecials(rawValue)})=[^&#]*)`, 'g');
         }
     }
@@ -42,6 +54,13 @@ export class RemoveParamModifier implements IAdvancedModifier {
      */
     public getValue(): string {
         return this.value;
+    }
+
+    /**
+     * Is modifier valid for MV3 or not
+     */
+    public getmv3Validity(): boolean {
+        return this.mv3Valid;
     }
 
     /**

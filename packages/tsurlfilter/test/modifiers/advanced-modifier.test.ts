@@ -450,4 +450,20 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0&p1=1`);
     });
+
+    it('check removeparam mv3 validity', () => {
+        expect(() => {
+            new RemoveParamModifier('p1|p2');
+        }).toThrowError(/Unsupported option*/);
+
+        const mv3GoodModifier = new RemoveParamModifier('p3');
+        expect(mv3GoodModifier.getValue()).toEqual('p3');
+        expect(mv3GoodModifier.getmv3Validity()).toBeTruthy();
+
+        const mv3BadModifier = new RemoveParamModifier('~p4');
+        expect(mv3BadModifier.getmv3Validity()).toBeFalsy();
+
+        const mv3BadModifier2 = new RemoveParamModifier('/P5/i');
+        expect(mv3BadModifier2.getmv3Validity()).toBeFalsy();
+    });
 });

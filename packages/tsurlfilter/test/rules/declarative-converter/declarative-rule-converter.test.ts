@@ -434,4 +434,78 @@ describe('DeclarativeRuleConverter', () => {
             });
         });
     });
+
+    describe('check $removeparam', () => {
+        it('converts $removeparam rules', () => {
+            const ruleText = '||example.com$removeparam=param';
+            const ruleId = 1;
+
+            const networkRule = new NetworkRule(ruleText, -1);
+            const declarativeRule = DeclarativeRuleConverter.convert(networkRule, ruleId);
+            expect(declarativeRule).toEqual({
+                id: ruleId,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['param'],
+                            },
+                        },
+                    },
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                },
+            });
+        });
+
+        it('converts empty $removeparam rule', () => {
+            const ruleText = '||example.com$removeparam';
+            const ruleId = 1;
+
+            const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+            expect(declarativeRule).toEqual({
+                id: ruleId,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            query: '',
+                        },
+                    },
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                },
+            });
+        });
+
+        it('converts $removeparam resource type xmlhttprequest', () => {
+            const ruleText = '||testcases.adguard.com$xmlhttprequest,removeparam=p2case2';
+            const ruleId = 1;
+
+            const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+            expect(declarativeRule).toEqual({
+                id: ruleId,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['p2case2'],
+                            },
+                        },
+                    },
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    resourceTypes: ['xmlhttprequest'],
+                    urlFilter: '||testcases.adguard.com',
+                },
+            });
+        });
+    });
 });

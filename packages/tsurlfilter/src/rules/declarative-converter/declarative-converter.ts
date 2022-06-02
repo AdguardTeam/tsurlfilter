@@ -6,6 +6,7 @@ import { DeclarativeRuleConverter } from './declarative-rule-converter';
 import { IRuleList } from '../../filterlist/rule-list';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { IndexedRule } from '../rule';
+import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
 
 interface IConvertOptions {
     resoursesPath?: string,
@@ -115,6 +116,12 @@ export class DeclarativeConverter {
      * @param rule
      */
     private static isRuleApplicable(rule: NetworkRule): boolean {
+        if (rule.isSingleOptionEnabled(NetworkRuleOption.RemoveParam)) {
+            const removeParam = rule.getAdvancedModifier() as RemoveParamModifier;
+
+            return removeParam.getmv3Validity();
+        }
+
         if (!rule.isAllowlist()) {
             return true;
         }
