@@ -49,9 +49,9 @@ export class TsWebExtension implements ManifestV2AppInterface {
         configurationValidator.parse(configuration);
 
         await redirectsService.start();
+        await engineApi.startEngine(configuration);
         await tabsApi.start();
         FrameRequestService.start();
-        await engineApi.startEngine(configuration);
         await stealthApi.start(configuration);
         WebRequestApi.start();
 
@@ -75,6 +75,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
         configurationValidator.parse(configuration);
 
         await engineApi.startEngine(configuration);
+        await tabsApi.updateCurrentTabsMainFrameRules();
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         /* TODO: this.stop */

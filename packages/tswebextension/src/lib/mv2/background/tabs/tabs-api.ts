@@ -153,6 +153,30 @@ export class TabsApi implements TabsApiInterface {
         return tabContext.updateBlockedRequestCount(increment);
     }
 
+    public updateTabMainFrameRule(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.updateMainFrameRule();
+    }
+
+    public async updateCurrentTabsMainFrameRules(): Promise<void> {
+        const currentTabs = await browser.tabs.query({});
+
+        if (!Array.isArray(currentTabs)) {
+            return;
+        }
+
+        for (const tab of currentTabs) {
+            if (tab.id) {
+                this.updateTabMainFrameRule(tab.id);
+            }
+        }
+    }
+
     private createTabContext(tab: Tabs.Tab): void {
         if (typeof tab.id === 'number') {
             const tabContext = new TabContext(tab);

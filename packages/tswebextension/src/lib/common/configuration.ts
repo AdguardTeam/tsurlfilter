@@ -40,6 +40,13 @@ export const configurationValidator = z.object({
         allowlistInverted: z.boolean(),
 
         /**
+         * Flag specifying allowlist enable state
+         * We don't use allowlist array lenght condition for calculate enable state,
+         * because its not cover case with empty list in inverted mode
+         */
+        allowlistEnabled: z.boolean(),
+
+        /**
          * Enables css hits counter if true
          */
         collectStats: z.boolean(),

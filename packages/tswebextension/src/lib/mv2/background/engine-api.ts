@@ -14,6 +14,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { Configuration, getHost } from '../../common';
+import { allowlistApi } from './allowlist';
 import { stealthApi } from './stealth-api';
 
 /**
@@ -49,8 +50,6 @@ export interface EngineApiInterface {
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
-const ALLOWLIST_FILTER_ID = 100;
-
 const USER_FILTER_ID = 0;
 
 /**
@@ -61,8 +60,12 @@ export class EngineApi implements EngineApiInterface {
 
     public async startEngine(configuration: Configuration): Promise<void> {
         const {
-            filters, userrules, allowlist, verbose, settings,
+            filters,
+            userrules,
+            verbose,
         } = configuration;
+
+        allowlistApi.configure(configuration);
 
         const lists: StringRuleList[] = [];
 
@@ -77,13 +80,9 @@ export class EngineApi implements EngineApiInterface {
             lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
-        if (allowlist.length > 0) {
-            lists.push(new StringRuleList(
-                ALLOWLIST_FILTER_ID,
-                allowlist.map((domain) => {
-                    return `${settings.allowlistInverted ? '' : '@@'}//${domain}$document`;
-                }).join('\n'),
-            ));
+        const allowlistRules = allowlistApi.getAllowlistRules();
+        if (allowlistRules) {
+            lists.push(allowlistRules);
         }
 
         const stealthModeList = stealthApi.getStealthModeRuleList();
@@ -106,9 +105,11 @@ export class EngineApi implements EngineApiInterface {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        this.engine = new Engine(ruleStorage, true);
+        const engine = new Engine(ruleStorage, true);
 
-        await this.engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
+        await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
+
+        this.engine = engine;
     }
 
     public matchRequest(matchQuery: MatchQuery): MatchingResult | null {

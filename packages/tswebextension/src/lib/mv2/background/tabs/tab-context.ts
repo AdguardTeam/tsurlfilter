@@ -2,6 +2,7 @@ import { Tabs } from 'webextension-polyfill';
 import { NetworkRule } from '@adguard/tsurlfilter';
 import { engineApi } from '../engine-api';
 import { Frame } from './frame';
+import { allowlistApi } from '../allowlist';
 
 export type TabMetadata = {
     mainFrameRule?: NetworkRule | null
@@ -47,6 +48,16 @@ export class TabContext implements TabContextInterface {
         return blockedRequestCount;
     }
 
+    updateMainFrameRule(): void {
+        const mainFrame = this.frames.get(MAIN_FRAME_ID);
+
+        const mainFrameRule = mainFrame?.url
+            ? engineApi.matchFrame(mainFrame?.url)
+            : null;
+
+        this.metadata.mainFrameRule = mainFrameRule;
+    }
+
     reloadTabFrameData(url: string): void {
         const previousUrl = this.frames.get(MAIN_FRAME_ID)?.url;
 
@@ -54,7 +65,7 @@ export class TabContext implements TabContextInterface {
         this.frames.set(MAIN_FRAME_ID, new Frame({ url }));
 
         this.metadata = {
-            mainFrameRule: engineApi.matchFrame(url),
+            mainFrameRule: allowlistApi.matchFrame(url),
             previousUrl,
         };
     }

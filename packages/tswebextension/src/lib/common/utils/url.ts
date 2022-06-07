@@ -1,10 +1,10 @@
-export const isHttpRequest = (url: string): boolean => {
+export function isHttpRequest(url: string): boolean {
     return !!url && url.indexOf('http') === 0;
-};
+}
 
-export const isHttpOrWsRequest = (url: string): boolean => {
+export function isHttpOrWsRequest(url: string): boolean {
     return !!url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
-};
+}
 
 /**
  * Extract url host
@@ -45,4 +45,13 @@ export function getHost(url: string): string | null {
     }
 
     return host;
+}
+
+export function getDomain(url: string): string | null {
+    const host = getHost(url);
+    if (!host) {
+        return null;
+    }
+
+    return host.startsWith('www.') ? host.substring(4) : host;
 }
