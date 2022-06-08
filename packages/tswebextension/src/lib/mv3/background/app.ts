@@ -52,6 +52,7 @@ export class TsWebExtension implements AppInterface<Configuration> {
 
         try {
             await this.configure(this.configuration);
+            await this.executeScriptlets();
         } catch (e) {
             this.startPromise = undefined;
             console.debug('[START]: failed', e);
@@ -84,8 +85,6 @@ export class TsWebExtension implements AppInterface<Configuration> {
         // Call and wait for promise for allow multiple calling start
         this.startPromise = this.innerStart(config);
         await this.startPromise;
-
-        await this.executeScriptlets();
     }
 
     /**
@@ -121,11 +120,12 @@ export class TsWebExtension implements AppInterface<Configuration> {
             this.configuration.userrules,
             this.webAccessibleResourcesPath,
         );
-        await engineApi.startEngine({
+        engineApi.waitingForEngine = engineApi.startEngine({
             filters: this.configuration.filters,
             userrules: this.configuration.userrules,
             verbose: this.configuration.verbose,
         });
+        await engineApi.waitingForEngine;
 
         console.debug('[CONFIGURE]: end');
     }
@@ -155,16 +155,20 @@ export class TsWebExtension implements AppInterface<Configuration> {
 
         if (this.isStarted && this.configuration && activeTab?.url && activeTab?.id) {
             const { url, id } = activeTab;
-            const { filters, userrules, verbose } = this.configuration;
-            await engineApi.startEngine({ filters, userrules, verbose });
+            const { verbose } = this.configuration;
+
             await getAndExecuteScripts(id, url, verbose);
         }
 
         chrome.webNavigation.onCommitted.addListener(
             async (details) => {
                 if (this.isStarted && this.configuration) {
-                    const { filters, userrules, verbose } = this.configuration;
-                    await engineApi.startEngine({ filters, userrules, verbose });
+                    // If service worker just woke up
+                    if (this.startPromise) {
+                        await this.startPromise;
+                    }
+
+                    const { verbose } = this.configuration;
                     await getAndExecuteScripts(details.tabId, details.url, verbose);
                 }
             },

@@ -29,13 +29,13 @@ type FilterConfig = Pick<Configuration, 'filters' | 'userrules' | 'verbose'>;
 class EngineApi {
     private engine: Engine | undefined;
 
+    waitingForEngine: Promise<void> | undefined;
+
     /**
      * Starts engine with provided config
      * @param config config for pass to engine
      */
     async startEngine(config: FilterConfig): Promise<void> {
-        console.debug('[START ENGINE]: start');
-
         const { filters, userrules, verbose } = config;
 
         const lists: StringRuleList[] = [];
@@ -66,11 +66,9 @@ class EngineApi {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        this.engine = new Engine(ruleStorage, true);
-
-        await this.engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
-
-        console.debug('[START ENGINE]: end');
+        const engine = new Engine(ruleStorage, true);
+        await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
+        this.engine = engine;
     }
 
     /**
@@ -115,7 +113,6 @@ class EngineApi {
         ignoreTraditionalCss: boolean,
         ignoreExtCss: boolean,
     ) {
-        console.debug('[BUILD COSMETIC CSS]: start');
         const cosmeticResult = this.getCosmeticResult(url, options);
 
         const elemhideCss = [
