@@ -26,10 +26,6 @@ npmjs:
             set -e
             set -x
 
-            # TODO: Remove after merge to master
-            # Needs to get tswebextension from its development branch
-            git checkout epic/tswebextension
-
             ls -alt
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
