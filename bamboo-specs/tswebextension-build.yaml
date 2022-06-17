@@ -41,6 +41,7 @@ Build:
 
             cd packages/tswebextension/
             yarn pack
+            mv adguard-tswebextension-v${bamboo.inject.version}.tgz tswebextension.tgz
 
             cd ../../
 
@@ -60,7 +61,7 @@ Build:
   artifacts:
     - name: tswebextension.tgz
       location: packages/tswebextension/
-      pattern: adguard-tswebextension-v${bamboo.inject.version}.tgz
+      pattern: tswebextension.tgz
       shared: true
       required: true
   requirements:
