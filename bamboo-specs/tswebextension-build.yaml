@@ -40,8 +40,7 @@ Build:
             npx lerna run --scope @adguard/tswebextension build -- ${bamboo.varsYarn}
 
             cd packages/tswebextension/
-            yarn pack
-            mv adguard-tswebextension-v${bamboo.inject.version}.tgz tswebextension.tgz
+            yarn pack --filename tswebextension.tgz
 
             cd ../../
 
