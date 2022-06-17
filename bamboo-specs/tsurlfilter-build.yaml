@@ -49,7 +49,7 @@ Build:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:
           selectedRepository: defaultRepository
-          tagName: v${bamboo.inject.version}
+          tagName: tsurlfilter-v${bamboo.inject.version}
   requirements:
     - adg-docker: 'true'
 
