@@ -39,6 +39,11 @@ Build:
             npx lerna run --scope @adguard/tsurlfilter build
             npx lerna run --scope @adguard/tswebextension build -- ${bamboo.varsYarn}
 
+            cd packages/tswebextension/
+            yarn pack
+
+            cd ../../
+
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
@@ -52,6 +57,12 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: tswebextension-v${bamboo.inject.version}
+  artifacts:
+    - name: tswebextension.tgz
+      location: packages/tswebextension/
+      pattern: adguard-tswebextension-v${bamboo.inject.version}.tgz
+      shared: true
+      required: true
   requirements:
     - adg-docker: 'true'
 

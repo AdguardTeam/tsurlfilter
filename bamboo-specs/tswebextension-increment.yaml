@@ -39,14 +39,7 @@ Increment:
 
             ls -alt
 
-            yarn install
-
             npx lerna run --scope @adguard/tswebextension increment
-
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna exec -- rm -rf node_modules
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

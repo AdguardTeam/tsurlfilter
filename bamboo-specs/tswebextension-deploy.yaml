@@ -16,6 +16,9 @@ npmjs:
   tasks:
     - checkout:
         force-clean-build: 'true'
+    - artifact-download:
+        artifacts:
+          - name: tswebextension.tgz
     - script:
         interpreter: SHELL
         scripts:
@@ -29,20 +32,9 @@ npmjs:
 
             ls -alt
 
-            yarn install ${bamboo.varsYarn}
-
-            npx lerna bootstrap
-            # For link dependencies
-            npx lerna run --scope @adguard/tsurlfilter build
-            npx lerna exec --scope @adguard/tswebextension yarn install -- ${bamboo.varsYarn}
-            npx lerna run --scope @adguard/tswebextension build
-
-            cd ./packages/tswebextension
-            ls -alt
-
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish --access public
+            npm publish adguard-tswebextension-v${bamboo.inject.version}.tgz --access public
 
             # cleanup parent
             cd ../..
