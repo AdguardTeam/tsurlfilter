@@ -34,7 +34,7 @@ npmjs:
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish adguard-tswebextension-v${bamboo.inject.version}.tgz --access public
+            npm publish tswebextension.tgz --access public
 
             # cleanup parent
             cd ../..
