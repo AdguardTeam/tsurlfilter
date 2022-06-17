@@ -25,6 +25,7 @@
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
+    "postbuild": "node tasks/build-txt",
     "build:types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
@@ -73,8 +74,15 @@
     ]
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^3.1.9",
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-typescript": "^8.3.0",
     "@types/jest": "^23.3.14",
     "jest": "^25.5.4",
+    "rollup": "^2.60.1",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-preserve-shebangs": "^0.2.0",
     "webextension-polyfill-ts": "^0.24.0"
   },
   "dependencies": {

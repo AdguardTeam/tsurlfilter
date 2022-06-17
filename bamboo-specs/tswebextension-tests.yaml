@@ -2,8 +2,8 @@
 version: 2
 plan:
   project-key: AJL
-  key: TSURLFILTERTEST
-  name: tsurlfilter - tests
+  key: TSWEBEXTENSIONTEST
+  name: tswebextension - tests
 variables:
   dockerContainer: adguard/node-ssh:14.18--0
 
@@ -21,6 +21,13 @@ Test:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
+    - stop-job:
+        success: 'true'
+        conditions:
+        - variable:
+            not-equals:
+              # Stop build when target PR branch not 'epic/tswebextension'
+              bamboo.repository.pr.targetBranch: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
     - script:
@@ -33,8 +40,10 @@ Test:
             ls -alt
 
             npx lerna bootstrap
-            npx lerna run --scope @adguard/tsurlfilter test:prod
+            # For link dependencies
             npx lerna run --scope @adguard/tsurlfilter build
+            npx lerna run --scope @adguard/tswebextension test:prod
+            npx lerna run --scope @adguard/tswebextension build
 
             # cleanup parent
             rm -rf node_modules
@@ -61,5 +70,6 @@ notifications:
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 labels: [ ]
+
 other:
   concurrent-build-plugin: system-default

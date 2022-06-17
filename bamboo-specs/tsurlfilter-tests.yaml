@@ -2,20 +2,20 @@
 version: 2
 plan:
   project-key: AJL
-  key: TSURLFILTERINCR
-  name: tsurlfilter - increment
+  key: TSURLFILTERTEST
+  name: tsurlfilter - tests
 variables:
   dockerContainer: adguard/node-ssh:14.18--0
 
 stages:
-  - Increment:
+  - Test:
       manual: 'false'
       final: 'false'
       jobs:
-        - Increment
+        - Test
 
-Increment:
-  key: INCR
+Test:
+  key: TEST
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
@@ -32,27 +32,35 @@ Increment:
 
             ls -alt
 
-            yarn install
-
-            npx lerna run --scope @adguard/tsurlfilter increment
+            npx lerna bootstrap
+            npx lerna run --scope @adguard/tsurlfilter test:prod
+            npx lerna run --scope @adguard/tsurlfilter build
 
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
             npx lerna exec -- rm -rf node_modules
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          commitMessage: 'skipci: Automatic increment build number'
-          selectedRepository: defaultRepository
+  final-tasks:
+    - clean
   requirements:
     - adg-docker: 'true'
 
 branches:
-  create: manually
-  delete: never
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
   link-to-jira: 'true'
 
-labels: []
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+labels: [ ]
+
 other:
   concurrent-build-plugin: system-default
