@@ -21,6 +21,13 @@ Increment:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
+    - stop-job:
+        success: 'true'
+        conditions:
+        - variable:
+            not-equals:
+              # Stop build when current branch not 'epic/tswebextension'
+              bamboo.planRepository.branchName: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
     - script:
