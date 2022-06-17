@@ -35,8 +35,6 @@ npmjs:
             # cleanup parent
             cd ../..
             rm -rf node_modules
-            # cleanup child packages
-            npx lerna exec -- rm -rf node_modules
   requirements:
     - adg-docker: 'true'
   notifications:
