@@ -51,6 +51,7 @@
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
+    "postbuild": "node tasks/build-txt",
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
