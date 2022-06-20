@@ -4,10 +4,47 @@ deployment:
   name: tsurlfilter - deploy
   source-plan: AJL-TSURLFILTERBUILD
 release-naming: ${bamboo.inject.version}
+# Here we need two fully identical plans in order
+# to have two different versions in bamboo releases
 environments:
-  - npmjs
+  - npmjs-1.x
+  - npmjs-2.x
 
-npmjs:
+npmjs-1.x:
+  docker:
+    image: adguard/node-ssh:14.18--0
+    volumes:
+      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+  triggers: [ ]
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - artifact-download:
+        artifacts:
+          - name: tsurlfilter.tgz
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            ls -alt
+
+            export NPM_TOKEN=${bamboo.npmSecretToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            npm publish --access public
+  requirements:
+    - adg-docker: 'true'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+npmjs-2.x:
   docker:
     image: adguard/node-ssh:14.18--0
     volumes:
