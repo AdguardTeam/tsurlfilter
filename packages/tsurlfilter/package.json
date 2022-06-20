@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "0.7.75",
+  "version": "2.0.0-alpha.0",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
@@ -38,7 +38,8 @@
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",
-    "increment": "yarn version --patch --no-git-tag-version"
+    "increment": "yarn version --patch --no-git-tag-version",
+    "increment:alpha": "yarn version --prerelease --no-git-tag-version"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [

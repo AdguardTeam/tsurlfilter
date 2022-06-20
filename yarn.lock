@@ -30,6 +30,38 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
+"@adguard/scriptlets@^1.6.8":
+  version "1.6.20"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.20.tgz#668c997aba032a2e195e57f27fd09468e4377ab5"
+  integrity sha512-28k5ROl+o4l4gy3JvrltchN4+jLjj20KAjcp48YKO5h20ATCeK4UitWJ1//xZwryg1irg25lQ+E+vKHsM07Ibg==
+  dependencies:
+    "@babel/runtime" "^7.7.2"
+    js-yaml "^3.13.1"
+
+"@adguard/tsurlfilter@^0.7.37", "@adguard/tsurlfilter@^0.7.58":
+  version "0.7.78"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.78.tgz#66b73bfb95f9bd8df389dbe7f6bea09a1cb409cc"
+  integrity sha512-0H2kRkg8BK17BDf1lGLsWQqWNHI7488WCM/B0Q7Nx/NYjKfG9XbEIIAEiUr5g7rGHPFBxDmD9oiavp0GkCS0Gg==
+  dependencies:
+    "@adguard/scriptlets" "^1.6.8"
+    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.14"
+    ip6addr "^0.2.3"
+    is-cidr "^4.0.2"
+    is-ip "^3.1.0"
+    lru_map "^0.4.1"
+    netmask "^2.0.2"
+    punycode "^2.1.1"
+    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2"
+    tldts "^5.6.45"
+    webextension-polyfill "^0.8.0"
+
+"@adguard/tswebextension@0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.0.1.tgz#05650bc004e5e686b2e7eb577585c7039fd83b89"
+  integrity sha512-e5jjs9gT+FehA7zRVtDzPcnfMSCOXMXFoSyG6bjrSAmrATStgElOiYEvBMjHHlqMnwfJNk/1tO+GEFBIEw0fog==
+  dependencies:
+    zod "^3.9.8"
+
 "@ampproject/remapping@^2.1.0":
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/@ampproject/remapping/-/remapping-2.1.2.tgz#4edca94973ded9630d20101cd8559cedb8d8bd34"
@@ -5541,6 +5573,10 @@ extend@~3.0.2:
 "extended-css@git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.13":
   version "1.3.13"
   resolved "git+https://github.com/AdguardTeam/ExtendedCss.git#66c6c9a390f53325876e54e3de486338b2535a2c"
+
+"extended-css@git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.14":
+  version "1.3.14"
+  resolved "git+https://github.com/AdguardTeam/ExtendedCss.git#e8e2b1d1a732d3043b2227b4bd5511300b33ea3d"
 
 external-editor@^3.0.3:
   version "3.1.0"
@@ -12201,3 +12237,8 @@ zod@^3.11.6:
   version "3.13.4"
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.13.4.tgz#5d6fe03ef4824a637d7ef50b5441cf6ab3acede0"
   integrity sha512-LZRucWt4j/ru5azOkJxCfpR87IyFDn8h2UODdqvXzZLb3K7bb9chUrUIGTy3BPsr8XnbQYfQ5Md5Hu2OYIo1mg==
+
+zod@^3.9.8:
+  version "3.17.3"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.17.3.tgz#86abbc670ff0063a4588d85a4dcc917d6e4af2ba"
+  integrity sha512-4oKP5zvG6GGbMlqBkI5FESOAweldEhSOZ6LI6cG+JzUT7ofj1ZOC0PJudpQOpT1iqOFpYYtX5Pw0+o403y4bcg==

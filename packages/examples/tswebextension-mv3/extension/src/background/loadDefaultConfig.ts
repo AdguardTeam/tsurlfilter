@@ -18,6 +18,7 @@ export const loadDefaultConfig = async (filtersDir: string): Promise<Configurati
         settings: {
             collectStats: true,
             allowlistInverted: false,
+            allowlistEnabled: false,
             stealth: {
                 blockChromeClientData: true,
                 hideReferrer: true,
