@@ -31,10 +31,6 @@ npmjs:
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish tswebextension.tgz --access public
-
-            # cleanup parent
-            cd ../..
-            rm -rf node_modules
   requirements:
     - adg-docker: 'true'
   notifications:

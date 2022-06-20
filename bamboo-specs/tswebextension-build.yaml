@@ -41,7 +41,6 @@ Build:
 
             cd packages/tswebextension/
             yarn pack --filename tswebextension.tgz
-
             cd ../../
 
             # cleanup parent

@@ -16,6 +16,9 @@ npmjs:
   tasks:
     - checkout:
         force-clean-build: 'true'
+    - artifact-download:
+        artifacts:
+          - name: tsurlfilter.tgz
     - script:
         interpreter: SHELL
         scripts:
@@ -25,24 +28,9 @@ npmjs:
 
             ls -alt
 
-            yarn install ${bamboo.varsYarn}
-
-            npx lerna bootstrap
-            npx lerna exec --scope @adguard/tsurlfilter yarn install -- ${bamboo.varsYarn}
-            npx lerna run --scope @adguard/tsurlfilter build
-
-            cd ./packages/tsurlfilter
-            ls -alt
-
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish --access public
-
-            # cleanup parent
-            cd ../..
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna exec -- rm -rf node_modules
   requirements:
     - adg-docker: 'true'
   notifications:

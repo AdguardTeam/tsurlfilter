@@ -39,7 +39,8 @@
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",
-    "increment": "yarn version --patch --no-git-tag-version"
+    "increment": "yarn version --patch --no-git-tag-version",
+    "increment:alpha": "yarn version --prerelease --no-git-tag-version"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [

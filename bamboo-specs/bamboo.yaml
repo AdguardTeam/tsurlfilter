@@ -17,7 +17,7 @@
 !include 'tswebextension-tests.yaml'
 
 ---
-!include 'tswebextension-increment.yaml'
+!include 'epic-increment.yaml'
 
 ---
 !include 'tswebextension-build.yaml'

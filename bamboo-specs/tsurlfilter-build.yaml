@@ -37,6 +37,10 @@ Build:
             npx lerna bootstrap
             npx lerna run --scope @adguard/tsurlfilter build -- ${bamboo.varsYarn}
 
+            cd packages/tsurlfilter/
+            yarn pack --filename tsurlfilter.tgz
+            cd ../../
+
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
@@ -50,6 +54,12 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: tsurlfilter-v${bamboo.inject.version}
+  artifacts:
+    - name: tsurlfilter.tgz
+      location: packages/tsurlfilter/
+      pattern: tsurlfilter.tgz
+      shared: true
+      required: true
   requirements:
     - adg-docker: 'true'
 
