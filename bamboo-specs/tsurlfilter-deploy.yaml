@@ -29,11 +29,14 @@ npmjs • 1.x:
             set -e
             set -x
 
+            # Fix mixed logs
+            exec 2>&1
+
             ls -alt
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish --access public
+            npm publish tsurlfilter.tgz --access public
   requirements:
     - adg-docker: 'true'
   notifications:
@@ -63,11 +66,14 @@ npmjs • 2.x • Alpha:
             set -e
             set -x
 
+            # Fix mixed logs
+            exec 2>&1
+
             ls -alt
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish --access public
+            npm publish tsurlfilter.tgz --access public
   requirements:
     - adg-docker: 'true'
   notifications:
