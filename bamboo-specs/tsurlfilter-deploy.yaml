@@ -7,10 +7,10 @@ release-naming: ${bamboo.inject.version}
 # Here we need two fully identical plans in order
 # to have two different versions in bamboo releases
 environments:
-  - npmjs-1.x
-  - npmjs-2.x
+  - npmjs • 1.x
+  - npmjs • 2.x • Alpha
 
-npmjs-1.x:
+npmjs • 1.x:
   docker:
     image: adguard/node-ssh:14.18--0
     volumes:
@@ -44,7 +44,7 @@ npmjs-1.x:
             name: Deploy webhook
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-npmjs-2.x:
+npmjs • 2.x • Alpha:
   docker:
     image: adguard/node-ssh:14.18--0
     volumes:
