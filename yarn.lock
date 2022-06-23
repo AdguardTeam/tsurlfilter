@@ -22,15 +22,7 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/scriptlets@^1.6.11":
-  version "1.6.15"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.15.tgz#d9b1ef573004d5ec513a312321e599cc3253da0f"
-  integrity sha512-9ltcuFAnmdWvHJnkOVQtH/FZl6dY7MRUYvmoZNz9uyR7JdwHtHi7A+N5JTsWcXf4Wc28ymHNnn43CL94H/wnyg==
-  dependencies:
-    "@babel/runtime" "^7.7.2"
-    js-yaml "^3.13.1"
-
-"@adguard/scriptlets@^1.6.8":
+"@adguard/scriptlets@^1.6.20", "@adguard/scriptlets@^1.6.8":
   version "1.6.20"
   resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.20.tgz#668c997aba032a2e195e57f27fd09468e4377ab5"
   integrity sha512-28k5ROl+o4l4gy3JvrltchN4+jLjj20KAjcp48YKO5h20ATCeK4UitWJ1//xZwryg1irg25lQ+E+vKHsM07Ibg==
@@ -38,7 +30,7 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/tsurlfilter@^0.7.37", "@adguard/tsurlfilter@^0.7.58":
+"@adguard/tsurlfilter@^0.7.37":
   version "0.7.78"
   resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-0.7.78.tgz#66b73bfb95f9bd8df389dbe7f6bea09a1cb409cc"
   integrity sha512-0H2kRkg8BK17BDf1lGLsWQqWNHI7488WCM/B0Q7Nx/NYjKfG9XbEIIAEiUr5g7rGHPFBxDmD9oiavp0GkCS0Gg==

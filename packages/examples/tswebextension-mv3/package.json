@@ -15,12 +15,12 @@
     "test": "rimraf tmp && node -r esbuild-register ./scripts/browser-test/index.ts"
   },
   "dependencies": {
-    "@adguard/tswebextension": "^0.0.5",
+    "@adguard/tswebextension": "^0.0.12",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@adguard/tsurlfilter": "^0.7.58",
+    "@adguard/tsurlfilter": "^2.0.0-alpha.4",
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-class-properties": "^7.16.0",
     "@babel/plugin-transform-runtime": "^7.16.4",

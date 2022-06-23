@@ -12,15 +12,17 @@ import {
     SiteStatus,
     defaultFilteringLog,
     configurationValidator,
+    ConfigurationContext,
     Configuration,
 } from '../../common';
 import { engineApi } from './engine-api';
 
-// TODO: implement
-export class TsWebExtension implements AppInterface<Configuration> {
+export class TsWebExtension implements AppInterface<Configuration, ConfigurationContext> {
     onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
-    configuration: Configuration | undefined;
+    // Here we store configuration excluding "heavy" fields:
+    // filters content, userrules and allowlist
+    configuration: ConfigurationContext | undefined;
 
     isStarted = false;
 
@@ -46,12 +48,10 @@ export class TsWebExtension implements AppInterface<Configuration> {
      * Runs configuration process via saving promise to inner startPromise
      */
     private async innerStart(config: Configuration): Promise<void> {
-        this.configuration = configurationValidator.parse(config);
-
         console.debug('[START]: start');
 
         try {
-            await this.configure(this.configuration);
+            await this.configure(config);
             await this.executeScriptlets();
         } catch (e) {
             this.startPromise = undefined;
@@ -107,9 +107,10 @@ export class TsWebExtension implements AppInterface<Configuration> {
     public async configure(config: Configuration): Promise<void> {
         console.debug('[CONFIGURE]: start with ', config);
 
-        this.configuration = configurationValidator.parse(config);
+        const configuration = configurationValidator.parse(config);
 
-        const enableFiltersIds = this.configuration.filters
+        const { declarativeFilters, customFilters } = FiltersApi.separateRulesets(configuration.filters);
+        const enableFiltersIds = declarativeFilters
             .map(({ filterId }) => filterId);
         const currentFiltersIds = await FiltersApi.getEnabledRulesets();
         const disableFiltersIds = currentFiltersIds
@@ -117,15 +118,17 @@ export class TsWebExtension implements AppInterface<Configuration> {
 
         await FiltersApi.updateFiltering(disableFiltersIds, enableFiltersIds);
         await UserRulesApi.updateDynamicFiltering(
-            this.configuration.userrules,
+            configuration.userrules.concat(customFilters.map(({ content }) => content)),
             this.webAccessibleResourcesPath,
         );
         engineApi.waitingForEngine = engineApi.startEngine({
-            filters: this.configuration.filters,
-            userrules: this.configuration.userrules,
-            verbose: this.configuration.verbose,
+            filters: configuration.filters,
+            userrules: configuration.userrules,
+            verbose: configuration.verbose,
         });
         await engineApi.waitingForEngine;
+
+        this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         console.debug('[CONFIGURE]: end');
     }
@@ -173,5 +176,21 @@ export class TsWebExtension implements AppInterface<Configuration> {
                 }
             },
         );
+    }
+
+    /**
+     * Extract Partial Configuration from whole Configration,
+     * excluding heavyweight fields which contains rules
+     * @param configuration Configuration
+     * @returns ConfigurationContext
+     */
+    private static createConfigurationContext(configuration: Configuration): ConfigurationContext {
+        const { filters, verbose, settings } = configuration;
+
+        return {
+            filters: filters.map(({ filterId }) => filterId),
+            verbose,
+            settings,
+        };
     }
 }
