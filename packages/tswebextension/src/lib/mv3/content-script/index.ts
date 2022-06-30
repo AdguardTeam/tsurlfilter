@@ -1,7 +1,8 @@
 import ExtendedCss from 'extended-css';
 
 /* eslint-disable no-console */
-import { MessageType, sendAppMessage } from '../../common';
+import { MessageType } from '../../common/message-constants';
+import { sendAppMessage } from '../../common/content-script/send-app-message';
 
 // TODO: Add extended css
 // TODO: It helps only with Force refresh (via drop cache).

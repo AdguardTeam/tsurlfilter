@@ -15,7 +15,7 @@
     "test": "rimraf tmp && node -r esbuild-register ./scripts/browser-test/index.ts"
   },
   "dependencies": {
-    "@adguard/tswebextension": "^0.0.12",
+    "@adguard/tswebextension": "^0.0.x",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },

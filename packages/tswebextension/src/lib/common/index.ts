@@ -1,6 +1,7 @@
 export * from './app';
 export * from './configuration';
 export * from './message';
+export * from './message-constants';
 export * from './filtering-log';
 export * from './utils';
 export * from './stealth-helper';

@@ -45,7 +45,7 @@ const contentScriptMv3Config = {
             sourcemap: false,
         },
     ],
-    external: ['zod', 'extended-css', '@adguard/tsurlfilter', '@adguard/assistant'],
+    external: ['zod', 'webextension-polyfill', 'extended-css', '@adguard/tsurlfilter', '@adguard/assistant'],
     watch: {
         include: 'src/lib/mv3/content-script/**',
     },
