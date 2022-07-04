@@ -144,6 +144,12 @@ export class Request {
 
         if (publicSuffix) {
             subdomainsResult.push(publicSuffix);
+            // Extract tld from suffixes like 'com.pl'
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2037
+            const tld = publicSuffix.split('.').pop();
+            if (tld && tld !== publicSuffix) {
+                subdomainsResult.push(tld);
+            }
         }
 
         subdomainsResult.push(domain);

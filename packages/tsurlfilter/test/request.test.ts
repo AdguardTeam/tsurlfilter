@@ -63,7 +63,7 @@ describe('Creating request', () => {
     it('parses subdomains with complex tld', () => {
         const request = new Request('http://sub.sub.example.org.uk/part', 'http://sub.example.org', RequestType.Other);
         expect(request.subdomains.sort())
-            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk'].sort());
+            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk', 'uk'].sort());
         expect(request.sourceSubdomains.sort())
             .toEqual(['sub.example.org', 'example.org', 'org'].sort());
     });
