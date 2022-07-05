@@ -50,6 +50,15 @@ describe('Creating request', () => {
         expect(request.thirdParty).toEqual(true);
     });
 
+    it('detects third-party properly for IP domains', () => {
+        const request = new Request('https://example.org', 'https://1.2.3.4/', RequestType.Other);
+        expect(request.sourceHostname).toEqual('1.2.3.4');
+        expect(request.thirdParty).toEqual(true);
+
+        const request2 = new Request('https://1.2.3.4/', 'https://1.2.3.4/', RequestType.Other);
+        expect(request2.thirdParty).toEqual(false);
+    }); 
+
     it('parses subdomains', () => {
         const request = new Request('http://sub.sub.example.org/part', 'http://sub.example.org', RequestType.Other);
         expect(request.subdomains.sort()).toEqual([

@@ -190,8 +190,9 @@ export class Request {
         this.domain = tldResult.domain!;
         this.subdomains = this.getSubdomains(tldResult);
 
+        let sourceTldResult;
         if (sourceUrl) {
-            const sourceTldResult = parse(sourceUrl);
+            sourceTldResult = parse(sourceUrl);
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
             this.sourceSubdomains = this.getSubdomains(sourceTldResult);
@@ -203,7 +204,9 @@ export class Request {
 
         if (this.sourceDomain) {
             this.thirdParty = this.domain !== this.sourceDomain;
-        } else {
+        } else if (sourceTldResult && sourceTldResult.isIp) {
+            this.thirdParty = this.hostname !== this.sourceHostname;
+        }  else {
             this.thirdParty = null;
         }
     }
