@@ -353,7 +353,7 @@ describe('DeclarativeRuleConverter', () => {
         const resourcesPath = '/war/redirects';
         const ruleId = 1;
 
-        DeclarativeRuleConverter.WebAccesibleResoursesPath = resourcesPath;
+        DeclarativeRuleConverter.WebAccessibleResourcesPath = resourcesPath;
         const result = DeclarativeRuleConverter.convert(
             new NetworkRule('||example.org/script.js$script,redirect=noopjs', -1),
             ruleId,

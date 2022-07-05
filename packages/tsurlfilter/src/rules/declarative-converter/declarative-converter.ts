@@ -9,15 +9,35 @@ import { IndexedRule } from '../rule';
 import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
 
 interface IConvertOptions {
-    resoursesPath?: string,
+    // Path to web accessible resources, relative to the extension root dir. Should start with leading slash '/'
+    resourcesPath?: string,
+    // Max allowed number of rules in the list
     maxLimit?: number,
+    // Max allowed number of regular expression rules in the list
     maxRegexLimit?: number,
+    // Offset for generated identifiers of new declarative rules
+    offsetId?: number,
+    // Should the filter ID be stored in the source map value or not
+    saveFilterId?: boolean,
 }
 
 const defaultOptions: IConvertOptions = {
     maxLimit: Number.MAX_SAFE_INTEGER,
     maxRegexLimit: Number.MAX_SAFE_INTEGER,
 };
+
+export type ConvertedRuleId = number;
+export type HashOriginalRule = number;
+export type { DeclarativeRule };
+
+type ConvertedResult = {
+    declarativeRules: DeclarativeRule[],
+    convertedSourceMap: Map<ConvertedRuleId, HashOriginalRule>,
+};
+
+// Because for all static filters we have ID's less than 1000,
+// and for customs filters we start ID from 1000
+const LIST_ID_MAX_VALUE_MV3 = 10000;
 
 /**
  * Converter class
@@ -28,20 +48,22 @@ export class DeclarativeConverter {
      * Converts a set of rules to declarative rules array
      *
      * @param ruleList
-     * @param maxLimit - max allowed number of rules in the list
-     * @param maxRegexLimit - max allowed number of regular expression rules in the list
+     * @param IConvertOptions - different options for convert
      */
     // eslint-disable-next-line class-methods-use-this
     public convert(
         ruleList: IRuleList,
         options?: IConvertOptions,
-    ): DeclarativeRule[] {
-        const resoursesPath = options?.resoursesPath;
+    ): ConvertedResult {
+        const resourcesPath = options?.resourcesPath;
         const maxLimit = options?.maxLimit || defaultOptions.maxLimit!;
         const maxRegexLimit = options?.maxRegexLimit || defaultOptions.maxRegexLimit!;
+        // TODO: Discuss with a.meshkov
+        const offsetId = options?.offsetId;
+        const saveFilterId = options?.saveFilterId;
 
-        if (resoursesPath) {
-            DeclarativeRuleConverter.WebAccesibleResoursesPath = resoursesPath;
+        if (resourcesPath) {
+            DeclarativeRuleConverter.WebAccessibleResourcesPath = resourcesPath;
         }
 
         const indexedRules: IndexedRule[] = [];
@@ -63,7 +85,9 @@ export class DeclarativeConverter {
             }
         }
 
-        const result: DeclarativeRule[] = [];
+        const declarativeRules: DeclarativeRule[] = [];
+        const convertedSourceMap: Map<ConvertedRuleId, HashOriginalRule> = new Map();
+        const rulesetId = ruleList.getId();
 
         let regexpRulesCounter = 0;
 
@@ -78,23 +102,30 @@ export class DeclarativeConverter {
 
             let dRule;
             try {
+                const id = offsetId ? offsetId + iRule.index : iRule.index;
                 dRule = DeclarativeRuleConverter.convert(
                     rule,
-                    DeclarativeConverter.createDeclarativeRuleId(iRule.index),
+                    DeclarativeConverter.createDeclarativeRuleId(id),
                 );
             } catch (e: any) {
                 logger.info(e.message);
             }
 
             if (dRule) {
-                result.push(dRule);
+                declarativeRules.push(dRule);
+                // For static filters, we do not need to save the filter identifier
+                // This is only necessary for dynamic rules: custom filters and user rules
+                const hashOriginalRule = saveFilterId
+                    ? DeclarativeConverter.ruleListIdxToStorageIdx(rulesetId, iRule.index)
+                    : iRule.index;
+                convertedSourceMap.set(dRule.id, hashOriginalRule);
 
                 if (dRule.condition.regexFilter) {
                     regexpRulesCounter += 1;
                 }
             }
 
-            if (result.length > maxLimit) {
+            if (declarativeRules.length > maxLimit) {
                 // eslint-disable-next-line max-len
                 throw new Error(`Status: ${ERROR_STATUS_CODES.RULE_LIMIT} Message: Maximum allowed rules count reached: ${maxLimit}`);
             }
@@ -105,7 +136,10 @@ export class DeclarativeConverter {
             }
         });
 
-        return result;
+        return {
+            declarativeRules,
+            convertedSourceMap,
+        };
     }
 
     /**
@@ -148,5 +182,31 @@ export class DeclarativeConverter {
      */
     private static createDeclarativeRuleId(index: number): number {
         return index + 1;
+    }
+
+    /**
+     * ruleListIdxToStorageIdx converts pair of listID and rule list index
+     * to "storage index" number
+     *
+     * @param listId
+     * @param ruleIdx
+     */
+    public static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): number {
+        return listId / LIST_ID_MAX_VALUE_MV3 + ruleIdx;
+    }
+
+    /**
+     * Converts the "storage index" to two integers:
+     * listID -- rule list identifier
+     * ruleIdx -- index of the rule in the list
+     *
+     * @param storageIdx
+     * @return [listId, ruleIdx]
+     */
+    public static storageIdxToRuleListIdx(storageIdx: number): [number, number] {
+        const listId = Math.round((storageIdx % 1) * LIST_ID_MAX_VALUE_MV3);
+        const ruleIdx = Math.trunc(storageIdx);
+
+        return [listId, ruleIdx];
     }
 }

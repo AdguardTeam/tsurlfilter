@@ -1,5 +1,5 @@
 import fs from 'fs';
-import * as TSUrlFilter from '@adguard/tsurlfilter';
+import { DeclarativeConverter, StringRuleList } from '@adguard/tsurlfilter';
 import axios from 'axios';
 import path from 'path';
 
@@ -37,7 +37,7 @@ const ensureDirSync = (dirPath: string) => {
 };
 
 const startConvert = () => {
-    const converter = new TSUrlFilter.DeclarativeConverter();
+    const converter = new DeclarativeConverter();
 
     ensureDirSync(DECLARATIVE_FILTERS_DIR);
 
@@ -49,17 +49,15 @@ const startConvert = () => {
         const rulesetIndex = filePath.match(/\d+/);
         if (rulesetIndex) {
             const data = fs.readFileSync(`${FILTERS_DIR}/${filePath}`, { encoding: 'utf-8' });
-            const list = new TSUrlFilter.StringRuleList(
-                +rulesetIndex, data, false,
+            const list = new StringRuleList(+rulesetIndex, data);
+            const { declarativeRules } = converter.convert(
+                list,
+                { resourcesPath: '/war/redirects' },
             );
-            const result = converter.convert(list, {
-                resoursesPath: '/war/redirects',
-            });
-
             const fileDeclarative = filePath.replace('.txt', '.json');
             fs.writeFileSync(
                 `${DECLARATIVE_FILTERS_DIR}/${fileDeclarative}`,
-                JSON.stringify(result, null, '\t'),
+                JSON.stringify(declarativeRules, null, '\t'),
             );
 
             console.info(`Convert ${filePath} done`);

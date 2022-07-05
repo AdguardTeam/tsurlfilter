@@ -37,7 +37,7 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
     /**
      * Constructor
      *
-     * @param webAccessibleResourcesPath string path to web accessible resourses,
+     * @param webAccessibleResourcesPath string path to web accessible resources,
      * relative to the extension root dir. Should start with leading slash '/'
      */
     constructor(webAccessibleResourcesPath?: string) {
@@ -118,7 +118,8 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
 
         await FiltersApi.updateFiltering(disableFiltersIds, enableFiltersIds);
         await UserRulesApi.updateDynamicFiltering(
-            configuration.userrules.concat(customFilters.map(({ content }) => content)),
+            configuration.userrules,
+            customFilters,
             this.webAccessibleResourcesPath,
         );
         engineApi.waitingForEngine = engineApi.startEngine({
@@ -192,5 +193,11 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
             verbose,
             settings,
         };
+    }
+
+    /** Returns the map of converted declarative rule
+     * identifiers with a hash to the original rule */
+    public get convertedSourceMap() {
+        return UserRulesApi.convertedSourceMap;
     }
 }

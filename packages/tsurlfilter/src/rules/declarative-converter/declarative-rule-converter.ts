@@ -70,30 +70,30 @@ export class DeclarativeRuleConverter {
     }
 
     /**
-     * String path to web accessible resourses,
+     * String path to web accessible resources,
      * relative to the extension root dir.
      * Should start with leading slash '/'
      */
-    private static webAccesibleResoursesPath: string;
+    private static webAccessibleResourcesPath: string;
 
     /**
-     * String path to web accessible resourses,
+     * String path to web accessible resources,
      * relative to the extension root dir.
      * Should start with leading slash '/'
      */
-    public static set WebAccesibleResoursesPath(value: string) {
+    public static set WebAccessibleResourcesPath(value: string) {
         const firstChar = 0;
         const lastChar = value.length > 0 ? value.length - 1 : 0;
 
         if (value[firstChar] !== '/') {
-            throw new Error(`Path to web accesible resourses should be started with leading slash: ${value}`);
+            throw new Error(`Path to web accessible resources should be started with leading slash: ${value}`);
         }
 
         if (value[lastChar] === '/') {
-            throw new Error(`Path to web accesible resourses should not be ended with slash: ${value}`);
+            throw new Error(`Path to web accessible resources should not be ended with slash: ${value}`);
         }
 
-        this.webAccesibleResoursesPath = value;
+        this.webAccessibleResourcesPath = value;
     }
 
     /**
@@ -152,13 +152,13 @@ export class DeclarativeRuleConverter {
      */
     private static getRedirectAction(rule: NetworkRule): Redirect {
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-            const resoursesPath = DeclarativeRuleConverter.webAccesibleResoursesPath;
-            if (!resoursesPath) {
-                throw new Error(`Error: empty web accessible resourses path: ${rule.getText()}`);
+            const resourcesPath = DeclarativeRuleConverter.webAccessibleResourcesPath;
+            if (!resourcesPath) {
+                throw new Error(`Error: empty web accessible resources path: ${rule.getText()}`);
             }
             const filename = redirects.getRedirectFilename(rule.getAdvancedModifierValue()!);
 
-            return { extensionPath: `${resoursesPath}/${filename}` };
+            return { extensionPath: `${resourcesPath}/${filename}` };
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {

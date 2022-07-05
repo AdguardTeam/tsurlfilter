@@ -7,11 +7,17 @@ describe('DeclarativeConverter', () => {
     const declarativeConverter = new DeclarativeConverter();
 
     it('converts simple blocking rules', () => {
-        const result = declarativeConverter.convert(createRuleList(['||example.org^']));
+        const {
+            declarativeRules,
+            convertedSourceMap,
+        } = declarativeConverter.convert(createRuleList(['||example.org^']));
 
-        expect(result).toHaveLength(1);
-        expect(result).toContainEqual({
-            id: 1,
+        const generatedId = 1;
+        const positionRuleInList = 0;
+
+        expect(declarativeRules).toHaveLength(1);
+        expect(declarativeRules).toContainEqual({
+            id: generatedId,
             action: {
                 type: 'block',
             },
@@ -20,17 +26,26 @@ describe('DeclarativeConverter', () => {
                 isUrlFilterCaseSensitive: false,
             },
         });
+
+        expect(Array.from(convertedSourceMap.entries())).toHaveLength(1);
+        expect(convertedSourceMap.get(generatedId)).toBe(positionRuleInList);
     });
 
     it('respects badfilter rules', () => {
-        const result = declarativeConverter.convert(createRuleList([
+        const {
+            declarativeRules,
+            convertedSourceMap,
+        } = declarativeConverter.convert(createRuleList([
             '||example.org^',
             '||example.org^$badfilter',
             '||persistent.com^',
         ]));
 
-        expect(result).toHaveLength(1);
-        expect(result).toContainEqual({
+        const generatedId = 41;
+        const positionRuleInList = 40;
+
+        expect(declarativeRules).toHaveLength(1);
+        expect(declarativeRules).toContainEqual({
             id: 41,
             action: {
                 type: 'block',
@@ -40,15 +55,22 @@ describe('DeclarativeConverter', () => {
                 isUrlFilterCaseSensitive: false,
             },
         });
+
+        expect(Array.from(convertedSourceMap.entries())).toHaveLength(1);
+        expect(convertedSourceMap.get(generatedId)).toBe(positionRuleInList);
     });
 
     it('skips some inapplicable rules', () => {
-        const result = declarativeConverter.convert(createRuleList([
+        const {
+            declarativeRules,
+            convertedSourceMap,
+        } = declarativeConverter.convert(createRuleList([
             '||example.org^$badfilter',
             '@@||example.org^$elemhide',
         ]));
 
-        expect(result).toHaveLength(0);
+        expect(declarativeRules).toHaveLength(0);
+        expect(Array.from(convertedSourceMap.entries())).toHaveLength(0);
     });
 
     it('maximum allowed regex rules count reached', () => {
