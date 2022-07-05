@@ -396,7 +396,7 @@ export class NetworkRule implements rule.IRule {
      */
     match(request: Request, useShortcut = true): boolean {
         // Regex rules should not be tested by shortcut
-        if (!this.ruleText.startsWith(SimpleRegex.MASK_REGEX_RULE) && (useShortcut && !this.matchShortcut(request))) {
+        if (useShortcut && !this.matchShortcut(request)) {
             return false;
         }
 
