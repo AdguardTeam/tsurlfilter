@@ -502,12 +502,40 @@ describe('NetworkRule.match', () => {
     });
 
     it('works when $match-case is applied properly', () => {
+        // Rule's url has upper case characters
         let rule = new NetworkRule('||example.org/PATH$match-case', 0);
         let request = new Request('https://example.org/path', null, RequestType.Other);
         expect(rule.match(request)).toEqual(false);
 
         rule = new NetworkRule('||example.org/PATH$match-case', 0);
         request = new Request('https://example.org/PATH', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        // Rule's url have upper case characters
+        rule = new NetworkRule('||example.org/path$match-case', 0);
+        request = new Request('https://example.org/PATH', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('||example.org/path$match-case', 0);
+        request = new Request('https://example.org/path', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        // Rule's short url has upper case characters
+        rule = new NetworkRule('/FILE.js$match-case', 0);
+        request = new Request('https://example.org/file.js', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('/FILE.js$match-case', 0);
+        request = new Request('https://example.org/FILE.js', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        // Rule's short url doesn't have upper case characters
+        rule = new NetworkRule('/file.js$match-case', 0);
+        request = new Request('https://example.org/FILE.js', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('/file.js$match-case', 0);
+        request = new Request('https://example.org/file.js', null, RequestType.Other);
         expect(rule.match(request)).toEqual(true);
     });
 

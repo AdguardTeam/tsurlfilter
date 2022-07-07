@@ -148,8 +148,9 @@ export class Pattern {
         this.prepared = true;
 
         // If shortcut and pattern are the same, we don't need to actually compile
-        // a regex and can simply use matchShortcut instead.
-        if (this.pattern === this.shortcut) {
+        // a regex and can simply use matchShortcut instead,
+        // except for the $match-case modifier
+        if (this.pattern === this.shortcut && !this.matchcase) {
             this.patternShortcut = true;
             return;
         }
