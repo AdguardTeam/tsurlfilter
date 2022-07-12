@@ -118,7 +118,12 @@ export class Pattern {
             return false;
         }
 
-        if (this.patternShortcut) {
+        const pathIsEmptyString = this.pattern === '';
+        // No-value $path should match root URL
+        if (pathIsEmptyString && path === '/') {
+            return true;
+        }
+        if (!pathIsEmptyString && this.patternShortcut) {
             return this.matchShortcut(path);
         }
 

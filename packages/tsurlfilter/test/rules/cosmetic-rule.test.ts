@@ -167,6 +167,9 @@ describe('Element hiding rules constructor', () => {
         rule = new CosmeticRule('[$,path=qwerty]example.com###banner', 0);
         expect(rule.pathModifier?.pattern).toEqual('qwerty');
 
+        rule = new CosmeticRule('[$path]###banner', 0);
+        expect(rule.pathModifier?.pattern).toEqual('');
+
         rule = new CosmeticRule('example.com###banner', 0);
         expect(rule.pathModifier).toEqual(undefined);
 
@@ -290,6 +293,14 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.com/another-page.html'))).toEqual(false);
         expect(rule.match(createRequest('https://another.org/page1.html'))).toEqual(false);
         expect(rule.match(createRequest('https://another.org/page2.html'))).toEqual(false);
+    });
+
+    it('works if it matches path modifier without a value correctly', () => {
+        const rule = new CosmeticRule('[$domain=example.com,path]##.textad', 0);
+
+        expect(rule.match(createRequest('https://example.com/'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com/page1.html'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com/page2.html?param=1'))).toEqual(false);
     });
 
     it('works if it matches domain and path modifiers included in the rule', () => {

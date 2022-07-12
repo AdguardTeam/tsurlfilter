@@ -425,7 +425,7 @@ export class CosmeticRule implements rule.IRule {
                 restrictedDomains,
             } = CosmeticRuleParser.parseRulePattern(pattern);
 
-            if (path) {
+            if (path || path === '') {
                 this.pathModifier = new Pattern(path);
             }
 
