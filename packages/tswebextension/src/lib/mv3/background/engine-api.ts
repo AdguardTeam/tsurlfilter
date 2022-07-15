@@ -12,6 +12,7 @@ import {
     CosmeticResult,
     CosmeticOption,
     RuleConverter,
+    ScriptletData,
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from '../../common';
@@ -167,11 +168,22 @@ class EngineApi {
      * @param url
      * @param option
      */
-    getScriptletsDataForUrl(url: string, option: CosmeticOption) {
+    getScriptletsDataForUrl(url: string, option: CosmeticOption): ScriptletData[] {
         const scriptRules = this.getScriptsForUrl(url, option);
-        const scriptletDataList = scriptRules
-            .filter((rule) => rule.isScriptlet)
-            .map((scriptletRule) => scriptletRule.getScriptletData());
+        const scriptletDataList: ScriptletData[] = [];
+        scriptRules.forEach((scriptRule) => {
+            if (!scriptRule.isScriptlet) {
+                return;
+            }
+
+            const scriptletData = scriptRule.getScriptletData();
+            if (!scriptletData) {
+                return;
+            }
+
+            scriptletDataList.push(scriptletData);
+        });
+
         return scriptletDataList;
     }
 

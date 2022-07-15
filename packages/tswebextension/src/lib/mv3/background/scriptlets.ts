@@ -43,17 +43,14 @@ const executeScript = async (scripts: string, tabId: number) => {
  * Executes scriptlets data via chrome.scripting.executeScript api
  * @param tabId
  * @param scriptletsData
+ * @param verbose
  */
 const executeScriptletsData = async (
     tabId: number,
-    scriptletsData: (ScriptletData | null)[],
+    scriptletsData: ScriptletData[],
     verbose?: boolean,
 ) => {
     const promises = scriptletsData.map(async (scriptletData) => {
-        if (scriptletData === null) {
-            return;
-        }
-
         if (verbose !== undefined) {
             scriptletData.params.verbose = verbose;
         }
@@ -73,6 +70,7 @@ const executeScriptletsData = async (
  * Get scripts and executing them
  * @param id
  * @param url
+ * @param verbose
  */
 export const getAndExecuteScripts = async (id: number, url: string, verbose?: boolean) => {
     const NEW_TAB_PAGE = 'new-tab-page'; // the url from the details have http even on the new tab page
