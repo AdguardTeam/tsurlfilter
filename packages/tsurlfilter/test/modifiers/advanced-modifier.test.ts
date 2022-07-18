@@ -158,6 +158,15 @@ describe('NetworkRule - replace rules apply', () => {
         expect(applyFunc).toBeTruthy();
         expect(applyFunc(input)).toBe(expected);
     });
+
+    it('unescapes special characters (\n,\t,\r...) in replace', () => {
+        const input = 'test';
+        const expected = '\t\n\rtest';
+
+        const modifier = new ReplaceModifier('/(test)/\\t\\n\\r\\$1/');
+        const applyFunc = modifier.getApplyFunc();
+        expect(applyFunc(input)).toBe(expected);
+    });
 });
 
 describe('NetworkRule - cookie rules', () => {

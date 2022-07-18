@@ -8,6 +8,16 @@ const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g')
 const reSpecialCharactersFull = /[.*+?^${}()|[\]\\]/g;
 const reEscapedSpecialCharactersFull = /\\[.*+?^${}()|[\]\\]/g;
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings
+const escapeSequence: { [key: string]: string } = {
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'b': '\b',
+    'f': '\f',
+    'v': '\v',
+};
+
 /**
  * Class with static helper methods for working with basic filtering rules patterns.
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
@@ -306,5 +316,17 @@ export class SimpleRegex {
      */
     public static isRegexPattern(str: string): boolean {
         return str.startsWith('/') && str.endsWith('/');
+    }
+
+    /**
+     * Unescapes special characters in a string
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings
+     */
+    public static unescapeSpecials(str: string): string {
+        const keys = Object.keys(escapeSequence).join('|');
+        const regex = new RegExp(`\\\\(${keys})`, 'g');
+        return str.replace(regex, (match, group) => {
+            return escapeSequence[group];
+        });
     }
 }

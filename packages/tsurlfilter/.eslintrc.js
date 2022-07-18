@@ -23,7 +23,7 @@ module.exports = {
         '@typescript-eslint/indent': ['error', 4],
         'no-bitwise': 'off',
         'no-new': 'off',
-        'max-len': ['error', { code: 120 }],
+        'max-len': ['error', { code: 120, 'ignoreUrls': true }],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
         'no-continue': 'off',
