@@ -692,9 +692,13 @@ export class NetworkRule implements rule.IRule {
             || pattern === ''
             || pattern.length < SimpleRegex.MIN_GENERIC_RULE_LENGTH
         ) {
-            // Except cookie and removeparam rules, they have their own atmosphere
-            if (!(this.advancedModifier instanceof CookieModifier)
-                && !(this.advancedModifier instanceof RemoveParamModifier)) {
+            // Except cookie, removeparam rules and dns compatible rules, they have their own atmosphere
+            const hasCookieModifier = this.advancedModifier instanceof CookieModifier;
+            const hasRemoveParamModifier = this.advancedModifier instanceof RemoveParamModifier;
+            // https://github.com/AdguardTeam/tsurlfilter/issues/56
+            const isDnsCompatible = isCompatibleWith(CompatibilityTypes.dns);
+
+            if (!hasCookieModifier && !hasRemoveParamModifier && !isDnsCompatible) {
                 if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
