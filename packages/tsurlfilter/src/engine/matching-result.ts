@@ -220,7 +220,7 @@ export class MatchingResult {
         // Redirect rules have a high priority
         const redirectRule = this.getRedirectRule();
         if (redirectRule) {
-            if (!basic || redirectRule.isHigherPriority(basic)) {
+            if (!basic || !basic.isHigherPriority(redirectRule)) {
                 return redirectRule;
             }
         }
