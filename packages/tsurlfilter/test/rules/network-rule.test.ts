@@ -486,6 +486,18 @@ describe('NetworkRule constructor', () => {
         expect(rule.isOptionDisabled(NetworkRuleOption.Document));
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
     });
+
+    it('works if popup modifier works properly with other request type modifiers', () => {
+        let rule = new NetworkRule('||example.org^$popup', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$script,image,popup', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document | RequestType.Script | RequestType.Image);
+    });
 });
 
 describe('NetworkRule.match', () => {

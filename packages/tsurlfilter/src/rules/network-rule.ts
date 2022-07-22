@@ -749,9 +749,15 @@ export class NetworkRule implements rule.IRule {
             this.setOptionEnabled(NetworkRuleOption.Content, true, true);
         }
 
+        // $popup should work accumulatively with requestType modifiers
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1992
+        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== 0) {
+            this.permittedRequestTypes |= RequestType.Document;
+        } else if (this.isOptionEnabled(NetworkRuleOption.Popup)) {
+            this.permittedRequestTypes = RequestType.Document;
+        }
         // Rules of these types can be applied to documents only
         // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for allowlist rules.
-        // $popup - for url blocking
         if (
             this.isOptionEnabled(NetworkRuleOption.Jsinject)
             || this.isOptionEnabled(NetworkRuleOption.Elemhide)
@@ -759,7 +765,6 @@ export class NetworkRule implements rule.IRule {
             || this.isOptionEnabled(NetworkRuleOption.Urlblock)
             || this.isOptionEnabled(NetworkRuleOption.Genericblock)
             || this.isOptionEnabled(NetworkRuleOption.Generichide)
-            || this.isOptionEnabled(NetworkRuleOption.Popup)
         ) {
             this.permittedRequestTypes = RequestType.Document;
         }
