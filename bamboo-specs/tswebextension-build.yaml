@@ -34,10 +34,10 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap
+            npx lerna@4 bootstrap
             # For link dependencies
-            npx lerna run --scope @adguard/tsurlfilter build
-            npx lerna run --scope @adguard/tswebextension build -- ${bamboo.varsYarn}
+            npx lerna@4 run --scope @adguard/tsurlfilter build
+            npx lerna@4 run --scope @adguard/tswebextension build -- ${bamboo.varsYarn}
 
             cd packages/tswebextension/
             yarn pack --filename tswebextension.tgz
@@ -46,7 +46,7 @@ Build:
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna exec -- rm -rf node_modules
+            npx lerna@4 exec -- rm -rf node_modules
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt
         scope: RESULT

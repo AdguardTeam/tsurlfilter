@@ -32,14 +32,14 @@ Test:
 
             ls -alt
 
-            npx lerna bootstrap
-            npx lerna run --scope @adguard/tsurlfilter test:prod
-            npx lerna run --scope @adguard/tsurlfilter build
+            npx lerna@4 bootstrap
+            npx lerna@4 run --scope @adguard/tsurlfilter test:prod
+            npx lerna@4 run --scope @adguard/tsurlfilter build
 
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna exec -- rm -rf node_modules
+            npx lerna@4 exec -- rm -rf node_modules
   final-tasks:
     - clean
   requirements:

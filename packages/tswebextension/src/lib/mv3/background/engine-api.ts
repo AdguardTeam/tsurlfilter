@@ -13,6 +13,7 @@ import {
     CosmeticOption,
     RuleConverter,
     ScriptletData,
+    NetworkRule,
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from '../../common';
@@ -93,6 +94,13 @@ class EngineApi {
         }
 
         const frameUrl = getHost(url);
+
+        const frameRule = this.engine.matchFrame(url);
+
+        if (frameRule?.isAllowlist()) {
+            return new CosmeticResult();
+        }
+
         const request = new Request(url, frameUrl, RequestType.Document);
 
         return this.engine.getCosmeticResult(request, option);

@@ -34,8 +34,8 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap
-            npx lerna run --scope @adguard/tsurlfilter build -- ${bamboo.varsYarn}
+            npx lerna@4 bootstrap
+            npx lerna@4 run --scope @adguard/tsurlfilter build -- ${bamboo.varsYarn}
 
             cd packages/tsurlfilter/
             yarn pack --filename tsurlfilter.tgz
@@ -44,7 +44,7 @@ Build:
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna exec -- rm -rf node_modules
+            npx lerna@4 exec -- rm -rf node_modules
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT
