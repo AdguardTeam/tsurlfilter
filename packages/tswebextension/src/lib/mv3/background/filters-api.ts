@@ -8,6 +8,14 @@ type FiltersOfTwoTypes = {
     customFilters: Filters,
 };
 
+export type UpdateStaticFiltersResult = {
+    errors: FiltersErrors[],
+};
+
+export const enum FiltersErrors {
+    FAILED_UPDATING_FILTERS,
+}
+
 export default class FiltersApi {
     /**
      * Updates filtering rulesets via declarativeNetRequest
@@ -17,11 +25,21 @@ export default class FiltersApi {
     static async updateFiltering(
         disableFiltersIds: number[],
         enableFiltersIds?: number[],
-    ): Promise<void> {
-        await chrome.declarativeNetRequest.updateEnabledRulesets({
-            enableRulesetIds: enableFiltersIds?.map((filterId) => `${RULESET_PREFIX}${filterId}`) || [],
-            disableRulesetIds: disableFiltersIds?.map((filterId) => `${RULESET_PREFIX}${filterId}`) || [],
-        });
+    ): Promise<UpdateStaticFiltersResult> {
+        const res = {
+            errors: [] as FiltersErrors[],
+        };
+
+        try {
+            await chrome.declarativeNetRequest.updateEnabledRulesets({
+                enableRulesetIds: enableFiltersIds?.map((filterId) => `${RULESET_PREFIX}${filterId}`) || [],
+                disableRulesetIds: disableFiltersIds?.map((filterId) => `${RULESET_PREFIX}${filterId}`) || [],
+            });
+        } catch (e) {
+            res.errors.push(FiltersErrors.FAILED_UPDATING_FILTERS);
+        }
+
+        return res;
     }
 
     /**

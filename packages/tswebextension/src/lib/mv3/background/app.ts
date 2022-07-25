@@ -1,8 +1,8 @@
 /* eslint-disable class-methods-use-this */
 // TODO: Remove call to console
 /* eslint-disable no-console */
-import FiltersApi from './filters-api';
-import UserRulesApi from './user-rules-api';
+import FiltersApi, { FiltersErrors, UpdateStaticFiltersResult } from './filters-api';
+import UserRulesApi, { UserRulesErrors, UpdateDynamicRulesResult } from './user-rules-api';
 import MessagesApi from './messages-api';
 import TabsApi from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
@@ -17,7 +17,13 @@ import {
 } from '../../common';
 import { engineApi } from './engine-api';
 
-export class TsWebExtension implements AppInterface<Configuration, ConfigurationContext> {
+type ConfigurationResult = {
+    staticFilters: UpdateStaticFiltersResult,
+    dynamicRules: UpdateDynamicRulesResult
+};
+
+export { ConfigurationResult, FiltersErrors, UserRulesErrors };
+export class TsWebExtension implements AppInterface<ConfigurationResult> {
     onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
     // Here we store configuration excluding "heavy" fields:
@@ -26,7 +32,7 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
 
     isStarted = false;
 
-    private startPromise: Promise<void> | undefined;
+    private startPromise: Promise<ConfigurationResult> | undefined;
 
     /**
      * Web accessible resources path in the result bundle
@@ -47,44 +53,64 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
     /**
      * Runs configuration process via saving promise to inner startPromise
      */
-    private async innerStart(config: Configuration): Promise<void> {
+    private async innerStart(config: Configuration): Promise<ConfigurationResult> {
         console.debug('[START]: start');
 
+        let res = {
+            staticFilters: { errors: [] },
+            dynamicRules: {
+                regexpRulesCounter: 0,
+                declarativeRulesCounter: 0,
+                errors: [],
+            },
+        } as ConfigurationResult;
+
         try {
-            await this.configure(config);
+            res = await this.configure(config);
             await this.executeScriptlets();
         } catch (e) {
             this.startPromise = undefined;
             console.debug('[START]: failed', e);
 
-            return;
+            return res;
         }
 
         this.isStarted = true;
         this.startPromise = undefined;
         console.debug('[START]: started');
+        return res;
     }
 
     /**
      * Starts filtering
      */
-    public async start(config: Configuration): Promise<void> {
+    public async start(config: Configuration): Promise<ConfigurationResult> {
         console.debug('[START]: is started ', this.isStarted);
 
+        let res = {
+            staticFilters: { errors: [] },
+            dynamicRules: {
+                regexpRulesCounter: 0,
+                declarativeRulesCounter: 0,
+                errors: [],
+            },
+        } as ConfigurationResult;
+
         if (this.isStarted) {
-            return;
+            return res;
         }
 
         if (this.startPromise) {
             console.debug('[START]: already called start, waiting');
-            await this.startPromise;
+            res = await this.startPromise;
             console.debug('[START]: awaited start');
-            return;
+            return res;
         }
 
         // Call and wait for promise for allow multiple calling start
         this.startPromise = this.innerStart(config);
-        await this.startPromise;
+        res = await this.startPromise;
+        return res;
     }
 
     /**
@@ -104,8 +130,17 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
     /**
      * Uses configuration to pass params to filters, user rules and filter engine
      */
-    public async configure(config: Configuration): Promise<void> {
+    public async configure(config: Configuration): Promise<ConfigurationResult> {
         console.debug('[CONFIGURE]: start with ', config);
+
+        const res = {
+            staticFilters: { errors: [] },
+            dynamicRules: {
+                regexpRulesCounter: 0,
+                declarativeRulesCounter: 0,
+                errors: [],
+            },
+        } as ConfigurationResult;
 
         const configuration = configurationValidator.parse(config);
 
@@ -116,12 +151,17 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
         const disableFiltersIds = currentFiltersIds
             .filter((f) => !enableFiltersIds.includes(f)) || [];
 
-        await FiltersApi.updateFiltering(disableFiltersIds, enableFiltersIds);
-        await UserRulesApi.updateDynamicFiltering(
+        res.staticFilters = await FiltersApi.updateFiltering(
+            disableFiltersIds,
+            enableFiltersIds,
+        );
+
+        res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
             configuration.userrules,
             customFilters,
             this.webAccessibleResourcesPath,
         );
+
         engineApi.waitingForEngine = engineApi.startEngine({
             filters: configuration.filters,
             userrules: configuration.userrules,
@@ -132,6 +172,8 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         console.debug('[CONFIGURE]: end');
+
+        return res;
     }
 
     public openAssistant(): void {}
@@ -195,8 +237,10 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
         };
     }
 
-    /** Returns the map of converted declarative rule
-     * identifiers with a hash to the original rule */
+    /**
+     * Returns the map of converted declarative rule
+     * identifiers with a hash to the original rule
+     */
     public get convertedSourceMap() {
         return UserRulesApi.convertedSourceMap;
     }

@@ -1,3 +1,4 @@
+import { Configuration, ConfigurationContext } from './configuration';
 import { FilteringLogEvent } from './filtering-log';
 import { EventChannelInterface } from './utils';
 
@@ -20,11 +21,11 @@ export const enum SiteStatus {
     FilteringEnabled = 'FILTERING_ENABLED',
 }
 
-export interface AppInterface<TConfiguration, TConfigurationContext = TConfiguration> {
+export interface AppInterface<ConfigurationResult> {
     /**
      * Configuration context
      */
-    configuration?: TConfigurationContext;
+    configuration?: ConfigurationContext;
 
     /**
      * Is app started
@@ -40,13 +41,13 @@ export interface AppInterface<TConfiguration, TConfigurationContext = TConfigura
       * Starts api
       * @param configuration
       */
-    start: (configuration: TConfiguration) => Promise<void>;
+    start: (configuration: Configuration) => Promise<ConfigurationResult>;
 
     /**
      * Updates configuration
      * @param configuration
      */
-    configure: (configuration: TConfiguration) => Promise<void>;
+    configure: (configuration: Configuration) => Promise<ConfigurationResult>;
 
     /**
      * Stops api

@@ -33,6 +33,7 @@ export type { DeclarativeRule };
 type ConvertedResult = {
     declarativeRules: DeclarativeRule[],
     convertedSourceMap: Map<ConvertedRuleId, HashOriginalRule>,
+    regexpRulesCounter: number,
 };
 
 // Because for all static filters we have ID's less than 1000,
@@ -58,7 +59,6 @@ export class DeclarativeConverter {
         const resourcesPath = options?.resourcesPath;
         const maxLimit = options?.maxLimit || defaultOptions.maxLimit!;
         const maxRegexLimit = options?.maxRegexLimit || defaultOptions.maxRegexLimit!;
-        // TODO: Discuss with a.meshkov
         const offsetId = options?.offsetId;
         const saveFilterId = options?.saveFilterId;
 
@@ -139,6 +139,7 @@ export class DeclarativeConverter {
         return {
             declarativeRules,
             convertedSourceMap,
+            regexpRulesCounter,
         };
     }
 

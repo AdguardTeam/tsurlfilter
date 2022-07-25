@@ -20,7 +20,9 @@ import {
 
 import { Assistant } from './assistant';
 
-export interface ManifestV2AppInterface extends AppInterface<Configuration, ConfigurationContext> {
+type ConfigurationResult = void;
+
+export interface ManifestV2AppInterface extends AppInterface<ConfigurationResult> {
     getMessageHandler: () => typeof messagesApi.handleMessage
 }
 
