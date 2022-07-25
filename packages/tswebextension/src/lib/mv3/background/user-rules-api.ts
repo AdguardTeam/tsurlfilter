@@ -53,9 +53,9 @@ export default class UserRulesApi {
     ): Promise<UpdateDynamicRulesResult> {
         const lists = customFilters
             .map((f) => new StringRuleList(f.filterId, f.content))
-            // Combining custom rules into one string with '\r\n' to be able
+            // Combining custom rules into one string with '\n' to be able
             // to cut the original rule in the debug panel
-            .concat(new StringRuleList(USER_FILTER_ID, userrules.join('\r\n')));
+            .concat(new StringRuleList(USER_FILTER_ID, userrules.join('\n')));
 
         const {
             regexpRulesCounter,
