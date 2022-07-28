@@ -4,7 +4,7 @@
 import FiltersApi, { FiltersErrors, UpdateStaticFiltersResult } from './filters-api';
 import UserRulesApi, { UserRulesErrors, UpdateDynamicRulesResult } from './user-rules-api';
 import MessagesApi from './messages-api';
-import TabsApi from './tabs-api';
+import { TabsApi, tabsApi } from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
 
 import {
@@ -48,6 +48,11 @@ export class TsWebExtension implements AppInterface<ConfigurationResult> {
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
+
+        /**
+         * Keep app context when use method as callback of WebNavigation API listeners
+         */
+        this.onCommitted = this.onCommitted.bind(this);
     }
 
     /**
@@ -82,10 +87,30 @@ export class TsWebExtension implements AppInterface<ConfigurationResult> {
     }
 
     /**
+     * Fires on WebNavigation.onCommitted event
+     */
+    private async onCommitted({ tabId, url }: chrome.webNavigation.WebNavigationTransitionCallbackDetails) {
+        if (this.isStarted && this.configuration) {
+            // If service worker just woke up
+            if (this.startPromise) {
+                await this.startPromise;
+            }
+
+            const { verbose } = this.configuration;
+            await getAndExecuteScripts(tabId, url, verbose);
+        }
+    }
+
+    /**
      * Starts filtering
      */
     public async start(config: Configuration): Promise<ConfigurationResult> {
         console.debug('[START]: is started ', this.isStarted);
+
+        /**
+         * Add tabs listeners
+         */
+        await tabsApi.start();
 
         let res = {
             staticFilters: { errors: [] },
@@ -123,6 +148,11 @@ export class TsWebExtension implements AppInterface<ConfigurationResult> {
         await FiltersApi.updateFiltering(disableFiltersIds);
 
         await engineApi.stopEngine();
+
+        /**
+         * Remove tabs listeners and clear context storage
+         */
+        tabsApi.stop();
 
         this.isStarted = false;
     }
@@ -196,7 +226,7 @@ export class TsWebExtension implements AppInterface<ConfigurationResult> {
         return messagesApi.handleMessage;
     }
 
-    async executeScriptlets() {
+    public async executeScriptlets() {
         const activeTab = await TabsApi.getActiveTab();
 
         if (this.isStarted && this.configuration && activeTab?.url && activeTab?.id) {
@@ -206,19 +236,7 @@ export class TsWebExtension implements AppInterface<ConfigurationResult> {
             await getAndExecuteScripts(id, url, verbose);
         }
 
-        chrome.webNavigation.onCommitted.addListener(
-            async (details) => {
-                if (this.isStarted && this.configuration) {
-                    // If service worker just woke up
-                    if (this.startPromise) {
-                        await this.startPromise;
-                    }
-
-                    const { verbose } = this.configuration;
-                    await getAndExecuteScripts(details.tabId, details.url, verbose);
-                }
-            },
-        );
+        chrome.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
     /**

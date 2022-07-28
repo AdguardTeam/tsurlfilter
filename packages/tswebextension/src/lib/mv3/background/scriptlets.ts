@@ -1,6 +1,7 @@
 import { CosmeticOption, ScriptletData } from '@adguard/tsurlfilter';
 import { isHttpRequest } from '../../common/utils';
 import { engineApi } from './engine-api';
+import { tabsApi } from './tabs-api';
 
 const getScripts = async (url: string) => {
     return engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
@@ -73,7 +74,17 @@ const executeScriptletsData = async (
  * @param verbose
  */
 export const getAndExecuteScripts = async (id: number, url: string, verbose?: boolean) => {
-    const NEW_TAB_PAGE = 'new-tab-page'; // the url from the details have http even on the new tab page
+    /**
+     * The url from the details have http even on the new tab page
+     */
+    const NEW_TAB_PAGE = 'new-tab-page';
+
+    /**
+     * In the case when the frame does not have a source, we use the url of the main frame
+     */
+    if (!isHttpRequest(url)) {
+        url = tabsApi.getMainFrameUrl(id) || '';
+    }
 
     if (isHttpRequest(url) && !url.includes(NEW_TAB_PAGE)) {
         const response = await getScripts(url);

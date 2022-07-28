@@ -13,7 +13,6 @@ import {
     CosmeticOption,
     RuleConverter,
     ScriptletData,
-    NetworkRule,
 } from '@adguard/tsurlfilter';
 
 import { Configuration } from '../../common';
