@@ -35,7 +35,7 @@ Increment:
 
             ls -alt
 
-            npx lerna run --scope @adguard/tsurlfilter increment
+            npx lerna@4 run --scope @adguard/tsurlfilter increment
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

@@ -330,6 +330,15 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.com/page.html'))).toEqual(false);
         expect(rule.match(createRequest('https://another.org/sub3/page.html'))).toEqual(false);
     });
+
+    it('work if it matches urls with complex public suffixes', () => {
+        const requestUrl = 'https://www.city.toyota.aichi.jp/';
+        const rule1 = new CosmeticRule('aichi.jp###sad', 0);
+        const rule2 = new CosmeticRule('toyota.aichi.jp###sad', 0);
+
+        expect(rule1.match(createRequest(requestUrl))).toEqual(true);
+        expect(rule2.match(createRequest(requestUrl))).toEqual(true);
+    });
 });
 
 describe('CosmeticRule.CSS', () => {

@@ -77,6 +77,12 @@ describe('Creating request', () => {
             .toEqual(['sub.example.org', 'example.org', 'org'].sort());
     });
 
+    it('parses domains with complex public suffixes', () => {
+        const request = new Request('https://www.city.toyota.aichi.jp/part', 'https://www.city.toyota.aichi.jp/', RequestType.Other);
+        expect(request.subdomains.sort())
+            .toEqual(['www.city.toyota.aichi.jp', 'city.toyota.aichi.jp', 'toyota.aichi.jp', 'aichi.jp', 'jp'].sort());
+    });
+
     it('parses subdomains for localhost', () => {
         const request = new Request('http://localhost', 'http://localhost.test', RequestType.Other);
         expect(request.subdomains.sort()).toEqual(['localhost'].sort());
