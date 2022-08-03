@@ -44,13 +44,42 @@ describe('General', () => {
     });
 
     it('works if ubo script tag rules are converted properly', () => {
-        let result = RuleConverter.convertRule('example.com##^script:some-another-rule(test)');
-        expect(result).toHaveLength(1);
-        expect(result).toContain('example.com##^script:some-another-rule(test)');
-
-        result = RuleConverter.convertRule('example.com##^script:has-text(12313)');
+        let result = RuleConverter.convertRule('example.com##^script:has-text(12313)');
         expect(result).toHaveLength(1);
         expect(result).toContain('example.com$$script[tag-content="12313"][max-length="262144"]');
+
+        // Escape double quotes in has-text|contains
+        result = RuleConverter.convertRule('example.com##^script:has-text(console.log("doubles"))');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.com$$script[tag-content="console.log(""doubles"")"][max-length="262144"]');
+
+        // Test script tag rules with attributes
+        // Single no-value attr
+        result = RuleConverter.convertRule('example.com##^script[data-test]:has-text(12313)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.com$$script[tag-content="12313"][max-length="262144"][data-test]');
+
+        // Multiple attributes with values
+        result = RuleConverter.convertRule('example.com##^script[data-test="1"][data-test2="2"]:has-text(12313)');
+        expect(result).toHaveLength(1);
+        expect(result).toContain('example.com$$script[tag-content="12313"][max-length="262144"][data-test="1"][data-test2="2"]');
+
+        // Multiple attributes with values
+        result = RuleConverter.convertRule("example.com##^script:has-text(d.createElement('script'))");
+        expect(result).toHaveLength(1);
+        // eslint-disable-next-line @typescript-eslint/quotes
+        expect(result).toContain(`example.com$$script[tag-content="d.createElement('script')"][max-length="262144"]`);
+
+        // Rules with CSS combinator should throw error
+        let invalidRule = 'example.com##^body > script:has-text(test)';
+        expect(() => {
+            RuleConverter.convertRule(invalidRule);
+        }).toThrow(`Invalid UBO script rule: ${invalidRule}`);
+
+        invalidRule = 'example.com##^script:some-another-rule(test)';
+        expect(() => {
+            RuleConverter.convertRule(invalidRule);
+        }).toThrow(`Invalid UBO script rule: ${invalidRule}`);
     });
 
     it('converts css adguard rule', () => {
