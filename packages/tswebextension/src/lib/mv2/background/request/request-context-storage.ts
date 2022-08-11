@@ -4,9 +4,8 @@ import {
     MatchingResult,
     RequestType,
 } from '@adguard/tsurlfilter';
-import { ContentType } from './request-type';
 import ParsedCookie from '../services/cookie-filtering/parsed-cookie';
-import { EventChannel, EventChannelInterface } from '../../../common';
+import { EventChannel, EventChannelInterface, ContentType } from '../../../common';
 
 export const enum RequestContextState {
     BEFORE_REQUEST = 'BEFORE_REQUEST',
@@ -26,20 +25,19 @@ export const enum RequestContextState {
 export type RequestContext = {
     state: RequestContextState;
     requestId: string;
-
     tabId: number;
     frameId: number;
     timestamp: number; // record time in ms
+    requestUrl: string;
+    referrerUrl: string;
+    requestType: RequestType;
+    contentType: ContentType;
+    requestFrameId: number;
+    thirdParty: boolean;
+    method: string;
 
-    requestUrl?: string;
-    referrerUrl?: string;
-    requestType?: RequestType;
-    contentType?: ContentType;
-    requestFrameId?: number;
-    thirdParty?: boolean;
     requestHeaders?: WebRequest.HttpHeaders;
     responseHeaders?: WebRequest.HttpHeaders;
-    method?: string;
     statusCode?: number;
     cookies?: ParsedCookie[];
     contentTypeHeader?: string;

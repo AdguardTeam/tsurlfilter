@@ -1,19 +1,26 @@
+import { nanoid } from 'nanoid';
+
 import { NetworkRule, RemoveParamModifier } from '@adguard/tsurlfilter';
-import { FilteringLog, defaultFilteringLog, FilteringEventType } from '../../../common';
+import {
+    defaultFilteringLog,
+    FilteringEventType,
+    FilteringLogInterface,
+    getDomain,
+} from '../../../common';
 import { requestContextStorage } from '../request';
 
 /**
  * Params filtering service module
  */
 export class ParamsService {
-    private filteringLog: FilteringLog;
+    private filteringLog: FilteringLogInterface;
 
     /**
      * Constructor
      *
      * @param filteringLog
      */
-    constructor(filteringLog: FilteringLog) {
+    constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
     }
 
@@ -32,13 +39,15 @@ export class ParamsService {
             return null;
         }
 
-        const { matchingResult, method, requestUrl } = context;
+        const {
+            matchingResult,
+            method,
+            requestUrl,
+            contentType,
+            timestamp,
+        } = context;
 
-        if (!matchingResult
-            || !requestUrl
-            || !method
-            || !ParamsService.isMethodSupported(method)
-        ) {
+        if (!matchingResult || !ParamsService.isMethodSupported(method)) {
             return null;
         }
 
@@ -61,10 +70,15 @@ export class ParamsService {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.REMOVE_PARAM,
                     data: {
+                        removeParam: true,
+                        eventId: nanoid(),
                         tabId: context.tabId,
+                        requestUrl: modifiedUrl,
                         frameUrl: modifiedUrl,
-                        paramName: modifier.getValue(),
+                        frameDomain: getDomain(modifiedUrl) as string,
+                        requestType: contentType,
                         rule,
+                        timestamp,
                     },
                 });
             }

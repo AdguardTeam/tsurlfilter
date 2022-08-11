@@ -9,7 +9,6 @@ import { getAndExecuteScripts } from './scriptlets';
 
 import {
     AppInterface,
-    SiteStatus,
     defaultFilteringLog,
     configurationValidator,
     ConfigurationContext,
@@ -23,7 +22,7 @@ type ConfigurationResult = {
 };
 
 export { ConfigurationResult, FiltersErrors, UserRulesErrors };
-export class TsWebExtension implements AppInterface<ConfigurationResult> {
+export class TsWebExtension implements AppInterface<Configuration, ConfigurationContext, ConfigurationResult> {
     onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
     // Here we store configuration excluding "heavy" fields:
@@ -209,10 +208,6 @@ export class TsWebExtension implements AppInterface<ConfigurationResult> {
     public openAssistant(): void {}
 
     public closeAssistant(): void {}
-
-    public getSiteStatus(): SiteStatus {
-        return SiteStatus.FilteringEnabled;
-    }
 
     public getRulesCount(): number {
         return 0;

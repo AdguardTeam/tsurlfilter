@@ -6,9 +6,8 @@ import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import BrowserCookieApi from '@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
 import { RequestContext, RequestContextState, requestContextStorage } from '@lib/mv2/background/request/request-context-storage';
-import { ContentType } from '@lib/mv2/background/request/request-type';
+import { FilteringEventType, ContentType } from '@lib/common';
 import { tabsApi } from '@lib/mv2/background/tabs';
-import { FrameRequestService } from '@lib/mv2/background/services/frame-request-service';
 
 import { MockFilteringLog } from '../../../../common/mock-filtering-log';
 
@@ -53,6 +52,7 @@ describe('Cookie filtering', () => {
             matchingResult: new MatchingResult([], null),
             cookies: undefined,
             contentTypeHeader: undefined,
+            method: 'GET',
         };
     });
 
@@ -80,7 +80,7 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalled();
     });
 
     it('checks remove rule', async () => {
@@ -96,13 +96,16 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'c_user',
-            cookieRule,
-            isModifyingCookieRule: false,
-            thirdParty: false,
-        }));
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.COOKIE,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'c_user',
+                rule: cookieRule,
+                isModifyingCookieRule: false,
+                requestThirdParty: false,
+            }),
+        });
     });
 
     it('checks cookie specific allowlist rule', async () => {
@@ -119,13 +122,16 @@ describe('Cookie filtering', () => {
         }]);
 
         await runCase(rules, requestHeaders);
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'pick',
-            cookieRule: allowlistRule,
-            isModifyingCookieRule: false,
-            thirdParty: false,
-        }));
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.COOKIE,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'pick',
+                rule: allowlistRule,
+                isModifyingCookieRule: false,
+                requestThirdParty: false,
+            }),
+        });
     });
 
     it('checks cookie specific allowlist regex rule', async () => {
@@ -142,13 +148,16 @@ describe('Cookie filtering', () => {
         }]);
 
         await runCase(rules, requestHeaders);
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'pick',
-            cookieRule: allowlistRule,
-            isModifyingCookieRule: false,
-            thirdParty: false,
-        }));
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.COOKIE,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'pick',
+                rule: allowlistRule,
+                isModifyingCookieRule: false,
+                requestThirdParty: false,
+            }),
+        });
     });
 
     it('checks modifying rule - max age', async () => {
@@ -164,14 +173,17 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'c_user',
-            cookieValue: 'test_value',
-            cookieRule,
-            isModifyingCookieRule: true,
-            thirdParty: false,
-        }));
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.COOKIE,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'c_user',
+                cookieValue: 'test_value',
+                rule: cookieRule,
+                isModifyingCookieRule: true,
+                requestThirdParty: false,
+            }),
+        });
     });
 
     it('checks modifying rule - sameSite', async () => {
@@ -187,14 +199,17 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'c_user',
-            cookieValue: 'test_value',
-            cookieRule,
-            isModifyingCookieRule: true,
-            thirdParty: false,
-        }));
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.COOKIE,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'c_user',
+                cookieValue: 'test_value',
+                rule: cookieRule,
+                isModifyingCookieRule: true,
+                requestThirdParty: false,
+            }),
+        });
     });
 
     it('checks remove rule - third-party cases', async () => {
@@ -218,13 +233,16 @@ describe('Cookie filtering', () => {
 
         expect(responseHeaders).toEqual([]);
 
-        expect(mockFilteringLog.addCookieEvent).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieDomain: 'example.org',
-            cookieName: 'third_party_user',
-            cookieRule: thirdPartyCookieRule,
-            isModifyingCookieRule: false,
-            thirdParty: true,
-        }));
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.COOKIE,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'third_party_user',
+                rule: thirdPartyCookieRule,
+                isModifyingCookieRule: false,
+                requestThirdParty: true,
+            }),
+        });
     });
 
     it('filters blocking rules', async () => {
@@ -235,24 +253,18 @@ describe('Cookie filtering', () => {
         ];
 
         await tabsApi.start();
-        FrameRequestService.start();
 
         browser.tabs.onCreated.dispatch({ id: 0 });
 
-        tabsApi.recordRequestFrame(0, 0, 'https://example.org', RequestType.Document);
+        tabsApi.recordFrameRequest(context);
 
         context.matchingResult = new MatchingResult(rules, null);
         requestContextStorage.record(requestId, context);
 
-        let result = cookieFiltering.getBlockingRules('https://example.org', 0, 0);
-        expect(result).toHaveLength(2);
-
-        result = cookieFiltering.getBlockingRules('https://another.org', 0, 0);
-        expect(result).toHaveLength(0);
+        expect(cookieFiltering.getBlockingRules(context.tabId, context.frameId)).toHaveLength(2);
 
         requestContextStorage.delete(requestId);
 
-        FrameRequestService.stop();
         tabsApi.stop();
     });
 
@@ -266,7 +278,7 @@ describe('Cookie filtering', () => {
 
         cookieFiltering.onHeadersReceived(context);
 
-        expect(mockFilteringLog.addCookieEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalled();
 
         requestContextStorage.delete(requestId);
 
@@ -277,7 +289,7 @@ describe('Cookie filtering', () => {
 
         cookieFiltering.onHeadersReceived(context);
 
-        expect(mockFilteringLog.addCookieEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalled();
 
         requestContextStorage.delete(requestId);
     });

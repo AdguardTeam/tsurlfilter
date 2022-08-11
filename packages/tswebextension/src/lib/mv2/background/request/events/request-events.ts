@@ -3,6 +3,13 @@ import browser, { WebRequest } from 'webextension-polyfill';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, BrowserRequstEvent } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
+import {
+    getDomain,
+    isThirdPartyRequest,
+    getRequestType,
+} from '../../../../common';
+
+const MAX_URL_LENGTH = 1024 * 16;
 
 // TODO: firefox adapter
 
@@ -16,10 +23,47 @@ export const onBeforeRequest = new RequestEvent(
     (details) => {
         const {
             requestId,
+            type,
             frameId,
             tabId,
+            parentFrameId,
+            originUrl,
+            initiator,
+            method,
             timeStamp,
         } = details;
+
+        let { url } = details;
+
+        /**
+         * truncate too long urls
+         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493
+         */
+        if (url.length > MAX_URL_LENGTH) {
+            url = url.slice(0, MAX_URL_LENGTH);
+        }
+
+        /**
+         * FF sends http instead of ws protocol at the http-listeners layer
+         * Although this is expected, as the Upgrade request is indeed an HTTP request,
+         * we use a chromium based approach in this case.
+         */
+        if (type === 'websocket' && url.indexOf('http') === 0) {
+            url = url.replace(/^http(s)?:/, 'ws$1:');
+        }
+
+        const { requestType, contentType } = getRequestType(type);
+
+        let requestFrameId = type === 'main_frame' ? frameId : parentFrameId;
+
+        // Relate request to main_frame
+        if (requestFrameId === -1) {
+            requestFrameId = 0;
+        }
+
+        const referrerUrl = originUrl || initiator || getDomain(url) || url;
+
+        const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
         const context = requestContextStorage.record(requestId, {
             state: RequestContextState.BEFORE_REQUEST,
@@ -27,6 +71,13 @@ export const onBeforeRequest = new RequestEvent(
             frameId,
             tabId,
             timestamp: timeStamp,
+            requestUrl: url,
+            referrerUrl,
+            requestType,
+            requestFrameId,
+            thirdParty,
+            contentType,
+            method,
         });
 
         return { details, context };

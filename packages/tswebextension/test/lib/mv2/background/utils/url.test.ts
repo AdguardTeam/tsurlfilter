@@ -1,6 +1,4 @@
-/* eslint-disable max-len */
-import { getHost } from '@lib/common/utils';
-import { isThirdPartyRequest } from '@lib/mv2/background/utils/url';
+import { getHost, isThirdPartyRequest } from '@lib/common/utils';
 
 describe('Url utils', () => {
     it('parses url host', () => {

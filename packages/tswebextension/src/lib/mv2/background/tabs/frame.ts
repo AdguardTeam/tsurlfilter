@@ -1,25 +1,12 @@
-import { RequestContextStorage } from '../request';
-
-export interface Injection {
-    jsScriptText?: string;
-    cssText?: string;
-    extCssText?: string;
-}
-
-export interface FrameData {
-    url: string;
-    injection?: Injection;
-}
+import { RequestContext } from '../request';
 
 export class Frame {
-    url: string;
+    url: string | undefined;
 
-    injection: Injection | undefined;
+    requestContext: RequestContext | undefined;
 
-    requests = new RequestContextStorage();
-
-    constructor(data: FrameData) {
-        this.url = data.url;
-        this.injection = data.injection;
+    constructor(url?: string, requestContext?: RequestContext) {
+        this.url = url;
+        this.requestContext = requestContext;
     }
 }

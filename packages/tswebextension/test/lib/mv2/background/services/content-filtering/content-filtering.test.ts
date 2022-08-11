@@ -8,6 +8,7 @@ import {
     CosmeticResult,
     CosmeticRule,
 } from '@adguard/tsurlfilter';
+import { ContentType } from '@lib/common';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
 import { ContentFiltering } from '@lib/mv2/background/services/content-filtering/content-filtering';
 import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
@@ -33,9 +34,12 @@ describe('Content filtering', () => {
             referrerUrl: 'https://example.org',
             tabId: 0,
             frameId: 0,
+            requestFrameId: 0,
             timestamp: 1643639355148,
             requestType: RequestType.Document,
             method: 'GET',
+            contentType: ContentType.DOCUMENT,
+            thirdParty: false,
         });
     });
 

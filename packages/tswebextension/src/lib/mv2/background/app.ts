@@ -6,23 +6,21 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects-service';
-import { FrameRequestService } from './services/frame-request-service';
 import { messagesApi } from './messages-api';
-import { stealthApi } from './stealth-api';
 import {
     AppInterface,
-    SiteStatus,
     defaultFilteringLog,
-    configurationValidator,
-    Configuration,
-    ConfigurationContext,
 } from '../../common';
+
+import {
+    ConfigurationMV2,
+    ConfigurationMV2Context,
+    configurationMV2Validator,
+} from './configuration';
 
 import { Assistant } from './assistant';
 
-type ConfigurationResult = void;
-
-export interface ManifestV2AppInterface extends AppInterface<ConfigurationResult> {
+export interface ManifestV2AppInterface extends AppInterface<ConfigurationMV2, ConfigurationMV2Context, void> {
     getMessageHandler: () => typeof messagesApi.handleMessage
 }
 
@@ -30,9 +28,9 @@ export class TsWebExtension implements ManifestV2AppInterface {
     public isStarted = false;
 
     /**
-     * MV2 Configuration context excludes heavyweight fields with rules
+     * MV2 ConfigurationMV2 context excludes heavyweight fields with rules
      */
-    public configuration: ConfigurationContext | undefined;
+    public configuration: ConfigurationMV2Context | undefined;
 
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
@@ -47,42 +45,34 @@ export class TsWebExtension implements ManifestV2AppInterface {
         resourcesService.init(webAccessibleResourcesPath);
     }
 
-    public async start(configuration: Configuration): Promise<void> {
-        configurationValidator.parse(configuration);
+    public async start(configuration: ConfigurationMV2): Promise<void> {
+        configurationMV2Validator.parse(configuration);
 
         await redirectsService.start();
         await engineApi.startEngine(configuration);
         await tabsApi.start();
-        FrameRequestService.start();
-        await stealthApi.start(configuration);
         WebRequestApi.start();
 
         this.isStarted = true;
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
+        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
     }
 
     public async stop(): Promise<void> {
         WebRequestApi.stop();
-        FrameRequestService.stop();
         tabsApi.stop();
-        stealthApi.stop();
         this.isStarted = false;
     }
 
-    public async configure(configuration: Configuration): Promise<void> {
+    public async configure(configuration: ConfigurationMV2): Promise<void> {
         if (!this.isStarted) {
             throw new Error('App is not started!');
         }
 
-        configurationValidator.parse(configuration);
+        configurationMV2Validator.parse(configuration);
 
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
-
-        /* TODO: this.stop */
-        stealthApi.stop();
-        await stealthApi.start(configuration);
+        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
     }
 
     public openAssistant(tabId: number): void {
@@ -91,10 +81,6 @@ export class TsWebExtension implements ManifestV2AppInterface {
 
     public closeAssistant(tabId: number): void {
         Assistant.closeAssistant(tabId);
-    }
-
-    public getSiteStatus(url: string): SiteStatus {
-        return SiteStatus.FilteringEnabled;
     }
 
     public getRulesCount(): number {
@@ -113,17 +99,17 @@ export class TsWebExtension implements ManifestV2AppInterface {
      * and pass it to {@link configure} or {@link start} method
      * which will validate the configuration
      */
-    static mergeConfiguration(
-        configuration: Configuration,
-        changes: Partial<Configuration>,
+    static mergeConfigurationMV2(
+        configuration: ConfigurationMV2,
+        changes: Partial<ConfigurationMV2>,
     ) {
-        return merge<Configuration>(configuration, changes, {
+        return merge<ConfigurationMV2>(configuration, changes, {
             // Arrays will be replaced
             arrayMerge: (_, source) => source,
         });
     }
 
-    private static createConfigurationContext(configuration: Configuration): ConfigurationContext {
+    private static createConfigurationMV2Context(configuration: ConfigurationMV2): ConfigurationMV2Context {
         const { filters, verbose, settings } = configuration;
 
         return {

@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 import {
     StringRuleList,
     RuleStorage,
@@ -13,14 +15,15 @@ import {
     RuleConverter,
 } from '@adguard/tsurlfilter';
 
-import { Configuration, getHost } from '../../common';
+import { getHost } from '../../common';
 import { allowlistApi } from './allowlist';
 import { stealthApi } from './stealth-api';
+import { ConfigurationMV2 } from './configuration';
 
 /**
  * Request Match Query
  */
-export interface MatchQuery{
+export interface MatchQuery {
     requestUrl: string;
     frameUrl: string;
     requestType: RequestType;
@@ -28,7 +31,7 @@ export interface MatchQuery{
 }
 
 export interface EngineApiInterface {
-    startEngine: (configuration: Configuration) => Promise<void>;
+    startEngine: (configuration: ConfigurationMV2) => Promise<void>;
 
     /**
      * Gets matching result for request.
@@ -56,23 +59,37 @@ const USER_FILTER_ID = 0;
  * TSUrlFilter Engine wrapper
  */
 export class EngineApi implements EngineApiInterface {
+    public isFilteringEnabled: boolean | undefined;
+
     private engine: Engine | undefined;
 
-    public async startEngine(configuration: Configuration): Promise<void> {
+    public async startEngine(configuration: ConfigurationMV2): Promise<void> {
         const {
             filters,
             userrules,
             verbose,
+            settings,
         } = configuration;
 
+        const { filteringEnabled } = settings;
+
+        this.isFilteringEnabled = filteringEnabled;
+
         allowlistApi.configure(configuration);
+        await stealthApi.configure(configuration);
 
         const lists: StringRuleList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
-            const { filterId, content } = filters[i];
+            const { filterId, content, trusted } = filters[i];
             const convertedContent = RuleConverter.convertRules(content);
-            lists.push(new StringRuleList(filterId, convertedContent));
+            lists.push(new StringRuleList(
+                filterId,
+                convertedContent,
+                false,
+                !trusted,
+                !trusted,
+            ));
         }
 
         if (userrules.length > 0) {
@@ -94,7 +111,7 @@ export class EngineApi implements EngineApiInterface {
 
         setConfiguration({
             engine: 'extension',
-            version: '1.0.0',
+            version: browser.runtime.getManifest().version,
             verbose,
             compatibility: CompatibilityTypes.extension,
         });
@@ -113,7 +130,7 @@ export class EngineApi implements EngineApiInterface {
     }
 
     public matchRequest(matchQuery: MatchQuery): MatchingResult | null {
-        if (!this.engine) {
+        if (!this.engine || !this.isFilteringEnabled) {
             return null;
         }
 
@@ -139,7 +156,7 @@ export class EngineApi implements EngineApiInterface {
     }
 
     public matchFrame(frameUrl: string): NetworkRule | null {
-        if (!this.engine) {
+        if (!this.engine || !this.isFilteringEnabled) {
             return null;
         }
 
@@ -147,7 +164,7 @@ export class EngineApi implements EngineApiInterface {
     }
 
     public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
-        if (!this.engine) {
+        if (!this.engine || !this.isFilteringEnabled) {
             return new CosmeticResult();
         }
 

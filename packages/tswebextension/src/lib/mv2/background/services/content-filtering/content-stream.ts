@@ -12,7 +12,7 @@ import {
     parseCharsetFromHeader,
 } from './charsets';
 import { RequestContext } from '../../request';
-import { FilteringEventType, FilteringLog } from '../../../../common';
+import { FilteringEventType, FilteringLogInterface } from '../../../../common';
 import { ContentStringFilterInterface } from './content-string-filter';
 
 /**
@@ -64,7 +64,7 @@ export class ContentStream {
     /**
      * Filtering log
      */
-    private readonly filteringLog: FilteringLog;
+    private readonly filteringLog: FilteringLogInterface;
 
     /**
      * Contains collection of accepted content types for stream filtering
@@ -82,7 +82,7 @@ export class ContentStream {
         context: RequestContext,
         contentStringFilter: ContentStringFilterInterface,
         streamFilterCreator: (id: string) => WebRequest.StreamFilter,
-        filteringLog: FilteringLog,
+        filteringLog: FilteringLogInterface,
     ) {
         this.content = '';
         this.context = context;

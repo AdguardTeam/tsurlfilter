@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
+import { nanoid } from 'nanoid';
 import browser, { Runtime } from 'webextension-polyfill';
-import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
+import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { RequestBlockingApi } from './request';
 import { CosmeticApi } from './cosmetic-api';
@@ -18,8 +19,11 @@ import {
     FilteringLog,
     defaultFilteringLog,
     FilteringEventType,
+    getDomain,
+    ContentType,
 } from '../../common';
 import { Assistant } from './assistant';
+import { tabsApi } from './tabs';
 
 export interface MessagesApiInterface {
     sendMessage: (tabId: number, message: unknown) => void;
@@ -95,6 +99,9 @@ export class MessagesApi implements MessagesApiInterface {
                     message.payload,
                 );
             }
+            case MessageType.SAVE_CSS_HITS_STATS: {
+                return this.handleSaveCssHitsStats(sender, message.payload);
+            }
             default:
         }
     }
@@ -135,11 +142,18 @@ export class MessagesApi implements MessagesApiInterface {
         }
 
         const tabId = sender.tab.id;
-        const frameId = sender.frameId || 0;
+        let { frameId } = sender;
 
-        const { documentUrl } = res.data;
+        if (!frameId) {
+            frameId = 0;
+        }
 
-        return CosmeticApi.getFrameExtCssText(documentUrl, tabId, frameId);
+        // TODO check rules for parent/grandparent frames
+        if (!tabsApi.getTabFrame(tabId, frameId)) {
+            frameId = 0;
+        }
+
+        return CosmeticApi.getFrameExtCssText(tabId, frameId);
     }
 
     /**
@@ -163,11 +177,18 @@ export class MessagesApi implements MessagesApiInterface {
         }
 
         const tabId = sender.tab.id;
-        const frameId = sender.frameId || 0;
+        let { frameId } = sender;
 
-        const { documentUrl } = res.data;
+        if (!frameId) {
+            frameId = 0;
+        }
 
-        const cookieRules = cookieFiltering.getBlockingRules(documentUrl, tabId, frameId);
+        // TODO check rules for parent/grandparent frames
+        if (!tabsApi.getTabFrame(tabId, frameId)) {
+            frameId = 0;
+        }
+
+        const cookieRules = cookieFiltering.getBlockingRules(tabId, frameId);
 
         return cookieRules.map((rule) => ({
             ruleText: rule.getText(),
@@ -202,14 +223,16 @@ export class MessagesApi implements MessagesApiInterface {
         this.filteringLog.publishEvent({
             type: FilteringEventType.COOKIE,
             data: {
+                eventId: nanoid(),
                 tabId: sender.tab.id,
                 cookieName: data.cookieName,
-                cookieDomain: data.cookieDomain,
+                frameDomain: data.cookieDomain,
                 cookieValue: data.cookieValue,
-                cookieRule: new NetworkRule(data.ruleText, data.filterId),
+                rule: new NetworkRule(data.ruleText, data.filterId),
                 isModifyingCookieRule: false,
-                thirdParty: data.thirdParty,
+                requestThirdParty: data.thirdParty,
                 timestamp: Date.now(),
+                requestType: ContentType.COOKIE,
             },
         });
     }
@@ -236,6 +259,44 @@ export class MessagesApi implements MessagesApiInterface {
         const { ruleText } = res.data;
 
         Assistant.onCreateRule.dispatch(ruleText);
+    }
+
+    private handleSaveCssHitsStats(
+        sender: Runtime.MessageSender,
+        payload?: any,
+    ) {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const tabId = sender.tab.id;
+
+        const frame = tabsApi.getTabMainFrame(tabId);
+
+        if (!frame?.url) {
+            return;
+        }
+
+        const { url } = frame;
+
+        for (let i = 0; i < payload.length; i += 1) {
+            const stat = payload[i];
+            const rule = new CosmeticRule(stat.ruleText, stat.filterId);
+
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.APPLY_COSMETIC_RULE,
+                data: {
+                    tabId,
+                    eventId: nanoid(),
+                    rule,
+                    element: stat.element,
+                    frameUrl: url,
+                    frameDomain: getDomain(url) as string,
+                    requestType: ContentType.DOCUMENT,
+                    timestamp: Date.now(),
+                },
+            });
+        }
     }
 }
 

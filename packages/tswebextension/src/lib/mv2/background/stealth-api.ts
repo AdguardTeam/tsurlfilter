@@ -1,27 +1,20 @@
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser from 'webextension-polyfill';
 import { StringRuleList, logger } from '@adguard/tsurlfilter';
-import { StealthConfig, StealthService } from './services/stealth-service';
-import {
-    RequestContext,
-    requestContextStorage,
-    RequestEvents,
-    RequestData,
-} from './request';
+import { StealthService } from './services/stealth-service';
+import { RequestContext } from './request';
 
 import {
     Configuration,
-    FilteringLog,
+    FilteringLogInterface,
     defaultFilteringLog,
-    FilteringEventType,
+    StealthConfig,
 } from '../../common';
 
-// TODO: Privacy permission for block webrtc stealth setting
 /**
  * Stealth api
  */
 export interface StealthApiInterface {
-    start: (configuration: Configuration) => void;
-    stop: () => void;
+    configure: (configuration: Configuration) => Promise<void>;
 }
 
 /**
@@ -53,26 +46,27 @@ export class StealthApi implements StealthApiInterface {
     /**
      * Filtering log
      */
-    private filteringLog: FilteringLog;
+    private filteringLog: FilteringLogInterface;
 
-    constructor(filteringLog: FilteringLog) {
+    private isStealthModeEnabled: boolean | undefined;
+
+    private isFilteringEnabled: boolean | undefined;
+
+    constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
     }
 
-    /**
-     * Starts service
-     *
-     * @param configuration
-     */
-    public async start(configuration: Configuration): Promise<void> {
-        this.configuration = {
-            ...configuration.settings.stealth,
-        } as StealthConfig;
+    public async configure(configuration: Configuration): Promise<void> {
+        const { settings } = configuration;
 
-        this.engine = new StealthService(this.configuration);
+        const { stealth, stealthModeEnabled, filteringEnabled } = settings;
 
-        RequestEvents.onBeforeSendHeaders.addListener(this.onBeforeSendHeaders);
+        this.isStealthModeEnabled = stealthModeEnabled;
+        this.isFilteringEnabled = filteringEnabled;
+        this.configuration = stealth;
+        this.engine = new StealthService(this.configuration, this.filteringLog);
 
+        // TODO: Privacy permission for block webrtc stealth setting
         if (StealthApi.canBlockWebRTC()) {
             let isPermissionsGranted = false;
             try {
@@ -88,18 +82,14 @@ export class StealthApi implements StealthApiInterface {
     }
 
     /**
-     * Stops service
-     */
-    public stop():void {
-        RequestEvents.onBeforeSendHeaders.removeListener(this.onBeforeSendHeaders);
-    }
-
-    /**
      * Returns rule list with stealth mode rules
      * @return {StringRuleList}
      */
     public getStealthModeRuleList(): StringRuleList | null {
-        if (!this.engine) {
+        if (!this.engine
+            || !this.isStealthModeEnabled
+            || !this.isFilteringEnabled
+        ) {
             return null;
         }
 
@@ -112,47 +102,46 @@ export class StealthApi implements StealthApiInterface {
      *
      * @param details
      */
-    private onBeforeSendHeaders({ details }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>):void {
+    public onBeforeSendHeaders(context: RequestContext):void {
         if (!this.engine) {
             return;
         }
 
-        if (!details.requestHeaders) {
-            return;
-        }
-
-        const context = requestContextStorage.get(details.requestId);
         if (!context) {
             return;
         }
 
-        if (!StealthApi.canApplyStealthActionsToContext(context)) {
+        if (!this.canApplyStealthActionsToContext(context)) {
             return;
         }
 
-        const stealthActions = this.engine.processRequestHeaders(
-            context.requestUrl!,
-            context.requestType!,
-            details.requestHeaders,
-        );
+        this.engine.processRequestHeaders(context);
+    }
 
-        if (stealthActions > 0) {
-            this.filteringLog.publishEvent({
-                type: FilteringEventType.STEALTH_ACTION,
-                data: {
-                    tabId: context.tabId,
-                    requestId: context.requestId,
-                    actions: stealthActions,
-                },
-            });
+    private canApplyStealthActionsToContext(context: RequestContext): boolean {
+        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
+            return false;
         }
+
+        const { matchingResult } = context;
+        if (matchingResult) {
+            if (matchingResult.documentRule || matchingResult.stealthRule) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
      * Updates browser privacy.network settings depending on blocking WebRTC or not
      */
     private async handleBlockWebRTC() {
-        const webRTCDisabled = this.configuration!.blockWebRTC;
+        if (!this.configuration) {
+            return;
+        }
+
+        const webRTCDisabled = this.configuration.blockWebRTC;
 
         if (typeof browser.privacy.network.webRTCIPHandlingPolicy === 'object') {
             try {
@@ -187,22 +176,6 @@ export class StealthApi implements StealthApiInterface {
                 StealthApi.logError(e as Error);
             }
         }
-    }
-
-    private static canApplyStealthActionsToContext(context: RequestContext): boolean {
-        // TODO: Missing config field
-        // if (isStealthModeDisabled()) {
-        //     return false;
-        // }
-
-        const { matchingResult } = context;
-        if (matchingResult) {
-            if (matchingResult.documentRule || matchingResult.stealthRule) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static canBlockWebRTC() {

@@ -28,7 +28,14 @@ const contentScriptConfig = {
             sourcemap: false,
         },
     ],
-    external: ['zod', 'webextension-polyfill', 'extended-css', '@adguard/tsurlfilter', '@adguard/assistant'],
+    external: [
+        'zod',
+        'webextension-polyfill',
+        'extended-css',
+        '@adguard/tsurlfilter',
+        '@adguard/assistant',
+        'tldts',
+    ],
     watch: {
         include: 'src/lib/mv2/content-script/**',
     },
@@ -65,7 +72,16 @@ const backgroundMv2Config = {
     watch: {
         include: 'src/lib/mv2/background/**',
     },
-    external: ['zod', 'webextension-polyfill', '@adguard/tsurlfilter', '@adguard/scriptlets', 'tldts', 'bowser'],
+    external: [
+        'zod',
+        'webextension-polyfill',
+        '@adguard/tsurlfilter',
+        '@adguard/scriptlets',
+        'tldts',
+        'bowser',
+        'deepmerge',
+        'nanoid',
+    ],
     plugins: commonPlugins,
 };
 
@@ -82,7 +98,13 @@ const backgroundMv3Config = {
     watch: {
         include: 'src/lib/mv3/background/**',
     },
-    external: ['zod', '@adguard/tsurlfilter', 'deepmerge'],
+    external: [
+        'zod',
+        '@adguard/tsurlfilter',
+        'deepmerge',
+        'tldts',
+        'webextension-polyfill',
+    ],
     plugins: commonPlugins,
 };
 

@@ -1,6 +1,7 @@
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import { HeadersService } from '@lib/mv2/background/services/headers-service';
-import { ContentType, RequestContext } from '@lib/mv2/background/request';
+import { RequestContext } from '@lib/mv2/background/request';
+import { FilteringEventType, ContentType } from '@lib/common';
 import { MockFilteringLog } from '../../../common/mock-filtering-log';
 
 describe('Headers service', () => {
@@ -37,68 +38,87 @@ describe('Headers service', () => {
     };
 
     beforeEach(() => {
-        mockFilteringLog.addRemoveHeaderEvent.mockClear();
+        mockFilteringLog.publishEvent.mockClear();
     });
 
     it('checks removing request headers', () => {
         let headersModified = headersService.onBeforeSendHeaders(context as RequestContext);
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
-
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=an-other', 0),
         ], null);
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=test_name', 0),
         ], null);
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=request:test_name', 0),
         ], null);
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeTruthy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
     });
 
     it('checks removing response headers', () => {
         let headersModified = headersService.onHeadersReceived(context as RequestContext);
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=an-other', 0),
         ], null);
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=request:test_name', 0),
         ], null);
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).not.toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
 
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=test_name', 0),
         ], null);
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeTruthy();
-        expect(mockFilteringLog.addRemoveHeaderEvent).toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+        );
     });
 });

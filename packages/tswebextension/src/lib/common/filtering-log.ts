@@ -1,10 +1,21 @@
-import { NetworkRule, CosmeticRule, RequestType } from '@adguard/tsurlfilter';
+import {
+    NetworkRule,
+    CosmeticRule,
+} from '@adguard/tsurlfilter';
+
+import { ContentType } from './request-type';
 import { EventChannel, EventChannelInterface } from './utils';
 
 /**
  * Types of filtering events that can occur during request processing
  */
 export enum FilteringEventType {
+    SEND_REQUEST = 'SEND_REQUEST',
+    PAGE_RELOAD = 'PAGE_RELOAD',
+    APPLY_BASIC_RULE = 'APPLY_BASIC_RULE',
+    APPLY_COSMETIC_RULE = 'APPLY_COSMETIC_RULE',
+    APPLY_CSP_RULE = 'APPLY_CSP_RULE',
+    RECEIVE_RESPONSE = 'RECEIVE_RESPONSE',
     COOKIE = 'COOKIE',
     REMOVE_HEADER = 'REMOVE_HEADER',
     REMOVE_PARAM = 'REMOVE_PARAM',
@@ -13,7 +24,7 @@ export enum FilteringEventType {
     CONTENT_FILTERING_START = 'CONTENT_FILTERING_START',
     CONTENT_FILTERING_FINISH = 'CONTENT_FILTERING_FINISH',
     STEALTH_ACTION = 'STEALTH_ACTION',
-    BLOCK_REQUEST = 'BLOCK_REQUEST',
+    JS_INJECT = 'JS_INJECT',
 }
 
 /**
@@ -28,42 +39,145 @@ export enum FilteringEventType {
  */
 
 /**
- * {@link BlockRequestEvent} event data
+ * {@link SendRequestEvent} event data
  */
-export type BlockRequestEventData = {
+export type SendRequestEventData = {
     tabId: number,
+    eventId: string,
     requestUrl: string,
-    referrerUrl: string,
-    requestType: RequestType,
-    rule: string,
-    filterId: number,
+    requestDomain: string,
+    frameUrl: string,
+    frameDomain: string,
+    requestType: ContentType,
+    timestamp: number,
+    requestThirdPatry: boolean,
+    method: string,
 };
 
 /**
- * Dispatched by WebRequestApi module on request blocking
+ * Dispatched by WebRequestApi manifest v2 module on request
  * in onBeforeRequest event handler
  */
-export type BlockRequestEvent = {
-    type: FilteringEventType.BLOCK_REQUEST
-    data: BlockRequestEventData
+export type SendRequestEvent = {
+    type: FilteringEventType.SEND_REQUEST,
+    data: SendRequestEventData,
+};
+
+/**
+ * {@link PageReloadEvent} event data
+ */
+export type PageReloadEventData = {
+    tabId: number,
+};
+
+/**
+ * Dispatched by WebRequestApi manifest v2 module on document request type handling
+ * in onBeforeRequest event handler
+ */
+export type PageReloadEvent = {
+    type: FilteringEventType.PAGE_RELOAD,
+    data: PageReloadEventData,
+};
+
+/**
+ * {@link ApplyBasicRuleEvent} event data
+ */
+export type ApplyBasicRuleEventData = {
+    tabId: number,
+    eventId: string,
+    rule: NetworkRule,
+};
+
+/**
+ * Dispatched by WebRequestApi manifest v2 module on request
+ * block or allowlist rule matching in onBeforeRequest event handler
+ */
+export type ApplyBasicRuleEvent = {
+    type: FilteringEventType.APPLY_BASIC_RULE,
+    data: ApplyBasicRuleEventData,
+};
+
+/**
+ * {@link ApplyCspRuleEvent} event data
+ */
+export type ApplyCspRuleEventData = {
+    tabId: number,
+    eventId: string,
+    rule: NetworkRule,
+    requestUrl: string,
+    frameUrl: string,
+    frameDomain: string,
+    requestType: ContentType,
+    timestamp: number,
+};
+
+/**
+ * Dispatched by manifest v2 csp service
+ */
+export type ApplyCspRuleEvent = {
+    type: FilteringEventType.APPLY_CSP_RULE,
+    data: ApplyCspRuleEventData,
+};
+
+/**
+ * {@link ApplyCosmenticRuleEvent} event data
+ */
+export type ApplyCosmenticRuleEventData = {
+    tabId: number,
+    eventId: string,
+    rule: CosmeticRule,
+    element: string,
+    frameUrl: string,
+    frameDomain: string,
+    requestType: ContentType,
+    timestamp: number,
+};
+
+/**
+ * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method
+ * and in ContentStream module on html rule apply
+ */
+export type ApplyCosmenticRuleEvent = {
+    type: FilteringEventType.APPLY_COSMETIC_RULE,
+    data: ApplyCosmenticRuleEventData,
+};
+
+/**
+ * {@link ReceiveResponseEvent} event data
+ */
+export type ReceiveResponseEventData = {
+    tabId: number,
+    eventId: string,
+    statusCode: number,
+};
+
+/**
+ * Dispatched by WebRequestApi manifest v2 module on response
+ * in onHeadersReceived event handler
+ */
+export type ReceiveResponseEvent = {
+    type: FilteringEventType.RECEIVE_RESPONSE,
+    data: ReceiveResponseEventData,
 };
 
 /**
  * {@link CookieEvent} event data
  */
 export type CookieEventData = {
-    tabId: number;
-    cookieName: string;
-    cookieValue: string;
-    cookieDomain: string;
-    cookieRule: NetworkRule;
-    isModifyingCookieRule: boolean;
-    thirdParty: boolean;
-    timestamp: number;
+    eventId: string,
+    tabId: number,
+    cookieName: string,
+    cookieValue: string,
+    frameDomain: string,
+    rule: NetworkRule,
+    isModifyingCookieRule: boolean,
+    requestThirdParty: boolean,
+    timestamp: number,
+    requestType: ContentType,
 };
 
 /**
- * Dispatched by CookieFiltering module on cookie filtering
+ * Dispatched by CookieFiltering manifest v2 module on cookie filtering
  * in onBeforeSendHeaders and onHeadersReceived event handlers
  */
 export type CookieEvent = {
@@ -75,14 +189,20 @@ export type CookieEvent = {
  * {@link RemoveHeaderEvent} event data
  */
 export type RemoveHeaderEventData = {
+    removeHeader: boolean,
+    headerName: string,
+    eventId: string;
     tabId: number;
+    requestUrl: string,
     frameUrl: string;
-    headerName: string;
+    frameDomain: string;
+    requestType: ContentType;
+    timestamp: number,
     rule: NetworkRule;
 };
 
 /**
- * Dispatched by HeadersService module on request header removing
+ * Dispatched by HeadersService manifest v2 module on request header removing
  * in onBeforeSendHeaders and onHeadersReceived event handlers
  */
 export type RemoveHeaderEvent = {
@@ -94,14 +214,19 @@ export type RemoveHeaderEvent = {
  * {@link RemoveParamEvent} event data
  */
 export type RemoveParamEventData = {
+    removeParam: boolean,
+    eventId: string;
     tabId: number;
+    requestUrl: string,
     frameUrl: string;
-    paramName: string;
-    rule: NetworkRule;
+    frameDomain: string;
+    requestType: ContentType;
+    timestamp: number,
+    rule: NetworkRule,
 };
 
 /**
- * Dispatched by ParamsService module on request param removing
+ * Dispatched by ParamsService manifest v2 module on request param removing
  * in WebRequestApi.onBeforeRequest event handler
  */
 export type RemoveParamEvent = {
@@ -110,37 +235,16 @@ export type RemoveParamEvent = {
 };
 
 /**
- * {@link HttpRuleApplyEvent} event data
- */
-export type HttpRuleApplyEventData = {
-    tabId: number;
-    requestId: string;
-    elementString: string;
-    frameUrl: string;
-    rule: CosmeticRule;
-};
-
-/**
- * Dispatched by ContentStringFilter module on http rule apply
- * while content filtering process
- */
-export type HttpRuleApplyEvent = {
-    type: FilteringEventType.HTTP_RULE_APPLY;
-    data: HttpRuleApplyEventData;
-};
-
-/**
  * {@link ReplaceRuleApplyEvent} event data
  */
 export type ReplaceRuleApplyEventData = {
     tabId: number;
-    requestId: string;
-    frameUrl: string;
+    eventId: string;
     rules: NetworkRule[];
 };
 
 /**
- * Dispatched by ContentStringFilter module on replace rule apply
+ * Dispatched by ContentStringFilter manifest v2 module on replace rule apply
  * while content filtering process
  */
 export type ReplaceRuleApplyEvent = {
@@ -156,7 +260,7 @@ export type ContentFilteringStartEventData = {
 };
 
 /**
- * Dispatched by ContentStream module on start of data reading
+ * Dispatched by ContentStream manifest v2 module on start of data reading
  * while content filtering process
  */
 export type ContentFilteringStartEvent = {
@@ -172,7 +276,7 @@ export type ContentFilteringFinishEventData = {
 };
 
 /**
- * Dispatched by ContentStream module on finish of data reading
+ * Dispatched by ContentStream manifest v2 module on finish of data reading
  * while content filtering process
  */
 export type ContentFilteringFinishEvent = {
@@ -185,20 +289,43 @@ export type ContentFilteringFinishEvent = {
  */
 export type StealthActionEventData = {
     tabId: number;
-    requestId: string;
+    eventId: string;
     /**
      * Applied actions mask
      */
-    actions: number;
+    stealthActions: number;
 };
 
 /**
- * Dispatched by StealthApi on stealth action apply in
+ * Dispatched by manifest v2 StealthApi on stealth action apply in
  * onBeforeSendHeaders event handler
  */
 export type StealthActionEvent = {
     type: FilteringEventType.STEALTH_ACTION
     data: StealthActionEventData;
+};
+
+/**
+ * {@link JsInjectEvent} event data
+ */
+export type JsInjectEventData = {
+    eventId: string,
+    tabId: number,
+    script: boolean,
+    requestUrl: string,
+    frameUrl: string,
+    frameDomain: string,
+    requestType: ContentType,
+    timestamp: number,
+    rule: CosmeticRule,
+};
+
+/**
+ * Dispatched by manifest v2 WebRequest API injectJsScript method
+ */
+export type JsInjectEvent = {
+    type: FilteringEventType.JS_INJECT
+    data: JsInjectEventData;
 };
 
 /**
@@ -211,12 +338,17 @@ export type FilteringLogEvent =
     | CookieEvent
     | RemoveHeaderEvent
     | RemoveParamEvent
-    | HttpRuleApplyEvent
     | ReplaceRuleApplyEvent
     | ContentFilteringStartEvent
     | ContentFilteringFinishEvent
     | StealthActionEvent
-    | BlockRequestEvent;
+    | SendRequestEvent
+    | PageReloadEvent
+    | ApplyBasicRuleEvent
+    | ApplyCspRuleEvent
+    | ApplyCosmenticRuleEvent
+    | ReceiveResponseEvent
+    | JsInjectEvent;
 
 /**
  * Utility type for mapping {@link FilteringEventType}

@@ -1,8 +1,8 @@
 import { ZodError } from 'zod';
-import { configurationValidator } from '@lib/common';
+import { configurationValidator, Configuration } from '@lib/common';
 
 describe('configuration validator', () => {
-    const validConfiguration = {
+    const validConfiguration: Configuration = {
         filters: [
             { filterId: 1, content: '' },
             { filterId: 2, content: '' },
@@ -11,8 +11,11 @@ describe('configuration validator', () => {
         userrules: ['||example.org^', 'example.com##h1'],
         verbose: false,
         settings: {
+            filteringEnabled: true,
+            stealthModeEnabled: true,
             collectStats: true,
             allowlistInverted: false,
+            allowlistEnabled: false,
             stealth: {
                 blockChromeClientData: true,
                 hideReferrer: true,

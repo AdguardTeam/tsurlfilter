@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import ExtendedCss, { IAffectedElement } from 'extended-css';
 import { CssHitsCounter } from './css-hits-counter';
 import { ElementCollapser } from './element-collapser';
@@ -13,15 +12,14 @@ ElementCollapser.start();
 
 initAssistant();
 
-// TODO: replace to separate class
+const cssHitsCounter = new CssHitsCounter((stats) => {
+    sendAppMessage({
+        type: MessageType.SAVE_CSS_HITS_STATS,
+        payload: stats,
+    });
+});
 
 const applyExtendedCss = (cssText: string) => {
-    // Init css hits counter
-    const cssHitsCounter = new CssHitsCounter((stats) => {
-        console.debug('Css stats ready');
-        console.debug(stats);
-    });
-
     console.debug('CssHitsCounter initialized');
 
     // Apply extended css stylesheets

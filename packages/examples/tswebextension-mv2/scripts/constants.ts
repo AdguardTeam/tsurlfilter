@@ -23,6 +23,9 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     settings: {
         collectStats: true,
         allowlistInverted: false,
+        allowlistEnabled: false,
+        stealthModeEnabled: true,
+        filteringEnabled: true,
         stealth: {
             blockChromeClientData: true,
             hideReferrer: true,

@@ -1,8 +1,11 @@
 import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
+import { RequestType } from '@adguard/tsurlfilter';
 
 import * as RequestEvents from '@lib/mv2/background/request/events/request-events';
-import { RequestContextState } from '@lib/mv2/background/request';
+import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
+
+import { ContentType } from '@lib/common';
 
 describe('Request Events', () => {
     const commonRequestData = {
@@ -14,6 +17,19 @@ describe('Request Events', () => {
         type: 'main_frame' as WebRequest.ResourceType,
         url: 'https://example.com/',
         thirdParty: false,
+    };
+
+    const commonContextData: Partial<RequestContext> = {
+        requestId: '12345',
+        tabId: 1,
+        frameId: 0,
+        requestUrl: 'https://example.com/',
+        referrerUrl: 'https://testcases.adguard.com',
+        requestFrameId: 0,
+        requestType: RequestType.Document,
+        method: 'GET',
+        contentType: ContentType.DOCUMENT,
+        thirdParty: true,
     };
 
     it('onBeforeRequest', () => {
@@ -31,10 +47,8 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.BEFORE_REQUEST,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -58,10 +72,8 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.BEFORE_SEND_HEADERS,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -85,10 +97,8 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.SEND_HEADERS,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -120,9 +130,6 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.HEADERS_RECEIVED,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             responseHeaders: [
                 {
                     name: 'content-type',
@@ -131,6 +138,7 @@ describe('Request Events', () => {
             ],
             statusCode: 200,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -166,9 +174,6 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.RESPONSE_STARTED,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             responseHeaders: [
                 {
                     name: 'content-type',
@@ -177,6 +182,7 @@ describe('Request Events', () => {
             ],
             statusCode: 200,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -216,9 +222,6 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.COMPLETED,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             responseHeaders: [
                 {
                     name: 'content-type',
@@ -227,6 +230,7 @@ describe('Request Events', () => {
             ],
             statusCode: 200,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
@@ -253,9 +257,6 @@ describe('Request Events', () => {
 
         const expectedContext = {
             state: RequestContextState.ERROR,
-            frameId: commonRequestData.frameId,
-            requestId: commonRequestData.requestId,
-            tabId: commonRequestData.tabId,
             responseHeaders: [
                 {
                     name: 'content-type',
@@ -264,6 +265,7 @@ describe('Request Events', () => {
             ],
             statusCode: 200,
             timestamp,
+            ...commonContextData,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);

@@ -3,7 +3,12 @@ import {
     ReplaceModifier,
     CosmeticRule,
 } from '@adguard/tsurlfilter';
-import { FilteringEventType, FilteringLog } from '../../../../common';
+
+import {
+    FilteringEventType,
+    FilteringLog,
+    getDomain,
+} from '../../../../common';
 
 import { RequestContext } from '../../request';
 import { documentParser } from './doc-parser';
@@ -74,16 +79,25 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                     if (element.parentNode && deleted.indexOf(element) < 0) {
                         element.parentNode.removeChild(element);
 
-                        const { tabId, requestId, requestUrl } = this.context;
+                        const {
+                            tabId,
+                            requestId,
+                            requestUrl,
+                            timestamp,
+                            contentType,
+                        } = this.context;
 
                         this.filteringLog.publishEvent({
-                            type: FilteringEventType.HTTP_RULE_APPLY,
+                            type: FilteringEventType.APPLY_COSMETIC_RULE,
                             data: {
                                 tabId,
-                                requestId,
-                                elementString: element.innerHTML,
-                                frameUrl: requestUrl!,
+                                eventId: requestId,
+                                element: element.innerHTML,
+                                frameUrl: requestUrl,
                                 rule,
+                                frameDomain: getDomain(requestUrl) as string,
+                                requestType: contentType,
+                                timestamp,
                             },
                         });
 
@@ -122,15 +136,14 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             }
         }
 
-        const { tabId, requestId, requestUrl } = this.context;
+        const { tabId, requestId } = this.context;
 
         if (appliedRules.length > 0) {
             this.filteringLog.publishEvent({
                 type: FilteringEventType.REPLACE_RULE_APPLY,
                 data: {
                     tabId,
-                    requestId,
-                    frameUrl: requestUrl!,
+                    eventId: requestId,
                     rules: appliedRules,
                 },
             });

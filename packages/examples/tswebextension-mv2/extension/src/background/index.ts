@@ -23,8 +23,11 @@ const defaultConfig: Configuration = {
     userrules: [],
     verbose: false,
     settings: {
+        filteringEnabled: true,
+        stealthModeEnabled: true,
         collectStats: true,
         allowlistInverted: false,
+        allowlistEnabled: false,
         stealth: {
             blockChromeClientData: false,
             hideReferrer: false,

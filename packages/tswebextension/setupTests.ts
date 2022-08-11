@@ -7,3 +7,7 @@ jest.mock('webextension-polyfill', () => ({
         filterResponseData: jest.fn(),
     },
 }));
+
+jest.mock('nanoid', () => ({
+    nanoid: () => '1',
+}));

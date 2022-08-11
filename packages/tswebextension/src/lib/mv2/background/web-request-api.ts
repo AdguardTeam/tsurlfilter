@@ -3,17 +3,14 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
-import {
-    isOwnUrl,
-    getDomain,
-    isThirdPartyRequest,
-    findHeaderByName,
-} from './utils';
+import { findHeaderByName } from './utils';
 
 import {
     isHttpOrWsRequest,
     defaultFilteringLog,
     FilteringEventType,
+    isExtensionUrl,
+    getDomain,
 } from '../../common';
 
 import { CosmeticApi } from './cosmetic-api';
@@ -27,14 +24,12 @@ import {
     RequestEvents,
     RequestData,
     requestContextStorage,
-    getRequestType,
     RequestBlockingApi,
     RequestContext,
 } from './request';
+import { stealthApi } from './stealth-api';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
-
-const MAX_URL_LENGTH = 1024 * 16;
 
 export class WebRequestApi {
     public static start(): void {
@@ -62,73 +57,59 @@ export class WebRequestApi {
     }
 
     private static onBeforeRequest(
-        data: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
     ): WebRequestEventResponse {
-        const { details } = data;
-
+        if (!context) {
+            return;
+        }
         const {
-            requestId,
-            type,
-            frameId,
-            tabId,
-            parentFrameId,
-            originUrl,
-            initiator,
-            method,
-        } = details;
-
-        let { url } = details;
-
-        /**
-         * truncate too long urls
-         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493
-         */
-        if (url.length > MAX_URL_LENGTH) {
-            url = url.slice(0, MAX_URL_LENGTH);
-        }
-
-        /**
-         * FF sends http instead of ws protocol at the http-listeners layer
-         * Although this is expected, as the Upgrade request is indeed an HTTP request,
-         * we use a chromium based approach in this case.
-         */
-        if (type === 'websocket' && url.indexOf('http') === 0) {
-            url = url.replace(/^http(s)?:/, 'ws$1:');
-        }
-
-        const { requestType, contentType } = getRequestType(type);
-
-        let requestFrameId = type === 'main_frame' ? frameId : parentFrameId;
-
-        // Relate request to main_frame
-        if (requestFrameId === -1) {
-            requestFrameId = 0;
-        }
-
-        const referrerUrl = originUrl || initiator || getDomain(url) || url;
-
-        const thirdParty = isThirdPartyRequest(url, referrerUrl);
-
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
-            tabsApi.recordRequestFrame(tabId, frameId, url, requestType);
-        }
-
-        requestContextStorage.update(requestId, {
-            requestUrl: url,
-            referrerUrl,
             requestType,
-            requestFrameId,
-            thirdParty,
+            tabId,
+            requestUrl,
+            referrerUrl,
+            requestId,
             contentType,
+            timestamp,
+            thirdParty,
             method,
-        });
+            requestFrameId,
+        } = context;
 
-        if (isOwnUrl(referrerUrl) || !isHttpOrWsRequest(url)) {
+        if (isExtensionUrl(referrerUrl) || !isHttpOrWsRequest(requestUrl)) {
             return;
         }
 
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+            tabsApi.recordFrameRequest(context);
+
+            if (requestType === RequestType.Document) {
+                defaultFilteringLog.publishEvent({
+                    type: FilteringEventType.PAGE_RELOAD,
+                    data: {
+                        tabId,
+                    },
+                });
+            }
+        }
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.SEND_REQUEST,
+            data: {
+                tabId,
+                eventId: requestId,
+                requestUrl,
+                requestDomain: getDomain(requestUrl) as string,
+                frameUrl: referrerUrl,
+                frameDomain: getDomain(referrerUrl) as string,
+                requestType: contentType,
+                timestamp,
+                requestThirdPatry: thirdParty,
+                method,
+            },
+        });
+
         const result = engineApi.matchRequest({
-            requestUrl: url,
+            requestUrl,
             frameUrl: referrerUrl,
             requestType,
             frameRule: tabsApi.getTabFrameRule(tabId),
@@ -145,7 +126,7 @@ export class WebRequestApi {
         if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
             const cosmeticOption = result.getCosmeticOption();
 
-            const cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOption);
+            const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
 
             requestContextStorage.update(requestId, {
                 cosmeticResult,
@@ -154,7 +135,20 @@ export class WebRequestApi {
 
         const basicResult = result.getBasicResult();
 
-        const response = RequestBlockingApi.getBlockedResponseByRule(basicResult, requestType);
+        const rule = RequestBlockingApi.postProcessRequestRule(basicResult, requestType);
+
+        if (rule) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.APPLY_BASIC_RULE,
+                data: {
+                    eventId: requestId,
+                    tabId,
+                    rule,
+                },
+            });
+        }
+
+        const response = RequestBlockingApi.getBlockedResponseByRule(rule);
 
         if (!response) {
             /*
@@ -170,21 +164,8 @@ export class WebRequestApi {
         }
 
         if (response?.cancel) {
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.BLOCK_REQUEST,
-                data: {
-                    tabId,
-                    requestUrl: url,
-                    referrerUrl,
-                    requestType,
-                    rule: basicResult!.getText(),
-                    filterId: basicResult!.getFilterListId(),
-                },
-            });
-
             tabsApi.updateTabBlockedRequestCount(tabId, 1);
-
-            hideRequestInitiatorElement(tabId, requestFrameId, url, requestType, thirdParty);
+            hideRequestInitiatorElement(tabId, requestFrameId, requestUrl, requestType, thirdParty);
         } else {
             ContentFiltering.onBeforeRequest(requestId);
         }
@@ -195,6 +176,12 @@ export class WebRequestApi {
     private static onBeforeSendHeaders({
         context,
     }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): WebRequestEventResponse {
+        if (!context) {
+            return;
+        }
+
+        stealthApi.onBeforeSendHeaders(context);
+
         if (!context?.matchingResult) {
             return;
         }
@@ -213,7 +200,17 @@ export class WebRequestApi {
 
     private static onHeadersReceived({
         context,
+        details,
     }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.RECEIVE_RESPONSE,
+            data: {
+                tabId: details.tabId,
+                eventId: details.requestId,
+                statusCode: details.statusCode,
+            },
+        });
+
         if (!context?.matchingResult) {
             return;
         }
@@ -234,8 +231,6 @@ export class WebRequestApi {
         let responseHeadersModified = false;
 
         if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)) {
-            WebRequestApi.recordFrameInjection(context);
-
             if (CspService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
@@ -257,15 +252,11 @@ export class WebRequestApi {
     private static onResponseStarted({
         context,
     }: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
-        if (!context?.matchingResult) {
+        if (!context) {
             return;
         }
 
-        const { requestType, tabId, frameId } = context;
-
-        if (requestType === RequestType.Document) {
-            WebRequestApi.injectJsScript(tabId, frameId);
-        }
+        WebRequestApi.injectJsScript(context);
     }
 
     private static onCompleted({
@@ -277,15 +268,7 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
-        const { requestId, tabId, frameId } = details;
-
-        const frame = tabsApi.getTabFrame(tabId, frameId);
-
-        if (frame?.injection) {
-            delete frame.injection;
-        }
-
-        requestContextStorage.delete(requestId);
+        requestContextStorage.delete(details.requestId);
     }
 
     private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
@@ -293,55 +276,80 @@ export class WebRequestApi {
         WebRequestApi.injectCosmetic(tabId, frameId);
     }
 
-    private static recordFrameInjection(context: RequestContext): void {
-        const {
-            cosmeticResult,
-            tabId,
-            frameId,
-        } = context;
-
-        if (!cosmeticResult) {
+    private static injectCss(context: RequestContext) {
+        if (!context?.cosmeticResult) {
             return;
         }
 
+        const {
+            tabId,
+            frameId,
+            cosmeticResult,
+        } = context;
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
-        const extCssText = CosmeticApi.getExtCssText(cosmeticResult);
-        const jsScriptText = CosmeticApi.getScriptText(cosmeticResult);
 
-        const frame = tabsApi.getTabFrame(tabId, frameId);
-
-        if (frame) {
-            frame.injection = {
-                cssText,
-                extCssText,
-                jsScriptText,
-            };
+        if (cssText) {
+            CosmeticApi.injectCss(cssText, tabId, frameId);
         }
     }
 
-    private static injectJsScript(tabId: number, frameId: number) {
-        const frame = tabsApi.getTabFrame(tabId, frameId);
+    private static injectJsScript(context: RequestContext) {
+        if (!context?.cosmeticResult) {
+            return;
+        }
 
-        if (frame?.injection?.jsScriptText) {
-            CosmeticApi.injectScript(frame.injection.jsScriptText, tabId, frameId);
+        const {
+            tabId,
+            requestId,
+            requestUrl,
+            frameId,
+            requestType,
+            contentType,
+            timestamp,
+            cosmeticResult,
+        } = context;
+
+        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+            const scriptRules = cosmeticResult.getScriptRules();
+
+            const scriptText = CosmeticApi.getScriptText(scriptRules);
+
+            if (scriptText) {
+                CosmeticApi.injectScript(scriptText, tabId, frameId);
+
+                for (const scriptRule of scriptRules) {
+                    if (!scriptRule.isGeneric()) {
+                        defaultFilteringLog.publishEvent({
+                            type: FilteringEventType.JS_INJECT,
+                            data: {
+                                script: true,
+                                tabId,
+                                eventId: requestId,
+                                requestUrl,
+                                frameUrl: requestUrl,
+                                frameDomain: getDomain(requestUrl) as string,
+                                requestType: contentType,
+                                timestamp,
+                                rule: scriptRule,
+                            },
+                        });
+                    }
+                }
+            }
         }
     }
 
     private static injectCosmetic(tabId: number, frameId: number): void {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (frame?.injection) {
-            const { cssText, jsScriptText } = frame.injection;
-
-            if (cssText) {
-                CosmeticApi.injectCss(cssText, tabId, frameId);
-            }
-
-            if (jsScriptText) {
-                CosmeticApi.injectScript(jsScriptText, tabId, frameId);
-            }
-
-            delete frame.injection;
+        if (!frame?.requestContext) {
+            return;
         }
+
+        const { requestContext } = frame;
+
+        WebRequestApi.injectCss(requestContext);
+        WebRequestApi.injectJsScript(requestContext);
     }
 }

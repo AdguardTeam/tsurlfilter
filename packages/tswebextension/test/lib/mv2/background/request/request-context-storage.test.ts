@@ -1,3 +1,5 @@
+import { RequestType } from '@adguard/tsurlfilter';
+import { ContentType } from '@lib/common';
 import {
     requestContextStorage,
     RequestContext,
@@ -14,6 +16,13 @@ describe('Request Context Storage', () => {
             tabId: 1,
             frameId: 0,
             timestamp: Date.now(),
+            requestUrl: 'https://example.org',
+            referrerUrl: 'https://example.org',
+            requestFrameId: 0,
+            requestType: RequestType.Document,
+            method: 'GET',
+            contentType: ContentType.DOCUMENT,
+            thirdParty: false,
         };
 
         // Create

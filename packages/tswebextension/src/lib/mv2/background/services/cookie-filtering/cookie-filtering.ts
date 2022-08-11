@@ -1,13 +1,19 @@
 /* eslint-disable class-methods-use-this */
+import { nanoid } from 'nanoid';
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
-import { FilteringLog, defaultFilteringLog, FilteringEventType } from '../../../../common';
+import {
+    ContentType,
+    defaultFilteringLog,
+    FilteringEventType,
+    FilteringLogInterface,
+} from '../../../../common';
 import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { findHeaderByName } from '../../utils/headers';
 import { RequestContext, requestContextStorage } from '../../request';
-import { FrameRequestService } from '../frame-request-service';
+import { tabsApi } from '../../tabs';
 
 /**
  * Cookie filtering
@@ -34,7 +40,7 @@ import { FrameRequestService } from '../frame-request-service';
  * - apply
  */
 export class CookieFiltering {
-    private filteringLog: FilteringLog;
+    private filteringLog: FilteringLogInterface;
 
     private browserCookieApi: BrowserCookieApi = new BrowserCookieApi();
 
@@ -43,7 +49,7 @@ export class CookieFiltering {
      *
      * @param filteringLog
      */
-    constructor(filteringLog: FilteringLog) {
+    constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
     }
 
@@ -117,13 +123,15 @@ export class CookieFiltering {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.COOKIE,
                     data: {
+                        eventId: nanoid(),
                         tabId: context.tabId,
                         cookieName: cookie.name,
                         cookieValue: cookie.value,
-                        cookieDomain: cookie.domain,
-                        cookieRule: bRule,
+                        frameDomain: cookie.domain,
+                        rule: bRule,
                         isModifyingCookieRule: false,
-                        thirdParty,
+                        requestThirdParty: thirdParty,
+                        requestType: ContentType.COOKIE,
                         timestamp: Date.now(),
                     },
 
@@ -140,14 +148,16 @@ export class CookieFiltering {
                         this.filteringLog.publishEvent({
                             type: FilteringEventType.COOKIE,
                             data: {
+                                eventId: nanoid(),
                                 tabId,
                                 cookieName: cookie.name,
                                 cookieValue: cookie.value,
-                                cookieDomain: cookie.domain,
-                                cookieRule: r,
+                                frameDomain: cookie.domain,
+                                rule: r,
                                 isModifyingCookieRule: true,
-                                thirdParty,
+                                requestThirdParty: thirdParty,
                                 timestamp: Date.now(),
+                                requestType: ContentType.COOKIE,
                             },
                         });
                     });
@@ -209,18 +219,14 @@ export class CookieFiltering {
     /**
      * Looks up blocking rules for content-script in frame context
      */
-    public getBlockingRules(
-        frameUrl: string,
-        tabId: number,
-        frameId: number,
-    ): NetworkRule[] {
-        const searchParams = FrameRequestService.prepareSearchParams(frameUrl, tabId, frameId);
-        const requestContext = FrameRequestService.search(searchParams);
+    public getBlockingRules(tabId: number, frameId: number): NetworkRule[] {
+        const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (!requestContext) {
+        if (!frame?.requestContext) {
             return [];
         }
 
+        const { requestContext } = frame;
         const { matchingResult, requestUrl } = requestContext;
 
         if (!matchingResult || !requestUrl) {
@@ -274,14 +280,16 @@ export class CookieFiltering {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.COOKIE,
                     data: {
+                        eventId: nanoid(),
                         tabId,
                         cookieName: cookie.name,
                         cookieValue: cookie.value,
-                        cookieDomain: cookie.domain,
-                        cookieRule: bRule,
+                        frameDomain: cookie.domain,
+                        rule: bRule,
                         isModifyingCookieRule: false,
-                        thirdParty: isThirdPartyCookie,
+                        requestThirdParty: isThirdPartyCookie,
                         timestamp: Date.now(),
+                        requestType: ContentType.COOKIE,
                     },
                 });
             }
@@ -298,14 +306,16 @@ export class CookieFiltering {
                         this.filteringLog.publishEvent({
                             type: FilteringEventType.COOKIE,
                             data: {
+                                eventId: nanoid(),
                                 tabId,
                                 cookieName: cookie.name,
                                 cookieValue: cookie.value,
-                                cookieDomain: cookie.domain,
-                                cookieRule: r,
+                                frameDomain: cookie.domain,
+                                rule: r,
                                 isModifyingCookieRule: true,
-                                thirdParty: isThirdPartyCookie,
+                                requestThirdParty: isThirdPartyCookie,
                                 timestamp: Date.now(),
+                                requestType: ContentType.COOKIE,
                             },
                         });
                     });

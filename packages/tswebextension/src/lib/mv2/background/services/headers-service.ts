@@ -1,6 +1,12 @@
+import { nanoid } from 'nanoid';
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
-import { FilteringLog, defaultFilteringLog, FilteringEventType } from '../../../common';
+import {
+    defaultFilteringLog,
+    FilteringEventType,
+    FilteringLogInterface,
+    getDomain,
+} from '../../../common';
 import { removeHeader } from '../utils/headers';
 import { RequestContext, requestContextStorage } from '../request';
 
@@ -8,14 +14,14 @@ import { RequestContext, requestContextStorage } from '../request';
  * Headers filtering service module
  */
 export class HeadersService {
-    private filteringLog: FilteringLog;
+    private filteringLog: FilteringLogInterface;
 
     /**
      * Constructor
      *
      * @param filteringLog
      */
-    constructor(filteringLog: FilteringLog) {
+    constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
     }
 
@@ -33,12 +39,11 @@ export class HeadersService {
             tabId,
             requestUrl,
             requestId,
+            contentType,
+            timestamp,
         } = context;
 
-        if (!requestHeaders
-            || !matchingResult
-            || !requestUrl
-        ) {
+        if (!requestHeaders || !matchingResult) {
             return false;
         }
 
@@ -55,9 +60,15 @@ export class HeadersService {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.REMOVE_HEADER,
                     data: {
-                        tabId,
-                        frameUrl: requestUrl,
+                        removeHeader: true,
                         headerName: rule.getAdvancedModifierValue()!,
+                        eventId: nanoid(),
+                        tabId,
+                        requestUrl,
+                        frameUrl: requestUrl,
+                        frameDomain: getDomain(requestUrl) as string,
+                        requestType: contentType,
+                        timestamp,
                         rule,
                     },
                 });
@@ -85,12 +96,11 @@ export class HeadersService {
             tabId,
             requestUrl,
             requestId,
+            contentType,
+            timestamp,
         } = context;
 
-        if (!responseHeaders
-            || !matchingResult
-            || !requestUrl
-        ) {
+        if (!responseHeaders || !matchingResult) {
             return false;
         }
 
@@ -107,9 +117,15 @@ export class HeadersService {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.REMOVE_HEADER,
                     data: {
-                        tabId,
-                        frameUrl: requestUrl,
+                        removeHeader: true,
                         headerName: rule.getAdvancedModifierValue()!,
+                        eventId: nanoid(),
+                        tabId,
+                        requestUrl,
+                        frameUrl: requestUrl,
+                        frameDomain: getDomain(requestUrl) as string,
+                        requestType: contentType,
+                        timestamp,
                         rule,
                     },
                 });

@@ -37,23 +37,67 @@ export class RequestBlockingApi {
     public static isDocumentBlockingRule(requestRule: NetworkRule | null): boolean {
         return !!requestRule
             && !requestRule.isAllowlist()
-            && requestRule.isOptionEnabled(NetworkRuleOption.Elemhide)
-            && requestRule.isOptionEnabled(NetworkRuleOption.Jsinject)
-            && requestRule.isOptionEnabled(NetworkRuleOption.Urlblock);
+            && requestRule.isOptionEnabled(NetworkRuleOption.Document);
     }
 
-    public static getBlockedResponseByRule(
+    public static isPopupBlockingRule(requestRule: NetworkRule | null): boolean {
+        return !!requestRule
+            && !requestRule.isAllowlist()
+            && requestRule.isOptionEnabled(NetworkRuleOption.Popup);
+    }
+
+    public static getRule(
         requestRule: NetworkRule | null,
         requestType: RequestType,
-    ): WebRequestBlockingResponse {
-        if (RequestBlockingApi.isRequestBlockedByRule(requestRule)) {
-            // Don't block main_frame request
-            if (requestType !== RequestType.Document) {
-                return { cancel: true };
+    ) {
+        // Don't block main_frame request
+        if (RequestBlockingApi.isRequestBlockedByRule(requestRule)
+            && requestType === RequestType.Document
+        ) {
+            return null;
+        }
+
+        //
+        if (requestRule?.isOptionEnabled(NetworkRuleOption.Replace)) {
+            return null;
+        }
+
+        return requestRule;
+    }
+
+    static postProcessRequestRule(
+        requestRule: NetworkRule | null,
+        requestType: RequestType,
+    ) {
+        if (requestRule && !requestRule.isAllowlist()) {
+            const isRequestBlockingRule = RequestBlockingApi.isRequestBlockedByRule(requestRule);
+            const isReplaceRule = requestRule.isOptionEnabled(NetworkRuleOption.Replace);
+
+            // Url blocking rules are not applicable to the main_frame
+            if (isRequestBlockingRule && requestType === RequestType.Document) {
+                // except rules with $document and $popup modifiers
+                if (!RequestBlockingApi.isDocumentBlockingRule(requestRule)
+                    && !RequestBlockingApi.isPopupBlockingRule(requestRule)) {
+                    return null;
+                }
             }
 
+            // Replace rules are processed in content-filtering
+            if (isReplaceRule) {
+                return null;
+            }
+        }
+
+        return requestRule;
+    }
+
+    public static getBlockedResponseByRule(requestRule: NetworkRule | null): WebRequestBlockingResponse {
+        if (RequestBlockingApi.isRequestBlockedByRule(requestRule)) {
+            return { cancel: true };
+        }
+
         // check if request rule is blocked by rule and is redirect rule
-        } else if (requestRule && !requestRule.isAllowlist()) {
+        if (requestRule && !requestRule.isAllowlist()) {
             if (requestRule.isOptionEnabled(NetworkRuleOption.Redirect)) {
                 const redirectUrl = redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
                 if (redirectUrl) {

@@ -1,3 +1,6 @@
+import { parse } from 'tldts';
+import browser from 'webextension-polyfill';
+
 export function isHttpRequest(url: string): boolean {
     return !!url && url.indexOf('http') === 0;
 }
@@ -54,4 +57,27 @@ export function getDomain(url: string): string | null {
     }
 
     return host.startsWith('www.') ? host.substring(4) : host;
+}
+
+/**
+ * If referrer of request contains full url of extension,
+ * then this request is considered as extension's own request
+ * (e.g. request for filter downloading)
+ * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1437
+ */
+export function isExtensionUrl(url: string): boolean {
+    return url.indexOf(browser.runtime.getURL('')) === 0;
+}
+
+/**
+ * Checks third party relation
+ *
+ * @param requestUrl
+ * @param referrer
+ */
+export function isThirdPartyRequest(requestUrl: string, referrer: string): boolean {
+    const tldResult = parse(requestUrl);
+    const sourceTldResult = parse(referrer);
+
+    return tldResult.domain !== sourceTldResult.domain;
 }

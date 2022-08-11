@@ -2,6 +2,7 @@ import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
 import { ParamsService } from '@lib/mv2/background/services/params-service';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
+import { ContentType, FilteringEventType } from '@lib/common';
 
 import { MockFilteringLog } from '../../../common/mock-filtering-log';
 
@@ -10,14 +11,13 @@ describe('Params service', () => {
     const paramsService = new ParamsService(mockFilteringLog);
 
     beforeEach(() => {
-        mockFilteringLog.addRemoveHeaderEvent.mockClear();
+        mockFilteringLog.publishEvent.mockClear();
         requestContextStorage.clear();
     });
 
     const testUrlPurge = (
         url: string,
         method: string,
-        requestType: RequestType,
         rulesText: string[],
     ) => {
         const requestId = '12345';
@@ -28,13 +28,14 @@ describe('Params service', () => {
             requestUrl: url,
             referrerUrl: url,
             method,
-            requestType,
+            requestType: RequestType.Document,
             tabId: 0,
             frameId: 0,
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
             matchingResult: new MatchingResult(rulesText.map(((ruleText) => new NetworkRule(ruleText, 1))), null),
+            contentType: ContentType.DOCUMENT,
         });
 
         return paramsService.getPurgedUrl(requestId);
@@ -50,7 +51,6 @@ describe('Params service', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'GET',
-            RequestType.Document,
             [],
         );
 
@@ -61,19 +61,19 @@ describe('Params service', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'GET',
-            RequestType.Document,
             ['||example.org^$removeparam'],
         );
 
         expect(purgedUrl).toBe('https://example.org');
-        expect(mockFilteringLog.addRemoveParamEvent).toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_PARAM }),
+        );
     });
 
     it('ignores post request params', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'POST',
-            RequestType.Document,
             ['||example.org^$removeparam'],
         );
 
@@ -84,7 +84,6 @@ describe('Params service', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'POST',
-            RequestType.Document,
             ['@@||example.org^$removeparam'],
         );
 
@@ -95,23 +94,25 @@ describe('Params service', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1&test=1',
             'GET',
-            RequestType.Document,
             ['||example.org^$removeparam=param'],
         );
 
         expect(purgedUrl).toBe('https://example.org?test=1');
-        expect(mockFilteringLog.addRemoveParamEvent).toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_PARAM }),
+        );
     });
 
     it('doesn`t remove unspecific param', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?test=1',
             'GET',
-            RequestType.Document,
             ['||example.org^$removeparam=param'],
         );
 
         expect(purgedUrl).toBe(null);
-        expect(mockFilteringLog.addRemoveParamEvent).toHaveBeenCalled();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.REMOVE_PARAM }),
+        );
     });
 });

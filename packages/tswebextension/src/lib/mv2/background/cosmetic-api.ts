@@ -1,8 +1,7 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
-import { FrameRequestService } from './services/frame-request-service';
-import { TabsApi } from './tabs/tabs-api';
+import { tabsApi, TabsApi } from './tabs/tabs-api';
 
 export class CosmeticApi {
     private static ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
@@ -76,14 +75,12 @@ export class CosmeticApi {
         }
     }
 
-    public static getScriptText(cosmeticResult: CosmeticResult): string | undefined {
-        const rules = cosmeticResult.getScriptRules();
-
+    public static getScriptText(rules: CosmeticRule[]): string | undefined {
         if (rules.length === 0) {
             return;
         }
 
-        const scriptText = rules.map((rule) => rule.script).join('\n');
+        const scriptText = rules.map((rule) => rule.getScript()).join('\n');
 
         if (!scriptText) {
             return;
@@ -92,18 +89,22 @@ export class CosmeticApi {
         return scriptText;
     }
 
-    public static getFrameExtCssText(frameUrl: string, tabId: number, frameId: number): string | undefined {
-        const searchParams = FrameRequestService.prepareSearchParams(frameUrl, tabId, frameId);
+    public static getFrameExtCssText(tabId: number, frameId: number): string | undefined {
+        const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        const requestContext = FrameRequestService.search(searchParams);
-
-        const cosmeticResult = requestContext?.cosmeticResult;
-
-        if (!cosmeticResult) {
+        if (!frame?.requestContext) {
             return;
         }
 
-        const extCssText = CosmeticApi.getExtCssText(cosmeticResult);
+        const { requestContext } = frame;
+
+        if (!requestContext?.cosmeticResult) {
+            return;
+        }
+
+        const { cosmeticResult } = requestContext;
+
+        const extCssText = CosmeticApi.getExtCssText(cosmeticResult, true);
 
         return extCssText;
     }

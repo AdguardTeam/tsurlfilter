@@ -1,3 +1,5 @@
+import { getDomain } from 'tldts';
+import { ContentType, defaultFilteringLog, FilteringEventType } from '..';
 import { RequestBlockingApi, RequestContext, requestContextStorage } from '../request';
 
 const CSP_HEADER_NAME = 'Content-Security-Policy';
@@ -18,6 +20,9 @@ export class CspService {
             matchingResult,
             responseHeaders,
             requestId,
+            tabId,
+            requestUrl,
+            referrerUrl,
         } = context;
 
         if (!matchingResult) {
@@ -38,6 +43,20 @@ export class CspService {
                     cspHeaders.push({
                         name: CSP_HEADER_NAME,
                         value: cspHeaderValue,
+                    });
+
+                    defaultFilteringLog.publishEvent({
+                        type: FilteringEventType.APPLY_CSP_RULE,
+                        data: {
+                            tabId,
+                            eventId: requestId,
+                            requestUrl,
+                            frameUrl: referrerUrl,
+                            frameDomain: getDomain(referrerUrl) as string,
+                            requestType: ContentType.CSP,
+                            rule,
+                            timestamp: Date.now(),
+                        },
                     });
                 }
             }

@@ -1,31 +1,11 @@
-import { Configuration, ConfigurationContext } from './configuration';
 import { FilteringLogEvent } from './filtering-log';
 import { EventChannelInterface } from './utils';
 
-/*
- * Returns information about state for site
- */
-export const enum SiteStatus {
-    /**
-    * AdBlocker can't apply rules on this site
-    */
-    SiteInException = 'SITE_IN_EXCEPTION',
-    /**
-    * Site is in the allowlist
-    */
-    SiteAllowlisted = 'SITE_ALLOWLISTED',
-
-    /**
-    * Filtering on the site is working as expected
-    */
-    FilteringEnabled = 'FILTERING_ENABLED',
-}
-
-export interface AppInterface<ConfigurationResult> {
+export interface AppInterface<TConfiguration, TConfigurationContext, TConfigurationResult> {
     /**
      * Configuration context
      */
-    configuration?: ConfigurationContext;
+    configuration?: TConfigurationContext;
 
     /**
      * Is app started
@@ -41,13 +21,13 @@ export interface AppInterface<ConfigurationResult> {
       * Starts api
       * @param configuration
       */
-    start: (configuration: Configuration) => Promise<ConfigurationResult>;
+    start: (configuration: TConfiguration) => Promise<TConfigurationResult>;
 
     /**
      * Updates configuration
      * @param configuration
      */
-    configure: (configuration: Configuration) => Promise<ConfigurationResult>;
+    configure: (configuration: TConfiguration) => Promise<TConfigurationResult>;
 
     /**
      * Stops api
@@ -63,11 +43,6 @@ export interface AppInterface<ConfigurationResult> {
      * Closes assistant
      */
     closeAssistant: (tabId: number) => void;
-
-    /**
-     * Returns current status for site
-     */
-    getSiteStatus(url: string): SiteStatus,
 
     /**
      * Returns number of active rules

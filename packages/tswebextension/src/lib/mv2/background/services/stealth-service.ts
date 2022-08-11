@@ -1,11 +1,15 @@
-import { WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 import { findHeaderByName, removeHeader } from '../utils/headers';
-import { isThirdPartyRequest } from '../utils/url';
-import { getHost } from '../../../common/utils';
-import { StealthHelper } from '../../../common';
+import {
+    FilteringEventType,
+    FilteringLogInterface,
+    StealthHelper,
+    StealthConfig,
+    getHost,
+    isThirdPartyRequest,
+} from '../../../common';
 
-import HttpHeaders = WebRequest.HttpHeaders;
+import { RequestContext } from '../request';
 
 /**
  * Stealth action bitwise masks
@@ -17,57 +21,6 @@ export enum StealthActions {
     SEND_DO_NOT_TRACK = 1 << 3,
     FIRST_PARTY_COOKIES = 1 << 4,
     THIRD_PARTY_COOKIES = 1 << 5,
-}
-
-/**
- * Stealth service configuration
- * TODO: Take stealth-service from browser-extension repo
- */
-export interface StealthConfig {
-    /**
-     * Is destruct first-party cookies enabled
-     */
-    selfDestructFirstPartyCookies: boolean;
-
-    /**
-     * Cookie maxAge in minutes
-     */
-    selfDestructFirstPartyCookiesTime: number;
-
-    /**
-     * Is destruct third-party cookies enabled
-     */
-    selfDestructThirdPartyCookies: boolean;
-
-    /**
-     * Cookie maxAge in minutes
-     */
-    selfDestructThirdPartyCookiesTime: number;
-
-    /**
-     * Remove referrer for third-party requests
-     */
-    hideReferrer: boolean;
-
-    /**
-     * Hide referrer in case of search engine is referrer
-     */
-    hideSearchQueries: boolean;
-
-    /**
-     * Remove X-Client-Data header
-     */
-    blockChromeClientData: boolean;
-
-    /**
-     * Adding Do-Not-Track (DNT) header
-     */
-    sendDoNotTrack: boolean;
-
-    /**
-     * Is WebRTC blocking enabled
-     */
-    blockWebRTC: boolean;
 }
 
 /**
@@ -120,12 +73,21 @@ export class StealthService {
     private readonly config: StealthConfig;
 
     /**
+     * Filtering logger
+     */
+    private readonly filteringLog: FilteringLogInterface;
+
+    /**
      * Constructor
      *
      * @param config
      */
-    constructor(config: StealthConfig) {
+    constructor(
+        config: StealthConfig,
+        filteringLog: FilteringLogInterface,
+    ) {
         this.config = config;
+        this.filteringLog = filteringLog;
     }
 
     /**
@@ -148,16 +110,16 @@ export class StealthService {
     /**
      * Applies stealth actions to request headers
      *
-     * @param requestUrl
-     * @param requestType
-     * @param requestHeaders
+     * @param context - request context
      */
-    public processRequestHeaders(
-        requestUrl: string,
-        requestType: RequestType,
-        requestHeaders: HttpHeaders,
-    ): StealthActions {
+    public processRequestHeaders(context: RequestContext): StealthActions {
         let stealthActions = 0;
+
+        const { requestUrl, requestType, requestHeaders } = context;
+
+        if (!requestHeaders) {
+            return stealthActions;
+        }
 
         // Remove referrer for third-party requests
         if (this.config.hideReferrer) {
@@ -195,6 +157,17 @@ export class StealthService {
             requestHeaders.push(StealthService.HEADER_VALUES.DO_NOT_TRACK);
             requestHeaders.push(StealthService.HEADER_VALUES.GLOBAL_PRIVACY_CONTROL);
             stealthActions |= StealthActions.SEND_DO_NOT_TRACK;
+        }
+
+        if (stealthActions > 0) {
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.STEALTH_ACTION,
+                data: {
+                    tabId: context.tabId,
+                    eventId: context.requestId,
+                    stealthActions,
+                },
+            });
         }
 
         return stealthActions;

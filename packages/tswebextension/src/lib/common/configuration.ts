@@ -1,6 +1,58 @@
 import { z } from 'zod';
 
 /**
+ * Stealth mode options schema
+ */
+export const stealthConfigValidator = z.object({
+    /**
+     * Is destruct first-party cookies enabled
+     */
+    selfDestructFirstPartyCookies: z.boolean(),
+
+    /**
+      * Cookie maxAge in minutes
+      */
+    selfDestructFirstPartyCookiesTime: z.number(),
+
+    /**
+      * Is destruct third-party cookies enabled
+      */
+    selfDestructThirdPartyCookies: z.boolean(),
+
+    /**
+      * Cookie maxAge in minutes
+      */
+    selfDestructThirdPartyCookiesTime: z.number(),
+
+    /**
+      * Remove referrer for third-party requests
+      */
+    hideReferrer: z.boolean(),
+
+    /**
+      * Hide referrer in case of search engine is referrer
+      */
+    hideSearchQueries: z.boolean(),
+
+    /**
+      * Remove X-Client-Data header
+      */
+    blockChromeClientData: z.boolean(),
+
+    /**
+      * Adding Do-Not-Track (DNT) header
+      */
+    sendDoNotTrack: z.boolean(),
+
+    /**
+      * Is WebRTC blocking enabled
+      */
+    blockWebRTC: z.boolean(),
+}).strict();
+
+export type StealthConfig = z.infer<typeof stealthConfigValidator>;
+
+/**
  * App configuration data schema
  */
 export const configurationValidator = z.object({
@@ -51,17 +103,20 @@ export const configurationValidator = z.object({
          */
         collectStats: z.boolean(),
 
-        stealth: z.object({
-            blockChromeClientData: z.boolean(),
-            hideReferrer: z.boolean(),
-            hideSearchQueries: z.boolean(),
-            sendDoNotTrack: z.boolean(),
-            blockWebRTC: z.boolean(),
-            selfDestructThirdPartyCookies: z.boolean(),
-            selfDestructThirdPartyCookiesTime: z.number(),
-            selfDestructFirstPartyCookies: z.boolean(),
-            selfDestructFirstPartyCookiesTime: z.number(),
-        }),
+        /**
+         * Enables stealth mode if true
+         */
+        stealthModeEnabled: z.boolean(),
+
+        /**
+         * Enables filtering if true
+         */
+        filteringEnabled: z.boolean(),
+
+        /**
+         * Stealth mode options
+         */
+        stealth: stealthConfigValidator,
     }),
 
 }).strict();

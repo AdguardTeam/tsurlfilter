@@ -6,3 +6,4 @@ export * from './filtering-log';
 export * from './utils';
 export * from './stealth-helper';
 export * from './content-script/send-app-message';
+export * from './request-type';

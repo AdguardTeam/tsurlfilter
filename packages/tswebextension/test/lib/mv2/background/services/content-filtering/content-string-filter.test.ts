@@ -5,7 +5,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { RequestContextState } from '@lib/mv2/background/request';
 import { ContentStringFilter } from '@lib/mv2/background/services/content-filtering/content-string-filter';
-import { defaultFilteringLog } from '@lib/common';
+import { ContentType, defaultFilteringLog } from '@lib/common';
 
 describe('Content string filter', () => {
     const context = {
@@ -19,6 +19,9 @@ describe('Content string filter', () => {
         requestType: RequestType.Document,
         method: 'GET',
         status: 200,
+        requestFrameId: 0,
+        contentType: ContentType.DOCUMENT,
+        thirdParty: false,
     };
 
     const content = '<html><head></head><body><h1>test</h1><span>test</span></body></html>';
