@@ -189,16 +189,9 @@ export class DeclarativeRuleConverter {
     private static getAction(rule: NetworkRule): RuleAction {
         const action = {} as RuleAction;
 
-        // TODO: RuleAction
-        //  - redirect?: Redirect;
-        //  - requestHeaders?: ModifyHeaderInfo[];
-        //  - responseHeaders?: ModifyHeaderInfo[];
-        //  - type: RuleActionType;
-        // TODO RuleActionType
-        //  - 'redirect' = 'redirect',
+        // TODO: RuleActionType
         //  - 'upgradeScheme' = 'upgradeScheme',
         //  - 'modifyHeaders' = 'modifyHeaders',
-        //  - 'allowAllRequests' = 'allowAllRequests',
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)
          || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
@@ -206,7 +199,11 @@ export class DeclarativeRuleConverter {
             action.type = RuleActionType.REDIRECT;
             action.redirect = this.getRedirectAction(rule);
         } else if (rule.isAllowlist()) {
-            action.type = RuleActionType.ALLOW;
+            if (rule.isDocumentLevelAllowlistRule() || rule.isDocumentAllowlistRule()) {
+                action.type = RuleActionType.ALLOW_ALL_REQUESTS;
+            } else {
+                action.type = RuleActionType.ALLOW;
+            }
         } else {
             action.type = RuleActionType.BLOCK;
         }

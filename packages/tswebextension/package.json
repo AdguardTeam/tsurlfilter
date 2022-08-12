@@ -101,10 +101,10 @@
     }
   },
   "dependencies": {
-    "@adguard/assistant": "4.3.62",
-    "@adguard/filters-downloader": "1.1.13",
-    "@adguard/scriptlets": "1.6.24",
-    "@adguard/tsurlfilter": "2.0.0-alpha.13",
+    "@adguard/assistant": "^4.3.62",
+    "@adguard/filters-downloader": "^1.1.13",
+    "@adguard/scriptlets": "^1.6.24",
+    "@adguard/tsurlfilter": "^2.0.0-alpha.11",
     "bowser": "2.11.0",
     "commander": "9.4.0",
     "deepmerge": "4.2.2",

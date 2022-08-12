@@ -122,4 +122,35 @@ describe('DeclarativeConverter', () => {
             });
         }).toThrowError();
     });
+
+    it('respects $document, $urlblock modifiers', () => {
+        const {
+            declarativeRules,
+        } = declarativeConverter.convert(createRuleList([
+            '@@||example.org^$document',
+            '@@||example.com^$urlblock',
+        ]));
+
+        expect(declarativeRules).toHaveLength(2);
+        expect(declarativeRules[0]).toEqual({
+            id: 1,
+            priority: 4,
+            action: { type: 'allowAllRequests' },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: ['main_frame'],
+                urlFilter: '||example.org^',
+            },
+        });
+        expect(declarativeRules[1]).toEqual({
+            id: 27,
+            priority: 1,
+            action: { type: 'allowAllRequests' },
+            condition: {
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: ['main_frame'],
+                urlFilter: '||example.com^',
+            },
+        });
+    });
 });
