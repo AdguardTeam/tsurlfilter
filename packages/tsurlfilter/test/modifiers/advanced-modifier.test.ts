@@ -257,7 +257,15 @@ describe('NetworkRule - redirect rules', () => {
 
     it('works for click2load redirect', () => {
         const redirectValue = 'click2load.html';
-        const rule = new NetworkRule(`||example.org/embed/$subdocument,redirect=${redirectValue}`, 0);
+        const rule = new NetworkRule(`||example.org/embed/$xmlhttprequest,other,redirect=${redirectValue}`, 0);
+        expect(rule).toBeTruthy();
+        expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
+        expect(rule.getAdvancedModifierValue()).toBe(redirectValue);
+    });
+
+    it('works for noopvast-4.0 redirect', () => {
+        const redirectValue = 'noopvast-4.0';
+        const rule = new NetworkRule(`||example.org/vast.xml$subdocument,redirect=${redirectValue}`, 0);
         expect(rule).toBeTruthy();
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RedirectModifier);
         expect(rule.getAdvancedModifierValue()).toBe(redirectValue);

@@ -10,10 +10,10 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/scriptlets@^1.6.20":
-  version "1.6.20"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.20.tgz#668c997aba032a2e195e57f27fd09468e4377ab5"
-  integrity sha512-28k5ROl+o4l4gy3JvrltchN4+jLjj20KAjcp48YKO5h20ATCeK4UitWJ1//xZwryg1irg25lQ+E+vKHsM07Ibg==
+"@adguard/scriptlets@^1.6.39":
+  version "1.6.39"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.6.39.tgz#f3780dbd1ddf001e920ed3e35bb16e5063ef8b70"
+  integrity sha512-fJxy/9HYxh0NBwosEgdspvc7LXy5CqHldtKQfJIgW2wAzQJgt8/GxlA0YS+IPiu5B05X9cD8rPu0nv4fpw98hA==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
