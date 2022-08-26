@@ -747,6 +747,7 @@ export class NetworkRule implements rule.IRule {
             this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
             this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
             this.setOptionEnabled(NetworkRuleOption.Content, true, true);
+            this.priorityWeight += 4;
         }
 
         // $popup should work accumulatively with requestType modifiers

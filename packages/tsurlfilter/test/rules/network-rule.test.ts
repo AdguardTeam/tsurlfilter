@@ -1031,6 +1031,21 @@ describe('NetworkRule.isHigherPriority', () => {
     }
 
     it('checks rule priority', () => {
+        // $document --> $elemhide, $content, $urlblock, $jsinject, $extension
+        compareRulesPriority('@@||example.org$document', '@@||example.org$elemhide', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$content', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$urlblock', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$jsinject', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$extension', true);
+
+
+        // $elemhide, $content, $urlblock, $jsinject, $extension -->  $document
+        compareRulesPriority('@@||example.org$elemhide', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$content', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$urlblock', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$jsinject', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$extension', '@@||example.org$document', false);
+
         compareRulesPriority('@@||example.org$important', '@@||example.org$important', false);
         compareRulesPriority('@@||example.org$important', '||example.org$important', true);
         compareRulesPriority('@@||example.org$important', '@@||example.org', true);
