@@ -63,7 +63,7 @@ export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ex
  */
 interface InitScriptParams {
     debug?: boolean,
-    request?: Request,
+    request?: Partial<Request>,
 }
 
 /**
