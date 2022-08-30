@@ -39,6 +39,8 @@ export class RuleConverter {
 
     private static SCRIPT_HAS_TEXT_REGEX_SHORT = /(##\^script:(has-text|contains))\((?!\/.+\/\))/i;
 
+    private static TAG_CONTENT_VALUE_REGEX = /\[tag-content="(.*?)"]/g;
+
     private static ATTRIBUTE_REGEX = /(\[[{a-z0-9-_.:}]*(="[{a-z0-9-_.:}]*")*\])/i;
 
     private static CSS_COMBINATORS_REGEX = />|\+|~/;
@@ -222,11 +224,15 @@ export class RuleConverter {
         // Convert base of the rule ##^script:has-text(text) to $$script[tag-content='text']
         convertedRuleText = `${
             convertedRuleText
-                // Escape double quotes (") in has-text|contains with two double quotes ("")
-                .replace(/(?<!")"(?!")/g, '""')
                 .replace(RuleConverter.SCRIPT_HAS_TEXT_REGEX_SHORT, RuleConverter.SCRIPT_HAS_TEXT_REPLACEMENT)
                 .slice(0, -1)
         }"][max-length="262144"]`;
+
+        // Escape double quotes inside tag-content, like it is required by AdGuard syntax
+        // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content
+        convertedRuleText = convertedRuleText.replace(RuleConverter.TAG_CONTENT_VALUE_REGEX, (match, group) => {
+            return `[tag-content="${group.replace(/"/g, '""')}"]`;
+        });
 
         // Return attributes if there were any
         attributeStrings?.forEach((attrStr) => {
