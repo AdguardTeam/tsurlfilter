@@ -14,10 +14,14 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     filters: [],
     allowlist: [],
     userrules: [],
+    trustedDomains: [],
     verbose: false,
     settings: {
         collectStats: true,
+        allowlistEnabled: true,
         allowlistInverted: false,
+        stealthModeEnabled: true,
+        filteringEnabled: true,
         stealth: {
             blockChromeClientData: true,
             hideReferrer: true,

@@ -8,6 +8,7 @@ describe('configuration validator', () => {
             { filterId: 2, content: '' },
         ],
         allowlist: ['example.com'],
+        trustedDomains: [],
         userrules: ['||example.org^', 'example.com##h1'],
         verbose: false,
         settings: {
@@ -16,6 +17,7 @@ describe('configuration validator', () => {
             collectStats: true,
             allowlistInverted: false,
             allowlistEnabled: false,
+            documentBlockingPageUrl: 'https://example.org',
             stealth: {
                 blockChromeClientData: true,
                 hideReferrer: true,

@@ -6,6 +6,7 @@ import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects-service';
+
 import { messagesApi } from './messages-api';
 import {
     AppInterface,
@@ -39,12 +40,18 @@ export class TsWebExtension implements ManifestV2AppInterface {
     /**
      * Constructor
      *
-     * @param webAccessibleResourcesPath
+     * @param webAccessibleResourcesPath - path to web accessible resources for {@link resourcesService}
      */
     constructor(webAccessibleResourcesPath: string) {
         resourcesService.init(webAccessibleResourcesPath);
     }
 
+    /**
+     * Initialize {@link Engine} with passed {@link configuration} and {@link redirectsService}.
+     * Starts request processing via {@link WebRequestApi} and tab tracking via {@link tabsApi}
+     *
+     * @param configuration - app configuration
+     */
     public async start(configuration: ConfigurationMV2): Promise<void> {
         configurationMV2Validator.parse(configuration);
 
@@ -57,12 +64,25 @@ export class TsWebExtension implements ManifestV2AppInterface {
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
     }
 
+    /**
+     * Fully stop request and tab processing.
+     */
     public async stop(): Promise<void> {
         WebRequestApi.stop();
         tabsApi.stop();
         this.isStarted = false;
     }
 
+    /**
+     * Reinitialize {@link Engine} with passed {@link configuration}
+     * and update tabs main frame rules based on new engine state.
+     *
+     * Requires app is started
+     *
+     * @param configuration - app configuration
+     *
+     * @throws error, if app is not started
+     */
     public async configure(configuration: ConfigurationMV2): Promise<void> {
         if (!this.isStarted) {
             throw new Error('App is not started!');
@@ -72,6 +92,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
 
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();
+
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
     }
 
@@ -92,8 +113,11 @@ export class TsWebExtension implements ManifestV2AppInterface {
     }
 
     /**
-     * recursively merge changes to passed confuguration
-     * @returns new confuguration
+     * Recursively merge changes to passed {@link ConfigurationMV2}
+     *
+     * @param configuration - current app configuration
+     * @param changes - partial configuration data, which will be merged
+     * @returns new merged configuration
      *
      * using for immutably update the config object
      * and pass it to {@link configure} or {@link start} method

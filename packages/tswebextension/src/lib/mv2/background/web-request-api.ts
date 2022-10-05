@@ -9,7 +9,6 @@ import {
     isHttpOrWsRequest,
     defaultFilteringLog,
     FilteringEventType,
-    isExtensionUrl,
     getDomain,
 } from '../../common';
 
@@ -31,6 +30,9 @@ import { stealthApi } from './stealth-api';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
+/**
+ * @class WebRequestApi
+ */
 export class WebRequestApi {
     public static start(): void {
         // browser.webRequest Events
@@ -75,21 +77,21 @@ export class WebRequestApi {
             requestFrameId,
         } = context;
 
-        if (isExtensionUrl(referrerUrl) || !isHttpOrWsRequest(requestUrl)) {
-            return;
-        }
-
         if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
             tabsApi.recordFrameRequest(context);
 
             if (requestType === RequestType.Document) {
                 defaultFilteringLog.publishEvent({
-                    type: FilteringEventType.PAGE_RELOAD,
+                    type: FilteringEventType.TAB_RELOAD,
                     data: {
                         tabId,
                     },
                 });
             }
+        }
+
+        if (!isHttpOrWsRequest(requestUrl)) {
+            return;
         }
 
         defaultFilteringLog.publishEvent({
@@ -103,7 +105,7 @@ export class WebRequestApi {
                 frameDomain: getDomain(referrerUrl) as string,
                 requestType: contentType,
                 timestamp,
-                requestThirdPatry: thirdParty,
+                requestThirdParty: thirdParty,
                 method,
             },
         });
@@ -135,20 +137,13 @@ export class WebRequestApi {
 
         const basicResult = result.getBasicResult();
 
-        const rule = RequestBlockingApi.postProcessRequestRule(basicResult, requestType);
-
-        if (rule) {
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.APPLY_BASIC_RULE,
-                data: {
-                    eventId: requestId,
-                    tabId,
-                    rule,
-                },
-            });
-        }
-
-        const response = RequestBlockingApi.getBlockedResponseByRule(rule);
+        const response = RequestBlockingApi.getBlockingResponse(
+            basicResult,
+            requestId,
+            requestUrl,
+            requestType,
+            tabId,
+        );
 
         if (!response) {
             /*
@@ -287,7 +282,7 @@ export class WebRequestApi {
             cosmeticResult,
         } = context;
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult);
+        const cssText = CosmeticApi.getCssText(cosmeticResult, true);
 
         if (cssText) {
             CosmeticApi.injectCss(cssText, tabId, frameId);

@@ -8,6 +8,7 @@ import packageJson from '../../package.json';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');
+const DOCUMENT_BLOCKING_PATH = path.join(__dirname, '../../extension/pages/document-blocking');
 const CONTENT_SCRIPT = path.join(__dirname, '../../extension/pages/content-script');
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 const DECLARATIVE_FILTERS_DIR = path.resolve(__dirname, '../../extension/filters/declarative');
@@ -82,6 +83,11 @@ export const config: Configuration = {
             template: path.join(POPUP_PATH, 'index.html'),
             filename: 'pages/popup.html',
             chunks: ['pages/popup'],
+            cache: false,
+        }),
+        new HtmlWebpackPlugin({
+            template: path.join(DOCUMENT_BLOCKING_PATH, 'index.html'),
+            filename: 'pages/document-blocking.html',
             cache: false,
         }),
         new CopyWebpackPlugin({

@@ -8,6 +8,7 @@ import {
     CONTENT_SCRIPT,
     POPUP_PATH,
     BUILD_PATH,
+    DOCUMENT_BLOCKING_PATH,
 } from '../constants';
 
 const isFFBuild = process.env.BROWSER === 'firefox';
@@ -55,6 +56,11 @@ export const config: Configuration = {
             template: path.join(POPUP_PATH, 'index.html'),
             filename: 'pages/popup.html',
             chunks: ['pages/popup'],
+            cache: false,
+        }),
+        new HtmlWebpackPlugin({
+            template: path.join(DOCUMENT_BLOCKING_PATH, 'index.html'),
+            filename: 'pages/document-blocking.html',
             cache: false,
         }),
         new CopyWebpackPlugin({

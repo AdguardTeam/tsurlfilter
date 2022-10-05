@@ -50,6 +50,11 @@ export class ResourcesService implements ResourcesServiceInterface {
 
     /**
      * Create url for war file
+     *
+     * @param path - resource relative path
+     * @throws error, if web accessible resources path is not defined
+     *
+     * @returns url to resource with secret param
      */
     public createResourceUrl(path: string): string {
         if (!this.warDir) {
@@ -61,6 +66,8 @@ export class ResourcesService implements ResourcesServiceInterface {
 
     /**
      * Load war resource by path
+     *
+     * @param path - resource relative path
      */
     public async loadResource(path: string): Promise<string> {
         const url = this.createResourceUrl(path);

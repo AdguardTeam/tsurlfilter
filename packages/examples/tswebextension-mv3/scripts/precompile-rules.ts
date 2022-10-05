@@ -28,7 +28,7 @@ const getUrlsOfFiltersResources = () => {
 };
 
 const ensureDirSync = (dirPath: string) => {
-    if (!fs.existsSync(dirPath)){
+    if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, {
             recursive: true,
             mode: 0o2775,

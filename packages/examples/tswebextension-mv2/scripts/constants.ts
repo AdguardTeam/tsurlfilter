@@ -9,6 +9,8 @@ export const CONTENT_SCRIPT = path.join(__dirname, '../extension/pages/content-s
 
 export const POPUP_PATH = path.join(__dirname, '../extension/pages/popup');
 
+export const DOCUMENT_BLOCKING_PATH = path.join(__dirname, '../extension/pages/document-blocking');
+
 export const USER_DATA_PATH = path.join(__dirname, '../tmp');
 
 export const TESTCASES_BASE_URL = 'https://testcases.adguard.com';
@@ -18,6 +20,7 @@ export const TESTCASES_DATA_PATH = '/data.json';
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     filters: [],
     allowlist: [],
+    trustedDomains: [],
     userrules: [],
     verbose: false,
     settings: {

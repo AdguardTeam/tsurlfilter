@@ -80,7 +80,7 @@ export class TabContext implements TabContextInterface {
     }
 
     setMainFrameByFrameUrl(url: string) {
-        const previousUrl = this.getPreviosUrl();
+        const previousUrl = this.getPreviousUrl();
 
         this.frames.clear();
 
@@ -94,7 +94,7 @@ export class TabContext implements TabContextInterface {
 
     setMainFrameByRequestContext(requestContext: RequestContext): void {
         const { requestUrl } = requestContext;
-        const previousUrl = this.getPreviosUrl();
+        const previousUrl = this.getPreviousUrl();
 
         this.frames.clear();
 
@@ -106,7 +106,7 @@ export class TabContext implements TabContextInterface {
         };
     }
 
-    private getPreviosUrl(): string | undefined {
+    private getPreviousUrl(): string | undefined {
         const mainFrame = this.frames.get(MAIN_FRAME_ID);
 
         if (!mainFrame) {

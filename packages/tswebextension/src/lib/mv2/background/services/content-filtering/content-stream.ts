@@ -158,7 +158,7 @@ export class ContentStream {
         this.filter.onerror = this.onResponseError;
     }
 
-    private shouldProccessFiltering(): boolean {
+    private shouldProcessFiltering(): boolean {
         const { requestType, contentTypeHeader } = this.context;
         if (requestType === RequestType.Other || requestType === RequestType.XmlHttpRequest) {
             return !!contentTypeHeader && this.allowedContentTypes.some((contentType) => {
@@ -170,7 +170,7 @@ export class ContentStream {
     }
 
     private onResponseData(event: WebRequest.StreamFilterEventData): void {
-        if (!this.shouldProccessFiltering()) {
+        if (!this.shouldProcessFiltering()) {
             this.disconnect(event.data);
             return;
         }

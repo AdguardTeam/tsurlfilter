@@ -10,47 +10,88 @@ export const stealthConfigValidator = z.object({
     selfDestructFirstPartyCookies: z.boolean(),
 
     /**
-      * Cookie maxAge in minutes
-      */
+     * Cookie maxAge in minutes
+     */
     selfDestructFirstPartyCookiesTime: z.number(),
 
     /**
-      * Is destruct third-party cookies enabled
-      */
+     * Is destruct third-party cookies enabled
+     */
     selfDestructThirdPartyCookies: z.boolean(),
 
     /**
-      * Cookie maxAge in minutes
-      */
+     * Cookie maxAge in minutes
+     */
     selfDestructThirdPartyCookiesTime: z.number(),
 
     /**
-      * Remove referrer for third-party requests
-      */
+     * Remove referrer for third-party requests
+     */
     hideReferrer: z.boolean(),
 
     /**
-      * Hide referrer in case of search engine is referrer
-      */
+     * Hide referrer in case of search engine is referrer
+     */
     hideSearchQueries: z.boolean(),
 
     /**
-      * Remove X-Client-Data header
-      */
+     * Remove X-Client-Data header
+     */
     blockChromeClientData: z.boolean(),
 
     /**
-      * Adding Do-Not-Track (DNT) header
-      */
+     * Adding Do-Not-Track (DNT) header
+     */
     sendDoNotTrack: z.boolean(),
 
     /**
-      * Is WebRTC blocking enabled
-      */
+     * Is WebRTC blocking enabled
+     */
     blockWebRTC: z.boolean(),
 }).strict();
 
 export type StealthConfig = z.infer<typeof stealthConfigValidator>;
+
+export const settingsConfigValidator = z.object({
+    /**
+     * Flag specifying if ads for sites would be blocked or allowed
+     */
+    allowlistInverted: z.boolean(),
+
+    /**
+     * Flag specifying allowlist enable state
+     * We don't use allowlist array length condition for calculate enable state,
+     * because its not cover case with empty list in inverted mode
+     */
+    allowlistEnabled: z.boolean(),
+
+    /**
+     * Enables css hits counter if true
+     */
+    collectStats: z.boolean(),
+
+    /**
+     * Enables stealth mode if true
+     */
+    stealthModeEnabled: z.boolean(),
+
+    /**
+     * Enables filtering if true
+     */
+    filteringEnabled: z.boolean(),
+
+    /**
+     * Redirect url for $document rules
+     */
+    documentBlockingPageUrl: z.string().optional(),
+
+    /**
+     * Stealth mode options
+     */
+    stealth: stealthConfigValidator,
+});
+
+export type SettingsConfig = z.infer<typeof settingsConfigValidator>;
 
 /**
  * App configuration data schema
@@ -76,6 +117,11 @@ export const configurationValidator = z.object({
     allowlist: z.string().array(),
 
     /**
+     * List of domain names of sites, which should be temporary excluded from document blocking
+     */
+    trustedDomains: z.string().array(),
+
+    /**
      * List of rules added by user
      */
     userrules: z.string().array(),
@@ -85,39 +131,7 @@ export const configurationValidator = z.object({
      */
     verbose: z.boolean(),
 
-    settings: z.object({
-        /**
-         * Flag specifying if ads for sites would be blocked or allowed
-         */
-        allowlistInverted: z.boolean(),
-
-        /**
-         * Flag specifying allowlist enable state
-         * We don't use allowlist array lenght condition for calculate enable state,
-         * because its not cover case with empty list in inverted mode
-         */
-        allowlistEnabled: z.boolean(),
-
-        /**
-         * Enables css hits counter if true
-         */
-        collectStats: z.boolean(),
-
-        /**
-         * Enables stealth mode if true
-         */
-        stealthModeEnabled: z.boolean(),
-
-        /**
-         * Enables filtering if true
-         */
-        filteringEnabled: z.boolean(),
-
-        /**
-         * Stealth mode options
-         */
-        stealth: stealthConfigValidator,
-    }),
+    settings: settingsConfigValidator,
 
 }).strict();
 
@@ -130,5 +144,5 @@ export type Configuration = z.infer<typeof configurationValidator>;
  * because filter rule strings are heavyweight
  */
 export type ConfigurationContext =
-    & Omit<Configuration, 'filters' | 'allowlist' | 'userrules'>
+    & Omit<Configuration, 'filters' | 'allowlist' | 'userrules' | 'trustedDomains'>
     & { filters: number[] };

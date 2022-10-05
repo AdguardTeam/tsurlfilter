@@ -1,19 +1,19 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { RequestEvent, BrowserRequstEvent } from './request-event';
+import { RequestEvent, BrowserRequestEvent } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
 import {
-    getDomain,
     isThirdPartyRequest,
     getRequestType,
 } from '../../../../common';
+import { tabsApi } from '../../tabs';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
 // TODO: firefox adapter
 
-export type OnBeforeRequest = BrowserRequstEvent<
+export type OnBeforeRequest = BrowserRequestEvent<
 WebRequest.OnBeforeRequestDetailsType,
 WebRequest.OnBeforeRequestOptions
 >;
@@ -61,7 +61,11 @@ export const onBeforeRequest = new RequestEvent(
             requestFrameId = 0;
         }
 
-        const referrerUrl = originUrl || initiator || getDomain(url) || url;
+        const referrerUrl = originUrl
+            || initiator
+            || tabsApi.getTabMainFrame(tabId)?.url
+            || tabsApi.getTabFrame(tabId, requestFrameId)?.url
+            || url;
 
         const thirdParty = isThirdPartyRequest(url, referrerUrl);
 
@@ -86,7 +90,7 @@ export const onBeforeRequest = new RequestEvent(
     ['blocking', 'requestBody'],
 );
 
-export type OnBeforeSendHeaders = BrowserRequstEvent<
+export type OnBeforeSendHeaders = BrowserRequestEvent<
 WebRequest.OnBeforeSendHeadersDetailsType,
 WebRequest.OnBeforeSendHeadersOptions
 >;
@@ -114,7 +118,7 @@ export const onBeforeSendHeaders = new RequestEvent(
     onBeforeSendHeadersOptions,
 );
 
-export type OnSendHeaders = BrowserRequstEvent<
+export type OnSendHeaders = BrowserRequestEvent<
 WebRequest.OnSendHeadersDetailsType,
 WebRequest.OnSendHeadersOptions
 >;
@@ -134,7 +138,7 @@ export const onSendHeaders = new RequestEvent(
     { urls: ['<all_urls>'] },
 );
 
-export type OnHeadersReceived = BrowserRequstEvent<
+export type OnHeadersReceived = BrowserRequestEvent<
 WebRequest.OnHeadersReceivedDetailsType,
 WebRequest.OnHeadersReceivedOptions
 >;
@@ -166,7 +170,7 @@ export const onHeadersReceived = new RequestEvent(
     onHeadersReceivedOptions,
 );
 
-export type OnAuthRequired = BrowserRequstEvent<
+export type OnAuthRequired = BrowserRequestEvent<
 WebRequest.OnAuthRequiredDetailsType,
 WebRequest.OnAuthRequiredOptions
 >;
@@ -186,7 +190,7 @@ export const onAuthRequired = new RequestEvent(
     { urls: ['<all_urls>'] },
 );
 
-export type OnBeforeRedirect = BrowserRequstEvent<
+export type OnBeforeRedirect = BrowserRequestEvent<
 WebRequest.OnBeforeRedirectDetailsType,
 WebRequest.OnBeforeRedirectOptions
 >;
@@ -206,7 +210,7 @@ export const onBeforeRedirect = new RequestEvent(
     { urls: ['<all_urls>'] },
 );
 
-export type OnResponseStarted = BrowserRequstEvent<
+export type OnResponseStarted = BrowserRequestEvent<
 WebRequest.OnResponseStartedDetailsType,
 WebRequest.OnResponseStartedOptions
 >;
@@ -226,7 +230,7 @@ export const onResponseStarted = new RequestEvent(
     { urls: ['<all_urls>'] },
 );
 
-export type OnCompleted = BrowserRequstEvent<
+export type OnCompleted = BrowserRequestEvent<
 WebRequest.OnCompletedDetailsType,
 WebRequest.OnCompletedOptions
 >;
@@ -247,7 +251,7 @@ export const onCompleted = new RequestEvent(
     ['responseHeaders'],
 );
 
-export type OnErrorOccurred = BrowserRequstEvent<
+export type OnErrorOccurred = BrowserRequestEvent<
 WebRequest.OnErrorOccurredDetailsType,
 WebRequest.OnErrorOccurredOptions
 >;

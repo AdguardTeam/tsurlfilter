@@ -124,7 +124,7 @@ export class MessagesApi implements MessagesApiInterface {
 
         const { elementUrl, documentUrl, requestType } = res.data;
 
-        return RequestBlockingApi.processShouldCollapse(tabId, elementUrl, documentUrl, requestType);
+        return RequestBlockingApi.shouldCollapseElement(tabId, elementUrl, documentUrl, requestType);
     }
 
     private handleGetExtendedCssMessage(

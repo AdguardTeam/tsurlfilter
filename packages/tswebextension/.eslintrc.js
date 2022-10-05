@@ -10,11 +10,13 @@ module.exports = {
     plugins: [
         'import',
         '@typescript-eslint',
+        'jsdoc',
     ],
     extends: [
         'airbnb-base',
         'airbnb-typescript/base',
-        'plugin:@typescript-eslint/recommended',   
+        'plugin:@typescript-eslint/recommended',
+        'plugin:jsdoc/recommended',
     ],
 
     rules: {
@@ -36,5 +38,12 @@ module.exports = {
 
         'import/no-cycle': 'off',
         'import/export': 'off',
+
+        // types described in ts
+        'jsdoc/require-param-type': 'off',
+        'jsdoc/require-returns-type': 'off',
+
+        'jsdoc/tag-lines': 'off',
+        'jsdoc/require-throws': 'error',
     },
 };

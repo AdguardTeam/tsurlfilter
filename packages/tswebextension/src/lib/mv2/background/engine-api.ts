@@ -19,6 +19,7 @@ import { getHost } from '../../common';
 import { allowlistApi } from './allowlist';
 import { stealthApi } from './stealth-api';
 import { ConfigurationMV2 } from './configuration';
+import { documentBlockingService } from './services/document-blocking-service';
 
 /**
  * Request Match Query
@@ -77,6 +78,7 @@ export class EngineApi implements EngineApiInterface {
 
         allowlistApi.configure(configuration);
         await stealthApi.configure(configuration);
+        documentBlockingService.configure(configuration);
 
         const lists: StringRuleList[] = [];
 

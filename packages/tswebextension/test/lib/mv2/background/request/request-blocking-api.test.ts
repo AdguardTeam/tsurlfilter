@@ -18,7 +18,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('||example.org^');
 
         expect(
-            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(true);
     });
 
@@ -26,7 +26,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult();
 
         expect(
-            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 
@@ -34,7 +34,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('@@||example.org^');
 
         expect(
-            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 
@@ -42,7 +42,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('||example.org/script.js$script,redirect=noopjs');
 
         expect(
-            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 
@@ -50,7 +50,7 @@ describe('Request Blocking Api', () => {
         mockMatchingResult('||example.org^$replace=/X/Y/');
 
         expect(
-            RequestBlockingApi.processShouldCollapse(1, 'example.org', 'example.org', RequestType.Document),
+            RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(false);
     });
 });

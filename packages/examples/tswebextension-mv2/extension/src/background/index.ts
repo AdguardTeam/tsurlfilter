@@ -1,12 +1,12 @@
 import browser, { Events } from 'webextension-polyfill';
-import { TsWebExtension, Configuration, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
+import { TsWebExtension, ConfigurationMV2, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 
 import { MessageTypes } from '../common/message-types';
 
 const tsWebExtension = new TsWebExtension('war');
 
 /*
- * Need for access tsWebExtension instance form browser autotest tool
+ * Need for access tsWebExtension instance form browser auto test tool
  */
 
 declare global {
@@ -17,9 +17,10 @@ declare global {
 
 window.tsWebExtension = tsWebExtension;
 
-const defaultConfig: Configuration = {
+const defaultConfig: ConfigurationMV2 = {
     filters: [],
     allowlist: [],
+    trustedDomains: [],
     userrules: [],
     verbose: false,
     settings: {
@@ -28,6 +29,7 @@ const defaultConfig: Configuration = {
         collectStats: true,
         allowlistInverted: false,
         allowlistEnabled: false,
+        documentBlockingPageUrl: browser.runtime.getURL('pages/document-blocking.html'),
         stealth: {
             blockChromeClientData: false,
             hideReferrer: false,

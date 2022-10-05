@@ -11,7 +11,7 @@ import { EventChannel, EventChannelInterface } from './utils';
  */
 export enum FilteringEventType {
     SEND_REQUEST = 'SEND_REQUEST',
-    PAGE_RELOAD = 'PAGE_RELOAD',
+    TAB_RELOAD = 'TAB_RELOAD',
     APPLY_BASIC_RULE = 'APPLY_BASIC_RULE',
     APPLY_COSMETIC_RULE = 'APPLY_COSMETIC_RULE',
     APPLY_CSP_RULE = 'APPLY_CSP_RULE',
@@ -19,7 +19,6 @@ export enum FilteringEventType {
     COOKIE = 'COOKIE',
     REMOVE_HEADER = 'REMOVE_HEADER',
     REMOVE_PARAM = 'REMOVE_PARAM',
-    HTTP_RULE_APPLY = 'HTTP_RULE_APPLY',
     REPLACE_RULE_APPLY = 'REPLACE_RULE_APPLY',
     CONTENT_FILTERING_START = 'CONTENT_FILTERING_START',
     CONTENT_FILTERING_FINISH = 'CONTENT_FILTERING_FINISH',
@@ -50,7 +49,7 @@ export type SendRequestEventData = {
     frameDomain: string,
     requestType: ContentType,
     timestamp: number,
-    requestThirdPatry: boolean,
+    requestThirdParty: boolean,
     method: string,
 };
 
@@ -74,8 +73,8 @@ export type PageReloadEventData = {
  * Dispatched by WebRequestApi manifest v2 module on document request type handling
  * in onBeforeRequest event handler
  */
-export type PageReloadEvent = {
-    type: FilteringEventType.PAGE_RELOAD,
+export type TabReloadEvent = {
+    type: FilteringEventType.TAB_RELOAD,
     data: PageReloadEventData,
 };
 
@@ -120,9 +119,9 @@ export type ApplyCspRuleEvent = {
 };
 
 /**
- * {@link ApplyCosmenticRuleEvent} event data
+ * {@link ApplyCosmeticRuleEvent} event data
  */
-export type ApplyCosmenticRuleEventData = {
+export type ApplyCosmeticRuleEventData = {
     tabId: number,
     eventId: string,
     rule: CosmeticRule,
@@ -137,9 +136,9 @@ export type ApplyCosmenticRuleEventData = {
  * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method
  * and in ContentStream module on html rule apply
  */
-export type ApplyCosmenticRuleEvent = {
+export type ApplyCosmeticRuleEvent = {
     type: FilteringEventType.APPLY_COSMETIC_RULE,
-    data: ApplyCosmenticRuleEventData,
+    data: ApplyCosmeticRuleEventData,
 };
 
 /**
@@ -343,10 +342,10 @@ export type FilteringLogEvent =
     | ContentFilteringFinishEvent
     | StealthActionEvent
     | SendRequestEvent
-    | PageReloadEvent
+    | TabReloadEvent
     | ApplyBasicRuleEvent
     | ApplyCspRuleEvent
-    | ApplyCosmenticRuleEvent
+    | ApplyCosmeticRuleEvent
     | ReceiveResponseEvent
     | JsInjectEvent;
 

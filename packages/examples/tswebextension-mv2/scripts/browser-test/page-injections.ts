@@ -34,6 +34,7 @@ export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) 
         filters: [{
             filterId: 1,
             content: rulesText,
+            trusted: true,
         }],
     }));
 };

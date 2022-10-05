@@ -13,12 +13,16 @@ export const loadDefaultConfig = async (filtersDir: string): Promise<Configurati
     const defaultConfig: Configuration = {
         filters: [],
         allowlist: [],
+        trustedDomains: [],
         userrules: [],
         verbose: false,
         settings: {
             collectStats: true,
             allowlistInverted: false,
             allowlistEnabled: false,
+            documentBlockingPageUrl: chrome.runtime.getURL('pages/document-blocking.html'),
+            stealthModeEnabled: true,
+            filteringEnabled: true,
             stealth: {
                 blockChromeClientData: true,
                 hideReferrer: true,

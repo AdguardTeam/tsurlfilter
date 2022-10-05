@@ -31,7 +31,7 @@ export type BrowserEventListener<Details> = (
 /**
  * More flexible variants for {@link Events.Event} interfaces
  */
-export interface BrowserRequstEvent<Details, Options>
+export interface BrowserRequestEvent<Details, Options>
     extends Events.Event<BrowserEventListener<Details>> {
     addListener(
         callback: BrowserEventListener<Details>,
@@ -47,7 +47,7 @@ export class RequestEvent<Details, Options> {
     public listeners: EventCallback<Details>[] = [];
 
     constructor(
-        event: BrowserRequstEvent<Details, Options>,
+        event: BrowserRequestEvent<Details, Options>,
         handler: DetailsHandler<Details>,
         filter: WebRequest.RequestFilter,
         extraInfoSpec?: Options[],

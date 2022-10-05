@@ -180,6 +180,20 @@ export class TabsApi implements TabsApiInterface {
         }
     }
 
+    public isNewPopupTab(tabId: number): boolean {
+        const tab = this.context.get(tabId);
+
+        if (!tab) {
+            return false;
+        }
+
+        const url = tab.info?.url;
+
+        return url === undefined
+            || url === ''
+            || url === 'about:blank';
+    }
+
     private createTabContext(tab: Tabs.Tab): void {
         if (typeof tab.id === 'number') {
             const tabContext = new TabContext(tab);
