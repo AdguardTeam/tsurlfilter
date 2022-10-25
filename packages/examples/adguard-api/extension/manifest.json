@@ -1,0 +1,50 @@
+{
+    "manifest_version": 2,
+    "version": "0.0.1",
+    "name": "Sample AdGuard API",
+    "short_name": "Sample AdGuard API",
+    "author": "Adguard Software Ltd.",
+    "description": "Sample extension using Adguard API",
+    "background": {
+        "page": "background.html",
+        "persistent": true
+    },
+    "browser_action": {
+        "default_title": "Sample Extension",
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "all_frames": true,
+            "js": [
+                "content-script.js"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "match_about_blank": true,
+            "run_at": "document_start"
+        }
+    ],
+    "minimum_chrome_version": "79.0",
+    "permissions": [
+        "<all_urls>",
+        "tabs",
+        "webRequest",
+        "webRequestBlocking",
+        "webNavigation",
+        "storage",
+        "unlimitedStorage",
+        "contextMenus",
+        "cookies"
+    ],
+    "optional_permissions": [
+        "privacy"
+    ],
+    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+    "web_accessible_resources": [
+        "/war/*"
+    ]
+}
+
