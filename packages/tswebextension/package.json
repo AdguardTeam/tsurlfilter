@@ -112,7 +112,7 @@
     "fs-extra": "10.1.0",
     "nanoid": "4.0.0",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2",
-    "tldts": "5.7.88",
+    "tldts": "^5.7.97",
     "tslib": "2.4.0",
     "webextension-polyfill": "0.9.0",
     "zod": "3.18.0"
