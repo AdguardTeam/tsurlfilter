@@ -1,42 +1,7 @@
 import FiltersDownloader from "@adguard/filters-downloader/browser";
 
 import { UserAgent } from "./utils";
-
-export type FilterMetadata = {
-    description: string;
-    displayNumber: number;
-    expires: number;
-    filterId: number;
-    groupId: number;
-    homepage: string;
-    languages: string[];
-    name: string;
-    subscriptionUrl: string;
-    tags: number[];
-    timeAdded: string;
-    timeUpdated: string;
-    trustLevel: string;
-    version: string;
-};
-
-export type TagMetadata = {
-    description: string;
-    keyword: string;
-    name: string;
-    tagId: number;
-};
-
-export type GroupMetadata = {
-    displayNumber: number;
-    groupId: number;
-    groupName: string;
-};
-
-export type Metadata = {
-    filters: FilterMetadata[];
-    groups: GroupMetadata[];
-    tags: TagMetadata[];
-};
+import { metadataValidator, Metadata, Configuration } from "./schemas";
 
 export class Network {
     /**
@@ -51,7 +16,21 @@ export class Network {
         adguard_ext_opera: UserAgent.isOpera,
     };
 
-    constructor(private filtersMetadataUrl: string, private filterRulesUrl: string) {}
+    private filtersMetadataUrl: string | undefined;
+
+    private filterRulesUrl: string | undefined;
+
+    /**
+     * Apply network {@link Configuration}
+     *
+     * @param configuration - api {@link Configuration}
+     */
+    public configure(configuration: Configuration) {
+        const { filtersMetadataUrl, filterRulesUrl } = configuration;
+
+        this.filtersMetadataUrl = filtersMetadataUrl;
+        this.filterRulesUrl = filterRulesUrl;
+    }
 
     /**
      * Downloads filter rules by filter ID
@@ -59,6 +38,10 @@ export class Network {
      * @param filterId - Filter id
      */
     public async downloadFilterRules(filterId: number): Promise<string[]> {
+        if (!this.filterRulesUrl) {
+            throw new Error("filterRulesUrl option is not set");
+        }
+
         const url = this.filterRulesUrl.replace("{filter_id}", String(filterId));
 
         return FiltersDownloader.download(url, this.filterCompilerConditionsConstants);
@@ -68,6 +51,10 @@ export class Network {
      * Downloads filters metadata
      */
     public async downloadFiltersMetadata(): Promise<Metadata> {
+        if (!this.filtersMetadataUrl) {
+            throw new Error("filtersMetadataUrl option is not set");
+        }
+
         const response = await fetch(this.filtersMetadataUrl);
 
         const metadata = await response.json();
@@ -76,6 +63,6 @@ export class Network {
             throw new Error(`Invalid response: ${response}`);
         }
 
-        return metadata;
+        return metadataValidator.parse(metadata);
     }
 }

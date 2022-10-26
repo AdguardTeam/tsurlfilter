@@ -1,9 +1,10 @@
-import { Network, FilterMetadata } from "../network";
+import { Network } from "../network";
 import { Storage } from "../storage";
 import { MetadataApi } from "./metadata";
 import { VersionsApi } from "./versions";
 import { FilterRulesApi } from "./rules";
 import { BrowserUtils } from "../utils";
+import { FilterMetadata } from "../schemas";
 
 export class FiltersApi {
     private metadataApi: MetadataApi;

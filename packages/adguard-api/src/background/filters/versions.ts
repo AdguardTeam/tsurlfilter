@@ -1,13 +1,5 @@
 import { Storage } from "../storage";
-
-export type FilterVersionData = {
-    version: string;
-    lastCheckTime: number;
-    lastUpdateTime: number;
-    expires: number;
-};
-
-export type FilterVersionStorageData = Record<number, FilterVersionData>;
+import { filterVersionStorageDataValidator, FilterVersionData, FilterVersionStorageData } from "../schemas";
 
 export class VersionsApi {
     private versions: FilterVersionStorageData | undefined;
@@ -27,10 +19,11 @@ export class VersionsApi {
         }
 
         try {
-            this.versions = JSON.parse(storageData);
+            const versions = JSON.parse(storageData);
+            this.versions = filterVersionStorageDataValidator.parse(versions);
         } catch (e) {
             // eslint-disable-next-line no-console
-            console.warn("Can`t parse data from versions storage, load default data");
+            console.warn("Can`t parse data from versions storage, load default data", e);
             this.loadDefaultData();
         }
     }

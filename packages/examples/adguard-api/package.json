@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@adguard/api": "2.0.0",
-    "@adguard/tswebextension": "0.0.25",
+    "@adguard/tswebextension": "^0.0.25",
     "eslint-config-airbnb": "^19.0.4",
     "webextension-polyfill": "^0.8.0"
   },

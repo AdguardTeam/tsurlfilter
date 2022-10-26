@@ -6,8 +6,7 @@ import { CleanWebpackPlugin } from "clean-webpack-plugin";
 import { BACKGROUND_PATH, CONTENT_SCRIPT, POPUP_PATH, BUILD_PATH } from "../constants";
 
 export const config: Configuration = {
-    mode: "development",
-    devtool: "eval-source-map",
+    mode: "production",
     entry: {
         background: BACKGROUND_PATH,
         "content-script": CONTENT_SCRIPT,
@@ -33,6 +32,9 @@ export const config: Configuration = {
                 ],
             },
         ],
+    },
+    optimization: {
+        minimize: false,
     },
     plugins: [
         new CleanWebpackPlugin(),

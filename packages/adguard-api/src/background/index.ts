@@ -1,2 +1,2 @@
 export { AdguardApi } from "./main";
-export type { AdguardApiConfiguration } from "./main";
+export type { Configuration } from "./schemas";

@@ -1,5 +1,6 @@
-import { Network, Metadata, FilterMetadata } from "../network";
+import { Network } from "../network";
 import { Storage } from "../storage";
+import { metadataValidator, Metadata, FilterMetadata } from "../schemas";
 
 export class MetadataApi {
     private metadata: Metadata | undefined;
@@ -22,10 +23,11 @@ export class MetadataApi {
         }
 
         try {
-            this.metadata = JSON.parse(storageData);
+            const metadata = JSON.parse(storageData);
+            this.metadata = metadataValidator.parse(metadata);
         } catch (e) {
             // eslint-disable-next-line no-console
-            console.warn("Can`t parse data from metadata storage, load it from backend");
+            console.warn("Can`t parse data from metadata storage, load it from backend", e);
             await this.loadMetadata();
         }
     }

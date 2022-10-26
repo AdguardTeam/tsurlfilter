@@ -1,12 +1,11 @@
 const path = require("path");
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
-const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
     entry: {
-        "index": "./src/background/index.ts",
-        "content-script": "./src/content-script/index.ts"
+        index: "./src/background/index.ts",
+        "content-script": "./src/content-script/index.ts",
     },
     module: {
         rules: [
@@ -24,36 +23,23 @@ module.exports = {
     },
     experiments: {
         outputModule: true,
-      },
-    plugins: [
-        new CleanWebpackPlugin(),
-        new ESLintPlugin({ fix: true })
-    ],
+    },
+    plugins: [new CleanWebpackPlugin(), new ESLintPlugin({ fix: true })],
     resolve: {
-        extensions: ['.ts', '.js'],
+        extensions: [".ts", ".js"],
         // Node modules polyfills
         fallback: {
-            url: require.resolve('url'),
+            url: require.resolve("url"),
         },
     },
     optimization: {
-        minimize: true,
-        minimizer: [
-            new TerserPlugin({
-                extractComments: false,
-                terserOptions: {
-                    format: {
-                        comments: false,
-                    },
-                },
-            }),
-        ],
+        minimize: false,
     },
     output: {
-        filename: '[name].js',
+        filename: "[name].js",
         path: path.resolve(__dirname, "dist"),
         library: {
-            type: 'module',
-          },
+            type: "module",
+        },
     },
 };
