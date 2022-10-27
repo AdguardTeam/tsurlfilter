@@ -26,7 +26,7 @@ import { Assistant } from './assistant';
 import { tabsApi } from './tabs';
 
 export interface MessagesApiInterface {
-    sendMessage: (tabId: number, message: unknown) => void;
+    sendMessage: (tabId: number, message: unknown) => Promise<void>;
     handleMessage: (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 }
 // TODO: add long live connection
@@ -45,8 +45,8 @@ export class MessagesApi implements MessagesApiInterface {
         this.handleMessage = this.handleMessage.bind(this);
     }
 
-    public sendMessage(tabId: number, message: unknown) {
-        browser.tabs.sendMessage(tabId, message);
+    public async sendMessage(tabId: number, message: unknown) {
+        await browser.tabs.sendMessage(tabId, message);
     }
 
     /**

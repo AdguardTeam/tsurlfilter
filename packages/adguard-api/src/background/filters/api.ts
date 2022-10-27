@@ -3,7 +3,7 @@ import { Storage } from "../storage";
 import { MetadataApi } from "./metadata";
 import { VersionsApi } from "./versions";
 import { FilterRulesApi } from "./rules";
-import { BrowserUtils } from "../utils";
+import { BrowserUtils, I18n } from "../utils";
 import { FilterMetadata } from "../schemas";
 
 export class FiltersApi {
@@ -74,6 +74,8 @@ export class FiltersApi {
         const updateTasks = ids.map(async (id) => this.updateFilter(id));
 
         await Promise.allSettled(updateTasks);
+
+        // TODO: reload config
     }
 
     /**
@@ -153,5 +155,28 @@ export class FiltersApi {
         });
 
         return rules;
+    }
+
+    /**
+     * Gets list of filters for the specified language
+     *
+     * @param locale - page locale
+     * @returns list of filters ids for the specified language
+     */
+    public getFilterIdsForLanguage(locale: string): number[] {
+        const filters = this.metadataApi.getFiltersMetadata();
+
+        const filterIds: number[] = [];
+        for (let i = 0; i < filters.length; i += 1) {
+            const filter = filters[i];
+            const { languages } = filter;
+            if (languages && languages.length > 0) {
+                const language = I18n.normalize(languages, locale);
+                if (language) {
+                    filterIds.push(filter.filterId);
+                }
+            }
+        }
+        return filterIds;
     }
 }

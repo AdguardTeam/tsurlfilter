@@ -10,7 +10,7 @@ import {
 
 import { Network } from "./network";
 import { Storage } from "./storage";
-import { FiltersApi, FiltersService } from "./filters";
+import { FiltersApi, FiltersUpdateService, LocaleDetectService } from "./filters";
 import { Configuration, configurationValidator } from "./schemas";
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = "adguard";
@@ -22,7 +22,9 @@ export class AdguardApi {
 
     private filtersApi: FiltersApi;
 
-    private filtersService: FiltersService;
+    private filtersUpdateService: FiltersUpdateService;
+
+    private localeDetectService: LocaleDetectService;
 
     /**
      * {@link TsWebExtension} {@link EventChannel}, which fires event on assistant rule creation.
@@ -47,9 +49,12 @@ export class AdguardApi {
 
         this.filtersApi = new FiltersApi(this.network, storage);
 
-        this.filtersService = new FiltersService(this.filtersApi);
+        this.filtersUpdateService = new FiltersUpdateService(this.filtersApi);
+
+        this.localeDetectService = new LocaleDetectService(this.filtersApi);
 
         this.handleMessage = this.handleMessage.bind(this);
+        this.openAssistant = this.openAssistant.bind(this);
     }
 
     /**
@@ -66,7 +71,8 @@ export class AdguardApi {
         browser.runtime.onMessage.addListener(this.handleMessage);
 
         await this.filtersApi.init();
-        this.filtersService.start();
+        this.filtersUpdateService.start();
+        this.localeDetectService.start();
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration(configuration);
 
@@ -80,7 +86,8 @@ export class AdguardApi {
      */
     public async stop(): Promise<void> {
         await this.tswebextension.stop();
-        this.filtersService.stop();
+        this.filtersUpdateService.stop();
+        this.localeDetectService.stop();
 
         browser.runtime.onMessage.removeListener(this.handleMessage);
     }
@@ -110,8 +117,8 @@ export class AdguardApi {
      *
      * @param tabId - Tab id
      */
-    public openAssistant(tabId: number): void {
-        this.tswebextension.openAssistant(tabId);
+    public async openAssistant(tabId: number): Promise<void> {
+        await this.tswebextension.openAssistant(tabId);
     }
 
     /**
@@ -119,8 +126,8 @@ export class AdguardApi {
      *
      * @param tabId  - Tab id
      */
-    public closeAssistant(tabId: number): void {
-        this.tswebextension.closeAssistant(tabId);
+    public async closeAssistant(tabId: number): Promise<void> {
+        await this.tswebextension.closeAssistant(tabId);
     }
 
     /**
@@ -176,13 +183,14 @@ export class AdguardApi {
         };
     }
 
+    // eslint-disable-next-line consistent-return
     private async handleMessage(message: Message, sender: Runtime.MessageSender) {
         if (message?.handlerName === MESSAGE_HANDLER_NAME) {
             const handler = this.tswebextension.getMessageHandler();
 
             return handler(message, sender);
         }
-
-        return undefined;
     }
 }
+
+export const adguardApi = new AdguardApi();

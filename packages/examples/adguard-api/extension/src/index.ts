@@ -1,7 +1,5 @@
 /* eslint-disable no-console */
-import browser from "webextension-polyfill";
-import { FilteringEventType, FilteringLogEvent } from "@adguard/tswebextension";
-import { AdguardApi, Configuration } from "@adguard/api";
+import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from "@adguard/api";
 
 (async (): Promise<void> => {
     const configuration: Configuration = {
@@ -11,8 +9,6 @@ import { AdguardApi, Configuration } from "@adguard/api";
         filterRulesUrl: "https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt",
         filtersMetadataUrl: "https://filters.adtidy.org/extension/chromium/filters.json",
     };
-
-    const adguardApi = new AdguardApi();
 
     // console log request data on basic rule apply
     const onFilteringLogEvent = (event: FilteringLogEvent) => {
@@ -49,13 +45,14 @@ import { AdguardApi, Configuration } from "@adguard/api";
         logTotalCount();
     });
 
-    browser.runtime.onMessage.addListener(async (message) => {
+    chrome.runtime.onMessage.addListener(async (message) => {
         switch (message.type) {
             case "OPEN_ASSISTANT": {
-                const activeTab = (await browser.tabs.query({ active: true }))[0];
-                if (activeTab?.id) {
-                    adguardApi.openAssistant(activeTab.id);
-                }
+                chrome.tabs.query({ active: true }, async (res) => {
+                    if (res[0]?.id) {
+                        await adguardApi.openAssistant(res[0].id);
+                    }
+                });
                 break;
             }
             default:

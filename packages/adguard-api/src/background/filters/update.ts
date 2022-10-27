@@ -1,6 +1,6 @@
 import { FiltersApi } from "./api";
 
-export class FiltersService {
+export class FiltersUpdateService {
     // update checking initialization delay
     private static initDelay = 1000 * 60 * 5; // 5 min
 
@@ -20,7 +20,7 @@ export class FiltersService {
     public start(): void {
         this.delayTimerId = window.setTimeout(async () => {
             await this.scheduleUpdate();
-        }, FiltersService.initDelay);
+        }, FiltersUpdateService.initDelay);
     }
 
     public stop(): void {
@@ -33,7 +33,7 @@ export class FiltersService {
         }
     }
 
-    public async scheduleUpdate(): Promise<void> {
+    private async scheduleUpdate(): Promise<void> {
         if (this.updateTimerId) {
             window.clearTimeout(this.updateTimerId);
         }
@@ -42,6 +42,6 @@ export class FiltersService {
 
         this.updateTimerId = window.setTimeout(async () => {
             await this.scheduleUpdate();
-        }, FiltersService.checkPeriodMs);
+        }, FiltersUpdateService.checkPeriodMs);
     }
 }

@@ -1,2 +1,3 @@
 export { FiltersApi } from "./api";
-export { FiltersService } from "./service";
+export { FiltersUpdateService } from "./update";
+export { LocaleDetectService } from "./locale-detect";

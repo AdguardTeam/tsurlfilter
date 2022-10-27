@@ -2,11 +2,11 @@
   "name": "@adguard/api",
   "version": "2.0.0",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
-  "main": "dist/index.js",
+  "main": "dist/adguard-api.js",
   "typings": "dist/types/background/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./content-script": "./dist/content-script.js"
+    ".": "./dist/adguard-api.js",
+    "./content-script": "./dist/adguard-content.js"
   },
   "typesVersions": {
     "*": {

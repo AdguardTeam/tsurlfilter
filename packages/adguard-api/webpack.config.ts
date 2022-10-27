@@ -4,8 +4,8 @@ const ESLintPlugin = require("eslint-webpack-plugin");
 
 module.exports = {
     entry: {
-        index: "./src/background/index.ts",
-        "content-script": "./src/content-script/index.ts",
+        "adguard-api": "./src/background/index.ts",
+        "adguard-content": "./src/content-script/index.ts",
     },
     module: {
         rules: [
@@ -20,9 +20,6 @@ module.exports = {
                 ],
             },
         ],
-    },
-    experiments: {
-        outputModule: true,
     },
     plugins: [new CleanWebpackPlugin(), new ESLintPlugin({ fix: true })],
     resolve: {
@@ -39,7 +36,7 @@ module.exports = {
         filename: "[name].js",
         path: path.resolve(__dirname, "dist"),
         library: {
-            type: "module",
+            type: "umd",
         },
     },
 };

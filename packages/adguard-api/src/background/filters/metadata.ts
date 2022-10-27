@@ -33,15 +33,25 @@ export class MetadataApi {
     }
 
     public async loadMetadata(): Promise<void> {
-        const metadata = await this.network.downloadFiltersMetadata();
-        await this.storage.set("metadata", JSON.stringify(metadata));
-        this.metadata = metadata;
+        try {
+            const metadata = await this.network.downloadFiltersMetadata();
+            await this.storage.set("metadata", JSON.stringify(metadata));
+            this.metadata = metadata;
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error("Can`t download metadata", e);
+            await this.loadMetadata();
+        }
     }
 
-    public getFilterMetadata(filterId: number): FilterMetadata | undefined {
+    public getFiltersMetadata(): FilterMetadata[] {
         if (!this.metadata) {
             throw new Error("Metadata is not loaded!");
         }
-        return this.metadata.filters.find((el) => el.filterId === filterId);
+        return this.metadata.filters;
+    }
+
+    public getFilterMetadata(filterId: number): FilterMetadata | undefined {
+        return this.getFiltersMetadata().find((el) => el.filterId === filterId);
     }
 }

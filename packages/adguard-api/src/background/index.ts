@@ -1,2 +1,4 @@
-export { AdguardApi } from "./main";
-export type { Configuration } from "./schemas";
+export { FilteringEventType, FilteringLogEvent } from "@adguard/tswebextension";
+
+export { adguardApi } from "./main";
+export { Configuration } from "./schemas";
