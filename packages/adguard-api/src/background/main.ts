@@ -12,6 +12,7 @@ import { Network } from "./network";
 import { Storage } from "./storage";
 import { FiltersApi, FiltersUpdateService, LocaleDetectService } from "./filters";
 import { Configuration, configurationValidator } from "./schemas";
+import { DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = "adguard";
 
@@ -25,6 +26,8 @@ export class AdguardApi {
     private filtersUpdateService: FiltersUpdateService;
 
     private localeDetectService: LocaleDetectService;
+
+    private configuration: Configuration | undefined;
 
     /**
      * {@link TsWebExtension} {@link EventChannel}, which fires event on assistant rule creation.
@@ -55,6 +58,8 @@ export class AdguardApi {
 
         this.handleMessage = this.handleMessage.bind(this);
         this.openAssistant = this.openAssistant.bind(this);
+        this.handleDetectFilters = this.handleDetectFilters.bind(this);
+        this.handleUpdateFilters = this.handleUpdateFilters.bind(this);
     }
 
     /**
@@ -64,9 +69,9 @@ export class AdguardApi {
      * @returns applied {@link Configuration} promise
      */
     public async start(configuration: Configuration): Promise<Configuration> {
-        configurationValidator.parse(configuration);
+        this.configuration = configurationValidator.parse(configuration);
 
-        this.network.configure(configuration);
+        this.network.configure(this.configuration);
 
         browser.runtime.onMessage.addListener(this.handleMessage);
 
@@ -74,7 +79,10 @@ export class AdguardApi {
         this.filtersUpdateService.start();
         this.localeDetectService.start();
 
-        const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration(configuration);
+        notifier.addListener(NotifierEventType.UpdateFilters, this.handleUpdateFilters);
+        notifier.addListener(NotifierEventType.DetectFilters, this.handleDetectFilters);
+
+        const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         await this.tswebextension.start(tsWebExtensionConfiguration);
 
@@ -99,11 +107,11 @@ export class AdguardApi {
      * @returns applied {@link Configuration} promise
      */
     public async configure(configuration: Configuration): Promise<Configuration> {
-        configurationValidator.parse(configuration);
+        this.configuration = configurationValidator.parse(configuration);
 
-        this.network.configure(configuration);
+        this.network.configure(this.configuration);
 
-        const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration(configuration);
+        const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         await this.tswebextension.configure(tsWebExtensionConfiguration);
 
@@ -139,22 +147,24 @@ export class AdguardApi {
         return this.tswebextension.getRulesCount();
     }
 
-    private async createTsWebExtensionConfiguration(
-        configuration: Configuration
-    ): Promise<TsWebExtensionConfiguration> {
+    private async createTsWebExtensionConfiguration(): Promise<TsWebExtensionConfiguration> {
+        if (!this.configuration) {
+            throw new Error("Api configuration is not set");
+        }
+
         let allowlistInverted = false;
         let allowlist: string[] = [];
 
-        if (configuration.blacklist) {
-            allowlist = configuration.blacklist;
+        if (this.configuration.blacklist) {
+            allowlist = this.configuration.blacklist;
             allowlistInverted = true;
-        } else if (configuration.whitelist) {
-            allowlist = configuration.whitelist;
+        } else if (this.configuration.whitelist) {
+            allowlist = this.configuration.whitelist;
         }
 
-        const userrules = configuration.rules || [];
+        const userrules = this.configuration.rules || [];
 
-        const filters = await this.filtersApi.getFilters(configuration.filters);
+        const filters = await this.filtersApi.getFilters(this.configuration.filters);
 
         return {
             filters,
@@ -190,6 +200,36 @@ export class AdguardApi {
 
             return handler(message, sender);
         }
+    }
+
+    private async handleUpdateFilters() {
+        const tsWebExtensionConfig = await this.createTsWebExtensionConfiguration();
+
+        await this.tswebextension.configure(tsWebExtensionConfig);
+
+        // eslint-disable-next-line no-console
+        console.log("Reload engine with updated filter ids list");
+    }
+
+    private async handleDetectFilters(event: DetectFiltersEvent) {
+        if (!this.configuration) {
+            throw new Error("Api configuration is not set");
+        }
+
+        const { filters: currentFilters } = this.configuration;
+
+        const filtersIds = event.data.filtersIds.filter((id) => !currentFilters.includes(id));
+
+        if (filtersIds.length === 0) {
+            return;
+        }
+
+        this.configuration.filters = [...this.configuration.filters, ...filtersIds];
+
+        // eslint-disable-next-line no-console
+        console.log(`Add language filters ids: ${filtersIds}`);
+
+        await this.handleUpdateFilters();
     }
 }
 

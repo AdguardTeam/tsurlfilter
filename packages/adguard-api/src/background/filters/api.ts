@@ -5,6 +5,7 @@ import { VersionsApi } from "./versions";
 import { FilterRulesApi } from "./rules";
 import { BrowserUtils, I18n } from "../utils";
 import { FilterMetadata } from "../schemas";
+import { notifier, NotifierEventType } from "../notifier";
 
 export class FiltersApi {
     private metadataApi: MetadataApi;
@@ -75,7 +76,7 @@ export class FiltersApi {
 
         await Promise.allSettled(updateTasks);
 
-        // TODO: reload config
+        notifier.publishEvent({ type: NotifierEventType.UpdateFilters });
     }
 
     /**
@@ -134,7 +135,7 @@ export class FiltersApi {
 
     private async loadFilterRules(filterId: number): Promise<string[]> {
         // eslint-disable-next-line no-console
-        console.log(`Download ${filterId} rules`);
+        console.log(`Download rules for filter ${filterId}`);
 
         const filterMetadata = this.metadataApi.getFilterMetadata(filterId);
 

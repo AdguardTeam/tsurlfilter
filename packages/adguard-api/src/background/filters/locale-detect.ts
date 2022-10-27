@@ -4,6 +4,7 @@ import { isHttpRequest, getDomain } from "@adguard/tswebextension";
 import { UserAgent } from "../utils";
 import { Configuration } from "../schemas";
 import { FiltersApi } from "./api";
+import { notifier, NotifierEventType } from "../notifier";
 
 export type BrowsingLanguage = {
     language: string;
@@ -201,7 +202,11 @@ export class LocaleDetectService {
 
         const filtersIds = filterIds.filter((filterId) => !this.enabledFilters.includes(filterId));
 
-        // TODO: reload config
-        console.log(filtersIds);
+        notifier.publishEvent({
+            type: NotifierEventType.DetectFilters,
+            data: {
+                filtersIds,
+            },
+        });
     }
 }
