@@ -21,11 +21,12 @@ export function findHeaderByName(headers: HttpHeaders, headerName: string): Http
 }
 
 /**
+ * TODO: Make function pure (don't modify headers, return new object instead)
  * Removes header from headers by name
  *
  * @param {Array} headers
- * @param {String} headerName
- * @return {boolean} True if header were removed
+ * @param {string} headerName
+ * @returns {boolean} True if header were removed
  */
 export function removeHeader(headers: HttpHeaders, headerName: string): boolean {
     let removed = false;
