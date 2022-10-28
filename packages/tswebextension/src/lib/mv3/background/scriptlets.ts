@@ -28,16 +28,17 @@ const executeScript = async (scripts: string, tabId: number) => {
         }
     };
 
-    await chrome.scripting.executeScript({
-        target: { tabId },
-        func: functionToInject,
-        world: 'MAIN', // ISOLATED doesnt allow to execute code inline
-        args: [scripts],
-    }, () => {
-        if (chrome.runtime.lastError) {
-            console.debug(chrome.runtime.lastError);
-        }
-    });
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: functionToInject,
+            injectImmediately: true,
+            world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+            args: [scripts],
+        });
+    } catch (e) {
+        console.debug('Error on executeScript', e);
+    }
 };
 
 /**
@@ -56,12 +57,17 @@ const executeScriptletsData = async (
             scriptletData.params.verbose = verbose;
         }
 
-        await chrome.scripting.executeScript({
-            target: { tabId },
-            func: scriptletData.func,
-            args: [scriptletData.params, scriptletData.params.args],
-            world: 'MAIN',
-        });
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                func: scriptletData.func,
+                injectImmediately: true,
+                world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+                args: [scriptletData.params, scriptletData.params.args],
+            });
+        } catch (e) {
+            console.debug('Error on executeScript', e);
+        }
     });
 
     await Promise.all(promises);

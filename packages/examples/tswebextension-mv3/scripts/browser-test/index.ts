@@ -5,6 +5,7 @@ import {
     USER_DATA_PATH,
     DEFAULT_EXTENSION_CONFIG,
     TESTCASES_BASE_URL,
+    TESTS_COMPLETED_EVENT,
 } from '../constants';
 import {
     addQunitListeners,
@@ -63,6 +64,13 @@ import { Product } from './product';
 
         // run test page
         await page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' });
+
+        // wait until all tests are completed
+        await page.evaluate(
+            // eslint-disable-next-line @typescript-eslint/no-loop-func
+            eventName => new Promise(callback => window.addEventListener(eventName, callback, { once: true })),
+            TESTS_COMPLETED_EVENT,
+        );
     }
 
     await browserContext.close();

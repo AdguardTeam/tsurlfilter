@@ -17,6 +17,8 @@ export const TESTCASES_BASE_URL = 'https://testcases.adguard.com';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
+export const TESTS_COMPLETED_EVENT = 'testPassed';
+
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     filters: [],
     allowlist: [],

@@ -1,4 +1,5 @@
 import { Configuration, TsWebExtension } from '@adguard/tswebextension';
+import { TESTS_COMPLETED_EVENT } from '../constants';
 
 declare global {
     interface Window {
@@ -19,6 +20,8 @@ export const addQunitListeners = (callbackName: string) => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
                 (<any>window)[callbackName](Object.assign(details, { name }));
+
+                window.dispatchEvent(new Event(TESTS_COMPLETED_EVENT));
             });
         },
         configurable: true,
