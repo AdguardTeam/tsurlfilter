@@ -5,6 +5,7 @@ import {
     BUILD_PATH,
     USER_DATA_PATH,
     DEFAULT_EXTENSION_CONFIG,
+    TESTS_COMPLETED_EVENT,
 } from '../constants';
 
 import { getTestcases, getRuleText } from './requests';
@@ -34,7 +35,6 @@ import { filterCompatibleTestcases } from './testcase';
     await backgroundPage.waitForFunction(() => window.tsWebExtension?.isStarted, null, { polling: 100 });
 
     const page = await browserContext.newPage();
-
 
     const testcases = await getTestcases();
 
@@ -68,6 +68,13 @@ import { filterCompatibleTestcases } from './testcase';
 
         // run test page
         await page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' });
+
+        // wait until all tests are completed
+        await page.evaluate(
+            // eslint-disable-next-line @typescript-eslint/no-loop-func
+            eventName => new Promise(callback => window.addEventListener(eventName, callback, { once: true })),
+            TESTS_COMPLETED_EVENT,
+        );
     }
 
     await browserContext.close();
