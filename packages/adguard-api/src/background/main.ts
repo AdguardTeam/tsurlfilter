@@ -1,3 +1,21 @@
+/**
+ * @file
+ * This file is part of Adguard API library (https://github.com/AdguardTeam/tsurlfilter/packages/adguard-api).
+ *
+ * Adguard API is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Adguard API is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 import browser, { Runtime } from "webextension-polyfill";
 import {
     TsWebExtension,
@@ -16,17 +34,32 @@ import { DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = "adguard";
 
+/**
+ * AdGuard API is filtering library, provided following features:
+ * - request and content filtering, using {@link TsWebExtension}
+ * - filters rules downloading and caching via {@link FiltersApi}
+ * - filters rules auto updates via {@link filtersUpdateService}
+ * - content blocking via AdGuard Assistant UI, provided by {@link TsWebExtension}
+ * - auto detecting language filters via {@link localeDetectService}
+ * - logging request processing via filtering events api, provided by {@link TsWebExtension}
+ */
 export class AdguardApi {
+    // Engine instance
     private tswebextension: TsWebExtension;
 
+    // Network requests API
     private network: Network;
 
+    // API for managing filters data
     private filtersApi: FiltersApi;
 
+    // Service for scheduling filters rules updates
     private filtersUpdateService: FiltersUpdateService;
 
+    // Service for auto-enabling language-specific filters.
     private localeDetectService: LocaleDetectService;
 
+    // AdguardApi configuration
     private configuration: Configuration | undefined;
 
     /**
@@ -123,7 +156,7 @@ export class AdguardApi {
      * You should also subscribe on {@link onAssistantCreateRule} event channel for applying rules,
      * which are created by the Adguard assistant.
      *
-     * @param tabId - Tab id
+     * @param tabId - {@link browser.tabs.Tab } id. @see https://developer.chrome.com/docs/extensions/reference/tabs/#type-Tab
      */
     public async openAssistant(tabId: number): Promise<void> {
         await this.tswebextension.openAssistant(tabId);
@@ -132,7 +165,7 @@ export class AdguardApi {
     /**
      * Closes AdGuard assistant in the specified tab.
      *
-     * @param tabId  - Tab id
+     * @param tabId - {@link browser.tabs.Tab } id. @see https://developer.chrome.com/docs/extensions/reference/tabs/#type-Tab
      */
     public async closeAssistant(tabId: number): Promise<void> {
         await this.tswebextension.closeAssistant(tabId);
@@ -147,6 +180,11 @@ export class AdguardApi {
         return this.tswebextension.getRulesCount();
     }
 
+    /**
+     * Creates {@link TsWebExtension} configuration based on current API {@link configuration}.
+     *
+     * @returns - {@link TsWebExtension} configuration
+     */
     private async createTsWebExtensionConfiguration(): Promise<TsWebExtensionConfiguration> {
         if (!this.configuration) {
             throw new Error("Api configuration is not set");
@@ -193,8 +231,15 @@ export class AdguardApi {
         };
     }
 
+    /**
+     * Handles messages from {@link TsWebExtension} content-script
+     *
+     * @param message - {@link TsWebExtension} extension {@link Message}
+     * @param sender - extension {@link Runtime.MessageSender}
+     * @returns TsWebExtension message handler response
+     */
     // eslint-disable-next-line consistent-return
-    private async handleMessage(message: Message, sender: Runtime.MessageSender) {
+    private async handleMessage(message: Message, sender: Runtime.MessageSender): Promise<unknown> {
         if (message?.handlerName === MESSAGE_HANDLER_NAME) {
             const handler = this.tswebextension.getMessageHandler();
 
@@ -202,7 +247,10 @@ export class AdguardApi {
         }
     }
 
-    private async handleUpdateFilters() {
+    /**
+     * Handles fired {@link UpdateFiltersEvent}
+     */
+    private async handleUpdateFilters(): Promise<void> {
         const tsWebExtensionConfig = await this.createTsWebExtensionConfiguration();
 
         await this.tswebextension.configure(tsWebExtensionConfig);
@@ -211,7 +259,12 @@ export class AdguardApi {
         console.log("Reload engine with updated filter ids list");
     }
 
-    private async handleDetectFilters(event: DetectFiltersEvent) {
+    /**
+     * Handles fired {@link DetectFiltersEvent}
+     *
+     * @param event - fired {@link DetectFiltersEvent}
+     */
+    private async handleDetectFilters(event: DetectFiltersEvent): Promise<void> {
         if (!this.configuration) {
             throw new Error("Api configuration is not set");
         }

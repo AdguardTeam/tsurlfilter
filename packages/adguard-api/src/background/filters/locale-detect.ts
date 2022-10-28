@@ -1,3 +1,21 @@
+/**
+ * @file
+ * This file is part of Adguard API library (https://github.com/AdguardTeam/tsurlfilter/packages/adguard-api).
+ *
+ * Adguard API is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Adguard API is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 import browser, { Tabs } from "webextension-polyfill";
 import { isHttpRequest, getDomain } from "@adguard/tswebextension";
 
@@ -13,13 +31,21 @@ export type BrowsingLanguage = {
 
 /**
  *
- * This api is used to auto-enable language-specific filters.
+ * This service is used to auto-enable language-specific filters.
+ *
+ * Tracks page language, reading data on browser tab update.
+ *
+ * If language hits some times, checks if language filter
+ * is disabled and dispatches {@link NotifierEventType.DetectFilters} event with detected filter ids.
  */
 export class LocaleDetectService {
+    // Language hits threshold
     private static SUCCESS_HIT_COUNT = 3;
 
+    // Max count of hits, stored in memory
     private static MAX_HISTORY_LENGTH = 10;
 
+    // Page locale to filter language data mapping
     private static domainToLanguagesMap: Record<string, string> = {
         // Russian
         ru: "ru",
@@ -85,10 +111,13 @@ export class LocaleDetectService {
         tr: "tr",
     };
 
+    // Memory storage for language hits
     private browsingLanguages: BrowsingLanguage[] = [];
 
+    // Api for managing filters data
     private filtersApi: FiltersApi;
 
+    // list of enabled filters ids
     private enabledFilters: number[] = [];
 
     constructor(filtersApi: FiltersApi) {
@@ -96,19 +125,37 @@ export class LocaleDetectService {
         this.onTabUpdated = this.onTabUpdated.bind(this);
     }
 
-    public start() {
+    /**
+     * Add tab updates listener
+     */
+    public start(): void {
         browser.tabs.onUpdated.addListener(this.onTabUpdated);
     }
 
-    public stop() {
+    /**
+     * Remove tab updates listener
+     */
+    public stop(): void {
         browser.tabs.onUpdated.removeListener(this.onTabUpdated);
     }
 
-    public configure(configuration: Configuration) {
+    /**
+     * Set enabled filters ids on {@link Configuration} load
+     *
+     * @param configuration - loaded {@link Configuration}
+     */
+    public configure(configuration: Configuration): void {
         this.enabledFilters = configuration.filters;
     }
 
-    private onTabUpdated(_tabId: number, _changeInfo: Tabs.OnUpdatedChangeInfoType, tab: Tabs.Tab) {
+    /**
+     * Handles tab data on update
+     *
+     * @param _tabId - Tab id
+     * @param _changeInfo - Tab change info
+     * @param tab - Tab details record
+     */
+    private onTabUpdated(_tabId: number, _changeInfo: Tabs.OnUpdatedChangeInfoType, tab: Tabs.Tab): void {
         if (tab.status === "complete") {
             this.detectTabLanguage(tab);
         }
@@ -119,7 +166,7 @@ export class LocaleDetectService {
      *
      * @param tab - {@link Tabs.Tab} data
      */
-    private async detectTabLanguage(tab: Tabs.Tab) {
+    private async detectTabLanguage(tab: Tabs.Tab): Promise<void> {
         if (
             !tab.url ||
             // Check language only for http://... tabs
@@ -162,7 +209,7 @@ export class LocaleDetectService {
      *
      * @param language - Page language
      */
-    private detectLanguage(language: string) {
+    private detectLanguage(language: string): void {
         /**
          * For an unknown language "und" will be returned
          * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/tabs/detectLanguage
@@ -195,7 +242,7 @@ export class LocaleDetectService {
      *
      * @param filterIds - list of detected language-specific filters identifiers
      */
-    private async onFilterDetectedByLocale(filterIds: number[]) {
+    private onFilterDetectedByLocale(filterIds: number[]): void {
         if (!filterIds || filterIds.length === 0) {
             return;
         }

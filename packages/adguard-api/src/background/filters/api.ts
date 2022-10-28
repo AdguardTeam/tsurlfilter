@@ -1,3 +1,20 @@
+/**
+ * @file
+ * This file is part of Adguard API library (https://github.com/AdguardTeam/tsurlfilter/packages/adguard-api).
+ *
+ * Adguard API is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Adguard API is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
+ */
 import { Network } from "../network";
 import { Storage } from "../storage";
 import { MetadataApi } from "./metadata";
@@ -7,13 +24,20 @@ import { BrowserUtils, I18n } from "../utils";
 import { FilterMetadata } from "../schemas";
 import { notifier, NotifierEventType } from "../notifier";
 
+/**
+ * Filter Api provides methods for managing filters data
+ */
 export class FiltersApi {
+    // Api for managing app Metadata
     private metadataApi: MetadataApi;
 
+    // Api for managing filter version data
     private versionsApi: VersionsApi;
 
+    // Api for write and read filters rules from extension storage
     private filterRulesApi: FilterRulesApi;
 
+    // Network requests API
     private network: Network;
 
     constructor(network: Network, storage: Storage) {
@@ -23,11 +47,20 @@ export class FiltersApi {
         this.network = network;
     }
 
+    /**
+     * Initializes linked APIs
+     */
     public async init(): Promise<void> {
         await this.metadataApi.init();
         await this.versionsApi.init();
     }
 
+    /**
+     * Gets filter rules lists for specified filters ids.
+     *
+     * @param filterIds - list of filter ids
+     * @returns filters data for {@link TsWebExtension} configuration
+     */
     public async getFilters(filterIds: number[]): Promise<
         {
             content: string;
@@ -40,6 +73,15 @@ export class FiltersApi {
         return Promise.all(tasks);
     }
 
+    /**
+     * Gets filter rules for specified filter id.
+     *
+     * Try to load rules from extension storage.
+     * If rules is not found, download it from backend.
+     *
+     * @param filterId - filter id
+     * @returns filters data item for {@link TsWebExtension} configuration
+     */
     private async getFilter(filterId: number): Promise<{
         content: string;
         filterId: number;
@@ -59,7 +101,13 @@ export class FiltersApi {
     }
 
     /**
-     * Update filters
+     * Update filters rules lists based on {@link FilterMetadata}.
+     *
+     * Downloads fresh {@link Metadata} from backend
+     * and match filter versions with persisted {@link FilterVersionStorageData} for each installed filter.
+     * If filter version in metadata is higher, downloads and saves new rules content
+     *
+     * Dispatches {@link NotifierEventType.UpdateFilters} event, if at least one filter has been updated
      */
     public async updateFilters(): Promise<void> {
         // eslint-disable-next-line no-console
@@ -74,13 +122,20 @@ export class FiltersApi {
 
         const updateTasks = ids.map(async (id) => this.updateFilter(id));
 
-        await Promise.allSettled(updateTasks);
+        const updatedFilters = await Promise.all(updateTasks);
 
-        notifier.publishEvent({ type: NotifierEventType.UpdateFilters });
+        if (updatedFilters.some((filterData) => !!filterData?.filterId)) {
+            notifier.publishEvent({ type: NotifierEventType.UpdateFilters });
+        }
     }
 
     /**
-     * Update filter
+     * Update filter rules list based on {@link FilterMetadata}
+     *
+     * Match filter version from {@link Metadata} with persisted filter version from {@link VersionsApi}.
+     * If version in metadata is higher, downloads and saves new filter rules.
+     *
+     * Note: you must update {@link Metadata} first.
      *
      * @param filterId - filter id
      * @returns updated filter metadata or null, if update is not required
@@ -113,7 +168,7 @@ export class FiltersApi {
     }
 
     /**
-     * Checks if common filter need update.
+     * Checks if filter need update.
      * Matches version from updated metadata with data in filter version storage.
      *
      * @param filterMetadata - updated filter metadata
@@ -133,6 +188,12 @@ export class FiltersApi {
         return !BrowserUtils.isGreaterOrEqualsVersion(filterVersion.version, filterMetadata.version);
     }
 
+    /**
+     * Download filter rules from backend
+     *
+     * @param filterId - filter Id
+     * @returns list of downloaded rules lines
+     */
     private async loadFilterRules(filterId: number): Promise<string[]> {
         // eslint-disable-next-line no-console
         console.log(`Download rules for filter ${filterId}`);
@@ -172,7 +233,7 @@ export class FiltersApi {
             const filter = filters[i];
             const { languages } = filter;
             if (languages && languages.length > 0) {
-                const language = I18n.normalize(languages, locale);
+                const language = I18n.find(languages, locale);
                 if (language) {
                     filterIds.push(filter.filterId);
                 }

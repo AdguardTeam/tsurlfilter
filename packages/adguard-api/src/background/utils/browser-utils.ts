@@ -1,3 +1,21 @@
+/**
+ * @file
+ * This file is part of Adguard API library (https://github.com/AdguardTeam/tsurlfilter/packages/adguard-api).
+ *
+ * Adguard API is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Adguard API is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 import { Version } from "./version";
 
 /**
@@ -5,7 +23,7 @@ import { Version } from "./version";
  */
 export class BrowserUtils {
     /**
-     * {@link BrowserUtils.getNavigatorLanguages} retrieves locales from navigator
+     * Retrieves locales from navigator
      *
      * @param limit - limit of returned locales
      * @returns array of locales
@@ -24,7 +42,7 @@ export class BrowserUtils {
     }
 
     /**
-     * {@link BrowserUtils.isSemver} checks if version matches simple (without labels) semantic versioning scheme
+     * Checks if version matches simple (without labels) semantic versioning scheme
      * https://semver.org/
      *
      * @param version - version string
@@ -36,7 +54,7 @@ export class BrowserUtils {
     }
 
     /**
-     * {@link BrowserUtils.isGreaterVersion} checks if left version is greater than the right version
+     * Checks if left version is greater than the right version
      *
      * @param leftVersion - semver string
      * @param rightVersion - semver string
@@ -49,7 +67,7 @@ export class BrowserUtils {
     }
 
     /**
-     * {@link BrowserUtils.isGreaterOrEqualsVersion} checks if left version is greater than the right version or equals
+     * Checks if left version is greater than the right version or equals
      *
      * @param leftVersion - semver string
      * @param rightVersion - semver string
@@ -62,7 +80,7 @@ export class BrowserUtils {
     }
 
     /**
-     * {@link BrowserUtils.getMajorVersionNumber} gets major number of version
+     * Gets major number of version
      *
      * @param version - semver string
      * @returns major part of semver
@@ -73,7 +91,7 @@ export class BrowserUtils {
     }
 
     /**
-     * {@link BrowserUtils.getMinorVersionNumber} gets minor number of version
+     * Gets minor number of version
      *
      * @param version - semver string
      * @returns minor part of semver

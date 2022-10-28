@@ -1,6 +1,6 @@
 {
   "name": "@adguard/api",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/adguard-api.js",
   "typings": "dist/types/background/index.d.ts",
@@ -18,14 +18,14 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts'",
     "build": "webpack --mode=production && yarn types",
-    "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types"
+    "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+    "api-docs": "typedoc --plugin typedoc-plugin-markdown --out docs src/background/main"
   },
   "author": "Adguard",
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/assistant": "^4.3.63",
     "@adguard/filters-downloader": "^1.1.13",
-    "@adguard/tsurlfilter": "^1.0.42",
     "@adguard/tswebextension": "^0.0.25",
     "url": "^0.11.0",
     "webextension-polyfill": "0.10.0",

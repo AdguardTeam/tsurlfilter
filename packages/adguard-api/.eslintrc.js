@@ -14,12 +14,14 @@ module.exports = {
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:jsdoc/recommended',
-        'plugin:prettier/recommended'
+        'plugin:prettier/recommended',
     ],
     rules: {
-        'import/prefer-default-export': 0,
-        'jsdoc/require-param-type': 0,
-        'jsdoc/require-returns-type': 0,
-
+        '@typescript-eslint/explicit-function-return-type': 'error',
+        'import/prefer-default-export': 'off',
+        'jsdoc/require-param-type': 'off',
+        'jsdoc/require-returns-type': 'off',
+        'jsdoc/require-throws': 'error',
+        'jsdoc/require-file-overview': 'error',
     },
 };
