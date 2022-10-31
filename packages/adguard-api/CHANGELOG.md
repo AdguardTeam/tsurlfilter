@@ -6,10 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2022-10-31
 ### Added
-- `adguardApi.getRulesCount` method for getting current loaded rules count
-- Api can be imported as npm module
+- `adguardApi.getRulesCount` method for getting the number of rules that are currently loaded into the filtering engine
+- Api can be imported as an npm module
 - Typescript support
 
 ### Changed
-- Optional callback param was removed from `adguardApi.start`, `adguardApi.stop` and `adguardApi.configure` in favor of promises usage
+- [BREAKING CHANGE] Optional callback param was removed from `adguardApi.start`, `adguardApi.stop` and `adguardApi.configure` in favor of promises usage
 
