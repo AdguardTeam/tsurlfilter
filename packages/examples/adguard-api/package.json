@@ -10,7 +10,7 @@
     "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/api": "2.0.0"
+    "@adguard/api": "../../adguard-api"
   },
   "devDependencies": {
     "@adguard/tswebextension": "^0.0.26",
