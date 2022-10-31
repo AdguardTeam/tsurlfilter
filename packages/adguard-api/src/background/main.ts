@@ -21,7 +21,6 @@ import {
     TsWebExtension,
     ConfigurationMV2 as TsWebExtensionConfiguration,
     EventChannel,
-    FilteringLogEvent,
     MESSAGE_HANDLER_NAME,
     Message,
 } from "@adguard/tswebextension";
@@ -31,6 +30,7 @@ import { Storage } from "./storage";
 import { FiltersApi, FiltersUpdateService, LocaleDetectService } from "./filters";
 import { Configuration, configurationValidator } from "./schemas";
 import { DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
+import { RequestBlockingLogger } from "./request-blocking-logger";
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = "adguard";
 
@@ -68,16 +68,15 @@ export class AdguardApi {
     public onAssistantCreateRule: EventChannel<string>;
 
     /**
-     * {@link TsWebExtension} {@link EventChannel} for filtering log events.
+     * API for adding and removing listeners for request blocking events.
      *
      */
-    public onFilteringLogEvent: EventChannel<FilteringLogEvent>;
+    public onRequestBlocked = new RequestBlockingLogger();
 
     constructor() {
         this.tswebextension = new TsWebExtension(WEB_ACCESSIBLE_RESOURCES_PATH);
 
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
-        this.onFilteringLogEvent = this.tswebextension.onFilteringLogEvent;
 
         this.network = new Network();
 

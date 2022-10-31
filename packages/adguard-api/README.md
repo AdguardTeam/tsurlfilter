@@ -273,33 +273,6 @@ adguardApi.getRulesCount();
 
 rules count number
 
-## Event Channels
-
-`adguardApi` also provided access to some useful [tswebextension](../tswebextension/README.md) event channels
-
-### `adguardApi.onFilteringLogEvent`
-
-TsWebExtension Event channel for filtering log events.
-
-**Syntax:**
-
-```typescript
-public onFilteringLogEvent: EventChannel<FilteringLogEvent>;
-```
-
-**Example:**
-
-```typescript
-// console log request data on basic rule apply
-const onFilteringLogEvent = (event: FilteringLogEvent) => {
-  if (event.type === FilteringEventType.APPLY_BASIC_RULE) {
-    console.log(event.data);
-  }
-};
-
-adguardApi.onFilteringLogEvent.subscribe(onFilteringLogEvent);
-```
-
 ### `adguardApi.onAssistantCreateRule`
 
 TsWebExtension Event channel, which fires event on assistant rule creation.
@@ -320,12 +293,60 @@ adguardApi.onAssistantCreateRule.subscribe(async (rule) => {
   await adguardApi.configure(configuration);
 });
 ```
+
+### `adguardApi.onRequestBlocking`
+
+API for adding and removing listeners for request blocking events.
+
+**Syntax:**
+```typescript
+export interface RequestBlockingLoggerInterface {
+    addListener(listener: EventChannelListener<RequestBlockingEvent>): void;
+    removeListener(listener: EventChannelListener<RequestBlockingEvent>): void;
+}
+```
+
+**Example:**
+```typescript
+// Registers an event listener
+adguardApi.onRequestBlocked.addListener(
+  callback // function, mandatory
+)
+// Removes specified event listener
+adguardApi.onRequestBlocked.removeListener(
+  callback // function, mandatory
+)
+```
+
+
+**Callback parameter properties:**
+
+- `tabId` - Tab identifier.
+- `requestUrl` -Blocked request URL.
+- `referrerUrl` -Referrer URL.
+- `rule` - Filtering rule, which has blocked this request.
+- `filterId` - Rule's filter identifier.
+- `requestType` - Request mime type. Possible values are listed below:
+
+> Request types:
+> - `DOCUMENT` - top-level frame document.
+> - `SUBDOCUMENT` - document loaded in a nested frame.
+> - `SCRIPT`
+> - `STYLESHEET`
+> - `OBJECT`
+> - `IMAGE`
+> - `XMLHTTPREQUEST`
+> - `MEDIA`
+> - `FONT`
+> - `WEBSOCKET`
+> - `OTHER`
+
 ## Usage
 
 See full sample app project in [examples/adguard-api](../examples/adguard-api/)
 
 ```typescript
-import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from "@adguard/api";
+import { adguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
 (async (): Promise<void> => {
     const configuration: Configuration = {
@@ -336,11 +357,9 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
         filtersMetadataUrl: "https://filters.adtidy.org/extension/chromium/filters.json",
     };
 
-    // console log request data on basic rule apply
-    const onFilteringLogEvent = (event: FilteringLogEvent) => {
-        if (event.type === FilteringEventType.APPLY_BASIC_RULE) {
-            console.log(event.data);
-        }
+    // console log event on request blocking
+    const onRequestBlocked = (event: RequestBlockingEvent) => {
+        console.log(event);
     };
 
     // console log current rules count, loaded in engine
@@ -348,7 +367,7 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
         console.log("Total rules count:", adguardApi.getRulesCount());
     };
 
-    adguardApi.onFilteringLogEvent.subscribe(onFilteringLogEvent);
+    adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     await adguardApi.start(configuration);
 
@@ -371,7 +390,6 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
         logTotalCount();
     });
 
-    // listen popup "OPEN_ASSISTANT" message
     chrome.runtime.onMessage.addListener(async (message) => {
         switch (message.type) {
             case "OPEN_ASSISTANT": {
@@ -389,7 +407,7 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
 
     // Disable Adguard in 1 minute
     setTimeout(async () => {
-        adguardApi.onFilteringLogEvent.unsubscribe(onFilteringLogEvent);
+        adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         await adguardApi.stop();
         console.log("Adguard API has been disabled.");
     }, 60 * 1000);

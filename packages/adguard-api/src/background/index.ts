@@ -18,11 +18,11 @@
 
 // API entry point
 
-// Useful type and enum for handling filtering events
-export { FilteringEventType, FilteringLogEvent } from "@adguard/tswebextension";
-
 // API Configuration type
 export { Configuration } from "./schemas";
+
+// Request blocking event type
+export { RequestBlockingEvent } from "./request-blocking-logger";
 
 // Public interface
 export { adguardApi } from "./main";

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from "@adguard/api";
+import { adguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
 (async (): Promise<void> => {
     const configuration: Configuration = {
@@ -10,11 +10,9 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
         filtersMetadataUrl: "https://filters.adtidy.org/extension/chromium/filters.json",
     };
 
-    // console log request data on basic rule apply
-    const onFilteringLogEvent = (event: FilteringLogEvent) => {
-        if (event.type === FilteringEventType.APPLY_BASIC_RULE) {
-            console.log(event.data);
-        }
+    // console log event on request blocking
+    const onRequestBlocked = (event: RequestBlockingEvent) => {
+        console.log(event);
     };
 
     // console log current rules count, loaded in engine
@@ -22,7 +20,7 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
         console.log("Total rules count:", adguardApi.getRulesCount());
     };
 
-    adguardApi.onFilteringLogEvent.subscribe(onFilteringLogEvent);
+    adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     await adguardApi.start(configuration);
 
@@ -62,7 +60,7 @@ import { adguardApi, Configuration, FilteringLogEvent, FilteringEventType } from
 
     // Disable Adguard in 1 minute
     setTimeout(async () => {
-        adguardApi.onFilteringLogEvent.unsubscribe(onFilteringLogEvent);
+        adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         await adguardApi.stop();
         console.log("Adguard API has been disabled.");
     }, 60 * 1000);
