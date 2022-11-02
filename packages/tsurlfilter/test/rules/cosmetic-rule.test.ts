@@ -550,8 +550,20 @@ describe('Extended css rule', () => {
     ruleText = '~example.com,example.org##.sponsored:has(test)';
     rule = new CosmeticRule(ruleText, 0);
 
-    expect(rule.isExtendedCss()).toBeTruthy();
+    // :has() pseudo-class has native implementation.
+    // and since ExtendedCss v2 release
+    // the rule with `##` marker and `:has()` should not be considered as ExtendedCss
+    // https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+    expect(rule.isExtendedCss()).toBeFalsy();
     expect(rule.getContent()).toEqual('.sponsored:has(test)');
+
+    // but :has() pseudo-class should be considered as ExtendedCss
+    // if the rule marker is `#?#`
+    ruleText = 'example.org#?#.sponsored:has(.banner)';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.sponsored:has(.banner)');
 
     ruleText = '~example.com,example.org#?#div';
     rule = new CosmeticRule(ruleText, 0);

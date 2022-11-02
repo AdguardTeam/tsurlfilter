@@ -448,7 +448,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
     const cssRuleText = '.cosmetic { visibility: hidden; }';
     const specificCssRule = `example.org#$#${cssRuleText}`;
     const genericCssRule = `#$#${cssRuleText}`;
-    const extCssCssRuleText = ':has(.ext-css-cosmetic) { visibility: hidden; }';
+    const extCssCssRuleText = ':upward(.ext-css-cosmetic) { visibility: hidden; }';
     const extCssSpecificCssRule = `example.org#$#${extCssCssRuleText}`;
     const extCssGenericCssRule = `#$#${extCssCssRuleText}`;
 

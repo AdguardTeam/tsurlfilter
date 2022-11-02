@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 
-import { IAffectedElement } from 'extended-css';
+import { IAffectedElement } from '@adguard/extended-css';
 import ElementUtils from '../utils/element-utils';
 import HitsStorage from './hits-storage';
 

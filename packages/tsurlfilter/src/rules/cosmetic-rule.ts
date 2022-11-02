@@ -53,7 +53,7 @@ export enum CosmeticRuleType {
  * have extended css marker
  */
 export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
-    '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
+    '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has-text(',
     ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
     ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
     ':matches-attr(', ':matches-property(', ':is('];
