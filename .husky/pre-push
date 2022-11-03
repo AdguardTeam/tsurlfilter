@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx lerna@4 run prepush --since 'origin/$(git branch --show-current)'

@@ -49,6 +49,7 @@ import { filterCompatibleTestcases } from './testcase';
     await page.addInitScript(addQunitListeners, 'logTestResult');
 
     // run testcases
+    // FIXME: $removeheader is not printed on the final log
     for (const testcase of compatibleTestcases) {
 
         // TODO: implement separate e2e test for popups
@@ -102,7 +103,7 @@ const res = await axios.get(`http://localhost:${FF_DEBUG_PORT}/json/version`);
 const wsEndpoint = res.data.webSocketDebuggerUrl;
 
 // connect playwright
-// playwright internal error 
+// playwright internal error
 const browser = await firefox.connect(wsEndpoint);
 
 */

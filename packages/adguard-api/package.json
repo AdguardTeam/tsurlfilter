@@ -1,0 +1,58 @@
+{
+  "name": "@adguard/api",
+  "version": "1.0.0",
+  "description": "This is a TypeScript library that implements AdGuard's extension API",
+  "main": "dist/adguard-api.js",
+  "typings": "dist/types/background/index.d.ts",
+  "exports": {
+    ".": "./dist/adguard-api.js",
+    "./content-script": "./dist/adguard-content.js"
+  },
+  "typesVersions": {
+    "*": {
+      "content-script": [
+        "dist/types/content-script/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint 'src/**/*.ts' && yarn check-types",
+    "build": "cross-env MODE='production' webpack && yarn types",
+    "prepush": "yarn build",
+    "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+    "check-types": "tsc --project tsconfig.build.json --noemit"
+  },
+  "author": "Adguard",
+  "license": "GPL-3.0-only",
+  "dependencies": {
+    "@adguard/assistant": "^4.3.63",
+    "@adguard/filters-downloader": "^1.1.13",
+    "@adguard/tswebextension": "^0.0.25",
+    "url": "^0.11.0",
+    "webextension-polyfill": "0.10.0",
+    "zod": "3.19.1"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.19.4",
+    "@babel/preset-typescript": "^7.18.6",
+    "@types/webextension-polyfill": "0.9.1",
+    "@typescript-eslint/eslint-plugin": "^5.41.0",
+    "@typescript-eslint/parser": "5.40.1",
+    "babel-loader": "^8.2.5",
+    "clean-webpack-plugin": "^4.0.0",
+    "core-js": "^3.26.0",
+    "cross-env": "^7.0.3",
+    "eslint": "8.25.0",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-airbnb-typescript": "17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsdoc": "^39.3.14",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-webpack-plugin": "^3.2.0",
+    "prettier": "^2.7.1",
+    "typescript": "^4.8.4",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  }
+}

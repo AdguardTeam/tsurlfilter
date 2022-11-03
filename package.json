@@ -17,13 +17,15 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "lerna run --parallel lint"
+    "lint": "lerna run --parallel lint",
+    "prepare": "husky install"
   },
   "workspaces": [
     "packages/*",
     "packages/examples/*"
   ],
   "devDependencies": {
+    "husky": "8.0.1",
     "lerna": "4.0.0"
   }
 }

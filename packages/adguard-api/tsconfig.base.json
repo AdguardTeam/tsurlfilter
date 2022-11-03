@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "node",
+        "target": "es2015",
+        "module": "es2015",
+        "lib": ["esnext", "dom"],
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "allowJs": true,
+        "experimentalDecorators": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
+        "typeRoots": ["./types", "node_modules/@types", "../../node_modules/@types"],
+    }
+}

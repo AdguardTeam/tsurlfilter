@@ -27,6 +27,7 @@ import {
     RequestContext,
 } from './request';
 import { stealthApi } from './stealth-api';
+import { SanitizeApi } from './sanitize-api';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -175,6 +176,11 @@ export class WebRequestApi {
             return;
         }
 
+        const sanitizedRequest = SanitizeApi.onBeforeSendHeaders(context);
+        if (sanitizedRequest) {
+            return sanitizedRequest;
+        }
+
         stealthApi.onBeforeSendHeaders(context);
 
         if (!context?.matchingResult) {
@@ -183,6 +189,7 @@ export class WebRequestApi {
 
         cookieFiltering.onBeforeSendHeaders(context);
 
+        // TODO: Is this variable needed?
         let requestHeadersModified = false;
         if (headersService.onBeforeSendHeaders(context)) {
             requestHeadersModified = true;

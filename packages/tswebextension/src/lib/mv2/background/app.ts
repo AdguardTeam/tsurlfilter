@@ -96,12 +96,12 @@ export class TsWebExtension implements ManifestV2AppInterface {
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
     }
 
-    public openAssistant(tabId: number): void {
-        Assistant.openAssistant(tabId);
+    public async openAssistant(tabId: number): Promise<void> {
+        await Assistant.openAssistant(tabId);
     }
 
-    public closeAssistant(tabId: number): void {
-        Assistant.closeAssistant(tabId);
+    public async closeAssistant(tabId: number): Promise<void> {
+        await Assistant.closeAssistant(tabId);
     }
 
     public getRulesCount(): number {
