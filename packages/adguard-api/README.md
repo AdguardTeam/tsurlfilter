@@ -287,12 +287,19 @@ public onAssistantCreateRule: EventChannel<string>;
 **Example:**
 
 ```typescript
+
 // update config on Assistant rule apply
-adguardApi.onAssistantCreateRule.subscribe(async (rule) => {
+const applyRule = async (rule): Promise<void> => {
   console.log(`Rule ${rule} was created by Adguard Assistant`);
   configuration.rules!.push(rule);
   await adguardApi.configure(configuration);
-});
+};
+
+// add listener
+adguardApi.onAssistantCreateRule.subscribe(applyRule);
+
+// remove listener
+adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
 ```
 
 ### `adguardApi.onRequestBlocking`
