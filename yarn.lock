@@ -60,6 +60,27 @@
     webextension-polyfill "0.9.0"
     zod "3.18.0"
 
+"@adguard/tswebextension@^0.0.26":
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.0.26.tgz#f7563d95fbcf58a4034ed18d472a600ca7e66cc1"
+  integrity sha512-+BmgWufdpGrg9VtyRJYS63HG0M2LqoONW8cOut/TakPntl1EwSM7FYOt2i44sVDzrQnPa1MHFZSU7T+e9y9lJA==
+  dependencies:
+    "@adguard/assistant" "^4.3.62"
+    "@adguard/filters-downloader" "^1.1.13"
+    "@adguard/scriptlets" "^1.6.24"
+    "@adguard/tsurlfilter" "^2.0.0-alpha.15"
+    bowser "2.11.0"
+    commander "9.4.0"
+    deepmerge "4.2.2"
+    extended-css "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.14"
+    fs-extra "10.1.0"
+    nanoid "4.0.0"
+    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2"
+    tldts "5.7.88"
+    tslib "2.4.0"
+    webextension-polyfill "0.9.0"
+    zod "3.18.0"
+
 "@ampproject/remapping@^2.1.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@ampproject/remapping/-/remapping-2.2.0.tgz#56c133824780de3174aed5ab6834f3026790154d"
@@ -6756,11 +6777,6 @@ humanize-ms@^1.2.1:
   integrity sha512-Fl70vYtsAFb/C06PTS9dZBo7ihau+Tu/DNCk/OyHhea07S+aeMWpFFkUaXRa8fI+ScZbEI8dfSxwY7gxZ9SAVQ==
   dependencies:
     ms "^2.0.0"
-
-husky@^8.0.1:
-  version "8.0.1"
-  resolved "https://registry.yarnpkg.com/husky/-/husky-8.0.1.tgz#511cb3e57de3e3190514ae49ed50f6bc3f50b3e9"
-  integrity sha512-xs7/chUH/CKdOCs7Zy0Aev9e/dKOMZf3K1Az1nar3tzlv0jfqnYtu235bstsWTmXOR0EfINrPa97yy4Lz6RiKw==
 
 iconv-lite@0.6.3, iconv-lite@^0.6.2:
   version "0.6.3"
