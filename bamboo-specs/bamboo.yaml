@@ -27,3 +27,15 @@
 
 ---
 !include 'tswebextension-permissions.yaml'
+
+---
+!include 'adguard-api-build.yaml'
+
+---
+!include 'adguard-api-increment.yaml'
+
+---
+!include 'adguard-api-deploy.yaml'
+
+---
+!include 'adguard-api-permissions.yaml'
