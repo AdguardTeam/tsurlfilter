@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@adguard/extended-css@^2.0.5":
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/@adguard/extended-css/-/extended-css-2.0.5.tgz#4160aa6e199b81bda7f77a811fc35c7ae7d87970"
-  integrity sha512-8UGgmsEidg1ab12s1slNK78rNuC/t/qKLjYhR9MidDSgpkGG8oGWQGRumKJgaw2oG22N8Stkl/Kd8lEuy8ugiw==
+"@adguard/extended-css@^2.0.7":
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/@adguard/extended-css/-/extended-css-2.0.7.tgz#ee89374207c2ba72b5bf05eac0389f35204ca696"
+  integrity sha512-9LPmpqif52sc2F/vreWwYXToQtF4WY8tgBHQ2ymu+TkOcTmxpM3tQT0cb4HzyrlBGV8ue+rU0uFQY/DUXp8Wfw==
 
 "@adguard/scriptlets@^1.4.4":
   version "1.6.6"
