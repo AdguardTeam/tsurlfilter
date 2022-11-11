@@ -1,5 +1,5 @@
 import path from 'path';
-import { Configuration } from '@adguard/tswebextension';
+import { ConfigurationMV2 } from '@adguard/tswebextension';
 
 export const BUILD_PATH = path.join(__dirname, '../build');
 
@@ -17,9 +17,7 @@ export const TESTCASES_BASE_URL = 'https://testcases.adguard.com';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
-export const TESTS_COMPLETED_EVENT = 'testPassed';
-
-export const DEFAULT_EXTENSION_CONFIG: Configuration = {
+export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     filters: [],
     allowlist: [],
     trustedDomains: [],

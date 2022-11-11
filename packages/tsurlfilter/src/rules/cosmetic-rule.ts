@@ -1,10 +1,6 @@
 import scriptlets, { IConfiguration } from '@adguard/scriptlets';
 import * as rule from './rule';
-import {
-    CosmeticRuleMarker,
-    isExtCssMarker,
-    ADG_SCRIPTLET_MASK,
-} from './cosmetic-rule-marker';
+import { CosmeticRuleMarker, isExtCssMarker, ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
 import { getRelativeUrl } from '../utils/url';

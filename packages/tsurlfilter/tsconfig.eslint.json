@@ -2,8 +2,10 @@
     "extends": "./tsconfig.json",
     "include": [
       "src/**/*.ts",
+      "cli/**/*.ts",
       "test/**/*.ts",
       ".eslintrc.js",
       "rollup.config.ts",
+      "tasks/generate-examples.ts"
     ]
 }

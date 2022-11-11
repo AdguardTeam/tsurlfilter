@@ -1,13 +1,13 @@
 export enum CosmeticRuleModifiers {
-    PATH = 'path',
-    DOMAIN = 'domain',
+    Path = 'path',
+    Domain = 'domain',
 }
 
 export const CosmeticRuleModifiersSyntax = {
-    OPEN_BRACKET: '[',
-    CLOSE_BRACKET: ']',
-    SPECIAL_SYMBOL: '$',
-    DELIMITER: ',',
-    ASSIGNER: '=',
-    ESCAPE_CHARACTER: '\\',
+    OpenBracket: '[',
+    CloseBracket: ']',
+    SpecialSymbol: '$',
+    Delimiter: ',',
+    Assigner: '=',
+    EscapeCharacter: '\\',
 } as const;

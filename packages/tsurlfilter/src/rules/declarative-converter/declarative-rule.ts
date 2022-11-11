@@ -1,88 +1,111 @@
+/* eslint-disable jsdoc/require-description-complete-sentence */
+/**
+ * @file Describes types from declarativeNetRequest,
+ * since @types/chrome does not contain actual information.
+ *
+ * Updated 07/09/2022.
+ */
+
+import { z as zod } from 'zod';
+
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-DomainType
  */
 export enum DomainType {
-    FIRST_PARTY = 'firstParty',
-    THIRD_PARTY = 'thirdParty',
+    FirstParty = 'firstParty',
+    ThirdParty = 'thirdParty',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
  */
 export enum ResourceType {
-    MAIN_FRAME = 'main_frame',
-    SUB_FRAME = 'sub_frame',
-    STYLESHEET = 'stylesheet',
-    SCRIPT = 'script',
-    IMAGE = 'image',
-    FONT = 'font',
-    OBJECT = 'object',
-    XMLHTTPREQUEST = 'xmlhttprequest',
-    PING = 'ping',
-    CSP_REPORT = 'csp_report',
-    MEDIA = 'media',
-    WEBSOCKET = 'websocket',
-    OTHER = 'other',
+    MainFrame = 'main_frame',
+    SubFrame = 'sub_frame',
+    Stylesheet = 'stylesheet',
+    Script = 'script',
+    Image = 'image',
+    Font = 'font',
+    Object = 'object',
+    XmlHttpRequest = 'xmlhttprequest',
+    Ping = 'ping',
+    CspReport = 'csp_report',
+    Media = 'media',
+    WebSocket = 'websocket',
+    WebTransport = 'webtransport',
+    WebBundle = 'webbundle',
+    Other = 'other',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryKeyValue
  */
-export interface QueryKeyValue {
-    key: string;
-    value: string;
-}
+const QueryKeyValueValidator = zod.strictObject({
+    key: zod.string(),
+    replaceOnly: zod.boolean().optional(),
+    value: zod.string(),
+});
+
+export type QueryKeyValue = zod.infer<typeof QueryKeyValueValidator>;
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform
  */
-export interface QueryTransform {
-    addOrReplaceParams?: QueryKeyValue[] | undefined;
-    removeParams?: string[] | undefined;
-}
+const QueryTransformValidator = zod.strictObject({
+    addOrReplaceParams: QueryKeyValueValidator.array().optional(),
+    removeParams: zod.string().array().optional(),
+});
+
+export type QueryTransform = zod.infer<typeof QueryTransformValidator>;
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-URLTransform
  */
-export interface URLTransform {
-    fragment?: string | undefined;
-    host?: string | undefined;
-    password?: string | undefined;
-    path?: string | undefined;
-    port?: string | undefined;
-    query?: string | undefined;
-    queryTransform?: QueryTransform | undefined;
-    scheme?: string | undefined;
-    username?: string | undefined;
-}
+const URLTransformValidator = zod.strictObject({
+    fragment: zod.string().optional(),
+    host: zod.string().optional(),
+    password: zod.string().optional(),
+    path: zod.string().optional(),
+    port: zod.string().optional(),
+    query: zod.string().optional(),
+    queryTransform: QueryTransformValidator.optional(),
+    scheme: zod.string().optional(),
+    username: zod.string().optional(),
+});
+
+export type URLTransform = zod.infer<typeof URLTransformValidator>;
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-Redirect
  */
-export interface Redirect {
-    extensionPath?: string | undefined;
-    regexSubstitution?: string | undefined;
-    transform?: URLTransform | undefined;
-    url?: string | undefined;
-}
+const RedirectValidator = zod.strictObject({
+    extensionPath: zod.string().optional(),
+    regexSubstitution: zod.string().optional(),
+    transform: URLTransformValidator.optional(),
+    url: zod.string().optional(),
+});
+
+export type Redirect = zod.infer<typeof RedirectValidator>;
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-HeaderOperation
  */
 export enum HeaderOperation {
-    APPEND = 'append',
-    SET = 'set',
-    REMOVE = 'remove',
+    Append = 'append',
+    Set = 'set',
+    Remove = 'remove',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ModifyHeaderInfo
  */
-export interface ModifyHeaderInfo {
-    header: string;
-    operation: HeaderOperation;
-    value?: string | undefined;
-}
+const ModifyHeaderInfoValidator = zod.strictObject({
+    header: zod.string(),
+    operation: zod.nativeEnum(HeaderOperation),
+    value: zod.string().optional(),
+});
+
+export type ModifyHeaderInfo = zod.infer<typeof ModifyHeaderInfoValidator>;
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleActionType
@@ -99,37 +122,60 @@ export enum RuleActionType {
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleAction
  */
-export interface RuleAction {
-    redirect?: Redirect;
-    requestHeaders?: ModifyHeaderInfo[];
-    responseHeaders?: ModifyHeaderInfo[];
-    type: RuleActionType;
+const RuleActionValidator = zod.strictObject({
+    redirect: RedirectValidator.optional(),
+    requestHeaders: ModifyHeaderInfoValidator.array().optional(),
+    responseHeaders: ModifyHeaderInfoValidator.array().optional(),
+    type: zod.nativeEnum(RuleActionType),
+});
+
+export type RuleAction = zod.infer<typeof RuleActionValidator>;
+
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RequestMethod
+ */
+export enum RequestMethod {
+    Connect = 'connect',
+    Delete = 'delete',
+    Get = 'get',
+    Head = 'head',
+    Options = 'options',
+    Patch = 'patch',
+    Post = 'post',
+    Put = 'put',
 }
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleCondition
  */
-export interface RuleCondition {
-    domainType?: DomainType;
-    initiatorDomains?: string[];
-    excludedInitiatorDomains?: string[];
-    excludedRequestDomains?: string [];
-    excludedResourceTypes?: ResourceType[];
-    isUrlFilterCaseSensitive?: boolean;
-    regexFilter?: string;
-    resourceTypes?: ResourceType[];
-    urlFilter?: string;
-}
+
+const RuleConditionValidator = zod.strictObject({
+    domainType: zod.nativeEnum(DomainType).optional(),
+    excludedInitiatorDomains: zod.string().array().optional(),
+    excludedRequestDomains: zod.string().array().optional(),
+    excludedRequestMethods: zod.nativeEnum(RequestMethod).array().optional(),
+    excludedResourceTypes: zod.nativeEnum(ResourceType).array().optional(),
+    excludedTabIds: zod.number().array().optional(),
+    initiatorDomains: zod.string().array().optional(),
+    isUrlFilterCaseSensitive: zod.boolean().optional(),
+    regexFilter: zod.string().optional(),
+    requestDomains: zod.string().array().optional(),
+    requestMethods: zod.string().array().optional(),
+    resourceTypes: zod.nativeEnum(ResourceType).array().optional(),
+    tabIds: zod.number().array().optional(),
+    urlFilter: zod.string().optional(),
+});
+
+export type RuleCondition = zod.infer<typeof RuleConditionValidator>;
 
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-Rule
  */
+export const DeclarativeRuleValidator = zod.strictObject({
+    action: RuleActionValidator,
+    condition: RuleConditionValidator,
+    id: zod.number(),
+    priority: zod.number().optional(),
+});
 
-export interface DeclarativeRule {
-    action: RuleAction;
-    condition: RuleCondition;
-    id: number;
-    // In chrome.declarativeNetRequest.Rule priority is not optional, although in the documentation it is.
-    // TODO fix when it will correct.
-    priority: number;
-}
+export type DeclarativeRule = zod.infer<typeof DeclarativeRuleValidator>;

@@ -182,7 +182,7 @@ export class ContentStream {
                  * If this.charset is undefined and requestType is Document or Subdocument, we try
                  * to detect charset from page <meta> tags
                  */
-                if (this.context.requestType === RequestType.Subdocument
+                if (this.context.requestType === RequestType.SubDocument
                     || this.context.requestType === RequestType.Document) {
                     charset = ContentStream.parseHtmlCharset(event.data);
                 }

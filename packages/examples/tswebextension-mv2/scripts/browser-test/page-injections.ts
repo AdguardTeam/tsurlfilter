@@ -1,5 +1,5 @@
-import { Configuration, TsWebExtension } from '@adguard/tswebextension';
-import { TESTS_COMPLETED_EVENT } from '../constants';
+import { ConfigurationMV2, TsWebExtension } from '@adguard/tswebextension';
+import { LogDetails } from './logger';
 
 declare global {
     interface Window {
@@ -7,7 +7,7 @@ declare global {
     }
 }
 
-export const addQunitListeners = (callbackName: string) => {
+export const addQunitListeners = (logResultFnName: string) => {
     let qUnit: any;
 
     Object.defineProperty(window, 'QUnit', {
@@ -16,12 +16,12 @@ export const addQunitListeners = (callbackName: string) => {
             qUnit = value;
 
             // https://github.com/js-reporters/js-reporters
-            qUnit.on('runEnd', (details: any) => {
+            qUnit.on('runEnd', (details: LogDetails) => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
-                (<any>window)[callbackName](Object.assign(details, { name }));
+                (<any>window)[logResultFnName](Object.assign(details, { name }));
 
-                window.dispatchEvent(new Event(TESTS_COMPLETED_EVENT));
+                (<any>window).testsCompleted = true;
             });
         },
         configurable: true,
@@ -29,15 +29,19 @@ export const addQunitListeners = (callbackName: string) => {
 };
 
 
-export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, rulesText: string ];
+export type SetTsWebExtensionConfigArg = [ defaultConfig: ConfigurationMV2, rulesText: string ];
 
 export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, rulesText ] = arg;
-    await window.tsWebExtension.configure(Object.assign(defaultConfig, {
-        filters: [{
-            filterId: 1,
-            content: rulesText,
-            trusted: true,
-        }],
-    }));
+    const configuration: ConfigurationMV2 = defaultConfig;
+    configuration.filters = [{
+        filterId: 1,
+        content: rulesText,
+        trusted: true,
+    }];
+    await window.tsWebExtension.configure(configuration);
+};
+
+export const waitUntilTestsCompleted = () => {
+    return (<any>window).testsCompleted;
 };

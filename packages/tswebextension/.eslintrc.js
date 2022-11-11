@@ -32,6 +32,7 @@ module.exports = {
         'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
         'no-constant-condition': ['error', { 'checkLoops': false }],
         '@typescript-eslint/interface-name-prefix': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'error',
         'arrow-body-style': 'off',
         'consistent-return': 'off',
         'no-param-reassign': 'off',

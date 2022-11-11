@@ -5,8 +5,8 @@
  *  engine would ignore rules with $app modifier
  */
 export enum CompatibilityTypes {
-    extension = 1 << 0,
-    corelibs = 1 << 1,
+    Extension = 1 << 0,
+    CoreLibs = 1 << 1,
 }
 
 /**
@@ -63,7 +63,7 @@ class Configuration implements IConfiguration {
     /**
      * compatibility flag
      */
-    public compatibility: CompatibilityTypes | null = CompatibilityTypes.extension;
+    public compatibility: CompatibilityTypes | null = CompatibilityTypes.Extension;
 
     constructor(inputConfig?: Partial<IConfiguration>) {
         const config = { ...this.defaultConfig, ...inputConfig };

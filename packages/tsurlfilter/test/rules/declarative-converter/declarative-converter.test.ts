@@ -1,138 +1,149 @@
-import { DeclarativeConverter } from '../../../src/rules/declarative-converter/declarative-converter';
-import { StringRuleList } from '../../../src/filterlist/rule-list';
+import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
+import { Filter } from '../../../src/rules/declarative-converter/filter';
+import { TooManyRulesError } from '../../../src/rules/declarative-converter/errors/limitation-errors';
+import {
+    EmptyOrNegativeNumberOfRulesError,
+    ResourcesPathError,
+} from '../../../src/rules/declarative-converter/errors/converter-options-errors';
 
-const createRuleList = (rules: string[]) => new StringRuleList(1, rules.join('\n'), false);
+const createFilter = (
+    rules: string[],
+    filterId: number = 0,
+) => {
+    return new Filter(
+        filterId,
+        { getContent: () => Promise.resolve(rules) },
+    );
+};
 
 describe('DeclarativeConverter', () => {
-    const declarativeConverter = new DeclarativeConverter();
+    const converter = new DeclarativeFilterConverter();
 
-    it('converts simple blocking rule', () => {
-        const {
-            declarativeRules,
-            convertedSourceMap,
-            regexpRulesCounter,
-        } = declarativeConverter.convert(createRuleList(['||example.org^']));
+    it('converts simple blocking rule', async () => {
+        const filter = createFilter(['||example.org^']);
+        const { ruleSets: [ruleSet] } = await converter.convert(
+            [filter],
+        );
+        const { declarativeRules } = await ruleSet.serialize();
 
-        const generatedId = 1;
-        const positionRuleInList = 0;
+        const ruleId = 1;
 
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules).toContainEqual({
-            id: generatedId,
-            action: {
-                type: 'block',
-            },
+            id: ruleId,
+            action: { type: 'block' },
             condition: {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
         });
-
-        expect(Array.from(convertedSourceMap.entries())).toHaveLength(1);
-        expect(convertedSourceMap.get(generatedId)).toBe(positionRuleInList);
-
-        expect(regexpRulesCounter).toBe(0);
     });
 
-    it('converts simple blocking regexp rule', () => {
-        const {
-            declarativeRules,
-            convertedSourceMap,
-            regexpRulesCounter,
-        } = declarativeConverter.convert(createRuleList(['/banner\\d+/$third-party']));
+    it('converts simple blocking regexp rule', async () => {
+        const filter = createFilter(['/banner\\d+/$third-party']);
+        const { ruleSets: [ruleSet] } = await converter.convert(
+            [filter],
+        );
+        const { declarativeRules } = await ruleSet.serialize();
 
-        const generatedId = 1;
-        const positionRuleInList = 0;
+        const ruleId = 1;
 
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules).toContainEqual({
-            id: 1,
-            action: {
-                type: 'block',
-            },
+            id: ruleId,
+            action: { type: 'block' },
             condition: {
                 regexFilter: '/banner\\d+/',
                 domainType: 'thirdParty',
                 isUrlFilterCaseSensitive: false,
             },
         });
-
-        expect(Array.from(convertedSourceMap.entries())).toHaveLength(1);
-        expect(convertedSourceMap.get(generatedId)).toBe(positionRuleInList);
-
-        expect(regexpRulesCounter).toBe(1);
     });
 
-    it('respects badfilter rules', () => {
-        const {
-            declarativeRules,
-            convertedSourceMap,
-            regexpRulesCounter,
-        } = declarativeConverter.convert(createRuleList([
-            '||example.org^',
-            '||example.org^$badfilter',
-            '||persistent.com^',
-        ]));
+    describe('respects badfilter rules', () => {
+        it('applies $badfilter to one filter', async () => {
+            const filter = createFilter([
+                '||example.org^',
+                '||example.org^$badfilter',
+                '||persistent.com^',
+            ]);
+            const { ruleSets: [ruleSet] } = await converter.convert(
+                [filter],
+            );
+            const { declarativeRules } = await ruleSet.serialize();
 
-        const generatedId = 41;
-        const positionRuleInList = 40;
+            const ruleId = 3;
 
-        expect(declarativeRules).toHaveLength(1);
-        expect(declarativeRules).toContainEqual({
-            id: 41,
-            action: {
-                type: 'block',
-            },
-            condition: {
-                urlFilter: '||persistent.com^',
-                isUrlFilterCaseSensitive: false,
-            },
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules).toContainEqual({
+                id: ruleId,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||persistent.com^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
         });
 
-        expect(Array.from(convertedSourceMap.entries())).toHaveLength(1);
-        expect(convertedSourceMap.get(generatedId)).toBe(positionRuleInList);
+        it('applies badfilter to multiple filters', async () => {
+            const filter = createFilter([
+                '||example.org^',
+            ], 0);
+            const filter2 = createFilter([
+                '||example.com^',
+                '||example.com^$badfilter',
+                '||example.org^$badfilter',
+                '||persistent.com^',
+            ], 1);
+            const filter3 = createFilter([
+                '||example.org^$badfilter',
+            ], 2);
+            const {
+                ruleSets: [ruleSet],
+            } = await converter.convertToSingle([
+                filter, filter2, filter3,
+            ]);
+            const { declarativeRules } = await ruleSet.serialize();
 
-        expect(regexpRulesCounter).toBe(0);
+            const ruleId = 4;
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules).toContainEqual({
+                id: ruleId,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||persistent.com^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+        });
     });
 
-    it('skips some inapplicable rules', () => {
-        const {
-            declarativeRules,
-            convertedSourceMap,
-            regexpRulesCounter,
-        } = declarativeConverter.convert(createRuleList([
+    it('skips some inapplicable rules', async () => {
+        const filter = createFilter([
             '||example.org^$badfilter',
             '@@||example.org^$elemhide',
-        ]));
+        ]);
+        const { ruleSets: [ruleSet] } = await converter.convert(
+            [filter],
+        );
+        const { declarativeRules } = await ruleSet.serialize();
 
         expect(declarativeRules).toHaveLength(0);
-        expect(Array.from(convertedSourceMap.entries())).toHaveLength(0);
-        expect(regexpRulesCounter).toBe(0);
     });
 
-    it('maximum allowed regex rules count reached', () => {
-        expect(() => {
-            declarativeConverter.convert(createRuleList([
-                '/.s/src/[a-z0-9]*.js/$domain=plasma.3dn.ru',
-                '/dbp/pre/$script,third-party',
-                '/wind10.ru/w*.js/$domain=wind10.ru,',
-            ]), {
-                maxLimit: 5000,
-                maxRegexLimit: 2,
-            });
-        }).toThrowError();
-    });
-
-    it('respects $document, $urlblock modifiers', () => {
-        const {
-            declarativeRules,
-        } = declarativeConverter.convert(createRuleList([
+    it('respects document, urlblock modifiers', async () => {
+        const filter = createFilter([
             '@@||example.org^$document',
             '@@||example.com^$urlblock',
-        ]));
+        ]);
+        const { ruleSets: [ruleSet] } = await converter.convert(
+            [filter],
+        );
+        const { declarativeRules } = await ruleSet.serialize();
 
         expect(declarativeRules).toHaveLength(2);
-        expect(declarativeRules[0]).toEqual({
+        expect(declarativeRules).toEqual(expect.arrayContaining([{
             id: 1,
             priority: 4,
             action: { type: 'allowAllRequests' },
@@ -141,9 +152,9 @@ describe('DeclarativeConverter', () => {
                 resourceTypes: ['main_frame'],
                 urlFilter: '||example.org^',
             },
-        });
-        expect(declarativeRules[1]).toEqual({
-            id: 27,
+        },
+        {
+            id: 2,
             priority: 1,
             action: { type: 'allowAllRequests' },
             condition: {
@@ -151,6 +162,254 @@ describe('DeclarativeConverter', () => {
                 resourceTypes: ['main_frame'],
                 urlFilter: '||example.com^',
             },
+        }]));
+    });
+
+    it('returns original rule text for specified declarative rule', async () => {
+        const rules = [
+            '||testcases.adguard.com$xmlhttprequest,removeparam=p1case1',
+            '||testcases.adguard.com$xmlhttprequest,removeparam=p2case1',
+            '||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1',
+        ];
+        const additionalRule = '$xmlhttprequest,removeparam=p1case2';
+        const filter = createFilter([
+            ...rules,
+            additionalRule,
+        ]);
+        const { ruleSets: [ruleSet] } = await converter.convert([filter]);
+
+        let sources = await ruleSet.getRulesById(1);
+        const originalRules = sources.map(({ sourceRule }) => sourceRule);
+        expect(originalRules).toEqual(expect.arrayContaining(rules));
+
+        sources = await ruleSet.getRulesById(4);
+        expect(sources[0].sourceRule).toEqual(additionalRule);
+    });
+
+    describe('respects limitations', () => {
+        it('work with max number of rules in one filter', async () => {
+            const filter = createFilter([
+                '||example.org^',
+                '||example.com^',
+                '||example.net^',
+            ]);
+
+            const { ruleSets: [ruleSet] } = await converter.convert(
+                [filter],
+                { maxNumberOfRules: 2 },
+            );
+            const { declarativeRules } = await ruleSet.serialize();
+
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules).toEqual(
+                expect.arrayContaining([{
+                    id: 1,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.org^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }, {
+                    id: 2,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.com^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }]),
+            );
+        });
+
+        it('work with max number of rules in many filter', async () => {
+            const filter1 = createFilter([
+                '||example.org^',
+                '||example.com^',
+                '||example.net^',
+            ], 0);
+            const filter2 = createFilter([
+                '||example.co.uk^',
+                '||example.io^',
+            ], 1);
+
+            const { ruleSets: [ruleSet] } = await converter.convertToSingle(
+                [filter1, filter2],
+                { maxNumberOfRules: 4 },
+            );
+            const { declarativeRules } = await ruleSet.serialize();
+
+            expect(declarativeRules).toHaveLength(4);
+            expect(declarativeRules).toEqual(
+                expect.arrayContaining([{
+                    id: 1,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.org^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }, {
+                    id: 2,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.com^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }, {
+                    id: 3,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.net^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }, {
+                    id: 4,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.co.uk^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }]),
+            );
+        });
+
+        it('work with max number of regexp rules', async () => {
+            const filter = createFilter([
+                '/.s/src/[a-z0-9]*.js/$domain=plasma.3dn.ru',
+                '/dbp/pre/$script,third-party',
+                '/wind10.ru/w*.js/$domain=wind10.ru,',
+            ]);
+
+            const { ruleSets: [ruleSet] } = await converter.convert(
+                [filter],
+                { maxNumberOfRules: 2 },
+            );
+            const { declarativeRules } = await ruleSet.serialize();
+
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules).toEqual(
+                expect.arrayContaining([{
+                    id: 1,
+                    action: { type: 'block' },
+                    condition: {
+                        initiatorDomains: ['plasma.3dn.ru'],
+                        isUrlFilterCaseSensitive: false,
+                        regexFilter: '/.s/src/[a-z0-9]*.js/',
+                    },
+                }, {
+                    id: 2,
+                    action: { type: 'block' },
+                    condition: {
+                        domainType: 'thirdParty',
+                        regexFilter: '/dbp/pre/',
+                        resourceTypes: ['script'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }]),
+            );
+        });
+
+        it('return limitations errors', async () => {
+            const filter = createFilter([
+                '||example.org^',
+                '||example.com^',
+                '||example.net^',
+            ]);
+
+            const maxNumberOfRules = 2;
+
+            const {
+                ruleSets: [ruleSet],
+                limitations,
+            } = await converter.convert(
+                [filter],
+                { maxNumberOfRules },
+            );
+            const { declarativeRules } = await ruleSet.serialize();
+
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules).toEqual(
+                expect.arrayContaining([{
+                    id: 1,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.org^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }, {
+                    id: 2,
+                    action: { type: 'block' },
+                    condition: {
+                        urlFilter: '||example.com^',
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }]),
+            );
+
+            const msg = 'After conversion, too many declarative rules remain: '
+                + '3 exceeds the limit provided - 2';
+            const err = new TooManyRulesError(msg, [2], maxNumberOfRules, 1);
+
+            expect(limitations).toHaveLength(1);
+            expect(limitations).toContainEqual(err);
+        });
+    });
+
+    describe('checks convert options', () => {
+        it('throws error when empty resources path provided', async () => {
+            const filter = createFilter(['||example.org^']);
+            const resourcesPath = '';
+            const convert = async () => {
+                await converter.convert([filter], { resourcesPath });
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `be started with leading slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
+        it('throws error if the resources path started with a slash', async () => {
+            const filter = createFilter(['||example.org^']);
+            const resourcesPath = 'path';
+            const convert = async () => {
+                await converter.convert([filter], { resourcesPath });
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `be started with leading slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
+        it('throws error if the resources path ended with a slash', async () => {
+            const filter = createFilter(['||example.org^']);
+            const resourcesPath = '/path/';
+            const convert = async () => {
+                await converter.convert([filter], { resourcesPath });
+            };
+
+            const msg = 'Path to web accessible resources should '
+                + `not be ended with slash: ${resourcesPath}`;
+            await expect(convert).rejects.toThrow(new ResourcesPathError(msg));
+        });
+
+        it('throws error if the maximum number of rules is equal to or less than 0', async () => {
+            const filter = createFilter(['||example.org^']);
+            const maxNumberOfRules = 0;
+            const convert = async () => {
+                await converter.convert([filter], { maxNumberOfRules });
+            };
+
+            const msg = 'Maximum number of rules cannot be equal or less than 0';
+            await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
+        });
+
+        it('throws error if the maximum number of regexp rules is less than 0', async () => {
+            const filter = createFilter(['||example.org^']);
+            const maxNumberOfRegexpRules = -1;
+            const convert = async () => {
+                await converter.convert([filter], { maxNumberOfRegexpRules });
+            };
+
+            const msg = 'Maximum number of regexp rules cannot be less than 0';
+            await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
         });
     });
 });

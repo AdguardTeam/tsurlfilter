@@ -3,29 +3,10 @@ import React, { useState, useEffect } from 'react';
 import './app.css';
 
 import { Message } from '../message';
+import { sendMessage } from '../common/send-message';
+import { ConfigResponse } from '../background';
 
 const filtersList = [ 1, 2, 3, 4, 9, 14 ];
-
-const sendMessage = (
-    type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any = null,
-) => {
-    return new Promise((resolve) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const callbackWrapper = (response: any) => {
-            console.log(`Response for '${type}':`, response);
-            resolve(response);
-        };
-        chrome.runtime.sendMessage({ type, data }, callbackWrapper);
-    });
-};
-
-type ConfigAnswer = {
-    status: boolean,
-    filters: number[],
-    rules: string[],
-};
 
 export function App() {
     const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +20,7 @@ export function App() {
                 status,
                 filters,
                 rules,
-            } = await sendMessage(Message.GET_CONFIG) as ConfigAnswer;
+            } = await sendMessage(Message.GetConfig) as ConfigResponse;
 
             setIsFilteringEnabled(status);
             setEnabledFilters(filters);
@@ -60,8 +41,8 @@ export function App() {
         setIsLoading(true);
 
         const message = isFilteringEnabled
-            ? Message.TURN_OFF
-            : Message.TURN_ON;
+            ? Message.TurnOff
+            : Message.TurnOn;
 
         const status = await sendMessage(message) as boolean;
         setIsFilteringEnabled(status);
@@ -85,7 +66,7 @@ export function App() {
     const updateUserRules = async () => {
         setIsLoading(true);
 
-        await sendMessage(Message.APPLY_USER_RULES, userRules);
+        await sendMessage(Message.ApplyUserRules, userRules);
 
         setIsLoading(false);
     };
@@ -111,7 +92,7 @@ export function App() {
     const updateFilters = async (ids: number[]) => {
         setIsLoading(true);
 
-        await sendMessage(Message.UPDATE_FILTERS, ids);
+        await sendMessage(Message.UpdateFilters, ids);
 
         setIsLoading(false);
         setEnabledFilters(ids);
@@ -142,7 +123,7 @@ export function App() {
         );
     });
 
-    const extra = (
+    const filtersPanel = (
         <>
             <br />
             <br />
@@ -156,6 +137,6 @@ export function App() {
 
     return <>
         {toggleBtn}
-        {isFilteringEnabled ? extra : ''}
+        {isFilteringEnabled ? filtersPanel : ''}
     </>;
 }

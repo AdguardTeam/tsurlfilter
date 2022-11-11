@@ -30,15 +30,15 @@ describe('RuleValidator', () => {
     });
 
     it('validates by compatibility', () => {
-        setConfiguration({ compatibility: CompatibilityTypes.extension });
+        setConfiguration({ compatibility: CompatibilityTypes.Extension });
         const invalidExtensionRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect(RuleValidator.validate(invalidExtensionRule).valid).toBeFalsy();
 
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
         const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect(RuleValidator.validate(validCompilerRule).valid).toBeTruthy();
 
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs | CompatibilityTypes.extension });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs | CompatibilityTypes.Extension });
         const validCompilerRule2 = '@@||test.com^$generichide,app=iexplore.exe';
         expect(RuleValidator.validate(validCompilerRule2).valid).toBeFalsy();
     });

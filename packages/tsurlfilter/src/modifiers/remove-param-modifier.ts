@@ -59,7 +59,7 @@ export class RemoveParamModifier implements IAdvancedModifier {
     /**
      * Is modifier valid for MV3 or not
      */
-    public getmv3Validity(): boolean {
+    public getMV3Validity(): boolean {
         return this.mv3Valid;
     }
 

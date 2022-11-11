@@ -118,7 +118,7 @@ describe('Test $domain modifier semantics', () => {
     });
 
     it('will match request url host - subdocument', () => {
-        const request = new Request('http://check.com/path', 'http://test.com/', RequestType.Subdocument);
+        const request = new Request('http://check.com/path', 'http://test.com/', RequestType.SubDocument);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();

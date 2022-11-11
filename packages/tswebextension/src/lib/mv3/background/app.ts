@@ -1,94 +1,125 @@
-/* eslint-disable class-methods-use-this */
-// TODO: Remove call to console
-/* eslint-disable no-console */
-import FiltersApi, { FiltersErrors, UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { UserRulesErrors, UpdateDynamicRulesResult } from './user-rules-api';
-import MessagesApi from './messages-api';
+import { IRuleSet } from '@adguard/tsurlfilter';
+
+import { AppInterface, defaultFilteringLog } from '../../common';
+import { logger } from '../utils/logger';
+import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+
+import FiltersApi, { UpdateStaticFiltersResult } from './filters-api';
+import UserRulesApi, { ConversionResult } from './user-rules-api';
+import MessagesApi, { MessagesHandlerType } from './messages-api';
 import { TabsApi, tabsApi } from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
-
-import {
-    AppInterface,
-    defaultFilteringLog,
-    configurationValidator,
-    ConfigurationContext,
-    Configuration,
-} from '../../common';
 import { engineApi } from './engine-api';
+import { declarativeFilteringLog, RecordFiltered } from './declarative-filtering-log';
+import RuleSetsLoaderApi from './rule-sets-loader-api';
+import {
+    ConfigurationMV3,
+    ConfigurationMV3Context,
+    configurationMV3Validator,
+} from './configuration';
 
 type ConfigurationResult = {
-    staticFilters: UpdateStaticFiltersResult,
-    dynamicRules: UpdateDynamicRulesResult
+    staticFiltersStatus: UpdateStaticFiltersResult,
+    staticFilters: IRuleSet[],
+    dynamicRules: ConversionResult
 };
 
-export { ConfigurationResult, FiltersErrors, UserRulesErrors };
-export class TsWebExtension implements AppInterface<Configuration, ConfigurationContext, ConfigurationResult> {
+// Reexport types
+export type {
+    ConfigurationResult,
+    ConversionResult,
+    FailedEnableRuleSetsError,
+    RecordFiltered,
+};
+
+/**
+ * The TsWebExtension class is a facade for working with the Chrome
+ * declarativeNetRequest module: enabling/disabling static filters,
+ * adding/editing/deleting custom filters or custom rules,
+ * starting/stopping declarative filtering log.
+ */
+export class TsWebExtension implements AppInterface<ConfigurationMV3, ConfigurationMV3Context, ConfigurationResult> {
+    /**
+     * Fires on filtering log event.
+     */
     onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
-    // Here we store configuration excluding "heavy" fields:
-    // filters content, userrules and allowlist
-    configuration: ConfigurationContext | undefined;
+    /**
+     * This is where the configuration is stored, excluding "heavy" fields:
+     * the contents of filters, custom rules and the allowlist.
+     */
+    configuration: ConfigurationMV3Context | undefined;
 
+    /**
+     * Whether filtering is enabled or not.
+     */
     isStarted = false;
 
+    /**
+     * Stores the initialize promise to prevent multiple initialize calls when
+     * a large number of messages are received when the service worker
+     * starts or wakes up.
+     */
     private startPromise: Promise<ConfigurationResult> | undefined;
 
     /**
      * Web accessible resources path in the result bundle
-     * relative to the root dir. Should start with leading slash '/'
+     * relative to the root dir. Should start with leading slash '/'.
      */
     private readonly webAccessibleResourcesPath: string | undefined;
 
     /**
-     * Constructor
+     * Creates new {@link TsWebExtension} class.
      *
-     * @param webAccessibleResourcesPath string path to web accessible resources,
-     * relative to the extension root dir. Should start with leading slash '/'
+     * @param webAccessibleResourcesPath Path to resources.
+     *
+     * @see {@link TsWebExtension.webAccessibleResourcesPath} for details.
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
 
-        /**
-         * Keep app context when use method as callback of WebNavigation API listeners
-         */
+        // Keep app context when use method as callback
+        // of WebNavigation API listeners.
         this.onCommitted = this.onCommitted.bind(this);
     }
 
     /**
-     * Runs configuration process via saving promise to inner startPromise
+     * Starts the configuration process, keeping the promise to prevent multiple
+     * initialize calls, and executes scripts after configuration.
+     *
+     * @param config {@link Configuration} Configuration file which contains all
+     * needed information to start.
      */
-    private async innerStart(config: Configuration): Promise<ConfigurationResult> {
-        console.debug('[START]: start');
-
-        let res = {
-            staticFilters: { errors: [] },
-            dynamicRules: {
-                regexpRulesCounter: 0,
-                declarativeRulesCounter: 0,
-                errors: [],
-            },
-        } as ConfigurationResult;
+    private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        logger.debug('[START]: start');
 
         try {
-            res = await this.configure(config);
+            const res = await this.configure(config);
             await this.executeScriptlets();
-        } catch (e) {
+
+            this.isStarted = true;
             this.startPromise = undefined;
-            console.debug('[START]: failed', e);
+            logger.debug('[START]: started');
 
             return res;
-        }
+        } catch (e) {
+            this.startPromise = undefined;
+            logger.debug('[START]: failed', e);
 
-        this.isStarted = true;
-        this.startPromise = undefined;
-        console.debug('[START]: started');
-        return res;
+            throw new Error('Cannot be started: ', { cause: e as Error });
+        }
     }
 
     /**
-     * Fires on WebNavigation.onCommitted event
+     * Fires on WebNavigation.onCommitted event.
+     *
+     * @param item {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
+     * @param item.tabId The ID of the tab in which the navigation occurred.
+     * @param item.url The url of the tab in which the navigation occurred.
      */
-    private async onCommitted({ tabId, url }: chrome.webNavigation.WebNavigationTransitionCallbackDetails) {
+    private async onCommitted(
+        { tabId, url }: chrome.webNavigation.WebNavigationTransitionCallbackDetails,
+    ): Promise<void> {
         if (this.isStarted && this.configuration) {
             // If service worker just woke up
             if (this.startPromise) {
@@ -101,127 +132,183 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
     }
 
     /**
-     * Starts filtering
+     * Starts filtering along with launching the tab listener, which will record
+     * tab urls to work correctly with domain blocking/allowing rules, for
+     * example: cosmetic rules in iframes.
+     *
+     * @param config {@link Configuration}.
      */
-    public async start(config: Configuration): Promise<ConfigurationResult> {
-        console.debug('[START]: is started ', this.isStarted);
+    public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        logger.debug('[START]: is started ', this.isStarted);
 
-        /**
-         * Add tabs listeners
-         */
+        // Add tabs listeners
         await tabsApi.start();
 
-        let res = {
-            staticFilters: { errors: [] },
-            dynamicRules: {
-                regexpRulesCounter: 0,
-                declarativeRulesCounter: 0,
-                errors: [],
-            },
-        } as ConfigurationResult;
-
         if (this.isStarted) {
-            return res;
+            throw new Error('Already started');
         }
 
         if (this.startPromise) {
-            console.debug('[START]: already called start, waiting');
-            res = await this.startPromise;
-            console.debug('[START]: awaited start');
+            logger.debug('[START]: already called start, waiting');
+            const res = await this.startPromise;
+            logger.debug('[START]: awaited start');
             return res;
         }
 
         // Call and wait for promise for allow multiple calling start
         this.startPromise = this.innerStart(config);
-        res = await this.startPromise;
-        return res;
+        return this.startPromise;
     }
 
     /**
-     * Stops service, disables all user rules and filters
+     * Stops service, disables all user rules and filters.
      */
     public async stop(): Promise<void> {
         await UserRulesApi.removeAllRules();
 
-        const disableFiltersIds = await FiltersApi.getEnabledRulesets();
+        const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
         await FiltersApi.updateFiltering(disableFiltersIds);
 
         await engineApi.stopEngine();
 
-        /**
-         * Remove tabs listeners and clear context storage
-         */
+        await declarativeFilteringLog.stop();
+
+        // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
         this.isStarted = false;
     }
 
     /**
-     * Uses configuration to pass params to filters, user rules and filter engine
+     * Applies new configuration: enables/disables static filters, creates rule
+     * sets from provided filters, updates dynamic filters (converts custom
+     * filters and user rules on the fly to a single merged rule set), starts
+     * declarative filtering log and restarts the engine to reload cosmetic
+     * rules.
+     *
+     * @param config {@link Configuration}.
+     *
+     * @returns ConfigurationResult {@link ConfigurationResult} which contains:
+     * - list of errors for static filters, if any of them has been thrown
+     * - converted dynamic rule set with rule set, errors and limitations.
+     * @see {@link ConversionResult}
      */
-    public async configure(config: Configuration): Promise<ConfigurationResult> {
-        console.debug('[CONFIGURE]: start with ', config);
+    public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        logger.debug('[CONFIGURE]: start with ', config);
 
-        const res = {
-            staticFilters: { errors: [] },
-            dynamicRules: {
-                regexpRulesCounter: 0,
-                declarativeRulesCounter: 0,
-                errors: [],
-            },
-        } as ConfigurationResult;
+        const configuration = configurationMV3Validator.parse(config);
 
-        const configuration = configurationValidator.parse(config);
+        // Wrap filters to tsurlfilter.IFilter
+        const staticFilters = FiltersApi.createStaticFilters(
+            configuration.staticFiltersIds,
+            configuration.filtersPath,
+        );
+        const customFilters = FiltersApi.createCustomFilters(configuration.customFilters);
+        const filtersIdsToEnable = staticFilters
+            .map((filter) => filter.getId());
+        const currentFiltersIds = await FiltersApi.getEnabledRuleSets();
+        const filtersIdsToDisable = currentFiltersIds
+            .filter((f) => !filtersIdsToEnable.includes(f)) || [];
 
-        const { declarativeFilters, customFilters } = FiltersApi.separateRulesets(configuration.filters);
-        const enableFiltersIds = declarativeFilters
-            .map(({ filterId }) => filterId);
-        const currentFiltersIds = await FiltersApi.getEnabledRulesets();
-        const disableFiltersIds = currentFiltersIds
-            .filter((f) => !enableFiltersIds.includes(f)) || [];
-
-        res.staticFilters = await FiltersApi.updateFiltering(
-            disableFiltersIds,
-            enableFiltersIds,
+        // Update list of enabled static filters
+        const staticFiltersStatus = await FiltersApi.updateFiltering(
+            filtersIdsToDisable,
+            filtersIdsToEnable,
         );
 
-        res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
+        // Convert custom filters and user rules into one rule set and apply it
+        const dynamicRules = await UserRulesApi.updateDynamicFiltering(
             configuration.userrules,
             customFilters,
             this.webAccessibleResourcesPath,
         );
 
+        // Reload engine for cosmetic rules
         engineApi.waitingForEngine = engineApi.startEngine({
-            filters: configuration.filters,
+            filters: [
+                ...staticFilters,
+                ...customFilters,
+            ],
             userrules: configuration.userrules,
             verbose: configuration.verbose,
         });
         await engineApi.waitingForEngine;
 
+        // Wrap filters into rule sets
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(config.ruleSetsPath);
+        const manifest = chrome.runtime.getManifest();
+        // eslint-disable-next-line max-len
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources as chrome.declarativeNetRequest.Ruleset[];
+        const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
+            return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
+        });
+        const staticRuleSets = await Promise.all(staticRuleSetsTasks);
+
+        // TODO: Recreate only dynamic rule set, because static cannot be changed
+        const ruleSets = [
+            ...staticRuleSets,
+            ...dynamicRules.ruleSets,
+        ];
+        declarativeFilteringLog.ruleSets = ruleSets;
+
+        // Starts declarative filtering log
+        if (config.filteringLogEnabled) {
+            await declarativeFilteringLog.start();
+        } else {
+            await declarativeFilteringLog.stop();
+        }
+
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
-        console.debug('[CONFIGURE]: end');
+        logger.debug('[CONFIGURE]: end');
 
-        return res;
+        return {
+            staticFiltersStatus,
+            staticFilters: staticRuleSets,
+            dynamicRules,
+        };
     }
 
+    /**
+     * Not implemented.
+     */
+    // eslint-disable-next-line class-methods-use-this
     public openAssistant(): void {}
 
+    /**
+     * Not implemented.
+     */
+    // eslint-disable-next-line class-methods-use-this
     public closeAssistant(): void {}
 
+    /**
+     * Not implemented.
+     *
+     * @returns Number.
+     */
+    // eslint-disable-next-line class-methods-use-this
     public getRulesCount(): number {
         return 0;
     }
 
     /**
-     * @returns messages handler
+     * Returns a message handler that will listen to internal messages,
+     * for example: get css for content-script, or start/stop declarative
+     * filtering log.
+     *
+     * @returns Messages handler.
      */
-    public getMessageHandler() {
+    public getMessageHandler(): MessagesHandlerType {
+        // Keep app context when handle message.
         const messagesApi = new MessagesApi(this);
         return messagesApi.handleMessage;
     }
 
-    public async executeScriptlets() {
+    /**
+     * Executes scriptlets for the currently active tab and adds a listener to
+     * the {@link chrome.webNavigation.onCommitted} hook to execute scriptlets.
+     */
+    public async executeScriptlets(): Promise<void> {
         const activeTab = await TabsApi.getActiveTab();
 
         if (this.isStarted && this.configuration && activeTab?.url && activeTab?.id) {
@@ -235,26 +322,35 @@ export class TsWebExtension implements AppInterface<Configuration, Configuration
     }
 
     /**
-     * Extract Partial Configuration from whole Configration,
-     * excluding heavyweight fields which contains rules
-     * @param configuration Configuration
-     * @returns ConfigurationContext
+     * Extract partial configuration {@link ConfigurationMV3Context} from whole
+     * {@link ConfigurationMV3}, excluding heavyweight fields which
+     * contains rules.
+     *
+     * @param configuration Configuration.
+     *
+     * @returns ConfigurationContext.
      */
-    private static createConfigurationContext(configuration: Configuration): ConfigurationContext {
-        const { filters, verbose, settings } = configuration;
+    private static createConfigurationContext(
+        configuration: ConfigurationMV3,
+    ): ConfigurationMV3Context {
+        const {
+            staticFiltersIds,
+            customFilters,
+            verbose,
+            settings,
+            filtersPath,
+            ruleSetsPath,
+            filteringLogEnabled,
+        } = configuration;
 
         return {
-            filters: filters.map(({ filterId }) => filterId),
+            staticFiltersIds,
+            customFilters: customFilters.map(({ filterId }) => filterId),
+            filtersPath,
+            ruleSetsPath,
+            filteringLogEnabled,
             verbose,
             settings,
         };
-    }
-
-    /**
-     * Returns the map of converted declarative rule
-     * identifiers with a hash to the original rule
-     */
-    public get convertedSourceMap() {
-        return UserRulesApi.convertedSourceMap;
     }
 }

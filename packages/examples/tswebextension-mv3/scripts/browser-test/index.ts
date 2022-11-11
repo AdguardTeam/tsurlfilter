@@ -5,17 +5,24 @@ import {
     USER_DATA_PATH,
     DEFAULT_EXTENSION_CONFIG,
     TESTCASES_BASE_URL,
-    TESTS_COMPLETED_EVENT,
 } from '../constants';
+import {
+    EXTENSION_INITIALIZED_EVENT,
+} from '../../extension/src/common/constants';
 import {
     addQunitListeners,
     setTsWebExtensionConfig,
     SetTsWebExtensionConfigArg,
+    waitUntilExtensionInitialized,
 } from './page-injections';
 import { getTestcases, getRuleText } from './requests';
 import { filterCompatibleTestcases } from './testcase';
-import { logTestResult } from './logger';
+import { logTestResult, logTestTimeout } from './logger';
 import { Product } from './product';
+
+const TESTS_TIMEOUT_MS = 5 * 1000;
+const TESTS_TIMEOUT_CODE = 'tests_timeout';
+const CSP_TEST_ID = 12;
 
 (async () => {
     // Launch browser with installed extension
@@ -29,11 +36,16 @@ import { Product } from './product';
 
     const backgroundPage = await browserContext.waitForEvent('serviceworker');
 
+    await backgroundPage.evaluate<void, string>(
+        waitUntilExtensionInitialized,
+        EXTENSION_INITIALIZED_EVENT,
+    );
+
     const page = await browserContext.newPage();
 
     const testcases = await getTestcases();
 
-    const compatibleTestcases = filterCompatibleTestcases(testcases, Product.CHROME);
+    const compatibleTestcases = filterCompatibleTestcases(testcases, Product.Chrome);
 
     // register function, that transfer args from page to playwright context
     // installed function survive navigations.
@@ -42,7 +54,6 @@ import { Product } from './product';
     // extends QUnit instance on creation by custom event listeners,
     // that triggers exposed function
     await page.addInitScript(addQunitListeners, 'logTestResult');
-
 
     // run testcases
     for (const testcase of compatibleTestcases) {
@@ -62,15 +73,27 @@ import { Product } from './product';
             [DEFAULT_EXTENSION_CONFIG, userrules],
         );
 
-        // run test page
-        await page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' });
+        const openPageAndWaitForTests = testcase.id === CSP_TEST_ID
+            ? page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`, { waitUntil: 'networkidle' })
+            // The function with tests check works only if there is no CSP
+            : Promise.all([
+                // run test page
+                page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`),
+                // wait until all tests are completed with disabled timeout
+                // eslint-disable-next-line @typescript-eslint/no-loop-func
+                page.waitForFunction(() => (<any>window).testsCompleted, undefined, { timeout: 0 }),
+            ]);
 
-        // wait until all tests are completed
-        await page.evaluate(
-            // eslint-disable-next-line @typescript-eslint/no-loop-func
-            eventName => new Promise(callback => window.addEventListener(eventName, callback, { once: true })),
-            TESTS_COMPLETED_EVENT,
-        );
+        const timeoutForTests = page.waitForTimeout(TESTS_TIMEOUT_MS).then(() => TESTS_TIMEOUT_CODE);
+
+        const res = await Promise.race([
+            timeoutForTests,
+            openPageAndWaitForTests,
+        ]);
+
+        if (res === TESTS_TIMEOUT_CODE) {
+            logTestTimeout(testcase.title, TESTS_TIMEOUT_MS);
+        }
     }
 
     await browserContext.close();

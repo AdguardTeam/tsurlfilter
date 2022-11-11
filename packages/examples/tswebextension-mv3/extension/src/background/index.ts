@@ -1,9 +1,13 @@
-import { TsWebExtension, Configuration, MessageType } from '@adguard/tswebextension/mv3';
+import {
+    TsWebExtension,
+    Configuration,
+    CommonMessageType,
+} from '@adguard/tswebextension/mv3';
 import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
-import { loadFilterContent } from './loadFilterContent';
 import { loadDefaultConfig } from './loadDefaultConfig';
+import { EXTENSION_INITIALIZED_EVENT } from '../common/constants';
 
 declare global {
     interface Window {
@@ -11,14 +15,11 @@ declare global {
     }
 }
 
-
 const tsWebExtension = new TsWebExtension('/war/redirects');
 self.tsWebExtension = tsWebExtension;
 const defaultUxConfig = {
     isStarted: true,
 };
-const filtersDir = 'filters';
-
 interface IMessage {
     type: Message,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,89 +27,109 @@ interface IMessage {
 }
 
 interface IMessageInner {
-    type: MessageType,
+    type: CommonMessageType,
     handlerName: typeof MESSAGE_HANDLER_NAME,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload?: any,
 }
 
+export type ConfigResponse = {
+    status: boolean,
+    filters: number[],
+    rules: string[],
+};
+
 let config: Configuration;
-let isStarted: boolean;
-let waitingConfigAndStart: Promise<void>;
+
+let isInitialized = false;
+let isStarted: boolean | undefined;
+let initializingPromise: Promise<void> | undefined;
 
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 const messageHandler = async (message: IMessage) => {
     const { type, data } = message;
     switch (type) {
-        case Message.GET_CONFIG: {
-            return {
-                status: isStarted,
-                filters: config.filters.map(f => f.filterId),
+        case Message.GetConfig: {
+            const res: ConfigResponse = {
+                status: isStarted || false,
+                filters: config.staticFiltersIds,
                 rules: config.userrules,
             };
+
+            return res;
         }
-        case Message.UPDATE_FILTERS: {
+        case Message.UpdateFilters: {
             const filterIds = data as number[];
 
-            const currentFiltersIds = config.filters.map(f => f.filterId);
-            const filtersToLoad = filterIds
-                .filter(id => !currentFiltersIds.includes(id))
-                .map((id) => loadFilterContent(id, filtersDir));
-            const loadedFilters = await Promise.all(filtersToLoad);
-            const filtersToStay = config.filters.filter(f => filterIds.includes(f.filterId));
-
-            config.filters = filtersToStay.concat(loadedFilters);
+            config.staticFiltersIds = filterIds;
 
             await tsWebExtension.configure(config);
 
-            await storage.set(StorageKeys.CONFIG, config);
+            await storage.set(StorageKeys.Config, config);
 
-            return;
+            break;
         }
-        case Message.TURN_OFF: {
+        case Message.TurnOff: {
             try {
                 await tsWebExtension.stop();
                 isStarted = false;
-            } catch (e: any) {
-                console.log(e.message);
+            } catch (e) {
+                console.log((e as Error).message);
             }
 
-            await storage.set(StorageKeys.IS_STARTED, isStarted);
+            await storage.set(StorageKeys.IsStarted, isStarted);
 
             return isStarted;
         }
-        case Message.TURN_ON: {
+        case Message.TurnOn: {
             try {
                 await tsWebExtension.start(config);
                 isStarted = true;
-            } catch (e: any) {
-                console.log(e.message);
+            } catch (e) {
+                console.log((e as Error).message);
             }
 
-            await storage.set(StorageKeys.IS_STARTED, isStarted);
+            await storage.set(StorageKeys.IsStarted, isStarted);
 
             return isStarted;
         }
-        case Message.APPLY_USER_RULES: {
+        case Message.ApplyUserRules: {
             config.userrules = (data as string).split('\n');
 
             await tsWebExtension.configure(config);
 
-            await storage.set(StorageKeys.CONFIG, config);
+            await storage.set(StorageKeys.Config, config);
 
-            return;
+            break;
+        }
+        case Message.StartLog: {
+            config.filteringLogEnabled = true;
+
+            await tsWebExtension.configure(config);
+
+            break;
+        }
+        case Message.StopLog: {
+            config.filteringLogEnabled = false;
+
+            await tsWebExtension.configure(config);
+
+            break;
         }
     }
 };
 
 const startIfNeed = async () => {
     if (isStarted === undefined) {
-        const savedValue = await storage.get<boolean>(StorageKeys.IS_STARTED);
+        const savedValue = await storage.get<boolean>(StorageKeys.IsStarted);
 
-        isStarted = savedValue !== undefined
-            ? savedValue
-            : defaultUxConfig.isStarted;
+        if (savedValue !== undefined) {
+            isStarted = savedValue;
+        } else {
+            isStarted = defaultUxConfig.isStarted;
+            await storage.set(StorageKeys.IsStarted, isStarted);
+        }
     }
 
     if (isStarted) {
@@ -116,18 +137,39 @@ const startIfNeed = async () => {
     }
 };
 
+const waitForInitAndClean = async () => {
+    await initializingPromise;
+    initializingPromise = undefined;
+
+    isInitialized = true;
+    dispatchEvent(new Event(EXTENSION_INITIALIZED_EVENT));
+};
+
 const checkConfigAndStart = async () => {
     if (config === undefined) {
-        const savedConfig = await storage.get<Configuration>(StorageKeys.CONFIG);
+        const savedConfig = await storage.get<Configuration>(StorageKeys.Config);
         if (savedConfig) {
             config = savedConfig;
         } else {
-            config = await loadDefaultConfig(filtersDir);
-            storage.set(StorageKeys.CONFIG, config);
+            config = loadDefaultConfig();
+            await storage.set(StorageKeys.Config, config);
         }
     }
+};
 
-    await startIfNeed();
+const initExtension = async (messageId: string) => {
+    await checkConfigAndStart();
+
+    if (initializingPromise) {
+        console.debug('[messageHandlerWrapper]: waiting for init', messageId);
+        await waitForInitAndClean();
+    }
+
+    if (!isInitialized) {
+        console.debug('[messageHandlerWrapper]: start init', messageId);
+        initializingPromise = startIfNeed();
+        await waitForInitAndClean();
+    }
 };
 
 const proxyHandler = async (
@@ -137,11 +179,7 @@ const proxyHandler = async (
     const id = 'id_' + Math.random().toString(16).slice(2);
     console.debug('[PROXY HANDLER]: start check config', id, message);
 
-    if (waitingConfigAndStart) {
-        await waitingConfigAndStart;
-    } else {
-        await checkConfigAndStart();
-    }
+    await initExtension(id);
 
     console.debug('[PROXY HANDLER]: after check config ', id, message);
 
@@ -155,8 +193,9 @@ const proxyHandler = async (
 // TODO: Add same logic for update event
 chrome.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: start');
-    waitingConfigAndStart = checkConfigAndStart();
-    await waitingConfigAndStart;
+
+    await initExtension('install');
+
     console.debug('[ON INSTALLED]: done');
 });
 

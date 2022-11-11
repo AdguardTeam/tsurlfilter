@@ -125,10 +125,28 @@ const cliConfig = {
     plugins: [...commonPlugins, preserveShebangs()],
 };
 
+const mv3UtilsConfig = {
+    cache,
+    input: 'src/lib/mv3/utils/get-filter-name.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/mv3-utils.js`,
+            format: 'cjs',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/lib/mv3/utils/get-filter-name.ts',
+    },
+    external: ['path', 'fs-extra', 'commander'],
+    plugins: [...commonPlugins],
+};
+
 export default [
     backgroundMv2Config,
     backgroundMv3Config,
     contentScriptConfig,
     contentScriptMv3Config,
     cliConfig,
+    mv3UtilsConfig,
 ];

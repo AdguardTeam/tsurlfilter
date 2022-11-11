@@ -1,7 +1,9 @@
 export const enum Message {
-    GET_CONFIG = 'GetConfig',
-    UPDATE_FILTERS = 'UpdateFilters',
-    TURN_OFF = 'TurnOff',
-    TURN_ON = 'TurnOn',
-    APPLY_USER_RULES = 'ApplyUserRules',
+    GetConfig = 'GET_CONFIG',
+    UpdateFilters = 'UPDATE_FILTERS',
+    TurnOff = 'TURN_OFF',
+    TurnOn = 'TURN_ON',
+    ApplyUserRules = 'APPLY_USER_RULES',
+    StartLog = 'START_LOG',
+    StopLog = 'STOP_LOG',
 }

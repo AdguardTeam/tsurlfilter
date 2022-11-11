@@ -314,10 +314,10 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Gets list of denyallow domains.
+     * Gets list of denyAllow domains.
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#denyallow-modifier
      */
-    getDenyallowDomains(): string[] | null {
+    getDenyAllowDomains(): string[] | null {
         return this.denyAllowDomains;
     }
 
@@ -501,7 +501,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         const isDocumentType = request.requestType === RequestType.Document
-            || request.requestType === RequestType.Subdocument;
+            || request.requestType === RequestType.SubDocument;
 
         const hasOnlyExcludedDomains = (!this.permittedDomains || this.permittedDomains.length === 0)
             && this.restrictedDomains
@@ -650,7 +650,7 @@ export class NetworkRule implements rule.IRule {
         if (this.permittedRequestTypes === 0
             && this.restrictedRequestTypes === 0
             && requestType !== RequestType.Document
-            && requestType !== RequestType.Subdocument) {
+            && requestType !== RequestType.SubDocument) {
             return false;
         }
 
@@ -1111,10 +1111,10 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Stylesheet, false);
                 break;
             case OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.Subdocument, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
             case NOT_MARK + OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.Subdocument, false);
+                this.setRequestType(RequestType.SubDocument, false);
                 break;
             case OPTIONS.OBJECT:
                 this.setRequestType(RequestType.Object, true);
@@ -1147,10 +1147,10 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Font, false);
                 break;
             case OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.Websocket, true);
+                this.setRequestType(RequestType.WebSocket, true);
                 break;
             case NOT_MARK + OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.Websocket, false);
+                this.setRequestType(RequestType.WebSocket, false);
                 break;
             case OPTIONS.OTHER:
                 this.setRequestType(RequestType.Other, true);
@@ -1165,10 +1165,10 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Ping, false);
                 break;
             case OPTIONS.WEBRTC:
-                this.setRequestType(RequestType.Webrtc, true);
+                this.setRequestType(RequestType.WebRtc, true);
                 break;
             case NOT_MARK + OPTIONS.WEBRTC:
-                this.setRequestType(RequestType.Webrtc, false);
+                this.setRequestType(RequestType.WebRtc, false);
                 break;
 
             // Special modifiers
@@ -1213,7 +1213,7 @@ export class NetworkRule implements rule.IRule {
 
             // Dns modifiers
             case OPTIONS.CLIENT: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $client modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Client, true);
@@ -1222,7 +1222,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.DNSREWRITE: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnsrewrite modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsRewrite, true);
@@ -1231,7 +1231,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.DNSTYPE: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnstype modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsType, true);
@@ -1240,7 +1240,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.CTAG: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $ctag modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Ctag, true);
@@ -1249,7 +1249,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.APP: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $app modifier');
                 }
                 this.appModifier = new AppModifier(optionValue);
@@ -1257,20 +1257,20 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.NETWORK:
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $network modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
 
             case OPTIONS.EXTENSION:
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, true);
                 break;
             case NOT_MARK + OPTIONS.EXTENSION:
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, false);

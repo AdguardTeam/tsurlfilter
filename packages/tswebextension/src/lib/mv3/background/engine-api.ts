@@ -1,6 +1,3 @@
-// TODO: Remove call to console
-/* eslint-disable no-console */
-
 import {
     StringRuleList,
     RuleStorage,
@@ -13,40 +10,70 @@ import {
     CosmeticOption,
     RuleConverter,
     ScriptletData,
+    IFilter,
+    CosmeticRule,
 } from '@adguard/tsurlfilter';
 
-import { Configuration } from '../../common';
 import { getHost } from '../../common/utils';
+import { logger } from '../utils/logger';
+
+import { ConfigurationMV3 } from './configuration';
 import { CosmeticApi } from './cosmetic-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
 
-type FilterConfig = Pick<Configuration, 'filters' | 'userrules' | 'verbose'>;
+type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
+    filters: IFilter[],
+};
+
+export type CosmeticRules = {
+    css: string[],
+    extendedCss: string[],
+};
 
 /**
- * TSUrlFilter Engine wrapper
+ * EngineApi - TSUrlFilter engine wrapper which controls how to work with
+ * cosmetic rules.
  */
 class EngineApi {
+    /**
+     * Link to current Engine.
+     */
     private engine: Engine | undefined;
 
+    // TODO: Make private
+    /**
+     * To prevent multiple calls to startEngine, saves the first call to
+     * startEngine and waits for it.
+     */
     waitingForEngine: Promise<void> | undefined;
 
     /**
-     * Starts engine with provided config
-     * @param config config for pass to engine
+     * Starts the engine with the provided bunch of rules,
+     * wrapped in filters or custom rules.
+     *
+     * @param config {@link EngineConfig} Which contains filters (static and
+     * custom), custom rules and the verbose flag.
      */
-    async startEngine(config: FilterConfig): Promise<void> {
-        const { filters, userrules, verbose } = config;
+    async startEngine(config: EngineConfig): Promise<void> {
+        const {
+            filters, userrules, verbose,
+        } = config;
 
         const lists: StringRuleList[] = [];
 
-        for (let i = 0; i < filters.length; i += 1) {
-            const { filterId, content } = filters[i];
-            const convertedContent = RuleConverter.convertRules(content);
-            lists.push(new StringRuleList(filterId, convertedContent));
-        }
+        // Wrap IFilter to StringRuleList
+        const tasks = filters.map(async (filter) => {
+            const content = await filter.getContent();
+            // TODO: Maybe pass filters content via FilterList to exclude double conversion
+            const convertedContent = RuleConverter.convertRules(content.join('\n'));
+            lists.push(new StringRuleList(filter.getId(), convertedContent));
+        });
 
+        await Promise.all(tasks);
+
+        // Wrap user rules to StringRuleList
         if (userrules.length > 0) {
             const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
             lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
@@ -58,12 +85,13 @@ class EngineApi {
             engine: 'extension',
             version: chrome.runtime.getManifest().version,
             verbose,
-            compatibility: CompatibilityTypes.extension,
+            compatibility: CompatibilityTypes.Extension,
         });
 
         /*
-         * UI thread becomes blocked on the options page while request filter is created
-         * that's why we create filter rules using chunks of the specified length
+         * UI thread becomes blocked on the options page while request filter is
+         * created that's why we create filter rules using chunks of
+         * the specified length.
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
@@ -73,19 +101,20 @@ class EngineApi {
     }
 
     /**
-     * Stops filtering engine
+     * Stops filtering engine with cosmetic rules.
      */
-    async stopEngine() {
+    public async stopEngine(): Promise<void> {
         this.engine = undefined;
     }
 
     /**
-     * Gets cosmetic result for the specified url and cosmetic options if engine is started
-     * Otherwise returns empty CosmeticResult
+     * Gets cosmetic result for the specified url and cosmetic options if
+     * engine is started.
+     * Otherwise returns empty CosmeticResult.
      *
-     * @param url hostname to check
-     * @param option mask of enabled cosmetic types
-     * @return cosmetic result
+     * @param url Hostname to check.
+     * @param option Mask of enabled cosmetic types.
+     * @returns Cosmetic result.
      */
     private getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
         if (!this.engine) {
@@ -107,20 +136,22 @@ class EngineApi {
 
     /**
      * Builds CSS for the specified web page.
-     * http://adguard.com/en/filterrules.html#hideRules
      *
-     * @param {string} url Page URL
-     * @param {number} options bitmask
-     * @param {boolean} ignoreTraditionalCss flag
-     * @param {boolean} ignoreExtCss flag
-     * @returns {*} CSS and ExtCss data for the webpage
+     * @see http://adguard.com/en/filterrules.html#hideRules
+     *
+     * @param url Page URL.
+     * @param options Bitmask.
+     * @param ignoreTraditionalCss Flag.
+     * @param ignoreExtCss Flag.
+     *
+     * @returns CSS and ExtCss data for the webpage.
      */
-    buildCosmeticCss(
+    public buildCosmeticCss(
         url: string,
         options: CosmeticOption,
         ignoreTraditionalCss: boolean,
         ignoreExtCss: boolean,
-    ) {
+    ): CosmeticRules {
         const cosmeticResult = this.getCosmeticResult(url, options);
 
         const elemhideCss = [
@@ -148,7 +179,7 @@ class EngineApi {
             ? CosmeticApi.buildStyleSheet(elemhideExtCss, injectExtCss, false)
             : [];
 
-        console.debug('[BUILD COSMETIC CSS]: builded');
+        logger.debug('[BUILD COSMETIC CSS]: builded');
 
         return {
             css: styles,
@@ -158,24 +189,29 @@ class EngineApi {
 
     /**
      * Builds domain-specific JS injection for the specified page.
-     * http://adguard.com/en/filterrules.html#javascriptInjection
      *
-     * @param url
-     * @param option
-     * @returns Javascript for the specified URL
+     * @see http://adguard.com/en/filterrules.html#javascriptInjection
+     *
+     * @param url Page URL.
+     * @param option Bitmask.
+     *
+     * @returns Javascript for the specified URL.
      */
-    getScriptsForUrl = (url: string, option: CosmeticOption) => {
+    public getScriptsForUrl = (url: string, option: CosmeticOption): CosmeticRule[] => {
         const cosmeticResult = this.getCosmeticResult(url, option);
 
         return cosmeticResult.getScriptRules();
     };
 
     /**
-     * Returns scriptlets data by url
-     * @param url
-     * @param option
+     * Returns scriptlets data by url.
+     *
+     * @param url Page URL.
+     * @param option Bitmask.
+     *
+     * @returns List of {@link ScriptletData}.
      */
-    getScriptletsDataForUrl(url: string, option: CosmeticOption): ScriptletData[] {
+    public getScriptletsDataForUrl(url: string, option: CosmeticOption): ScriptletData[] {
         const scriptRules = this.getScriptsForUrl(url, option);
         const scriptletDataList: ScriptletData[] = [];
         scriptRules.forEach((scriptRule) => {
@@ -197,13 +233,14 @@ class EngineApi {
     /**
      * Builds the final output string for the specified page.
      * Depending on the browser we either allow or forbid the new remote rules
-     * grep "localScriptRulesService" for details about script source
+     * grep "localScriptRulesService" for details about script source.
      *
-     * @param url
-     * @param option
-     * @returns Script to be applied
+     * @param url Page URL.
+     * @param option Bitmask.
+     *
+     * @returns Script to be applied.
      */
-    getScriptsStringForUrl(url: string, option: CosmeticOption) {
+    public getScriptsStringForUrl(url: string, option: CosmeticOption): string {
         const scriptRules = this.getScriptsForUrl(url, option);
 
         // scriptlet rules would are handled separately

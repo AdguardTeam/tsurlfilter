@@ -1,6 +1,4 @@
-import {
-    NetworkRule, RuleStorage, StringRuleList,
-} from '../../../src';
+import { NetworkRule, RuleStorage, StringRuleList } from '../../../src';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { ILookupTable } from '../../../src/engine/lookup-tables/lookup-table';
 

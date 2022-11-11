@@ -1,5 +1,0 @@
-export const ERROR_STATUS_CODES = {
-    COMPLEX_REGEX: 1001,
-    RULE_LIMIT: 1002,
-    REGEXP_RULE_LIMIT: 1003,
-};

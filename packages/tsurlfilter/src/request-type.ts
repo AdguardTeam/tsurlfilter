@@ -5,7 +5,7 @@ export enum RequestType {
     /** main frame */
     Document = 1,
     /** (iframe) $subdocument */
-    Subdocument = 1 << 1,
+    SubDocument = 1 << 1,
     /** (javascript, etc) $script */
     Script = 1 << 2,
     /** (css) $stylesheet */
@@ -21,11 +21,11 @@ export enum RequestType {
     /** (any custom font) $font */
     Font = 1 << 8,
     /** (a websocket connection) $websocket */
-    Websocket = 1 << 9,
+    WebSocket = 1 << 9,
     /** (navigator.sendBeacon()) $ping */
     Ping = 1 << 10,
     /** (webrtc, in extension works via wrappers) $webrtc */
-    Webrtc = 1 << 11,
+    WebRtc = 1 << 11,
     /** any other request type */
     Other = 1 << 12,
 }

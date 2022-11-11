@@ -25,7 +25,7 @@ export const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility
  */
 function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null {
     switch (requestType) {
-        case RequestType.Subdocument:
+        case RequestType.SubDocument:
             return [InitiatorTag.IFRAME, InitiatorTag.FRAME];
         case RequestType.Image:
             return [InitiatorTag.IMAGE];

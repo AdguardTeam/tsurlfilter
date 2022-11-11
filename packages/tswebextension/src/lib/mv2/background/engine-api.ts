@@ -115,7 +115,7 @@ export class EngineApi implements EngineApiInterface {
             engine: 'extension',
             version: browser.runtime.getManifest().version,
             verbose,
-            compatibility: CompatibilityTypes.extension,
+            compatibility: CompatibilityTypes.Extension,
         });
 
         /*

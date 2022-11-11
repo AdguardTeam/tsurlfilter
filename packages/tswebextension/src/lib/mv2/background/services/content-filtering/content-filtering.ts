@@ -18,7 +18,7 @@ export class ContentFiltering {
      */
     private static supportedReplaceRulesRequestTypes = [
         RequestType.Document,
-        RequestType.Subdocument,
+        RequestType.SubDocument,
         RequestType.Script,
         RequestType.Stylesheet,
         RequestType.XmlHttpRequest,

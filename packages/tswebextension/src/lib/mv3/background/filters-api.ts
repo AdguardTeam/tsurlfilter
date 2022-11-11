@@ -1,78 +1,111 @@
-import { Configuration } from '../../common';
+import { Filter, IFilter } from '@adguard/tsurlfilter';
 
-const RULESET_PREFIX = 'ruleset_';
+import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { getFilterName } from '../utils/get-filter-name';
 
-type Filters = Configuration['filters'];
-type FiltersOfTwoTypes = {
-    declarativeFilters: Filters,
-    customFilters: Filters,
-};
+import { ConfigurationMV3 } from './configuration';
+
+export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
 export type UpdateStaticFiltersResult = {
-    errors: FiltersErrors[],
+    errors: FailedEnableRuleSetsError[],
 };
 
-export const enum FiltersErrors {
-    FAILED_UPDATING_FILTERS,
-}
-
+/**
+ * FiltersApi knows how to enable or disable static rule sets (which were built
+ * with the extension) and how to create {@link Filter} through
+ * loading its contents.
+ */
 export default class FiltersApi {
     /**
-     * Updates filtering rulesets via declarativeNetRequest
-     * @param enableFiltersIds rulesets to enable
-     * @param disableFiltersIds rulesets to diable
+     * Enables or disables the provided rule set identifiers.
+     *
+     * @param disableFiltersIds Rule sets to disable.
+     * @param enableFiltersIds Rule sets to enable.
      */
     static async updateFiltering(
         disableFiltersIds: number[],
         enableFiltersIds?: number[],
     ): Promise<UpdateStaticFiltersResult> {
-        const res = {
-            errors: [] as FiltersErrors[],
+        const res: UpdateStaticFiltersResult = {
+            errors: [],
         };
+
+        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
+        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
 
         try {
             await chrome.declarativeNetRequest.updateEnabledRulesets({
-                enableRulesetIds: enableFiltersIds?.map((filterId) => `${RULESET_PREFIX}${filterId}`) || [],
-                disableRulesetIds: disableFiltersIds?.map((filterId) => `${RULESET_PREFIX}${filterId}`) || [],
+                enableRulesetIds,
+                disableRulesetIds,
             });
         } catch (e) {
-            res.errors.push(FiltersErrors.FAILED_UPDATING_FILTERS);
+            const msg = 'Cannot change list of enabled rule sets';
+            const err = new FailedEnableRuleSetsError(
+                msg,
+                enableRulesetIds,
+                disableRulesetIds,
+                e as Error,
+            );
+            res.errors.push(err);
         }
 
         return res;
     }
 
     /**
-     * Gets current enabled filters IDs
+     * Returns current enabled rule sets IDs.
+     *
+     * @returns List of extracted enabled rule sets ids.
      */
-    static async getEnabledRulesets(): Promise<number[]> {
-        const rulesets = await chrome.declarativeNetRequest.getEnabledRulesets();
-        return rulesets.map((f) => Number.parseInt(f.slice(RULESET_PREFIX.length), 10));
+    public static async getEnabledRuleSets(): Promise<number[]> {
+        const ruleSets = await chrome.declarativeNetRequest.getEnabledRulesets();
+        return ruleSets.map((f) => Number.parseInt(f.slice(RULE_SET_NAME_PREFIX.length), 10));
     }
 
     /**
-     * Separate array of filters to two groups: declarative and custom
-     * @param filters filters with id and content
-     * @returns object with two fields: declarative and custom
+     * Loads filters content from provided filtersPath (which has been extracted
+     * from field 'filtersPath' of the {@link Configuration}).
+     *
+     * @param id Filter id.
+     * @param filtersPath Path to filters directory.
      */
-    static separateRulesets(filters: Filters): FiltersOfTwoTypes {
-        const res = {
-            declarativeFilters: [],
-            customFilters: [],
-        } as FiltersOfTwoTypes;
+    private static async loadFilterContent(id: number, filtersPath: string): Promise<string[]> {
+        const filterName = getFilterName(id);
+        const url = chrome.runtime.getURL(`${filtersPath}/${filterName}`);
+        const file = await fetch(url);
+        const content = await file.text();
 
-        const manifest = chrome.runtime.getManifest();
-        const onlyDeclarativeIds = manifest.declarative_net_request.rule_resources
-            .map((r: chrome.declarativeNetRequest.Ruleset) => Number.parseInt(r.id.slice(RULESET_PREFIX.length), 10));
+        return content.split(/\r?\n/);
+    }
 
-        filters.forEach((f) => {
-            if (onlyDeclarativeIds.includes(f.filterId)) {
-                res.declarativeFilters.push(f);
-            } else {
-                res.customFilters.push(f);
-            }
-        });
+    /**
+     * Loads content for provided filters ids;.
+     *
+     * @param filtersIds List of filters ids.
+     * @param filtersPath Path to filters directory.
+     *
+     * @returns List of {@link IFilter} with a lazy content loading feature.
+     */
+    static createStaticFilters(
+        filtersIds: ConfigurationMV3['staticFiltersIds'],
+        filtersPath: string,
+    ): IFilter[] {
+        return filtersIds.map((filterId) => new Filter(filterId, {
+            getContent: () => this.loadFilterContent(filterId, filtersPath),
+        }));
+    }
 
-        return res;
+    /**
+     * Wraps custom filter into {@link IFilter}.
+     *
+     * @param customFilters List of custom filters.
+     *
+     * @returns List of {@link IFilter} with a lazy content loading feature.
+     */
+    static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
+        return customFilters.map((f) => new Filter(f.filterId, {
+            getContent: () => Promise.resolve(f.content.split('\n')),
+        }));
     }
 }

@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { Configuration } from '@adguard/tswebextension';
+import { Configuration } from '@adguard/tswebextension/mv3';
 
 export const BUILD_PATH = path.join(__dirname, '../build');
 
@@ -10,14 +10,16 @@ export const TESTCASES_BASE_URL = 'https://testcases.adguard.com';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
-export const TESTS_COMPLETED_EVENT = 'testPassed';
-
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
-    filters: [],
+    staticFiltersIds: [],
+    customFilters: [],
     allowlist: [],
     userrules: [],
     trustedDomains: [],
     verbose: false,
+    filtersPath: 'filters',
+    ruleSetsPath: 'filters/declarative',
+    filteringLogEnabled: false,
     settings: {
         collectStats: true,
         allowlistEnabled: true,

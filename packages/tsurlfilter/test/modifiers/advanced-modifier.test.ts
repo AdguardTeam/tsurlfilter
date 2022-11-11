@@ -458,12 +458,12 @@ describe('NetworkRule - removeparam rules', () => {
 
         const mv3GoodModifier = new RemoveParamModifier('p3');
         expect(mv3GoodModifier.getValue()).toEqual('p3');
-        expect(mv3GoodModifier.getmv3Validity()).toBeTruthy();
+        expect(mv3GoodModifier.getMV3Validity()).toBeTruthy();
 
         const mv3BadModifier = new RemoveParamModifier('~p4');
-        expect(mv3BadModifier.getmv3Validity()).toBeFalsy();
+        expect(mv3BadModifier.getMV3Validity()).toBeFalsy();
 
         const mv3BadModifier2 = new RemoveParamModifier('/P5/i');
-        expect(mv3BadModifier2.getmv3Validity()).toBeFalsy();
+        expect(mv3BadModifier2.getMV3Validity()).toBeFalsy();
     });
 });

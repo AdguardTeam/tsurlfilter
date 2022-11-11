@@ -1,6 +1,4 @@
-import {
-    NetworkRule, RequestType,
-} from '../../../src';
+import { NetworkRule, RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { DomainsLookupTable } from '../../../src/engine/lookup-tables/domains-lookup-table';

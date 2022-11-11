@@ -1,11 +1,14 @@
 import fs from 'fs';
-import { DeclarativeConverter, StringRuleList } from '@adguard/tsurlfilter';
+import { convertFilters } from '@adguard/tsurlfilter/cli';
+import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 import axios from 'axios';
 import path from 'path';
+import { ensureDir } from 'fs-extra';
 
 const COMMON_FILTERS_DIR = './extension/filters';
 const FILTERS_DIR = `${COMMON_FILTERS_DIR}`;
-const DECLARATIVE_FILTERS_DIR = `${COMMON_FILTERS_DIR}/declarative`;
+const DEST_RULE_SETS_DIR = `${COMMON_FILTERS_DIR}/declarative`;
+const RESOURCES_DIR = '/war/redirects';
 
 const ADGUARD_FILTERS_IDS = [1, 2, 3, 4, 9, 14];
 
@@ -21,52 +24,9 @@ export type UrlType = {
 const getUrlsOfFiltersResources = () => {
     return ADGUARD_FILTERS_IDS.map(filterId => ({
         id: filterId,
-        url: FILTER_DOWNLOAD_URL_FORMAT
-            .replace('%filter', `${filterId}`),
-        file: `filter_${filterId}.txt`,
+        url: FILTER_DOWNLOAD_URL_FORMAT.replace('%filter', `${filterId}`),
+        file: getFilterName(filterId),
     }));
-};
-
-const ensureDirSync = (dirPath: string) => {
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, {
-            recursive: true,
-            mode: 0o2775,
-        });
-    }
-};
-
-const startConvert = () => {
-    const converter = new DeclarativeConverter();
-
-    ensureDirSync(DECLARATIVE_FILTERS_DIR);
-
-    const files = fs.readdirSync(FILTERS_DIR);
-
-    const prepareDeclarativeFilter = (filePath: string) => {
-        console.info(`Convert ${filePath}...`);
-
-        const rulesetIndex = filePath.match(/\d+/);
-        if (rulesetIndex) {
-            const data = fs.readFileSync(`${FILTERS_DIR}/${filePath}`, { encoding: 'utf-8' });
-            const list = new StringRuleList(+rulesetIndex, data);
-            const { declarativeRules } = converter.convert(
-                list,
-                { resourcesPath: '/war/redirects' },
-            );
-            const fileDeclarative = filePath.replace('.txt', '.json');
-            fs.writeFileSync(
-                `${DECLARATIVE_FILTERS_DIR}/${fileDeclarative}`,
-                JSON.stringify(declarativeRules, null, '\t'),
-            );
-
-            console.info(`Convert ${filePath} done`);
-        } else {
-            console.info(`Convert ${filePath} skipped`);
-        }
-    };
-
-    files.forEach(prepareDeclarativeFilter);
 };
 
 const downloadFilter = async (url: UrlType, filtersDir: string) => {
@@ -80,7 +40,7 @@ const downloadFilter = async (url: UrlType, filtersDir: string) => {
 };
 
 const startDownload = async () => {
-    ensureDirSync(FILTERS_DIR);
+    await ensureDir(FILTERS_DIR);
 
     const urls = getUrlsOfFiltersResources();
     await Promise.all(urls.map(url => downloadFilter(url, FILTERS_DIR)));
@@ -88,7 +48,7 @@ const startDownload = async () => {
 
 /**
  * Compiles rules to declarative json
- * Actually for each ruleset entry in manifest's declarative_net_request:
+ * Actually for each rule set entry in manifest's declarative_net_request:
  *
  * "declarative_net_request": {
  *   "rule_resources": [{
@@ -102,7 +62,13 @@ const startDownload = async () => {
  */
 const precompileRules = async () => {
     await startDownload();
-    startConvert();
+
+    await convertFilters(
+        FILTERS_DIR,
+        RESOURCES_DIR,
+        DEST_RULE_SETS_DIR,
+        true,
+    );
 };
 
 precompileRules();

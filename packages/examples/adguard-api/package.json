@@ -27,7 +27,7 @@
     "esbuild": "^0.14.1",
     "esbuild-register": "^3.2.0",
     "eslint": "^8.6.0",
-    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.25.4",

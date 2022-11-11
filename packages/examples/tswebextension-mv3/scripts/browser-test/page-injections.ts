@@ -1,13 +1,15 @@
-import { Configuration, TsWebExtension } from '@adguard/tswebextension';
-import { TESTS_COMPLETED_EVENT } from '../constants';
+import { ConfigurationMV3 } from '@adguard/tswebextension/dist/types/lib/mv3/background/configuration';
+import { Configuration, TsWebExtension } from '@adguard/tswebextension/mv3';
+import { LogDetails } from './logger';
 
 declare global {
     interface Window {
         tsWebExtension: TsWebExtension;
+        isInitialized: boolean;
     }
 }
 
-export const addQunitListeners = (callbackName: string) => {
+export const addQunitListeners = (logResultFnName: string) => {
     let qUnit: any;
 
     Object.defineProperty(window, 'QUnit', {
@@ -16,30 +18,33 @@ export const addQunitListeners = (callbackName: string) => {
             qUnit = value;
 
             // https://github.com/js-reporters/js-reporters
-            qUnit.on('runEnd', (details: any) => {
+            qUnit.on('runEnd', (details: LogDetails) => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
-                (<any>window)[callbackName](Object.assign(details, { name }));
+                (<any>window)[logResultFnName](Object.assign(details, { name }));
 
-                window.dispatchEvent(new Event(TESTS_COMPLETED_EVENT));
+                (<any>window).testsCompleted = true;
             });
         },
         configurable: true,
     });
 };
 
-
 export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrules: string ];
 
-export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) => {
+export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, userrules ] = arg;
-    await self.tsWebExtension.configure(
-        Object.assign(
-            defaultConfig,
-            {
-                filters: [],
-                userrules: [ userrules ],
-            },
-        ),
-    );
+    const configuration: ConfigurationMV3 = defaultConfig;
+    configuration.userrules = userrules.split('\n');
+    await self.tsWebExtension.configure(configuration);
+};
+
+export const waitUntilExtensionInitialized = async (eventName: string): Promise<void> => {
+    return new Promise((resolve: () => void) => {
+        addEventListener(eventName, resolve, { once: true });
+    });
+};
+
+export const waitUntilTestsCompleted = () => {
+    return (<any>window).testsCompleted;
 };

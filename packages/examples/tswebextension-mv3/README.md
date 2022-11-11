@@ -16,12 +16,7 @@ yarn build
 ```
 
 ### <a id="precompile"></a> Precompile declarative rules
-Converts rules in `/extension/filters/static.txt` to a set of declarative rules in `/extension/filters/declarative/rules.json`:
-```
-yarn build:precompile-rules
-```
-
-### Build and compile rules
+Updates and converts rules from provided path to a set of declarative rules:
 ```
 yarn build:precompile-rules
 ```
@@ -39,3 +34,7 @@ You can apply any custom user rules, for example rule `||example.org$document`.
 Then, click "Apply" and go to https://example.org - site will be blocked.
 
 4. Cosmetic rules at now applies with huge (about 2 seconds) latency
+
+5. **Declarative filtering log.**
+You can open the developer tools, go to the "AdGuard" tab,
+and see what declarative network rules have been applied to the page.

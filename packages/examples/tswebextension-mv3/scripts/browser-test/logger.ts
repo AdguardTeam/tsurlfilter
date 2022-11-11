@@ -1,4 +1,4 @@
-import { colorizeStatusText, colorizeTitleText } from './text-color';
+import { colorizeDurationTime, colorizeStatusText, colorizeTitleText } from './text-color';
 
 export interface LogDetails {
     name: string,
@@ -28,7 +28,8 @@ export const logTestResult = (details: LogDetails) => {
         counts.failed,
         counts.skipped,
     );
-    console.log('Duration:', details.runtime, '\n');
+    // precision format log %.2f doesn't work in chrome
+    console.log(`Duration: ${colorizeDurationTime(details.runtime.toFixed(2))}ms \n`);
 
     const tests = details.tests;
 
@@ -37,6 +38,16 @@ export const logTestResult = (details: LogDetails) => {
 
         console.log(test.name, colorizeStatusText(test.status));
     }
+
+    console.log('\n');
+};
+
+
+export const logTestTimeout = (testName: string, timeoutMs: number) => {
+    console.log(colorizeTitleText(testName));
+
+    console.log('Status:', colorizeStatusText('TIMEOUT'));
+    console.log(`After waited ${colorizeDurationTime(timeoutMs)}ms test was skipped\n`);
 
     console.log('\n');
 };

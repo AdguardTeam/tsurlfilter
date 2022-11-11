@@ -35,7 +35,7 @@ export class ElementCollapser {
             }
             case 'frame':
             case 'iframe':
-                return RequestType.Subdocument;
+                return RequestType.SubDocument;
             default:
                 return null;
         }

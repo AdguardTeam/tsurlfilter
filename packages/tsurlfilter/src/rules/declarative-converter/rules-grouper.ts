@@ -1,0 +1,61 @@
+import { NetworkRule, NetworkRuleOption } from '../network-rule';
+import { IndexedRule } from '../rule';
+
+export enum RulesGroup {
+    Regular = 0,
+    RemoveParam = 1,
+    BadFilter = 2,
+}
+
+export type GroupedRules = { [key in RulesGroup]: IndexedRule[] };
+
+/**
+ * Contains logic on how to divide the rules into certain groups.
+ *
+ * @see {@link RulesGroup}
+ */
+export class DeclarativeRulesGrouper {
+    /**
+     * Returns group of the indexed rule.
+     *
+     * @param indexedRule Indexed rule.
+     *
+     * @returns Group of the indexed rule.
+     */
+    private static getRuleGroup(indexedRule: IndexedRule): RulesGroup {
+        const rule = indexedRule.rule as NetworkRule;
+
+        if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+            return RulesGroup.RemoveParam;
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+            return RulesGroup.BadFilter;
+        }
+
+        return RulesGroup.Regular;
+    }
+
+    /**
+     * Splits the list of indexed rules into an index with groups.
+     *
+     * @param rules List of indexed rules.
+     *
+     * @returns Index with grouped, indexed rules.
+     */
+    public static splitRulesByGroups(rules: IndexedRule[]): GroupedRules {
+        const rulesToProcess: GroupedRules = {
+            [RulesGroup.RemoveParam]: [],
+            [RulesGroup.BadFilter]: [],
+            [RulesGroup.Regular]: [],
+        };
+
+        // Categorizing rule groups
+        rules.forEach((indexedRule) => {
+            const group = DeclarativeRulesGrouper.getRuleGroup(indexedRule);
+            rulesToProcess[group].push(indexedRule);
+        });
+
+        return rulesToProcess;
+    }
+}

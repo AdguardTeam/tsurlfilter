@@ -1,21 +1,23 @@
 import { Configuration } from '@adguard/tswebextension/mv3';
-import { loadFilterContent } from './loadFilterContent';
 
 /**
  * Return default configuration with loaded filters content
  * @param filtersDir directory with filters in txt format
  * @returns configuration
  */
-export const loadDefaultConfig = async (filtersDir: string): Promise<Configuration> => {
+export const loadDefaultConfig = (): Configuration => {
     console.debug('[LOAD DEFAULT CONFIG]: start');
 
-    const defaultFilters = [1, 2, 3, 4, 9, 14];
     const defaultConfig: Configuration = {
-        filters: [],
+        staticFiltersIds: [1, 2, 3, 4, 9, 14],
+        customFilters: [],
         allowlist: [],
         trustedDomains: [],
         userrules: [],
         verbose: false,
+        filtersPath: 'filters',
+        ruleSetsPath: 'filters/declarative',
+        filteringLogEnabled: false,
         settings: {
             collectStats: true,
             allowlistInverted: false,
@@ -36,10 +38,6 @@ export const loadDefaultConfig = async (filtersDir: string): Promise<Configurati
             },
         },
     };
-
-    defaultConfig.filters = await Promise.all(
-        defaultFilters.map((id) => loadFilterContent(id, filtersDir)),
-    );
 
     console.debug('[LOAD DEFAULT CONFIG]: end');
 

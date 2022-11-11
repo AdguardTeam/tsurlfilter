@@ -4,10 +4,7 @@ import ExtendedCss from 'extended-css';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 
-// TODO: Add extended css
-// TODO: It helps only with Force refresh (via drop cache).
-// For just F5 - cosmetic css won't be applied
-const applyCss = (cssContent: string) => {
+const applyCss = (cssContent: string): void => {
     if (!cssContent || cssContent.length === 0) {
         return;
     }
@@ -20,7 +17,7 @@ const applyCss = (cssContent: string) => {
     console.debug('[COSMETIC CSS]: applied');
 };
 
-const applyExtendedCss = (cssText: string) => {
+const applyExtendedCss = (cssText: string): void => {
     if (!cssText || cssText.length === 0) {
         return;
     }
@@ -35,7 +32,7 @@ const applyExtendedCss = (cssText: string) => {
     console.debug('[EXTENDED CSS]: applied');
 };
 
-(async () => {
+(async (): Promise<void> => {
     const res = await sendAppMessage({
         type: MessageType.GET_CSS,
         payload: {

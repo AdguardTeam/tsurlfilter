@@ -38,7 +38,7 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
         case 'sub_frame':
             return {
                 contentType: ContentType.SUBDOCUMENT,
-                requestType: RequestType.Subdocument,
+                requestType: RequestType.SubDocument,
             };
         case 'stylesheet':
             return {
@@ -85,7 +85,7 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
         case 'websocket':
             return {
                 contentType: ContentType.WEBSOCKET,
-                requestType: RequestType.Websocket,
+                requestType: RequestType.WebSocket,
             };
         case 'csp_report':
             return {

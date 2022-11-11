@@ -7,6 +7,7 @@ import json from '@rollup/plugin-json';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
 import cleanup from 'rollup-plugin-cleanup';
 import { terser } from 'rollup-plugin-terser';
+import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
@@ -82,7 +83,46 @@ const umdConfig = {
     ...commonConfig,
 };
 
+const cliConfig = {
+    input: 'cli/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/cli.js`,
+            format: 'cjs',
+            sourcemap: false,
+        },
+    ],
+    external: [
+        '@adguard/scriptlets',
+        'is-ip',
+        'punycode/',
+        'tldts',
+        'is-cidr',
+        'netmask',
+        'ip6addr',
+    ],
+
+    plugins: [
+        // Allow json resolution
+        json(),
+
+        // Compile TypeScript files
+        typescript(),
+
+        cleanup({
+            comments: ['srcmaps'],
+        }),
+
+        preserveShebangs(),
+    ],
+
+    watch: {
+        include: 'cli/**',
+    },
+};
+
 export default [
     esmConfig,
     umdConfig,
+    cliConfig,
 ];

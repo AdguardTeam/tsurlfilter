@@ -1,13 +1,43 @@
+import { TooComplexRegexpError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import {
-    DeclarativeRuleConverter, DeclarativeRulePriority,
-} from '../../../src/rules/declarative-converter/declarative-rule-converter';
+    DeclarativeRulePriority,
+} from '../../../src/rules/declarative-converter/grouped-rules-converters/abstract-rule-converter';
+import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import { NetworkRule } from '../../../src/rules/network-rule';
+import { IndexedRule } from '../../../src/rules/rule';
+import { RuleFactory } from '../../../src/rules/rule-factory';
+
+const createRulesFromText = (
+    filterId: number,
+    lines: string[],
+): IndexedRule[] => {
+    let idx = 0;
+
+    return lines
+        .map((r) => {
+            const rule = RuleFactory.createRule(r, filterId);
+            return rule
+            // eslint-disable-next-line no-plusplus
+                ? new IndexedRule(rule, idx++)
+                : null;
+        })
+        .filter((r) => r) as IndexedRule[];
+};
 
 describe('DeclarativeRuleConverter', () => {
     it('converts simple blocking rules', () => {
-        const ruleText = '||example.org^';
+        const filterId = 0;
         const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+
+        const rules = createRulesFromText(
+            filterId,
+            ['||example.org^'],
+        );
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
         expect(declarativeRule).toEqual({
             id: ruleId,
             action: {
@@ -21,9 +51,17 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts simple allowlist rules', () => {
-        const ruleText = '@@||example.org^';
+        const filterId = 0;
+        const rules = createRulesFromText(
+            filterId,
+            ['@@||example.org^'],
+        );
         const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
         expect(declarativeRule).toEqual({
             id: ruleId,
             priority: DeclarativeRulePriority.Exception,
@@ -38,9 +76,17 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts important allowlist rules', () => {
-        const ruleText = '@@||example.org^$important';
+        const filterId = 0;
+        const rules = createRulesFromText(
+            filterId,
+            ['@@||example.org^$important'],
+        );
         const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
         expect(declarativeRule).toEqual({
             id: ruleId,
             priority: DeclarativeRulePriority.ImportantException,
@@ -55,9 +101,18 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts rules with $third-party modifiers', () => {
-        const thirdPartyRuleText = '||example.org^$third-party';
+        const filterId = 0;
         const ruleId = 1;
-        const thirdPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(thirdPartyRuleText, -1), ruleId);
+
+        const thirdPartyRules = createRulesFromText(
+            filterId,
+            ['||example.org^$third-party'],
+        );
+        const {
+            declarativeRules: [thirdPartyDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, thirdPartyRules]],
+        );
         expect(thirdPartyDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -70,9 +125,17 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const firstPartyRuleText = '||example.org^$~third-party';
-        const firstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(firstPartyRuleText, -1), ruleId);
-        expect(firstPartyDeclarative).toEqual({
+        const negateFirstPartyRules = createRulesFromText(
+            filterId,
+            ['||example.org^$~third-party'],
+        );
+        const {
+            declarativeRules: [negateFirstPartyDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, negateFirstPartyRules]],
+        );
+
+        expect(negateFirstPartyDeclarative).toEqual({
             id: ruleId,
             action: {
                 type: 'block',
@@ -86,9 +149,18 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts rules with $first-party modifiers', () => {
-        const firstPartyRuleText = '||example.org^$first-party';
+        const filterId = 0;
         const ruleId = 1;
-        const firstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(firstPartyRuleText, -1), ruleId);
+
+        const firstPartyRules = createRulesFromText(
+            filterId,
+            ['||example.org^$first-party'],
+        );
+        const {
+            declarativeRules: [firstPartyDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, firstPartyRules]],
+        );
         expect(firstPartyDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -101,11 +173,15 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const negateFirstPartyRuleText = '||example.org^$~first-party';
-        const negateFirstPartyDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(
-            negateFirstPartyRuleText,
-            -1,
-        ), ruleId);
+        const negateFirstPartyRules = createRulesFromText(
+            filterId,
+            ['||example.org^$~first-party'],
+        );
+        const {
+            declarativeRules: [negateFirstPartyDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, negateFirstPartyRules]],
+        );
         expect(negateFirstPartyDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -120,9 +196,18 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts rules with $domain modifiers', () => {
-        const domainRuleText = '||example.org^$domain=example.com';
+        const filterId = 0;
         const ruleId = 1;
-        const domainDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(domainRuleText, -1), ruleId);
+
+        const domainRules = createRulesFromText(
+            filterId,
+            ['||example.org^$domain=example.com'],
+        );
+        const {
+            declarativeRules: [domainDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, domainRules]],
+        );
         expect(domainDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -135,10 +220,14 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const multipleDomainRuleText = '||example.org^$domain=example.com|example2.com|~example3.com|~example4.com';
-        const multipleDomainDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(multipleDomainRuleText, -1),
-            ruleId,
+        const multipleDomainRules = createRulesFromText(
+            filterId,
+            ['||example.org^$domain=example.com|example2.com|~example3.com|~example4.com'],
+        );
+        const {
+            declarativeRules: [multipleDomainDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, multipleDomainRules]],
         );
         expect(multipleDomainDeclarative).toEqual({
             id: ruleId,
@@ -153,10 +242,14 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const negateDomainRuleText = '||example.org^$domain=~example.com';
-        const negateDomainDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negateDomainRuleText, -1),
-            ruleId,
+        const negateDomainRules = createRulesFromText(
+            filterId,
+            ['||example.org^$domain=~example.com'],
+        );
+        const {
+            declarativeRules: [negateDomainDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, negateDomainRules]],
         );
         expect(negateDomainDeclarative).toEqual({
             id: ruleId,
@@ -172,9 +265,18 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts rules with specified request types', () => {
-        const scriptRuleText = '||example.org^$script';
+        const filterId = 0;
         const ruleId = 1;
-        const scriptRuleDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(scriptRuleText, -1), ruleId);
+
+        const scriptRules = createRulesFromText(
+            filterId,
+            ['||example.org^$script'],
+        );
+        const {
+            declarativeRules: [scriptRuleDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, scriptRules]],
+        );
         expect(scriptRuleDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -187,10 +289,14 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const negatedScriptRule = '||example.org^$~script';
-        const negatedScriptRuleDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negatedScriptRule, -1),
-            ruleId,
+        const negatedScriptRules = createRulesFromText(
+            filterId,
+            ['||example.org^$~script'],
+        );
+        const {
+            declarativeRules: [negatedScriptRuleDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, negatedScriptRules]],
         );
         expect(negatedScriptRuleDeclarative).toEqual({
             id: ruleId,
@@ -204,27 +310,44 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const multipleRequestTypesRule = '||example.org^$script,image,media';
-        const multipleDeclarativeRule = DeclarativeRuleConverter.convert(
-            new NetworkRule(multipleRequestTypesRule, -1),
-            ruleId,
+        const multipleRequestTypesRules = createRulesFromText(
+            filterId,
+            ['||example.org^$script,image,media'],
         );
-        expect(multipleDeclarativeRule!.condition?.resourceTypes?.sort())
+        const {
+            declarativeRules: [multipleDeclarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, multipleRequestTypesRules]],
+        );
+        expect(multipleDeclarativeRule.condition?.resourceTypes?.sort())
             .toEqual(['script', 'image', 'media'].sort());
 
-        const multipleNegatedRequestTypesRule = '||example.org^$~script,~subdocument';
-        const multipleNegatedDeclarativeRule = DeclarativeRuleConverter.convert(
-            new NetworkRule(multipleNegatedRequestTypesRule, -1),
-            ruleId,
+        const multipleNegatedRequestTypesRules = createRulesFromText(
+            filterId,
+            ['||example.org^$~script,~subdocument'],
+        );
+        const {
+            declarativeRules: [multipleNegatedDeclarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, multipleNegatedRequestTypesRules]],
         );
         expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort())
             .toEqual(['script', 'sub_frame'].sort());
     });
 
     it('set rules case sensitive if necessary', () => {
-        const matchCaseRuleText = '||example.org^$match-case';
+        const filterId = 0;
         const ruleId = 1;
-        const matchCaseDeclarative = DeclarativeRuleConverter.convert(new NetworkRule(matchCaseRuleText, -1), ruleId);
+
+        const matchCaseRules = createRulesFromText(
+            filterId,
+            ['||example.org^$match-case'],
+        );
+        const {
+            declarativeRules: [matchCaseDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, matchCaseRules]],
+        );
         expect(matchCaseDeclarative).toEqual({
             id: ruleId,
             action: {
@@ -236,10 +359,14 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
 
-        const negatedMatchCaseTextRule = '||example.org^$~match-case';
-        const negatedMatchCaseDeclarative = DeclarativeRuleConverter.convert(
-            new NetworkRule(negatedMatchCaseTextRule, -1),
-            ruleId,
+        const negatedMatchCaseRules = createRulesFromText(
+            filterId,
+            ['||example.org^$~match-case'],
+        );
+        const {
+            declarativeRules: [negatedMatchCaseDeclarative],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, negatedMatchCaseRules]],
         );
         expect(negatedMatchCaseDeclarative).toEqual({
             id: ruleId,
@@ -254,9 +381,19 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts wildcard blocking rules', () => {
-        const ruleText = '||*example.org^';
+        const filterId = 0;
         const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+
+        const rules = createRulesFromText(
+            filterId,
+            ['||*example.org^'],
+        );
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+
         expect(declarativeRule).toEqual({
             id: ruleId,
             action: {
@@ -272,51 +409,120 @@ describe('DeclarativeRuleConverter', () => {
     // backreference; negative lookahead not supported;
     // https://github.com/google/re2/wiki/Syntax
     it('converts regex backslash before 1-9', () => {
-        // eslint-disable-next-line max-len
-        const ruleText = '/\\.vidzi\\.tv\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/\\1\\2\\3([a-f0-9]{26})\\.js/$domain=vidzi.tv';
-        const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual(null);
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            // eslint-disable-next-line max-len
+            ['/\\.vidzi\\.tv\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/([a-f0-9]{2})\\/\\1\\2\\3([a-f0-9]{26})\\.js/$domain=vidzi.tv'],
+        );
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+
+        expect(declarativeRule).toEqual(undefined);
     });
 
     // TODO Find how exactly the complexity of a rule is calculated
-    it('More complex regex than allowed', () => {
+    it('checks more complex regex than allowed', () => {
+        const filterId = 0;
         // eslint-disable-next-line max-len
-        const ruleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
-        const ruleId = 1;
-        expect(() => {
-            DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        }).toThrowError();
+        const regexpRuleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
+        const rules = createRulesFromText(
+            filterId,
+            [regexpRuleText],
+        );
+
+        const {
+            errors,
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+
+        const networkRule = new NetworkRule(regexpRuleText, filterId);
+
+        const err = new TooComplexRegexpError(
+            `More complex regex than allowed: "${networkRule.getText()}"`,
+            networkRule,
+            declarativeRule,
+        );
+
+        expect(errors).toHaveLength(1);
+        expect(errors).toContainEqual(err);
     });
 
     it('converts regex negative lookahead', () => {
-        const ruleText = '/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location';
-        const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual(null);
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            ['/rustorka.\\w+\\/forum\\/(?!login.php)/$removeheader=location'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+        expect(declarativeRule).toEqual(undefined);
     });
 
     // WebRTC resource type is not supported in Manifest V3
     it('converts WebRTC connections rules', () => {
-        const ruleText = '@@$webrtc,domain=walla.co.il';
-        const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual(null);
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            ['@@$webrtc,domain=walla.co.il'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+
+        expect(declarativeRule).toEqual(undefined);
     });
 
     // Cookies rules are not supported
-    it('converts cookies rules', () => {
-        const ruleText = '$cookie=bf_lead';
-        const ruleId = 1;
-        const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
-        expect(declarativeRule).toEqual(null);
+    it('converts $cookies rules', () => {
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            ['$cookie=bf_lead'],
+        );
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+
+        expect(declarativeRule).toEqual(undefined);
     });
 
     describe('converts cyrillic domain rules', () => {
         it('converts domains section', () => {
-            const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule('path$domain=меил.рф', -1), 2);
+            const filterId = 0;
+            const ruleId = 1;
+            const rules = createRulesFromText(
+                filterId,
+                ['path$domain=меил.рф'],
+            );
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+
             expect(declarativeRule).toEqual({
-                id: 2,
+                id: ruleId,
                 action: {
                     type: 'block',
                 },
@@ -331,12 +537,21 @@ describe('DeclarativeRuleConverter', () => {
         });
 
         it('converts urlFilterSection', () => {
-            const declarativeRule = DeclarativeRuleConverter.convert(
-                new NetworkRule('||банрек.рус^$third-party', -1),
-                1,
+            const filterId = 0;
+            const ruleId = 1;
+            const rules = createRulesFromText(
+                filterId,
+                ['||банрек.рус^$third-party'],
             );
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+
             expect(declarativeRule).toEqual({
-                id: 1,
+                id: ruleId,
                 action: {
                     type: 'block',
                 },
@@ -349,16 +564,25 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
-    it('converts redirect rules', () => {
+    it('converts $redirect rules', () => {
         const resourcesPath = '/war/redirects';
+        const filterId = 0;
         const ruleId = 1;
 
-        DeclarativeRuleConverter.WebAccessibleResourcesPath = resourcesPath;
-        const result = DeclarativeRuleConverter.convert(
-            new NetworkRule('||example.org/script.js$script,redirect=noopjs', -1),
-            ruleId,
+        const rules = createRulesFromText(
+            filterId,
+            ['||example.org/script.js$script,redirect=noopjs'],
         );
-        expect(result).toStrictEqual({
+
+        const {
+            declarativeRules: [declarativeRule],
+        } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+            { resourcesPath },
+        );
+
+        expect(declarativeRule).toStrictEqual({
+            id: ruleId,
             action: {
                 type: 'redirect',
                 redirect: {
@@ -372,22 +596,26 @@ describe('DeclarativeRuleConverter', () => {
                 ],
                 urlFilter: '||example.org/script.js',
             },
-            id: ruleId,
         });
     });
 
-    describe('converts denyallow rules', () => {
+    describe('converts $denyallow rules', () => {
         it('converts denyallow simple rule', () => {
+            const filterId = 0;
             const ruleId = 1;
 
-            const result = DeclarativeRuleConverter.convert(
-                new NetworkRule(
-                    '/adguard_circle.png$image,denyallow=cdn.adguard.com,domain=testcases.adguard.com|surge.sh',
-                    -1,
-                ),
-                ruleId,
+            const rules = createRulesFromText(
+                filterId,
+                ['/adguard_circle.png$image,denyallow=cdn.adguard.com,domain=testcases.adguard.com|surge.sh'],
             );
-            expect(result).toStrictEqual({
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+
+            expect(declarativeRule).toStrictEqual({
                 id: ruleId,
                 action: { type: 'block' },
                 condition: {
@@ -404,17 +632,22 @@ describe('DeclarativeRuleConverter', () => {
         });
 
         it('converts denyallow exclude rule', () => {
+            const filterId = 0;
             const ruleId = 1;
 
-            const result = DeclarativeRuleConverter.convert(
-                new NetworkRule(
-                    // eslint-disable-next-line max-len
-                    '@@/adguard_dns_map.png$image,denyallow=cdn.adguard.com|fastcdn.adguard.com,domain=testcases.adguard.com|surge.sh',
-                    -1,
-                ),
-                ruleId,
+            const rules = createRulesFromText(
+                filterId,
+                // eslint-disable-next-line max-len
+                ['@@/adguard_dns_map.png$image,denyallow=cdn.adguard.com|fastcdn.adguard.com,domain=testcases.adguard.com|surge.sh'],
             );
-            expect(result).toStrictEqual({
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+
+            expect(declarativeRule).toStrictEqual({
                 priority: 1,
                 id: ruleId,
                 action: { type: 'allow' },
@@ -437,11 +670,18 @@ describe('DeclarativeRuleConverter', () => {
 
     describe('check $removeparam', () => {
         it('converts $removeparam rules', () => {
-            const ruleText = '||example.com$removeparam=param';
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||example.com$removeparam=param'],
+            );
             const ruleId = 1;
 
-            const networkRule = new NetworkRule(ruleText, -1);
-            const declarativeRule = DeclarativeRuleConverter.convert(networkRule, ruleId);
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 action: {
@@ -462,10 +702,18 @@ describe('DeclarativeRuleConverter', () => {
         });
 
         it('converts empty $removeparam rule', () => {
-            const ruleText = '||example.com$removeparam';
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||example.com$removeparam'],
+            );
             const ruleId = 1;
 
-            const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 action: {
@@ -483,11 +731,77 @@ describe('DeclarativeRuleConverter', () => {
             });
         });
 
+        it('combine several $removeparam rule', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '||testcases.adguard.com$xmlhttprequest,removeparam=p1case1',
+                    '||testcases.adguard.com$xmlhttprequest,removeparam=p2case1',
+                    '||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1',
+                    '$xmlhttprequest,removeparam=p1case2',
+                ],
+            );
+            const firstGroupedRuleId = 1;
+            const secondGroupedRuleId = 4;
+
+            const { declarativeRules } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules)
+                .toEqual(expect.arrayContaining([{
+                    id: firstGroupedRuleId,
+                    action: {
+                        type: 'redirect',
+                        redirect: {
+                            transform: {
+                                queryTransform: {
+                                    removeParams: [
+                                        'p1case1',
+                                        'p2case1',
+                                        'P3Case1',
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                    condition: {
+                        urlFilter: '||testcases.adguard.com',
+                        resourceTypes: ['xmlhttprequest'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }, {
+                    id: secondGroupedRuleId,
+                    action: {
+                        type: 'redirect',
+                        redirect: {
+                            transform: {
+                                queryTransform: {
+                                    removeParams: ['p1case2'],
+                                },
+                            },
+                        },
+                    },
+                    condition: {
+                        resourceTypes: ['xmlhttprequest'],
+                        isUrlFilterCaseSensitive: false,
+                    },
+                }]));
+        });
+
         it('converts $removeparam resource type xmlhttprequest', () => {
-            const ruleText = '||testcases.adguard.com$xmlhttprequest,removeparam=p2case2';
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||testcases.adguard.com$xmlhttprequest,removeparam=p2case2'],
+            );
             const ruleId = 1;
 
-            const declarativeRule = DeclarativeRuleConverter.convert(new NetworkRule(ruleText, -1), ruleId);
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 action: {

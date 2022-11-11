@@ -78,7 +78,7 @@ export class WebRequestApi {
             requestFrameId,
         } = context;
 
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             tabsApi.recordFrameRequest(context);
 
             if (requestType === RequestType.Document) {
@@ -126,7 +126,7 @@ export class WebRequestApi {
             matchingResult: result,
         });
 
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const cosmeticOption = result.getCosmeticOption();
 
             const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
@@ -232,7 +232,7 @@ export class WebRequestApi {
 
         let responseHeadersModified = false;
 
-        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.Subdocument)) {
+        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
             if (CspService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
@@ -312,7 +312,7 @@ export class WebRequestApi {
             cosmeticResult,
         } = context;
 
-        if (requestType === RequestType.Document || requestType === RequestType.Subdocument) {
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const scriptRules = cosmeticResult.getScriptRules();
 
             const scriptText = CosmeticApi.getScriptText(scriptRules);

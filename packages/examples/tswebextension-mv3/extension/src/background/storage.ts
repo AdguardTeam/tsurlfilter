@@ -1,7 +1,6 @@
 export const enum StorageKeys {
-    IS_STARTED = 'isStarted',
-    CONFIG = 'config',
-    RULESET_PREFIX = 'ruleset',
+    IsStarted = 'isStarted',
+    Config = 'config',
 }
 
 class Storage {

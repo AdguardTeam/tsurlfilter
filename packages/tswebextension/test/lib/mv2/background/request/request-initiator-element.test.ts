@@ -22,7 +22,7 @@ describe('Request Initiator Element', () => {
         const tabId = 1;
         const frameId = 0;
 
-        hideRequestInitiatorElement(tabId, frameId, 'https://example.org', RequestType.Subdocument, true);
+        hideRequestInitiatorElement(tabId, frameId, 'https://example.org', RequestType.SubDocument, true);
 
         const expectedTags = [InitiatorTag.IFRAME, InitiatorTag.FRAME];
 

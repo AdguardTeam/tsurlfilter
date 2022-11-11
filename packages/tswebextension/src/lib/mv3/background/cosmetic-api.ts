@@ -1,9 +1,19 @@
 import { CosmeticRule } from '@adguard/tsurlfilter';
 
 // TODO: Move to common
+/**
+ * CosmeticApi contains logic about building css for hiding elements.
+ */
 export class CosmeticApi {
     /**
-     * Builds stylesheet from rules
+     * Builds stylesheet from rules.
+     *
+     * @param elemhideRules List of cosmetic hiding rules.
+     * @param injectRules List of cosmetic inject rules.
+     * @param groupElemhideSelectors Whether Elemhide selector grouping
+     * is necessary.
+     *
+     * @returns List of string rules.
      */
     public static buildStyleSheet(
         elemhideRules: CosmeticRule[],

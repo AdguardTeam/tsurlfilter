@@ -16,7 +16,7 @@ describe('Request Type', () => {
             },
             sub_frame: {
                 contentType: ContentType.SUBDOCUMENT,
-                requestType: RequestType.Subdocument,
+                requestType: RequestType.SubDocument,
             },
             stylesheet: {
                 contentType: ContentType.STYLESHEET,
@@ -56,7 +56,7 @@ describe('Request Type', () => {
             },
             websocket: {
                 contentType: ContentType.WEBSOCKET,
-                requestType: RequestType.Websocket,
+                requestType: RequestType.WebSocket,
             },
             csp_report: {
                 contentType: ContentType.CSP_REPORT,
