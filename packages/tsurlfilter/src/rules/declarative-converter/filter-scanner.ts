@@ -52,10 +52,9 @@ export class FilterScanner implements IFilterScanner {
      * @returns List of indexed rules.
      */
     public getIndexedRules(): IndexedRule[] {
-        const lines = this.filterContent;
-        const { filterId } = this;
+        const { filterContent, filterId } = this;
 
-        const indexedRules = lines
+        const indexedRules = filterContent
             .map((line, idx): IndexedRule | null => {
                 if (!line) {
                     return null;

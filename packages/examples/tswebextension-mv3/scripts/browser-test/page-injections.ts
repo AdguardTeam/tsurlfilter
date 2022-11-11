@@ -1,4 +1,3 @@
-import { ConfigurationMV3 } from '@adguard/tswebextension/dist/types/lib/mv3/background/configuration';
 import { Configuration, TsWebExtension } from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
 
@@ -34,7 +33,7 @@ export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrul
 
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, userrules ] = arg;
-    const configuration: ConfigurationMV3 = defaultConfig;
+    const configuration: Configuration = defaultConfig;
     configuration.userrules = userrules.split('\n');
     await self.tsWebExtension.configure(configuration);
 };

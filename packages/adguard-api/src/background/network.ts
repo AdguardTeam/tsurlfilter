@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import FiltersDownloader from "@adguard/filters-downloader/browser";
+import FiltersDownloader, { DefinedExpressions } from "@adguard/filters-downloader/browser";
 
 import { UserAgent } from "./utils";
 import { metadataValidator, Metadata, Configuration } from "./schemas";
@@ -28,7 +28,7 @@ import { metadataValidator, Metadata, Configuration } from "./schemas";
  */
 export class Network {
     // FiltersDownloader constants
-    private filterCompilerConditionsConstants = {
+    private filterCompilerConditionsConstants: DefinedExpressions = {
         adguard: true,
         adguard_ext_chromium: UserAgent.isChrome,
         adguard_ext_firefox: UserAgent.isFirefox,

@@ -39,5 +39,7 @@ module.exports = {
         ],
 
         'jsdoc/require-description-complete-sentence': ['warn'],
+
+        '@typescript-eslint/explicit-function-return-type': 'error',
     }
 }

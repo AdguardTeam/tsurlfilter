@@ -1,11 +1,11 @@
 import { ZodError } from 'zod';
-import { configurationValidator, Configuration } from '@lib/common';
+import { ConfigurationMV2, configurationMV2Validator } from '@lib/mv2';
 
 describe('configuration validator', () => {
-    const validConfiguration: Configuration = {
+    const validConfiguration: ConfigurationMV2 = {
         filters: [
-            { filterId: 1, content: '' },
-            { filterId: 2, content: '' },
+            { filterId: 1, content: '', trusted: true },
+            { filterId: 2, content: '', trusted: true },
         ],
         allowlist: ['example.com'],
         trustedDomains: [],
@@ -33,12 +33,12 @@ describe('configuration validator', () => {
     };
 
     it('passes valid configuration', () => {
-        expect(configurationValidator.parse(validConfiguration)).toEqual(validConfiguration);
+        expect(configurationMV2Validator.parse(validConfiguration)).toEqual(validConfiguration);
     });
 
     it('throws error on required field missing', () => {
         expect(() => {
-            configurationValidator.parse({
+            configurationMV2Validator.parse({
                 ...validConfiguration,
                 settings: undefined,
             });
@@ -57,13 +57,13 @@ describe('configuration validator', () => {
         const configuration = {
             ...validConfiguration,
             filters: [
-                { filterId: 1, content: false },
-                { filterId: 2, content: '' },
+                { filterId: 1, content: false, trusted: true },
+                { filterId: 2, content: '', trusted: true },
             ],
         };
 
         expect(() => {
-            configurationValidator.parse(configuration);
+            configurationMV2Validator.parse(configuration);
         }).toThrow(new ZodError([{
             code: 'invalid_type',
             expected: 'string',
@@ -84,7 +84,7 @@ describe('configuration validator', () => {
         };
 
         expect(() => {
-            configurationValidator.parse(configuration);
+            configurationMV2Validator.parse(configuration);
         }).toThrow(new ZodError([{
             code: 'unrecognized_keys',
             keys: [

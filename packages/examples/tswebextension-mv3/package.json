@@ -12,7 +12,7 @@
     "build:precompile-rules": "node -r esbuild-register ./scripts/precompile-rules.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'",
     "tswebextension": "tswebextension",
-    "test": "cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 rimraf tmp && node -r esbuild-register ./scripts/browser-test/index.ts"
+    "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r esbuild-register ./scripts/browser-test/index.ts"
   },
   "dependencies": {
     "@adguard/tswebextension": "^0.0.x",
