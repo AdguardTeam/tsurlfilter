@@ -109,7 +109,7 @@
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.62",
-    "@adguard/scriptlets": "^1.6.24",
+    "@adguard/scriptlets": "^1.6.55",
     "bowser": "2.11.0",
     "commander": "9.4.1",
     "deepmerge": "4.2.2",

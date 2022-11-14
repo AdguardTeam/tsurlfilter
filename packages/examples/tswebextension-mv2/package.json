@@ -14,7 +14,7 @@
     "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/tswebextension": "0.0.1",
+    "@adguard/tswebextension": "^0.0.x",
     "bowser": "^2.11.0",
     "formik": "^2.2.9",
     "react": "^17.0.2",

@@ -26,8 +26,8 @@
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/assistant": "^4.3.63",
-    "@adguard/filters-downloader": "^1.1.13",
-    "@adguard/tswebextension": "^0.0.25",
+    "@adguard/filters-downloader": "^1.1.14",
+    "@adguard/tswebextension": "^0.0.x",
     "url": "^0.11.0",
     "webextension-polyfill": "0.10.0",
     "zod": "3.19.1"
