@@ -20,6 +20,7 @@ import {
 } from './configuration';
 
 import { Assistant } from './assistant';
+import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 
 export interface ManifestV2AppInterface extends AppInterface<ConfigurationMV2, ConfigurationMV2Context, void> {
     getMessageHandler: () => typeof messagesApi.handleMessage
@@ -108,8 +109,20 @@ export class TsWebExtension implements ManifestV2AppInterface {
         return engineApi.getRulesCount();
     }
 
-    public getMessageHandler() {
+    // TODO: types
+    public getMessageHandler(): typeof messagesApi.handleMessage {
         return messagesApi.handleMessage;
+    }
+
+    /**
+     * Set prebuild local script rules
+     *
+     * @see {@link LocalScriptRulesService}
+     *
+     * @param localScriptRules - JSON object with pre-build JS rules. @see {@link LocalScriptRulesService}
+     */
+    public setLocalScriptRules(localScriptRules: LocalScriptRules): void {
+        localScriptRulesService.setLocalScriptRules(localScriptRules);
     }
 
     /**

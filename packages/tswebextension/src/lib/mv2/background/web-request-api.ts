@@ -318,6 +318,9 @@ export class WebRequestApi {
             const scriptText = CosmeticApi.getScriptText(scriptRules);
 
             if (scriptText) {
+                /**
+                 * @see {@link LocalScriptRulesService} for details about script source
+                 */
                 CosmeticApi.injectScript(scriptText, tabId, frameId);
 
                 for (const scriptRule of scriptRules) {

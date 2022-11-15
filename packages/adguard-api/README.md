@@ -1,5 +1,5 @@
 # AdGuard API
-**Document version: 1.0**
+**Version: 1.1.0**
 
 AdGuard API is filtering library, provided following features:
 

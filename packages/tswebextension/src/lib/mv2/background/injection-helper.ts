@@ -40,6 +40,7 @@ const variableName = `scriptExecuted${Date.now()}`;
 
 /**
  * Builds script to inject in a safe way;
+ * @see {@link LocalScriptRulesService} for details about script source
  */
 export const buildScriptText = (scriptText: string): string => {
     /**

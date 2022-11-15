@@ -1,7 +1,9 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
+import { localScriptRulesService } from './services/local-script-rules-service';
 import { tabsApi, TabsApi } from './tabs/tabs-api';
+import { USER_FILTER_ID } from '../../common/constants';
 
 export class CosmeticApi {
     private static ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
@@ -14,6 +16,7 @@ export class CosmeticApi {
 
     /**
      * Applies scripts from cosmetic result
+     * @see {@link LocalScriptRulesService} for details about script source
      */
     public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
         TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
@@ -80,7 +83,23 @@ export class CosmeticApi {
             return;
         }
 
-        const scriptText = rules.map((rule) => rule.getScript()).join('\n');
+        const scriptText = rules
+            .filter((rule) => {
+                const filterId = rule.getFilterListId();
+
+                if (filterId === USER_FILTER_ID) {
+                    return true;
+                }
+
+                const text = rule.getText();
+
+                /**
+                 * @see {@link LocalScriptRulesService} for details about script source
+                 */
+                return localScriptRulesService.isLocal(text);
+            })
+            .map((rule) => rule.getScript())
+            .join('\n');
 
         if (!scriptText) {
             return;
@@ -160,7 +179,7 @@ export class CosmeticApi {
      * Urlencodes rule text.
      *
      * @param ruleText
-     * @return {string}
+     * @returns {string}
      */
     private static escapeRule(ruleText: string): string {
         return encodeURIComponent(ruleText).replace(

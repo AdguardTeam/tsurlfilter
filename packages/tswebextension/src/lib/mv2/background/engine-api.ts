@@ -20,6 +20,7 @@ import { allowlistApi } from './allowlist';
 import { stealthApi } from './stealth-api';
 import { ConfigurationMV2 } from './configuration';
 import { documentBlockingService } from './services/document-blocking-service';
+import { USER_FILTER_ID } from '../../common/constants';
 
 /**
  * Request Match Query
@@ -53,8 +54,6 @@ export interface EngineApiInterface {
 }
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
-
-const USER_FILTER_ID = 0;
 
 /**
  * TSUrlFilter Engine wrapper
