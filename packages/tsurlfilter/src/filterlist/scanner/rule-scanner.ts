@@ -183,6 +183,7 @@ export class RuleScanner {
                 return true;
             }
             // Ignore JS type rules
+            // TODO: in the future we may allow CSS rules and Scriptlets (except for "trusted" scriptlets)
             return (this.ignoreJS && rule.getType() === CosmeticRuleType.Js);
         }
 
