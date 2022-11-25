@@ -40,7 +40,7 @@ Build:
             npx lerna@4 run --scope @adguard/tsurlfilter build
             npx lerna@4 run --scope @adguard/tswebextension build
             
-            npx lerna@4 run --scope @adguard/api build
+            npx lerna@4 run --scope @adguard/api build -- ${bamboo.varsYarn}
 
             cd packages/adguard-api/
             yarn pack --filename adguard-api.tgz
