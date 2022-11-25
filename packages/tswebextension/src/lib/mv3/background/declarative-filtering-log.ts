@@ -1,7 +1,5 @@
 import { IRuleSet, SourceRuleAndFilterId } from '@adguard/tsurlfilter';
 
-const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
-
 /**
  * Information about applied declarative network rule.
  */
@@ -134,7 +132,12 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
      * Starts recording.
      */
     public start = (): void => {
-        onRuleMatchedDebug.addListener(this.addNewRecord);
+        // onRuleMatchedDebug can be null if the extension is running
+        // as a packed version
+        if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
+            const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
+            onRuleMatchedDebug.addListener(this.addNewRecord);
+        }
     };
 
     /**
@@ -142,7 +145,13 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
      */
     public stop = (): void => {
         this.collected = [];
-        onRuleMatchedDebug.removeListener(this.addNewRecord);
+
+        // onRuleMatchedDebug can be null if the extension is running
+        // as a packed version
+        if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
+            const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
+            onRuleMatchedDebug.removeListener(this.addNewRecord);
+        }
     };
 
     /**

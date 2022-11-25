@@ -1,87 +1,99 @@
 # Table of contents
 1. [Description](#description)
-1. [Specific limitations](#specific_limitations)
-    1. [$document](#$document)
-    1. [$all](#$all)
-    1. [$removeparam](#$removeparam)
-    1. [$redirect-rule](#$redirect-rule)
+1. [MV3 specific limitations](#mv3_specific_limitations)
+    1. [$document](#mv3_specific_limitations__$document)
+    1. [$all](#mv3_specific_limitations__$all)
+    1. [$removeparam](#mv3_specific_limitations__$removeparam)
+    1. [$redirect-rule](#mv3_specific_limitations__$redirect-rule)
 1. [Basic examples](#basic_examples)
 1. [Basic modifiers](#basic_modifiers)
-    1. [$domain](#$domain)
-    1. [$third-party](#$third-party)
-    1. [$popup](#$popup)
-    1. [$match-case](#$match-case)
-    1. [$header](#$header)
+    1. [$domain](#basic_modifiers__$domain)
+    1. [$third-party](#basic_modifiers__$third-party)
+    1. [$popup](#basic_modifiers__$popup)
+    1. [$match-case](#basic_modifiers__$match-case)
+    1. [$header](#basic_modifiers__$header)
 1. [Content type modifiers](#content_type_modifiers)
-    1. [$document](#$document)
-    1. [$image](#$image)
-    1. [$stylesheet](#$stylesheet)
-    1. [$script](#$script)
-    1. [$object](#$object)
-    1. [$font](#$font)
-    1. [$media](#$media)
-    1. [$subdocument](#$subdocument)
-    1. [$ping](#$ping)
-    1. [$xmlhttprequest](#$xmlhttprequest)
-    1. [$websocket](#$websocket)
-    1. [$webrtc](#$webrtc)
+    1. [$document](#content_type_modifiers__$document)
+    1. [$image](#content_type_modifiers__$image)
+    1. [$stylesheet](#content_type_modifiers__$stylesheet)
+    1. [$script](#content_type_modifiers__$script)
+    1. [$object](#content_type_modifiers__$object)
+    1. [$font](#content_type_modifiers__$font)
+    1. [$media](#content_type_modifiers__$media)
+    1. [$subdocument](#content_type_modifiers__$subdocument)
+    1. [$ping](#content_type_modifiers__$ping)
+    1. [$xmlhttprequest](#content_type_modifiers__$xmlhttprequest)
+    1. [$websocket](#content_type_modifiers__$websocket)
+    1. [$webrtc](#content_type_modifiers__$webrtc)
+    1. [$other](#content_type_modifiers__$other)
 1. [Exception rules modifiers](#exception_rules_modifiers)
-    1. [$content](#$content)
-    1. [$urlblock](#$urlblock)
-    1. [$genericblock](#$genericblock)
-    1. [$specifichide](#$specifichide)
-    1. [Not supported in MV3](#not_supported_in_mv3)
-        1. [$elemhide (not supported in MV3)](#$elemhide_(not_supported_in_mv3))
-        1. [$jsinject (not supported in MV3)](#$jsinject_(not_supported_in_mv3))
-        1. [$stealth (not supported in MV3)](#$stealth_(not_supported_in_mv3))
-        1. [$generichide (not supported in MV3)](#$generichide_(not_supported_in_mv3))
+    1. [$elemhide](#exception_rules_modifiers__$elemhide)
+    1. [$content](#exception_rules_modifiers__$content)
+    1. [$jsinject](#exception_rules_modifiers__$jsinject)
+    1. [$urlblock](#exception_rules_modifiers__$urlblock)
+    1. [$stealth](#exception_rules_modifiers__$stealth)
+    1. [$generichide](#exception_rules_modifiers__$generichide)
+    1. [$genericblock](#exception_rules_modifiers__$genericblock)
+    1. [$specifichide](#exception_rules_modifiers__$specifichide)
 1. [Advanced capabilities](#advanced_capabilities)
-    1. [$important](#$important)
-    1. [$badfilter](#$badfilter)
-    1. [$redirect](#$redirect)
-    1. [$redirect-rule (partial support)](#$redirect-rule_(partial_support))
-    1. [$denyallow](#$denyallow)
-    1. [$removeparam](#$removeparam)
-    1. [Not supported in MV3](#not_supported_in_mv3)
-        1. [$all (not supported in MV3)](#$all_(not_supported_in_mv3))
-        1. [$removeheader (not supported in MV3)](#$removeheader_(not_supported_in_mv3))
-        1. [$replace (not supported in MV3)](#$replace_(not_supported_in_mv3))
-        1. [$csp (not supported in MV3)](#$csp_(not_supported_in_mv3))
-        1. [$cookie (not supported in MV3)](#$cookie_(not_supported_in_mv3))
-    1. [Not supported in extension](#not_supported_in_extension)
-        1. [$hls (not supported in extension)](#$hls_(not_supported_in_extension))
-        1. [$jsonprune (not supported in extension)](#$jsonprune_(not_supported_in_extension))
-        1. [noop (not supported in extension)](#noop_(not_supported_in_extension))
-        1. [$network (not supported in extension)](#$network_(not_supported_in_extension))
-        1. [$app (not supported in extension)](#$app_(not_supported_in_extension))
+    1. [$important](#advanced_capabilities__$important)
+    1. [$badfilter](#advanced_capabilities__$badfilter)
+    1. [$replace](#advanced_capabilities__$replace)
+    1. [$csp](#advanced_capabilities__$csp)
+    1. [$all](#advanced_capabilities__$all)
+    1. [$cookie](#advanced_capabilities__$cookie)
+    1. [$redirect](#advanced_capabilities__$redirect)
+    1. [$redirect-rule](#advanced_capabilities__$redirect-rule)
+    1. [noop](#advanced_capabilities__noop)
+    1. [$empty](#advanced_capabilities__$empty)
+    1. [$denyallow](#advanced_capabilities__$denyallow)
+    1. [$mp4](#advanced_capabilities__$mp4)
+    1. [$removeparam](#advanced_capabilities__$removeparam)
+    1. [$removeheader](#advanced_capabilities__$removeheader)
+1. [Not supported in extension](#not_supported_in_extension)
+    1. [$hls (not supported in extension)](#not_supported_in_extension__$hls_(not_supported_in_extension))
+    1. [$jsonprune (not supported in extension)](#not_supported_in_extension__$jsonprune_(not_supported_in_extension))
+    1. [$network (not supported in extension)](#not_supported_in_extension__$network_(not_supported_in_extension))
+    1. [$app (not supported in extension)](#not_supported_in_extension__$app_(not_supported_in_extension))
+    1. [$extension (not supported in extension)](#not_supported_in_extension__$extension_(not_supported_in_extension))
 <a name="description"></a>
 # Description
 This file contains examples of converting filter rules to new MV3 declarative
 rules and describes some MV3-specific limitations of the converted rules.
-<a name="specific_limitations"></a>
-# Specific limitations
-<a name="$document"></a>
-## $document
-Some general modifiers, like $document where the rule is expanded into
-$elemhide, $content, $urlblock, $jsinject and $extension,
-of which $elemhide and $jsinject are currently not supported,
-but we still convert the document rules, but not completely.
-[See code](./grouped-rules-converters/abstract-rule-converter.ts#432).
+<br />
+<br />
 
-<a name="$all"></a>
+<a name="mv3_specific_limitations"></a>
+# MV3 specific limitations
+<a name="mv3_specific_limitations__$document"></a>
+## $document
+During convertion process $document modificator is expanded into
+$elemhide, $content, $urlblock, $jsinject and $extension,
+of which:
+- $content - not supported in the MV3;
+- $extension - not supported in extension;
+- $elemhide, $jsinject - not implemented yet;
+- $urlblock - converted not correctly (allow all requests not on the specified
+url, but FROM specified url and also disables cosmetic rules).
+So we still convert the $document-rules, but not 100% correctly.
+
+<a name="mv3_specific_limitations__$all"></a>
 ## $all
 To convert a $all rule, a network rule must be modified to accept multiple
 modifiers from the same rule, for example, as it works with the
 "multi"-modifier $document.
 
-<a name="$removeparam"></a>
+<a name="mv3_specific_limitations__$removeparam"></a>
 ## $removeparam
 Groups of $removeparam rules with the same conditions are combined into one
 rule only within one filter.
 
-<a name="$redirect-rule"></a>
+<a name="mv3_specific_limitations__$redirect-rule"></a>
 ## $redirect-rule
 Works as $redirect
+<br />
+<br />
+
 <a name="basic_examples"></a>
 # Basic examples
 Blocking by domain name
@@ -223,10 +235,21 @@ example.org##.banner
 []
 
 ```
+<br />
+<br />
+
 <a name="basic_modifiers"></a>
 # Basic modifiers
-<a name="$domain"></a>
+<a name="basic_modifiers__$domain"></a>
 ## $domain
+<b>Status</b>: partial supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Doesn't support regexps and any tld domains
+<br/>
+<b>Examples:</b>
+<br/>
 example 1
 
 ```adblock
@@ -582,8 +605,12 @@ page$domain=targetdomain.com|~example.org
 ]
 
 ```
-<a name="$third-party"></a>
+<a name="basic_modifiers__$third-party"></a>
 ## $third-party
+<b>Status</b>: supported
+<br/>
+<b>Examples:</b>
+<br/>
 example 1
 
 ```adblock
@@ -632,9 +659,19 @@ example 2
 ]
 
 ```
-<a name="$popup"></a>
+<a name="basic_modifiers__$popup"></a>
 ## $popup
-example 1
+<b>Status</b>: partial support
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Cannot be converted to MV3 Declarative Rule, but maybe can be implemented on
+the content-script side
+<br/>
+Bug: currently converted to simple blocking rules
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 ||domain.com^$popup
@@ -660,9 +697,12 @@ example 1
 ]
 
 ```
-<a name="$match-case"></a>
+<a name="basic_modifiers__$match-case"></a>
 ## $match-case
-example 1
+<b>Status</b>: supported
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 */BannerAd.gif$match-case
@@ -685,8 +725,16 @@ example 1
 ]
 
 ```
-<a name="$header"></a>
+<a name="basic_modifiers__$header"></a>
 ## $header
+<b>Status</b>: not supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Cannot be converted to MV3 Declarative Rule
+<br/>
+<b>Examples:</b>
+<br/>
 example 1
 
 ```adblock
@@ -735,9 +783,17 @@ example 4
 []
 
 ```
+<br />
+<br />
+
 <a name="content_type_modifiers"></a>
 # Content type modifiers
-example 0
+<b>Status</b>: all content type modifiers supported, except deprecated $webrtc
+and $object-subrequest
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
 
 ```adblock
 ||example.org^$image
@@ -763,7 +819,7 @@ example 0
 ]
 
 ```
-example 1
+example 2
 
 ```adblock
 ||example.org^$script,stylesheet
@@ -790,7 +846,7 @@ example 1
 ]
 
 ```
-example 2
+example 3
 
 ```adblock
 ||example.org^$~image,~script,~stylesheet
@@ -818,9 +874,9 @@ example 2
 ]
 
 ```
-<a name="$document"></a>
+<a name="content_type_modifiers__$document"></a>
 ## $document
-example 0
+example 1
 
 ```adblock
 @@||example.com^$document
@@ -847,7 +903,7 @@ example 0
 ]
 
 ```
-example 1
+example 2
 
 ```adblock
 @@||example.com^$document,~extension
@@ -874,7 +930,7 @@ example 1
 ]
 
 ```
-example 2
+example 3
 
 ```adblock
 ||example.com^$document
@@ -900,7 +956,7 @@ example 2
 ]
 
 ```
-example 3
+example 4
 
 ```adblock
 ||example.com^$document,redirect=noopframe
@@ -929,7 +985,7 @@ example 3
 ]
 
 ```
-example 4
+example 5
 
 ```adblock
 ||example.com^$document,removeparam=test
@@ -964,7 +1020,7 @@ example 4
 ]
 
 ```
-example 5
+example 6
 
 ```adblock
 ||example.com^$document,replace=/test1/test2/
@@ -990,7 +1046,7 @@ example 5
 ]
 
 ```
-<a name="$image"></a>
+<a name="content_type_modifiers__$image"></a>
 ## $image
 
 ```adblock
@@ -1017,7 +1073,7 @@ example 5
 ]
 
 ```
-<a name="$stylesheet"></a>
+<a name="content_type_modifiers__$stylesheet"></a>
 ## $stylesheet
 
 ```adblock
@@ -1044,7 +1100,7 @@ example 5
 ]
 
 ```
-<a name="$script"></a>
+<a name="content_type_modifiers__$script"></a>
 ## $script
 
 ```adblock
@@ -1071,7 +1127,7 @@ example 5
 ]
 
 ```
-<a name="$object"></a>
+<a name="content_type_modifiers__$object"></a>
 ## $object
 
 ```adblock
@@ -1098,7 +1154,7 @@ example 5
 ]
 
 ```
-<a name="$font"></a>
+<a name="content_type_modifiers__$font"></a>
 ## $font
 
 ```adblock
@@ -1125,7 +1181,7 @@ example 5
 ]
 
 ```
-<a name="$media"></a>
+<a name="content_type_modifiers__$media"></a>
 ## $media
 
 ```adblock
@@ -1152,7 +1208,7 @@ example 5
 ]
 
 ```
-<a name="$subdocument"></a>
+<a name="content_type_modifiers__$subdocument"></a>
 ## $subdocument
 example 1
 
@@ -1209,7 +1265,7 @@ example 2
 ]
 
 ```
-<a name="$ping"></a>
+<a name="content_type_modifiers__$ping"></a>
 ## $ping
 
 ```adblock
@@ -1236,11 +1292,11 @@ example 2
 ]
 
 ```
-<a name="$xmlhttprequest"></a>
+<a name="content_type_modifiers__$xmlhttprequest"></a>
 ## $xmlhttprequest
 
 ```adblock
-||example.org^$ping
+||example.org^$xmlhttprequest
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -1255,7 +1311,7 @@ example 2
 		"condition": {
 			"urlFilter": "||example.org^",
 			"resourceTypes": [
-				"ping"
+				"xmlhttprequest"
 			],
 			"isUrlFilterCaseSensitive": false
 		}
@@ -1263,11 +1319,11 @@ example 2
 ]
 
 ```
-<a name="$websocket"></a>
+<a name="content_type_modifiers__$websocket"></a>
 ## $websocket
 
 ```adblock
-||example.org^$ping
+||example.org^$websocket
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -1282,7 +1338,7 @@ example 2
 		"condition": {
 			"urlFilter": "||example.org^",
 			"resourceTypes": [
-				"ping"
+				"websocket"
 			],
 			"isUrlFilterCaseSensitive": false
 		}
@@ -1290,8 +1346,10 @@ example 2
 ]
 
 ```
-<a name="$webrtc"></a>
+<a name="content_type_modifiers__$webrtc"></a>
 ## $webrtc
+<b>Status</b>: not supported
+<br/>
 example 1
 
 ```adblock
@@ -1316,10 +1374,69 @@ example 2
 []
 
 ```
+<a name="content_type_modifiers__$other"></a>
+## $other
+
+```adblock
+||example.org^$other
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"resourceTypes": [
+				"other"
+			],
+			"isUrlFilterCaseSensitive": false
+		}
+	}
+]
+
+```
+<br />
+<br />
+
 <a name="exception_rules_modifiers"></a>
 # Exception rules modifiers
-<a name="$content"></a>
+<a name="exception_rules_modifiers__$elemhide"></a>
+## $elemhide
+<b>Status</b>: not implemented yet
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Not convertible to DNR in MV3, but uses tsurlfilter's [CosmeticEngine](https://github.com/AdguardTeam/tsurlfilter/blob/epic/tswebextension/packages/tsurlfilter/src/engine/cosmetic-engine/cosmetic-engine.ts#L15) for work
+<br/>
+<b>Examples:</b>
+<br/>
+
+```adblock
+@@||example.com^$elemhide
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="exception_rules_modifiers__$content"></a>
 ## $content
+<b>Status</b>: not supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Bug: currently converted to allowAllRequests rules
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 @@||example.com^$content
@@ -1346,8 +1463,37 @@ example 2
 ]
 
 ```
-<a name="$urlblock"></a>
+<a name="exception_rules_modifiers__$jsinject"></a>
+## $jsinject
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
+
+```adblock
+@@||example.com^$jsinject
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="exception_rules_modifiers__$urlblock"></a>
 ## $urlblock
+<b>Status</b>: implemented not correctly
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Bug: uses urlFilter instead of initiatorDomains
+<br/>
+Bug: incorrect priority
+<br/>
+Bug: disables cosmetic rules
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 @@||example.com^$urlblock
@@ -1374,8 +1520,59 @@ example 2
 ]
 
 ```
-<a name="$genericblock"></a>
+<a name="exception_rules_modifiers__$stealth"></a>
+## $stealth
+<b>Status</b>: partial support, not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
+
+```adblock
+@@||example.com^$stealth
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 2
+
+```adblock
+@@||domain.com^$script,stealth,domain=example.com
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="exception_rules_modifiers__$generichide"></a>
+## $generichide
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
+
+```adblock
+@@||example.com^$generichide
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="exception_rules_modifiers__$genericblock"></a>
 ## $genericblock
+<b>Status</b>: supported
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 @@||example.com^$genericblock
@@ -1402,8 +1599,12 @@ example 2
 ]
 
 ```
-<a name="$specifichide"></a>
+<a name="exception_rules_modifiers__$specifichide"></a>
 ## $specifichide
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 @@||example.org^$specifichide
@@ -1427,89 +1628,18 @@ example 2
 ]
 
 ```
-<a name="not_supported_in_mv3"></a>
-## Not supported in MV3
-<a name="$elemhide_(not_supported_in_mv3)"></a>
-### $elemhide (not supported in MV3)
+<br />
+<br />
 
-```adblock
-@@||example.com^$elemhide
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-<a name="$jsinject_(not_supported_in_mv3)"></a>
-### $jsinject (not supported in MV3)
-
-```adblock
-@@||example.com^$jsinject
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-<a name="$stealth_(not_supported_in_mv3)"></a>
-### $stealth (not supported in MV3)
-example 1
-
-```adblock
-@@||example.com^$stealth
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 2
-
-```adblock
-@@||domain.com^$script,stealth,domain=example.com
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-<a name="$generichide_(not_supported_in_mv3)"></a>
-### $generichide (not supported in MV3)
-
-```adblock
-@@||example.com^generichide
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.com^generichide",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
-
-```
 <a name="advanced_capabilities"></a>
 # Advanced capabilities
-<a name="$important"></a>
+<a name="advanced_capabilities__$important"></a>
 ## $important
+<b>Status</b>: supported
+<br/>
+<b>Examples:</b>
+<br/>
+example 1.
 blocking rule will block all requests despite of the exception rule
 
 ```adblock
@@ -1546,6 +1676,7 @@ blocking rule will block all requests despite of the exception rule
 ]
 
 ```
+example 2.
 if the exception rule also has `$important` modifier it will prevail,
 so no requests will not be blocked
 
@@ -1583,6 +1714,7 @@ so no requests will not be blocked
 ]
 
 ```
+example 3.
 if a document-level exception rule is applied to the document,
 the `$important` modifier will be ignored;
 so if a request to `example.org` is sent from the `test.org` domain,
@@ -1625,8 +1757,17 @@ the blocking rule will not be applied despite it has the `$important` modifier
 ]
 
 ```
-<a name="$badfilter"></a>
+<a name="advanced_capabilities__$badfilter"></a>
 ## $badfilter
+<b>Status</b>: partial support
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Works only within the scope of one static filter or within the scope of all
+dynamic rules (custom filters with user rules).
+<br/>
+<b>Examples:</b>
+<br/>
 example 1
 
 ```adblock
@@ -1814,8 +1955,307 @@ example 10
 ]
 
 ```
-<a name="$redirect"></a>
+<a name="advanced_capabilities__$replace"></a>
+## $replace
+<b>Status</b>: not supported
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
+
+```adblock
+||example.org^$replace=/(<VAST[\s\S]*?>)[\s\S]*<\/VAST>/\$1<\/VAST>/i
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 2
+
+```adblock
+||example.org^$replace=/X/Y/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 3
+
+```adblock
+||example.org^$replace=/Z/Y/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 4
+
+```adblock
+@@||example.org/page/*$replace=/Z/Y/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="advanced_capabilities__$csp"></a>
+## $csp
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
+
+```adblock
+||example.org^$csp=frame-src 'none'
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 2
+
+```adblock
+@@||example.org/page/*$csp=frame-src 'none'
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 3
+
+```adblock
+@@||example.org/page/*$csp
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 4
+
+```adblock
+||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 5
+
+```adblock
+||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
+@@||example.org^$document
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+	{
+		"id": 2,
+		"action": {
+			"type": "allowAllRequests"
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"resourceTypes": [
+				"main_frame"
+			],
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 4
+	}
+]
+
+```
+<a name="advanced_capabilities__$all"></a>
+## $all
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
+
+```adblock
+||example.org^$all
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="advanced_capabilities__$cookie"></a>
+## $cookie
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
+example 1
+
+```adblock
+||example.org^$cookie=NAME;maxAge=3600;sameSite=lax
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 2
+
+```adblock
+||example.org^$cookie
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 3
+
+```adblock
+||example.org^$cookie=NAME
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 4
+
+```adblock
+||example.org^$cookie=/regexp/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 5
+
+```adblock
+@@||example.org^$cookie
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 6
+
+```adblock
+@@||example.org^$cookie=NAME
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 7
+
+```adblock
+@@||example.org^$cookie=/regexp/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 8
+
+```adblock
+$cookie=__cfduid
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 9
+
+```adblock
+$cookie=/__utm[a-z]/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 10
+
+```adblock
+||facebook.com^$third-party,cookie=c_user
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||facebook.com^",
+			"domainType": "thirdParty",
+			"isUrlFilterCaseSensitive": false
+		}
+	}
+]
+
+```
+<a name="advanced_capabilities__$redirect"></a>
 ## $redirect
+<b>Status</b>: partial support
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Allowlist rules are not supported
+<br/>
+<b>Examples:</b>
+<br/>
 example 1
 
 ```adblock
@@ -2134,8 +2574,16 @@ example 11
 ]
 
 ```
-<a name="$redirect-rule_(partial_support)"></a>
-## $redirect-rule (partial support)
+<a name="advanced_capabilities__$redirect-rule"></a>
+## $redirect-rule
+<b>Status</b>: not supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Converting as $redirect rules
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 ||example.org/script.js
@@ -2172,8 +2620,79 @@ example 11
 ]
 
 ```
-<a name="$denyallow"></a>
+<a name="advanced_capabilities__noop"></a>
+## noop
+<b>Status</b>: supported
+<br/>
+<b>Examples:</b>
+<br/>
+
+```adblock
+||example.com$_,removeparam=/^ss\\$/,_,image
+||example.com$domain=example.org,___,~third-party
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+	{
+		"id": 2,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||example.com",
+			"domainType": "firstParty",
+			"initiatorDomains": [
+				"example.org"
+			],
+			"isUrlFilterCaseSensitive": false
+		}
+	}
+]
+
+```
+<a name="advanced_capabilities__$empty"></a>
+## $empty
+<b>Status</b>: implemented not correct, deprecated
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Converted as simple blocking rule.
+<br/>
+<b>Examples:</b>
+<br/>
+example 1.
+returns an empty response to all requests to example.org and all subdomains.
+
+```adblock
+||example.org^$empty
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"isUrlFilterCaseSensitive": false
+		}
+	}
+]
+
+```
+<a name="advanced_capabilities__$denyallow"></a>
 ## $denyallow
+<b>Status</b>: supported
+<br/>
+<b>Examples:</b>
+<br/>
 
 ```adblock
 *$script,domain=a.com|b.com,denyallow=x.com|y.com
@@ -2207,11 +2726,41 @@ example 11
 ]
 
 ```
-<a name="$removeparam"></a>
-## $removeparam
-skip rules with a negation, or regexp or the rule is a allowlist
+<a name="advanced_capabilities__$mp4"></a>
+## $mp4
+<b>Status</b>: not implemented yet, deprecated
+<br/>
+<b>Examples:</b>
+<br/>
+example 1.
+block a video downloads from ||example.com/videos/* and changes the response to a video placeholder.
 
-example 1
+```adblock
+||example.com/videos/$mp4
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+<a name="advanced_capabilities__$removeparam"></a>
+## $removeparam
+<b>Status</b>: partial support
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Regexps, negation and allow-rules are not supported
+<br/>
+Rules with the same matching condition are combined into one, but only within
+the scope of one static filter or within the scope of all dynamic rules
+(custom filters with user rules).
+<br/>
+<b>Examples:</b>
+<br/>
+example 1.
+skip rules with a negation, or regexp or the rule is a allowlist
 
 ```adblock
 ||example.org^$removeparam
@@ -2323,6 +2872,7 @@ $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 []
 
 ```
+example 9.
 Group of similar remove param rules will be combined into one
 
 ```adblock
@@ -2384,23 +2934,12 @@ $xmlhttprequest,removeparam=p1case2
 ]
 
 ```
-<a name="not_supported_in_mv3"></a>
-## Not supported in MV3
-<a name="$all_(not_supported_in_mv3)"></a>
-### $all (not supported in MV3)
-
-```adblock
-||example.org^$all
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-<a name="$removeheader_(not_supported_in_mv3)"></a>
-### $removeheader (not supported in MV3)
+<a name="advanced_capabilities__$removeheader"></a>
+## $removeheader
+<b>Status</b>: not implemented yet
+<br/>
+<b>Examples:</b>
+<br/>
 example 1
 
 ```adblock
@@ -2553,276 +3092,15 @@ example 7
 ]
 
 ```
-<a name="$replace_(not_supported_in_mv3)"></a>
-### $replace (not supported in MV3)
-example 1
-
-```adblock
-||example.org^$replace=/(<VAST[\s\S]*?>)[\s\S]*<\/VAST>/\$1<\/VAST>/i
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 2
-
-```adblock
-||example.org^$replace=/X/Y/
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 3
-
-```adblock
-||example.org^$replace=/Z/Y/
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 4
-
-```adblock
-@@||example.org/page/*$replace=/Z/Y/
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-<a name="$csp_(not_supported_in_mv3)"></a>
-### $csp (not supported in MV3)
-example 0
-
-```adblock
-||example.org^$csp=frame-src 'none'
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 1
-
-```adblock
-@@||example.org/page/*$csp=frame-src 'none'
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 2
-
-```adblock
-@@||example.org/page/*$csp
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 3
-
-```adblock
-||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 4
-
-```adblock
-@@||example.org^$document
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 4
-	}
-]
-
-```
-<a name="$cookie_(not_supported_in_mv3)"></a>
-### $cookie (not supported in MV3)
-example 1
-
-```adblock
-||example.org^$cookie=NAME;maxAge=3600;sameSite=lax
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 2
-
-```adblock
-||example.org^$cookie
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 3
-
-```adblock
-||example.org^$cookie=NAME
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 4
-
-```adblock
-||example.org^$cookie=/regexp/
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 5
-
-```adblock
-@@||example.org^$cookie
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 6
-
-```adblock
-@@||example.org^$cookie=NAME
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 7
-
-```adblock
-@@||example.org^$cookie=/regexp/
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 8
-
-```adblock
-$cookie=__cfduid
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 9
-
-```adblock
-$cookie=/__utm[a-z]/
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[]
-
-```
-example 10
-
-```adblock
-||facebook.com^$third-party,cookie=c_user
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||facebook.com^",
-			"domainType": "thirdParty",
-			"isUrlFilterCaseSensitive": false
-		}
-	}
-]
-
-```
 <a name="not_supported_in_extension"></a>
-## Not supported in extension
-<a name="$hls_(not_supported_in_extension)"></a>
-### $hls (not supported in extension)
-<a name="$jsonprune_(not_supported_in_extension)"></a>
-### $jsonprune (not supported in extension)
-<a name="noop_(not_supported_in_extension)"></a>
-### noop (not supported in extension)
-<a name="$network_(not_supported_in_extension)"></a>
-### $network (not supported in extension)
-<a name="$app_(not_supported_in_extension)"></a>
-### $app (not supported in extension)
+# Not supported in extension
+<a name="not_supported_in_extension__$hls_(not_supported_in_extension)"></a>
+## $hls (not supported in extension)
+<a name="not_supported_in_extension__$jsonprune_(not_supported_in_extension)"></a>
+## $jsonprune (not supported in extension)
+<a name="not_supported_in_extension__$network_(not_supported_in_extension)"></a>
+## $network (not supported in extension)
+<a name="not_supported_in_extension__$app_(not_supported_in_extension)"></a>
+## $app (not supported in extension)
+<a name="not_supported_in_extension__$extension_(not_supported_in_extension)"></a>
+## $extension (not supported in extension)

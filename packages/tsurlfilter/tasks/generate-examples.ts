@@ -32,6 +32,30 @@ const readFileByLines = (filePath: string) => {
     return fileData.split('\n');
 };
 
+/**
+ * Finds nearest parent row in the table of contents
+ */
+const findParentLink = (tableOfContents: string[], indentLeft: string) => {
+    const parentRow = tableOfContents
+        .slice()
+        .reverse()
+        .find((item) => {
+            return !item.startsWith(indentLeft);
+        });
+
+    if (!parentRow) {
+        return '';
+    }
+
+    const linkPosStart = parentRow.indexOf('(#') + 2;
+    const linkPosEnd = parentRow.indexOf(')\r?\n');
+
+    return parentRow.slice(linkPosStart, linkPosEnd);
+};
+
+/**
+ * Converts provided bunch of text rules to Declarative rules
+ */
 const convertTxtToRules = async (
     rules: string[],
 ): Promise<DeclarativeRule[]> => {
@@ -50,30 +74,47 @@ const convertTxtToRules = async (
 
         return declarativeRules;
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('ERROR during conversion: ');
         throw e;
     }
 };
 
-// '# Description' -> ['1. [Description](#description)', '<a name="description"></a>']
-const parseRowAndLinkFromText = (txt: string): [string, string] | null => {
+/**
+ * From provided line of text generate one row to the table of contents
+ * and id for link, e.g.:
+ * '# Description' -> ['1. [Description](#description)', '<a name="description"></a>']
+ */
+const parseRowAndLinkFromText = (
+    txt: string,
+    tableOfContents: string[],
+): [string, string] | null => {
     if (!txt.startsWith('#')) {
         return null;
     }
 
     // Gen table of contents line
-    let index = 0;
-    while (txt[index] === '#' && index < txt.length - 1) {
-        index += 1;
+    let levelInTable = 0;
+    while (txt[levelInTable] === '#' && levelInTable < txt.length - 1) {
+        levelInTable += 1;
     }
-    const indentLeft = '    '.repeat(index - 1);
+    const indentLeft = '    '.repeat(levelInTable - 1);
+
+    let parentLink = '';
+    if (levelInTable > 1) {
+        parentLink = findParentLink(tableOfContents, indentLeft);
+    }
+    // To avoid duplication of links
+    const hash = parentLink ? `${parentLink}__` : '';
 
     // Gen link
-    const linkName = txt.slice(index).trim().toLocaleLowerCase().replace(/\s/g, '_');
-    const htmlLink = `<a name="${linkName}"></a>`;
+    const linkName = txt.slice(levelInTable).trim().toLocaleLowerCase().replace(/\s/g, '_');
+
+    const idLinkWithHash = `${hash}${linkName}`;
+    const htmlLink = `<a name="${idLinkWithHash}"></a>`;
 
     return [
-        `${indentLeft}1. [${txt.slice(index).trim()}](#${linkName})`,
+        `${indentLeft}1. [${txt.slice(levelInTable).trim()}](#${idLinkWithHash})`,
         htmlLink,
     ];
 };
@@ -91,7 +132,7 @@ const parseTxt = async (filePath: string) => {
     for (let i = 0; i < lines.length; i++) {
         if (lines[i].startsWith('!')) {
             const text = lines[i].slice(commentTextStartPos);
-            const parsedRowAndLinkFromText = parseRowAndLinkFromText(text);
+            const parsedRowAndLinkFromText = parseRowAndLinkFromText(text, tableOfContents);
             if (parsedRowAndLinkFromText) {
                 const [row, link] = parsedRowAndLinkFromText;
                 tableOfContents.push(row);

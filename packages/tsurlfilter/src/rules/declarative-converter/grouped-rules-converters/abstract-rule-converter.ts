@@ -57,6 +57,17 @@ export enum DeclarativeRulePriority {
     DocumentException = 4,
     ImportantException = 3,
     Important = 2,
+    /**
+     * Base exception has default priority level because MV3 matching algorithm
+     * has following order of decreasing precedence:
+     * 1. "allow"
+     * 2. "allowAllRequests"
+     * 3. "block"
+     * 4. "upgradeScheme"
+     * 5. "redirect".
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#matching-algorithm}
+     */
     Exception = 1,
 }
 
