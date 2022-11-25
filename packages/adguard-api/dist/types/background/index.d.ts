@@ -17,4 +17,4 @@
  */
 export type { Configuration } from "./schemas";
 export type { RequestBlockingEvent } from "./request-blocking-logger";
-export { adguardApi } from "./main";
+export { AdguardApi } from "./main";

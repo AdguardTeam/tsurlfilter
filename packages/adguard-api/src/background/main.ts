@@ -302,6 +302,13 @@ export class AdguardApi {
 
         await this.handleUpdateFilters();
     }
-}
 
-export const adguardApi = new AdguardApi();
+    /**
+     * Creates new adguardApi instance
+     *
+     * @returns AdguardApi instance
+     */
+    public static create(): AdguardApi {
+        return new AdguardApi();
+    }
+}
