@@ -1,6 +1,6 @@
 {
   "name": "@adguard/api",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/adguard-api.js",
   "typings": "dist/types/background/index.d.ts",
