@@ -1,5 +1,5 @@
 # AdGuard API
-**Version: 1.1.0**
+**Version: 1.2.0**
 
 AdGuard API is filtering library, provided following features:
 
@@ -10,11 +10,14 @@ AdGuard API is filtering library, provided following features:
 - logging request processing
 
 ## Table of content
-  - [Installation](#installation)
+- [AdGuard API](#adguard-api)
+  - [Table of content](#table-of-content)
     - [Installation via `script` tag](#installation-via-script-tag)
     - [Module installation](#module-installation)
     - [Required web accessible resources](#required-web-accessible-resources)
   - [Configuration](#configuration)
+  - [Static methods](#static-methods)
+    - [`AdguardApi.create`](#adguardapicreate)
   - [Methods](#methods)
     - [`adguardApi.start`](#adguardapistart)
     - [`adguardApi.stop`](#adguardapistop)
@@ -55,7 +58,7 @@ The library code can be loaded either via `script` tag or as an `npm` module.
   <script type="text/javascript" src="adguard-api.js"></script>
 ```
 
-AdGuard API is exposed through a global javascript object: `adguardApi`.
+AdGuard API is exposed through a `AdguardApi` class.
 
 ### Module installation
 
@@ -70,12 +73,12 @@ or
 yarn add @adguard/api
 ```
 
-2. Import `adguardApi` instance to background script
+1. Import `AdguardApi` class to background script
 ```
-import { adguardApi } from "@adguard/api";
+import { AdguardApi } from "@adguard/api";
 ```
 
-3. Import `adguard-contents` in top of you content script entry
+1. Import `adguard-contents` in top of you content script entry
 
 ```
 import '@adguard/api/content-script';
@@ -145,6 +148,21 @@ const configuration: Configuration = {
 
 > **Please note, that we do not allow using `filters.adtidy.org` other than for testing purposes**. You have to use your own server for storing filters files. You can (and actually should) to use `filters.adtidy.org` for updating files on your side periodically.
 
+
+## Static methods
+
+Creates new `AdguardApi` instance.
+### `AdguardApi.create`
+
+**Syntax:**
+```typescript
+public static create(): AdguardApi
+```
+
+**Example:**
+```typescript
+const adguardApi = AdguardApi.create();
+```
 
 ## Methods
 
@@ -354,9 +372,12 @@ adguardApi.onRequestBlocked.removeListener(
 See full sample app project in [examples/adguard-api](../examples/adguard-api/)
 
 ```typescript
-import { adguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
+import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
 (async (): Promise<void> => {
+    // create new AdguardApi instance
+    const adguardApi = AdguardApi.create();
+
     const configuration: Configuration = {
         filters: [2],
         allowlist: ["www.example.com"],

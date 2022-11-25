@@ -108,5 +108,10 @@ export declare class AdguardApi {
      * @param event - fired {@link DetectFiltersEvent}
      */
     private handleDetectFilters;
+    /**
+     * Creates new adguardApi instance
+     *
+     * @returns AdguardApi instance
+     */
+    static create(): AdguardApi;
 }
-export declare const adguardApi: AdguardApi;

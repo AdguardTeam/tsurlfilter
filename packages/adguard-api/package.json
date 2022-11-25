@@ -1,6 +1,6 @@
 {
   "name": "@adguard/api",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/adguard-api.js",
   "typings": "dist/types/background/index.d.ts",
@@ -17,7 +17,8 @@
   },
   "scripts": {
     "lint": "eslint 'src/**/*.ts' && yarn check-types",
-    "build": "cross-env MODE='production' webpack && yarn types",
+    "build": "cross-env MODE='production' webpack",
+    "postbuild": "yarn types && node tasks/build-txt",
     "prepush": "yarn build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "check-types": "tsc --project tsconfig.build.json --noemit"

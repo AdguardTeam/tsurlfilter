@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
-import { adguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
+import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
 (async (): Promise<void> => {
+    // create new AdguardApi instance
+    const adguardApi = AdguardApi.create();
+
     const configuration: Configuration = {
         filters: [2],
         allowlist: ["www.example.com"],
