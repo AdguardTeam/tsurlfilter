@@ -58,7 +58,7 @@ The library code can be loaded either via `script` tag or as an `npm` module.
   <script type="text/javascript" src="adguard-api.js"></script>
 ```
 
-AdGuard API is exposed through a global javascript object: `adguardApi`.
+AdGuard API is exposed through a `AdguardApi` class.
 
 ### Module installation
 
@@ -73,12 +73,12 @@ or
 yarn add @adguard/api
 ```
 
-2. Import `adguardApi` instance to background script
+1. Import `AdguardApi` class to background script
 ```
-import { adguardApi } from "@adguard/api";
+import { AdguardApi } from "@adguard/api";
 ```
 
-3. Import `adguard-contents` in top of you content script entry
+1. Import `adguard-contents` in top of you content script entry
 
 ```
 import '@adguard/api/content-script';
