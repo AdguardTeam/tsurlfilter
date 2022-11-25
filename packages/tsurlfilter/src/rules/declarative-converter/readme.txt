@@ -2,13 +2,20 @@
 ! This file contains examples of converting filter rules to new MV3 declarative
 ! rules and describes some MV3-specific limitations of the converted rules.
 
-! # Specific limitations
+! <br />
+! <br />
+!
+! # MV3 specific limitations
 ! ## $document
-! Some general modifiers, like $document where the rule is expanded into
+! During convertion process $document modificator is expanded into
 ! $elemhide, $content, $urlblock, $jsinject and $extension,
-! of which $elemhide and $jsinject are currently not supported,
-! but we still convert the document rules, but not completely.
-! [See code](./grouped-rules-converters/abstract-rule-converter.ts#432).
+! of which:
+! - $content - not supported in the MV3;
+! - $extension - not supported in extension;
+! - $elemhide, $jsinject - not implemented yet;
+! - $urlblock - converted not correctly (allow all requests not on the specified
+! url, but FROM specified url and also disables cosmetic rules).
+! So we still convert the $document-rules, but not 100% correctly.
 !
 ! ## $all
 ! To convert a $all rule, a network rule must be modified to accept multiple
@@ -22,6 +29,9 @@
 ! ## $redirect-rule
 ! Works as $redirect
 
+! <br />
+! <br />
+!
 ! # Basic examples
 ! Blocking by domain name
 ||example.org^
@@ -31,17 +41,30 @@
 
 ! Basic rule modifiers
 ||example.org^$script,third-party,domain=example.com
+
 ! Unblocking an address
 @@||example.org/banner
+
 ! Unblocking everything on a website
 @@||example.org^$document
+
 ! Cosmetic rule will be ignored
 example.org##.banner
 
+! <br />
+! <br />
+!
 ! # Basic modifiers
 
 ! ## $domain
-
+! <b>Status</b>: partial supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Doesn't support regexps and any tld domains
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 ||baddomain.com^$domain=example.org
 ! example 2
@@ -72,24 +95,45 @@ page$domain=targetdomain.com
 page$domain=targetdomain.com|~example.org
 
 ! ## $third-party
-
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 ||domain.com^$third-party
 ! example 2
 ||domain.com$~third-party
 
 ! ## $popup
-
-! example 1
+! <b>Status</b>: partial support
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Cannot be converted to MV3 Declarative Rule, but maybe can be implemented on
+! the content-script side
+! <br/>
+! Bug: currently converted to simple blocking rules
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ||domain.com^$popup
 
 ! ## $match-case
-
-! example 1
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
 */BannerAd.gif$match-case
 
 ! ## $header
-
+! <b>Status</b>: not supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Cannot be converted to MV3 Declarative Rule
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 ||example.com^$header=set-cookie:foo
 ! example 2
@@ -99,28 +143,34 @@ page$domain=targetdomain.com|~example.org
 ! example 4
 @@||example.com^$header=set-cookie
 
+! <br />
+! <br />
+!
 ! # Content type modifiers
-
-! example 0
-||example.org^$image
+! <b>Status</b>: all content type modifiers supported, except deprecated $webrtc
+! and $object-subrequest
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
-||example.org^$script,stylesheet
+||example.org^$image
 ! example 2
+||example.org^$script,stylesheet
+! example 3
 ||example.org^$~image,~script,~stylesheet
 
 ! ## $document
-
-! example 0
-@@||example.com^$document
 ! example 1
-@@||example.com^$document,~extension
+@@||example.com^$document
 ! example 2
-||example.com^$document
+@@||example.com^$document,~extension
 ! example 3
-||example.com^$document,redirect=noopframe
+||example.com^$document
 ! example 4
-||example.com^$document,removeparam=test
+||example.com^$document,redirect=noopframe
 ! example 5
+||example.com^$document,removeparam=test
+! example 6
 ||example.com^$document,replace=/test1/test2/
 
 ! ## $image
@@ -142,7 +192,6 @@ page$domain=targetdomain.com|~example.org
 ||example.org^$media
 
 ! ## $subdocument
-
 ! example 1
 ||example.com^$subdocument
 ! example 2
@@ -152,63 +201,122 @@ page$domain=targetdomain.com|~example.org
 ||example.org^$ping
 
 ! ## $xmlhttprequest
-||example.org^$ping
+||example.org^$xmlhttprequest
 
 ! ## $websocket
-||example.org^$ping
+||example.org^$websocket
 
 ! ## $webrtc
-
+! <b>Status</b>: not supported
+! <br/>
 ! example 1
 ||example.com^$webrtc,domain=example.org
 ! example 2
 @@*$webrtc,domain=example.org
 
+! ## $other
+||example.org^$other
+
+! <br />
+! <br />
+!
 ! # Exception rules modifiers
 
-! ## $content
-@@||example.com^$content
-
-! ## $urlblock
-@@||example.com^$urlblock
-
-! ## $genericblock
-@@||example.com^$genericblock
-
-! ## $specifichide
-@@||example.org^$specifichide
-
-! ## Not supported in MV3
-
-! ### $elemhide (not supported in MV3)
+! ## $elemhide
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Not convertible to DNR in MV3, but uses tsurlfilter's [CosmeticEngine](https://github.com/AdguardTeam/tsurlfilter/blob/epic/tswebextension/packages/tsurlfilter/src/engine/cosmetic-engine/cosmetic-engine.ts#L15) for work
+! <br/>
+! <b>Examples:</b>
+! <br/>
 @@||example.com^$elemhide
 
-! ### $jsinject (not supported in MV3)
+! ## $content
+! <b>Status</b>: not supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Bug: currently converted to allowAllRequests rules
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$content
+
+! ## $jsinject
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
 @@||example.com^$jsinject
 
-! ### $stealth (not supported in MV3)
+! ## $urlblock
+! <b>Status</b>: implemented not correctly
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Bug: uses urlFilter instead of initiatorDomains
+! <br/>
+! Bug: incorrect priority
+! <br/>
+! Bug: disables cosmetic rules
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$urlblock
+
+! ## $stealth
+! <b>Status</b>: partial support, not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 @@||example.com^$stealth
 ! example 2
 @@||domain.com^$script,stealth,domain=example.com
 
-! ### $generichide (not supported in MV3)
-@@||example.com^generichide
+! ## $generichide
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$generichide
 
+! ## $genericblock
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$genericblock
 
+! ## $specifichide
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.org^$specifichide
+
+! <br />
+! <br />
+!
 ! # Advanced capabilities
 
 ! ## $important
-
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
 ! blocking rule will block all requests despite of the exception rule
 ||example.org^$important
 @@||example.org^
-
+! example 2.
 ! if the exception rule also has `$important` modifier it will prevail,
 ! so no requests will not be blocked
 ||example.org^$important
 @@||example.org^$important
-
+! example 3.
 ! if a document-level exception rule is applied to the document,
 ! the `$important` modifier will be ignored;
 ! so if a request to `example.org` is sent from the `test.org` domain,
@@ -217,48 +325,119 @@ page$domain=targetdomain.com|~example.org
 @@||test.org^$document
 
 ! ## $badfilter
-
+! <b>Status</b>: partial support
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Works only within the scope of one static filter or within the scope of all
+! dynamic rules (custom filters with user rules).
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 ||example.com
 ||example.com$badfilter
-
 ! example 2
 ||example.com,image
 ||example.com$image,badfilter
-
 ! example 3
 @@||example.com
 @@||example.com$badfilter
-
 ! example 4
 ||example.com$domain=domain.com
 ||example.com$domain=domain.com,badfilter
-
 ! example 5
 /some$domain=example.com|example.org|example.io
 /some$domain=example.com,badfilter
-
 ! example 6
 /some$domain=example.com|example.org|example.io
 /some$domain=example.com|example.org,badfilter
-
 ! example 7
 /some$domain=example.com|example.org
 /some$domain=example.com|example.org|example.io,badfilter
-
 ! example 8
 /some$domain=example.com|example.org|example.io
 /some$domain=example.*,badfilter
-
 ! example 9
 /some$domain=example.*
 /some$domain=example.com|example.org,badfilter
-
 ! example 10
 /some$domain=example.com|example.org|example.io
 /some$domain=example.com|~example.org,badfilter
 
+! ## $replace
+! <b>Status</b>: not supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||example.org^$replace=/(<VAST[\s\S]*?>)[\s\S]*<\/VAST>/\$1<\/VAST>/i
+! example 2
+||example.org^$replace=/X/Y/
+! example 3
+||example.org^$replace=/Z/Y/
+! example 4
+@@||example.org/page/*$replace=/Z/Y/
+
+! ## $csp
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||example.org^$csp=frame-src 'none'
+! example 2
+@@||example.org/page/*$csp=frame-src 'none'
+! example 3
+@@||example.org/page/*$csp
+! example 4
+||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
+! example 5
+||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
+@@||example.org^$document
+
+! ## $all
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+||example.org^$all
+
+! ## $cookie
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||example.org^$cookie=NAME;maxAge=3600;sameSite=lax
+! example 2
+||example.org^$cookie
+! example 3
+||example.org^$cookie=NAME
+! example 4
+||example.org^$cookie=/regexp/
+! example 5
+@@||example.org^$cookie
+! example 6
+@@||example.org^$cookie=NAME
+! example 7
+@@||example.org^$cookie=/regexp/
+! example 8
+$cookie=__cfduid
+! example 9
+$cookie=/__utm[a-z]/
+! example 10
+||facebook.com^$third-party,cookie=c_user
+
 ! ## $redirect
+! <b>Status</b>: partial support
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Allowlist rules are not supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 ||example.org/script.js$script,redirect=noopjs
 ! example 2
@@ -284,17 +463,70 @@ page$domain=targetdomain.com|~example.org
 ||*/redirect-priority-test.js$redirect=noopjs
 ||*/redirect-priority-test.js$important,csp=script-src 'self'
 
-! ## $redirect-rule (partial support)
+! ## $redirect-rule
+! <b>Status</b>: not supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Converting as $redirect rules
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ||example.org/script.js
 ||example.org^$redirect-rule=noopjs
 
+! ## noop
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+||example.com$_,removeparam=/^ss\\$/,_,image
+||example.com$domain=example.org,___,~third-party
+
+! ## $empty
+! <b>Status</b>: implemented not correct, deprecated
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Converted as simple blocking rule.
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
+! returns an empty response to all requests to example.org and all subdomains.
+||example.org^$empty
+
 ! ## $denyallow
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
 *$script,domain=a.com|b.com,denyallow=x.com|y.com
 
+! ## $mp4
+! <b>Status</b>: not implemented yet, deprecated
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
+! block a video downloads from ||example.com/videos/* and changes the response to a video placeholder.
+||example.com/videos/$mp4
+
 ! ## $removeparam
+! <b>Status</b>: partial support
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Regexps, negation and allow-rules are not supported
+! <br/>
+! Rules with the same matching condition are combined into one, but only within
+! the scope of one static filter or within the scope of all dynamic rules
+! (custom filters with user rules).
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
 ! skip rules with a negation, or regexp or the rule is a allowlist
-!
-! example 1
 ||example.org^$removeparam
 ! example 2
 $removeparam=~param
@@ -310,20 +542,18 @@ $removeparam=~/regexp/
 $removeparam=/^(utm_source|utm_medium|utm_term)=/
 ! example 8
 $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
-
+! example 9.
 ! Group of similar remove param rules will be combined into one
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1
 $xmlhttprequest,removeparam=p1case2
 
-! ## Not supported in MV3
-
-! ### $all (not supported in MV3)
-||example.org^$all
-
-! ### $removeheader (not supported in MV3)
-
+! ## $removeheader
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
 ! example 1
 ||example.org^$removeheader=header-name
 ! example 2
@@ -339,57 +569,10 @@ $removeheader
 ! example 7
 ||example.org^$removeheader=request:x-client-data
 
-! ### $replace (not supported in MV3)
+! # Not supported in extension
 
-! example 1
-||example.org^$replace=/(<VAST[\s\S]*?>)[\s\S]*<\/VAST>/\$1<\/VAST>/i
-! example 2
-||example.org^$replace=/X/Y/
-! example 3
-||example.org^$replace=/Z/Y/
-! example 4
-@@||example.org/page/*$replace=/Z/Y/
-
-! ### $csp (not supported in MV3)
-
-! example 0
-||example.org^$csp=frame-src 'none'
-! example 1
-@@||example.org/page/*$csp=frame-src 'none'
-! example 2
-@@||example.org/page/*$csp
-! example 3
-||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
-! example 4
-@@||example.org^$document
-
-! ### $cookie (not supported in MV3)
-
-! example 1
-||example.org^$cookie=NAME;maxAge=3600;sameSite=lax
-! example 2
-||example.org^$cookie
-! example 3
-||example.org^$cookie=NAME
-! example 4
-||example.org^$cookie=/regexp/
-! example 5
-@@||example.org^$cookie
-! example 6
-@@||example.org^$cookie=NAME
-! example 7
-@@||example.org^$cookie=/regexp/
-! example 8
-$cookie=__cfduid
-! example 9
-$cookie=/__utm[a-z]/
-! example 10
-||facebook.com^$third-party,cookie=c_user
-
-! ## Not supported in extension
-
-! ### $hls (not supported in extension)
-! ### $jsonprune (not supported in extension)
-! ### noop (not supported in extension)
-! ### $network (not supported in extension)
-! ### $app (not supported in extension)
+! ## $hls (not supported in extension)
+! ## $jsonprune (not supported in extension)
+! ## $network (not supported in extension)
+! ## $app (not supported in extension)
+! ## $extension (not supported in extension)
