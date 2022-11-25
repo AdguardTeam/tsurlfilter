@@ -17,7 +17,8 @@
   },
   "scripts": {
     "lint": "eslint 'src/**/*.ts' && yarn check-types",
-    "build": "cross-env MODE='production' webpack && yarn types",
+    "build": "cross-env MODE='production' webpack",
+    "postbuild": "yarn types && node tasks/build-txt",
     "prepush": "yarn build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "check-types": "tsc --project tsconfig.build.json --noemit"

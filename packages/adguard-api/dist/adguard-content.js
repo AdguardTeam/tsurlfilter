@@ -42466,6 +42466,17 @@ var adguardAssistant = isMobile(navigator.userAgent) ? adguardAssistantMini : ad
         DeclarativeRulePriority[DeclarativeRulePriority["DocumentException"] = 4] = "DocumentException";
         DeclarativeRulePriority[DeclarativeRulePriority["ImportantException"] = 3] = "ImportantException";
         DeclarativeRulePriority[DeclarativeRulePriority["Important"] = 2] = "Important";
+        /**
+         * Base exception has default priority level because MV3 matching algorithm
+         * has following order of decreasing precedence:
+         * 1. "allow"
+         * 2. "allowAllRequests"
+         * 3. "block"
+         * 4. "upgradeScheme"
+         * 5. "redirect".
+         *
+         * @see {@link https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#matching-algorithm}
+         */
         DeclarativeRulePriority[DeclarativeRulePriority["Exception"] = 1] = "Exception";
     })(DeclarativeRulePriority || (DeclarativeRulePriority = {}));
     /**
