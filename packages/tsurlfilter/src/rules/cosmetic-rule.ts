@@ -52,11 +52,41 @@ export enum CosmeticRuleType {
  * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
  * have extended css marker
  */
-export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
-    '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has-text(',
-    ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
-    ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
-    ':matches-attr(', ':matches-property(', ':is('];
+export const EXT_CSS_PSEUDO_INDICATORS = [
+    /**
+     * Pseudo-classes :has(), :is(), and :not() may use native implementation
+     * so they are not listed here
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
+     */
+    ':contains(',
+    ':matches-css(',
+    ':matches-attr(',
+    ':matches-property(',
+    ':xpath(',
+    ':upward(',
+    ':nth-ancestor(',
+    ':remove(',
+    ':if-not(',
+    // aliases for :has()
+    ':if(',
+    ':-abp-has(',
+    // aliases for :contains()
+    ':has-text(',
+    ':-abp-contains(',
+    // old syntax
+    '[-ext-has=',
+    '[-ext-contains=',
+    '[-ext-has-text=',
+    '[-ext-matches-css=',
+    '[-ext-matches-css-before=',
+    '[-ext-matches-css-after=',
+    // obsolete since ExtendedCss v2.0.2 but still compatible
+    // https://github.com/AdguardTeam/ExtendedCss/releases/tag/v2.0.2
+    ':matches-css-before(',
+    ':matches-css-after(',
+];
 
 /**
  * Init script params

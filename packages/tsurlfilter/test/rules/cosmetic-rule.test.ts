@@ -547,13 +547,13 @@ describe('Extended css rule', () => {
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.sponsored[-ext-has=test]');
 
-    ruleText = '~example.com,example.org##.sponsored:has(test)';
-    rule = new CosmeticRule(ruleText, 0);
-
     // :has() pseudo-class has native implementation.
     // and since ExtendedCss v2 release
     // the rule with `##` marker and `:has()` should not be considered as ExtendedCss
     // https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+    ruleText = '~example.com,example.org##.sponsored:has(test)';
+    rule = new CosmeticRule(ruleText, 0);
+
     expect(rule.isExtendedCss()).toBeFalsy();
     expect(rule.getContent()).toEqual('.sponsored:has(test)');
 
@@ -564,6 +564,39 @@ describe('Extended css rule', () => {
 
     expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.sponsored:has(.banner)');
+
+    // :is() pseudo-class has native implementation alike :has(),
+    // so the rule with `##` marker and `:is()` should not be considered as ExtendedCss
+    // https://github.com/AdguardTeam/ExtendedCss#extended-css-is
+    ruleText = 'example.org##.banner:is(div, p)';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeFalsy();
+    expect(rule.getContent()).toEqual('.banner:is(div, p)');
+
+    // but :is() pseudo-class should be considered as ExtendedCss
+    // if the rule marker is `#?#`
+    ruleText = 'example.org#?#.banner:is(div, p)';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.banner:is(div, p)');
+
+    // the same ExtendedCss marker enforcement should work for :not() as well
+    // https://github.com/AdguardTeam/ExtendedCss#extended-css-not
+    ruleText = 'example.org##.banner:not(.main, .content)';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeFalsy();
+    expect(rule.getContent()).toEqual('.banner:not(.main, .content)');
+
+    // but :not() pseudo-class should be considered as ExtendedCss
+    // if the rule marker is `#?#`
+    ruleText = 'example.org#?#.banner:not(.main, .content)';
+    rule = new CosmeticRule(ruleText, 0);
+
+    expect(rule.isExtendedCss()).toBeTruthy();
+    expect(rule.getContent()).toEqual('.banner:not(.main, .content)');
 
     ruleText = '~example.com,example.org#?#div';
     rule = new CosmeticRule(ruleText, 0);
