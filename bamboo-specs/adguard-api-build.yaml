@@ -50,6 +50,10 @@ Build:
             rm -rf node_modules
             # cleanup child packages
             npx lerna@4 exec -- rm -rf node_modules
+    - inject-variables:
+        file: ./packages/adguard-api/dist/build.txt
+        scope: RESULT
+        namespace: inject
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
         configuration:
