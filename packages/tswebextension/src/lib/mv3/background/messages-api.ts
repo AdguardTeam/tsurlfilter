@@ -1,6 +1,6 @@
 import { CosmeticOption } from '@adguard/tsurlfilter';
 
-import { getCssPayloadValidator } from '../../common';
+import { getAssistantCreateRulePayloadValidator, getCssPayloadValidator } from '../../common';
 import { isHttpOrWsRequest } from '../../common/utils';
 import { logger } from '../utils/logger';
 
@@ -13,6 +13,7 @@ import {
     MessageMV3,
     messageMV3Validator,
 } from './messages';
+import { Assistant } from './assistant';
 
 export type MessagesHandlerType = (
     message: MessageMV3,
@@ -86,6 +87,12 @@ export default class MessagesApi {
             case ExtendedMV3MessageType.GetCollectedLog: {
                 return declarativeFilteringLog.getCollected();
             }
+            case CommonMessageType.ASSISTANT_CREATE_RULE: {
+                return this.handleAssistantCreateRuleMessage(
+                    sender,
+                    message.payload,
+                );
+            }
             default: {
                 logger.error('Did not found handler for message');
             }
@@ -110,5 +117,46 @@ export default class MessagesApi {
                 false,
             );
         }
+    }
+
+    /**
+     * Handles message with new rule from assistant content script.
+     *
+     * @param sender An object containing information about the script context
+     * that sent a message or request.
+     * @param payload Object with rules text.
+     *
+     * @returns False if it cannot process the created rule,
+     * or true for successful processing.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    private handleAssistantCreateRuleMessage(
+        sender: chrome.runtime.MessageSender,
+        payload?: unknown,
+    ): boolean {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const res = getAssistantCreateRulePayloadValidator.safeParse(payload);
+        if (!res.success) {
+            return false;
+        }
+
+        const { ruleText } = res.data;
+
+        Assistant.onCreateRule.dispatch(ruleText);
+
+        return true;
+    }
+
+    /**
+     * Sends message to the specified tab.
+     *
+     * @param tabId The ID of the tab to send the message.
+     * @param message Some payload to send to the tab.
+     */
+    public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
+        await chrome.tabs.sendMessage(tabId, message);
     }
 }

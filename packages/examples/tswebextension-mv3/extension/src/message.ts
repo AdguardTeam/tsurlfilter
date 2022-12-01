@@ -6,4 +6,6 @@ export const enum Message {
     ApplyUserRules = 'APPLY_USER_RULES',
     StartLog = 'START_LOG',
     StopLog = 'STOP_LOG',
+    OpenAssistant = 'OPEN_ASSISTANT',
+    CloseAssistant = 'CLOSE_ASSISTANT',
 }

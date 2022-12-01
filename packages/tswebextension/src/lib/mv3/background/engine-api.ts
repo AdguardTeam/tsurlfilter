@@ -188,6 +188,16 @@ class EngineApi {
     }
 
     /**
+     * Gets current loaded rules in the filtering engine
+     * (except declarative rules).
+     *
+     * @returns Number of loaded rules in the filtering engine.
+     */
+    public getRulesCount(): number {
+        return this.engine ? this.engine.getRulesCount() : 0;
+    }
+
+    /**
      * Builds domain-specific JS injection for the specified page.
      *
      * @see http://adguard.com/en/filterrules.html#javascriptInjection

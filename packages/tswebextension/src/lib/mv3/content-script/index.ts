@@ -1,8 +1,24 @@
 import ExtendedCss from 'extended-css';
 
-/* eslint-disable no-console */
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
+import { logger } from '../utils/logger';
+
+import { initAssistant } from './assistant';
+
+// TODO: add ElementCollapser.start();
+
+interface CustomWindow extends Window {
+    isAssistantInitiated: boolean;
+}
+
+declare const global: CustomWindow;
+
+// Init assistant only once
+if (!global.isAssistantInitiated) {
+    initAssistant();
+    global.isAssistantInitiated = true;
+}
 
 const applyCss = (cssContent: string): void => {
     if (!cssContent || cssContent.length === 0) {
@@ -14,7 +30,7 @@ const applyCss = (cssContent: string): void => {
     styleEl.textContent = cssContent;
 
     (document.head || document.documentElement).appendChild(styleEl);
-    console.debug('[COSMETIC CSS]: applied');
+    logger.debug('[COSMETIC CSS]: applied');
 };
 
 const applyExtendedCss = (cssText: string): void => {
@@ -29,7 +45,7 @@ const applyExtendedCss = (cssText: string): void => {
 
     extendedCss.apply();
 
-    console.debug('[EXTENDED CSS]: applied');
+    logger.debug('[EXTENDED CSS]: applied');
 };
 
 (async (): Promise<void> => {
@@ -40,7 +56,7 @@ const applyExtendedCss = (cssText: string): void => {
         },
     });
 
-    console.debug('[GET_CSS]: result ', res);
+    logger.debug('[GET_CSS]: result ', res);
 
     if (res) {
         const { css, extendedCss } = res;

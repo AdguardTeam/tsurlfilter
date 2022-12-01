@@ -16,6 +16,9 @@ declare global {
 }
 
 const tsWebExtension = new TsWebExtension('/war/redirects');
+tsWebExtension.onAssistantCreateRule.subscribe((rule) => {
+    console.log(`assistant create rule ${rule}`);
+});
 self.tsWebExtension = tsWebExtension;
 const defaultUxConfig = {
     isStarted: true,
@@ -114,6 +117,22 @@ const messageHandler = async (message: IMessage) => {
             config.filteringLogEnabled = false;
 
             await tsWebExtension.configure(config);
+
+            break;
+        }
+        case Message.OpenAssistant: {
+            const tabs = await chrome.tabs.query({ active: true });
+            if (tabs.length > 0 && tabs[0].id) {
+                await tsWebExtension.openAssistant(tabs[0].id);
+            }
+
+            break;
+        }
+        case Message.CloseAssistant: {
+            const tabs = await chrome.tabs.query({ active: true });
+            if (tabs.length > 0 && tabs[0].id) {
+                await tsWebExtension.closeAssistant(tabs[0].id);
+            }
 
             break;
         }

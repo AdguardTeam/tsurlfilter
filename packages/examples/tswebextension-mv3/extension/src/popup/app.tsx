@@ -32,7 +32,7 @@ export function App() {
         fetch();
     }, []);
 
-    const loader = <h1>Грузимся</h1>;
+    const loader = <h1>Loading...</h1>;
     if (isLoading) {
         return loader;
     }
@@ -135,8 +135,32 @@ export function App() {
         </>
     );
 
+    const handleOpenAssistant = async () => {
+        await sendMessage(Message.OpenAssistant);
+    };
+
+    const handleCloseAssistant = async () => {
+        await sendMessage(Message.CloseAssistant);
+    };
+
+    const assistantPanel = (
+        <>
+            <button className='button' type="button" onClick={handleOpenAssistant}>
+                <span className="text">
+                    Open assistant
+                </span>
+            </button>
+            <button className='button' type="button" onClick={handleCloseAssistant}>
+                <span className="text">
+                    Close assistant
+                </span>
+            </button>
+        </>
+    );
+
     return <>
         {toggleBtn}
         {isFilteringEnabled ? filtersPanel : ''}
+        {isFilteringEnabled ? assistantPanel : ''}
     </>;
 }
