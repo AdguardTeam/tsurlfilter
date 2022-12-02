@@ -2,7 +2,7 @@ import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
-import * as RequestEvents from '@lib/mv2/background/request/events/request-events';
+import { RequestEvents } from '@lib/mv2/background/request/events/request-events';
 import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
 
 import { ContentType } from '@lib/common';
@@ -31,6 +31,10 @@ describe('Request Events', () => {
         contentType: ContentType.DOCUMENT,
         thirdParty: true,
     };
+
+    beforeAll(() => {
+        RequestEvents.init();
+    });
 
     it('onBeforeRequest', () => {
         const listener = jest.fn();

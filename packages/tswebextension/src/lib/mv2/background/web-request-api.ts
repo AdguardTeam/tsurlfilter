@@ -278,7 +278,7 @@ export class WebRequestApi {
         WebRequestApi.injectCosmetic(tabId, frameId);
     }
 
-    private static injectCss(context: RequestContext) {
+    private static injectCss(context: RequestContext): void {
         if (!context?.cosmeticResult) {
             return;
         }
@@ -296,7 +296,7 @@ export class WebRequestApi {
         }
     }
 
-    private static injectJsScript(context: RequestContext) {
+    private static injectJsScript(context: RequestContext): void {
         if (!context?.cosmeticResult) {
             return;
         }

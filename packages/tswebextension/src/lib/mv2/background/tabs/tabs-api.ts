@@ -1,4 +1,4 @@
-import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import { NetworkRule, RequestType, logger } from '@adguard/tsurlfilter';
 import browser, { ExtensionTypes, Tabs } from 'webextension-polyfill';
 import { TabContext } from './tab-context';
 import { Frame } from './frame';
@@ -26,6 +26,9 @@ export interface TabsApiInterface {
 }
 
 export class TabsApi implements TabsApiInterface {
+    // TODO: use global config context
+    private verbose = false;
+
     private context = new Map<number, TabContext>();
 
     public onCreate = new EventChannel<TabContext>();
@@ -48,9 +51,15 @@ export class TabsApi implements TabsApiInterface {
         this.getTabFrame = this.getTabFrame.bind(this);
         this.getTabMainFrame = this.getTabMainFrame.bind(this);
         this.recordFrameRequest = this.recordFrameRequest.bind(this);
+
+        this.logError = this.logError.bind(this);
     }
 
-    public async start() {
+    public setVerbose(value: boolean): void {
+        this.verbose = value;
+    }
+
+    public async start(): Promise<void> {
         await this.createCurrentTabsContext();
 
         browser.tabs.onCreated.addListener(this.createTabContext);
@@ -59,7 +68,7 @@ export class TabsApi implements TabsApiInterface {
         browser.tabs.onActivated.addListener(this.onTabActivated);
     }
 
-    public stop() {
+    public stop(): void {
         browser.tabs.onCreated.removeListener(this.createTabContext);
         browser.tabs.onRemoved.removeListener(this.deleteTabContext);
         browser.tabs.onUpdated.removeListener(this.updateTabContextData);
@@ -92,7 +101,7 @@ export class TabsApi implements TabsApiInterface {
         return frameRule;
     }
 
-    public setTabFrame(tabId: number, frameId: number, frameData: Frame) {
+    public setTabFrame(tabId: number, frameId: number, frameData: Frame): void {
         const tabContext = this.context.get(tabId);
 
         if (tabContext) {
@@ -101,7 +110,7 @@ export class TabsApi implements TabsApiInterface {
         }
     }
 
-    public getTabFrame(tabId: number, frameId: number) {
+    public getTabFrame(tabId: number, frameId: number): Frame | null {
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
@@ -117,11 +126,11 @@ export class TabsApi implements TabsApiInterface {
         return frame;
     }
 
-    public getTabMainFrame(tabId: number) {
+    public getTabMainFrame(tabId: number): Frame | null {
         return this.getTabFrame(tabId, 0);
     }
 
-    public recordFrameRequest(requestContext: RequestContext) {
+    public recordFrameRequest(requestContext: RequestContext): void {
         const {
             requestUrl,
             tabId,
@@ -239,7 +248,7 @@ export class TabsApi implements TabsApiInterface {
         }
     }
 
-    public static injectScript(code: string, tabId: number, frameId?: number): void {
+    public injectScript(code: string, tabId: number, frameId?: number): void {
         const injectDetails = {
             code,
             frameId,
@@ -247,14 +256,12 @@ export class TabsApi implements TabsApiInterface {
             matchAboutBlank: true,
         } as ExtensionTypes.InjectDetails;
 
-        try {
-            browser.tabs.executeScript(tabId, injectDetails);
-        } catch (e) {
-            // TODO: log on verbose
-        }
+        browser.tabs
+            .executeScript(tabId, injectDetails)
+            .catch(this.logError);
     }
 
-    public static injectCss(code: string, tabId: number, frameId?: number): void {
+    public injectCss(code: string, tabId: number, frameId?: number): void {
         const injectDetails = {
             code,
             frameId,
@@ -263,10 +270,14 @@ export class TabsApi implements TabsApiInterface {
             cssOrigin: 'user',
         } as ExtensionTypes.InjectDetails;
 
-        try {
-            browser.tabs.insertCSS(tabId, injectDetails);
-        } catch (e) {
-            // TODO: log on verbose
+        browser.tabs
+            .insertCSS(tabId, injectDetails)
+            .catch(this.logError);
+    }
+
+    private logError(e: unknown): void {
+        if (this.verbose) {
+            logger.error(e instanceof Error ? e.message : JSON.stringify(e));
         }
     }
 }

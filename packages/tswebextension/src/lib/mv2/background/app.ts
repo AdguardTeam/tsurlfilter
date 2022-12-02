@@ -1,5 +1,4 @@
 /* eslint-disable class-methods-use-this */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import merge from 'deepmerge';
 import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
@@ -21,6 +20,7 @@ import {
 
 import { Assistant } from './assistant';
 import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
+import { RequestEvents } from './request';
 
 export interface ManifestV2AppInterface extends AppInterface<ConfigurationMV2, ConfigurationMV2Context, void> {
     getMessageHandler: () => typeof messagesApi.handleMessage
@@ -56,8 +56,10 @@ export class TsWebExtension implements ManifestV2AppInterface {
     public async start(configuration: ConfigurationMV2): Promise<void> {
         configurationMV2Validator.parse(configuration);
 
+        RequestEvents.init();
         await redirectsService.start();
         await engineApi.startEngine(configuration);
+        tabsApi.setVerbose(configuration.verbose);
         await tabsApi.start();
         WebRequestApi.start();
 
@@ -90,6 +92,8 @@ export class TsWebExtension implements ManifestV2AppInterface {
         }
 
         configurationMV2Validator.parse(configuration);
+
+        tabsApi.setVerbose(configuration.verbose);
 
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();
@@ -139,7 +143,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
     static mergeConfigurationMV2(
         configuration: ConfigurationMV2,
         changes: Partial<ConfigurationMV2>,
-    ) {
+    ): ConfigurationMV2 {
         return merge<ConfigurationMV2>(configuration, changes, {
             // Arrays will be replaced
             arrayMerge: (_, source) => source,

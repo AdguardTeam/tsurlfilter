@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/require-file-overview */
 const path = require("path");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
@@ -6,6 +7,7 @@ const MODE = process.env.MODE || "production";
 
 module.exports = {
     mode: MODE,
+    devtool: "source-map",
     entry: {
         "adguard-api": "./src/background/index.ts",
         "adguard-content": "./src/content-script/index.ts",

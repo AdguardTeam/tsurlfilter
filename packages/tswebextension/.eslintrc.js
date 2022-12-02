@@ -21,7 +21,10 @@ module.exports = {
 
     rules: {
         'indent': 'off',
-        '@typescript-eslint/indent': ['error', 4],
+        '@typescript-eslint/indent': ['error', 4, {
+            SwitchCase: 1,
+            ignoredNodes: ['TSTypeParameterInstantiation']
+        }],
         'no-bitwise': 'off',
         'no-new': 'off',
         'max-len': ['error', { code: 120 }],

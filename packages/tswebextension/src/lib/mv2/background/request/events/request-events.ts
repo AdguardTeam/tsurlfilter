@@ -1,7 +1,7 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { RequestEvent, BrowserRequestEvent } from './request-event';
+import { RequestEvent, RequestData } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
 import {
     isThirdPartyRequest,
@@ -11,16 +11,127 @@ import { tabsApi } from '../../tabs';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
-// TODO: firefox adapter
+export class RequestEvents {
+    public static onBeforeRequest = new RequestEvent<
+        WebRequest.OnBeforeRequestDetailsType,
+        WebRequest.OnBeforeRequestOptions
+    >();
 
-export type OnBeforeRequest = BrowserRequestEvent<
-WebRequest.OnBeforeRequestDetailsType,
-WebRequest.OnBeforeRequestOptions
->;
+    public static onBeforeSendHeaders = new RequestEvent<
+        WebRequest.OnBeforeSendHeadersDetailsType,
+        WebRequest.OnBeforeSendHeadersOptions
+    >();
 
-export const onBeforeRequest = new RequestEvent(
-    browser.webRequest.onBeforeRequest as OnBeforeRequest,
-    (details) => {
+    public static onSendHeaders = new RequestEvent<
+        WebRequest.OnSendHeadersDetailsType,
+        WebRequest.OnSendHeadersOptions
+    >();
+
+    public static onHeadersReceived = new RequestEvent<
+        WebRequest.OnHeadersReceivedDetailsType,
+        WebRequest.OnHeadersReceivedOptions
+    >();
+
+    public static onAuthRequired = new RequestEvent<
+        WebRequest.OnAuthRequiredDetailsType,
+        WebRequest.OnAuthRequiredOptions
+    >();
+
+    public static onBeforeRedirect = new RequestEvent<
+        WebRequest.OnBeforeRedirectDetailsType,
+        WebRequest.OnBeforeRedirectOptions
+    >();
+
+    public static onResponseStarted = new RequestEvent<
+        WebRequest.OnResponseStartedDetailsType,
+        WebRequest.OnResponseStartedOptions
+    >();
+
+    public static onCompleted = new RequestEvent<
+        WebRequest.OnCompletedDetailsType,
+        WebRequest.OnCompletedOptions
+    >();
+
+    public static onErrorOccurred = new RequestEvent<
+        WebRequest.OnErrorOccurredDetailsType,
+        WebRequest.OnErrorOccurredOptions
+    >();
+
+    public static init(): void {
+        RequestEvents.onBeforeRequest.init(
+            browser.webRequest.onBeforeRequest,
+            RequestEvents.handleOnBeforeRequest,
+            { urls: ['<all_urls>'] },
+            ['blocking', 'requestBody'],
+        );
+
+        const onBeforeSendHeadersOptions: WebRequest.OnBeforeSendHeadersOptions[] = ['requestHeaders', 'blocking'];
+
+        if (isChrome) {
+            onBeforeSendHeadersOptions.push('extraHeaders');
+        }
+
+        RequestEvents.onBeforeSendHeaders.init(
+            browser.webRequest.onBeforeSendHeaders,
+            RequestEvents.handleOnBeforeSendHeaders,
+            { urls: ['<all_urls>'] },
+            onBeforeSendHeadersOptions,
+        );
+
+        RequestEvents.onSendHeaders.init(
+            browser.webRequest.onSendHeaders,
+            RequestEvents.handleSendHeaders,
+            { urls: ['<all_urls>'] },
+        );
+
+        const onHeadersReceivedOptions: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
+
+        if (isChrome) {
+            onHeadersReceivedOptions.push('extraHeaders');
+        }
+
+        RequestEvents.onHeadersReceived.init(
+            browser.webRequest.onHeadersReceived,
+            RequestEvents.handleOnHeadersReceived,
+            { urls: ['<all_urls>'] },
+            onHeadersReceivedOptions,
+        );
+
+        RequestEvents.onAuthRequired.init(
+            browser.webRequest.onAuthRequired,
+            RequestEvents.handleOnAuthRequired,
+            { urls: ['<all_urls>'] },
+        );
+
+        RequestEvents.onBeforeRedirect.init(
+            browser.webRequest.onBeforeRedirect,
+            RequestEvents.handleOnBeforeRedirect,
+            { urls: ['<all_urls>'] },
+        );
+
+        RequestEvents.onResponseStarted.init(
+            browser.webRequest.onResponseStarted,
+            RequestEvents.handleOnResponseStarted,
+            { urls: ['<all_urls>'] },
+        );
+
+        RequestEvents.onCompleted.init(
+            browser.webRequest.onCompleted,
+            RequestEvents.handleOnCompleted,
+            { urls: ['<all_urls>'] },
+            ['responseHeaders'],
+        );
+
+        RequestEvents.onErrorOccurred.init(
+            browser.webRequest.onErrorOccurred,
+            RequestEvents.handleOnErrorOccurred,
+            { urls: ['<all_urls>'] },
+        );
+    }
+
+    private static handleOnBeforeRequest(
+        details: WebRequest.OnBeforeRequestDetailsType,
+    ): RequestData<WebRequest.OnBeforeRequestDetailsType> {
         const {
             requestId,
             type,
@@ -85,25 +196,11 @@ export const onBeforeRequest = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-    ['blocking', 'requestBody'],
-);
+    }
 
-export type OnBeforeSendHeaders = BrowserRequestEvent<
-WebRequest.OnBeforeSendHeadersDetailsType,
-WebRequest.OnBeforeSendHeadersOptions
->;
-
-const onBeforeSendHeadersOptions = ['requestHeaders', 'blocking'];
-
-if (isChrome) {
-    onBeforeSendHeadersOptions.push('extraHeaders');
-}
-
-export const onBeforeSendHeaders = new RequestEvent(
-    browser.webRequest.onBeforeSendHeaders as OnBeforeSendHeaders,
-    (details) => {
+    private static handleOnBeforeSendHeaders(
+        details: WebRequest.OnBeforeSendHeadersDetailsType,
+    ): RequestData<WebRequest.OnBeforeSendHeadersDetailsType> {
         const { requestId, timeStamp, requestHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -113,19 +210,11 @@ export const onBeforeSendHeaders = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-    onBeforeSendHeadersOptions,
-);
+    }
 
-export type OnSendHeaders = BrowserRequestEvent<
-WebRequest.OnSendHeadersDetailsType,
-WebRequest.OnSendHeadersOptions
->;
-
-export const onSendHeaders = new RequestEvent(
-    browser.webRequest.onSendHeaders as OnSendHeaders,
-    (details) => {
+    private static handleSendHeaders(
+        details: WebRequest.OnSendHeadersDetailsType,
+    ): RequestData<WebRequest.OnSendHeadersDetailsType> {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -134,24 +223,11 @@ export const onSendHeaders = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-);
+    }
 
-export type OnHeadersReceived = BrowserRequestEvent<
-WebRequest.OnHeadersReceivedDetailsType,
-WebRequest.OnHeadersReceivedOptions
->;
-
-const onHeadersReceivedOptions = ['responseHeaders', 'blocking'];
-
-if (isChrome) {
-    onHeadersReceivedOptions.push('extraHeaders');
-}
-
-export const onHeadersReceived = new RequestEvent(
-    browser.webRequest.onHeadersReceived as OnHeadersReceived,
-    (details) => {
+    private static handleOnHeadersReceived(
+        details: WebRequest.OnHeadersReceivedDetailsType,
+    ): RequestData<WebRequest.OnHeadersReceivedDetailsType> {
         const {
             requestId,
             responseHeaders,
@@ -165,19 +241,11 @@ export const onHeadersReceived = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-    onHeadersReceivedOptions,
-);
+    }
 
-export type OnAuthRequired = BrowserRequestEvent<
-WebRequest.OnAuthRequiredDetailsType,
-WebRequest.OnAuthRequiredOptions
->;
-
-export const onAuthRequired = new RequestEvent(
-    browser.webRequest.onAuthRequired as OnAuthRequired,
-    (details) => {
+    private static handleOnAuthRequired(
+        details: WebRequest.OnAuthRequiredDetailsType,
+    ): RequestData<WebRequest.OnAuthRequiredDetailsType> {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -186,18 +254,11 @@ export const onAuthRequired = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-);
+    }
 
-export type OnBeforeRedirect = BrowserRequestEvent<
-WebRequest.OnBeforeRedirectDetailsType,
-WebRequest.OnBeforeRedirectOptions
->;
-
-export const onBeforeRedirect = new RequestEvent(
-    browser.webRequest.onBeforeRedirect as OnBeforeRedirect,
-    (details) => {
+    private static handleOnBeforeRedirect(
+        details: WebRequest.OnBeforeRedirectDetailsType,
+    ): RequestData<WebRequest.OnBeforeRedirectDetailsType> {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -206,18 +267,11 @@ export const onBeforeRedirect = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-);
+    }
 
-export type OnResponseStarted = BrowserRequestEvent<
-WebRequest.OnResponseStartedDetailsType,
-WebRequest.OnResponseStartedOptions
->;
-
-export const onResponseStarted = new RequestEvent(
-    browser.webRequest.onResponseStarted as OnResponseStarted,
-    (details) => {
+    private static handleOnResponseStarted(
+        details: WebRequest.OnResponseStartedDetailsType,
+    ): RequestData<WebRequest.OnResponseStartedDetailsType> {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -226,18 +280,11 @@ export const onResponseStarted = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-);
+    }
 
-export type OnCompleted = BrowserRequestEvent<
-WebRequest.OnCompletedDetailsType,
-WebRequest.OnCompletedOptions
->;
-
-export const onCompleted = new RequestEvent(
-    browser.webRequest.onCompleted as OnCompleted,
-    (details) => {
+    private static handleOnCompleted(
+        details: WebRequest.OnCompletedDetailsType,
+    ): RequestData<WebRequest.OnCompletedDetailsType> {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -246,19 +293,11 @@ export const onCompleted = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-    ['responseHeaders'],
-);
+    }
 
-export type OnErrorOccurred = BrowserRequestEvent<
-WebRequest.OnErrorOccurredDetailsType,
-WebRequest.OnErrorOccurredOptions
->;
-
-export const onErrorOccurred = new RequestEvent(
-    browser.webRequest.onErrorOccurred as OnErrorOccurred,
-    (details) => {
+    private static handleOnErrorOccurred(
+        details: WebRequest.OnErrorOccurredDetailsType,
+    ): RequestData<WebRequest.OnErrorOccurredDetailsType> {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -267,6 +306,5 @@ export const onErrorOccurred = new RequestEvent(
         });
 
         return { details, context };
-    },
-    { urls: ['<all_urls>'] },
-);
+    }
+}

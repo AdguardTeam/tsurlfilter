@@ -3,7 +3,9 @@ import { RequestEvent } from '@lib/mv2/background/request/events/request-event';
 
 describe('Request Event', () => {
     it('subscribes to original event once on initialization', () => {
-        const event = new RequestEvent(
+        const event = new RequestEvent();
+
+        event.init(
             browser.webRequest.onBeforeRequest,
             (details) => ({ details }),
             { urls: ['<all_urls>'] },
@@ -20,7 +22,9 @@ describe('Request Event', () => {
     });
 
     it('can add and remove listeners', () => {
-        const event = new RequestEvent(
+        const event = new RequestEvent();
+
+        event.init(
             browser.webRequest.onBeforeRequest,
             (details) => ({ details }),
             { urls: ['<all_urls>'] },
@@ -42,7 +46,9 @@ describe('Request Event', () => {
     });
 
     it('doesn`t call rest listeners after non-empty value returns', () => {
-        const event = new RequestEvent(
+        const event = new RequestEvent();
+
+        event.init(
             browser.webRequest.onBeforeRequest,
             (details) => ({ details }),
             { urls: ['<all_urls>'] },

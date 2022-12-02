@@ -46,13 +46,13 @@ export interface BrowserRequestEvent<Details, Options>
 export class RequestEvent<Details, Options> {
     public listeners: EventCallback<Details>[] = [];
 
-    constructor(
+    init(
         event: BrowserRequestEvent<Details, Options>,
         handler: DetailsHandler<Details>,
         filter: WebRequest.RequestFilter,
         extraInfoSpec?: Options[],
-    ) {
-        const handleBrowserEvent = (details: Details) => {
+    ): void {
+        const handleBrowserEvent = (details: Details): void | WebRequest.BlockingResponseOrPromise => {
             const data = handler(details);
 
             /**
@@ -73,11 +73,11 @@ export class RequestEvent<Details, Options> {
         }
     }
 
-    public addListener(listener: EventCallback<Details>) {
+    public addListener(listener: EventCallback<Details>): void {
         this.listeners.push(listener);
     }
 
-    public removeListener(listener: EventCallback<Details>) {
+    public removeListener(listener: EventCallback<Details>): void {
         const index = this.listeners.indexOf(listener);
 
         if (index !== -1) {

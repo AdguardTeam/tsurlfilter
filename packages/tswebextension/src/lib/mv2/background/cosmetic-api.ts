@@ -2,7 +2,7 @@ import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
-import { tabsApi, TabsApi } from './tabs/tabs-api';
+import { tabsApi } from './tabs/tabs-api';
 import { USER_FILTER_ID } from '../../common/constants';
 
 export class CosmeticApi {
@@ -16,10 +16,14 @@ export class CosmeticApi {
 
     /**
      * Applies scripts from cosmetic result
+     *
+     * @param scriptText - script text
+     * @param tabId - tab id
+     * @param frameId - frame id
      * @see {@link LocalScriptRulesService} for details about script source
      */
     public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
-        TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+        tabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
     }
 
     /**
@@ -28,13 +32,18 @@ export class CosmeticApi {
      * Patches rule selector adding adguard mark rule info in the content attribute
      * Example:
      * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
+     *
+     * @param cssText - css text
+     * @param tabId - tab id
+     * @param frameId - frame id
      */
     public static injectCss(cssText: string, tabId: number, frameId = 0): void {
-        TabsApi.injectCss(cssText, tabId, frameId);
+        tabsApi.injectCss(cssText, tabId, frameId);
     }
 
+    // TODO: check why is not called
     public static injectExtCss(extCssText: string, tabId: number, frameId = 0): void {
-        TabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
+        tabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
     }
 
     public static getCssText(cosmeticResult: CosmeticResult, collectingCosmeticRulesHits = false): string | undefined {
@@ -130,12 +139,18 @@ export class CosmeticApi {
 
     /**
      * Builds stylesheet from rules
+     *
+     * @param elemhideRules - list of elemhide css rules
+     * @param injectRules - list of inject css rules
+     * @param groupElemhideSelectors - is hidden elements selectors will be grouped
+     *
+     * @returns list of stylesheet expressions
      */
     private static buildStyleSheet(
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
         groupElemhideSelectors: boolean,
-    ) {
+    ): string[] {
         const CSS_SELECTORS_PER_LINE = 50;
         const ELEMHIDE_CSS_STYLE = ' { display: none!important; }\r\n';
 
@@ -176,10 +191,10 @@ export class CosmeticApi {
     }
 
     /**
-     * Urlencodes rule text.
+     * Encodes rule text.
      *
-     * @param ruleText
-     * @returns {string}
+     * @param ruleText - rule text
+     * @returns encoded rule text
      */
     private static escapeRule(ruleText: string): string {
         return encodeURIComponent(ruleText).replace(
@@ -192,8 +207,12 @@ export class CosmeticApi {
      * Patch rule selector adding adguard mark rule info in the content attribute
      * Example:
      * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
+     *
+     * @param rule - elemhide cosmetic rule
+     *
+     * @returns - stylesheet expression with marker
      */
-    private static addMarkerToElemhideRule(rule: CosmeticRule) {
+    private static addMarkerToElemhideRule(rule: CosmeticRule): string {
         const result = [];
         result.push(rule.getContent());
         result.push(CosmeticApi.ELEMHIDE_HIT_START);
@@ -208,8 +227,12 @@ export class CosmeticApi {
      * Patch rule selector adding adguard mark and rule info in the content attribute
      * Example:
      * .selector { color: red } -> .selector { color: red, content: 'adguard{filterId};{ruleText} !important;}
+     *
+     * @param rule - inject cosmetic rule
+     *
+     * @returns - stylesheet expression with marker
      */
-    private static addMarkerToInjectRule(rule: CosmeticRule) {
+    private static addMarkerToInjectRule(rule: CosmeticRule): string {
         const result = [];
         const ruleContent = rule.getContent();
         // if rule text has content attribute we don't add rule marker
@@ -236,11 +259,16 @@ export class CosmeticApi {
 
     /**
      * Builds stylesheet with css-hits marker
+     *
+     * @param elemhideRules - elemhide css rules
+     * @param injectRules - inject css rules
+     *
+     * @returns list of stylesheet expressions
      */
     private static buildStyleSheetWithHits = (
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
-    ) => {
+    ): string[] => {
         const elemhideStyles = elemhideRules.map((x) => CosmeticApi.addMarkerToElemhideRule(x));
         const injectStyles = injectRules.map((x) => CosmeticApi.addMarkerToInjectRule(x));
 
