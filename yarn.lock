@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@adguard/extended-css@^2.0.18":
-  version "2.0.18"
-  resolved "https://registry.yarnpkg.com/@adguard/extended-css/-/extended-css-2.0.18.tgz#669f5ad297425184fd4946e76d1a3a110e413a44"
-  integrity sha512-IxuzXYPwH4gG1MRm5b08jVbgCIRi49SIhHN6EtciNSpR7+vnTh7nU2eA/Bsupt2XB8LBaco84yLetSxnA6nETQ==
+"@adguard/extended-css@^2.0.24":
+  version "2.0.24"
+  resolved "https://registry.yarnpkg.com/@adguard/extended-css/-/extended-css-2.0.24.tgz#8bb4e31dcf746c1573288fa1bfee190407cea89b"
+  integrity sha512-qkQyH+5/oKDw9JvTeZcfBUbJJj8TV+/3G9ECDKdehJy8vUCbIuKg6rqBDxqGXBnUQcTZPKrnf7JUgSJE3GzE6Q==
 
 "@adguard/scriptlets@^1.4.4":
   version "1.6.6"
@@ -23,10 +23,10 @@
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
 
-"@adguard/scriptlets@^1.7.3":
-  version "1.7.3"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.7.3.tgz#63df428f136635ea8395bd911c1697561d32ca1f"
-  integrity sha512-6qRjUQGr2Ga5mF9cbrhbcibum7pMSyCWP5wK5xEviyemwvcLAQQvCvzChzgVeBmfpCFjuEV9ufCj9oGfkMCpSw==
+"@adguard/scriptlets@^1.7.10":
+  version "1.7.10"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.7.10.tgz#3831032cf4b92024160e68fd456addd1b02965f3"
+  integrity sha512-+G9eDgZZpcvcbdm8PBE0MuQwoYwuLHtX7eYFbX+rFsgMLaM5R0nhhvBQw0a2njVbs8oI1qs9sGDcvX+Clh8slg==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"

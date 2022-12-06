@@ -68,9 +68,7 @@ export const EXT_CSS_PSEUDO_INDICATORS = [
     ':upward(',
     ':nth-ancestor(',
     ':remove(',
-    ':if-not(',
     // aliases for :has()
-    ':if(',
     ':-abp-has(',
     // aliases for :contains()
     ':has-text(',
