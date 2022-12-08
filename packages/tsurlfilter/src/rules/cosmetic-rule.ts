@@ -15,6 +15,7 @@ import { Request } from '../request';
 import { Pattern } from './pattern';
 import { ScriptletParser } from '../engine/cosmetic-engine/scriptlet-parser';
 import { config } from '../configuration';
+import { logger } from '../utils/logger';
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -362,13 +363,21 @@ export class CosmeticRule implements rule.IRule {
             version: config.version || '',
         };
 
+        let code = null;
+        try {
+            code = scriptlets.invoke(params);
+        } catch (e) {
+            logger.debug(`Error: cannot invoke scriptlet with name: '${params.name}'`);
+        }
+
         this.scriptData = {
-            code: scriptlets.invoke(params) ?? null,
+            code,
             debug,
             domain: request?.domain,
         };
 
         this.scriptletData = {
+            // TODO: check unknown scriptlet name in mv3 later
             func: scriptlets.getScriptletFunction(params.name),
             params: params,
         };
