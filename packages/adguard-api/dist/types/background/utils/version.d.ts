@@ -16,13 +16,19 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Helper class for work with semver (x.x.x)
+ * Helper class for work with semver
+ *
+ * Parsed semver string saves in {@link data} property.
+ * We save first {@link MAX_LENGTH} parts of parsed string.
+ * If there are less than {@link MAX_LENGTH} parts in the version, the missing ones are filled with zeros
+ * For example, entry string `1.1` will be parsed as `[1, 1, 0, 0]`.
  *
  * @param version - semver string
  * @class
  * @throws error, if passed string cannot be parsed
  */
 export declare class Version {
+    private static MAX_LENGTH;
     data: number[];
     constructor(version: string);
     /**
@@ -33,11 +39,4 @@ export declare class Version {
      * @throws error, if some version data is invalid
      */
     compare(version: Version): number;
-    /**
-     * Cast semver part to number
-     *
-     * @param part - splitted semver part
-     * @returns semver part number
-     */
-    private static parseVersionPart;
 }
