@@ -101,7 +101,7 @@
     "@types/ip6addr": "^0.2.3",
     "@types/jest": "^27.0.3",
     "@types/netmask": "^1.0.30",
-    "@types/node": "^16.11.10",
+    "@types/node": "^18.11.11",
     "@types/punycode": "^2.1.0",
     "@types/rollup-plugin-node-globals": "^1.4.1",
     "@types/webextension-polyfill": "^0.8.2",
