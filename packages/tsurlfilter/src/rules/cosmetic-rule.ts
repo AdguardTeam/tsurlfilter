@@ -55,12 +55,20 @@ export enum CosmeticRuleType {
  */
 export const EXT_CSS_PSEUDO_INDICATORS = [
     /**
-     * Pseudo-classes :has(), :is(), and :not() may use native implementation
+     * Pseudo-classes :is(), and :not() may use native implementation
      * so they are not listed here
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
      * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
      * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
      */
+    /**
+     * :has() should also be conditionally considered as extended and should not be in this list
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+     * but there is a bug with content blocker in safari
+     * https://bugs.webkit.org/show_bug.cgi?id=248868
+     *
+     * TODO: remove ':has(' later
+     */
+    ':has(',
     ':contains(',
     ':matches-css(',
     ':matches-attr(',

@@ -1,6 +1,13 @@
 # TSUrlFilter Changelog
 
 
+## v1.0.62
+
+### Changed
+
+* Always consider `:has()` pseudo-class as extended
+
+
 
 ## v1.0.59
 

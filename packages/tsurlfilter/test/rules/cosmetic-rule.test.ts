@@ -554,7 +554,9 @@ describe('Extended css rule', () => {
     ruleText = '~example.com,example.org##.sponsored:has(test)';
     rule = new CosmeticRule(ruleText, 0);
 
-    expect(rule.isExtendedCss()).toBeFalsy();
+    // TODO: change later to 'toBeFalsy'
+    // after ':has(' is removed from EXT_CSS_PSEUDO_INDICATORS
+    expect(rule.isExtendedCss()).toBeTruthy();
     expect(rule.getContent()).toEqual('.sponsored:has(test)');
 
     // but :has() pseudo-class should be considered as ExtendedCss
