@@ -65,9 +65,7 @@ describe('Injection Helper', () => {
                 
                 chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
             });
-            
-            console.debug('CssHitsCounter initialized');
-            
+
             // Apply extended css stylesheets
             const extendedCssContent = \`h1:contains(Example){display:none!important;}\`;
             const extendedCss = new ExtendedCss({
@@ -77,8 +75,6 @@ describe('Injection Helper', () => {
                 }
             });
             extendedCss.apply();
-
-            console.debug('Extended css applied');
         })()`;
 
         expect(trim(buildExtendedCssScriptText(extendedCss))).toBe(trim(expected));

@@ -20,8 +20,6 @@ const cssHitsCounter = new CssHitsCounter((stats) => {
 });
 
 const applyExtendedCss = (cssText: string) => {
-    console.debug('CssHitsCounter initialized');
-
     // Apply extended css stylesheets
     const extendedCss = new ExtendedCss({
         styleSheet: cssText,
@@ -31,8 +29,6 @@ const applyExtendedCss = (cssText: string) => {
     });
 
     extendedCss.apply();
-
-    console.debug('Extended css applied');
 };
 
 (async () => {

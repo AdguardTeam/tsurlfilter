@@ -95,8 +95,6 @@ export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
                     chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
                 });
                 
-                console.debug('CssHitsCounter initialized');
-                
                 // Apply extended css stylesheets
                 const extendedCssContent = \`${extendedCssStylesheets}\`;
                 const extendedCss = new ExtendedCss({
@@ -106,7 +104,5 @@ export const buildExtendedCssScriptText = (extendedCssStylesheets: string) => {
                     }
                 });
                 extendedCss.apply();
-
-                console.debug('Extended css applied');
             })()`;
 };
