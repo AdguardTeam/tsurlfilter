@@ -1,59 +1,64 @@
+interface OnRuleAppliedData {
+    cookieName: string,
+    cookieValue: string,
+    cookieDomain: string,
+    cookieRuleText: string,
+    thirdParty: boolean,
+    filterId: number,
+}
+
+interface OnRuleAppliedCallback {
+    (data: OnRuleAppliedData): void;
+}
+
+// TODO check if this type is not duplicated
+interface Rule {
+    ruleText: string;
+    match: string;
+    isThirdParty: boolean;
+    filterId: number;
+    isAllowlist: boolean;
+}
+
 /**
- * This class applies cookie rules in page context
+ * This class applies cookie rules in page context.
  *
  * - Removes cookies matching rules
- * - Listens to new cookies, then tries to apply rules to them
+ * - Listens to new cookies, then tries to apply rules to them.
  */
 export class CookieController {
     /**
-     * On rule applied callback
+     * Default cookie polling interval.
      */
-    private readonly onRuleAppliedCallback: (data: {
-        cookieName: string;
-        cookieValue: string;
-        cookieDomain: string;
-        cookieRuleText: string;
-        thirdParty: boolean;
-        filterId: number;
-    }) => void;
+    DEFAULT_COOKIE_POLLING_INTERVAL_MS = 1000;
 
     /**
-     * Is current context third-party
+     * On rule applied callback.
+     */
+    private readonly onRuleAppliedCallback: OnRuleAppliedCallback;
+
+    /**
+     * Is current context third-party.
      */
     private readonly isThirdPartyContext: boolean = false;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param callback
+     * @param callback On rule applied callback.
      */
-    constructor(callback: (data: {
-        cookieName: string;
-        cookieValue: string;
-        cookieDomain: string;
-        cookieRuleText: string;
-        thirdParty: boolean;
-        filterId: number;
-    }) => void) {
+    constructor(callback: OnRuleAppliedCallback) {
         this.onRuleAppliedCallback = callback;
 
         this.isThirdPartyContext = this.isThirdPartyFrame();
     }
 
     /**
-     * Applies rules
+     * Applies rules.
      *
-     * @param rules
+     * @param rules Rules to apply.
      */
-    public apply(
-        rules: {
-            ruleText: string;
-            match: string;
-            isThirdParty: boolean;
-            filterId: number;
-            isAllowlist: boolean;
-        }[],
-    ): void {
+    public apply(rules: Rule[]): void {
         this.applyRules(rules);
 
         let lastCookie = document.cookie;
@@ -74,13 +79,15 @@ export class CookieController {
     }
 
     /**
-     * Polling document cookie
+     * Polling document cookie.
      *
-     * @param callback
-     * @param interval
+     * @param callback Callback to be called periodically.
+     * @param interval Polling interval.
      */
-    // eslint-disable-next-line class-methods-use-this
-    private listenCookieChange(callback: (oldValue: string, newValue: string) => void, interval = 1000): void {
+    private listenCookieChange(
+        callback: (oldValue: string, newValue: string) => void,
+        interval = this.DEFAULT_COOKIE_POLLING_INTERVAL_MS,
+    ): void {
         let lastCookie = document.cookie;
 
         setInterval(() => {
@@ -96,7 +103,9 @@ export class CookieController {
     }
 
     /**
-     * Checks if current context is third-party
+     * Checks if current context is third-party.
+     *
+     * @returns True if current context is third-party.
      */
     // eslint-disable-next-line class-methods-use-this
     private isThirdPartyFrame(): boolean {
@@ -108,11 +117,12 @@ export class CookieController {
     }
 
     /**
-     * Applies rules to document cookies
-     * Inspired by remove-cookie scriptlet
-     * https://github.com/AdguardTeam/Scriptlets/blob/master/src/scriptlets/remove-cookie.js
+     * Applies rules to document cookies.
      *
-     * @param rules
+     * @param rules Rules to apply.
+     *
+     * Inspired by remove-cookie scriptlet.
+     * @see {@link https://github.com/AdguardTeam/Scriptlets/blob/master/src/scriptlets/remove-cookie.js}
      */
     private applyRules(
         rules: {
@@ -162,14 +172,14 @@ export class CookieController {
     }
 
     /**
-     * Applies rule
+     * Applies rule.
      *
-     * @param rule
-     * @param cookieName
-     * @param cookieValue
+     * @param rule Rule to apply.
+     * @param cookieName Cookie name.
+     * @param cookieValue Cookie value.
      */
     private applyRule(
-        rule: { ruleText: string; match: string; isThirdParty: boolean; filterId: number; isAllowlist: boolean; },
+        rule: Rule,
         cookieName: string,
         cookieValue: string,
     ): void {
@@ -194,10 +204,10 @@ export class CookieController {
     }
 
     /**
-     * Removes cookie for host
+     * Removes cookie for host.
      *
-     * @param cookieName
-     * @param hostName
+     * @param cookieName Cookie name.
+     * @param hostName Host name.
      */
     private static removeCookieFromHost(cookieName: string, hostName: string): void {
         const cookieSpec = `${cookieName}=`;
@@ -214,9 +224,10 @@ export class CookieController {
     }
 
     /**
-     * Converts cookie rule match to regular expression
+     * Converts cookie rule match to regular expression.
      *
-     * @param str
+     * @param str String to convert.
+     * @returns Regular expression.
      */
     private static toRegExp(str: string): RegExp {
         if (str[0] === '/' && str[str.length - 1] === '/') {

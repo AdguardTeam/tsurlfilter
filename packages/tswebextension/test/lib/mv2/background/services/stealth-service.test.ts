@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import { WebRequest } from 'webextension-polyfill';
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 

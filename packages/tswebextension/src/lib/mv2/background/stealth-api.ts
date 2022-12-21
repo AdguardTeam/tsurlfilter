@@ -1,8 +1,8 @@
 import browser from 'webextension-polyfill';
 import { StringRuleList, logger } from '@adguard/tsurlfilter';
+
 import { StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
-
 import {
     Configuration,
     FilteringLogInterface,
@@ -11,40 +11,40 @@ import {
 } from '../../common';
 
 /**
- * Stealth api
+ * Stealth api interface.
  */
 export interface StealthApiInterface {
     configure: (configuration: Configuration) => Promise<void>;
 }
 
 /**
- * Stealth api implementation
+ * Stealth api implementation.
  */
 export class StealthApi implements StealthApiInterface {
     /**
-     * Privacy permission for block webrtc stealth setting
+     * Privacy permission for block webrtc stealth setting.
      */
     private static PRIVACY_PERMISSIONS = {
         permissions: ['privacy'],
     };
 
     /**
-     * Stealth filter identifier
+     * Stealth filter identifier.
      */
     private static STEALTH_MODE_FILTER_ID: -1;
 
     /**
-     * Stealth configuration
+     * Stealth configuration.
      */
     private configuration: StealthConfig | undefined;
 
     /**
-     * Stealth service
+     * Stealth service.
      */
     private engine: StealthService | undefined;
 
     /**
-     * Filtering log
+     * Filtering log.
      */
     private filteringLog: FilteringLogInterface;
 
@@ -52,14 +52,28 @@ export class StealthApi implements StealthApiInterface {
 
     private isFilteringEnabled: boolean | undefined;
 
+    /**
+     * Stealth API constructor.
+     *
+     * @param filteringLog Filtering log.
+     */
     constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
     }
 
+    /**
+     * Configure stealth api.
+     *
+     * @param configuration Configuration.
+     */
     public async configure(configuration: Configuration): Promise<void> {
         const { settings } = configuration;
 
-        const { stealth, stealthModeEnabled, filteringEnabled } = settings;
+        const {
+            stealth,
+            stealthModeEnabled,
+            filteringEnabled,
+        } = settings;
 
         this.isStealthModeEnabled = stealthModeEnabled;
         this.isFilteringEnabled = filteringEnabled;
@@ -82,8 +96,9 @@ export class StealthApi implements StealthApiInterface {
     }
 
     /**
-     * Returns rule list with stealth mode rules
-     * @return {StringRuleList}
+     * Returns rule list with stealth mode rules.
+     *
+     * @returns String rule list or null.
      */
     public getStealthModeRuleList(): StringRuleList | null {
         if (!this.engine
@@ -94,15 +109,16 @@ export class StealthApi implements StealthApiInterface {
         }
 
         const rulesTexts = this.engine.getCookieRulesTexts().join('\n');
+
         return new StringRuleList(StealthApi.STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
     }
 
     /**
-     * Handler
+     * Stealth api onBeforeRequest handler.
      *
-     * @param details
+     * @param context Request context.
      */
-    public onBeforeSendHeaders(context: RequestContext):void {
+    public onBeforeSendHeaders(context: RequestContext): void {
         if (!this.engine) {
             return;
         }
@@ -118,6 +134,12 @@ export class StealthApi implements StealthApiInterface {
         this.engine.processRequestHeaders(context);
     }
 
+    /**
+     * Checks if stealth actions can be applied to request context.
+     *
+     * @param context Request context.
+     * @returns True if stealth actions can be applied to request context.
+     */
     private canApplyStealthActionsToContext(context: RequestContext): boolean {
         if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
             return false;
@@ -134,9 +156,9 @@ export class StealthApi implements StealthApiInterface {
     }
 
     /**
-     * Updates browser privacy.network settings depending on blocking WebRTC or not
+     * Updates browser privacy.network settings depending on blocking WebRTC or not.
      */
-    private async handleBlockWebRTC() {
+    private async handleBlockWebRTC(): Promise<void> {
         if (!this.configuration) {
             return;
         }
@@ -178,13 +200,25 @@ export class StealthApi implements StealthApiInterface {
         }
     }
 
-    private static canBlockWebRTC() {
+    /**
+     * // TODO consider deprecating this method as edge browser is built on chromium now.
+     * Checks if there is browser.privacy permission is granted.
+     *
+     * @returns True if there is browser.privacy permission.
+     */
+    private static canBlockWebRTC(): boolean {
         // Edge doesn't support privacy api
         // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/privacy
         return !!browser.privacy;
     }
 
-    private static logError(e: Error) {
+    /**
+     * TODO consider using logger service.
+     * Logs error.
+     *
+     * @param e Error instance.
+     */
+    private static logError(e: Error): void {
         logger.error(`Error updating privacy.network settings: ${e.message}`);
     }
 }

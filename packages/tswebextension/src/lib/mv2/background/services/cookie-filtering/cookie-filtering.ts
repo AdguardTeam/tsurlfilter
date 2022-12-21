@@ -1,4 +1,4 @@
-/* eslint-disable class-methods-use-this */
+/* eslint-disable class-methods-use-this,jsdoc/require-description-complete-sentence */
 import { nanoid } from 'nanoid';
 import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
 import {
@@ -16,28 +16,27 @@ import { RequestContext, requestContextStorage } from '../../request';
 import { tabsApi } from '../../tabs';
 
 /**
- * Cookie filtering
+ * Cookie filtering.
  *
- * The following public methods should be set as suitable webrequest events listeners,
- * check sample extension in this repo for an example
+ * The following public methods should be set as suitable webrequest events listeners, check sample extension in this
+ * repo for an example.
  *
  * Logic introduction:
+ *  onBeforeSendHeaders:
+ *  - get all cookies for request url;
+ *  - store cookies (first-party);
  *
- * onBeforeSendHeaders:
- * - get all cookies for request url
- * - store cookies (first-party)
+ *  onHeadersReceived:
+ *  - parse set-cookie header, only to detect if the cookie in header will be set from third-party request;
+ *  - save third-party flag for this cookie cookie.thirdParty=request.thirdParty;
+ *  - apply rules via removing them from headers and removing them with browser.cookies api;
+ *  TODO Rewrite/split method for extensions on MV3, because we wont have possibility to remove rules via headers.
  *
- * onHeadersReceived:
- * - parse set-cookie header, only to detect if the cookie in header will be set from third-party request
- * - save third-party flag for this cookie cookie.thirdParty=request.thirdParty
- * - apply rules via removing them from headers and removing them with browser.cookies api
- * TODO Rewrite/split method for extensions on MV3, because we wont have possibility to remove rules via headers
- *
- * onCompleted
- * - apply rules via content script
- * In content-scripts (check /src/content-script/cookie-controller.ts):
- * - get matching cookie rules
- * - apply
+ *  onCompleted
+ *  - apply rules via content script
+ *  In content-scripts (check /src/content-script/cookie-controller.ts):
+ *  - get matching cookie rules
+ *  - apply
  */
 export class CookieFiltering {
     private filteringLog: FilteringLogInterface;
@@ -45,17 +44,18 @@ export class CookieFiltering {
     private browserCookieApi: BrowserCookieApi = new BrowserCookieApi();
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param filteringLog
+     * @param filteringLog Filtering log.
      */
     constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
     }
 
     /**
-     * Parses cookies from headers
-     * @param context
+     * Parses cookies from headers.
+     *
+     * @param context Request context.
      */
     public onBeforeSendHeaders(context: RequestContext): void {
         const { requestHeaders, requestUrl, requestId } = context;
@@ -78,9 +78,10 @@ export class CookieFiltering {
     }
 
     /**
-     * Applies cookies to headers
-     * @param context
-     * @private
+     * Applies cookies to headers.
+     *
+     * @param context Request context.
+     * @returns True if headers were modified.
      */
     private applyRulesToCookieHeaders(context: RequestContext): boolean {
         let headersModified = false;
@@ -173,12 +174,12 @@ export class CookieFiltering {
     }
 
     /**
-     * Parses set-cookie header
-     * looks up third-party cookies
-     * This callback won't work for mv3 extensions
-     * TODO separate or rewrite to mv2 and mv3 methods
+     * Parses set-cookie header and looks up third-party cookies.
+     * This callback won't work for mv3 extensions.
+     * TODO separate or rewrite to mv2 and mv3 methods.
      *
-     * @param context
+     * @param context Request context.
+     * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {
         const {
@@ -217,7 +218,11 @@ export class CookieFiltering {
     }
 
     /**
-     * Looks up blocking rules for content-script in frame context
+     * Looks up blocking rules for content-script in frame context.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @returns True if rules were found.
      */
     public getBlockingRules(tabId: number, frameId: number): NetworkRule[] {
         const frame = tabsApi.getTabFrame(tabId, frameId);
@@ -239,8 +244,9 @@ export class CookieFiltering {
     }
 
     /**
-     * Applies rules
-     * @param context
+     * Applies rules.
+     *
+     * @param context Request context.
      */
     private async applyRules(context: RequestContext): Promise<void> {
         const { matchingResult, cookies, tabId } = context;
@@ -259,13 +265,12 @@ export class CookieFiltering {
     }
 
     /**
-     * Applies rules to cookie
+     * Applies rules to cookie.
      *
-     * @param cookie
-     * @param cookieRules
-     * @param tabId
+     * @param cookie Cookie.
+     * @param cookieRules Cookie rules.
+     * @param tabId Tab id.
      */
-    /* istanbul ignore next */
     private async applyRulesToCookie(
         cookie: ParsedCookie,
         cookieRules: NetworkRule[],
@@ -325,12 +330,11 @@ export class CookieFiltering {
     }
 
     /**
-     * Modifies instance of BrowserCookie with provided rules
+     * Modifies instance of BrowserCookie with provided rules.
      *
-     * @param cookie Cookie modify
-     * @param rules Cookie matching rules
-     * @return applied rules
-     *
+     * @param cookie Cookie modify.
+     * @param rules Cookie matching rules.
+     * @returns Applied rules.
      */
     private static applyRuleToBrowserCookie(cookie: ParsedCookie, rules: NetworkRule[]): NetworkRule[] {
         const appliedRules = [];

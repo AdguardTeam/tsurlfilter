@@ -1,30 +1,30 @@
 import { HtmlRuleAttributes } from './html-rule-attributes';
 
 /**
- * Encapsulates document element matching
+ * Encapsulates document element matching.
  */
 export class HtmlRuleSelector {
     /**
-     * Html Rule parse result
+     * Html Rule parse result.
      */
     private ruleAttributes: HtmlRuleAttributes;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param parsedHtmlRule
+     * @param parsedHtmlRule Html rule attributes.
      */
     constructor(parsedHtmlRule: HtmlRuleAttributes) {
         this.ruleAttributes = parsedHtmlRule;
     }
 
     /**
-     * Returns matched elements for provided html rule
+     * Returns elements matched by provided html rule.
      *
-     * @param doc document object
-     * @return Array of elements or null
+     * @param doc Document object.
+     * @returns Array of elements or null.
      */
-    public getMatchedElements(doc: HTMLDocument): Element[] | null {
+    public getMatchedElements(doc: Document): Element[] | null {
         const elements = doc.querySelectorAll(this.ruleAttributes.selector!);
 
         let result = null;
@@ -57,10 +57,10 @@ export class HtmlRuleSelector {
     }
 
     /**
-     * Checks if element is filtered by provided rule
+     * Checks if element is filtered by provided rule.
      *
-     * @param element to check
-     * @return {boolean} is element filtered
+     * @param element Element to check.
+     * @returns True if element is filtered.
      */
     private isFiltered(element: Element): boolean {
         // Checking tag content length limits
@@ -103,12 +103,12 @@ export class HtmlRuleSelector {
     }
 
     /**
-     * Searches for parent element to delete.
+     * Searches for parent element.
      * Suitable parent elements are set by 'parent-elements' attribute.
      * If suitable element found - returns it. Otherwise - returns null.
      *
-     * @param element Element evaluated against this rule
-     * @return Parent element to be deleted
+     * @param element Element evaluated against this rule.
+     * @returns Parent element.
      */
     private searchForParentElement(element: Element): Element | null {
         let parentElement = element.parentNode as Element;

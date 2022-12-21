@@ -3,7 +3,6 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable max-len */
 
 import { CssHitsCounter } from '@lib/mv2/content-script/css-hits-counter';
 
@@ -36,10 +35,12 @@ describe('CssHitsCounter', () => {
 
             expect(stats[0].filterId).toBe(1);
             expect(stats[0].ruleText).toBe('test-rule-one');
-            expect(stats[0].element).toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;test-rule-one\';">');
+            expect(stats[0].element)
+                .toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;test-rule-one\';">');
 
             expect(stats[1].filterId).toBe(2);
             expect(stats[1].ruleText).toBe('test-rule-two');
+            // eslint-disable-next-line max-len
             expect(stats[1].element).toBe('<div id="hiddenDiv2" style="display: none !important; content:\'adguard2;test-rule-two\' !important;">');
         });
 
@@ -58,12 +59,17 @@ describe('CssHitsCounter', () => {
         let mutationObserverRef: any;
 
         /**
-         * Mock mutation observer class
-         * In case original class doesn't work properly in jest jsdom environment
+         * Mock mutation observer class.
+         * In case original class doesn't work properly in jest jsdom environment.
          */
         window.MutationObserver = class {
             private callback: MutationCallback;
 
+            /**
+             * Mock constructor.
+             *
+             * @param callback Mutation callback.
+             */
             constructor(callback: MutationCallback) {
                 this.callback = callback;
 
@@ -72,16 +78,27 @@ describe('CssHitsCounter', () => {
                 mutationObserverRef = this;
             }
 
+            /**
+             * Disconnect mock.
+             */
             // eslint-disable-next-line class-methods-use-this
-            disconnect() {
+            disconnect(): void {
                 // do nothing;
             }
 
+            /**
+             * Observe mock.
+             */
             // eslint-disable-next-line class-methods-use-this
-            observe() {
+            observe(): void {
                 // do nothing;
             }
 
+            /**
+             * Take records mock.
+             *
+             * @returns Empty array.
+             */
             // eslint-disable-next-line class-methods-use-this
             takeRecords(): MutationRecord[] {
                 // do nothing;
@@ -89,10 +106,11 @@ describe('CssHitsCounter', () => {
             }
 
             /**
-             * Mock trigger mutations
-             * @param mutations
+             * Mock trigger mutations.
+             *
+             * @param mutations Mutations to trigger.
              */
-            public trigger(mutations: MutationRecord[]) {
+            public trigger(mutations: MutationRecord[]): void {
                 this.callback(mutations, this);
             }
         };
@@ -100,6 +118,7 @@ describe('CssHitsCounter', () => {
         const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
 
         const template = document.createElement('div');
+        // eslint-disable-next-line max-len
         template.innerHTML = '<div id="mutationDiv" style="display: none !important; content:\'adguard3;test-rule-three\';"></div>';
 
         const mutationRecord = {

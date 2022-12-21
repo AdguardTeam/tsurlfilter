@@ -3,23 +3,26 @@ import ParsedCookie from './parsed-cookie';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 
 /**
- * Cookie Utils
+ * Cookie Utils.
  */
 export default class CookieUtils {
     /**
-     * RegExp to match field-content in RFC 7230 sec 3.2
+     * RegExp to match field-content in RFC 7230 sec 3.2.
      *
+     * Example:
      * field-content = field-vchar [ 1*( SP / HTAB ) field-vchar ]
      * field-vchar   = VCHAR / obs-text
-     * obs-text      = %x80-FF
+     * obs-text      = %x80-FF.
      */
     // eslint-disable-next-line no-control-regex
     static FIELD_CONTENT_REGEX = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
 
     /**
-     * Parses set-cookie header from http response header
-     * @param header
-     * @param url
+     * Parses set-cookie header from http response header.
+     *
+     * @param header HTTP response header.
+     * @param url Request URL.
+     * @returns Parsed cookie or null if it failed to parse the header.
      */
     static parseSetCookieHeader(header: HttpHeadersItemType, url: string): ParsedCookie | null {
         if (!header.name || header.name.toLowerCase() !== 'set-cookie') {
@@ -34,11 +37,11 @@ export default class CookieUtils {
     }
 
     /**
-     * Parses set-cookie headers for cookie objects
+     * Parses set-cookie headers for cookie objects.
      *
-     * @param responseHeaders
-     * @param url
-     * @returns array of parsed cookies
+     * @param responseHeaders HTTP response headers.
+     * @param url Request URL.
+     * @returns Array of parsed cookies.
      */
     static parseSetCookieHeaders(responseHeaders: HttpHeadersItemType[], url: string): ParsedCookie[] {
         const result = [];
@@ -60,9 +63,9 @@ export default class CookieUtils {
     /**
      * Parse an HTTP Cookie header string and return an object with all cookie name-value pairs.
      *
-     * @param cookieValue HTTP Cookie value
-     * @param url
-     * @returns Array of cookie name-value pairs
+     * @param cookieValue HTTP Cookie value.
+     * @param url Request URL.
+     * @returns Array of cookie name-value pairs.
      */
     static parseCookies(cookieValue: string, url: string): ParsedCookie[] {
         const cookies = [];
@@ -79,13 +82,14 @@ export default class CookieUtils {
                 continue;
             }
 
-            const key = pair.substr(0, eqIdx).trim();
-            const value = pair.substr(eqIdx + 1, pair.length).trim();
+            const key = pair.substring(0, eqIdx).trim();
+            const value = pair.substring(eqIdx + 1, pair.length).trim();
 
             const parsedCookie = new ParsedCookie(key, value, url);
             /**
-             * Not obviously there are few special name prefixes
-             * https://developer.cdn.mozilla.net/pt-BR/docs/Web/HTTP/Headers/Set-Cookie
+             * Not obviously there are few special name prefixes.
+             *
+             * @see {@link https://developer.cdn.mozilla.net/pt-BR/docs/Web/HTTP/Headers/Set-Cookie}
              */
             if (key.startsWith('__Secure-') || key.startsWith('__Host-')) {
                 parsedCookie.secure = true;
@@ -98,11 +102,11 @@ export default class CookieUtils {
     }
 
     /**
-     * Parses "Set-Cookie" header value and returns a cookie object with its properties
+     * Parses "Set-Cookie" header value and returns a cookie object with its properties.
      *
-     * @param setCookieValue "Set-Cookie" header value to parse
-     * @param url
-     * @returns cookie object or null if it failed to parse the value
+     * @param setCookieValue "Set-Cookie" header value to parse.
+     * @param url Request URL.
+     * @returns Parsed cookie or null if it failed to parse the value.
      */
     static parseSetCookie(setCookieValue: string, url: string): ParsedCookie | null {
         const parts = setCookieValue.split(';').filter((s) => !!s);
@@ -143,11 +147,11 @@ export default class CookieUtils {
     }
 
     /**
-     * Updates cookie maxAge value
+     * Updates cookie maxAge value.
      *
-     * @param cookie Cookie to modify
-     * @param maxAge
-     * @return if cookie was modified
+     * @param cookie Cookie to modify.
+     * @param maxAge New maxAge value.
+     * @returns True if cookie was modified.
      */
     static updateCookieMaxAge(cookie: ParsedCookie, maxAge: number): boolean {
         const currentTimeSec = Date.now() / 1000;
@@ -175,10 +179,9 @@ export default class CookieUtils {
     /**
      * Serializes cookie data into a string suitable for Set-Cookie header.
      *
-     * @param cookie A cookie object
-     * @return Set-Cookie string or null if it failed to serialize object
-     * @throws {TypeError} Thrown in case of invalid input data
-     * @public
+     * @param cookie A cookie object.
+     * @returns Set-Cookie string or null if it failed to serialize object.
+     * @throws {TypeError} Thrown in case of invalid input data.
      */
     static serializeCookie(cookie: ParsedCookie): string {
         if (!cookie) {
@@ -241,7 +244,7 @@ export default class CookieUtils {
             }
         }
 
-        // Don't affected. Let it be here just in case
+        // Not affected. Let it be here just in case
         // https://bugs.chromium.org/p/chromium/issues/detail?id=232693
         if (cookie.priority) {
             setCookieValue += `; Priority=${cookie.priority}`;

@@ -1,7 +1,5 @@
 import browser from 'webextension-polyfill';
-import {
-    RequestType, CosmeticRule, NetworkRule,
-} from '@adguard/tsurlfilter';
+import { RequestType, CosmeticRule, NetworkRule } from '@adguard/tsurlfilter';
 
 import { RequestContext, requestContextStorage } from '../../request';
 import { ContentStringFilter } from './content-string-filter';
@@ -9,12 +7,12 @@ import { ContentStream } from './content-stream';
 import { defaultFilteringLog } from '../../../../common';
 
 /**
- * Content filtering module
- * Handles Html filtering and replace rules
+ * Content filtering module.
+ * Handles Html filtering and replace rules.
  */
 export class ContentFiltering {
     /**
-     * Contains collection of supported request types for replace rules
+     * Contains collection of supported request types for replace rules.
      */
     private static supportedReplaceRulesRequestTypes = [
         RequestType.Document,
@@ -25,12 +23,18 @@ export class ContentFiltering {
         RequestType.Other,
     ];
 
+    /**
+     * Retrieves html rules.
+     *
+     * @param context Request context.
+     * @returns Html rules or null.
+     */
     private static getHtmlRules(context: RequestContext): CosmeticRule[] | null {
         const { cosmeticResult } = context;
 
         /**
-         * cosmeticResult is defined only for Document and Subdocument request types
-         * do not need extra request type checking
+         * "cosmeticResult" is defined only for Document and Subdocument request types
+         * do not need extra request type checking.
          */
         if (!cosmeticResult) {
             return null;
@@ -45,6 +49,12 @@ export class ContentFiltering {
         return htmlRules;
     }
 
+    /**
+     * Retrieves replace rules and sorts them alphabetically.
+     *
+     * @param context Request context.
+     * @returns Replace rules or null.
+     */
     private static getReplaceRules(context: RequestContext): NetworkRule[] | null {
         const { requestType, matchingResult } = context;
 
@@ -76,6 +86,11 @@ export class ContentFiltering {
         });
     }
 
+    /**
+     * On before request event handler.
+     *
+     * @param requestId Request identifier.
+     */
     public static onBeforeRequest(requestId: string): void {
         if (!browser.webRequest.filterResponseData) {
             return;

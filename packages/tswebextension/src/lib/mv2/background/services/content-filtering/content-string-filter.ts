@@ -22,6 +22,9 @@ export interface ContentStringFilterInterface {
     applyRules: (content: string) => string;
 }
 
+/**
+ * Content string filter.
+ */
 export class ContentStringFilter implements ContentStringFilterInterface {
     context: RequestContext;
 
@@ -31,6 +34,14 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
     filteringLog: FilteringLog;
 
+    /**
+     * Creates an instance of ContentStringFilter.
+     *
+     * @param context Request context.
+     * @param htmlRules Html rules.
+     * @param replaceRules Replace rules.
+     * @param filteringLog Filtering log.
+     */
     constructor(
         context: RequestContext,
         htmlRules: CosmeticRule[] | null,
@@ -43,6 +54,15 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         this.filteringLog = filteringLog;
     }
 
+    /**
+     * Applies Html and Replace rules to content string.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier}
+     *
+     * @param content Content string.
+     * @returns Modified content string.
+     */
     public applyRules(content: string): string {
         if (this.htmlRules && this.htmlRules.length > 0) {
             content = this.applyHtmlRules(content);
@@ -59,6 +79,14 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         return content;
     }
 
+    /**
+     * Applies Html rules to content string.
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
+     *
+     * @param content Content string.
+     * @returns Modified content string.
+     */
     private applyHtmlRules(content: string): string {
         const doc = documentParser.parse(content);
 
@@ -120,6 +148,12 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         return content;
     }
 
+    /**
+     * Applies "replace" rules to content string.
+     *
+     * @param content Content string.
+     * @returns Modified content string.
+     */
     private applyReplaceRules(content: string): string {
         const appliedRules = [];
 

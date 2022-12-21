@@ -1,27 +1,29 @@
 import { NetworkRule, NetworkRuleOption, CookieModifier } from '@adguard/tsurlfilter';
 
 /**
- * Cookie rules manager class
+ * Cookie rules manager class.
  */
 export default class CookieRulesFinder {
     /**
-     * Filters blocking rules
-     * Used in content scripts
+     * Filters blocking rules.
+     * Used in content scripts.
      *
-     * @param url
-     * @param rules
+     * @param url Request url.
+     * @param rules List of rules.
+     * @returns Blocking rules.
      */
     static getBlockingRules(url: string, rules: NetworkRule[]): NetworkRule[] {
         return rules.filter((rule) => !CookieRulesFinder.isModifyingRule(rule));
     }
 
     /**
-     * Finds a rule that doesn't modify cookie: i.e. this rule cancels cookie or it's a allowlist rule.
+     * Finds a rule that doesn't modify cookie:
+     *  i.e.: this rule cancels cookie or if it's an allowlist rule.
      *
-     * @param cookieName Cookie name
-     * @param rules Matching rules
-     * @param isThirdPartyCookie
-     * @return Found rule or null
+     * @param cookieName Cookie name.
+     * @param rules List of network rules.
+     * @param isThirdPartyCookie Flag that indicates if cookie is third-party.
+     * @returns Found rule or null.
      */
     static lookupNotModifyingRule(
         cookieName: string,
@@ -59,12 +61,12 @@ export default class CookieRulesFinder {
     }
 
     /**
-     * Finds rules that modify cookie
+     * Finds rules that modify cookie.
      *
-     * @param cookieName Cookie name
-     * @param rules Matching rules
-     * @param isThirdPartyCookie
-     * @return Modifying rules
+     * @param cookieName Cookie name.
+     * @param rules Matching rules.
+     * @param isThirdPartyCookie Flag that indicates if cookie is third-party.
+     * @returns Modifying rules.
      */
     static lookupModifyingRules(
         cookieName: string,
@@ -106,10 +108,11 @@ export default class CookieRulesFinder {
     }
 
     /**
-     * Checks if rule and third party flag matches
+     * Checks if rule and third party flag matches.
      *
-     * @param rule
-     * @param isThirdParty
+     * @param rule Rule.
+     * @param isThirdParty Flag that indicates if cookie is third-party.
+     * @returns True if rule and third party flag matches.
      */
     private static matchThirdParty(rule: NetworkRule, isThirdParty: boolean): boolean {
         if (!rule.isOptionEnabled(NetworkRuleOption.ThirdParty)) {
@@ -120,10 +123,10 @@ export default class CookieRulesFinder {
     }
 
     /**
-     * Checks if $cookie rule is modifying
+     * Checks if $cookie rule is modifying.
      *
-     * @param rule $cookie rule
-     * @return result
+     * @param rule $cookie rule.
+     * @returns True if rule is modifying.
      */
     private static isModifyingRule(rule: NetworkRule): boolean {
         const cookieModifier = rule.getAdvancedModifier() as CookieModifier;

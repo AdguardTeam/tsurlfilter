@@ -29,11 +29,11 @@ describe('Headers service', () => {
         }],
     };
 
-    const runOnBeforeSendHeaders = () => {
+    const runOnBeforeSendHeaders = (): boolean => {
         return headersService.onBeforeSendHeaders(context as RequestContext);
     };
 
-    const runOnHeadersReceived = () => {
+    const runOnHeadersReceived = (): boolean => {
         return headersService.onHeadersReceived(context as RequestContext);
     };
 

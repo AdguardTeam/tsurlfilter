@@ -3,49 +3,51 @@ import { EventChannelInterface } from './utils';
 
 export interface AppInterface<TConfiguration, TConfigurationContext, TConfigurationResult> {
     /**
-     * Configuration context
+     * Configuration context.
      */
     configuration?: TConfigurationContext;
 
     /**
-     * Is app started
+     * Is app started.
      */
     isStarted: boolean;
 
     /**
-     * Fires on filtering log event
+     * Fires on filtering log event.
      */
     onFilteringLogEvent: EventChannelInterface<FilteringLogEvent>,
 
     /**
-      * Starts api
-      * @param configuration
-      */
+     * Starts api.
+     *
+     * @param configuration App configuration.
+     */
     start: (configuration: TConfiguration) => Promise<TConfigurationResult>;
 
     /**
-     * Updates configuration
-     * @param configuration
+     * Updates configuration.
+     *
+     * @param configuration App configuration.
      */
     configure: (configuration: TConfiguration) => Promise<TConfigurationResult>;
 
     /**
-     * Stops api
+     * Stops api.
      */
     stop: () => Promise<void>;
 
     /**
-     * Launches assistant in the current tab
+     * Launches assistant in the current tab.
      */
     openAssistant: (tabId: number) => void;
 
     /**
-     * Closes assistant
+     * Closes assistant.
      */
     closeAssistant: (tabId: number) => void;
 
     /**
-     * Returns number of active rules
+     * Returns number of active rules.
      */
     getRulesCount(): number,
 }

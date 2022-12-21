@@ -1,9 +1,9 @@
 /**
- * This module applies stealth actions in page context
+ * This module applies stealth actions in page context.
  */
 export class StealthHelper {
     /**
-     * Sends a Global Privacy Control DOM signal
+     * Sends a Global Privacy Control DOM signal.
      */
     public static setDomSignal(): void {
         try {

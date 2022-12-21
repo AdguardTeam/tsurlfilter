@@ -7,7 +7,7 @@ import { ContentType } from './request-type';
 import { EventChannel, EventChannelInterface } from './utils';
 
 /**
- * Types of filtering events that can occur during request processing
+ * Types of filtering events that can occur during request processing.
  */
 export enum FilteringEventType {
     SEND_REQUEST = 'SEND_REQUEST',
@@ -27,18 +27,17 @@ export enum FilteringEventType {
 }
 
 /**
- * Type schemas for plain objects passed to
- * filtering event channels during request processing
+ * Type schemas for plain objects passed to filtering event channels during request processing.
  *
- * Used for type checking in generic {@link FilteringLog} methods
+ * Used for type checking in generic {@link FilteringLog} methods.
  *
  * Common filtering event type structure:
  * - type - {@link FilteringEventType}
- * - data - specified event data type schema
+ * - data - specified event data type schema.
  */
 
 /**
- * {@link SendRequestEvent} event data
+ * {@link SendRequestEvent} Event data.
  */
 export type SendRequestEventData = {
     tabId: number,
@@ -54,8 +53,7 @@ export type SendRequestEventData = {
 };
 
 /**
- * Dispatched by WebRequestApi manifest v2 module on request
- * in onBeforeRequest event handler
+ * Dispatched by WebRequestApi manifest v2 module on request in onBeforeRequest event handler.
  */
 export type SendRequestEvent = {
     type: FilteringEventType.SEND_REQUEST,
@@ -63,15 +61,14 @@ export type SendRequestEvent = {
 };
 
 /**
- * {@link PageReloadEvent} event data
+ * {@link TabReloadEvent} Event data.
  */
 export type PageReloadEventData = {
     tabId: number,
 };
 
 /**
- * Dispatched by WebRequestApi manifest v2 module on document request type handling
- * in onBeforeRequest event handler
+ * Dispatched by WebRequestApi manifest v2 module on document request type handling in onBeforeRequest event handler.
  */
 export type TabReloadEvent = {
     type: FilteringEventType.TAB_RELOAD,
@@ -79,7 +76,7 @@ export type TabReloadEvent = {
 };
 
 /**
- * {@link ApplyBasicRuleEvent} event data
+ * {@link ApplyBasicRuleEvent} Event data.
  */
 export type ApplyBasicRuleEventData = {
     tabId: number,
@@ -88,8 +85,8 @@ export type ApplyBasicRuleEventData = {
 };
 
 /**
- * Dispatched by WebRequestApi manifest v2 module on request
- * block or allowlist rule matching in onBeforeRequest event handler
+ * Dispatched by WebRequestApi manifest v2 module on request block or allowlist rule matching in onBeforeRequest event
+ * handler.
  */
 export type ApplyBasicRuleEvent = {
     type: FilteringEventType.APPLY_BASIC_RULE,
@@ -97,7 +94,7 @@ export type ApplyBasicRuleEvent = {
 };
 
 /**
- * {@link ApplyCspRuleEvent} event data
+ * {@link ApplyCspRuleEvent} Event data.
  */
 export type ApplyCspRuleEventData = {
     tabId: number,
@@ -111,7 +108,7 @@ export type ApplyCspRuleEventData = {
 };
 
 /**
- * Dispatched by manifest v2 csp service
+ * Dispatched by manifest v2 csp service.
  */
 export type ApplyCspRuleEvent = {
     type: FilteringEventType.APPLY_CSP_RULE,
@@ -119,7 +116,7 @@ export type ApplyCspRuleEvent = {
 };
 
 /**
- * {@link ApplyCosmeticRuleEvent} event data
+ * {@link ApplyCosmeticRuleEvent} Event data.
  */
 export type ApplyCosmeticRuleEventData = {
     tabId: number,
@@ -133,8 +130,8 @@ export type ApplyCosmeticRuleEventData = {
 };
 
 /**
- * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method
- * and in ContentStream module on html rule apply
+ * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method and in ContentStream module on html rule
+ * apply.
  */
 export type ApplyCosmeticRuleEvent = {
     type: FilteringEventType.APPLY_COSMETIC_RULE,
@@ -142,7 +139,7 @@ export type ApplyCosmeticRuleEvent = {
 };
 
 /**
- * {@link ReceiveResponseEvent} event data
+ * {@link ReceiveResponseEvent} Event data.
  */
 export type ReceiveResponseEventData = {
     tabId: number,
@@ -151,8 +148,7 @@ export type ReceiveResponseEventData = {
 };
 
 /**
- * Dispatched by WebRequestApi manifest v2 module on response
- * in onHeadersReceived event handler
+ * Dispatched by WebRequestApi manifest v2 module on response in onHeadersReceived event handler.
  */
 export type ReceiveResponseEvent = {
     type: FilteringEventType.RECEIVE_RESPONSE,
@@ -160,7 +156,7 @@ export type ReceiveResponseEvent = {
 };
 
 /**
- * {@link CookieEvent} event data
+ * {@link CookieEvent} Event data.
  */
 export type CookieEventData = {
     eventId: string,
@@ -176,8 +172,8 @@ export type CookieEventData = {
 };
 
 /**
- * Dispatched by CookieFiltering manifest v2 module on cookie filtering
- * in onBeforeSendHeaders and onHeadersReceived event handlers
+ * Dispatched by CookieFiltering manifest v2 module on cookie filtering in onBeforeSendHeaders and onHeadersReceived
+ * event handlers.
  */
 export type CookieEvent = {
     type: FilteringEventType.COOKIE;
@@ -185,7 +181,7 @@ export type CookieEvent = {
 };
 
 /**
- * {@link RemoveHeaderEvent} event data
+ * {@link RemoveHeaderEvent} Event data.
  */
 export type RemoveHeaderEventData = {
     removeHeader: boolean,
@@ -201,8 +197,8 @@ export type RemoveHeaderEventData = {
 };
 
 /**
- * Dispatched by HeadersService manifest v2 module on request header removing
- * in onBeforeSendHeaders and onHeadersReceived event handlers
+ * Dispatched by HeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
+ * onHeadersReceived event handlers.
  */
 export type RemoveHeaderEvent = {
     type: FilteringEventType.REMOVE_HEADER;
@@ -210,7 +206,7 @@ export type RemoveHeaderEvent = {
 };
 
 /**
- * {@link RemoveParamEvent} event data
+ * {@link RemoveParamEvent} Event data.
  */
 export type RemoveParamEventData = {
     removeParam: boolean,
@@ -225,8 +221,8 @@ export type RemoveParamEventData = {
 };
 
 /**
- * Dispatched by ParamsService manifest v2 module on request param removing
- * in WebRequestApi.onBeforeRequest event handler
+ * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
+ * handler.
  */
 export type RemoveParamEvent = {
     type: FilteringEventType.REMOVE_PARAM;
@@ -234,7 +230,7 @@ export type RemoveParamEvent = {
 };
 
 /**
- * {@link ReplaceRuleApplyEvent} event data
+ * {@link ReplaceRuleApplyEvent} Event data.
  */
 export type ReplaceRuleApplyEventData = {
     tabId: number;
@@ -243,8 +239,7 @@ export type ReplaceRuleApplyEventData = {
 };
 
 /**
- * Dispatched by ContentStringFilter manifest v2 module on replace rule apply
- * while content filtering process
+ * Dispatched by ContentStringFilter manifest v2 module on replace rule apply while content filtering process.
  */
 export type ReplaceRuleApplyEvent = {
     type: FilteringEventType.REPLACE_RULE_APPLY;
@@ -252,15 +247,14 @@ export type ReplaceRuleApplyEvent = {
 };
 
 /**
- * {@link ContentFilteringStartEvent} event data
+ * {@link ContentFilteringStartEvent} Event data.
  */
 export type ContentFilteringStartEventData = {
     requestId: string;
 };
 
 /**
- * Dispatched by ContentStream manifest v2 module on start of data reading
- * while content filtering process
+ * Dispatched by ContentStream manifest v2 module on start of data reading while content filtering process.
  */
 export type ContentFilteringStartEvent = {
     type: FilteringEventType.CONTENT_FILTERING_START
@@ -268,15 +262,14 @@ export type ContentFilteringStartEvent = {
 };
 
 /**
- * {@link ContentFilteringFinishEvent} event data
+ * {@link ContentFilteringFinishEvent} Event data.
  */
 export type ContentFilteringFinishEventData = {
     requestId: string;
 };
 
 /**
- * Dispatched by ContentStream manifest v2 module on finish of data reading
- * while content filtering process
+ * Dispatched by ContentStream manifest v2 module on finish of data reading while content filtering process.
  */
 export type ContentFilteringFinishEvent = {
     type: FilteringEventType.CONTENT_FILTERING_FINISH
@@ -284,20 +277,19 @@ export type ContentFilteringFinishEvent = {
 };
 
 /**
- * {@link StealthActionEvent} event data
+ * {@link StealthActionEvent} Event data.
  */
 export type StealthActionEventData = {
     tabId: number;
     eventId: string;
     /**
-     * Applied actions mask
+     * Applied stealth actions mask.
      */
     stealthActions: number;
 };
 
 /**
- * Dispatched by manifest v2 StealthApi on stealth action apply in
- * onBeforeSendHeaders event handler
+ * Dispatched by manifest v2 StealthApi on stealth action apply in onBeforeSendHeaders event handler.
  */
 export type StealthActionEvent = {
     type: FilteringEventType.STEALTH_ACTION
@@ -305,7 +297,7 @@ export type StealthActionEvent = {
 };
 
 /**
- * {@link JsInjectEvent} event data
+ * {@link JsInjectEvent} Event data.
  */
 export type JsInjectEventData = {
     eventId: string,
@@ -320,7 +312,7 @@ export type JsInjectEventData = {
 };
 
 /**
- * Dispatched by manifest v2 WebRequest API injectJsScript method
+ * Dispatched by manifest v2 WebRequest API injectJsScript method.
  */
 export type JsInjectEvent = {
     type: FilteringEventType.JS_INJECT
@@ -328,10 +320,10 @@ export type JsInjectEvent = {
 };
 
 /**
- * Filtering events union
+ * Filtering events union.
  *
- * Used for type extraction in generic {@link FilteringLog} methods
- * and common {@link FilteringLog.onLogEvent} channel event typing
+ * Used for type extraction in generic {@link FilteringLog} methods and common {@link FilteringLog.onLogEvent} channel
+ * event typing.
  */
 export type FilteringLogEvent =
     | CookieEvent
@@ -350,21 +342,19 @@ export type FilteringLogEvent =
     | JsInjectEvent;
 
 /**
- * Utility type for mapping {@link FilteringEventType}
- * with specified {@link FilteringLogEvent}
+ * Utility type for mapping {@link FilteringEventType} with specified {@link FilteringLogEvent}.
  *
- * Used for type extraction in generic {@link FilteringLog} methods
+ * Used for type extraction in generic {@link FilteringLog} methods.
  */
 export type ExtractedFilteringLogEvent<P> = Extract<FilteringLogEvent, { type: P }>;
 
 /**
- * Filtering event listener registered by {@link FilteringLog}
+ * Filtering event listener registered by {@link FilteringLog}.
  */
 export type FilteringLogListener<T> = (event: T) => void | Promise<void>;
 
 /**
- * Data for mapping {@link FilteringEventType}
- * with specified registered {@link FilteringLogListener}
+ * Data for mapping {@link FilteringEventType} with specified registered {@link FilteringLogListener}.
  */
 export type FilteringLogEventChannel = {
     type: FilteringEventType,
@@ -372,16 +362,16 @@ export type FilteringLogEventChannel = {
 };
 
 /**
- * Filtering log API
+ * Filtering log API.
  */
 export interface FilteringLogInterface {
     /**
-     * {@link EventChannel} for listening all {@link FilteringLogEvent} events
+     * {@link EventChannel} For listening all {@link FilteringLogEvent} events.
      */
     onLogEvent: EventChannelInterface<FilteringLogEvent>;
 
     /**
-     * Registers listener for specified {@link FilteringLogEvent}
+     * Registers listener for specified {@link FilteringLogEvent}.
      */
     addEventListener<T extends FilteringEventType>(
         type: T,
@@ -389,20 +379,26 @@ export interface FilteringLogInterface {
     ): void;
 
     /**
-     * Dispatch {@link FilteringLogEvent} to {@link FilteringLog.onLogEvent}
-     * and specified {@link FilteringLogListener} listeners, if they exist
+     * Dispatch {@link FilteringLogEvent} to {@link FilteringLog.onLogEvent} and specified {@link FilteringLogListener}
+     * listeners, if they exist.
      */
     publishEvent<T extends FilteringLogEvent>(event: T): void;
 }
 
 /**
- * {@link FilteringLogInterface} default implementation
+ * {@link FilteringLogInterface} Default implementation.
  */
 export class FilteringLog implements FilteringLogInterface {
     public onLogEvent = new EventChannel<FilteringLogEvent>();
 
     private channels: FilteringLogEventChannel[] = [];
 
+    /**
+     * Registers listener for specified {@link FilteringLogEvent}.
+     *
+     * @param type Filtering log type.
+     * @param listener Filtering log listener.
+     */
     public addEventListener<T extends FilteringEventType>(
         type: T,
         listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>,
@@ -412,6 +408,11 @@ export class FilteringLog implements FilteringLogInterface {
         this.channels.push(channel);
     }
 
+    /**
+     * Publishes event to attached listeners.
+     *
+     * @param event Filtering log event.
+     */
     public publishEvent<T extends FilteringLogEvent>(event: T): void {
         const listeners = this.channels
             .filter(({ type }) => type === event.type)
@@ -426,6 +427,6 @@ export class FilteringLog implements FilteringLogInterface {
 }
 
 /**
- * Shared {@link FilteringLog} instance
+ * Shared {@link FilteringLog} instance.
  */
 export const defaultFilteringLog = new FilteringLog();

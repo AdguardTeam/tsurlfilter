@@ -1,11 +1,10 @@
-/* eslint-disable no-param-reassign */
-
 import { IAffectedElement } from 'extended-css';
+
 import { ElementUtils } from './utils/element-utils';
 import { HitsStorage } from './hits-storage';
 
 /**
- * Counted element interface
+ * Counted element data structure.
  */
 interface ICountedElement {
     filterId: number;
@@ -14,23 +13,20 @@ interface ICountedElement {
 }
 
 /**
- * Class represents collecting css style hits process
+ * Class represents collecting css style hits process.
  *
  * During applying css styles to element we add special 'content:' attribute
- * Example:
- * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
- *
- * then here we parse this attribute and calls provided callback function
+ *  e.g.: ".selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}".
+ * After the style is applied we parse this "content" attribute and call provided via constructor callback function.
  */
 export class CssHitsCounter {
     /**
-     * We split CSS hits counting into smaller batches of elements
-     * and schedule them one by one using setTimeout
+     * We split CSS hits counting into smaller batches of elements and schedule them one by one using setTimeout.
      */
     private static readonly COUNT_CSS_HITS_BATCH_DELAY = 5;
 
     /**
-     * Size of small batches of elements we count
+     * Size of small batches of elements we count.
      */
     private static readonly CSS_HITS_BATCH_SIZE = 25;
 
@@ -42,34 +38,35 @@ export class CssHitsCounter {
     private static readonly CONTENT_ATTR_PREFIX = 'adguard';
 
     /**
-     * We delay countAllCssHits function if it was called too frequently from mutationObserver
+     * We delay countAllCssHits function if it was called too frequently from mutationObserver.
      */
     private static readonly COUNT_ALL_CSS_HITS_TIMEOUT_MS = 500;
 
     /**
-     * Callback function for counted css hits handling
+     * Callback function for counted css hits handling.
      */
     private onCssHitsFoundCallback: (x: ICountedElement[]) => void;
 
     /**
-     * Hits storage
+     * Hits storage.
      */
     private hitsStorage: HitsStorage = new HitsStorage();
 
     /**
-     * Mutation observer
+     * Mutation observer.
      */
     private observer: MutationObserver | null = null;
 
     /**
-     * Counting on process flag
+     * Counting on process flag.
      */
     private countIsWorking = false;
 
     /**
      * This function prepares calculation of css hits.
      * We are waiting for 'load' event and start calculation.
-     * @param callback - ({filterId: number; ruleText: string; element: string}[]) => {} handles counted css hits
+     *
+     * @param callback Which receives {@link ICountedElement} and handles counted css hits.
      */
     constructor(callback: (x: ICountedElement[]) => void) {
         this.onCssHitsFoundCallback = callback;
@@ -83,7 +80,7 @@ export class CssHitsCounter {
     }
 
     /**
-     * Stops css hits counting process
+     * Stops css hits counting process.
      */
     public stop(): void {
         this.onCssHitsFoundCallback = (): void => {};
@@ -93,10 +90,10 @@ export class CssHitsCounter {
     }
 
     /**
-     * Callback used to collect statistics of elements affected by extended css rules
+     * Callback used to collect statistics of elements affected by extended css rules.
      *
-     * @param {object} affectedEl
-     * @return {object} affectedEl
+     * @param affectedEl Affected element.
+     * @returns Affected element.
      */
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
         if (affectedEl && affectedEl.rules && affectedEl.rules.length > 0) {
@@ -133,7 +130,7 @@ export class CssHitsCounter {
     }
 
     /**
-     * Starts counting process
+     * Starts counting process.
      */
     private startCounter(): void {
         if (document.readyState === 'interactive'
@@ -145,7 +142,7 @@ export class CssHitsCounter {
     }
 
     /**
-     * Counts css hits
+     * Counts css hits.
      */
     private countCssHits(): void {
         this.countAllCssHits();
@@ -153,7 +150,7 @@ export class CssHitsCounter {
     }
 
     /**
-     * Counts css hits for already affected elements
+     * Counts css hits for already affected elements.
      */
     private countAllCssHits(): void {
         // we don't start counting again all css hits till previous count process wasn't finished
@@ -186,12 +183,12 @@ export class CssHitsCounter {
      * marker then retrieves rule text and filter identifier.
      * 3. Starts next task with some delay.
      *
-     * @param elements Collection of all elements
-     * @param start Start of batch
-     * @param end End of batch
-     * @param step Size of batch
-     * @param result Collection for save result
-     * @param callback Finish callback
+     * @param elements Collection of all elements.
+     * @param start Start of batch.
+     * @param end End of batch.
+     * @param step Size of batch.
+     * @param result Collection for save result.
+     * @param callback Finish callback.
      */
     // eslint-disable-next-line max-len
     private countCssHitsBatch(
@@ -219,11 +216,13 @@ export class CssHitsCounter {
     }
 
     /**
-     * Counts css hits for array of elements
+     * Counts css hits for array of elements.
      *
-     * @param elements
-     * @param start
-     * @param length
+     * @param elements Array of elements.
+     * @param start Start of batch.
+     * @param length Length of batch.
+     *
+     * @returns Data with information about filter id, rule text and element.
      */
     private countCssHitsForElements(
         elements: NodeListOf<Element> | Element[],
@@ -261,7 +260,7 @@ export class CssHitsCounter {
     }
 
     /**
-     * Counts css hits for mutations
+     * Counts css hits for mutations.
      */
     private countCssHitsForMutations(): void {
         // eslint-disable-next-line prefer-destructuring
@@ -337,8 +336,8 @@ export class CssHitsCounter {
                     this.onCssHitsFoundCallback(result);
                 }
                 /**
-                 * don't remove child elements of probe elements
-                 * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1096
+                 * Don't remove child elements of probe elements
+                 * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1096.
                  */
                 ElementUtils.removeElements(probeElements);
                 this.startObserver();
@@ -358,7 +357,7 @@ export class CssHitsCounter {
     }
 
     /**
-     * Starts mutation observer
+     * Starts mutation observer.
      */
     private startObserver(): void {
         if (this.observer) {
@@ -371,10 +370,10 @@ export class CssHitsCounter {
     }
 
     /**
-     * Function checks if elements style content attribute contains data injected with AdGuard
+     * Function retrieves css hits data from element style content attribute contains data injected with AdGuard.
      *
-     * @param {Node} element
-     * @returns {({filterId: Number, ruleText: String} | null)}
+     * @param element Element to check.
+     * @returns Filter id and rule text or null.
      */
     private static getCssHitData(element: Element): { filterId: number; ruleText: string } | null {
         const style = getComputedStyle(element);
@@ -382,8 +381,10 @@ export class CssHitsCounter {
     }
 
     /**
-     * Check if tag is ignored
-     * @param nodeTag
+     * Checks if tag is ignored.
+     *
+     * @param nodeTag Tag name to check.
+     * @returns True if tag is ignored.
      */
     private static isIgnoredNodeTag(nodeTag: string): boolean {
         const ignoredTags = ['script'];

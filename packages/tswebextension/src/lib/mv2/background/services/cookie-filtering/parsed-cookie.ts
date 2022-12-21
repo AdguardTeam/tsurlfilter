@@ -1,7 +1,7 @@
 import { parse } from 'tldts';
 
 /**
- * Synthetic Cookie-like object parsed from headers
+ * Synthetic Cookie-like object parsed from headers.
  */
 export default class ParsedCookie {
     /**
@@ -50,14 +50,14 @@ export default class ParsedCookie {
     sameSite?: string;
 
     /**
-     * Cookies path
+     * Cookies path.
      */
     path?: string;
 
     /**
-     * Priority chrome only specs
-     * Don't affected. Let it be here just in case
-     * https://bugs.chromium.org/p/chromium/issues/detail?id=232693
+     * Priority chrome only specs.
+     * Isn't affected. Let it be here just in case.
+     * {@link https://bugs.chromium.org/p/chromium/issues/detail?id=232693}.
      */
     priority?: string;
 
@@ -67,11 +67,11 @@ export default class ParsedCookie {
     thirdParty = false;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param name
-     * @param value
-     * @param url
+     * @param name Cookie name.
+     * @param value Cookie value.
+     * @param url Url.
      */
     constructor(name: string, value: string, url: string) {
         this.name = name;

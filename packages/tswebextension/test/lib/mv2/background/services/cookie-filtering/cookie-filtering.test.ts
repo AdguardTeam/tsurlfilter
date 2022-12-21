@@ -1,11 +1,14 @@
-/* eslint-disable max-len */
 import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
 import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import BrowserCookieApi from '@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
-import { RequestContext, RequestContextState, requestContextStorage } from '@lib/mv2/background/request/request-context-storage';
+import {
+    RequestContext,
+    RequestContextState,
+    requestContextStorage,
+} from '@lib/mv2/background/request/request-context-storage';
 import { FilteringEventType, ContentType } from '@lib/common';
 import { tabsApi } from '@lib/mv2/background/tabs';
 
@@ -56,7 +59,11 @@ describe('Cookie filtering', () => {
         };
     });
 
-    const runCase = async (rules: NetworkRule[], requestHeaders: HttpHeaders, responseHeaders?: HttpHeaders): Promise<void> => {
+    const runCase = async (
+        rules: NetworkRule[],
+        requestHeaders: HttpHeaders,
+        responseHeaders?: HttpHeaders,
+    ): Promise<void> => {
         context.matchingResult = new MatchingResult(rules, null);
         context.requestHeaders = requestHeaders;
         context.responseHeaders = responseHeaders;

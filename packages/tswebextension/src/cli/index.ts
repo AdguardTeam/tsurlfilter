@@ -5,7 +5,10 @@ import { copyWar } from './copyWar';
 
 export const DEFAULT_WAR_PATH = 'build/war';
 
-async function main() {
+/**
+ * Main entrypoint.
+ */
+async function main(): Promise<void> {
     program
         .name('tswebextension')
         .description('CLI to some development utils')

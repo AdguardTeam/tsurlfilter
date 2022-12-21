@@ -1,30 +1,32 @@
+// TODO remove the comment turning off the rule
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * This storage is used to keep track of counted rules
- * regarding to node elements
+ * This storage is used to keep track of counted rules received from node elements.
  */
 export class HitsStorage {
     /**
-     * Start count number
+     * Start count number.
      */
     private counter = 0;
 
     /**
-     * Storage random identificator
+     * Storage random identificator.
      */
     private randomKey = HitsStorage.generateRandomKey();
 
     /**
-     * Map storage
+     * Map storage.
      */
     private map = new Map<number, { element: any; rule: string }>();
 
     /**
-     * Checks if element is counted
+     * Checks if element is counted.
      *
-     * @param element html element
-     * @param rule rule text
+     * @param element Html element.
+     * @param rule Rule text.
+     *
+     * @returns True if element is counted.
      */
     public isCounted(element: any, rule: string): boolean {
         const hitAddress = element[this.randomKey];
@@ -39,10 +41,10 @@ export class HitsStorage {
     }
 
     /**
-     * Stores rule-element info in storage
+     * Stores rule-element info in storage.
      *
-     * @param element html element
-     * @param rule rule text
+     * @param element Html element.
+     * @param rule Rule text.
      */
     public setCounted(element: any, rule: string): void {
         const counter = this.getCounter();
@@ -53,16 +55,20 @@ export class HitsStorage {
     }
 
     /**
-     * @return current count number
+     * Returns current counter value and increments it.
+     *
+     * @returns Count number.
      */
     public getCounter(): number {
         this.counter += 1;
         return this.counter;
     }
 
+    // TODO replace with nanoid
     /**
-     * Random id generator
-     * @returns {String} - random key with desired length
+     * Random id generator.
+     *
+     * @returns Random key with 10 characters length.
      */
     private static generateRandomKey(): string {
         const keyLength = 10;

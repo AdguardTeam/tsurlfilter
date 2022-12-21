@@ -16,58 +16,58 @@ import { FilteringEventType, FilteringLogInterface } from '../../../../common';
 import { ContentStringFilterInterface } from './content-string-filter';
 
 /**
- * Content Stream Filter class
+ * Content Stream Filter class.
  *
  * Encapsulates response data stream filtering logic
- * https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
+ * https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html.
  */
 export class ContentStream {
     /**
-     * Request context
+     * Request context.
      *
-     * This object is mutated during request processing
+     * This object is mutated during request processing.
      */
     private context: RequestContext;
 
     /**
-     * Content Filter
+     * Content filter.
      *
-     * Modify content with specified rules
+     * Modifies content with specified rules.
      */
     private contentStringFilter: ContentStringFilterInterface;
 
     /**
-     * Web request filter
+     * Web request filter.
      */
     private filter: WebRequest.StreamFilter;
 
     /**
-     * Request charset
+     * Request charset.
      */
     private charset: string | undefined;
 
     /**
-     * Content
+     * Content.
      */
     private content: string;
 
     /**
-     * Decoder instance
+     * Decoder instance.
      */
     private decoder: TextDecoder | undefined;
 
     /**
-     * Encoder instance
+     * Encoder instance.
      */
     private encoder: TextEncoder | undefined;
 
     /**
-     * Filtering log
+     * Filtering log.
      */
     private readonly filteringLog: FilteringLogInterface;
 
     /**
-     * Contains collection of accepted content types for stream filtering
+     * Contains collection of accepted content types for stream filtering.
      */
     private readonly allowedContentTypes = [
         'text/',
@@ -78,6 +78,14 @@ export class ContentStream {
         'application/x-javascript',
     ];
 
+    /**
+     * Content stream constructor.
+     *
+     * @param context Request context.
+     * @param contentStringFilter Content filter.
+     * @param streamFilterCreator Stream filter creator.
+     * @param filteringLog Filtering log.
+     */
     constructor(
         context: RequestContext,
         contentStringFilter: ContentStringFilterInterface,
@@ -96,15 +104,18 @@ export class ContentStream {
         this.onResponseError = this.onResponseError.bind(this);
     }
 
+    /**
+     * Initializes encoders and filter.
+     */
     public init(): void {
         this.initEncoders();
         this.initFilter();
     }
 
     /**
-     * Writes data to stream
+     * Writes data to stream.
      *
-     * @param content
+     * @param content Content to write.
      */
     public write(content: string): void {
         this.filter.write(this.encoder!.encode(content));
@@ -112,9 +123,9 @@ export class ContentStream {
     }
 
     /**
-     * Sets charset
+     * Sets charset.
      *
-     * @param charset
+     * @param charset Charset.
      */
     public setCharset(charset: string | null): void {
         if (charset) {
@@ -124,9 +135,9 @@ export class ContentStream {
     }
 
     /**
-     * Disconnects filter from stream
+     * Disconnects filter from stream.
      *
-     * @param data
+     * @param data Data to write.
      */
     public disconnect(data: BufferSource): void {
         this.filter.write(data as ArrayBuffer);
@@ -134,7 +145,7 @@ export class ContentStream {
     }
 
     /**
-     * Initializes encoders
+     * Initializes encoders.
      */
     private initEncoders(): void {
         let set = this.charset ? this.charset : DEFAULT_CHARSET;
@@ -152,12 +163,20 @@ export class ContentStream {
         }
     }
 
+    /**
+     * Initializes filter.
+     */
     private initFilter(): void {
         this.filter.ondata = this.onResponseData;
         this.filter.onstop = this.onResponseFinish;
         this.filter.onerror = this.onResponseError;
     }
 
+    /**
+     * We do not support stream filtering for some content types.
+     *
+     * @returns True if content type is supported.
+     */
     private shouldProcessFiltering(): boolean {
         const { requestType, contentTypeHeader } = this.context;
         if (requestType === RequestType.Other || requestType === RequestType.XmlHttpRequest) {
@@ -169,6 +188,11 @@ export class ContentStream {
         return true;
     }
 
+    /**
+     * Handler for response data.
+     *
+     * @param event Stream filter event.
+     */
     private onResponseData(event: WebRequest.StreamFilterEventData): void {
         if (!this.shouldProcessFiltering()) {
             this.disconnect(event.data);
@@ -179,8 +203,8 @@ export class ContentStream {
             try {
                 let charset;
                 /**
-                 * If this.charset is undefined and requestType is Document or Subdocument, we try
-                 * to detect charset from page <meta> tags
+                 * If this.charset is undefined and requestType is Document or Subdocument, we try to detect charset
+                 * from page <meta> tags.
                  */
                 if (this.context.requestType === RequestType.SubDocument
                     || this.context.requestType === RequestType.Document) {
@@ -188,8 +212,8 @@ export class ContentStream {
                 }
 
                 /**
-                 * If this.charset is undefined and requestType is Stylesheet, we try
-                 * to detect charset from css directive
+                 * If this.charset is undefined and requestType is Stylesheet, we try to detect charset from css
+                 * directive.
                  */
                 if (this.context.requestType === RequestType.Stylesheet) {
                     charset = ContentStream.parseCssCharset(event.data);
@@ -217,12 +241,18 @@ export class ContentStream {
         }
     }
 
+    /**
+     * Handler for response error.
+     */
     private onResponseError(): void {
         if (this.filter.error && this.filter.error) {
             logger.info(this.filter.error);
         }
     }
 
+    /**
+     * Handler for the end of response data.
+     */
     private onResponseFinish(): void {
         this.content += this.decoder!.decode(); // finish stream
 
@@ -266,10 +296,10 @@ export class ContentStream {
     }
 
     /**
-     * Parses charset from html
+     * Parses charset from html.
      *
-     * @param data
-     * @returns {*}
+     * @param data Data to parse.
+     * @returns Parsed charset or null.
      */
     private static parseHtmlCharset(data: BufferSource): string | null {
         const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();
@@ -277,10 +307,10 @@ export class ContentStream {
     }
 
     /**
-     * Parses charset from html
+     * Parses charset from css.
      *
-     * @param data
-     * @returns {*}
+     * @param data Data to parse.
+     * @returns Parsed charset or null.
      */
     private static parseCssCharset(data: BufferSource): string | null {
         const decoded = new TextDecoder('utf-8').decode(data).toLowerCase();

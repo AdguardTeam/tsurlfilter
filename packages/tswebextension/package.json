@@ -52,7 +52,7 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
+    "lint": "eslint .",
     "prebuild": "rimraf dist",
     "build": "yarn build:types && rollup -c rollup.config.ts",
     "postbuild": "node tasks/build-txt",

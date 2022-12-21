@@ -19,7 +19,7 @@ describe('Params service', () => {
         url: string,
         method: string,
         rulesText: string[],
-    ) => {
+    ): string | null => {
         const requestId = '12345';
 
         requestContextStorage.record(requestId, {
@@ -80,7 +80,7 @@ describe('Params service', () => {
         expect(purgedUrl).toBe(null);
     });
 
-    it('correctly proccess allowlist rule', () => {
+    it('correctly processes allowlist rule', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'POST',
@@ -103,7 +103,7 @@ describe('Params service', () => {
         );
     });
 
-    it('doesn`t remove unspecific param', () => {
+    it('doesn\'t remove unspecific param', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?test=1',
             'GET',

@@ -32,9 +32,14 @@ import { SanitizeApi } from './sanitize-api';
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
 /**
+ * API for handling browser web request events.
+ *
  * @class WebRequestApi
  */
 export class WebRequestApi {
+    /**
+     * Adds listeners to web request events.
+     */
     public static start(): void {
         // browser.webRequest Events
         RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeRequest);
@@ -48,6 +53,9 @@ export class WebRequestApi {
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
     }
 
+    /**
+     * Removes web request event handlers.
+     */
     public static stop(): void {
         RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeRequest);
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
@@ -59,11 +67,18 @@ export class WebRequestApi {
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
     }
 
+    /**
+     * On before request event handler. This is the earliest event in the chain of the web request events.
+     *
+     * @param details Request details.
+     * @param details.context Request context.
+     * @returns Web request response or void if there is nothing to do.
+     */
     private static onBeforeRequest(
         { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
     ): WebRequestEventResponse {
         if (!context) {
-            return;
+            return undefined;
         }
         const {
             requestType,
@@ -92,7 +107,7 @@ export class WebRequestApi {
         }
 
         if (!isHttpOrWsRequest(requestUrl)) {
-            return;
+            return undefined;
         }
 
         defaultFilteringLog.publishEvent({
@@ -119,7 +134,7 @@ export class WebRequestApi {
         });
 
         if (!result) {
-            return;
+            return undefined;
         }
 
         requestContextStorage.update(requestId, {
@@ -169,11 +184,18 @@ export class WebRequestApi {
         return response;
     }
 
+    /**
+     * On before send headers event handler.
+     *
+     * @param details On before send headers details.
+     * @param details.context Details context.
+     * @returns Web request event response.
+     */
     private static onBeforeSendHeaders({
         context,
     }: RequestData<WebRequest.OnBeforeSendHeadersDetailsType>): WebRequestEventResponse {
         if (!context) {
-            return;
+            return undefined;
         }
 
         const sanitizedRequest = SanitizeApi.onBeforeSendHeaders(context);
@@ -184,7 +206,7 @@ export class WebRequestApi {
         stealthApi.onBeforeSendHeaders(context);
 
         if (!context?.matchingResult) {
-            return;
+            return undefined;
         }
 
         cookieFiltering.onBeforeSendHeaders(context);
@@ -198,8 +220,18 @@ export class WebRequestApi {
         if (requestHeadersModified) {
             return { requestHeaders: context.requestHeaders };
         }
+
+        return undefined;
     }
 
+    /**
+     * On headers received event handler.
+     *
+     * @param event On headers received event.
+     * @param event.context Event context.
+     * @param event.details On headers received details.
+     * @returns Web request event response.
+     */
     private static onHeadersReceived({
         context,
         details,
@@ -214,7 +246,7 @@ export class WebRequestApi {
         });
 
         if (!context?.matchingResult) {
-            return;
+            return undefined;
         }
 
         const {
@@ -249,11 +281,19 @@ export class WebRequestApi {
         if (responseHeadersModified) {
             return { responseHeaders: context.responseHeaders };
         }
+
+        return undefined;
     }
 
+    /**
+     * On response started event handler.
+     *
+     * @param event On response started event.
+     * @param event.context Event context.
+     */
     private static onResponseStarted({
         context,
-    }: RequestData<WebRequest.OnResponseStartedDetailsType>): WebRequestEventResponse {
+    }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
         if (!context) {
             return;
         }
@@ -261,23 +301,46 @@ export class WebRequestApi {
         WebRequestApi.injectJsScript(context);
     }
 
+    /**
+     * This is handler for the last event from the request lifecycle.
+     *
+     * @param event On completed event.
+     * @param event.details On completed event details.
+     * @private
+     */
     private static onCompleted({
         details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
+    /**
+     * Event handler for onErrorOccurred event. It fires when an error occurs.
+     *
+     * @param event On error occurred event.
+     * @param event.details On error occurred event details.
+     */
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
     }
 
+    /**
+     * On committed web navigation event handler. We use it because it is more reliable than webRequest events.
+     *
+     * @param details Event details.
+     */
     private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
         const { frameId, tabId } = details;
         WebRequestApi.injectCosmetic(tabId, frameId);
     }
 
+    /**
+     * Injects css in the page.
+     *
+     * @param context Request context.
+     */
     private static injectCss(context: RequestContext): void {
         if (!context?.cosmeticResult) {
             return;
@@ -296,6 +359,11 @@ export class WebRequestApi {
         }
     }
 
+    /**
+     * Injects js script in the page.
+     *
+     * @param context Request context.
+     */
     private static injectJsScript(context: RequestContext): void {
         if (!context?.cosmeticResult) {
             return;
@@ -345,6 +413,12 @@ export class WebRequestApi {
         }
     }
 
+    /**
+     * Injects cosmetic rules in the page.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
     private static injectCosmetic(tabId: number, frameId: number): void {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 

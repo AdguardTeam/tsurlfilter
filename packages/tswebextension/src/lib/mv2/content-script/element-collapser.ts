@@ -4,21 +4,33 @@ import { ProcessShouldCollapsePayload, MessageType, sendAppMessage } from '../..
 type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 
 /**
- * Hides broken items after blocking a network request
+ * Hides broken items after blocking a network request.
  */
 export class ElementCollapser {
-    public static start() {
+    /**
+     * Start listening for error events.
+     */
+    public static start(): void {
         document.addEventListener('error', ElementCollapser.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
         document.addEventListener('load', ElementCollapser.shouldCollapseElement, true);
     }
 
-    public static stop() {
+    /**
+     * Stop listening for error events.
+     */
+    public static stop(): void {
         document.removeEventListener('error', ElementCollapser.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
         document.removeEventListener('load', ElementCollapser.shouldCollapseElement, true);
     }
 
+    /**
+     * Returns request type by tag name.
+     *
+     * @param tagName Tag name.
+     * @returns Request type or null.
+     */
     private static getRequestTypeByInitiatorTagName(tagName: string): RequestType | null {
         switch (tagName) {
             case 'img':
@@ -42,7 +54,10 @@ export class ElementCollapser {
     }
 
     /**
-     * Extracts element URL from the dom node
+     * Extracts element URL from the dom node.
+     *
+     * @param element Dom node.
+     * @returns Element URL or null.
      */
     private static getElementUrl(element: RequestInitiatorElement): string | null {
         let elementUrl = element.src || element.data;
@@ -65,12 +80,23 @@ export class ElementCollapser {
         return elementUrl;
     }
 
+    /**
+     * Checks if element is already collapsed.
+     *
+     * @param element DOM element.
+     * @returns True if element is collapsed.
+     */
     private static isElementCollapsed(element: HTMLElement): boolean {
         const computedStyle = window.getComputedStyle(element);
         return (computedStyle && computedStyle.display === 'none');
     }
 
-    private static async shouldCollapseElement(event: Event) {
+    /**
+     * Checks if element should be collapsed by requirements.
+     *
+     * @param event Error or load event.
+     */
+    private static async shouldCollapseElement(event: Event): Promise<void> {
         const eventType = event.type;
         const element = event.target as RequestInitiatorElement;
 

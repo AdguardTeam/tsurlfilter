@@ -1,11 +1,14 @@
 /**
- * Document parser wrapper
+ * Document parser wrapper.
  */
 export class DocumentParser {
     private readonly parser: DOMParser;
 
     private readonly parsererrorNS: string | null;
 
+    /**
+     * Constructor.
+     */
     constructor() {
         // eslint-disable-next-line no-undef
         this.parser = new DOMParser();
@@ -14,10 +17,11 @@ export class DocumentParser {
     }
 
     /**
-     * Checking for parse errors
-     * https://developer.mozilla.org/en-US/docs/Web/API/DOMParser#Error_handling
-     * @param parsedDocument
-     * @returns true if html cannot parsed
+     * Checks for parse errors.
+     * {@link https://developer.mozilla.org/en-US/docs/Web/API/DOMParser#Error_handling}.
+     *
+     * @param parsedDocument Parsed document.
+     * @returns True if document cannot be parsed.
      */
     private isParseError(parsedDocument: Document): boolean {
         if (this.parsererrorNS === 'http://www.w3.org/1999/xhtml') {
@@ -28,9 +32,10 @@ export class DocumentParser {
     }
 
     /**
-     * Parse html to document
-     * @param html HTML content
-     * @returns Document
+     * Parse html to document.
+     *
+     * @param html HTML content.
+     * @returns Document or null if parse error occurred.
      */
     parse(html: string): Document | null {
         const doc = this.parser.parseFromString(html, 'text/html');

@@ -9,10 +9,10 @@ export interface ResourcesServiceInterface {
 }
 
 /**
- * Foil ability of web pages to identify extension through its web accessible resources.
+ * Prevent web pages to identify extension through its web accessible resources.
  *
  * Inspired by:
- * https://github.com/gorhill/uBlock/blob/7f999b759fe540e457e297363f55b25d9860dd3e/platform/chromium/vapi-background
+ *  https://github.com/gorhill/uBlock/blob/7f999b759fe540e457e297363f55b25d9860dd3e/platform/chromium/vapi-background.
  */
 export class ResourcesService implements ResourcesServiceInterface {
     private secrets: string[] = [];
@@ -25,11 +25,21 @@ export class ResourcesService implements ResourcesServiceInterface {
 
     private generateSecretKey: () => string;
 
+    /**
+     * Constructor.
+     *
+     * @param generateSecretKey Function to generate secret key.
+     */
     constructor(generateSecretKey: () => string) {
         this.generateSecretKey = generateSecretKey;
         this.guardWar = this.guardWar.bind(this);
     }
 
+    /**
+     * Init service.
+     *
+     * @param warDir Web accessible resources directory.
+     */
     public init(warDir: string): void {
         this.warDir = warDir;
 
@@ -42,6 +52,9 @@ export class ResourcesService implements ResourcesServiceInterface {
         browser.webRequest.onBeforeRequest.addListener(this.guardWar, filter, extraInfoSpec);
     }
 
+    /**
+     * Stops service.
+     */
     public stop(): void {
         this.warDir = undefined;
         this.secrets = [];
@@ -49,12 +62,12 @@ export class ResourcesService implements ResourcesServiceInterface {
     }
 
     /**
-     * Create url for war file
+     * Creates url for war file.
      *
-     * @param path - resource relative path
-     * @throws error, if web accessible resources path is not defined
+     * @param path Resource relative path.
+     * @throws Error, if web accessible resources path is not defined.
      *
-     * @returns url to resource with secret param
+     * @returns Url to resource with secret param.
      */
     public createResourceUrl(path: string): string {
         if (!this.warDir) {
@@ -65,9 +78,9 @@ export class ResourcesService implements ResourcesServiceInterface {
     }
 
     /**
-     * Load war resource by path
+     * Loads war resource by path.
      *
-     * @param path - resource relative path
+     * @param path Resource relative path.
      */
     public async loadResource(path: string): Promise<string> {
         const url = this.createResourceUrl(path);
@@ -75,8 +88,14 @@ export class ResourcesService implements ResourcesServiceInterface {
         return response.text();
     }
 
+    /**
+     * Generates secret key, persists it in the secrets array and formats querystring.
+     *
+     * @returns Querystring with secret.
+     */
     private createSecretParam(): string {
         if (this.secrets.length !== 0) {
+            // TODO move magic numbers to constants
             if ((Date.now() - this.lastSecretTime) > 5000) {
                 this.secrets.splice(0);
             } else if (this.secrets.length > 256) {
@@ -89,7 +108,13 @@ export class ResourcesService implements ResourcesServiceInterface {
         return `?secret=${secret}`;
     }
 
-    private guardWar(details: WebRequest.OnBeforeRequestDetailsType) {
+    /**
+     * If secret is not found redirects to the main url of extension, otherwise removes secret from the stored values.
+     *
+     * @param details Web request details.
+     * @returns Redirect or nothing.
+     */
+    private guardWar(details: WebRequest.OnBeforeRequestDetailsType): WebRequest.BlockingResponse | undefined {
         const { url } = details;
         const pos = this.secrets.findIndex((secret) => url.lastIndexOf(`?secret=${secret}`) !== -1);
         if (pos === -1) {
@@ -97,6 +122,7 @@ export class ResourcesService implements ResourcesServiceInterface {
         }
 
         this.secrets.splice(pos, 1);
+        return undefined;
     }
 }
 

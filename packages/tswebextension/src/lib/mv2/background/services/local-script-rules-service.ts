@@ -28,9 +28,9 @@ export class LocalScriptRulesService {
     private data = new Set<string>();
 
     /**
-     * Saves local script rules to object
+     * Saves local script rules to object.
      *
-     * @param json JSON object with pre-build JS rules
+     * @param json JSON object with pre-build JS rules.
      */
     setLocalScriptRules(json: LocalScriptRules): void {
         this.data = new Set(json.rules.map((rule) => {
@@ -46,10 +46,10 @@ export class LocalScriptRulesService {
     }
 
     /**
-     * Checks if ruleText is in the pre-build JS rules JSON
+     * Checks if ruleText is in the pre-build JS rules JSON.
      *
-     * @param ruleText Rule text
-     * @returns true, if rule is local, else returns false
+     * @param ruleText Rule text.
+     * @returns True, if rule is local, else returns false.
      */
     isLocal(ruleText: string): boolean {
         if (isFirefox) {

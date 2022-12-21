@@ -5,6 +5,10 @@ import { localScriptRulesService } from './services/local-script-rules-service';
 import { tabsApi } from './tabs/tabs-api';
 import { USER_FILTER_ID } from '../../common/constants';
 
+/**
+ * Cosmetic api class.
+ * Used to prepare and inject javascript and css into pages.
+ */
 export class CosmeticApi {
     private static ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
 
@@ -15,37 +19,51 @@ export class CosmeticApi {
     private static HIT_END = "' !important;}\r\n";
 
     /**
-     * Applies scripts from cosmetic result
+     * Applies scripts from cosmetic result.
      *
-     * @param scriptText - script text
-     * @param tabId - tab id
-     * @param frameId - frame id
-     * @see {@link LocalScriptRulesService} for details about script source
+     * @param scriptText Script text.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
         tabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
     }
 
     /**
-     * Applies css from cosmetic result
+     * Applies css from cosmetic result.
      *
-     * Patches rule selector adding adguard mark rule info in the content attribute
+     * Patches rule selector adding adguard mark rule info in the content attribute.
      * Example:
-     * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
+     * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}.
      *
-     * @param cssText - css text
-     * @param tabId - tab id
-     * @param frameId - frame id
+     * @param cssText Css text.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
      */
     public static injectCss(cssText: string, tabId: number, frameId = 0): void {
         tabsApi.injectCss(cssText, tabId, frameId);
     }
 
     // TODO: check why is not called
+    /**
+     * Injects extended css into the page.
+     *
+     * @param extCssText Extended css text.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
     public static injectExtCss(extCssText: string, tabId: number, frameId = 0): void {
         tabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
     }
 
+    /**
+     * Retrieves css styles from the cosmetic result.
+     *
+     * @param cosmeticResult Cosmetic result.
+     * @param collectingCosmeticRulesHits Flag to collect cosmetic rules hits.
+     * @returns Css styles as string, or `undefined` if no styles found.
+     */
     public static getCssText(cosmeticResult: CosmeticResult, collectingCosmeticRulesHits = false): string | undefined {
         const { elementHiding, CSS } = cosmeticResult;
 
@@ -63,8 +81,17 @@ export class CosmeticApi {
         if (styles.length > 0) {
             return styles.join('\n');
         }
+
+        return undefined;
     }
 
+    /**
+     * Builds extended css stylesheet from cosmetic result.
+     *
+     * @param cosmeticResult Cosmetic result.
+     * @param collectingCosmeticRulesHits Flag to collect cosmetic rules hits.
+     * @returns Extended css stylesheet or undefined.
+     */
     public static getExtCssText(
         cosmeticResult: CosmeticResult,
         collectingCosmeticRulesHits = false,
@@ -85,11 +112,19 @@ export class CosmeticApi {
         if (extStyles.length > 0) {
             return extStyles.join('\n');
         }
+
+        return undefined;
     }
 
+    /**
+     * Builds scripts from cosmetic rules.
+     *
+     * @param rules Cosmetic rules.
+     * @returns Scripts or undefined.
+     */
     public static getScriptText(rules: CosmeticRule[]): string | undefined {
         if (rules.length === 0) {
-            return;
+            return undefined;
         }
 
         const scriptText = rules
@@ -111,23 +146,30 @@ export class CosmeticApi {
             .join('\n');
 
         if (!scriptText) {
-            return;
+            return undefined;
         }
 
         return scriptText;
     }
 
+    /**
+     * Returns extended css stylesheet for the frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @returns Extended css stylesheet or undefined.
+     */
     public static getFrameExtCssText(tabId: number, frameId: number): string | undefined {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
         if (!frame?.requestContext) {
-            return;
+            return undefined;
         }
 
         const { requestContext } = frame;
 
         if (!requestContext?.cosmeticResult) {
-            return;
+            return undefined;
         }
 
         const { cosmeticResult } = requestContext;
@@ -138,13 +180,13 @@ export class CosmeticApi {
     }
 
     /**
-     * Builds stylesheet from rules
+     * Builds stylesheet from rules.
      *
-     * @param elemhideRules - list of elemhide css rules
-     * @param injectRules - list of inject css rules
-     * @param groupElemhideSelectors - is hidden elements selectors will be grouped
+     * @param elemhideRules List of elemhide css rules.
+     * @param injectRules List of inject css rules.
+     * @param groupElemhideSelectors Is hidden elements selectors will be grouped.
      *
-     * @returns list of stylesheet expressions
+     * @returns List of stylesheet expressions.
      */
     private static buildStyleSheet(
         elemhideRules: CosmeticRule[],
@@ -193,8 +235,8 @@ export class CosmeticApi {
     /**
      * Encodes rule text.
      *
-     * @param ruleText - rule text
-     * @returns encoded rule text
+     * @param ruleText Rule text.
+     * @returns Encoded rule text.
      */
     private static escapeRule(ruleText: string): string {
         return encodeURIComponent(ruleText).replace(
@@ -204,13 +246,13 @@ export class CosmeticApi {
     }
 
     /**
-     * Patch rule selector adding adguard mark rule info in the content attribute
+     * Patches rule selector adding adguard mark rule info in the content attribute.
      * Example:
-     * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}
+     * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}.
      *
-     * @param rule - elemhide cosmetic rule
+     * @param rule Elemhide cosmetic rule.
      *
-     * @returns - stylesheet expression with marker
+     * @returns Rule with modified stylesheet, containing content marker.
      */
     private static addMarkerToElemhideRule(rule: CosmeticRule): string {
         const result = [];
@@ -224,13 +266,13 @@ export class CosmeticApi {
     }
 
     /**
-     * Patch rule selector adding adguard mark and rule info in the content attribute
+     * Patches rule selector adding adguard mark and rule info in the content style attribute.
      * Example:
-     * .selector { color: red } -> .selector { color: red, content: 'adguard{filterId};{ruleText} !important;}
+     * .selector { color: red } -> .selector { color: red, content: 'adguard{filterId};{ruleText} !important;}.
      *
-     * @param rule - inject cosmetic rule
+     * @param rule Inject cosmetic rule.
      *
-     * @returns - stylesheet expression with marker
+     * @returns Modified rule with injected content marker into stylesheet.
      */
     private static addMarkerToInjectRule(rule: CosmeticRule): string {
         const result = [];
@@ -258,12 +300,12 @@ export class CosmeticApi {
     }
 
     /**
-     * Builds stylesheet with css-hits marker
+     * Builds stylesheet with css-hits marker.
      *
-     * @param elemhideRules - elemhide css rules
-     * @param injectRules - inject css rules
+     * @param elemhideRules Elemhide css rules.
+     * @param injectRules Inject css rules.
      *
-     * @returns list of stylesheet expressions
+     * @returns List of stylesheet expressions.
      */
     private static buildStyleSheetWithHits = (
         elemhideRules: CosmeticRule[],

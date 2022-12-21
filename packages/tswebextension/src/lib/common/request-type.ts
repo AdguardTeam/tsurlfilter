@@ -28,6 +28,12 @@ export interface RequestTypeData {
     requestType: RequestType;
 }
 
+/**
+ * Returns request type and content type by resource type.
+ *
+ * @param resourceType Resource type.
+ * @returns Request type and content type.
+ */
 export function getRequestType(resourceType: WebRequest.ResourceType): RequestTypeData {
     switch (resourceType) {
         case 'main_frame':

@@ -1,24 +1,24 @@
 import { nanoid } from 'nanoid';
-
 import { NetworkRule, RemoveParamModifier } from '@adguard/tsurlfilter';
+
+import { requestContextStorage } from '../request';
 import {
     defaultFilteringLog,
     FilteringEventType,
     FilteringLogInterface,
     getDomain,
 } from '../../../common';
-import { requestContextStorage } from '../request';
 
 /**
- * Params filtering service module
+ * Params filtering service module.
  */
 export class ParamsService {
     private filteringLog: FilteringLogInterface;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param filteringLog
+     * @param filteringLog Filtering log.
      */
     constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
@@ -27,10 +27,10 @@ export class ParamsService {
     private static SupportedMethods = ['GET', 'OPTIONS', 'HEAD'];
 
     /**
-     * Removes request params from url, stored in request context
+     * Removes request params from url, stored in request context.
      *
-     * @param requestId
-     * @return modified url or null
+     * @param requestId Request id.
+     * @returns Modified url or null.
      */
     public getPurgedUrl(requestId: string): string | null {
         const context = requestContextStorage.get(requestId);
@@ -93,6 +93,12 @@ export class ParamsService {
         return purgedUrl;
     }
 
+    /**
+     * Checks if we support requests for specified method.
+     *
+     * @param method Request method.
+     * @returns True if method supported.
+     */
     private static isMethodSupported(method: string): boolean {
         return ParamsService.SupportedMethods.includes(method.toUpperCase());
     }

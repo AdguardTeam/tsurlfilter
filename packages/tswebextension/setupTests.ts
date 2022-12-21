@@ -9,5 +9,5 @@ jest.mock('webextension-polyfill', () => ({
 }));
 
 jest.mock('nanoid', () => ({
-    nanoid: () => '1',
+    nanoid: (): string => '1',
 }));

@@ -1,36 +1,35 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
+
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { engineApi } from '../engine-api';
-import { redirectsService } from '../services/redirects-service';
-import { tabsApi } from '../tabs';
 import { documentBlockingService } from '../services/document-blocking-service';
+import { redirectsService } from '../services/redirects-service';
+import { engineApi } from '../engine-api';
+import { tabsApi } from '../tabs';
 
 export type WebRequestBlockingResponse = WebRequest.BlockingResponse | void;
 
 /**
  * Api for processing request filtering.
  *
- * {@link getBlockingResponse} method processes rule applying for request
- * and compute response for {@link WebRequestApi.onBeforeRequest} listener.
+ * Method {@link getBlockingResponse} processes rule applying for request and computes response
+ * for {@link WebRequestApi.onBeforeRequest} listener.
  *
- * {@link shouldCollapseElement} method checks, if initializer
- * for request should be collapsed by content-script
+ * Method {@link shouldCollapseElement} checks, if initializer for request should be collapsed by content-script.
  *
- * This class also provides method {@link isRequestBlockedByRule}
- * for checking, if rule is blocking rule
+ * This class also provides method {@link isRequestBlockedByRule} for checking, if rule is blocking rule.
  */
 export class RequestBlockingApi {
     /**
      * In some cases request blocking breaks images and frames on page.
      * We match rule from content-script and decide if DOM element should be hidden via css.
      *
-     * @param tabId - tab id
-     * @param url - request url
-     * @param referrerUrl - request initializer frame url
-     * @param requestType - type of request
+     * @param tabId Tab id.
+     * @param url Request url.
+     * @param referrerUrl Request initializer frame url.
+     * @param requestType Type of request.
      *
-     * @returns true, if element should be collapsed, else returns false
+     * @returns True, if element should be collapsed, else returns false.
      */
     public static shouldCollapseElement(
         tabId: number,
@@ -53,10 +52,10 @@ export class RequestBlockingApi {
     }
 
     /**
-     * Checks, if request rule is blocking
+     * Checks if request rule is blocked.
      *
-     * @param requestRule - request network rule or null
-     * @returns true, if rule is request blocking, else returns false
+     * @param requestRule Request network rule or null.
+     * @returns True, if rule is request blocking, else returns false.
      */
     public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
         return !!requestRule
@@ -66,16 +65,15 @@ export class RequestBlockingApi {
     }
 
     /**
-     * Processes rule applying for request and compute response
-     * for {@link WebRequestApi.onBeforeRequest} listener
+     * Processes rule applying for request and compute response for {@link WebRequestApi.onBeforeRequest} listener.
      *
-     * @param rule - matched rule
-     * @param requestId - request id
-     * @param requestUrl - request url
-     * @param requestType -request type
-     * @param tabId - tab id
+     * @param rule Matched rule.
+     * @param requestId Request id.
+     * @param requestUrl Request url.
+     * @param requestType Request type.
+     * @param tabId Tab id.
      *
-     * @returns response for {@link WebRequestApi.onBeforeRequest} listener
+     * @returns Response for {@link WebRequestApi.onBeforeRequest} listener.
      */
     public static getBlockingResponse(
         rule: NetworkRule | null,
@@ -85,12 +83,12 @@ export class RequestBlockingApi {
         tabId: number,
     ): WebRequestBlockingResponse {
         if (!rule) {
-            return;
+            return undefined;
         }
 
         if (rule.isAllowlist()) {
             RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
-            return;
+            return undefined;
         }
 
         if (requestType === RequestType.Document) {
@@ -114,12 +112,12 @@ export class RequestBlockingApi {
             }
 
             // Other url blocking rules are not applicable to main frame
-            return;
+            return undefined;
         }
 
         // Replace rules are processed in content-filtering
         if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
-            return;
+            return undefined;
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
@@ -135,17 +133,17 @@ export class RequestBlockingApi {
     }
 
     /**
-     * Creates {@link FilteringLog} event of rule applying for processed request
+     * Creates {@link FilteringLog} event of rule applying for processed request.
      *
-     * @param requestId - request id
-     * @param requestRule - request rule
-     * @param tabId - tab id
+     * @param requestId Request id.
+     * @param requestRule Request rule.
+     * @param tabId Tab id.
      */
     private static logRuleApplying(
         requestId: string,
         requestRule: NetworkRule,
         tabId: number,
-    ) {
+    ): void {
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.APPLY_BASIC_RULE,
             data: {

@@ -4,15 +4,15 @@ export const WIN_1251 = 'windows-1251';
 export const WIN_1252 = 'windows-1252';
 
 /**
- * Supported charsets array
+ * Supported charsets array.
  */
 export const SUPPORTED_CHARSETS = [DEFAULT_CHARSET, WIN_1251, WIN_1252, LATIN_1];
 
 /**
- * Parses charset from content-type header
+ * Parses charset from content-type header.
  *
- * @param contentType
- * @returns {*}
+ * @param contentType Content-type header.
+ * @returns Charset string or null.
  */
 export function parseCharsetFromHeader(contentType: string | undefined): string | null {
     if (!contentType) {
@@ -33,9 +33,10 @@ export function parseCharsetFromHeader(contentType: string | undefined): string 
  * <meta charset=utf-8 />
  * <meta charset=utf-8>
  * <meta http-equiv="content-type" content="text/html; charset=utf-8" />
- * <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+ * <meta content="text/html; charset=utf-8" http-equiv="content-type" />.
  *
- * @param text
+ * @param text Html content.
+ * @returns Charset string or null.
  */
 export function parseCharsetFromHtml(text: string): string | null {
     let match = /<meta\s*charset\s*=\s*['"]?(.*?)['"]?\s*\/?>/.exec(text.toLowerCase());
@@ -59,9 +60,10 @@ export function parseCharsetFromHtml(text: string): string | null {
 }
 
 /**
- * Parses charset from css
+ * Parses charset from css.
  *
- * @param text
+ * @param text Css content.
+ * @returns Charset string or null.
  */
 export function parseCharsetFromCss(text: string): string | null {
     const match = /^@charset\s*['"](.*?)['"]/.exec(text.toLowerCase());

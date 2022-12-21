@@ -3,14 +3,14 @@ import browser, { WebRequest } from 'webextension-polyfill';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, RequestData } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
-import {
-    isThirdPartyRequest,
-    getRequestType,
-} from '../../../../common';
+import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
 import { tabsApi } from '../../tabs';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
+/**
+ * Request events class.
+ */
 export class RequestEvents {
     public static onBeforeRequest = new RequestEvent<
         WebRequest.OnBeforeRequestDetailsType,
@@ -57,6 +57,9 @@ export class RequestEvents {
         WebRequest.OnErrorOccurredOptions
     >();
 
+    /**
+     * Initializes request events service.
+     */
     public static init(): void {
         RequestEvents.onBeforeRequest.init(
             browser.webRequest.onBeforeRequest,
@@ -129,6 +132,12 @@ export class RequestEvents {
         );
     }
 
+    /**
+     * Handles onBeforeRequest event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data.
+     */
     private static handleOnBeforeRequest(
         details: WebRequest.OnBeforeRequestDetailsType,
     ): RequestData<WebRequest.OnBeforeRequestDetailsType> {
@@ -147,8 +156,9 @@ export class RequestEvents {
         let { url } = details;
 
         /**
-         * truncate too long urls
-         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493
+         * Truncate too long urls.
+         *
+         * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1493}
          */
         if (url.length > MAX_URL_LENGTH) {
             url = url.slice(0, MAX_URL_LENGTH);
@@ -159,7 +169,7 @@ export class RequestEvents {
          * Although this is expected, as the Upgrade request is indeed an HTTP request,
          * we use a chromium based approach in this case.
          */
-        if (type === 'websocket' && url.indexOf('http') === 0) {
+        if (type === 'websocket' && isHttpRequest(url)) {
             url = url.replace(/^http(s)?:/, 'ws$1:');
         }
 
@@ -198,6 +208,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onBeforeSendHeaders event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data.
+     */
     private static handleOnBeforeSendHeaders(
         details: WebRequest.OnBeforeSendHeadersDetailsType,
     ): RequestData<WebRequest.OnBeforeSendHeadersDetailsType> {
@@ -212,6 +228,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onSendHeaders event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleSendHeaders(
         details: WebRequest.OnSendHeadersDetailsType,
     ): RequestData<WebRequest.OnSendHeadersDetailsType> {
@@ -225,6 +247,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onHeadersReceived event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleOnHeadersReceived(
         details: WebRequest.OnHeadersReceivedDetailsType,
     ): RequestData<WebRequest.OnHeadersReceivedDetailsType> {
@@ -243,6 +271,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onAuthRequired event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleOnAuthRequired(
         details: WebRequest.OnAuthRequiredDetailsType,
     ): RequestData<WebRequest.OnAuthRequiredDetailsType> {
@@ -256,6 +290,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onBeforeRedirect event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleOnBeforeRedirect(
         details: WebRequest.OnBeforeRedirectDetailsType,
     ): RequestData<WebRequest.OnBeforeRedirectDetailsType> {
@@ -269,6 +309,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onResponseStarted event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleOnResponseStarted(
         details: WebRequest.OnResponseStartedDetailsType,
     ): RequestData<WebRequest.OnResponseStartedDetailsType> {
@@ -282,6 +328,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onCompleted event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleOnCompleted(
         details: WebRequest.OnCompletedDetailsType,
     ): RequestData<WebRequest.OnCompletedDetailsType> {
@@ -295,6 +347,12 @@ export class RequestEvents {
         return { details, context };
     }
 
+    /**
+     * Handles onErrorOccurred event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
     private static handleOnErrorOccurred(
         details: WebRequest.OnErrorOccurredDetailsType,
     ): RequestData<WebRequest.OnErrorOccurredDetailsType> {

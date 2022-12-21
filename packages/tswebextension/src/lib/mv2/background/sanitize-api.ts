@@ -1,10 +1,19 @@
 import { WebRequest } from 'webextension-polyfill';
+
 import { isExtensionUrl } from '../../common';
 import { RequestContext, BACKGROUND_TAB_ID } from './request';
 import { removeHeader } from './utils';
 
-// TODO: docs
+/**
+ * // TODO add documentation.
+ */
 export class SanitizeApi {
+    /**
+     * // TODO add documentation.
+     *
+     * @param context Request context.
+     * @returns Blocking response or null.
+     */
     public static onBeforeSendHeaders(context: RequestContext): WebRequest.BlockingResponseOrPromise | null {
         const {
             requestHeaders,

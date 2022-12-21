@@ -26,6 +26,10 @@ export interface TabContextInterface {
 }
 
 export const MAIN_FRAME_ID = 0;
+
+/**
+ * Tab context with methods to work with frames and metadata.
+ */
 export class TabContext implements TabContextInterface {
     info: Tabs.Tab;
 
@@ -33,9 +37,14 @@ export class TabContext implements TabContextInterface {
 
     metadata: TabMetadata = {};
 
-    // We mark this tabs as synthetic because actually they may not exists
+    // We mark this tabs as synthetic because actually they may not exist
     isSyntheticTab = true;
 
+    /**
+     * Context constructor.
+     *
+     * @param info Tab info.
+     */
     constructor(info: Tabs.Tab) {
         this.updateTabInfo = this.updateTabInfo.bind(this);
         this.updateBlockedRequestCount = this.updateBlockedRequestCount.bind(this);
@@ -49,6 +58,11 @@ export class TabContext implements TabContextInterface {
         }
     }
 
+    /**
+     * Updates tab info with new values.
+     *
+     * @param changeInfo Tab change info.
+     */
     updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType): void {
         this.info = Object.assign(this.info, changeInfo);
 
@@ -56,13 +70,22 @@ export class TabContext implements TabContextInterface {
         this.isSyntheticTab = false;
     }
 
-    updateBlockedRequestCount(increment: number) {
+    /**
+     * Updates blocked requests count.
+     *
+     * @param increment Count to add value.
+     * @returns Total blocked requests count.
+     */
+    updateBlockedRequestCount(increment: number): number {
         const blockedRequestCount = (this.metadata.blockedRequestCount || 0) + increment;
         this.metadata.blockedRequestCount = blockedRequestCount;
 
         return blockedRequestCount;
     }
 
+    /**
+     * Updates main frame rule.
+     */
     updateMainFrameRule(): void {
         let mainFrameRule = null;
 
@@ -79,7 +102,13 @@ export class TabContext implements TabContextInterface {
         this.metadata.mainFrameRule = mainFrameRule;
     }
 
-    setMainFrameByFrameUrl(url: string) {
+    /**
+     * // TODO add info why we need previous url.
+     * Sets main frame by frame url.
+     *
+     * @param url Url for main frame.
+     */
+    setMainFrameByFrameUrl(url: string): void {
         const previousUrl = this.getPreviousUrl();
 
         this.frames.clear();
@@ -92,6 +121,12 @@ export class TabContext implements TabContextInterface {
         };
     }
 
+    /**
+     * // TODO answer why we need this method?
+     * Sets main frame by request context.
+     *
+     * @param requestContext Request context.
+     */
     setMainFrameByRequestContext(requestContext: RequestContext): void {
         const { requestUrl } = requestContext;
         const previousUrl = this.getPreviousUrl();
@@ -106,11 +141,17 @@ export class TabContext implements TabContextInterface {
         };
     }
 
+    /**
+     * // TODO why do we need to keep track of previous url?
+     * Returns previous url.
+     *
+     * @returns Previous url or undefined if there is no such frame id.
+     */
     private getPreviousUrl(): string | undefined {
         const mainFrame = this.frames.get(MAIN_FRAME_ID);
 
         if (!mainFrame) {
-            return;
+            return undefined;
         }
 
         return mainFrame.url;

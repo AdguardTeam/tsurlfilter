@@ -2,7 +2,7 @@ import { WebRequest, Events } from 'webextension-polyfill';
 import { RequestContext } from '../request-context-storage';
 
 /**
- * Extended {@link EventCallback} argument data
+ * Extended {@link EventCallback} argument data.
  */
 export interface RequestData<Details> {
     details: Details,
@@ -14,7 +14,7 @@ export type DetailsHandler<Details> = (
 ) => RequestData<Details>;
 
 /**
- * Callback function passed as {@link RequestEvent} methods argument
+ * Callback function passed as {@link RequestEvent} methods argument.
  *
  */
 export type EventCallback<Details> = (
@@ -22,14 +22,14 @@ export type EventCallback<Details> = (
 ) => WebRequest.BlockingResponseOrPromise | void;
 
 /**
- * Function registered as listener of the browser.WebRequest event
+ * Function registered as listener of the browser.WebRequest event.
  */
 export type BrowserEventListener<Details> = (
     details: Details
 ) => WebRequest.BlockingResponseOrPromise | void;
 
 /**
- * More flexible variants for {@link Events.Event} interfaces
+ * More flexible variants for {@link Events.Event} interfaces.
  */
 export interface BrowserRequestEvent<Details, Options>
     extends Events.Event<BrowserEventListener<Details>> {
@@ -41,11 +41,19 @@ export interface BrowserRequestEvent<Details, Options>
 }
 
 /**
- * browser.webRequest generic wrapper with custom event implementation
+ * Generic wrapper for browser.webRequest with custom event implementation.
  */
 export class RequestEvent<Details, Options> {
     public listeners: EventCallback<Details>[] = [];
 
+    /**
+     * Register listener for the browser.webRequest events.
+     *
+     * @param event Webrequest event name.
+     * @param handler Handler to register.
+     * @param filter Filter of the events.
+     * @param extraInfoSpec Extra info spec.
+     */
     init(
         event: BrowserRequestEvent<Details, Options>,
         handler: DetailsHandler<Details>,
@@ -56,7 +64,7 @@ export class RequestEvent<Details, Options> {
             const data = handler(details);
 
             /**
-             * Execute all registered listeners one by one until a non-empty value is returned
+             * Execute all registered listeners one by one until a non-empty value is returned.
              */
             for (let i = 0; i < this.listeners.length; i += 1) {
                 const res = this.listeners[i](data);
@@ -64,6 +72,8 @@ export class RequestEvent<Details, Options> {
                     return res;
                 }
             }
+
+            return undefined;
         };
 
         if (extraInfoSpec) {
@@ -73,10 +83,20 @@ export class RequestEvent<Details, Options> {
         }
     }
 
+    /**
+     * Register listener for the browser.webRequest events.
+     *
+     * @param listener Event callback.
+     */
     public addListener(listener: EventCallback<Details>): void {
         this.listeners.push(listener);
     }
 
+    /**
+     * Remove listener from the browser.webRequest events.
+     *
+     * @param listener Event callback.
+     */
     public removeListener(listener: EventCallback<Details>): void {
         const index = this.listeners.indexOf(listener);
 

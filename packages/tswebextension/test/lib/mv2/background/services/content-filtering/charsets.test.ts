@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import {
     DEFAULT_CHARSET,
     parseCharsetFromHeader,
@@ -21,23 +20,28 @@ describe('Content filtering - charsets', () => {
      * <meta charset=utf-8 />
      * <meta charset=utf-8>
      * <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-     * <meta content="text/html; charset=utf-8" http-equiv="Content-type" />
+     * <meta content="text/html; charset=utf-8" http-equiv="Content-type" />.
      */
-    it('checks parsing charset from html tag', () => {
-        expect(parseCharsetFromHtml('test <meta charset="utf-8" /> test')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('test <meta charset="utf-8"/> test')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('test <meta charset="utf-8" > test')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('test <meta charset="utf-8"> test')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('test <meta charset=utf-8> test')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('test <META CHARSET=utf-8> test')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('test <META CHARSET=UTF-8> test')).toBe(DEFAULT_CHARSET);
+    describe('checks parsing charset from html tag', () => {
+        const table = [
+            ['test <meta charset="utf-8" /> test', DEFAULT_CHARSET],
+            ['test <meta charset="utf-8"/> test', DEFAULT_CHARSET],
+            ['test <meta charset="utf-8" > test', DEFAULT_CHARSET],
+            ['test <meta charset="utf-8"> test', DEFAULT_CHARSET],
+            ['test <meta charset=utf-8> test', DEFAULT_CHARSET],
+            ['test <META CHARSET=utf-8> test', DEFAULT_CHARSET],
+            ['test <META CHARSET=UTF-8> test', DEFAULT_CHARSET],
+            ['<meta http-equiv="content-type" content="text/html; charset=utf-8" />', DEFAULT_CHARSET],
+            ['<meta http-equiv="Content-type" content="text/html; charset=utf-8" />', DEFAULT_CHARSET],
+            ['<META HTTP-EQUIV="CONTENT-TYPE" content="text/html; charset=utf-8" />', DEFAULT_CHARSET],
+            ['<META HTTP-EQUIV="CONTENT-TYPE" content="text/html;charset=utf-8" />', DEFAULT_CHARSET],
+            ['<META HTTP-EQUIV=\'CONTENT-TYPE\' content="text/html;charset=utf-8" />', DEFAULT_CHARSET],
+            ['<meta content="text/html; charset=utf-8" http-equiv="content-type" />', DEFAULT_CHARSET],
+        ];
 
-        expect(parseCharsetFromHtml('<meta http-equiv="content-type" content="text/html; charset=utf-8" />')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('<meta http-equiv="Content-type" content="text/html; charset=utf-8" />')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('<META HTTP-EQUIV="CONTENT-TYPE" content="text/html; charset=utf-8" />')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('<META HTTP-EQUIV="CONTENT-TYPE" content="text/html;charset=utf-8" />')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('<META HTTP-EQUIV=\'CONTENT-TYPE\' content="text/html;charset=utf-8" />')).toBe(DEFAULT_CHARSET);
-        expect(parseCharsetFromHtml('<meta content="text/html; charset=utf-8" http-equiv="content-type" />')).toBe(DEFAULT_CHARSET);
+        test.each(table)('parseCharsetFromHtml(\'%s\')', (html, expected) => {
+            expect(parseCharsetFromHtml(html)).toBe(expected);
+        });
     });
 
     it('checks parsing charset from css', () => {

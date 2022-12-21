@@ -1,6 +1,14 @@
 {
     "extends": "./tsconfig.base.json",
-    "include": ["src/**/*.ts", "test/**/*.ts", "rollup.config.ts", "setupTests.ts"],
+    "include": [
+        "src",
+        "test",
+        "rollup.config.ts",
+        "setupTests.ts",
+        "tasks",
+        ".eslintrc.js",
+        "src/lib/mv3/.eslintrc.js",
+    ],
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {

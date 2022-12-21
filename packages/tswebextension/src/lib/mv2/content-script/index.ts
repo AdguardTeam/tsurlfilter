@@ -19,11 +19,11 @@ const cssHitsCounter = new CssHitsCounter((stats) => {
     });
 });
 
-const applyExtendedCss = (cssText: string) => {
+const applyExtendedCss = (cssText: string): void => {
     // Apply extended css stylesheets
     const extendedCss = new ExtendedCss({
         styleSheet: cssText,
-        beforeStyleApplied: (el: IAffectedElement) => {
+        beforeStyleApplied: (el: IAffectedElement): IAffectedElement => {
             return cssHitsCounter.countAffectedByExtendedCss(el);
         },
     });
@@ -31,7 +31,7 @@ const applyExtendedCss = (cssText: string) => {
     extendedCss.apply();
 };
 
-(async () => {
+(async (): Promise<void> => {
     const res = await sendAppMessage({
         type: MessageType.GET_EXTENDED_CSS,
         payload: {
@@ -45,20 +45,20 @@ const applyExtendedCss = (cssText: string) => {
 })();
 
 /**
- * Runs CookieController
+ * Runs CookieController.
  *
- * * Steps:
+ * Steps:
  * - content script requests matching cookie rules for the frame(in which this script is executed)
  * - service returns matching set of rules data to content script
  * - the rules are applied with TSUrlFilterContentScript.CookieController
- * - filtering log receives callback with applied rules data
+ * - filtering log receives callback with applied rules data.
  *
  * The important point is:
  * - there is no way to run cookie controller script via chrome.tabs.executeScript cause one only could be executed
  * for all frames or main frame only. But it's not correct cause there should be different rules
  * for each frame.
  */
-(async () => {
+(async (): Promise<void> => {
     const response = await sendAppMessage({
         type: MessageType.GET_COOKIE_RULES,
         payload: {

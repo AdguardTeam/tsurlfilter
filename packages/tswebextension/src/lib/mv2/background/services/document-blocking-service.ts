@@ -1,32 +1,29 @@
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser from 'webextension-polyfill';
 import { NetworkRule } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
 
+import { WebRequestBlockingResponse } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { isFirefox } from '../utils/browser-detector';
 import { tabsApi } from '../tabs';
 import { ConfigurationMV2 } from '../configuration';
 
 /**
- * This service encapsulate processing of $document modifier rules
+ * This service encapsulate processing of $document modifier rules.
  *
- * Service is initialized in {@link configure} method, called from {@link EngineApi#startEngine}
+ * Service is initialized in {@link configure} method, called from {@link EngineApi#startEngine}.
  *
- * Request rule is processed in {@link getDocumentBlockingResponse} method,
- * called from {@link RequestBlockingApi.getBlockingResponse}
+ * Request rule is processed in {@link getDocumentBlockingResponse} method, called
+ * from {@link RequestBlockingApi.getBlockingResponse}.
  *
  * Request rule is processed following scenario:
- *
- * - If domain is trusted, ignore request
- *
- * - if rule is document blocking and {@link documentBlockingPageUrl} is undefined,
- * return {@link WebRequestApi.onBeforeRequest} blocking response
- *
- * - if rule is document blocking and {@link documentBlockingPageUrl} is defined,
- * return redirect response with required params.
- *
- * - if browser is Firefox, update page url by {@link browser.tabs} API,
- * because FF does't support redirects to extension pages.
+ * - if domain is trusted, ignore request
+ * - if rule is document blocking and {@link documentBlockingPageUrl} is undefined, return
+ * {@link WebRequestApi.onBeforeRequest} blocking response
+ * - if rule is document blocking and {@link documentBlockingPageUrl} is defined, return redirect response with
+ * required params.
+ * - if browser is Firefox, update page url by {@link browser.tabs} API, because FF doesn't support redirects to
+ * extension pages.
  */
 export class DocumentBlockingService {
     // base url of document blocking page
@@ -36,11 +33,11 @@ export class DocumentBlockingService {
     private trustedDomains: string[] = [];
 
     /**
-     * Configure service instance {@link documentBlockingPageUrl}
+     * Configures service instance {@link documentBlockingPageUrl}.
      *
-     * @param configuration - app {@link Configuration}
+     * @param configuration App {@link Configuration}.
      */
-    public configure(configuration: ConfigurationMV2) {
+    public configure(configuration: ConfigurationMV2): void {
         const { settings, trustedDomains } = configuration;
 
         this.documentBlockingPageUrl = settings?.documentBlockingPageUrl;
@@ -48,23 +45,23 @@ export class DocumentBlockingService {
     }
 
     /**
-     * Processes $document modifier rule matched request in {@link RequestBlockingApi.getBlockingResponse}
+     * Processes $document modifier rule matched request in {@link RequestBlockingApi.getBlockingResponse}.
      *
-     * @param requestId - request id
-     * @param requestUrl - url of processed request
-     * @param rule - {@link NetworkRule} instance of matched rule
-     * @param tabId - tabId of processed request
-     * @returns - {@link WebRequestApi.onBeforeRequest} callback response or null
+     * @param requestId Request id.
+     * @param requestUrl Url of processed request.
+     * @param rule {@link NetworkRule} Instance of matched rule.
+     * @param tabId TabId of processed request.
+     * @returns Blocking response or null {@link WebRequestApi.onBeforeRequest}.
      */
     public getDocumentBlockingResponse(
         requestId: string,
         requestUrl: string,
         rule: NetworkRule,
         tabId: number,
-    ): WebRequest.BlockingResponse | void {
+    ): WebRequestBlockingResponse {
         // if request url domain is trusted, ignore document blocking rule
         if (this.isTrustedDomain(requestUrl)) {
-            return;
+            return undefined;
         }
 
         // public filtering log event
@@ -99,22 +96,26 @@ export class DocumentBlockingService {
     }
 
     /**
-     * Checks if request url domain is trusted
+     * Checks if request url domain is trusted.
      *
-     * @param url - request url
-     * @returns true, if request url domain is trusted, else false
+     * @param url Request url.
+     * @returns True, if request url domain is trusted, else false.
      */
-    private isTrustedDomain(url: string) {
+    private isTrustedDomain(url: string): boolean {
         const domain = getDomain(url);
 
-        return domain && this.trustedDomains.includes(domain);
+        if (domain) {
+            return this.trustedDomains.includes(domain);
+        }
+
+        return false;
     }
 
     /**
-     * Update tab with document blocking page url
+     * Updates tab with document blocking page url.
      *
-     * @param tabId - tab id
-     * @param url - blocking page url
+     * @param tabId Tab id.
+     * @param url Blocking page url.
      */
     private static reloadTabWithBlockingPage(tabId: number, url: string): void {
         const tabContext = tabsApi.getTabContext(tabId);
@@ -127,12 +128,12 @@ export class DocumentBlockingService {
     }
 
     /**
-     * Set required url and rule query params to document-blocking page url
+     * Sets required url and rule query params to document-blocking page url.
      *
-     * @param  documentBlockingPageUrl - url of document-blocking page
-     * @param  requestUrl - processed request url
-     * @param  ruleText - matched rule text
-     * @returns blocking page url with required url and rule query params
+     * @param  documentBlockingPageUrl Url of document-blocking page.
+     * @param  requestUrl Processed request url.
+     * @param  ruleText Matched rule text.
+     * @returns Document blocking page url with required params.
      */
     private static createBlockingUrl(
         documentBlockingPageUrl: string,

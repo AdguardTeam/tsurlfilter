@@ -1,8 +1,9 @@
 import { Wildcard } from './wildcard';
 
 /**
- * Html rule attributes
+ * Html rule attributes.
  *
+ * @example
  * rule = [domains] "$$" tagName [attributes]
  * domains = [domain0, domain1[, ...[, domainN]]]
  * attributes = "[" name0 = value0 "]" "[" name1 = value2 "]" ... "[" nameN = valueN "]"
@@ -11,22 +12,20 @@ import { Wildcard } from './wildcard';
  */
 export class HtmlRuleAttributes {
     /**
-     * Tag name attribute
+     * Tag name attribute.
      */
     tagName: string | undefined;
 
     /**
-     * Composed selector
-     * Parsed [attributes] excepting special attributes
-     * are joined here to be a valid css selector string.
+     * Composed selector.
+     * Parsed [attributes] excepting special attributes are joined here to be a valid css selector string.
      * Example:
-     * For "example.org$$div[id="ad_text"][tag-content="teas""ernet"]" rule,
-     * css selector will be "div[id*="ad_text"]"
+     * For "example.org$$div[id="ad_text"][tag-content="teas""ernet"]" rule, css selector will be "div[id*="ad_text"]".
      */
     selector: string | undefined;
 
     /**
-     * Parent search level attribute
+     * Parent search level attribute.
      */
     parentSearchLevel: number | undefined;
 
@@ -56,7 +55,7 @@ export class HtmlRuleAttributes {
     minLength: number | undefined;
 
     /**
-     * Parent elements attributes
+     * Parent elements attributes.
      */
     parentElements: string[] | undefined;
 }

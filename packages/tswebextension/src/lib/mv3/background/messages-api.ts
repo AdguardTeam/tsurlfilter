@@ -61,7 +61,7 @@ export default class MessagesApi {
         } catch (e) {
             logger.error('Bad message', message);
             // Ignore this message
-            return;
+            return undefined;
         }
 
         const { type } = message;
@@ -71,7 +71,7 @@ export default class MessagesApi {
 
                 const res = getCssPayloadValidator.safeParse(message.payload);
                 if (!res.success) {
-                    return;
+                    return undefined;
                 }
 
                 let { url } = res.data;
@@ -97,6 +97,8 @@ export default class MessagesApi {
                 logger.error('Did not found handler for message');
             }
         }
+
+        return undefined;
     }
 
     /**
@@ -117,6 +119,8 @@ export default class MessagesApi {
                 false,
             );
         }
+
+        return undefined;
     }
 
     /**

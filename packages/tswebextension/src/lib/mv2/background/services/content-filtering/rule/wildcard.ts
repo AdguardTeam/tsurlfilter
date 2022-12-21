@@ -1,7 +1,7 @@
 import { replaceAll, indexOfAny } from '@adguard/tsurlfilter';
 
 /**
- * Html rule wildcard
+ * Html rule wildcard.
  */
 export class Wildcard {
     private readonly regexp: RegExp;
@@ -9,9 +9,9 @@ export class Wildcard {
     private readonly shortcut: string;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param pattern
+     * @param pattern Wildcard pattern.
      */
     constructor(pattern: string) {
         this.regexp = new RegExp(Wildcard.wildcardToRegex(pattern), 'i');
@@ -22,8 +22,8 @@ export class Wildcard {
      * Returns 'true' if input text is matching wildcard.
      * This method first checking shortcut -- if shortcut exists in input string -- than it checks regexp.
      *
-     * @param input Input string
-     * @return boolean if input string matches wildcard
+     * @param input Input string.
+     * @returns Boolean if input string matches wildcard.
      */
     public matches(input: string): boolean {
         if (!input) {
@@ -38,10 +38,10 @@ export class Wildcard {
     }
 
     /**
-     * Converts wildcard to regular expression
+     * Converts wildcard to regular expression.
      *
-     * @param pattern The wildcard pattern to convert
-     * @return string A regex equivalent of the given wildcard
+     * @param pattern The wildcard pattern to convert.
+     * @returns A regex equivalent of the given wildcard.
      */
     private static wildcardToRegex(pattern: string): string {
         const specials = [
@@ -58,10 +58,10 @@ export class Wildcard {
     }
 
     /**
-     * Extracts longest string that does not contain * or ? symbols.
+     * Extracts the longest string that does not contain "*" or "?" symbols.
      *
-     * @param pattern Wildcard pattern
-     * @return Longest string without special symbols
+     * @param pattern Wildcard pattern.
+     * @returns Longest string without special symbols.
      */
     private static extractShortcut(pattern: string): string {
         const wildcardChars = ['*', '?'];

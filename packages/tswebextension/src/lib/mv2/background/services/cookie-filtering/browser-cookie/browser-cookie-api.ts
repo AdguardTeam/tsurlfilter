@@ -1,20 +1,22 @@
-/* istanbul ignore file */
 /* eslint-disable class-methods-use-this */
 import browser, { Cookies } from 'webextension-polyfill';
 import { logger } from '@adguard/tsurlfilter';
+
 import ParsedCookie from '../parsed-cookie';
+
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
 
 /**
- * Cookie api implementation
+ * Cookie api implementation.
  */
 export default class BrowserCookieApi {
     /**
-     * Removes cookie
+     * Removes cookie.
      *
-     * @param name
-     * @param url
+     * @param name Cookie name.
+     * @param url Request url.
+     * @returns True if cookie was removed.
      */
     async removeCookie(name: string, url: string): Promise<boolean> {
         try {
@@ -28,9 +30,9 @@ export default class BrowserCookieApi {
     }
 
     /**
-     * Updates cookie
+     * Updates cookie.
      *
-     * @param cookie Cookie for update
+     * @param cookie Cookie for update.
      */
     async modifyCookie(cookie: ParsedCookie): Promise<boolean> {
         try {
@@ -45,6 +47,12 @@ export default class BrowserCookieApi {
         return false;
     }
 
+    /**
+     * Converts cookie to SetDetailsType.
+     *
+     * @param cookie Cookie for convert.
+     * @returns SetDetailsType.
+     */
     private static convertToSetDetailsType(cookie: ParsedCookie): SetDetailsType {
         return {
             /**
@@ -100,9 +108,10 @@ export default class BrowserCookieApi {
     }
 
     /**
-     * Returns same-site type
+     * Returns same-site type.
      *
-     * @param sameSite
+     * @param sameSite Same-site string.
+     * @returns Same-site status or undefined if same-site is not specified.
      */
     private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus | undefined {
         if (sameSite) {

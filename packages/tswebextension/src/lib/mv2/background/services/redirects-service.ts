@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { redirects, Redirect } from '@adguard/scriptlets';
+
 import { resourcesService } from './resources-service';
 
 // TODO: Update Redirect export
@@ -11,10 +12,16 @@ export interface RedirectsServiceInterface {
     createRedirectUrl: (title: string) => string | null;
 }
 
+/**
+ * Service for working with redirects.
+ */
 export class RedirectsService implements RedirectsServiceInterface {
     redirects: any;
 
-    public async start() {
+    /**
+     * Starts redirects service.
+     */
+    public async start(): Promise<void> {
         try {
             const rawYaml = await resourcesService.loadResource('redirects.yml');
             this.redirects = new Redirects(rawYaml);
@@ -23,6 +30,12 @@ export class RedirectsService implements RedirectsServiceInterface {
         }
     }
 
+    /**
+     * Returns redirect url for the specified title.
+     *
+     * @param title Redirect title.
+     * @returns Redirect url or null if redirect is not found.
+     */
     public createRedirectUrl(title: string | null): string | null {
         if (!title) {
             return null;

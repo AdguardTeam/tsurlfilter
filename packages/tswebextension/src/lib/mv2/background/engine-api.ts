@@ -23,7 +23,7 @@ import { documentBlockingService } from './services/document-blocking-service';
 import { USER_FILTER_ID } from '../../common/constants';
 
 /**
- * Request Match Query
+ * Request Match Query.
  */
 export interface MatchQuery {
     requestUrl: string;
@@ -46,7 +46,7 @@ export interface EngineApiInterface {
     matchFrame: (frameUrl: string) => NetworkRule | null;
 
     /**
-     * Gets cosmetic result for the specified hostname and cosmetic options
+     * Gets cosmetic result for the specified hostname and cosmetic options.
      */
     getCosmeticResult: (url: string, option: CosmeticOption) => CosmeticResult;
 
@@ -56,13 +56,18 @@ export interface EngineApiInterface {
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
 /**
- * TSUrlFilter Engine wrapper
+ * TSUrlFilter Engine wrapper.
  */
 export class EngineApi implements EngineApiInterface {
     public isFilteringEnabled: boolean | undefined;
 
     private engine: Engine | undefined;
 
+    /**
+     * Starts engine.
+     *
+     * @param configuration Engine configuration.
+     */
     public async startEngine(configuration: ConfigurationMV2): Promise<void> {
         const {
             filters,
@@ -130,6 +135,12 @@ export class EngineApi implements EngineApiInterface {
         this.engine = engine;
     }
 
+    /**
+     * Searched for rules by match query.
+     *
+     * @param matchQuery Query against which the request would be matched.
+     * @returns Matching result or null.
+     */
     public matchRequest(matchQuery: MatchQuery): MatchingResult | null {
         if (!this.engine || !this.isFilteringEnabled) {
             return null;
@@ -156,6 +167,12 @@ export class EngineApi implements EngineApiInterface {
         return this.engine.matchRequest(request, frameRule);
     }
 
+    /**
+     * Matches current frame url and returns rule if found.
+     *
+     * @param frameUrl Frame url.
+     * @returns NetworkRule or null.
+     */
     public matchFrame(frameUrl: string): NetworkRule | null {
         if (!this.engine || !this.isFilteringEnabled) {
             return null;
@@ -164,6 +181,13 @@ export class EngineApi implements EngineApiInterface {
         return this.engine.matchFrame(frameUrl);
     }
 
+    /**
+     * Gets cosmetic result for the specified hostname and cosmetic options.
+     *
+     * @param url Request url.
+     * @param option Cosmetic options.
+     * @returns Cosmetic result.
+     */
     public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
         if (!this.engine || !this.isFilteringEnabled) {
             return new CosmeticResult();
@@ -175,6 +199,11 @@ export class EngineApi implements EngineApiInterface {
         return this.engine.getCosmeticResult(request, option);
     }
 
+    /**
+     * Simple getter for rules count.
+     *
+     * @returns Number of rules in the engine.
+     */
     public getRulesCount(): number {
         return this.engine ? this.engine.getRulesCount() : 0;
     }

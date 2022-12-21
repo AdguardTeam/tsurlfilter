@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import { WebRequest } from 'webextension-polyfill';
 import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
+
 import {
     defaultFilteringLog,
     FilteringEventType,
@@ -11,15 +12,15 @@ import { removeHeader } from '../utils/headers';
 import { RequestContext, requestContextStorage } from '../request';
 
 /**
- * Headers filtering service module
+ * Headers filtering service module.
  */
 export class HeadersService {
     private filteringLog: FilteringLogInterface;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param filteringLog
+     * @param filteringLog Filtering log.
      */
     constructor(filteringLog: FilteringLogInterface) {
         this.filteringLog = filteringLog;
@@ -29,8 +30,8 @@ export class HeadersService {
      * On before send headers handler.
      * Removes request headers.
      *
-     * @param context request context
-     * @return if headers modified
+     * @param context Request context.
+     * @returns True if headers were modified.
      */
     public onBeforeSendHeaders(context: RequestContext): boolean {
         const {
@@ -84,10 +85,10 @@ export class HeadersService {
 
     /**
      * On headers received handler.
-     * Remove response headers.
+     * Removes response headers.
      *
-     * @param context request context
-     * @return if headers modified
+     * @param context Request context.
+     * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {
         const {
@@ -140,11 +141,13 @@ export class HeadersService {
     }
 
     /**
-     * Applies rule to headers
+     * Applies rule to headers. Removes header from headers if rule matches.
+     * Important: this method modifies headers array as they are passed by reference.
      *
-     * @param headers
-     * @param rule
-     * @param isRequestHeaders
+     * @param headers Headers.
+     * @param rule Rule to apply if it has remove header modifier.
+     * @param isRequestHeaders Is request headers.
+     * @returns True if headers removed by rule.
      */
     private static applyRule(
         headers: WebRequest.HttpHeadersItemType[],

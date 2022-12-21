@@ -3,7 +3,7 @@ import { Wildcard } from './wildcard';
 import { HtmlRuleAttributes } from './html-rule-attributes';
 
 /**
- * Encapsulates html rule attributes parsing
+ * Encapsulates html rule attributes parsing.
  */
 export class HtmlRuleParser {
     private static ATTRIBUTE_START_MARK = '[';
@@ -29,9 +29,10 @@ export class HtmlRuleParser {
     private static DEFAULT_MAX_LENGTH = 8192;
 
     /**
-     * Parses html rule
+     * Parses html rule.
      *
-     * @param rule
+     * @param rule Rule to parse.
+     * @returns Parsed rule attributes.
      */
     public static parse(rule: CosmeticRule): HtmlRuleAttributes {
         const result = new HtmlRuleAttributes();
@@ -112,13 +113,13 @@ export class HtmlRuleParser {
     }
 
     /**
-     * Looks up next closing quotation
+     * Looks up next closing quotation starting from start index.
      * Skips double quotes in text like:
-     * [tag-content="teas""ernet"]
+     *  [tag-content="teas""ernet"].
      *
-     * @param text
-     * @param startIndex
-     * @return {number}
+     * @param text Text to search.
+     * @param startIndex Start index.
+     * @returns Index of closing double quotation `"` found, or `-1` if not found.
      */
     private static getClosingQuoteIndex(text: string, startIndex: number): number {
         let nextChar = HtmlRuleParser.QUOTES;

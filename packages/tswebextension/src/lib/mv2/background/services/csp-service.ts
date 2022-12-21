@@ -1,19 +1,20 @@
 import { getDomain } from 'tldts';
+
 import { ContentType, defaultFilteringLog, FilteringEventType } from '..';
 import { RequestBlockingApi, RequestContext, requestContextStorage } from '../request';
 
 const CSP_HEADER_NAME = 'Content-Security-Policy';
 
 /**
- * Content Security Policy Headers filtering service module
+ * Content Security Policy Headers filtering service module.
  */
 export class CspService {
     /**
-     * On headers received handler.
-     * Add CSP headers.
+     * Applies CSP rules to response headers and returns modified headers.
+     * It is applied when webRequest.onHeadersReceived event is fired.
      *
-     * @param context request context
-     * @return if headers modified
+     * @param context Request context.
+     * @returns True if headers were modified.
      */
     public static onHeadersReceived(context: RequestContext): boolean {
         const {

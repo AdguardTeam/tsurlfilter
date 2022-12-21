@@ -1,11 +1,13 @@
 /**
- * Utils class
+ * Utils class.
  */
 export class ElementUtils {
     /**
-     * Serialize HTML element
+     * Serialize HTML element.
      *
-     * @param element
+     * @param element Element to serialize.
+     *
+     * @returns String representation of the element.
      */
     public static elementToString(element: Element): string {
         const s = [];
@@ -28,10 +30,10 @@ export class ElementUtils {
     }
 
     /**
-     * Appends node children to the array
+     * Appends node children to the array.
      *
-     * @param node - element whose children we would like to add
-     * @param arrayWithNodes - array where we add children
+     * @param node Element whose children we would like to add.
+     * @param arrayWithNodes Array where we add children.
      */
     public static appendChildren(node: Element, arrayWithNodes: Element[]): void {
         const children = node.querySelectorAll('*');
@@ -43,10 +45,10 @@ export class ElementUtils {
     }
 
     /**
-     * Adds elements into array if they are not in the array yet
+     * Adds elements into array if they are not in the array yet.
      *
-     * @param {*} targetArray
-     * @param {*} sourceArray
+     * @param targetArray Array where we add elements.
+     * @param sourceArray Array with elements.
      */
     public static addUnique(targetArray: Element[], sourceArray: Element[]): void {
         if (sourceArray.length > 0) {
@@ -60,9 +62,9 @@ export class ElementUtils {
     }
 
     /**
-     * Removes all elements in array
+     * Removes all elements in array.
      *
-     * @param elements
+     * @param elements Array with elements.
      */
     public static removeElements(elements: Element[]): void {
         for (let i = 0; i < elements.length; i += 1) {
@@ -72,10 +74,12 @@ export class ElementUtils {
     }
 
     /**
-     * Parses hits info from style content
+     * Parses hits info from style content.
      *
-     * @param content style
-     * @param attributeMarker
+     * @param content Style.
+     * @param attributeMarker Attribute marker.
+     *
+     * @returns Info with filterId, ruleText or null.
      */
     public static parseInfo(content: string, attributeMarker: string): { filterId: number; ruleText: string } | null {
         if (!content || content.indexOf(attributeMarker) < 0) {
@@ -104,13 +108,17 @@ export class ElementUtils {
     }
 
     /**
-     * Parses hits info from style content
+     * Parses hits info from style content.
      *
-     * @param content style
-     * @param attributeMarker
+     * @param content Style.
+     * @param attributeMarker Attribute marker.
+     *
+     * @returns Info with filterId, ruleText or null.
      */
-    // eslint-disable-next-line max-len
-    public static parseExtendedStyleInfo(content: string, attributeMarker: string): { filterId: number; ruleText: string } | null {
+    public static parseExtendedStyleInfo(
+        content: string,
+        attributeMarker: string,
+    ): { filterId: number; ruleText: string } | null {
         const important = '!important';
         const indexOfImportant = content.lastIndexOf(important);
         if (indexOfImportant === -1) {
@@ -122,7 +130,11 @@ export class ElementUtils {
     }
 
     /**
-     * Unquotes specified value
+     * Unquotes specified value.
+     *
+     * @param value Value to unquote.
+     *
+     * @returns Unquoted value.
      */
     private static removeQuotes(value: string): string {
         if (value.length > 1

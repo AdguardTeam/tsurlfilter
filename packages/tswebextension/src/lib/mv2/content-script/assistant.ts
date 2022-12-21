@@ -3,9 +3,9 @@ import { adguardAssistant, Assistant } from '@adguard/assistant';
 import { MessageType, sendAppMessage } from '../../common';
 
 /**
- * Initializes assistant object
+ * Initializes assistant object.
  */
-export const initAssistant = () => {
+export const initAssistant = (): void => {
     if (window.top !== window || !(document.documentElement instanceof HTMLElement)) {
         return;
     }

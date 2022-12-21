@@ -16,7 +16,7 @@ import { ContentStream } from '@lib/mv2/background/services/content-filtering/co
 describe('Content filtering', () => {
     const requestId = '1';
 
-    const getCosmeticResult = () => {
+    const getCosmeticResult = (): CosmeticResult => {
         const cosmeticResult = new CosmeticResult();
 
         cosmeticResult.Html.append(new CosmeticRule('example.org$$script[tag-content="test"]', 1));

@@ -3,11 +3,11 @@ import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 import HttpHeaders = WebRequest.HttpHeaders;
 
 /**
- * Finds header object by header name (case insensitive)
+ * Finds header object by header name (case-insensitive).
  *
- * @param headers Headers collection
- * @param headerName Header name
- * @returns header value
+ * @param headers Headers collection.
+ * @param headerName Header name.
+ * @returns Found header, or null if not found.
  */
 export function findHeaderByName(headers: HttpHeaders, headerName: string): HttpHeadersItemType | null {
     for (let i = 0; i < headers.length; i += 1) {
@@ -22,21 +22,20 @@ export function findHeaderByName(headers: HttpHeaders, headerName: string): Http
 
 /**
  * TODO: Make function pure (don't modify headers, return new object instead)
- * Removes header from headers by name
+ * Removes header from headers by name.
  *
- * @param {Array} headers
- * @param {string} headerName
- * @returns {boolean} True if header were removed
+ * @param headers Headers collection.
+ * @param headerName Header name.
+ * @returns True if headers were removed.
  */
 export function removeHeader(headers: HttpHeaders, headerName: string): boolean {
     let removed = false;
-    if (headers) {
-        for (let i = headers.length - 1; i >= 0; i -= 1) {
-            const header = headers[i];
-            if (header.name.toLowerCase() === headerName.toLowerCase()) {
-                headers.splice(i, 1);
-                removed = true;
-            }
+
+    for (let i = headers.length - 1; i >= 0; i -= 1) {
+        const header = headers[i];
+        if (header.name.toLowerCase() === headerName.toLowerCase()) {
+            headers.splice(i, 1);
+            removed = true;
         }
     }
 
