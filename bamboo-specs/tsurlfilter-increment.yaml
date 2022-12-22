@@ -5,11 +5,11 @@ plan:
   key: TSURLFILTERINCR
   name: tsurlfilter - increment
 variables:
-  dockerContainer: adguard/node-ssh:14.18--0
+  dockerContainer: adguard/node-ssh:16.17--1
 
 stages:
   - Increment:
-      manual: 'false'
+      manual: 'true'
       final: 'false'
       jobs:
         - Increment
@@ -21,6 +21,13 @@ Increment:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
+    - stop-job:
+        success: 'true'
+        conditions:
+        - variable:
+            not-equals:
+              # Stop increment when current branch not 'master'
+              bamboo.planRepository.branchName: master
     - checkout:
         force-clean-build: 'true'
     - script:

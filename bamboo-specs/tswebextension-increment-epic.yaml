@@ -1,34 +1,33 @@
 ---
-# This plan describes two increments: one for tswebextension and another for tsurlfilter
-# This needs, because now we develop two packages in one branch
 version: 2
 plan:
   project-key: AJL
-  key: TSWEBEXTENSIONINCR
-  name: tswebextension - increment
+  key: TSWEBEXTENSIONINCREPIC
+  name: tswebextension - increment epic
 variables:
-  dockerContainer: adguard/node-ssh:14.18--0
+  dockerContainer: adguard/node-ssh:16.17--1
 
 stages:
-  - Increment-tswebextension:
-      manual: 'false'
+  - Increment:
+      manual: 'true'
       final: 'false'
       jobs:
-        - Increment-tswebextension
+        - Increment
 
-Increment-tswebextension:
+Increment:
   key: INCRTSWEBEXT
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
+    # Stop increment when current branch not 'epic/tswebextension',
+    # because tswebextension is only being worked on in the 'epic/tswebextension' branch
     - stop-job:
         success: 'true'
         conditions:
         - variable:
             not-equals:
-              # Stop build when current branch not 'epic/tswebextension'
               bamboo.planRepository.branchName: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
