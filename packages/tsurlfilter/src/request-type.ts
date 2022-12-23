@@ -24,8 +24,6 @@ export enum RequestType {
     WebSocket = 1 << 9,
     /** (navigator.sendBeacon()) $ping */
     Ping = 1 << 10,
-    /** (webrtc, in extension works via wrappers) $webrtc */
-    WebRtc = 1 << 11,
     /** any other request type */
-    Other = 1 << 12,
+    Other = 1 << 11,
 }

@@ -69,9 +69,9 @@ describe('RuleValidator', () => {
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
-    it('validates rules $webrtc modifier', () => {
+    it('invalidates rules $webrtc modifier', () => {
         const ruleText = '$webrtc,domain=browserleaks.com';
-        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
+        expect(RuleValidator.validate(ruleText).valid).toBeFalsy();
     });
 
     it('invalidates rules with $protobuf modifier', () => {

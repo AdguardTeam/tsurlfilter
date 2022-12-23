@@ -470,24 +470,6 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(undefined);
     });
 
-    // WebRTC resource type is not supported in Manifest V3
-    it('converts WebRTC connections rules', () => {
-        const filterId = 0;
-
-        const rules = createRulesFromText(
-            filterId,
-            ['@@$webrtc,domain=walla.co.il'],
-        );
-
-        const {
-            declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert(
-            [[filterId, rules]],
-        );
-
-        expect(declarativeRule).toEqual(undefined);
-    });
-
     // Cookies rules are not supported
     it('converts $cookies rules', () => {
         const filterId = 0;

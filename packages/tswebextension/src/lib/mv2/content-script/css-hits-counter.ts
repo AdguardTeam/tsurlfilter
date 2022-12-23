@@ -361,6 +361,8 @@ export class CssHitsCounter {
      */
     private startObserver(): void {
         if (this.observer) {
+            // TODO: Check, maybe we should observer for 'characterData' and
+            // 'characterDataOldValue' like it was in the old extension code
             this.observer.observe(document.documentElement, {
                 childList: true,
                 subtree: true,

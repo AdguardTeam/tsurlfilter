@@ -374,9 +374,6 @@ describe('NetworkRule constructor', () => {
         checkRequestType('ping', RequestType.Ping, true);
         checkRequestType('~ping', RequestType.Ping, false);
 
-        checkRequestType('webrtc', RequestType.WebRtc, true);
-        checkRequestType('~webrtc', RequestType.WebRtc, false);
-
         checkRequestType('document', RequestType.Document, true);
         checkRequestType('~document', RequestType.Document, false);
     });

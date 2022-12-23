@@ -74,12 +74,22 @@ const applyExtendedCss = (cssText: string): void => {
         try {
             const cookieController = new CookieController(
                 ({
-                    cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId,
+                    cookieName,
+                    cookieValue,
+                    cookieDomain,
+                    cookieRuleText,
+                    thirdParty,
+                    filterId,
                 }) => {
                     sendAppMessage({
                         type: MessageType.SAVE_COOKIE_LOG_EVENT,
                         payload: {
-                            cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId,
+                            cookieName,
+                            cookieValue,
+                            cookieDomain,
+                            cookieRuleText,
+                            thirdParty,
+                            filterId,
                         },
                     });
                 },
