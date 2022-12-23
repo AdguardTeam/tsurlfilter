@@ -21,7 +21,7 @@ module.exports = {
         '@typescript-eslint/indent': ['error', 4],
         'no-bitwise': 'off',
         'no-new': 'off',
-        'max-len': ['error', { code: 120 }],
+        'max-len': ['error', { code: 120, ignoreUrls: true }],
         'import-newlines/enforce': ['error', 3, 120],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',

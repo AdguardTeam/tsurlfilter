@@ -403,6 +403,7 @@ export class NetworkRule implements rule.IRule {
      * includes full rule shortcut.
      */
     match(request: Request, useShortcut = true): boolean {
+        // Regex rules should not be tested by shortcut
         if (useShortcut && !this.matchShortcut(request)) {
             return false;
         }
@@ -699,9 +700,13 @@ export class NetworkRule implements rule.IRule {
             || pattern === ''
             || pattern.length < SimpleRegex.MIN_GENERIC_RULE_LENGTH
         ) {
-            // Except cookie and removeparam rules, they have their own atmosphere
-            if (!(this.advancedModifier instanceof CookieModifier)
-                && !(this.advancedModifier instanceof RemoveParamModifier)) {
+            // Except cookie, removeparam rules and dns compatible rules, they have their own atmosphere
+            const hasCookieModifier = this.advancedModifier instanceof CookieModifier;
+            const hasRemoveParamModifier = this.advancedModifier instanceof RemoveParamModifier;
+            // https://github.com/AdguardTeam/tsurlfilter/issues/56
+            const isDnsCompatible = isCompatibleWith(CompatibilityTypes.Dns);
+
+            if (!hasCookieModifier && !hasRemoveParamModifier && !isDnsCompatible) {
                 if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
@@ -750,11 +755,18 @@ export class NetworkRule implements rule.IRule {
             this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
             this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
             this.setOptionEnabled(NetworkRuleOption.Content, true, true);
+            this.priorityWeight += 4;
         }
 
+        // $popup should work accumulatively with requestType modifiers
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1992
+        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== 0) {
+            this.permittedRequestTypes |= RequestType.Document;
+        } else if (this.isOptionEnabled(NetworkRuleOption.Popup)) {
+            this.permittedRequestTypes = RequestType.Document;
+        }
         // Rules of these types can be applied to documents only
         // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for allowlist rules.
-        // $popup - for url blocking
         if (
             this.isOptionEnabled(NetworkRuleOption.Jsinject)
             || this.isOptionEnabled(NetworkRuleOption.Elemhide)
@@ -762,7 +774,6 @@ export class NetworkRule implements rule.IRule {
             || this.isOptionEnabled(NetworkRuleOption.Urlblock)
             || this.isOptionEnabled(NetworkRuleOption.Genericblock)
             || this.isOptionEnabled(NetworkRuleOption.Generichide)
-            || this.isOptionEnabled(NetworkRuleOption.Popup)
         ) {
             this.permittedRequestTypes = RequestType.Document;
         }

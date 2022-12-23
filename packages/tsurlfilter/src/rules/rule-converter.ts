@@ -34,7 +34,16 @@ export class RuleConverter {
 
     private static FRAME_REPLACEMENT = '$1subdocument';
 
-    private static SCRIPT_HAS_TEXT_REGEX = /(##\^script:(has-text|contains))\((?!\/.+\/\))/i;
+    // eslint-disable-next-line max-len
+    private static SCRIPT_HAS_TEXT_REGEX = /##\^(script(\[[{a-z0-9-_.:}]*(="[{a-z0-9-_.:}]*")*\])*:(has-text|contains))\((?!\/.+\/\))/i;
+
+    private static SCRIPT_HAS_TEXT_REGEX_SHORT = /(##\^script:(has-text|contains))\((?!\/.+\/\))/i;
+
+    private static TAG_CONTENT_VALUE_REGEX = /\[tag-content="(.*?)"]/g;
+
+    private static ATTRIBUTE_REGEX = /(\[[{a-z0-9-_.:}]*(="[{a-z0-9-_.:}]*")*\])/i;
+
+    private static CSS_COMBINATORS_REGEX = />|\+|~/;
 
     private static SCRIPT_HAS_TEXT_REPLACEMENT = '$$$$script[tag-content="';
 
@@ -80,6 +89,8 @@ export class RuleConverter {
      * Rule masks
      */
     private static MASK_ELEMENT_HIDING = '##';
+
+    private static UBO_HTML_RULE_MASK = '##^';
 
     private static MASK_ELEMENT_HIDING_EXCEPTION = '#@#';
 
@@ -164,6 +175,10 @@ export class RuleConverter {
             return ruleWithConvertedOptions;
         }
 
+        if (converted.includes(RuleConverter.UBO_HTML_RULE_MASK)) {
+            throw new SyntaxError(`Invalid UBO script rule: ${converted}`);
+        }
+
         return [converted];
     }
 
@@ -187,14 +202,44 @@ export class RuleConverter {
      * @returns {string} converted rule
      */
     private static convertScriptHasTextToScriptTagContent(ruleText: string): string {
-        if (!ruleText.startsWith(SimpleRegex.MASK_COMMENT) && RuleConverter.SCRIPT_HAS_TEXT_REGEX.test(ruleText)) {
-            return `${
-                ruleText.replace(RuleConverter.SCRIPT_HAS_TEXT_REGEX, RuleConverter.SCRIPT_HAS_TEXT_REPLACEMENT)
-                    .slice(0, -1)
-            }"][max-length="262144"]`;
+        if (ruleText.startsWith(SimpleRegex.MASK_COMMENT)
+            || !RuleConverter.SCRIPT_HAS_TEXT_REGEX.test(ruleText)
+            || RuleConverter.CSS_COMBINATORS_REGEX.test(ruleText)) {
+            return ruleText;
         }
 
-        return ruleText;
+        let convertedRuleText = ruleText;
+        let attributeStrings: string[] | null = [];
+
+        // Cut all attributes substrings from rule text into array
+        // https://github.com/AdguardTeam/tsurlfilter/issues/55
+        if (RuleConverter.ATTRIBUTE_REGEX.test(ruleText)) {
+            const globalAttributeRegExp = new RegExp(RuleConverter.ATTRIBUTE_REGEX, 'gi');
+            attributeStrings = ruleText.match(globalAttributeRegExp);
+            attributeStrings?.forEach((attrStr) => {
+                convertedRuleText = convertedRuleText.replace(attrStr, '');
+            });
+        }
+
+        // Convert base of the rule ##^script:has-text(text) to $$script[tag-content='text']
+        convertedRuleText = `${
+            convertedRuleText
+                .replace(RuleConverter.SCRIPT_HAS_TEXT_REGEX_SHORT, RuleConverter.SCRIPT_HAS_TEXT_REPLACEMENT)
+                .slice(0, -1)
+        }"][max-length="262144"]`;
+
+        // Escape double quotes inside tag-content, like it is required by AdGuard syntax
+        // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content
+        convertedRuleText = convertedRuleText.replace(RuleConverter.TAG_CONTENT_VALUE_REGEX, (match, group) => {
+            return `[tag-content="${group.replace(/"/g, '""')}"]`;
+        });
+
+        // Return attributes if there were any
+        attributeStrings?.forEach((attrStr) => {
+            convertedRuleText += attrStr;
+        });
+
+        return convertedRuleText;
     }
 
     /**

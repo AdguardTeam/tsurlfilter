@@ -1,5 +1,6 @@
 import * as utils from '../utils/utils';
 import { IAdvancedModifier } from './advanced-modifier';
+import { SimpleRegex } from '../rules/simple-regex';
 
 /**
  * Replace modifier class
@@ -53,7 +54,8 @@ export class ReplaceModifier implements IAdvancedModifier {
         const pattern = new RegExp(parts[0], modifiers);
 
         // unescape replacement alias
-        const replacement = parts[1].replace(/\\\$/g, '$');
+        let replacement = parts[1].replace(/\\\$/g, '$');
+        replacement = SimpleRegex.unescapeSpecials(replacement);
 
         const apply = (input: string): string => input.replace(pattern, replacement);
 

@@ -733,6 +733,22 @@ describe('TestNewMatchingResult - redirect-rule rules', () => {
         expect(found).not.toBeNull();
         expect(found!.getText()).toBe('||example.org^$redirect=noopjs');
     });
+
+    it('returns redirect-rule if there is blocking rule', () => {
+        const blockingRule = new NetworkRule('!/googleads.$~script,domain=~github.com|~github.io', 0);
+        const redirectRuleRule = new NetworkRule(
+            '||googleads.g.doubleclick.net/pagead/id^$xmlhttprequest,redirect=nooptext',
+            0,
+        );
+        const rules = [
+            blockingRule,
+            redirectRuleRule,
+        ];
+
+        const result = new MatchingResult(rules, null);
+        const resultRule = result.getBasicResult();
+        expect(resultRule).toBe(redirectRuleRule);
+    });
 });
 
 describe('TestNewMatchingResult - removeparam rules', () => {

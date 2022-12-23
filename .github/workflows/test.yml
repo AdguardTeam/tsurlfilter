@@ -2,7 +2,7 @@
 name: test
 
 env:
-  NODE_VERSION: 12
+  NODE_VERSION: 16
 
 on:
   push:
@@ -17,29 +17,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           # Number of commits to fetch. 0 indicates all history.
           fetch-depth: 0
       - name: Setup Node.js environment
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Get npm cache directory
-        id: npm-cache
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - name: Set up npm cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.npm-cache.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          # actions/setup-node@v3 already has caching under hood.
+          cache: 'yarn'
       - name: Run bash commands
         shell: bash
         run: |
-          npm install
+          ls -alt
+
+          # install deps
+          npx lerna@4 bootstrap
+
+          # run linter
+          npx lerna@4 run --scope @adguard/tsurlfilter lint
+
+          # run tests
+          npx lerna@4 run --scope @adguard/tsurlfilter test:prod
 
           npx lerna@4 bootstrap
           npx lerna@4 exec npm install
@@ -47,7 +47,7 @@ jobs:
           npx lerna@4 run --scope @adguard/tsurlfilter test:prod
           npx lerna@4 run --scope @adguard/tsurlfilter build
   notify:
-    needs: [test]
+    needs: [ test ]
     # Secrets are not passed to workflows that are triggered by a pull request from a fork
     if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest

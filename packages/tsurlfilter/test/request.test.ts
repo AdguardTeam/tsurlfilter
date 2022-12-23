@@ -50,6 +50,15 @@ describe('Creating request', () => {
         expect(request.thirdParty).toEqual(true);
     });
 
+    it('detects third-party properly for IP domains', () => {
+        const request = new Request('https://example.org', 'https://1.2.3.4/', RequestType.Other);
+        expect(request.sourceHostname).toEqual('1.2.3.4');
+        expect(request.thirdParty).toEqual(true);
+
+        const request2 = new Request('https://1.2.3.4/', 'https://1.2.3.4/', RequestType.Other);
+        expect(request2.thirdParty).toEqual(false);
+    });
+
     it('parses subdomains', () => {
         const request = new Request('http://sub.sub.example.org/part', 'http://sub.example.org', RequestType.Other);
         expect(request.subdomains.sort()).toEqual([
@@ -63,9 +72,16 @@ describe('Creating request', () => {
     it('parses subdomains with complex tld', () => {
         const request = new Request('http://sub.sub.example.org.uk/part', 'http://sub.example.org', RequestType.Other);
         expect(request.subdomains.sort())
-            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk'].sort());
+            .toEqual(['sub.sub.example.org.uk', 'sub.example.org.uk', 'example.org.uk', 'org.uk', 'uk'].sort());
         expect(request.sourceSubdomains.sort())
             .toEqual(['sub.example.org', 'example.org', 'org'].sort());
+    });
+
+    it('parses domains with complex public suffixes', () => {
+        // eslint-disable-next-line max-len
+        const request = new Request('https://www.city.toyota.aichi.jp/part', 'https://www.city.toyota.aichi.jp/', RequestType.Other);
+        expect(request.subdomains.sort())
+            .toEqual(['www.city.toyota.aichi.jp', 'city.toyota.aichi.jp', 'toyota.aichi.jp', 'aichi.jp', 'jp'].sort());
     });
 
     it('parses subdomains for localhost', () => {

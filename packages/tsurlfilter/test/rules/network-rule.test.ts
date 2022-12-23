@@ -483,6 +483,18 @@ describe('NetworkRule constructor', () => {
         expect(rule.isOptionDisabled(NetworkRuleOption.Document));
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
     });
+
+    it('works if popup modifier works properly with other request type modifiers', () => {
+        let rule = new NetworkRule('||example.org^$popup', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+
+        rule = new NetworkRule('||example.org^$script,image,popup', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document | RequestType.Script | RequestType.Image);
+    });
 });
 
 describe('NetworkRule.match', () => {
@@ -499,12 +511,40 @@ describe('NetworkRule.match', () => {
     });
 
     it('works when $match-case is applied properly', () => {
+        // Rule's url has upper case characters
         let rule = new NetworkRule('||example.org/PATH$match-case', 0);
         let request = new Request('https://example.org/path', null, RequestType.Other);
         expect(rule.match(request)).toEqual(false);
 
         rule = new NetworkRule('||example.org/PATH$match-case', 0);
         request = new Request('https://example.org/PATH', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        // Rule's url have upper case characters
+        rule = new NetworkRule('||example.org/path$match-case', 0);
+        request = new Request('https://example.org/PATH', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('||example.org/path$match-case', 0);
+        request = new Request('https://example.org/path', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        // Rule's short url has upper case characters
+        rule = new NetworkRule('/FILE.js$match-case', 0);
+        request = new Request('https://example.org/file.js', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('/FILE.js$match-case', 0);
+        request = new Request('https://example.org/FILE.js', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        // Rule's short url doesn't have upper case characters
+        rule = new NetworkRule('/file.js$match-case', 0);
+        request = new Request('https://example.org/FILE.js', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = new NetworkRule('/file.js$match-case', 0);
+        request = new Request('https://example.org/file.js', null, RequestType.Other);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -988,6 +1028,20 @@ describe('NetworkRule.isHigherPriority', () => {
     }
 
     it('checks rule priority', () => {
+        // $document --> $elemhide, $content, $urlblock, $jsinject, $extension
+        compareRulesPriority('@@||example.org$document', '@@||example.org$elemhide', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$content', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$urlblock', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$jsinject', true);
+        compareRulesPriority('@@||example.org$document', '@@||example.org$extension', true);
+
+        // $elemhide, $content, $urlblock, $jsinject, $extension -->  $document
+        compareRulesPriority('@@||example.org$elemhide', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$content', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$urlblock', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$jsinject', '@@||example.org$document', false);
+        compareRulesPriority('@@||example.org$extension', '@@||example.org$document', false);
+
         compareRulesPriority('@@||example.org$important', '@@||example.org$important', false);
         compareRulesPriority('@@||example.org$important', '||example.org$important', true);
         compareRulesPriority('@@||example.org$important', '@@||example.org', true);

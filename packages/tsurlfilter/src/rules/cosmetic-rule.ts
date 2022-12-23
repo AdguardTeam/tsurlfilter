@@ -72,11 +72,47 @@ export enum CosmeticRuleType {
  * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
  * have extended css marker
  */
-export const EXT_CSS_PSEUDO_INDICATORS = ['[-ext-has=', '[-ext-contains=', '[-ext-has-text=',
-    '[-ext-matches-css=', '[-ext-matches-css-before=', '[-ext-matches-css-after=', ':has(', ':has-text(',
-    ':contains(', ':matches-css(', ':matches-css-before(', ':matches-css-after(', ':-abp-has(', ':-abp-contains(',
-    ':if(', ':if-not(', ':xpath(', ':nth-ancestor(', ':upward(', ':remove(',
-    ':matches-attr(', ':matches-property(', ':is('];
+export const EXT_CSS_PSEUDO_INDICATORS = [
+    /**
+     * Pseudo-classes :is(), and :not() may use native implementation
+     * so they are not listed here
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
+     */
+    /**
+     * :has() should also be conditionally considered as extended and should not be in this list
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+     * but there is a bug with content blocker in safari
+     * https://bugs.webkit.org/show_bug.cgi?id=248868
+     *
+     * TODO: remove ':has(' later
+     */
+    ':has(',
+    ':contains(',
+    ':matches-css(',
+    ':matches-attr(',
+    ':matches-property(',
+    ':xpath(',
+    ':upward(',
+    ':nth-ancestor(',
+    ':remove(',
+    // aliases for :has()
+    ':-abp-has(',
+    // aliases for :contains()
+    ':has-text(',
+    ':-abp-contains(',
+    // old syntax
+    '[-ext-has=',
+    '[-ext-contains=',
+    '[-ext-has-text=',
+    '[-ext-matches-css=',
+    '[-ext-matches-css-before=',
+    '[-ext-matches-css-after=',
+    // obsolete since ExtendedCss v2.0.2 but still compatible
+    // https://github.com/AdguardTeam/ExtendedCss/releases/tag/v2.0.2
+    ':matches-css-before(',
+    ':matches-css-after(',
+];
 
 /**
  * Implements a basic cosmetic rule.
@@ -125,16 +161,6 @@ export class CosmeticRule implements rule.IRule {
      * Js script to execute
      */
     public script: string | undefined = undefined;
-
-    /**
-     * Js script to execute - debug
-     */
-    public scriptVerbose: string | undefined = undefined;
-
-    /**
-     * Needed to avoid reinvoking scriptVerbose for scriptlets rules
-     */
-    public verboseInvokedForDomain?: string | undefined = undefined;
 
     /**
      * Object with script code ready to execute and debug, domain values
@@ -373,7 +399,7 @@ export class CosmeticRule implements rule.IRule {
                 restrictedDomains,
             } = CosmeticRuleParser.parseRulePattern(pattern);
 
-            if (path) {
+            if (path || path === '') {
                 this.pathModifier = new Pattern(path);
             }
 

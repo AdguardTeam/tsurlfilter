@@ -1,3 +1,4 @@
+import { SEPARATOR } from '../common/constants';
 import { IAdvancedModifier } from './advanced-modifier';
 
 /**
@@ -38,11 +39,6 @@ export class BaseValuesModifier implements IValuesModifier {
     private readonly value: string;
 
     /**
-     * Separator between values
-     */
-    protected SEPARATOR = '|';
-
-    /**
      * Parses the values string
      *
      * @param values - values string
@@ -59,7 +55,7 @@ export class BaseValuesModifier implements IValuesModifier {
         const permittedValues: string[] = [];
         const restrictedValues: string[] = [];
 
-        const parts = values.split(this.SEPARATOR);
+        const parts = values.split(SEPARATOR);
         for (let i = 0; i < parts.length; i += 1) {
             let app = parts[i];
             let restricted = false;

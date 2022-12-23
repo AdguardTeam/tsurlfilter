@@ -1,12 +1,13 @@
 /**
  * Compatibility types are used to configure engine for better support of different libraries
  * For example:
- *  extension doesnt support $app modifier. So if we set in configuration CompatibilityTypes.extension,
+ *  extension doesn't support $app modifier. So if we set in configuration CompatibilityTypes.Extension,
  *  engine would ignore rules with $app modifier
  */
 export enum CompatibilityTypes {
     Extension = 1 << 0,
     CoreLibs = 1 << 1,
+    Dns = 1 << 2,
 }
 
 /**

@@ -139,8 +139,9 @@ export class Request {
         this.domain = tldResult.domain!;
         this.subdomains = Request.getSubdomains(tldResult);
 
+        let sourceTldResult;
         if (sourceUrl) {
-            const sourceTldResult = parse(sourceUrl);
+            sourceTldResult = parse(sourceUrl);
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
             this.sourceSubdomains = Request.getSubdomains(sourceTldResult);
@@ -152,6 +153,8 @@ export class Request {
 
         if (this.sourceDomain) {
             this.thirdParty = this.domain !== this.sourceDomain;
+        } else if (sourceTldResult && sourceTldResult.isIp) {
+            this.thirdParty = this.hostname !== this.sourceHostname;
         } else {
             this.thirdParty = null;
         }
@@ -196,6 +199,14 @@ export class Request {
 
         if (publicSuffix) {
             subdomainsResult.push(publicSuffix);
+            // Extract subdomains from complex suffixes
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2037
+            // https://github.com/AdguardTeam/tsurlfilter/issues/57
+            for (let i = 0; i < publicSuffix.length; i += 1) {
+                if (publicSuffix[i] === '.') {
+                    subdomainsResult.push(publicSuffix.slice(i + 1));
+                }
+            }
         }
 
         subdomainsResult.push(domain);

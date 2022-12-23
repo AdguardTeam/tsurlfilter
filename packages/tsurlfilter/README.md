@@ -4,24 +4,45 @@
 
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
-*   [Idea](#idea)
-*   [Usage](#usage)
-    *   [API description](#api-description)
-        *   [Public classes](#public-classes)
-            *   [Engine](#engine)
-            *   [MatchingResult](#matching-result)
-            *   [CosmeticResult](#cosmetic-result)
-            *   [DnsEngine](#dns-engine)
-            *   [RuleConverter](#rule-converter)           
-            *   [RuleValidator](#rule-validator)
-            *   [RuleSyntaxUtils](#rule-syntax-utils)
-            *   [DeclarativeConverter](#declarative-converter)
-        
-    *   [Sample extensions](#sample-extensions)
-*   [Development](#development)
-    *   [NPM scripts](#npm-scripts)
-    *   [Excluding peer dependencies](#excluding-peer-dependencies)
-    *   [Git hooks](#git-hooks)
+- [TSUrlFilter](#tsurlfilter)
+  - [ Idea](#-idea)
+  - [ Usage](#-usage)
+    - [ API description](#-api-description)
+      - [ Public classes](#-public-classes)
+      - [ Engine](#-engine)
+        - [**Constructor**](#constructor)
+        - [**matchRequest**](#matchrequest)
+        - [**matchFrame**](#matchframe)
+        - [Starting engine](#starting-engine)
+        - [Matching requests](#matching-requests)
+        - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+      - [ MatchingResult](#-matchingresult)
+        - [**getBasicResult**](#getbasicresult)
+        - [**getCosmeticOption**](#getcosmeticoption)
+        - [**Other rules**](#other-rules)
+      - [ CosmeticResult](#-cosmeticresult)
+        - [Applying cosmetic result - css](#applying-cosmetic-result---css)
+        - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+      - [ DnsEngine](#-dnsengine)
+        - [**Constructor**](#constructor-1)
+        - [**match**](#match)
+        - [Matching hostname](#matching-hostname)
+      - [ RuleConverter](#-ruleconverter)
+        - [**convertRules**](#convertrules)
+      - [ RuleValidator](#-rulevalidator)
+        - [Public methods](#public-methods)
+      - [ RuleSyntaxUtils](#-rulesyntaxutils)
+        - [Public methods](#public-methods-1)
+      - [ DeclarativeConverter](#-declarativeconverter)
+        - [Public methods](#public-methods-2)
+        - [Problems](#problems)
+      - [ Content script classes](#-content-script-classes)
+      - [ CssHitsCounter](#-csshitscounter)
+        - [Initialization:](#initialization)
+  - [Development](#development)
+    - [ NPM scripts](#-npm-scripts)
+    - [ Excluding peerDependencies](#-excluding-peerdependencies)
+    - [ Git Hooks](#-git-hooks)
 
 ## <a id="idea"></a> Idea
 The idea is to have a single library that we can reuse for the following tasks:
@@ -326,6 +347,36 @@ Provides a functionality of conversion AG rules to manifest v3 declarative synta
      * @param ruleList
      */
     public convert(ruleList: IRuleList): DeclarativeRule[] {
+```
+##### Problems
+[QueryTransform](https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform)
+- Regexp is not supported in remove params
+- We cannot implement inversion in remove params
+- We cannot filter by request methods
+- Only one rule applies for a redirect. For this reason, different rules with the same url may not work. Example below:
+```
+Works   ||testcases.adguard.com$removeparam=p1case6|p2case6
+
+Failed  ||testcases.adguard.com$removeparam=p1case6
+Works   ||testcases.adguard.com$removeparam=p2case6
+```
+
+#### <a id="content-script-classes"></a> Content script classes
+Classes provided for page context:
+
+#### <a id="css-hits-counter"></a> CssHitsCounter
+Class represents collecting css style hits process.
+
+##### Initialization:
+```
+    const cssHitsCounter = new CssHitsCounter((stats) => {
+        chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
+    });
+```
+Works   ||testcases.adguard.com$removeparam=p1case6|p2case6
+
+Failed  ||testcases.adguard.com$removeparam=p1case6
+Works   ||testcases.adguard.com$removeparam=p2case6
 ```
 
 ## Development

@@ -5,6 +5,9 @@
 !include 'tsurlfilter-increment.yaml'
 
 ---
+!include 'tsurlfilter-increment-epic.yaml'
+
+---
 !include 'tsurlfilter-build.yaml'
 
 ---
@@ -17,9 +20,6 @@
 !include 'tswebextension-tests.yaml'
 
 ---
-!include 'epic-increment.yaml'
-
----
 !include 'tswebextension-build.yaml'
 
 ---
@@ -27,6 +27,9 @@
 
 ---
 !include 'tswebextension-permissions.yaml'
+
+---
+!include 'tswebextension-increment-epic.yaml'
 
 ---
 !include 'adguard-api-build.yaml'

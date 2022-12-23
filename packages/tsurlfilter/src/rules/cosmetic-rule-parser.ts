@@ -150,6 +150,12 @@ export class CosmeticRuleParser {
             const modifierText = modifiersTextArray[i];
             const assignerIndex = modifierText.indexOf(Assigner);
 
+            if (modifierText === 'path') {
+                // Empty path modifier without assigner and value will match only main page
+                modifiers[modifierText] = '';
+                continue;
+            }
+
             if (assignerIndex === -1) {
                 throw new SyntaxError('Modifier must have assigned value');
             }
@@ -191,7 +197,7 @@ export class CosmeticRuleParser {
         const modifiers = CosmeticRuleParser.parseRuleModifiers(modifiersText);
 
         if (modifiers) {
-            if (modifiers.path) {
+            if (modifiers.path || modifiers.path === '') {
                 path = modifiers.path;
 
                 if (SimpleRegex.isRegexPattern(path)) {

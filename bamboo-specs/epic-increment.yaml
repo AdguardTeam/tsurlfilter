@@ -39,6 +39,9 @@ Increment-tswebextension:
             set -e
             set -x
 
+            # Fix mixed logs
+            exec 2>&1
+
             ls -alt
 
             # Increment tswebextension

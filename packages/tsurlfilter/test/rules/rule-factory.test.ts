@@ -2,6 +2,7 @@ import { RuleFactory } from '../../src/rules/rule-factory';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { HostRule } from '../../src/rules/host-rule';
+import { CompatibilityTypes, setConfiguration } from '../../src';
 
 describe('RuleFactory Builder Test', () => {
     it('works if builder creates correct rules', () => {
@@ -62,6 +63,20 @@ describe('RuleFactory Builder Test', () => {
 
         rule = RuleFactory.createRule('127.0.0.1 localhost', 1, false, false, true);
         expect(rule).toBeFalsy();
+    });
+
+    // https://github.com/AdguardTeam/tsurlfilter/issues/56
+    it('creates rules without domains or apps for dns compatible config', () => {
+        const config = {
+            engine: 'extension',
+            version: '1.0',
+            verbose: false,
+            compatibility: CompatibilityTypes.Dns,
+        };
+
+        setConfiguration(config);
+        const rule = RuleFactory.createRule('*$denyallow=org|com|example.net', 1, false, true, false);
+        expect(rule).toBeTruthy();
     });
 });
 

@@ -118,7 +118,12 @@ export class Pattern {
             return false;
         }
 
-        if (this.patternShortcut) {
+        const pathIsEmptyString = this.pattern === '';
+        // No-value $path should match root URL
+        if (pathIsEmptyString && path === '/') {
+            return true;
+        }
+        if (!pathIsEmptyString && this.patternShortcut) {
             return this.matchShortcut(path);
         }
 
@@ -148,8 +153,9 @@ export class Pattern {
         this.prepared = true;
 
         // If shortcut and pattern are the same, we don't need to actually compile
-        // a regex and can simply use matchShortcut instead.
-        if (this.pattern === this.shortcut) {
+        // a regex and can simply use matchShortcut instead,
+        // except for the $match-case modifier
+        if (this.pattern === this.shortcut && !this.matchcase) {
             this.patternShortcut = true;
             return;
         }
