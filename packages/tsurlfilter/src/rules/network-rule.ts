@@ -1167,12 +1167,6 @@ export class NetworkRule implements rule.IRule {
             case NOT_MARK + OPTIONS.PING:
                 this.setRequestType(RequestType.Ping, false);
                 break;
-            case OPTIONS.WEBRTC:
-                this.setRequestType(RequestType.Webrtc, true);
-                break;
-            case NOT_MARK + OPTIONS.WEBRTC:
-                this.setRequestType(RequestType.Webrtc, false);
-                break;
 
             // Special modifiers
             case OPTIONS.BADFILTER:

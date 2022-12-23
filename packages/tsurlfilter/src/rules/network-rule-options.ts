@@ -29,7 +29,6 @@ export const NETWORK_RULE_OPTIONS = {
     WEBSOCKET: 'websocket',
     OTHER: 'other',
     PING: 'ping',
-    WEBRTC: 'webrtc',
     BADFILTER: 'badfilter',
     CSP: 'csp',
     REPLACE: 'replace',

@@ -1,5 +1,11 @@
 # TSUrlFilter Changelog
 
+## v1.0.66
+
+### Removed
+
+- Support of $webrtc modifier
+
 
 ## v1.0.65
 
