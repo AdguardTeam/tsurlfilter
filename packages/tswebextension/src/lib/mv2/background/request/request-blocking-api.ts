@@ -3,7 +3,7 @@ import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilte
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { documentBlockingService } from '../services/document-blocking-service';
-import { redirectsService } from '../services/redirects-service';
+import { redirectsService } from '../services/redirects/redirects-service';
 import { engineApi } from '../engine-api';
 import { tabsApi } from '../tabs';
 
@@ -121,7 +121,7 @@ export class RequestBlockingApi {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-            const redirectUrl = redirectsService.createRedirectUrl(rule.getAdvancedModifierValue());
+            const redirectUrl = redirectsService.createRedirectUrl(rule.getAdvancedModifierValue(), requestUrl);
             if (redirectUrl) {
                 RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
                 return { redirectUrl };

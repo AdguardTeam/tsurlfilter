@@ -5,7 +5,7 @@ import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
-import { redirectsService } from './services/redirects-service';
+import { redirectsService } from './services/redirects/redirects-service';
 
 import { messagesApi } from './messages-api';
 import { AppInterface, defaultFilteringLog } from '../../common';

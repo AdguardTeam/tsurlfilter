@@ -109,7 +109,7 @@
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.62",
-    "@adguard/scriptlets": "^1.7.19",
+    "@adguard/scriptlets": "^1.7.20",
     "bowser": "2.11.0",
     "commander": "9.4.1",
     "deepmerge": "4.2.2",
@@ -120,7 +120,8 @@
     "tldts": "^5.7.97",
     "tslib": "2.4.0",
     "webextension-polyfill": "0.9.0",
-    "zod": "3.19.1"
+    "zod": "3.19.1",
+    "lru_map": "0.4.1"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "3.1.9",

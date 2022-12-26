@@ -4,7 +4,7 @@ export interface ResourcesServiceInterface {
     init: (warDir: string) => void;
     stop: () => void;
 
-    createResourceUrl: (path: string) => string;
+    createResourceUrl: (path: string, params: URLSearchParams) => string;
     loadResource: (path: string) => Promise<string>;
 }
 
@@ -65,16 +65,20 @@ export class ResourcesService implements ResourcesServiceInterface {
      * Creates url for war file.
      *
      * @param path Resource relative path.
+     * @param params Additional params appended to url, by default empty.
      * @throws Error, if web accessible resources path is not defined.
      *
      * @returns Url to resource with secret param.
      */
-    public createResourceUrl(path: string): string {
+    public createResourceUrl(path: string, params: URLSearchParams = new URLSearchParams()): string {
         if (!this.warDir) {
             throw new Error('Resources path is not defined. Did you init the service?');
         }
 
-        return browser.runtime.getURL(`/${this.warDir}/${path}${this.createSecretParam()}`);
+        const secretParams = new URLSearchParams(this.createSecretParam());
+        const resultParams = new URLSearchParams([...secretParams, ...params]);
+
+        return browser.runtime.getURL(`/${this.warDir}/${path}?${resultParams.toString()}`);
     }
 
     /**
