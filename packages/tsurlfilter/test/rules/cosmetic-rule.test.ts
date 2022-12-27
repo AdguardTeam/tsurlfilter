@@ -443,10 +443,11 @@ describe('CosmeticRule.CSS', () => {
     });
 
     it('throws error on invalid pseudo class', () => {
-        const selector = 'test:matches(.foo)';
+        const pseudoClass = 'matches';
+        const selector = `test:${pseudoClass}(.foo)`;
         expect(() => {
             new CosmeticRule(`example.org##${selector}`, 0);
-        }).toThrow(new SyntaxError(`Unknown pseudo class: ${selector}`));
+        }).toThrow(new SyntaxError(`Unknown pseudo-class ':${pseudoClass}()' in selector: '${selector}'`));
     });
 
     it('respects escaped colons when validates pseudo classes', () => {

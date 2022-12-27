@@ -37,6 +37,7 @@ export const NETWORK_RULE_OPTIONS = {
     REDIRECTRULE: 'redirect-rule',
     REMOVEPARAM: 'removeparam',
     REMOVEHEADER: 'removeheader',
+    JSONPRUNE: 'jsonprune',
     APP: 'app',
     NETWORK: 'network',
     EXTENSION: 'extension',

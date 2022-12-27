@@ -267,6 +267,22 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
     });
 
+    it('checks jsonprune modifier compatibility', () => {
+        let correct;
+
+        correct = new NetworkRule('||example.org/*/*/$xmlhttprequest,jsonprune=\\$..[ac\\, ab]', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org/*/*/$jsonprune=\\$..[ac\\, ab],xmlhttprequest', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org/*/*/$xmlhttprequest,jsonprune=\\$.data.*.attributes', 0);
+        expect(correct).toBeTruthy();
+
+        // TODO: add more specific jsonprune tests during the implementation
+        // https://github.com/AdguardTeam/tsurlfilter/issues/71
+    });
+
     it('works when it handles wide rules with $domain properly', () => {
         const rule = new NetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);
