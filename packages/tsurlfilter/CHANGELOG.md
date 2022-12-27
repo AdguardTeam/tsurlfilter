@@ -1,5 +1,16 @@
 # TSUrlFilter Changelog
 
+## v1.0.67
+
+### Added
+
+- Simple support of $jsonprune modifier — just for compiler validation
+
+### Changed
+
+- Improved selector validation unknown pseudo-class error
+
+
 ## v1.0.66
 
 ### Removed

@@ -69,6 +69,14 @@ describe('RuleValidator', () => {
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
+    it('validates jsonprune modifier', () => {
+        // TODO: remove following comment and setConfiguration() after the implementation
+        // $jsonprune is not implemented for extension yet
+        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        const ruleText = '||example.org/*/*/$xmlhttprequest,jsonprune=\\$..[ac\\, ab]';
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
+    });
+
     it('invalidates rules $webrtc modifier', () => {
         const ruleText = '$webrtc,domain=browserleaks.com';
         expect(RuleValidator.validate(ruleText).valid).toBeFalsy();

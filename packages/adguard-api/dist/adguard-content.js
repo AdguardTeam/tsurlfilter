@@ -25234,6 +25234,7 @@ var adguardAssistant = isMobile(navigator.userAgent) ? adguardAssistantMini : ad
         REDIRECTRULE: 'redirect-rule',
         REMOVEPARAM: 'removeparam',
         REMOVEHEADER: 'removeheader',
+        JSONPRUNE: 'jsonprune',
         APP: 'app',
         NETWORK: 'network',
         EXTENSION: 'extension',
@@ -35819,37 +35820,39 @@ var adguardAssistant = isMobile(navigator.userAgent) ? adguardAssistantMini : ad
         NetworkRuleOption[NetworkRuleOption["RemoveParam"] = 1048576] = "RemoveParam";
         /** $removeheader modifier */
         NetworkRuleOption[NetworkRuleOption["RemoveHeader"] = 2097152] = "RemoveHeader";
+        /** $jsonprune modifier */
+        NetworkRuleOption[NetworkRuleOption["JsonPrune"] = 4194304] = "JsonPrune";
         // Compatibility dependent
         /** $network modifier */
-        NetworkRuleOption[NetworkRuleOption["Network"] = 4194304] = "Network";
+        NetworkRuleOption[NetworkRuleOption["Network"] = 8388608] = "Network";
         /** dns modifiers */
-        NetworkRuleOption[NetworkRuleOption["Client"] = 8388608] = "Client";
-        NetworkRuleOption[NetworkRuleOption["DnsRewrite"] = 16777216] = "DnsRewrite";
-        NetworkRuleOption[NetworkRuleOption["DnsType"] = 33554432] = "DnsType";
-        NetworkRuleOption[NetworkRuleOption["Ctag"] = 67108864] = "Ctag";
+        NetworkRuleOption[NetworkRuleOption["Client"] = 16777216] = "Client";
+        NetworkRuleOption[NetworkRuleOption["DnsRewrite"] = 33554432] = "DnsRewrite";
+        NetworkRuleOption[NetworkRuleOption["DnsType"] = 67108864] = "DnsType";
+        NetworkRuleOption[NetworkRuleOption["Ctag"] = 134217728] = "Ctag";
         // Document
-        NetworkRuleOption[NetworkRuleOption["Document"] = 134217728] = "Document";
+        NetworkRuleOption[NetworkRuleOption["Document"] = 268435456] = "Document";
         // Groups (for validation)
         /** Blacklist-only modifiers */
         NetworkRuleOption[NetworkRuleOption["BlacklistOnly"] = 12288] = "BlacklistOnly";
         /** Allowlist-only modifiers */
         NetworkRuleOption[NetworkRuleOption["AllowlistOnly"] = 4088] = "AllowlistOnly";
         /** Options supported by host-level network rules * */
-        NetworkRuleOption[NetworkRuleOption["OptionHostLevelRules"] = 126353412] = "OptionHostLevelRules";
+        NetworkRuleOption[NetworkRuleOption["OptionHostLevelRules"] = 252182532] = "OptionHostLevelRules";
         /**
          * Removeparam compatible modifiers
          *
          * $removeparam rules are compatible only with content type modifiers ($script, $stylesheet, etc)
          * and this list of modifiers:
          */
-        NetworkRuleOption[NetworkRuleOption["RemoveParamCompatibleOptions"] = 135790599] = "RemoveParamCompatibleOptions";
+        NetworkRuleOption[NetworkRuleOption["RemoveParamCompatibleOptions"] = 270008327] = "RemoveParamCompatibleOptions";
         /**
          * Removeheader compatible modifiers
          *
          * $removeheader rules are compatible only with content type modifiers ($script, $stylesheet, etc)
          * and this list of modifiers:
          */
-        NetworkRuleOption[NetworkRuleOption["RemoveHeaderCompatibleOptions"] = 136839175] = "RemoveHeaderCompatibleOptions";
+        NetworkRuleOption[NetworkRuleOption["RemoveHeaderCompatibleOptions"] = 271056903] = "RemoveHeaderCompatibleOptions";
     })(exports.NetworkRuleOption || (exports.NetworkRuleOption = {}));
     /**
      * Helper class that is used for passing {@link NetworkRule.parseRuleText}
@@ -36730,6 +36733,17 @@ var adguardAssistant = isMobile(navigator.userAgent) ? adguardAssistantMini : ad
                     this.setOptionEnabled(exports.NetworkRuleOption.RemoveHeader, true);
                     this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                     break;
+                // simple validation of jsonprune rules for compiler
+                // https://github.com/AdguardTeam/FiltersCompiler/issues/168
+                case OPTIONS.JSONPRUNE: {
+                    if (isCompatibleWith(exports.CompatibilityTypes.Extension)) {
+                        throw new SyntaxError('Extension does not support $jsonprune modifier yet');
+                    }
+                    this.setOptionEnabled(exports.NetworkRuleOption.JsonPrune, true);
+                    // TODO: should be properly implemented later
+                    // https://github.com/AdguardTeam/tsurlfilter/issues/71
+                    break;
+                }
                 // Dns modifiers
                 case OPTIONS.CLIENT: {
                     if (isCompatibleWith(exports.CompatibilityTypes.Extension)) {
@@ -39184,7 +39198,7 @@ var adguardAssistant = isMobile(navigator.userAgent) ? adguardAssistantMini : ad
             var pseudoClass = CosmeticRule.parsePseudoClass(ruleContent);
             if (pseudoClass !== null) {
                 if (CosmeticRule.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
-                    throw new SyntaxError("Unknown pseudo class: ".concat(ruleContent));
+                    throw new SyntaxError("Unknown pseudo-class '".concat(pseudoClass, "()' in selector: '").concat(ruleContent, "'"));
                 }
             }
         };

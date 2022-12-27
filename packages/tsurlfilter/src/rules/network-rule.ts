@@ -86,19 +86,21 @@ export enum NetworkRuleOption {
     RemoveParam = 1 << 20,
     /** $removeheader modifier */
     RemoveHeader = 1 << 21,
+    /** $jsonprune modifier */
+    JsonPrune = 1 << 22,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 22,
+    Network = 1 << 23,
 
     /** dns modifiers */
-    Client = 1 << 23,
-    DnsRewrite = 1 << 24,
-    DnsType = 1 << 25,
-    Ctag = 1 << 26,
+    Client = 1 << 24,
+    DnsRewrite = 1 << 25,
+    DnsType = 1 << 26,
+    Ctag = 1 << 27,
 
     // Document
-    Document = 1 << 27,
+    Document = 1 << 28,
 
     // Groups (for validation)
 
@@ -1215,6 +1217,18 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
+
+            // simple validation of jsonprune rules for compiler
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/168
+            case OPTIONS.JSONPRUNE: {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
+                    throw new SyntaxError('Extension does not support $jsonprune modifier yet');
+                }
+                this.setOptionEnabled(NetworkRuleOption.JsonPrune, true);
+                // TODO: should be properly implemented later
+                // https://github.com/AdguardTeam/tsurlfilter/issues/71
+                break;
+            }
 
             // Dns modifiers
             case OPTIONS.CLIENT: {
