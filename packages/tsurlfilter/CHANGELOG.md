@@ -1,5 +1,12 @@
 # TSUrlFilter Changelog
 
+## Unreleased
+
+### Changed
+
+- Removed unnecessary brackets for unknown pseudo-class validation error
+
+
 ## v1.0.67
 
 ### Added

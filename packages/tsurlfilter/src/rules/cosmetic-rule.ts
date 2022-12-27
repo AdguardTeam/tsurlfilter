@@ -513,7 +513,7 @@ export class CosmeticRule implements rule.IRule {
         const pseudoClass = CosmeticRule.parsePseudoClass(ruleContent);
         if (pseudoClass !== null) {
             if (CosmeticRule.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
-                throw new SyntaxError(`Unknown pseudo-class '${pseudoClass}()' in selector: '${ruleContent}'`);
+                throw new SyntaxError(`Unknown pseudo-class '${pseudoClass}' in selector: '${ruleContent}'`);
             }
         }
     }
