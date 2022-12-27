@@ -45,18 +45,6 @@ export class CosmeticApi {
         tabsApi.injectCss(cssText, tabId, frameId);
     }
 
-    // TODO: check why is not called
-    /**
-     * Injects extended css into the page.
-     *
-     * @param extCssText Extended css text.
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     */
-    public static injectExtCss(extCssText: string, tabId: number, frameId = 0): void {
-        tabsApi.injectScript(buildExtendedCssScriptText(extCssText), tabId, frameId);
-    }
-
     /**
      * Retrieves css styles from the cosmetic result.
      *
