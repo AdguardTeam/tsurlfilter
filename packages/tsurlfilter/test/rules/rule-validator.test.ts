@@ -72,7 +72,7 @@ describe('RuleValidator', () => {
     it('validates jsonprune modifier', () => {
         // TODO: remove following comment and setConfiguration() after the implementation
         // $jsonprune is not implemented for extension yet
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
         const ruleText = '||example.org/*/*/$xmlhttprequest,jsonprune=\\$..[ac\\, ab]';
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
