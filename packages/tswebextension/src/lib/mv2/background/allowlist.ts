@@ -45,7 +45,7 @@ export class AllowlistApi {
             return new StringRuleList(
                 AllowlistApi.allowlistFilterId,
                 this.domains.map((domain) => {
-                    return `@@//${domain}$document`;
+                    return `@@//${domain}$document,important`;
                 }).join('\n'),
             );
         }
@@ -106,7 +106,7 @@ export class AllowlistApi {
             return null;
         }
 
-        return new NetworkRule(`@@//${domain}$document`, AllowlistApi.allowlistFilterId);
+        return new NetworkRule(`@@//${domain}$document,important`, AllowlistApi.allowlistFilterId);
     }
 }
 

@@ -154,4 +154,4 @@ export declare const metadataValidator: zod.ZodObject<{
         keyword: string;
     }[];
 }>;
-export declare type Metadata = zod.infer<typeof metadataValidator>;
+export type Metadata = zod.infer<typeof metadataValidator>;

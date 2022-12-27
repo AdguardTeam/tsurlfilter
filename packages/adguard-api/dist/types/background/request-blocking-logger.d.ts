@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 import { ContentType, EventChannelListener } from "@adguard/tswebextension";
-export declare type RequestBlockingEvent = {
+export type RequestBlockingEvent = {
     tabId: number;
     requestUrl: string;
     referrerUrl: string;

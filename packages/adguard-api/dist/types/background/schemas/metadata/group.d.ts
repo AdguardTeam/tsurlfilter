@@ -34,4 +34,4 @@ export declare const groupMetadataValidator: zod.ZodObject<{
     groupId: number;
     groupName: string;
 }>;
-export declare type GroupMetadata = zod.infer<typeof groupMetadataValidator>;
+export type GroupMetadata = zod.infer<typeof groupMetadataValidator>;

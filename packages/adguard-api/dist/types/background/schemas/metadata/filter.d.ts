@@ -67,4 +67,4 @@ export declare const filterMetadataValidator: zod.ZodObject<{
     trustLevel: string;
     version: string;
 }>;
-export declare type FilterMetadata = z.infer<typeof filterMetadataValidator>;
+export type FilterMetadata = z.infer<typeof filterMetadataValidator>;

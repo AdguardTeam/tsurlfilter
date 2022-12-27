@@ -84,6 +84,17 @@ describe('TestGetCosmeticOption', () => {
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionAll);
     });
 
+    it('works with source allowlist rule', () => {
+        rules = [new NetworkRule('||example.org^', 0)];
+        const allowlistSourceRule = new NetworkRule('@@||another.org^$document', 0);
+
+        const result = new MatchingResult(rules, allowlistSourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeDefined();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
+    });
+
     it('works with $generichide modifier', () => {
         rules = [new NetworkRule('@@||example.org^$generichide', 0)];
 

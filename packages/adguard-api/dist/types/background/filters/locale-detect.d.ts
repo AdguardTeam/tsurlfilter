@@ -17,7 +17,7 @@
  */
 import { Configuration } from "../schemas";
 import { FiltersApi } from "./api";
-export declare type BrowsingLanguage = {
+export type BrowsingLanguage = {
     language: string;
     time: number;
 };

@@ -80,4 +80,4 @@ export declare const configurationValidator: zod.ZodObject<{
     filtersMetadataUrl: string;
     filterRulesUrl: string;
 }>;
-export declare type Configuration = zod.infer<typeof configurationValidator>;
+export type Configuration = zod.infer<typeof configurationValidator>;

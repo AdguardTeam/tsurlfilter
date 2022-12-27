@@ -35,7 +35,7 @@ export declare const filterVersionDataValidator: zod.ZodObject<{
     lastCheckTime: number;
     lastUpdateTime: number;
 }>;
-export declare type FilterVersionData = zod.infer<typeof filterVersionDataValidator>;
+export type FilterVersionData = zod.infer<typeof filterVersionDataValidator>;
 /**
  * Runtime validator for persistent key value storage of filter version data.
  *
@@ -58,4 +58,4 @@ export declare const filterVersionStorageDataValidator: zod.ZodRecord<zod.ZodEff
     lastCheckTime: number;
     lastUpdateTime: number;
 }>>;
-export declare type FilterVersionStorageData = zod.infer<typeof filterVersionStorageDataValidator>;
+export type FilterVersionStorageData = zod.infer<typeof filterVersionStorageDataValidator>;

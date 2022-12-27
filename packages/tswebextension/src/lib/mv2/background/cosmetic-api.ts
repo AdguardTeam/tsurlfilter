@@ -1,6 +1,6 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
-import { buildScriptText, buildExtendedCssScriptText } from './injection-helper';
+import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { tabsApi } from './tabs/tabs-api';
 import { USER_FILTER_ID } from '../../common/constants';

@@ -234,12 +234,12 @@ export class MatchingResult {
      * @return {CosmeticOption} mask
      */
     getCosmeticOption(): CosmeticOption {
-        if (!this.basicRule || !this.basicRule.isAllowlist()) {
-            return CosmeticOption.CosmeticOptionAll;
+        if (this.basicRule?.isDocumentAllowlistRule() || this.documentRule?.isDocumentAllowlistRule()) {
+            return CosmeticOption.CosmeticOptionNone;
         }
 
-        if (this.basicRule.isDocumentAllowlistRule()) {
-            return CosmeticOption.CosmeticOptionNone;
+        if (!this.basicRule || !this.basicRule.isAllowlist()) {
+            return CosmeticOption.CosmeticOptionAll;
         }
 
         let option = CosmeticOption.CosmeticOptionAll;

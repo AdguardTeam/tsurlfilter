@@ -37,12 +37,8 @@ Build:
 
             ls -alt
 
-            npx lerna@4 bootstrap
-
-            # For link dependencies
-            npx lerna@4 run --scope @adguard/tsurlfilter build
-            npx lerna@4 run --scope @adguard/tswebextension build
-            npx lerna@4 run --scope @adguard/api build
+            npx lerna bootstrap
+            npx lerna run --scope @adguard/api build
 
             cd packages/adguard-api/
             yarn pack --filename adguard-api.tgz
@@ -51,7 +47,7 @@ Build:
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna@4 exec -- rm -rf node_modules
+            npx lerna clean -y
     - inject-variables:
         file: ./packages/adguard-api/dist/build.txt
         scope: RESULT

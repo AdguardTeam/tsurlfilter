@@ -37,4 +37,4 @@ export declare const tagMetadataValidator: zod.ZodObject<{
     tagId: number;
     keyword: string;
 }>;
-export declare type TagMetadata = zod.infer<typeof tagMetadataValidator>;
+export type TagMetadata = zod.infer<typeof tagMetadataValidator>;

@@ -19,21 +19,21 @@ export declare enum NotifierEventType {
     DetectFilters = "DetectFilters",
     UpdateFilters = "UpdateFilters"
 }
-export declare type DetectFiltersEvent = {
+export type DetectFiltersEvent = {
     type: NotifierEventType.DetectFilters;
     data: {
         filtersIds: number[];
     };
 };
-export declare type UpdateFiltersEvent = {
+export type UpdateFiltersEvent = {
     type: NotifierEventType.UpdateFilters;
 };
-export declare type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent;
-export declare type ExtractedNotifierEvent<T> = Extract<NotifierEvent, {
+export type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent;
+export type ExtractedNotifierEvent<T> = Extract<NotifierEvent, {
     type: T;
 }>;
-export declare type NotifierListener<T extends NotifierEventType> = (value: ExtractedNotifierEvent<T>) => void | Promise<void>;
-export declare type NotifierListenersMap = {
+export type NotifierListener<T extends NotifierEventType> = (value: ExtractedNotifierEvent<T>) => void | Promise<void>;
+export type NotifierListenersMap = {
     [K in NotifierEventType]: NotifierListener<K>[];
 };
 /**
