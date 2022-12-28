@@ -6,7 +6,6 @@ import { RequestContext } from '../request';
 
 export type TabMetadata = {
     mainFrameRule?: NetworkRule | null
-    previousUrl?: string
     blockedRequestCount?: number
 };
 
@@ -109,15 +108,12 @@ export class TabContext implements TabContextInterface {
      * @param url Url for main frame.
      */
     setMainFrameByFrameUrl(url: string): void {
-        const previousUrl = this.getPreviousUrl();
-
         this.frames.clear();
 
         this.frames.set(MAIN_FRAME_ID, new Frame(url));
 
         this.metadata = {
             mainFrameRule: allowlistApi.matchFrame(url),
-            previousUrl,
         };
     }
 
@@ -129,7 +125,6 @@ export class TabContext implements TabContextInterface {
      */
     setMainFrameByRequestContext(requestContext: RequestContext): void {
         const { requestUrl } = requestContext;
-        const previousUrl = this.getPreviousUrl();
 
         this.frames.clear();
 
@@ -137,23 +132,6 @@ export class TabContext implements TabContextInterface {
 
         this.metadata = {
             mainFrameRule: allowlistApi.matchFrame(requestContext.requestUrl),
-            previousUrl,
         };
-    }
-
-    /**
-     * // TODO why do we need to keep track of previous url?
-     * Returns previous url.
-     *
-     * @returns Previous url or undefined if there is no such frame id.
-     */
-    private getPreviousUrl(): string | undefined {
-        const mainFrame = this.frames.get(MAIN_FRAME_ID);
-
-        if (!mainFrame) {
-            return undefined;
-        }
-
-        return mainFrame.url;
     }
 }
