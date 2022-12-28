@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tswebextension",
-  "version": "0.0.49",
+  "version": "0.0.52",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/index.js",
   "typings": "dist/types/lib/mv2/background/index.d.ts",
@@ -59,7 +59,7 @@
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
+    "test:prod": "yarn lint && yarn test --no-cache",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",

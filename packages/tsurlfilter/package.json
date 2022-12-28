@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "2.0.0-alpha.40",
+  "version": "2.0.0-alpha.43",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/tsurlfilter.umd.js",
   "module": "dist/es/index.js",
@@ -50,7 +50,7 @@
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
+    "test:prod": "yarn lint && yarn test --no-cache",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
@@ -88,12 +88,9 @@
       }
     },
     "collectCoverageFrom": [
-      "src/*.{js,ts}",
-      "src/*/*.{js,ts}",
-      "src/*/*/*.{js,ts}"
-    ],
-    "setupFiles": [
-      "jest-webextension-mock"
+      "src/*.ts",
+      "src/*/*.ts",
+      "src/*/*/*.ts"
     ]
   },
   "dependencies": {
@@ -130,7 +127,6 @@
     "eslint-plugin-import-newlines": "1.2.3",
     "eslint-plugin-jsdoc": "39.3.6",
     "jest": "28.1.3",
-    "jest-webextension-mock": "3.7.22",
     "lint-staged": "13.0.3",
     "lodash": "4.17.21",
     "rimraf": "3.0.2",
