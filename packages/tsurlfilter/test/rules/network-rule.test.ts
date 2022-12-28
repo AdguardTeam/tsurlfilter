@@ -283,6 +283,22 @@ describe('NetworkRule constructor', () => {
         // https://github.com/AdguardTeam/tsurlfilter/issues/71
     });
 
+    it('checks hls modifier compatibility', () => {
+        let correct;
+
+        correct = new NetworkRule('||example.org^$hls=preroll', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$hls=\\/videoplayback^?*&source=dclk_video_ads', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('||example.org^$hls=/#UPLYNK-SEGMENT:.*\\,ad/t', 0);
+        expect(correct).toBeTruthy();
+
+        // TODO: add more specific jsonprune tests during the implementation
+        // https://github.com/AdguardTeam/tsurlfilter/issues/72
+    });
+
     it('works when it handles wide rules with $domain properly', () => {
         const rule = new NetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);

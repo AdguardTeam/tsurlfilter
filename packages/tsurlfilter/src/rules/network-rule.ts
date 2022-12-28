@@ -88,19 +88,21 @@ export enum NetworkRuleOption {
     RemoveHeader = 1 << 21,
     /** $jsonprune modifier */
     JsonPrune = 1 << 22,
+    /** $hls modifier */
+    Hls = 1 << 23,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 23,
+    Network = 1 << 24,
 
     /** dns modifiers */
-    Client = 1 << 24,
-    DnsRewrite = 1 << 25,
-    DnsType = 1 << 26,
-    Ctag = 1 << 27,
+    Client = 1 << 25,
+    DnsRewrite = 1 << 26,
+    DnsType = 1 << 27,
+    Ctag = 1 << 28,
 
     // Document
-    Document = 1 << 28,
+    Document = 1 << 29,
 
     // Groups (for validation)
 
@@ -1219,6 +1221,17 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.JsonPrune, true);
                 // TODO: should be properly implemented later
                 // https://github.com/AdguardTeam/tsurlfilter/issues/71
+                break;
+            }
+            // simple validation of hls rules for compiler
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/169
+            case OPTIONS.HLS: {
+                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                    throw new SyntaxError('Extension does not support $hls modifier yet');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Hls, true);
+                // TODO: should be properly implemented later
+                // https://github.com/AdguardTeam/tsurlfilter/issues/72
                 break;
             }
 

@@ -1,6 +1,10 @@
 # TSUrlFilter Changelog
 
-## Unreleased
+## v1.0.68
+
+### Added
+
+- Simple support of `$hls` modifier — just for compiler validation
 
 ### Changed
 
@@ -11,7 +15,7 @@
 
 ### Added
 
-- Simple support of $jsonprune modifier — just for compiler validation
+- Simple support of `$jsonprune` modifier — just for compiler validation
 
 ### Changed
 

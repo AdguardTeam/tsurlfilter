@@ -38,6 +38,7 @@ export const NETWORK_RULE_OPTIONS = {
     REMOVEPARAM: 'removeparam',
     REMOVEHEADER: 'removeheader',
     JSONPRUNE: 'jsonprune',
+    HLS: 'hls',
     APP: 'app',
     NETWORK: 'network',
     EXTENSION: 'extension',
