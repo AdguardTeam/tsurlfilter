@@ -77,6 +77,14 @@ describe('RuleValidator', () => {
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
+    it('validates hls modifier', () => {
+        // TODO: remove following comment and setConfiguration() after the implementation
+        // $hls is not implemented for extension yet
+        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        const ruleText = '||example.org^$hls=/#UPLYNK-SEGMENT:.*\\,ad/t';
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
+    });
+
     it('invalidates rules $webrtc modifier', () => {
         const ruleText = '$webrtc,domain=browserleaks.com';
         expect(RuleValidator.validate(ruleText).valid).toBeFalsy();
