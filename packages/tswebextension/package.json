@@ -59,7 +59,7 @@
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
+    "test:prod": "yarn lint && yarn test --no-cache",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",
