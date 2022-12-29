@@ -1234,7 +1234,7 @@ export class NetworkRule implements rule.IRule {
             // simple validation of hls rules for compiler
             // https://github.com/AdguardTeam/FiltersCompiler/issues/169
             case OPTIONS.HLS: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension does not support $hls modifier yet');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Hls, true);

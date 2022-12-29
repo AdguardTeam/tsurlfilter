@@ -80,7 +80,7 @@ describe('RuleValidator', () => {
     it('validates hls modifier', () => {
         // TODO: remove following comment and setConfiguration() after the implementation
         // $hls is not implemented for extension yet
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
         const ruleText = '||example.org^$hls=/#UPLYNK-SEGMENT:.*\\,ad/t';
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
