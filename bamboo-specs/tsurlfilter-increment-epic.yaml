@@ -15,7 +15,7 @@ stages:
         - Increment
 
 Increment:
-  key: INCRTSWEBEXT
+  key: INCR
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
