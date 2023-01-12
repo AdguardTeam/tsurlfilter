@@ -187,6 +187,9 @@ export class WebRequestApi {
     /**
      * On before send headers event handler.
      *
+     * !IMPORTANT! This method modifies headers in the context. This non-pure action needs
+     * to increase performance: exclude copying of headers for each service.
+     *
      * @param details On before send headers details.
      * @param details.context Details context.
      * @returns Web request event response.
@@ -198,23 +201,27 @@ export class WebRequestApi {
             return undefined;
         }
 
+        // If current request from the background - we don't need to modify headers,
+        // only remove Cookie and immediately return modified headers
         const sanitizedRequest = SanitizeApi.onBeforeSendHeaders(context);
         if (sanitizedRequest) {
             return sanitizedRequest;
         }
 
-        stealthApi.onBeforeSendHeaders(context);
+        let requestHeadersModified = false;
 
-        if (!context?.matchingResult) {
-            return undefined;
+        if (stealthApi.onBeforeSendHeaders(context)) {
+            requestHeadersModified = true;
         }
 
-        cookieFiltering.onBeforeSendHeaders(context);
+        // If the current request does not comply with any rules - we do not
+        // need to call any other processing services (e.g. cookie, header)
+        if (context?.matchingResult) {
+            cookieFiltering.onBeforeSendHeaders(context);
 
-        // TODO: Is this variable needed?
-        let requestHeadersModified = false;
-        if (headersService.onBeforeSendHeaders(context)) {
-            requestHeadersModified = true;
+            if (headersService.onBeforeSendHeaders(context)) {
+                requestHeadersModified = true;
+            }
         }
 
         if (requestHeadersModified) {
@@ -410,6 +417,9 @@ export class WebRequestApi {
                     }
                 }
             }
+
+            const setDomSignalScript = stealthApi.getSetDomSignalScript();
+            CosmeticApi.injectScript(setDomSignalScript, tabId, frameId);
         }
     }
 

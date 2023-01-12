@@ -9,7 +9,7 @@ import { removeHeader } from './utils';
  */
 export class SanitizeApi {
     /**
-     * // TODO add documentation.
+     * Removes Cookie headers from background extension's requests.
      *
      * @param context Request context.
      * @returns Blocking response or null.

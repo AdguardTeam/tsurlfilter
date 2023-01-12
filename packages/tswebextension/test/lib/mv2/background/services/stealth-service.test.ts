@@ -162,7 +162,32 @@ describe('Stealth service', () => {
             expect(service.processRequestHeaders(context)).toBe(StealthActions.SEND_DO_NOT_TRACK);
             expect(context.requestHeaders).toHaveLength(2);
             expect(context.requestHeaders![0].name).toBe('DNT');
+            expect(context.requestHeaders![0].value).toBe('1');
             expect(context.requestHeaders![1].name).toBe('Sec-GPC');
+            expect(context.requestHeaders![1].value).toBe('1');
+        });
+
+        it('checks global GPC value in the navigator', () => {
+            config.sendDoNotTrack = true;
+            const service = new StealthService(config, filteringLog);
+
+            // Here we check that the function is written correctly in the string,
+            // to avoid changing its form to a lambda function, for example.
+            const funcTxt = service.getSetDomSignalScript();
+            expect(funcTxt).toStrictEqual(`;(function setDomSignal() {
+    try {
+      if ('globalPrivacyControl' in Navigator.prototype) {
+        return;
+      }
+      Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
+        get: () => true,
+        configurable: true,
+        enumerable: true
+      });
+    } catch (ex) {
+      // Ignore
+    }
+  })();`);
         });
     });
 });

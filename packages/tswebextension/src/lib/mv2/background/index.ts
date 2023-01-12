@@ -11,3 +11,4 @@ export * from './tabs';
 export * from './request';
 export * from '../../common';
 export * from './configuration';
+export { StealthActions } from './services/stealth-service';

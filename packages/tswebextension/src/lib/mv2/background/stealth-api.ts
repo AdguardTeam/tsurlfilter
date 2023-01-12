@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill';
 import { StringRuleList, logger } from '@adguard/tsurlfilter';
 
-import { StealthService } from './services/stealth-service';
+import { StealthActions, StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
 import {
     Configuration,
@@ -117,21 +117,25 @@ export class StealthApi implements StealthApiInterface {
      * Stealth api onBeforeRequest handler.
      *
      * @param context Request context.
+     *
+     * @returns True if the headers have been changed.
      */
-    public onBeforeSendHeaders(context: RequestContext): void {
+    public onBeforeSendHeaders(context: RequestContext): boolean {
         if (!this.engine) {
-            return;
+            return false;
         }
 
         if (!context) {
-            return;
+            return false;
         }
 
         if (!this.canApplyStealthActionsToContext(context)) {
-            return;
+            return false;
         }
 
-        this.engine.processRequestHeaders(context);
+        const stealthActions = this.engine.processRequestHeaders(context);
+
+        return stealthActions !== StealthActions.NONE;
     }
 
     /**
@@ -153,6 +157,15 @@ export class StealthApi implements StealthApiInterface {
         }
 
         return true;
+    }
+
+    /**
+     * Returns set dom signal script if sendDoNotTrack enabled, otherwise empty string.
+     *
+     * @returns Dom signal script.
+     */
+    public getSetDomSignalScript(): string {
+        return this.engine?.getSetDomSignalScript() || '';
     }
 
     /**

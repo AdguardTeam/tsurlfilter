@@ -13,9 +13,10 @@ import {
 import { RequestContext } from '../request';
 
 /**
- * Stealth action bitwise masks.
+ * Stealth action bitwise masks used on the background page and on the filtering log page.
  */
 export enum StealthActions {
+    NONE = 0,
     HIDE_REFERRER = 1 << 0,
     HIDE_SEARCH_QUERIES = 1 << 1,
     BLOCK_CHROME_CLIENT_DATA = 1 << 2,
@@ -117,7 +118,7 @@ export class StealthService {
      * @returns Stealth actions bitmask.
      */
     public processRequestHeaders(context: RequestContext): StealthActions {
-        let stealthActions = 0;
+        let stealthActions = StealthActions.NONE;
 
         const { requestUrl, requestType, requestHeaders } = context;
 
@@ -184,7 +185,7 @@ export class StealthService {
      */
     public getSetDomSignalScript(): string {
         if (this.config.sendDoNotTrack) {
-            return `(${StealthHelper.setDomSignal.toString()})()`;
+            return `;(function ${StealthHelper.setDomSignal.toString()})();`;
         }
 
         return '';
