@@ -41,7 +41,8 @@
   "author": "AdGuard",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git"
+    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+    "directory": "packages/tswebextension"
   },
   "license": "GPL-3.0-only",
   "engines": {
@@ -50,7 +51,7 @@
   "bugs": {
     "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
   },
-  "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
+  "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
   "scripts": {
     "lint": "eslint .",
     "prebuild": "rimraf dist",
