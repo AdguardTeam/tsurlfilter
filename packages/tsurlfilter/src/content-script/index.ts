@@ -1,5 +1,5 @@
 import { ExtendedCss } from '@adguard/extended-css';
-import CssHitsCounter from './css-hits-counter';
+import { CssHitsCounter } from './css-hits-counter';
 import CookieController from './cookie-controller';
 import StealthHelper from '../stealth/stealth-helper';
 

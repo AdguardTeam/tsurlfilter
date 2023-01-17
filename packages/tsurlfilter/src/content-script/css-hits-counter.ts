@@ -1,6 +1,5 @@
-/* eslint-disable no-param-reassign */
+import type { IAffectedElement } from '@adguard/extended-css';
 
-import { IAffectedElement } from '@adguard/extended-css';
 import ElementUtils from '../utils/element-utils';
 import HitsStorage from './hits-storage';
 
@@ -22,7 +21,7 @@ interface ICountedElement {
  *
  * then here we parse this attribute and calls provided callback function
  */
-export default class CssHitsCounter {
+class CssHitsCounter {
     /**
      * We split CSS hits counting into smaller batches of elements
      * and schedule them one by one using setTimeout
@@ -382,3 +381,5 @@ export default class CssHitsCounter {
         return ignoredTags.includes(nodeTag.toLowerCase());
     }
 }
+
+export { CssHitsCounter };

@@ -25,3 +25,5 @@ export * from './utils/url';
 export { CosmeticRuleMarker } from './rules/cosmetic-rule-marker';
 export { CosmeticRuleParser } from './rules/cosmetic-rule-parser';
 export { RuleSyntaxUtils } from './utils/rule-syntax-utils';
+export { CookieFiltering } from './cookie-filtering/cookie-filtering';
+export { HeadersService } from './headers-filtering/headers-service';

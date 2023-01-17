@@ -2,11 +2,7 @@
   "name": "@adguard/tsurlfilter",
   "version": "1.0.68",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
-  "main": "dist/tsurlfilter.umd.js",
-  "module": "dist/es/index.js",
-  "iife": "dist/tsurlfilter.iife.js",
-  "browser": "dist/tsurlfilter.browser.js",
-  "typings": "dist/types",
+  "types": "dist/types",
   "files": [
     "dist",
     "src"
@@ -24,6 +20,25 @@
     "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
+  "exports": {
+    ".": "./dist/es",
+    "./*": "./*",
+    "./content-script": "./dist/es/content-script",
+    "./content-script/*": "./dist/es/content-script/*"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/types/index.d.ts"
+      ],
+      "content-script": [
+        "dist/types/content-script/index.d.ts"
+      ],
+      "content-script/*": [
+        "dist/types/content-script/*"
+      ]
+    }
+  },
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist && yarn build:types",
@@ -34,7 +49,8 @@
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:prod": "yarn lint && yarn test --no-cache --runInBand",
+    "test:smoke": "cd test/builders/rollup-ts && yarn test",
+    "test:prod": "yarn lint && yarn test:smoke && yarn test --no-cache --runInBand",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",

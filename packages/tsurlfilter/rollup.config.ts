@@ -20,10 +20,10 @@ const commonConfig = {
     cache: false,
     watch: {
         include: 'src/**',
-    }, 
+    },
 };
 
-const contentScriptConfig = {
+const contentScriptUmdConfig = {
     input: 'src/content-script/index.ts',
     output: [
         {
@@ -40,10 +40,36 @@ const contentScriptConfig = {
     ],
     plugins: [
         typescript(),
+        resolve(),
         commonjs({
             sourceMap: false,
         }),
+        cleanup({
+            comments: ['srcmaps'],
+        }),
+    ],
+    ...commonConfig,
+};
+
+/**
+ * Config for building content script utils, they shouldn't have side effects
+ */
+const contentScriptEsmConfig = {
+    input: [
+        'src/content-script/css-hits-counter.ts',
+        'src/content-script/index.ts',
+    ],
+    output: [{
+        dir: 'dist/es/content-script',
+        format: 'esm',
+        sourcemap: false,
+    }],
+    plugins: [
+        typescript(),
         resolve(),
+        commonjs({
+            sourceMap: false,
+        }),
         cleanup({
             comments: ['srcmaps'],
         }),
@@ -139,7 +165,7 @@ const umdConfig = {
         }),
         globals(),
         nodePolyfills(),
-        resolve({ preferBuiltins: false }), 
+        resolve({ preferBuiltins: false }),
         cleanup({
             comments: ['srcmaps'],
         }),
@@ -148,7 +174,8 @@ const umdConfig = {
 };
 
 export default [
-    contentScriptConfig,
+    contentScriptUmdConfig,
+    contentScriptEsmConfig,
     esmConfig,
     browserConfig,
     umdConfig,

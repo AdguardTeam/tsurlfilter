@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
 
-import CssHitsCounter from '../../src/content-script/css-hits-counter';
+import { CssHitsCounter } from '../../src/content-script/css-hits-counter';
 
 describe('CssHitsCounter', () => {
     // Mock document
