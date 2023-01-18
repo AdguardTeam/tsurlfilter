@@ -10560,7 +10560,7 @@ test-exclude@^6.0.0:
 
 "text-encoding@git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2":
   version "0.7.2"
-  resolved "git+ssh://git@github.com/AdguardTeam/text-encoding.git#4268d6b7dc0e15f57134545ae1c8c59e9c5ced70"
+  resolved "git+https://git@github.com/AdguardTeam/text-encoding.git#4268d6b7dc0e15f57134545ae1c8c59e9c5ced70"
 
 text-extensions@^1.0.0:
   version "1.9.0"
