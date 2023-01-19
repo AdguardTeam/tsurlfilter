@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "1.0.69",
+  "version": "1.0.70",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "types": "dist/types",
   "files": [
