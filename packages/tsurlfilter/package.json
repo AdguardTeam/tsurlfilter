@@ -21,7 +21,10 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "exports": {
-    ".": "./dist/es",
+    ".": {
+      "require": "./dist/tsurlfilter.umd.js",
+      "import": "./dist/es"
+    },
     "./*": "./*",
     "./content-script": "./dist/es/content-script",
     "./content-script/*": "./dist/es/content-script/*"
