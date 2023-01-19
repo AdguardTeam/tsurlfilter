@@ -1,5 +1,11 @@
 # TSUrlFilter Changelog
 
+## v1.0.70
+
+### Changed
+
+- Updated Scriptlets to v1.8.2
+
 ## v1.0.68
 
 ### Added

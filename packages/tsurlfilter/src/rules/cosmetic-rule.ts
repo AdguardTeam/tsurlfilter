@@ -375,7 +375,8 @@ export class CosmeticRule implements rule.IRule {
         try {
             code = scriptlets.invoke(params);
         } catch (e) {
-            logger.debug(`Error: cannot invoke scriptlet with name: '${params.name}'`);
+            // TODO: implement getErrorMessage()
+            logger.error((e as Error).message);
         }
 
         this.scriptData = {
