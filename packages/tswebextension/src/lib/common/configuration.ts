@@ -99,7 +99,8 @@ export type SettingsConfig = z.infer<typeof settingsConfigValidator>;
  */
 export const configurationValidator = z.object({
     /**
-     * List of domain names of sites, which should be excluded from blocking or which should be included in blocking
+     * List of hostnames or domains of sites, which should be excluded
+     * from blocking or which should be included in blocking
      * depending on the value of allowlistInverted setting value.
      */
     allowlist: z.string().array(),

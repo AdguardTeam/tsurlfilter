@@ -1,5 +1,6 @@
 import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
-import { Configuration, getDomain } from '../../common';
+import { Configuration } from '../../common/configuration';
+import { getDomain } from '../../common/utils/url';
 import { engineApi } from './engine-api';
 
 /**
@@ -30,9 +31,16 @@ export class AllowlistApi {
             allowlistInverted,
         } = settings;
 
-        this.domains = allowlist;
         this.enabled = allowlistEnabled;
         this.inverted = allowlistInverted;
+
+        const domains: string[] = [];
+
+        allowlist.forEach((hostname) => {
+            domains.push(hostname.startsWith('www.') ? hostname.substring(4) : hostname);
+        });
+
+        this.domains = domains;
     }
 
     /**
@@ -45,7 +53,7 @@ export class AllowlistApi {
             return new StringRuleList(
                 AllowlistApi.allowlistFilterId,
                 this.domains.map((domain) => {
-                    return `@@//${domain}$document,important`;
+                    return AllowlistApi.createAllowlistRuleString(domain);
                 }).join('\n'),
             );
         }
@@ -106,7 +114,19 @@ export class AllowlistApi {
             return null;
         }
 
-        return new NetworkRule(`@@//${domain}$document,important`, AllowlistApi.allowlistFilterId);
+        const ruleString = AllowlistApi.createAllowlistRuleString(domain);
+
+        return new NetworkRule(ruleString, AllowlistApi.allowlistFilterId);
+    }
+
+    /**
+     * Creates rule string based on specified domain.
+     *
+     * @param domain Allowlisted domain.
+     * @returns Allowlist rule string.
+     */
+    private static createAllowlistRuleString(domain: string): string {
+        return String.raw`@@///(www\.)?${domain}/$document,important`;
     }
 }
 
