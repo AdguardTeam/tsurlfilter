@@ -1,5 +1,8 @@
-import { RequestType } from '@adguard/tsurlfilter';
-import { ProcessShouldCollapsePayload, MessageType, sendAppMessage } from '../../common';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+import { ProcessShouldCollapsePayload } from '../../common/message';
+// Import directly from files to avoid side effects of tree shaking.
+// If import from '../../common', entire tsurlfilter will be in the package.
+import { MessageType, sendAppMessage } from '../../common/content-script';
 
 type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 

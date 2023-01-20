@@ -18,6 +18,7 @@ describe('configuration validator', () => {
             allowlistInverted: false,
             allowlistEnabled: false,
             documentBlockingPageUrl: 'https://example.org',
+            assistantUrl: '/assistant-inject.js',
             stealth: {
                 blockChromeClientData: true,
                 hideReferrer: true,

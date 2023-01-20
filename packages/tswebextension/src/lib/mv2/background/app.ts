@@ -62,6 +62,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
         tabsApi.setVerbose(configuration.verbose);
         await tabsApi.start();
         WebRequestApi.start();
+        Assistant.assistantUrl = configuration.settings.assistantUrl;
 
         this.isStarted = true;
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);

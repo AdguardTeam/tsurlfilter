@@ -100,6 +100,10 @@ const cliConfig = {
         'is-cidr',
         'netmask',
         'ip6addr',
+        'zod',
+        'path',
+        'commander',
+        'fs',
     ],
 
     plugins: [

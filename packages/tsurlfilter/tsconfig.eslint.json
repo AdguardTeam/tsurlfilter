@@ -6,6 +6,7 @@
       "test/**/*.ts",
       ".eslintrc.js",
       "rollup.config.ts",
+      "jest.config.ts",
       "tasks/generate-examples.ts"
     ]
 }

@@ -1,3 +1,4 @@
+import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import cleanup from 'rollup-plugin-cleanup';
 import commonjs from '@rollup/plugin-commonjs';
@@ -12,7 +13,12 @@ const commonPlugins = [
     typescript({
         tsconfig: 'tsconfig.build.json',
     }),
-    commonjs(),
+
+    // Allow node_modules resolution, so you can use 'external' to control
+    // which external modules to include in the bundle
+    // https://github.com/rollup/rollup-plugin-node-resolve#usage
+    resolve({ preferBuiltins: false }),
+
     cleanup({
         comments: ['srcmaps'],
     }),
@@ -52,7 +58,13 @@ const contentScriptMv3Config = {
             sourcemap: false,
         },
     ],
-    external: ['zod', 'webextension-polyfill', 'extended-css', '@adguard/tsurlfilter', '@adguard/assistant'],
+    external: [
+        'zod',
+        'webextension-polyfill',
+        'extended-css',
+        '@adguard/tsurlfilter',
+        '@adguard/assistant',
+    ],
     watch: {
         include: 'src/lib/mv3/content-script/**',
     },
@@ -81,8 +93,12 @@ const backgroundMv2Config = {
         'bowser',
         'deepmerge',
         'nanoid',
+        'lru_map',
     ],
-    plugins: commonPlugins,
+    plugins: [
+        ...commonPlugins,
+        commonjs(),
+    ],
 };
 
 const backgroundMv3Config = {
@@ -105,7 +121,10 @@ const backgroundMv3Config = {
         'tldts',
         'webextension-polyfill',
     ],
-    plugins: commonPlugins,
+    plugins: [
+        ...commonPlugins,
+        commonjs(),
+    ],
 };
 
 const cliConfig = {
@@ -122,7 +141,11 @@ const cliConfig = {
         include: 'src/cli/**',
     },
     external: ['path', 'fs-extra', 'commander'],
-    plugins: [...commonPlugins, preserveShebangs()],
+    plugins: [
+        ...commonPlugins,
+        commonjs(),
+        preserveShebangs(),
+    ],
 };
 
 const mv3UtilsConfig = {
@@ -131,6 +154,7 @@ const mv3UtilsConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/mv3-utils.js`,
+            // TODO: Replace via 'esm'
             format: 'cjs',
             sourcemap: false,
         },
@@ -142,6 +166,25 @@ const mv3UtilsConfig = {
     plugins: [...commonPlugins],
 };
 
+const assistantInjectScriptConfig = {
+    cache,
+    input: 'src/lib/mv2/content-script/assistant-inject.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/assistant-inject.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/lib/mv2/content-script/assistant-inject.ts',
+    },
+    plugins: [
+        ...commonPlugins,
+        commonjs(),
+    ],
+};
+
 export default [
     backgroundMv2Config,
     backgroundMv3Config,
@@ -149,4 +192,5 @@ export default [
     contentScriptMv3Config,
     cliConfig,
     mv3UtilsConfig,
+    assistantInjectScriptConfig,
 ];

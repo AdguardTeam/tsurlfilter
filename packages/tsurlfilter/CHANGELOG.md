@@ -1,5 +1,24 @@
 # TSUrlFilter Changelog
 
+
+## 2.0.0-alpha.47
+
+### Changed
+
+- The enum RequestType is made as const to avoid side effects for tree shaking.
+
+
+## 2.0.0-alpha.34
+
+### Removed
+
+- Support of $webrtc modifier
+
+
+## 2.0.0-alpha.1
+
+
+
 ## v1.0.68
 
 ### Added
@@ -23,13 +42,6 @@
 
 
 ## v1.0.66
-
-### Removed
-
-- Support of $webrtc modifier
-
-
-## 2.0.0-alpha.34
 
 ### Removed
 

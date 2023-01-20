@@ -10,7 +10,8 @@
     "./mv3/utils": "./dist/mv3-utils.js",
     "./mv3/content-script": "./dist/content-script.mv3.js",
     "./content-script": "./dist/content-script.js",
-    "./cli": "./dist/cli.js"
+    "./cli": "./dist/cli.js",
+    "./assistant-inject": "./dist/assistant-inject.js"
   },
   "typesVersions": {
     "*": {
@@ -28,6 +29,9 @@
       ],
       "cli": [
         "dist/types/cli/index.d.ts"
+      ],
+      "assistant-inject": [
+        "dist/types/lib/mv2/content-script/assistant-inject.d.ts"
       ]
     }
   },
@@ -71,45 +75,11 @@
       "eslint"
     ]
   },
-  "jest": {
-    "transform": {
-      ".+\\.(ts|tsx)": "ts-jest"
-    },
-    "testEnvironment": "jsdom",
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/test/",
-      "/src/index.browser.ts"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 0,
-        "functions": 0,
-        "lines": 0,
-        "statements": 0
-      }
-    },
-    "collectCoverageFrom": [
-      "src/**/*.{js,ts}"
-    ],
-    "setupFiles": [
-      "./setupTests.ts"
-    ],
-    "moduleNameMapper": {
-      "^@lib/(.*)$": "<rootDir>/src/lib/$1"
-    }
-  },
   "peerDependencies": {
-    "@adguard/tsurlfilter": "^2.0.0-alpha.15"
+    "@adguard/tsurlfilter": "^2.0.0-alpha.47"
   },
   "dependencies": {
-    "@adguard/assistant": "^4.3.62",
+    "@adguard/assistant": "^4.3.68",
     "@adguard/scriptlets": "^1.7.20",
     "bowser": "2.11.0",
     "commander": "9.4.1",
@@ -121,17 +91,20 @@
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2",
     "tldts": "^5.7.97",
     "tslib": "2.4.0",
-    "webextension-polyfill": "0.9.0",
+    "webextension-polyfill": "0.10.0",
     "zod": "3.19.1"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "3.1.9",
     "@rollup/plugin-commonjs": "22.0.2",
+    "@rollup/plugin-node-resolve": "13.3.0",
     "@rollup/plugin-typescript": "8.3.4",
+    "@swc/core": "^1.3.27",
+    "@swc/jest": "^0.2.24",
     "@types/chrome": "^0.0.196",
     "@types/jest": "28.1.6",
     "@types/sinon-chrome": "2.2.11",
-    "@types/webextension-polyfill": "0.9.0",
+    "@types/webextension-polyfill": "0.10.0",
     "@typescript-eslint/eslint-plugin": "5.33.0",
     "@typescript-eslint/parser": "5.33.0",
     "coveralls": "3.1.1",
@@ -141,7 +114,7 @@
     "eslint-plugin-import": "2.26.0",
     "eslint-plugin-import-newlines": "1.2.3",
     "eslint-plugin-jsdoc": "39.3.6",
-    "jest": "28.1.3",
+    "jest": "^29.3.1",
     "jest-environment-jsdom": "28.1.3",
     "lint-staged": "13.0.3",
     "rimraf": "3.0.2",
@@ -149,8 +122,8 @@
     "rollup-plugin-cleanup": "3.2.1",
     "rollup-plugin-copy": "3.4.0",
     "rollup-plugin-preserve-shebangs": "0.2.0",
-    "sinon-chrome": "3.0.1",
-    "ts-jest": "28.0.7",
+    "sinon-chrome": "^3.0.1",
+    "ts-jest": "^29.0.5",
     "typescript": "4.7.4"
   }
 }

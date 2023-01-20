@@ -162,6 +162,12 @@ class BasicRuleParts {
     public allowlist: boolean | undefined;
 }
 
+// Flag that indicates that permitted ALL request types.
+export const PermittedAllRequestTypes = 0;
+// Flag that indicates that restricted ALL request types.
+export const RestrictedAllRequestTypes = 0;
+export type RequestTypeExtra = typeof PermittedAllRequestTypes | typeof RestrictedAllRequestTypes;
+
 /**
  * Basic network filtering rule.
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
@@ -191,11 +197,11 @@ export class NetworkRule implements rule.IRule {
     /** Flag with all disabled rule options */
     private disabledOptions: NetworkRuleOption = 0;
 
-    /** Flag with all permitted request types. 0 means ALL. */
-    private permittedRequestTypes: RequestType = 0;
+    /** Flag with all permitted request types. */
+    private permittedRequestTypes: RequestType | RequestTypeExtra = PermittedAllRequestTypes;
 
-    /** Flag with all restricted request types. 0 means NONE. */
-    private restrictedRequestTypes: RequestType = 0;
+    /** Flag with all restricted request types. */
+    private restrictedRequestTypes: RequestType | RequestTypeExtra = RestrictedAllRequestTypes;
 
     /**
      * Rule Advanced modifier
@@ -355,13 +361,13 @@ export class NetworkRule implements rule.IRule {
         return null;
     }
 
-    /** Flag with all permitted request types. 0 means ALL. */
-    getPermittedRequestTypes(): RequestType {
+    /** Flag with all permitted request types. 'PermittedAll' means ALL. */
+    getPermittedRequestTypes(): RequestType | RequestTypeExtra {
         return this.permittedRequestTypes;
     }
 
-    /** Flag with all restricted request types. 0 means NONE. */
-    getRestrictedRequestTypes(): RequestType {
+    /** Flag with all restricted request types. 'RestrictedAll' means NONE. */
+    getRestrictedRequestTypes(): RequestType | RequestTypeExtra {
         return this.restrictedRequestTypes;
     }
 
@@ -631,14 +637,14 @@ export class NetworkRule implements rule.IRule {
      * matchRequestType checks if the request's type matches the rule properties
      * @param requestType - request type to check.
      */
-    public matchRequestType(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes !== 0) {
+    private matchRequestType(requestType: RequestType): boolean {
+        if (this.permittedRequestTypes !== PermittedAllRequestTypes) {
             if ((this.permittedRequestTypes & requestType) !== requestType) {
                 return false;
             }
         }
 
-        if (this.restrictedRequestTypes !== 0) {
+        if (this.restrictedRequestTypes !== RestrictedAllRequestTypes) {
             if ((this.restrictedRequestTypes & requestType) === requestType) {
                 return false;
             }
@@ -652,8 +658,8 @@ export class NetworkRule implements rule.IRule {
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes === 0
-            && this.restrictedRequestTypes === 0
+        if (this.permittedRequestTypes === PermittedAllRequestTypes
+            && this.restrictedRequestTypes === RestrictedAllRequestTypes
             && requestType !== RequestType.Document
             && requestType !== RequestType.SubDocument) {
             return false;
@@ -764,7 +770,7 @@ export class NetworkRule implements rule.IRule {
 
         // $popup should work accumulatively with requestType modifiers
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1992
-        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== 0) {
+        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== PermittedAllRequestTypes) {
             this.permittedRequestTypes |= RequestType.Document;
         } else if (this.isOptionEnabled(NetworkRuleOption.Popup)) {
             this.permittedRequestTypes = RequestType.Document;

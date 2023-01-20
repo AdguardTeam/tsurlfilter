@@ -14,7 +14,7 @@ export class ContentFiltering {
     /**
      * Contains collection of supported request types for replace rules.
      */
-    private static supportedReplaceRulesRequestTypes = [
+    private static supportedReplaceRulesRequestTypes: number[] = [
         RequestType.Document,
         RequestType.SubDocument,
         RequestType.Script,

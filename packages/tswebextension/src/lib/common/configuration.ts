@@ -86,6 +86,12 @@ export const settingsConfigValidator = z.object({
     documentBlockingPageUrl: z.string().optional(),
 
     /**
+     * Path to the assembled @adguard/assistant module. Necessary for lazy
+     * on-demand loading of the assistant.
+     */
+    assistantUrl: z.string(),
+
+    /**
      * Stealth mode options.
      */
     stealth: stealthConfigValidator,

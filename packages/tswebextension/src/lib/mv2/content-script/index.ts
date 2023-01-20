@@ -1,7 +1,9 @@
 import ExtendedCss, { IAffectedElement } from 'extended-css';
 import { CssHitsCounter } from './css-hits-counter';
 import { ElementCollapser } from './element-collapser';
-import { MessageType, sendAppMessage } from '../../common';
+// Import directly from files to avoid side effects of tree shaking.
+// If import from '../../common', entire tsurlfilter will be in the package.
+import { MessageType, sendAppMessage } from '../../common/content-script';
 import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
 

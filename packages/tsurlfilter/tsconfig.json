@@ -19,5 +19,11 @@
   "include": [
     "src",
     "cli"
-  ]
+  ],
+  "ts-node": {
+    "swc": true,
+    "compilerOptions": {
+      "module":"CommonJS",
+    }
+  }
 }

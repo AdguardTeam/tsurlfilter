@@ -11,6 +11,7 @@ export const getConfigFixture = (): Configuration => ({
         collectStats: true,
         allowlistInverted: false,
         allowlistEnabled: true,
+        assistantUrl: '',
         stealth: {
             blockChromeClientData: false,
             hideReferrer: false,
