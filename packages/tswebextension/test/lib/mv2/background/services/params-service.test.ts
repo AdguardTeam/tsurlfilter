@@ -4,7 +4,7 @@ import { ParamsService } from '@lib/mv2/background/services/params-service';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
 import { ContentType, FilteringEventType } from '@lib/common';
 
-import { MockFilteringLog } from '../../../common/mock-filtering-log';
+import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Params service', () => {
     const mockFilteringLog = new MockFilteringLog();

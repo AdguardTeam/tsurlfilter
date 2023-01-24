@@ -4,6 +4,7 @@ import type { Redirects } from '@adguard/scriptlets';
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
 import { resourcesService } from '../resources-service';
+import { logger } from '../../../../common';
 
 export interface RedirectsServiceInterface {
     start: () => Promise<void>;
@@ -111,9 +112,7 @@ export class RedirectsService implements RedirectsServiceInterface {
         const redirectSource = this.redirects.getRedirect(title);
 
         if (!redirectSource) {
-            // TODO use logger
-            // eslint-disable-next-line no-console
-            console.debug(`There is no redirect source with title: "${title}"`);
+            logger.debug(`There is no redirect source with title: "${title}"`);
             return null;
         }
 

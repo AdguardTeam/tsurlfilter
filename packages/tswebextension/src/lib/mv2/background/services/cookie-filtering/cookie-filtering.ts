@@ -1,11 +1,12 @@
 /* eslint-disable class-methods-use-this,jsdoc/require-description-complete-sentence */
 import { nanoid } from 'nanoid';
-import { NetworkRule, CookieModifier, logger } from '@adguard/tsurlfilter';
+import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
 import {
     ContentType,
     defaultFilteringLog,
     FilteringEventType,
     FilteringLogInterface,
+    logger,
 } from '../../../../common';
 import CookieRulesFinder from './cookie-rules-finder';
 import ParsedCookie from './parsed-cookie';

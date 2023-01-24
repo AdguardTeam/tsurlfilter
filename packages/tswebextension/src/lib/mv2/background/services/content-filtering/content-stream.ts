@@ -1,6 +1,6 @@
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { WebRequest } from 'webextension-polyfill';
-import { RequestType, logger } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter';
 
 import {
     DEFAULT_CHARSET,
@@ -12,7 +12,7 @@ import {
     parseCharsetFromHeader,
 } from './charsets';
 import { RequestContext } from '../../request';
-import { FilteringEventType, FilteringLogInterface } from '../../../../common';
+import { FilteringEventType, FilteringLogInterface, logger } from '../../../../common';
 import { ContentStringFilterInterface } from './content-string-filter';
 
 /**

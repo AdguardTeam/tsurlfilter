@@ -1,6 +1,6 @@
-/* eslint-disable no-console */
 import path from 'path';
 import { copy } from 'fs-extra';
+import { logger } from '../lib/common';
 
 const REDIRECTS_CONFIG_PATH = 'redirects.yml';
 const REDIRECTS_RESOURCES_SRC_PATH = 'redirect-files';
@@ -15,8 +15,8 @@ export const copyWar = async (dest: string): Promise<void> => {
         await copy(path.resolve(src, REDIRECTS_CONFIG_PATH), path.resolve(dest, REDIRECTS_CONFIG_PATH));
         await copy(path.resolve(src, REDIRECTS_RESOURCES_SRC_PATH), path.resolve(dest, REDIRECTS_RESOURCES_DEST_PATH));
 
-        console.info(`Web accessible resources was copied to ${dest}`);
+        logger.info(`Web accessible resources was copied to ${dest}`);
     } catch (e) {
-        console.error((e as Error).message);
+        logger.error((e as Error).message);
     }
 };

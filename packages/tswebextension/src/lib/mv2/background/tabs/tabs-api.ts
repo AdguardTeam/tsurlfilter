@@ -1,9 +1,13 @@
-import { NetworkRule, RequestType, logger } from '@adguard/tsurlfilter';
+import { NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import browser, { ExtensionTypes, Tabs } from 'webextension-polyfill';
 
 import { TabContext } from './tab-context';
 import { Frame } from './frame';
-import { EventChannel, EventChannelInterface } from '../../../common';
+import {
+    EventChannel,
+    EventChannelInterface,
+    logger,
+} from '../../../common';
 import { RequestContext } from '../request';
 
 export interface TabsApiInterface {
@@ -30,8 +34,6 @@ export interface TabsApiInterface {
  */
 export class TabsApi implements TabsApiInterface {
     // TODO: use global config context
-    private verbose = false;
-
     private context = new Map<number, TabContext>();
 
     public onCreate = new EventChannel<TabContext>();
@@ -57,17 +59,6 @@ export class TabsApi implements TabsApiInterface {
         this.getTabFrame = this.getTabFrame.bind(this);
         this.getTabMainFrame = this.getTabMainFrame.bind(this);
         this.recordFrameRequest = this.recordFrameRequest.bind(this);
-
-        this.logError = this.logError.bind(this);
-    }
-
-    /**
-     * Sets verbose mode.
-     *
-     * @param value Boolean flag.
-     */
-    public setVerbose(value: boolean): void {
-        this.verbose = value;
     }
 
     /**
@@ -362,7 +353,7 @@ export class TabsApi implements TabsApiInterface {
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      */
-    public injectScript(code: string, tabId: number, frameId?: number): void {
+    static injectScript(code: string, tabId: number, frameId?: number): void {
         const injectDetails = {
             code,
             frameId,
@@ -372,7 +363,7 @@ export class TabsApi implements TabsApiInterface {
 
         browser.tabs
             .executeScript(tabId, injectDetails)
-            .catch(this.logError);
+            .catch(logger.error);
     }
 
     /**
@@ -382,7 +373,7 @@ export class TabsApi implements TabsApiInterface {
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      */
-    public injectCss(code: string, tabId: number, frameId?: number): void {
+    static injectCss(code: string, tabId: number, frameId?: number): void {
         const injectDetails = {
             code,
             frameId,
@@ -393,19 +384,7 @@ export class TabsApi implements TabsApiInterface {
 
         browser.tabs
             .insertCSS(tabId, injectDetails)
-            .catch(this.logError);
-    }
-
-    /**
-     * // TODO consider using logger service
-     * Logs error to the console depending on the verbose mode.
-     *
-     * @param e Error instance.
-     */
-    private logError(e: unknown): void {
-        if (this.verbose) {
-            logger.error(e instanceof Error ? e.message : JSON.stringify(e));
-        }
+            .catch(logger.error);
     }
 }
 

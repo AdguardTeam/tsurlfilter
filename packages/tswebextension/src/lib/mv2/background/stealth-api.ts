@@ -1,5 +1,5 @@
 import browser from 'webextension-polyfill';
-import { StringRuleList, logger } from '@adguard/tsurlfilter';
+import { StringRuleList } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
@@ -8,6 +8,7 @@ import {
     FilteringLogInterface,
     defaultFilteringLog,
     StealthConfig,
+    logger,
 } from '../../common';
 
 /**
@@ -191,7 +192,7 @@ export class StealthApi implements StealthApiInterface {
                     });
                 }
             } catch (e) {
-                StealthApi.logError(e as Error);
+                logger.error(`Error updating privacy.network settings: ${(e as Error).message}`);
             }
         }
 
@@ -208,7 +209,7 @@ export class StealthApi implements StealthApiInterface {
                     });
                 }
             } catch (e) {
-                StealthApi.logError(e as Error);
+                logger.error(`Error updating privacy.network settings: ${(e as Error).message}`);
             }
         }
     }
@@ -223,16 +224,6 @@ export class StealthApi implements StealthApiInterface {
         // Edge doesn't support privacy api
         // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/privacy
         return !!browser.privacy;
-    }
-
-    /**
-     * TODO consider using logger service.
-     * Logs error.
-     *
-     * @param e Error instance.
-     */
-    private static logError(e: Error): void {
-        logger.error(`Error updating privacy.network settings: ${e.message}`);
     }
 }
 

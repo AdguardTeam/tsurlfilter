@@ -1,8 +1,8 @@
 /* eslint-disable class-methods-use-this */
 import browser, { Cookies } from 'webextension-polyfill';
-import { logger } from '@adguard/tsurlfilter';
 
 import ParsedCookie from '../parsed-cookie';
+import { logger } from '../../../../../common/utils/logger';
 
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;

@@ -5,7 +5,9 @@ import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '@lib/mv2/background/service
 import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
 import { ContentStringFilterInterface } from '@lib/mv2/background/services/content-filtering/content-string-filter';
 import { MockStreamFilter } from './mock-stream-filter';
-import { MockFilteringLog } from '../../../../common/mock-filtering-log';
+import { MockFilteringLog } from '../../../../common/mocks';
+
+jest.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Content stream', () => {
     const textEncoderUtf8 = new TextEncoder();

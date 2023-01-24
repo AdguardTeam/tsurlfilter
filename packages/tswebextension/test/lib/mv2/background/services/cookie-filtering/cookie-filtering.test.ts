@@ -12,10 +12,11 @@ import {
 import { FilteringEventType, ContentType } from '@lib/common';
 import { tabsApi } from '@lib/mv2/background/tabs';
 
-import { MockFilteringLog } from '../../../../common/mock-filtering-log';
+import { MockFilteringLog } from '../../../../common/mocks';
 
 import HttpHeaders = WebRequest.HttpHeaders;
 
+jest.mock('../../../../../../src/lib/common/utils/logger');
 jest.mock('@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
 
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);

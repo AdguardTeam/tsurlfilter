@@ -8,7 +8,7 @@ import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects/redirects-service';
 
 import { messagesApi } from './messages-api';
-import { AppInterface, defaultFilteringLog } from '../../common';
+import { AppInterface, defaultFilteringLog, logger } from '../../common';
 import {
     ConfigurationMV2,
     ConfigurationMV2Context,
@@ -56,10 +56,11 @@ export class TsWebExtension implements ManifestV2AppInterface {
     public async start(configuration: ConfigurationMV2): Promise<void> {
         configurationMV2Validator.parse(configuration);
 
+        logger.setVerbose(configuration.verbose);
+
         RequestEvents.init();
         await redirectsService.start();
         await engineApi.startEngine(configuration);
-        tabsApi.setVerbose(configuration.verbose);
         await tabsApi.start();
         WebRequestApi.start();
         Assistant.assistantUrl = configuration.settings.assistantUrl;
@@ -94,7 +95,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
 
         configurationMV2Validator.parse(configuration);
 
-        tabsApi.setVerbose(configuration.verbose);
+        logger.setVerbose(configuration.verbose);
 
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();

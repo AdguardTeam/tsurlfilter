@@ -5,7 +5,7 @@ import { ContentType, StealthConfig } from '@lib/common';
 import { RequestContext, RequestContextState } from '@lib/mv2';
 import { StealthActions, StealthService } from '@lib/mv2/background/services/stealth-service';
 
-import { MockFilteringLog } from '../../../common/mock-filtering-log';
+import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Stealth service', () => {
     let config: StealthConfig;

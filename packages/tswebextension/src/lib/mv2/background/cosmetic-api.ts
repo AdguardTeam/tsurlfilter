@@ -2,7 +2,7 @@ import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
-import { tabsApi } from './tabs/tabs-api';
+import { TabsApi, tabsApi } from './tabs/tabs-api';
 import { USER_FILTER_ID } from '../../common/constants';
 
 /**
@@ -27,7 +27,7 @@ export class CosmeticApi {
      * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
-        tabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+        TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
     }
 
     /**
@@ -42,7 +42,7 @@ export class CosmeticApi {
      * @param frameId Frame id.
      */
     public static injectCss(cssText: string, tabId: number, frameId = 0): void {
-        tabsApi.injectCss(cssText, tabId, frameId);
+        TabsApi.injectCss(cssText, tabId, frameId);
     }
 
     /**
