@@ -33,6 +33,8 @@ import { DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
 import { RequestBlockingLogger } from "./request-blocking-logger";
 import { Logger } from "./logger";
 
+import { ASSISTANT_OUTPUT } from "../../constants";
+
 /**
  * By the rules of Firefox AMO we cannot use remote scripts (and our JS rules can be counted as such).
  * Because of that we use the following approach (that was accepted by AMO reviewers):
@@ -231,6 +233,7 @@ export class AdguardApi {
             userrules,
             verbose: false,
             settings: {
+                assistantUrl: `${ASSISTANT_OUTPUT}.js`,
                 filteringEnabled: true,
                 stealthModeEnabled: true,
                 collectStats: true,

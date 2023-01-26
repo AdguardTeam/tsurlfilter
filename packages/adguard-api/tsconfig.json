@@ -1,7 +1,18 @@
 {
     "extends": "./tsconfig.base.json",
-    "include": ["src/**/*.ts", "webpack.config.ts"],
     "compilerOptions": {
         "baseUrl": ".",
+    },
+    "include": [
+        "src/**/*.ts",
+        "tasks/**/*.ts",
+        "constants.ts",
+        "webpack.config.ts"
+    ],
+    "ts-node": {
+        "swc": true,
+        "compilerOptions": {
+            "module": "CommonJS",
+        }
     }
 }
