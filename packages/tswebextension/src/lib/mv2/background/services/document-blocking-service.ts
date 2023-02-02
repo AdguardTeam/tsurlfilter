@@ -4,9 +4,10 @@ import { getDomain } from 'tldts';
 
 import { WebRequestBlockingResponse } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { isFirefox } from '../utils/browser-detector';
+import { isChromium, isFirefox } from '../utils/browser-detector';
 import { tabsApi } from '../tabs';
 import { ConfigurationMV2 } from '../configuration';
+import { logger } from '..';
 
 /**
  * This service encapsulate processing of $document modifier rules.
@@ -90,6 +91,16 @@ export class DocumentBlockingService {
         // We set blocking page url via browser.tabs api for bypassing this limitation
         if (isFirefox) {
             DocumentBlockingService.reloadTabWithBlockingPage(tabId, blockingUrl);
+        // Chrome doesn't allow to show extension pages in incognito mode
+        } else if (isChromium && tabsApi.isIncognitoTab(tabId)) {
+            // Closing tab before opening a new one may lead to browser crash (Chromium)
+            browser.tabs.create({ url: blockingUrl })
+                .then(() => {
+                    browser.tabs.remove(tabId);
+                })
+                .catch((e) => {
+                    logger.warn(`Can't open info page about blocked domain. Err: ${e}`);
+                });
         }
 
         return { redirectUrl: blockingUrl };
