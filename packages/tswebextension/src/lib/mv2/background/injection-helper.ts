@@ -91,23 +91,26 @@ export const buildScriptText = (scriptText: string): string => {
 /**
  * Builds script to be injected into the page and applying extended css rules.
  *
- * @param extendedCssStylesheets Extended css stylesheets.
+ * @param extendedCssRules Array of extended css rules.
  * @returns Script to inject.
  */
-export const buildExtendedCssScriptText = (extendedCssStylesheets: string): string => {
+export const buildExtendedCssScriptText = (extendedCssRules: string[]): string => {
+    // extended css rules is array
+    // so it should be injected into built script string as stringified array
+    const injectedExtCssRules = JSON.stringify(extendedCssRules);
     return `(function() {
                 // Init css hits counter
                 const cssHitsCounter = new CssHitsCounter((stats) => {
                     console.debug('Css stats ready');
                     console.debug(stats);
-                    
+
                     chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
                 });
-                
-                // Apply extended css stylesheets
-                const extendedCssContent = \`${extendedCssStylesheets}\`;
+
+                // Apply extended css rules
+                const cssRules = ${injectedExtCssRules};
                 const extendedCss = new ExtendedCss({
-                    styleSheet: extendedCssContent,
+                    cssRules,
                     beforeStyleApplied: (el) => {
                         return cssHitsCounter.countAffectedByExtendedCss(el);
                     }

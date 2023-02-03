@@ -168,15 +168,15 @@ export class MessagesApi implements MessagesApiInterface {
     private handleGetExtendedCssMessage(
         sender: Runtime.MessageSender,
         payload?: unknown,
-    ): boolean | string | undefined {
+    ): string[] | null {
         if (!payload || !sender?.tab?.id) {
-            return false;
+            return null;
         }
 
         const res = getExtendedCssPayloadValidator.safeParse(payload);
 
         if (!res.success) {
-            return false;
+            return null;
         }
 
         const tabId = sender.tab.id;
@@ -191,7 +191,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        return CosmeticApi.getFrameExtCssText(tabId, frameId);
+        return CosmeticApi.getFrameExtCssRules(tabId, frameId);
     }
 
     /**

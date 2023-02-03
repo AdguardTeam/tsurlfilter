@@ -37,7 +37,7 @@ const contentScriptConfig = {
     external: [
         'zod',
         'webextension-polyfill',
-        'extended-css',
+        '@adguard/extended-css',
         '@adguard/tsurlfilter',
         '@adguard/assistant',
         'tldts',
@@ -61,7 +61,7 @@ const contentScriptMv3Config = {
     external: [
         'zod',
         'webextension-polyfill',
-        'extended-css',
+        '@adguard/extended-css',
         '@adguard/tsurlfilter',
         '@adguard/assistant',
     ],

@@ -74,34 +74,32 @@ export class CosmeticApi {
     }
 
     /**
-     * Builds extended css stylesheet from cosmetic result.
+     * Builds extended css rules from cosmetic result.
      *
      * @param cosmeticResult Cosmetic result.
      * @param collectingCosmeticRulesHits Flag to collect cosmetic rules hits.
-     * @returns Extended css stylesheet or undefined.
+     * @returns Array of extended css rules or null.
      */
-    public static getExtCssText(
+    public static getExtCssRules(
         cosmeticResult: CosmeticResult,
         collectingCosmeticRulesHits = false,
-    ): string | undefined {
+    ): string[] | null {
         const { elementHiding, CSS } = cosmeticResult;
 
         const elemhideExtCss = elementHiding.genericExtCss.concat(elementHiding.specificExtCss);
         const injectExtCss = CSS.genericExtCss.concat(CSS.specificExtCss);
 
-        let extStyles: string[];
+        let extCssRules: string[];
 
         if (collectingCosmeticRulesHits) {
-            extStyles = CosmeticApi.buildStyleSheetWithHits(elemhideExtCss, injectExtCss);
+            extCssRules = CosmeticApi.buildStyleSheetWithHits(elemhideExtCss, injectExtCss);
         } else {
-            extStyles = CosmeticApi.buildStyleSheet(elemhideExtCss, injectExtCss, false);
+            extCssRules = CosmeticApi.buildStyleSheet(elemhideExtCss, injectExtCss, false);
         }
 
-        if (extStyles.length > 0) {
-            return extStyles.join('\n');
-        }
-
-        return undefined;
+        return extCssRules.length > 0
+            ? extCssRules
+            : null;
     }
 
     /**
@@ -141,28 +139,28 @@ export class CosmeticApi {
     }
 
     /**
-     * Returns extended css stylesheet for the frame.
+     * Returns array of extended css rules for the frame.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
-     * @returns Extended css stylesheet or undefined.
+     * @returns Array of extended css rules or null.
      */
-    public static getFrameExtCssText(tabId: number, frameId: number): string | undefined {
+    public static getFrameExtCssRules(tabId: number, frameId: number): string[] | null {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
         if (!frame?.requestContext) {
-            return undefined;
+            return null;
         }
 
         const { requestContext } = frame;
 
         if (!requestContext?.cosmeticResult) {
-            return undefined;
+            return null;
         }
 
         const { cosmeticResult } = requestContext;
 
-        const extCssText = CosmeticApi.getExtCssText(cosmeticResult, true);
+        const extCssText = CosmeticApi.getExtCssRules(cosmeticResult, true);
 
         return extCssText;
     }

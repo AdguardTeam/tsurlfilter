@@ -1,4 +1,4 @@
-import ExtendedCss from 'extended-css';
+import { ExtendedCss } from '@adguard/extended-css';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
@@ -20,28 +20,27 @@ if (!global.isAssistantInitiated) {
     global.isAssistantInitiated = true;
 }
 
-const applyCss = (cssContent: string): void => {
-    if (!cssContent || cssContent.length === 0) {
+const applyCss = (cssRules: string[]): void => {
+    if (!cssRules || cssRules.length === 0) {
         return;
     }
 
     const styleEl = document.createElement('style');
     styleEl.setAttribute('type', 'text/css');
-    styleEl.textContent = cssContent;
+    styleEl.textContent = cssRules.join('');
 
     (document.head || document.documentElement).appendChild(styleEl);
     logger.debug('[COSMETIC CSS]: applied');
 };
 
-const applyExtendedCss = (cssText: string): void => {
-    if (!cssText || cssText.length === 0) {
+const applyExtendedCss = (extendedCssRules: string[] | undefined): void => {
+    // cssRules may be undefined if there is no extended css rules
+    if (!extendedCssRules || extendedCssRules.length === 0) {
         return;
     }
 
-    // Apply extended css stylesheets
-    const extendedCss = new ExtendedCss({
-        styleSheet: cssText,
-    });
+    // Apply extended css rules
+    const extendedCss = new ExtendedCss({ cssRules: extendedCssRules });
 
     extendedCss.apply();
 
@@ -60,7 +59,7 @@ const applyExtendedCss = (cssText: string): void => {
 
     if (res) {
         const { css, extendedCss } = res;
-        applyCss(css?.join(''));
-        applyExtendedCss(extendedCss?.join(''));
+        applyCss(css);
+        applyExtendedCss(extendedCss);
     }
 })();

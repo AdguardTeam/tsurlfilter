@@ -80,11 +80,11 @@
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.68",
+    "@adguard/extended-css": "^2.0.45",
     "@adguard/scriptlets": "^1.7.20",
     "bowser": "2.11.0",
     "commander": "9.4.1",
     "deepmerge": "4.2.2",
-    "extended-css": "git+https://github.com/AdguardTeam/ExtendedCss.git#v1.3.14",
     "fs-extra": "10.1.0",
     "lru_map": "0.4.1",
     "nanoid": "4.0.0",

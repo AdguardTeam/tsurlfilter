@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.0.59]
+
+### Changed
+- Updated `@adguard/extended-css` to `v2.0.45`
+
+
 ## [0.0.58]
 
 ### Fixed
@@ -127,4 +134,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - JS and CSS injection error handling
 - Request events initialization
-

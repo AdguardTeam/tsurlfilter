@@ -55,28 +55,29 @@ describe('Injection Helper', () => {
     });
 
     it('build extended css script text', () => {
-        const extendedCss = 'h1:contains(Example){display:none!important;}';
+        const extendedCss = ['h1:contains(Example){display:none!important;}'];
 
+        /* eslint-disable no-useless-escape */
         const expected = `(function() {
             // Init css hits counter
             const cssHitsCounter = new CssHitsCounter((stats) => {
                 console.debug('Css stats ready');
                 console.debug(stats);
-                
+
                 chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
             });
 
-            // Apply extended css stylesheets
-            const extendedCssContent = \`h1:contains(Example){display:none!important;}\`;
+            // Apply extended css rules
+            const cssRules = [\"h1:contains(Example){display:none!important;}\"];
             const extendedCss = new ExtendedCss({
-                styleSheet: extendedCssContent,
+                cssRules,
                 beforeStyleApplied: (el) => {
                     return cssHitsCounter.countAffectedByExtendedCss(el);
                 }
             });
             extendedCss.apply();
         })()`;
-
+        /* eslint-enable no-useless-escape */
         expect(trim(buildExtendedCssScriptText(extendedCss))).toBe(trim(expected));
     });
 });

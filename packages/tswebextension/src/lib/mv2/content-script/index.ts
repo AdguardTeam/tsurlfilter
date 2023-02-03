@@ -1,4 +1,4 @@
-import ExtendedCss, { IAffectedElement } from 'extended-css';
+import { ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
 import { CssHitsCounter } from './css-hits-counter';
 import { ElementCollapser } from './element-collapser';
 // Import directly from files to avoid side effects of tree shaking.
@@ -21,10 +21,10 @@ const cssHitsCounter = new CssHitsCounter((stats) => {
     });
 });
 
-const applyExtendedCss = (cssText: string): void => {
-    // Apply extended css stylesheets
+const applyExtendedCss = (cssRules: string[]): void => {
+    // Apply extended css rules
     const extendedCss = new ExtendedCss({
-        styleSheet: cssText,
+        cssRules,
         beforeStyleApplied: (el: IAffectedElement): IAffectedElement => {
             return cssHitsCounter.countAffectedByExtendedCss(el);
         },
@@ -39,7 +39,7 @@ const applyExtendedCss = (cssText: string): void => {
         payload: {
             documentUrl: window.location.href,
         },
-    }) as string;
+    });
 
     if (res) {
         applyExtendedCss(res);
