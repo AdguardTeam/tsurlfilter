@@ -59,10 +59,11 @@ export class TabsApi implements TabsApiInterface {
         this.getTabFrame = this.getTabFrame.bind(this);
         this.getTabMainFrame = this.getTabMainFrame.bind(this);
         this.recordFrameRequest = this.recordFrameRequest.bind(this);
+        this.onWindowFocusChanged = this.onWindowFocusChanged.bind(this);
     }
 
     /**
-     * Initializes tabs API and starts listening for tab events.
+     * Initializes tabs API and starts listening for tab & window events.
      */
     public async start(): Promise<void> {
         await this.createCurrentTabsContext();
@@ -72,16 +73,21 @@ export class TabsApi implements TabsApiInterface {
         browser.tabs.onRemoved.addListener(this.deleteTabContext);
         browser.tabs.onUpdated.addListener(this.updateTabContextData);
         browser.tabs.onActivated.addListener(this.onTabActivated);
+
+        browser.windows.onFocusChanged.addListener(this.onWindowFocusChanged);
     }
 
     /**
-     * Stops listening for tab events and clears tabs context.
+     * Stops listening for tab & window events and clears tabs context.
      */
     public stop(): void {
         browser.tabs.onCreated.removeListener(this.createTabContext);
         browser.tabs.onRemoved.removeListener(this.deleteTabContext);
         browser.tabs.onUpdated.removeListener(this.updateTabContextData);
         browser.tabs.onActivated.removeListener(this.onTabActivated);
+
+        browser.windows.onFocusChanged.removeListener(this.onWindowFocusChanged);
+
         this.context.clear();
     }
 
@@ -343,6 +349,33 @@ export class TabsApi implements TabsApiInterface {
      */
     private onTabActivated({ tabId }: Tabs.OnActivatedActiveInfoType): void {
         const tabContext = this.context.get(tabId);
+
+        if (tabContext) {
+            this.onActivated.dispatch(tabContext);
+        }
+    }
+
+    /**
+     * Called when focus state of window changed.
+     *
+     * @param windowId Window ID.
+     */
+    private async onWindowFocusChanged(windowId: number): Promise<void> {
+        // If all browser windows have lost focus.
+        if (windowId === browser.windows.WINDOW_ID_NONE) {
+            return;
+        }
+
+        const [activeTab] = await browser.tabs.query({
+            active: true,
+            windowId,
+        });
+
+        if (!activeTab || !activeTab.id) {
+            return;
+        }
+
+        const tabContext = this.context.get(activeTab.id);
 
         if (tabContext) {
             this.onActivated.dispatch(tabContext);
