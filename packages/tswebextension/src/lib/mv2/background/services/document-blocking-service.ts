@@ -1,13 +1,13 @@
 import browser from 'webextension-polyfill';
-import { NetworkRule } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
+import type { NetworkRule } from '@adguard/tsurlfilter';
 
-import { WebRequestBlockingResponse } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { logger } from '../../../common/utils/logger';
 import { isChromium, isFirefox } from '../utils/browser-detector';
-import { tabsApi } from '../tabs';
-import { ConfigurationMV2 } from '../configuration';
-import { logger } from '..';
+import { tabsApi } from '../tabs/tabs-api';
+import type { ConfigurationMV2 } from '../configuration';
+import type { WebRequestBlockingResponse } from '../request/request-blocking-api';
 
 /**
  * This service encapsulate processing of $document modifier rules.

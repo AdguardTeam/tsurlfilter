@@ -8,4 +8,6 @@ export const BACKGROUND_PATH = path.join(__dirname, "../extension/pages/backgrou
 
 export const CONTENT_SCRIPT = path.join(__dirname, "../extension/pages/content-script");
 
+export const ASSISTANT_INJECT = path.join(__dirname, "../extension/pages/assistant-inject");
+
 export const POPUP_PATH = path.join(__dirname, "../extension/pages/popup");

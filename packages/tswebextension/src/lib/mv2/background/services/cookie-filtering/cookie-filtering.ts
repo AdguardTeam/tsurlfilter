@@ -219,29 +219,25 @@ export class CookieFiltering {
     }
 
     /**
+     * TODO: Return engine startup status data to content script
+     * to delay execution of cookie rules until the engine is ready
+     *
      * Looks up blocking rules for content-script in frame context.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
-     * @returns True if rules were found.
+     * @returns List of blocking rules.
      */
     public getBlockingRules(tabId: number, frameId: number): NetworkRule[] {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (!frame?.requestContext) {
+        if (!frame || !frame.matchingResult) {
             return [];
         }
 
-        const { requestContext } = frame;
-        const { matchingResult, requestUrl } = requestContext;
+        const cookieRules = frame.matchingResult.getCookieRules();
 
-        if (!matchingResult || !requestUrl) {
-            return [];
-        }
-
-        const cookieRules = matchingResult.getCookieRules();
-
-        return CookieRulesFinder.getBlockingRules(requestUrl, cookieRules);
+        return CookieRulesFinder.getBlockingRules(frame.url, cookieRules);
     }
 
     /**

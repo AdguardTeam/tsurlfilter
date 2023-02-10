@@ -6,12 +6,16 @@
   "typings": "dist/types/background/index.d.ts",
   "exports": {
     ".": "./dist/adguard-api.js",
-    "./content-script": "./dist/adguard-content.js"
+    "./content-script": "./dist/adguard-content.js",
+    "./assistant": "./dist/adguard-assistant.js"
   },
   "typesVersions": {
     "*": {
       "content-script": [
         "dist/types/content-script/index.d.ts"
+      ],
+      "assistant": [
+        "dist/types/content-script/assistant.d.ts"
       ]
     }
   },

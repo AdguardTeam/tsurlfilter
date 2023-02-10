@@ -3,13 +3,14 @@ import { Configuration } from "webpack";
 import CopyWebpackPlugin from "copy-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import { CleanWebpackPlugin } from "clean-webpack-plugin";
-import { BACKGROUND_PATH, CONTENT_SCRIPT, POPUP_PATH, BUILD_PATH } from "../constants";
+import { BACKGROUND_PATH, CONTENT_SCRIPT, POPUP_PATH, BUILD_PATH, ASSISTANT_INJECT } from "../constants";
 
 export const config: Configuration = {
     mode: "production",
     entry: {
         background: BACKGROUND_PATH,
         "content-script": CONTENT_SCRIPT,
+        "adguard-assistant": ASSISTANT_INJECT,
         popup: POPUP_PATH,
     },
     output: {

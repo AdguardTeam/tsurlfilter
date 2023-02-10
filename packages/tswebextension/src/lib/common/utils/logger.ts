@@ -27,6 +27,12 @@ export class Logger implements FlexibleLoggerInterface {
      */
     constructor(loggerImpl: LoggerInterface = console) {
         this.loggerImpl = loggerImpl;
+
+        this.setVerbose = this.setVerbose.bind(this);
+        this.error = this.error.bind(this);
+        this.warn = this.warn.bind(this);
+        this.debug = this.debug.bind(this);
+        this.info = this.info.bind(this);
     }
 
     /**

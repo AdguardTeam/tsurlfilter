@@ -1,21 +1,51 @@
-import { RequestContext } from '../request';
+import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 
 /**
- * Class for storing frame url and request context.
+ * Document level frame id.
+ */
+export const MAIN_FRAME_ID = 0;
+
+/**
+ * Frame context data.
  */
 export class Frame {
-    url: string | undefined;
-
-    requestContext: RequestContext | undefined;
+    /**
+     * Frame url.
+     */
+    public url: string;
 
     /**
-     * Constructor for the Frame class.
+     * Is js rules injected in frame.
+     */
+    public isJsInjected = false;
+
+    /**
+     * Frame request id.
+     */
+    public requestId?: string;
+
+    /**
+     * Frame cosmetic result.
+     * This data is saved in frame, because we need for access it
+     * after request content data delete.
+     */
+    public cosmeticResult?: CosmeticResult;
+
+    /**
+     * Frame matching result.
+     * This data is saved in frame, because we need for access it
+     * after request content data delete.
+     */
+    public matchingResult?: MatchingResult | null;
+
+    /**
+     * Creates frame instance.
      *
      * @param url Frame url.
-     * @param requestContext Request context.
+     * @param requestId Request id.
      */
-    constructor(url?: string, requestContext?: RequestContext) {
+    constructor(url: string, requestId?: string) {
         this.url = url;
-        this.requestContext = requestContext;
+        this.requestId = requestId;
     }
 }

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.62]
+
+### Added
+- Added cosmetic rules injection in tabs opened before API initialization
+### Fixed
+- Fix js rule injections via WebRequest API.
+- Fix extended css rule injections via content-script on API initialization.
+  Content-script wait for engine start before processing.
+- Fix css hit counter enabling.
+  Now, it is initialized only if `collectHitStats` configuration prop is true.
+
+
 ## [0.0.61]
 
 ### Added

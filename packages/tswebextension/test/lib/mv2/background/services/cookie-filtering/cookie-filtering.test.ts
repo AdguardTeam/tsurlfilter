@@ -264,9 +264,16 @@ describe('Cookie filtering', () => {
 
         browser.tabs.onCreated.dispatch({ id: 0 });
 
-        tabsApi.recordFrameRequest(context);
+        tabsApi.handleFrameRequest(context);
 
         context.matchingResult = new MatchingResult(rules, null);
+
+        tabsApi.handleFrameMatchingResult(
+            context.tabId,
+            context.frameId,
+            context.matchingResult,
+        );
+
         requestContextStorage.record(requestId, context);
 
         expect(cookieFiltering.getBlockingRules(context.tabId, context.frameId)).toHaveLength(2);

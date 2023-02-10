@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import merge from 'deepmerge';
 
+import { appContext } from './context';
 import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs';
@@ -17,6 +18,7 @@ import {
 import { Assistant } from './assistant';
 import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
+import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
 
 export interface ManifestV2AppInterface extends AppInterface<ConfigurationMV2, ConfigurationMV2Context, void> {
     getMessageHandler: () => typeof messagesApi.handleMessage
@@ -26,17 +28,46 @@ export interface ManifestV2AppInterface extends AppInterface<ConfigurationMV2, C
  * App implementation for MV2.
  */
 export class TsWebExtension implements ManifestV2AppInterface {
-    public isStarted = false;
-
-    /**
-     * MV2 ConfigurationMV2 context excludes heavyweight fields with rules.
-     */
-    public configuration: ConfigurationMV2Context | undefined;
-
     public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
 
     // TODO add comment when this is used.
     public onAssistantCreateRule = Assistant.onCreateRule;
+
+    /**
+     * Gets app running status.
+     *
+     * @returns True if app started, else false.
+     */
+    public get isStarted(): boolean {
+        return appContext.isAppStarted;
+    }
+
+    /**
+     * Sets app running status.
+     *
+     * @param value Status value.
+     */
+    public set isStarted(value: boolean) {
+        appContext.isAppStarted = value;
+    }
+
+    /**
+     * Gets app configuration context.
+     *
+     * @returns True if app started, else false.
+     */
+    public get configuration(): ConfigurationMV2Context | undefined {
+        return appContext.configuration;
+    }
+
+    /**
+     * Sets app configuration context.
+     *
+     * @param value Status value.
+     */
+    public set configuration(value: ConfigurationMV2Context | undefined) {
+        appContext.configuration = value;
+    }
 
     /**
      * Constructor.
@@ -52,6 +83,8 @@ export class TsWebExtension implements ManifestV2AppInterface {
      * Starts request processing via {@link WebRequestApi} and tab tracking via {@link tabsApi}.
      *
      * @param configuration App configuration.
+     *
+     * @throws Error if configuration is not valid.
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
         configurationMV2Validator.parse(configuration);
@@ -61,6 +94,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
         RequestEvents.init();
         await redirectsService.start();
         await engineApi.startEngine(configuration);
+        await TabsCosmeticInjector.processOpenTabs();
         await tabsApi.start();
         WebRequestApi.start();
         Assistant.assistantUrl = configuration.settings.assistantUrl;
@@ -79,14 +113,14 @@ export class TsWebExtension implements ManifestV2AppInterface {
     }
 
     /**
-     * Reinitializes {@link EngineApi} with passed {@link configuration}
+     * Re-initializes {@link EngineApi} with passed {@link configuration}
      * and update tabs main frame rules based on new engine state.
      *
      * Requires app is started.
      *
      * @param configuration App configuration.
      *
-     * @throws Error, if app is not started.
+     * @throws Error if app is not started or configuration is not valid.
      */
     public async configure(configuration: ConfigurationMV2): Promise<void> {
         if (!this.isStarted) {

@@ -236,7 +236,7 @@ export class AdguardApi {
                 assistantUrl: `${ASSISTANT_OUTPUT}.js`,
                 filteringEnabled: true,
                 stealthModeEnabled: true,
-                collectStats: true,
+                collectStats: false,
                 allowlistInverted,
                 allowlistEnabled: true,
                 stealth: {

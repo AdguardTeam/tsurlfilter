@@ -4,7 +4,7 @@ import browser, { Runtime } from 'webextension-polyfill';
 import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { RequestBlockingApi } from './request';
-import { CosmeticApi } from './cosmetic-api';
+import { ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 import {
@@ -97,8 +97,8 @@ export class MessagesApi implements MessagesApiInterface {
                     message.payload,
                 );
             }
-            case MessageType.GET_EXTENDED_CSS: {
-                return this.handleGetExtendedCssMessage(
+            case MessageType.GET_COSMETIC_DATA: {
+                return this.handleContentScriptDataMessage(
                     sender,
                     message.payload,
                 );
@@ -165,10 +165,10 @@ export class MessagesApi implements MessagesApiInterface {
      * @param payload Message payload.
      * @returns Extended css string or false or undefined.
      */
-    private handleGetExtendedCssMessage(
+    private handleContentScriptDataMessage(
         sender: Runtime.MessageSender,
         payload?: unknown,
-    ): string[] | null {
+    ): ContentScriptCosmeticData | null {
         if (!payload || !sender?.tab?.id) {
             return null;
         }
@@ -191,7 +191,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        return CosmeticApi.getFrameExtCssRules(tabId, frameId);
+        return CosmeticApi.getContentScriptData(tabId, frameId);
     }
 
     /**

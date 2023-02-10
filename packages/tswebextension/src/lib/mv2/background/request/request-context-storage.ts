@@ -1,5 +1,5 @@
 import { WebRequest } from 'webextension-polyfill';
-import {
+import type {
     CosmeticResult,
     MatchingResult,
     RequestType,

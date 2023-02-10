@@ -1,9 +1,51 @@
-import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import type {
+    CosmeticResult,
+    CosmeticRule,
+} from '@adguard/tsurlfilter';
 
+import { appContext } from './context';
+import { getDomain } from '../../common/utils/url';
+import { USER_FILTER_ID } from '../../common/constants';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
+import { stealthApi } from './stealth-api';
 import { TabsApi, tabsApi } from './tabs/tabs-api';
-import { USER_FILTER_ID } from '../../common/constants';
+
+import type { ContentType } from '../../common/request-type';
+
+export type ApplyJsRulesParams = {
+    tabId: number,
+    frameId: number,
+    cosmeticResult: CosmeticResult,
+    url: string,
+    requestId: string,
+    contentType: ContentType,
+    timestamp: number,
+};
+
+export type ApplyCssRulesParams = {
+    tabId: number,
+    frameId: number,
+    cosmeticResult: CosmeticResult,
+};
+
+export type ContentScriptCosmeticData = {
+    /**
+     * Is app started.
+     */
+    isAppStarted: boolean,
+
+    /**
+     * Are hits stats collected.
+     */
+    areHitsStatsCollected: boolean,
+
+    /**
+     * Extended css rules to apply.
+     */
+    extCssRules: string[] | null,
+};
 
 /**
  * Cosmetic api class.
@@ -139,30 +181,105 @@ export class CosmeticApi {
     }
 
     /**
-     * Returns array of extended css rules for the frame.
+     * Returns content script data for applying cosmetic.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
-     * @returns Array of extended css rules or null.
+     * @returns Content script data for applying cosmetic.
      */
-    public static getFrameExtCssRules(tabId: number, frameId: number): string[] | null {
+    public static getContentScriptData(tabId: number, frameId: number): ContentScriptCosmeticData {
+        const { isAppStarted, configuration } = appContext;
+
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+
+        const data: ContentScriptCosmeticData = {
+            isAppStarted,
+            areHitsStatsCollected,
+            extCssRules: null,
+        };
+
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (!frame?.requestContext) {
-            return null;
+        if (!frame?.cosmeticResult) {
+            return data;
         }
 
-        const { requestContext } = frame;
+        data.extCssRules = CosmeticApi.getExtCssRules(frame.cosmeticResult, areHitsStatsCollected);
 
-        if (!requestContext?.cosmeticResult) {
-            return null;
+        return data;
+    }
+
+    /**
+     * Applies css rules to specific frame.
+     *
+     * @param params Data for css rules injecting.
+     */
+    public static applyCssRules(params: ApplyCssRulesParams): void {
+        const {
+            tabId,
+            frameId,
+            cosmeticResult,
+        } = params;
+
+        const { configuration } = appContext;
+
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+
+        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
+
+        if (cssText) {
+            CosmeticApi.injectCss(cssText, tabId, frameId);
+        }
+    }
+
+    /**
+     * Applies js rules to specific frame.
+     *
+     * @param params Data for js rule injecting and logging.
+     */
+    public static applyJsRules(params: ApplyJsRulesParams): void {
+        const {
+            tabId,
+            frameId,
+            cosmeticResult,
+            url,
+            requestId,
+            contentType,
+            timestamp,
+        } = params;
+
+        const scriptRules = cosmeticResult.getScriptRules();
+
+        const scriptText = CosmeticApi.getScriptText(scriptRules);
+
+        if (scriptText) {
+            /**
+             * @see {@link LocalScriptRulesService} for details about script source
+             */
+            CosmeticApi.injectScript(scriptText, tabId, frameId);
+
+            for (const scriptRule of scriptRules) {
+                if (!scriptRule.isGeneric()) {
+                    defaultFilteringLog.publishEvent({
+                        type: FilteringEventType.JS_INJECT,
+                        data: {
+                            script: true,
+                            tabId,
+                            eventId: requestId,
+                            requestUrl: url,
+                            frameUrl: url,
+                            frameDomain: getDomain(url) as string,
+                            requestType: contentType,
+                            timestamp,
+                            rule: scriptRule,
+                        },
+                    });
+                }
+            }
         }
 
-        const { cosmeticResult } = requestContext;
-
-        const extCssText = CosmeticApi.getExtCssRules(cosmeticResult, true);
-
-        return extCssText;
+        const setDomSignalScript = stealthApi.getSetDomSignalScript();
+        CosmeticApi.injectScript(setDomSignalScript, tabId, frameId);
     }
 
     /**
@@ -293,13 +410,13 @@ export class CosmeticApi {
      *
      * @returns List of stylesheet expressions.
      */
-    private static buildStyleSheetWithHits = (
+    private static buildStyleSheetWithHits(
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
-    ): string[] => {
+    ): string[] {
         const elemhideStyles = elemhideRules.map((x) => CosmeticApi.addMarkerToElemhideRule(x));
         const injectStyles = injectRules.map((x) => CosmeticApi.addMarkerToInjectRule(x));
 
         return [...elemhideStyles, ...injectStyles];
-    };
+    }
 }

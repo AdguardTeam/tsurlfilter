@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- Assistant content-script is injected dynamically
+- [BREAKING CHANGE] Assistant script is separated and dynamically injected. You need to provide it in your project.
+- Update `@adguard/tswebextension` to `v0.0.62`
 
 ## [1.2.1]
 ### Added

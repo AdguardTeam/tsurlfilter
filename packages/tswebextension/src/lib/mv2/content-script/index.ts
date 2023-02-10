@@ -1,52 +1,21 @@
-import { ExtendedCss, type IAffectedElement } from '@adguard/extended-css';
-import { CssHitsCounter } from './css-hits-counter';
-import { ElementCollapser } from './element-collapser';
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { MessageType, sendAppMessage } from '../../common/content-script';
 import { CookieController } from './cookie-controller';
+import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
 
 export * from '../../common/stealth-helper';
 export * from './cookie-controller';
 
-ElementCollapser.start();
+const cosmeticController = new CosmeticController();
+cosmeticController.init();
 
 initAssistant();
 
-const cssHitsCounter = new CssHitsCounter((stats) => {
-    sendAppMessage({
-        type: MessageType.SAVE_CSS_HITS_STATS,
-        payload: stats,
-    });
-});
-
-const applyExtendedCss = (cssRules: string[]): void => {
-    // Apply extended css rules
-    const extendedCss = new ExtendedCss({
-        cssRules,
-        beforeStyleApplied: (el: IAffectedElement): IAffectedElement => {
-            return cssHitsCounter.countAffectedByExtendedCss(el);
-        },
-    });
-
-    extendedCss.apply();
-};
-
-(async (): Promise<void> => {
-    const res = await sendAppMessage({
-        type: MessageType.GET_EXTENDED_CSS,
-        payload: {
-            documentUrl: window.location.href,
-        },
-    });
-
-    if (res) {
-        applyExtendedCss(res);
-    }
-})();
-
 /**
+ * TODO: wait for engine starts (like in {@link CosmeticController}).
+ *
  * Runs CookieController.
  *
  * Steps:

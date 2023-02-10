@@ -1,4 +1,4 @@
-import { RequestType } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { WebRequest } from 'webextension-polyfill';
 
 /**

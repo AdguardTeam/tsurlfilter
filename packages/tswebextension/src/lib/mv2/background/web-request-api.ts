@@ -1,16 +1,13 @@
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { engineApi } from './engine-api';
-import { tabsApi } from './tabs';
-import { findHeaderByName } from './utils';
-
-import {
-    isHttpOrWsRequest,
-    defaultFilteringLog,
-    FilteringEventType,
-    getDomain,
-} from '../../common';
+import { tabsApi } from './tabs/tabs-api';
+import { MAIN_FRAME_ID } from './tabs/frame';
+import { findHeaderByName } from './utils/headers';
+import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
+import { ContentType } from '../../common/request-type';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 
 import { CosmeticApi } from './cosmetic-api';
 import { headersService } from './services/headers-service';
@@ -24,7 +21,6 @@ import {
     RequestData,
     requestContextStorage,
     RequestBlockingApi,
-    RequestContext,
 } from './request';
 import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
@@ -65,6 +61,7 @@ export class WebRequestApi {
         RequestEvents.onCompleted.removeListener(WebRequestApi.onCompleted);
 
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
+        browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
     }
 
     /**
@@ -83,6 +80,7 @@ export class WebRequestApi {
         const {
             requestType,
             tabId,
+            frameId,
             requestUrl,
             referrerUrl,
             requestId,
@@ -94,7 +92,7 @@ export class WebRequestApi {
         } = context;
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            tabsApi.recordFrameRequest(context);
+            tabsApi.handleFrameRequest(context);
 
             if (requestType === RequestType.Document) {
                 defaultFilteringLog.publishEvent({
@@ -142,9 +140,13 @@ export class WebRequestApi {
         });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            tabsApi.handleFrameMatchingResult(tabId, frameId, result);
+
             const cosmeticOption = result.getCosmeticOption();
 
             const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
+
+            tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
 
             requestContextStorage.update(requestId, {
                 cosmeticResult,
@@ -175,7 +177,7 @@ export class WebRequestApi {
         }
 
         if (response?.cancel) {
-            tabsApi.updateTabBlockedRequestCount(tabId, 1);
+            tabsApi.incrementTabBlockedRequestCount(tabId);
             hideRequestInitiatorElement(tabId, requestFrameId, requestUrl, requestType, thirdParty);
         } else {
             ContentFiltering.onBeforeRequest(requestId);
@@ -305,7 +307,57 @@ export class WebRequestApi {
             return;
         }
 
-        WebRequestApi.injectJsScript(context);
+        const {
+            requestId,
+            tabId,
+            frameId,
+            requestType,
+            contentType,
+            timestamp,
+        } = context;
+
+        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        const frame = tabContext.frames.get(frameId);
+
+        if (!frame
+            || !frame.cosmeticResult
+            || frame.isJsInjected
+        ) {
+            return;
+        }
+
+        /**
+         * Actual tab url may not be committed by navigation event during response processing.
+         * If {@link tabContext.info.url} and {@link url} are not the same, this means
+         * that tab navigation steel is being processed and js injection may be causing the error.
+         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
+         */
+        if (requestType === RequestType.Document && frame.url !== tabContext.info.url) {
+            return;
+        }
+
+        const { cosmeticResult, url } = frame;
+
+        CosmeticApi.applyJsRules({
+            requestId,
+            url,
+            tabId,
+            frameId,
+            cosmeticResult,
+            timestamp,
+            contentType,
+        });
+
+        frame.isJsInjected = true;
     }
 
     /**
@@ -334,111 +386,123 @@ export class WebRequestApi {
     }
 
     /**
-     * On committed web navigation event handler. We use it because it is more reliable than webRequest events.
+     * On committed web navigation event handler.
+     *
+     * Injects necessary CSS and scripts into the web page.
      *
      * @param details Event details.
      */
     private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
-        const { frameId, tabId } = details;
-        WebRequestApi.injectCosmetic(tabId, frameId);
-    }
-
-    /**
-     * Injects css in the page.
-     *
-     * @param context Request context.
-     */
-    private static injectCss(context: RequestContext): void {
-        if (!context?.cosmeticResult) {
-            return;
-        }
-
         const {
-            tabId,
             frameId,
-            cosmeticResult,
-        } = context;
-
-        const cssText = CosmeticApi.getCssText(cosmeticResult, true);
-
-        if (cssText) {
-            CosmeticApi.injectCss(cssText, tabId, frameId);
-        }
-    }
-
-    /**
-     * Injects js script in the page.
-     *
-     * @param context Request context.
-     */
-    private static injectJsScript(context: RequestContext): void {
-        if (!context?.cosmeticResult) {
-            return;
-        }
-
-        const {
             tabId,
-            requestId,
-            requestUrl,
-            frameId,
-            requestType,
-            contentType,
-            timestamp,
-            cosmeticResult,
-        } = context;
+            timeStamp,
+            url,
+        } = details;
 
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            const scriptRules = cosmeticResult.getScriptRules();
-
-            const scriptText = CosmeticApi.getScriptText(scriptRules);
-
-            if (scriptText) {
-                /**
-                 * @see {@link LocalScriptRulesService} for details about script source
-                 */
-                CosmeticApi.injectScript(scriptText, tabId, frameId);
-
-                for (const scriptRule of scriptRules) {
-                    if (!scriptRule.isGeneric()) {
-                        defaultFilteringLog.publishEvent({
-                            type: FilteringEventType.JS_INJECT,
-                            data: {
-                                script: true,
-                                tabId,
-                                eventId: requestId,
-                                requestUrl,
-                                frameUrl: requestUrl,
-                                frameDomain: getDomain(requestUrl) as string,
-                                requestType: contentType,
-                                timestamp,
-                                rule: scriptRule,
-                            },
-                        });
-                    }
-                }
-            }
-
-            const setDomSignalScript = stealthApi.getSetDomSignalScript();
-            CosmeticApi.injectScript(setDomSignalScript, tabId, frameId);
-        }
-    }
-
-    /**
-     * Injects cosmetic rules in the page.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     */
-    private static injectCosmetic(tabId: number, frameId: number): void {
         const frame = tabsApi.getTabFrame(tabId, frameId);
 
-        if (!frame?.requestContext) {
+        if (!frame
+            || !frame.cosmeticResult
+            || !frame.requestId
+        ) {
             return;
         }
 
-        const { requestContext } = frame;
+        const { cosmeticResult, requestId } = frame;
 
-        WebRequestApi.injectCss(requestContext);
-        WebRequestApi.injectJsScript(requestContext);
+        CosmeticApi.applyCssRules({
+            tabId,
+            frameId,
+            cosmeticResult,
+        });
+
+        if (frame.isJsInjected) {
+            return;
+        }
+
+        const isDocumentFrame = frameId === MAIN_FRAME_ID;
+
+        CosmeticApi.applyJsRules({
+            requestId,
+            url,
+            tabId,
+            frameId,
+            cosmeticResult,
+            timestamp: timeStamp,
+            contentType: isDocumentFrame
+                ? ContentType.DOCUMENT
+                : ContentType.SUBDOCUMENT,
+        });
+
+        frame.isJsInjected = true;
+    }
+
+    /**
+     * Checks if iframe has same source as main frame or if src is about:blank, javascript:, etc.
+     * We don't include frames with 'src=data:' because Chrome and Firefox
+     * do not allow data to be injected into frames with this type of src,
+     * this bug is reported here https://bugs.chromium.org/p/chromium/issues/detail?id=55084.
+     *
+     * @param frameUrl Frame url.
+     * @param frameId Unique id of frame in the tab.
+     * @param mainFrameUrl Url of tab where iframe exists.
+     * @returns True if frame without src, else returns false.
+     */
+    private static isLocalFrame(frameUrl: string, frameId: number, mainFrameUrl: string): boolean {
+        return frameId !== MAIN_FRAME_ID
+            && (frameUrl === mainFrameUrl
+                || frameUrl === 'about:blank'
+                || frameUrl === 'about:srcdoc'
+                // eslint-disable-next-line no-script-url
+                || frameUrl.indexOf('javascript:') > -1);
+    }
+
+    /**
+     * On DOM content loaded web navigation event handler.
+     *
+     * This method injects css and js code in iframes without remote source.
+     * Usual webRequest callbacks don't fire for iframes without remote source.
+     * Also urls in these iframes may be "about:blank", "about:srcdoc", etc.
+     * Due to this reason we prepare injections for them as for mainframe
+     * and inject them only when onDOMContentLoaded fires.
+     *
+     * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1046
+     * @param details Event details.
+     */
+    private static onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): void {
+        const {
+            tabId,
+            frameId,
+            url,
+            timeStamp,
+        } = details;
+
+        const mainFrame = tabsApi.getTabMainFrame(tabId);
+
+        if (!mainFrame
+            || !mainFrame.cosmeticResult
+            || !mainFrame.requestId
+            || !WebRequestApi.isLocalFrame(url, frameId, mainFrame.url)) {
+            return;
+        }
+
+        const { cosmeticResult, requestId } = mainFrame;
+
+        CosmeticApi.applyCssRules({
+            tabId,
+            frameId,
+            cosmeticResult,
+        });
+
+        CosmeticApi.applyJsRules({
+            requestId,
+            url,
+            tabId,
+            frameId,
+            cosmeticResult,
+            timestamp: timeStamp,
+            contentType: ContentType.SUBDOCUMENT,
+        });
     }
 }
