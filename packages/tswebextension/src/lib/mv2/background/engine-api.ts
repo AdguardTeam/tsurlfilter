@@ -1,5 +1,5 @@
+/* eslint-disable class-methods-use-this */
 import browser from 'webextension-polyfill';
-
 import {
     StringRuleList,
     RuleStorage,
@@ -19,6 +19,7 @@ import { getHost } from '../../common';
 import { allowlistApi } from './allowlist';
 import { stealthApi } from './stealth-api';
 import { ConfigurationMV2 } from './configuration';
+import { appContext } from './context';
 import { documentBlockingService } from './services/document-blocking-service';
 import { USER_FILTER_ID } from '../../common/constants';
 
@@ -59,9 +60,16 @@ const ASYNC_LOAD_CHINK_SIZE = 5000;
  * TSUrlFilter Engine wrapper.
  */
 export class EngineApi implements EngineApiInterface {
-    public isFilteringEnabled: boolean | undefined;
-
     private engine: Engine | undefined;
+
+    /**
+     * Gets app filtering status.
+     *
+     * @returns True if filtering is enabled, otherwise returns false.
+     */
+    public get isFilteringEnabled(): boolean {
+        return Boolean(appContext.configuration?.settings.filteringEnabled);
+    }
 
     /**
      * Starts engine.
@@ -73,12 +81,7 @@ export class EngineApi implements EngineApiInterface {
             filters,
             userrules,
             verbose,
-            settings,
         } = configuration;
-
-        const { filteringEnabled } = settings;
-
-        this.isFilteringEnabled = filteringEnabled;
 
         allowlistApi.configure(configuration);
         await stealthApi.configure(configuration);

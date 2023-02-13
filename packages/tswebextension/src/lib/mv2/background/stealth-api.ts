@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 import browser from 'webextension-polyfill';
 import { StringRuleList } from '@adguard/tsurlfilter';
 
@@ -10,6 +11,7 @@ import {
     StealthConfig,
     logger,
 } from '../../common';
+import { appContext } from './context';
 
 /**
  * Stealth api interface.
@@ -51,7 +53,14 @@ export class StealthApi implements StealthApiInterface {
 
     private isStealthModeEnabled: boolean | undefined;
 
-    private isFilteringEnabled: boolean | undefined;
+    /**
+     * Gets app filtering status.
+     *
+     * @returns True if filtering is enabled, otherwise returns false.
+     */
+    private get isFilteringEnabled(): boolean {
+        return Boolean(appContext.configuration?.settings.filteringEnabled);
+    }
 
     /**
      * Stealth API constructor.
@@ -73,11 +82,9 @@ export class StealthApi implements StealthApiInterface {
         const {
             stealth,
             stealthModeEnabled,
-            filteringEnabled,
         } = settings;
 
         this.isStealthModeEnabled = stealthModeEnabled;
-        this.isFilteringEnabled = filteringEnabled;
         this.configuration = stealth;
         this.engine = new StealthService(this.configuration, this.filteringLog);
 
