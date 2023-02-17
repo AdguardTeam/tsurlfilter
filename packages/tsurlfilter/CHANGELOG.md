@@ -1,6 +1,13 @@
 # TSUrlFilter Changelog
 
 
+## v1.0.75
+
+### Changed
+
+- Updated ExtendedCss to v2.0.51
+
+
 ## v1.0.74
 
 ### Changed
