@@ -21,7 +21,8 @@
   },
   "workspaces": [
     "packages/*",
-    "packages/examples/*"
+    "packages/examples/*",
+    "packages/tsurlfilter/test/builders/*"
   ],
   "devDependencies": {
     "lerna": "^6.2.0"

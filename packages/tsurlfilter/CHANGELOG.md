@@ -1,11 +1,38 @@
 # TSUrlFilter Changelog
 
+## v1.0.75
+
+### Changed
+
+- Updated ExtendedCss to v2.0.51
+
+
+## v1.0.74
+
+### Changed
+
+- Updated ExtendedCss to v2.0.49
+
+
+## v1.0.73
+
+### Changed
+
+- Updated ExtendedCss to v2.0.45
+
 
 ## 2.0.0-alpha.47
 
 ### Changed
 
 - The enum RequestType is made as const to avoid side effects for tree shaking.
+
+
+## v1.0.70
+
+### Changed
+
+- Updated Scriptlets to v1.8.2
 
 
 ## 2.0.0-alpha.34

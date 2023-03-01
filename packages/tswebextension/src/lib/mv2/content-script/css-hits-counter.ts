@@ -273,6 +273,11 @@ export class CssHitsCounter {
             this.observer.disconnect();
         }
 
+        /**
+         * To avoid cases where two css hits counters try to append and remove the
+         * same elements one after the other, we do not append already met nodes.
+         */
+        const probesWeakSet = new WeakSet();
         let timeoutId: number | null = null;
         this.observer = new MutationObserver(((mutationRecords) => {
             // Collect probe elements, count them, then remove from their targets
@@ -293,10 +298,19 @@ export class CssHitsCounter {
 
                     const { target } = mutationRecord;
                     if (!node.parentNode && target) {
+                        // If this node has been appended to the DOM and counted once, do not add
+                        // it again.
+                        if (probesWeakSet.has(node)) {
+                            return;
+                        }
                         // Most likely this is a "probe" element that was added and then
                         // immediately removed from DOM.
                         // We re-add it and check if any rule matched it
                         probeElements.push(node);
+
+                        // To ensure that this "probe" node has only been added once to the DOM,
+                        // we add it to the weak set.
+                        probesWeakSet.add(node);
 
                         // CSS rules could be applied to the nodes inside probe element
                         // that's why we get all child elements of added node

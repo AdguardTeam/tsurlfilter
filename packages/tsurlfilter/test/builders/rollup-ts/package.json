@@ -1,0 +1,14 @@
+{
+    "name": "rollup-ts",
+    "version": "0.0.1",
+    "description": "This package tests that TSUrlFilter can be successfully built into other libraries with rollup",
+    "license": "GPL-3.0-only",
+    "scripts": {
+        "build": "rollup -c",
+        "test": "./test.sh"
+    },
+    "devDependencies": {
+        "@rollup/plugin-node-resolve": "^15.0.1",
+        "rollup": "^3.10.0"
+    }
+}
