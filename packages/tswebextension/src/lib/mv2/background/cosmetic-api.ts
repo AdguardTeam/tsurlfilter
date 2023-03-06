@@ -52,13 +52,18 @@ export type ContentScriptCosmeticData = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi {
-    private static ELEMHIDE_HIT_START = " { display: none!important; content: 'adguard";
+    private static ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
 
     private static INJECT_HIT_START = " content: 'adguard";
 
     private static HIT_SEP = encodeURIComponent(';');
 
-    private static HIT_END = "' !important;}\r\n";
+    private static HIT_END = "' !important; }";
+
+    private static LINE_BREAK = '\r\n';
+
+    // Number of selectors in grouped selector list
+    private static CSS_SELECTORS_PER_LINE = 50;
 
     /**
      * Applies scripts from cosmetic result.
@@ -103,13 +108,13 @@ export class CosmeticApi {
         let styles: string[];
 
         if (collectingCosmeticRulesHits) {
-            styles = CosmeticApi.buildStyleSheetWithHits(elemhideCss, injectCss);
+            styles = CosmeticApi.buildStyleSheetsWithHits(elemhideCss, injectCss);
         } else {
-            styles = CosmeticApi.buildStyleSheet(elemhideCss, injectCss, true);
+            styles = CosmeticApi.buildStyleSheets(elemhideCss, injectCss, true);
         }
 
         if (styles.length > 0) {
-            return styles.join('\n');
+            return styles.join(CosmeticApi.LINE_BREAK);
         }
 
         return undefined;
@@ -134,9 +139,9 @@ export class CosmeticApi {
         let extCssRules: string[];
 
         if (collectingCosmeticRulesHits) {
-            extCssRules = CosmeticApi.buildStyleSheetWithHits(elemhideExtCss, injectExtCss);
+            extCssRules = CosmeticApi.buildStyleSheetsWithHits(elemhideExtCss, injectExtCss);
         } else {
-            extCssRules = CosmeticApi.buildStyleSheet(elemhideExtCss, injectExtCss, false);
+            extCssRules = CosmeticApi.buildStyleSheets(elemhideExtCss, injectExtCss, false);
         }
 
         return extCssRules.length > 0
@@ -283,53 +288,81 @@ export class CosmeticApi {
     }
 
     /**
-     * Builds stylesheet from rules.
+     * Builds element hiding stylesheet from rules.
+     * If `groupElemhideSelectors` is set,
+     * selector are to be combined into selector lists of {@link CosmeticApi.CSS_SELECTORS_PER_LINE}.
      *
-     * @param elemhideRules List of elemhide css rules.
+     * @param elemhideRules List of elemhide rules.
+     * @param groupElemhideSelectors Flag for elemhide selectors grouping.
+     *
+     * @returns Array of styles.
+     */
+    private static buildElemhideStyles(
+        elemhideRules: CosmeticRule[],
+        groupElemhideSelectors: boolean,
+    ): string[] {
+        // TODO: refactor constants as ELEMHIDE_CSS_STYLE and ELEMHIDE_HIT_START are duplicates partly
+        const ELEMHIDE_CSS_STYLE = ' { display: none !important; }';
+
+        const elemhideSelectors = [];
+
+        for (const selector of elemhideRules) {
+            elemhideSelectors.push(selector.getContent());
+        }
+
+        // if selector should not be grouped,
+        // add element hiding style to each of them
+        if (!groupElemhideSelectors) {
+            return elemhideSelectors.map((selector) => {
+                return `${selector}${ELEMHIDE_CSS_STYLE}`;
+            });
+        }
+
+        // otherwise selectors should be grouped into selector lists
+        const elemhideStyles = [];
+        for (let i = 0; i < elemhideSelectors.length; i += CosmeticApi.CSS_SELECTORS_PER_LINE) {
+            const selectorList = elemhideSelectors
+                .slice(i, i + CosmeticApi.CSS_SELECTORS_PER_LINE)
+                .join(', ');
+            elemhideStyles.push(`${selectorList}${ELEMHIDE_CSS_STYLE}`);
+        }
+        return elemhideStyles;
+    }
+
+    /**
+     * Builds stylesheets from rules.
+     * If `groupElemhideSelectors` is set,
+     * element hiding selector are to be combined into selector lists of {@link CosmeticApi.CSS_SELECTORS_PER_LINE}.
+     *
+     * @param elemhideRules List of elemhide rules.
      * @param injectRules List of inject css rules.
-     * @param groupElemhideSelectors Is hidden elements selectors will be grouped.
+     * @param groupElemhideSelectors Flag for elemhide selectors grouping.
      *
      * @returns List of stylesheet expressions.
      */
-    private static buildStyleSheet(
+    private static buildStyleSheets(
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
         groupElemhideSelectors: boolean,
     ): string[] {
-        const CSS_SELECTORS_PER_LINE = 50;
-        const ELEMHIDE_CSS_STYLE = ' { display: none!important; }\r\n';
+        const styles = [];
 
-        const elemhides = [];
-
-        let selectorsCount = 0;
-        // eslint-disable-next-line no-restricted-syntax
-        for (const selector of elemhideRules) {
-            selectorsCount += 1;
-
-            elemhides.push(selector.getContent());
-
-            if (selectorsCount % CSS_SELECTORS_PER_LINE === 0 || !groupElemhideSelectors) {
-                elemhides.push(ELEMHIDE_CSS_STYLE);
+        const elemHideStyles = CosmeticApi.buildElemhideStyles(elemhideRules, groupElemhideSelectors);
+        if (elemHideStyles.length > 0) {
+            if (groupElemhideSelectors) {
+                styles.push(elemHideStyles.join(CosmeticApi.LINE_BREAK));
             } else {
-                elemhides.push(', ');
+                styles.push(...elemHideStyles);
             }
         }
 
-        if (elemhides.length > 0) {
-            // Last element should always be a style (it will replace either a comma or the same style)
-            elemhides[elemhides.length - 1] = ELEMHIDE_CSS_STYLE;
-        }
-
-        const elemHideStyle = elemhides.join('');
-        const cssStyle = injectRules.map((x) => x.getContent()).join('\r\n');
-
-        const styles = [];
-        if (elemHideStyle) {
-            styles.push(elemHideStyle);
-        }
-
-        if (cssStyle) {
-            styles.push(cssStyle);
+        const cssStyles = injectRules.map((x: CosmeticRule) => x.getContent());
+        if (cssStyles.length > 0) {
+            if (groupElemhideSelectors) {
+                styles.push(cssStyles.join(CosmeticApi.LINE_BREAK));
+            } else {
+                styles.push(...cssStyles);
+            }
         }
 
         return styles;
@@ -403,14 +436,14 @@ export class CosmeticApi {
     }
 
     /**
-     * Builds stylesheet with css-hits marker.
+     * Builds stylesheets with css-hits marker.
      *
      * @param elemhideRules Elemhide css rules.
      * @param injectRules Inject css rules.
      *
      * @returns List of stylesheet expressions.
      */
-    private static buildStyleSheetWithHits(
+    private static buildStyleSheetsWithHits(
         elemhideRules: CosmeticRule[],
         injectRules: CosmeticRule[],
     ): string[] {
