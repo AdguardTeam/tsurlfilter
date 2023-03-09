@@ -5,11 +5,14 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import {
     BACKGROUND_PATH,
-    CONTENT_SCRIPT,
+    CONTENT_SCRIPT_PATH,
     POPUP_PATH,
     BUILD_PATH,
     DOCUMENT_BLOCKING_PATH,
+    ASSISTANT_INJECT_PATH,
 } from '../constants';
+
+import { BuildOutput } from '../../constants';
 
 const isFFBuild = process.env.BROWSER === 'firefox';
 
@@ -17,9 +20,10 @@ export const config: Configuration = {
     mode: 'development',
     devtool: 'eval-source-map',
     entry: {
-        background: BACKGROUND_PATH,
-        'content-script': CONTENT_SCRIPT,
-        'pages/popup': POPUP_PATH,
+        [BuildOutput.Background]: BACKGROUND_PATH,
+        [BuildOutput.ContentScript]: CONTENT_SCRIPT_PATH,
+        [BuildOutput.AssistantInject]: ASSISTANT_INJECT_PATH,
+        [BuildOutput.Popup]: POPUP_PATH,
     },
     output: {
         path: BUILD_PATH,
@@ -48,19 +52,19 @@ export const config: Configuration = {
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
             template: path.join(BACKGROUND_PATH, 'index.html'),
-            filename: 'background.html',
-            chunks: ['background'],
+            filename: `${BuildOutput.Background}.html`,
+            chunks: [BuildOutput.Background],
             cache: false,
         }),
         new HtmlWebpackPlugin({
             template: path.join(POPUP_PATH, 'index.html'),
-            filename: 'pages/popup.html',
-            chunks: ['pages/popup'],
+            filename: `${BuildOutput.Popup}.html`,
+            chunks: [BuildOutput.Popup],
             cache: false,
         }),
         new HtmlWebpackPlugin({
             template: path.join(DOCUMENT_BLOCKING_PATH, 'index.html'),
-            filename: 'pages/document-blocking.html',
+            filename: `${BuildOutput.DocumentBlocking}.html`,
             cache: false,
         }),
         new CopyWebpackPlugin({

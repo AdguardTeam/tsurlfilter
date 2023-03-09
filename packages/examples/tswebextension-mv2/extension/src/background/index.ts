@@ -2,6 +2,7 @@ import browser, { Events } from 'webextension-polyfill';
 import { TsWebExtension, ConfigurationMV2, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 
 import { MessageTypes } from '../common/message-types';
+import { BuildOutput } from '../../../constants';
 
 const tsWebExtension = new TsWebExtension('war');
 
@@ -24,6 +25,7 @@ const defaultConfig: ConfigurationMV2 = {
     userrules: [],
     verbose: false,
     settings: {
+        assistantUrl: `${BuildOutput.AssistantInject}.js`,
         filteringEnabled: true,
         stealthModeEnabled: true,
         collectStats: true,
