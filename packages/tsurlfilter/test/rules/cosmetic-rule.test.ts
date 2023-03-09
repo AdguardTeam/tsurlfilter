@@ -664,6 +664,21 @@ describe('Javascript rules', () => {
         expect(rule.isScriptlet).toBeTruthy();
     });
 
+    it('validate js scriptlet and regexp param', () => {
+        const jsRuleContent = '//scriptlet("prevent-setTimeout", "/location\\.href=\\"https:\\/\\/www\\.example\\.com\\//")';
+        const jsRule = `example.org#%#${jsRuleContent}`;
+        const rule = new CosmeticRule(jsRule, 0);
+
+        const scriptletData = rule.getScriptletData()!;
+        expect(typeof scriptletData.func).toBe('function');
+        expect(scriptletData.func.name).toBe('preventSetTimeout');
+        expect(scriptletData.params).toMatchObject({
+            ruleText: jsRule,
+            name: 'prevent-setTimeout',
+            args: ['/location\\.href=\\"https:\\/\\/www\\.example\\.com\\//'],
+        });
+    });
+
     it('returns script for js rule', () => {
         const jsRuleContent = 'console.log(\'test\')';
         const jsRule = `example.org#%#${jsRuleContent}`;
