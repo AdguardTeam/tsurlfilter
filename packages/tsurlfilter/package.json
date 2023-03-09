@@ -105,7 +105,7 @@
   },
   "dependencies": {
     "@adguard/extended-css": "^2.0.51",
-    "@adguard/scriptlets": "^1.8.2",
+    "@adguard/scriptlets": "^1.9.1",
     "ip6addr": "^0.2.3",
     "is-cidr": "^4.0.2",
     "is-ip": "^3.1.0",
