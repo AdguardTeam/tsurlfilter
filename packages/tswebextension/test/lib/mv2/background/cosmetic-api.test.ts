@@ -1,6 +1,9 @@
 import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
+import { localScriptRulesService } from '@lib/mv2/background/services/local-script-rules-service';
 
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { USER_FILTER_ID } from '@lib/common/constants';
+import localScriptRules from '../../../fixtures/local_script_rules';
 
 /**
  * Creates cosmetic result for elemhide rules.
@@ -334,6 +337,82 @@ describe('cosmetic api', () => {
                 const cosmeticResult = getCssCosmeticResult(actual);
                 expect(CosmeticApi.getExtCssRules(cosmeticResult, true)).toEqual(expected);
             });
+        });
+    });
+
+    describe('returns correct script text', () => {
+        const getScriptRules = (id: number): CosmeticRule[] => {
+            return [
+                new CosmeticRule('example.com#%#window.confirm = undefined;', id),
+            ];
+        };
+
+        const getLocalScriptRules = (id: number): CosmeticRule[] => {
+            return [
+                new CosmeticRule('example.com#%#window.open = undefined;', id),
+            ];
+        };
+
+        const getScriptletsRules = (id: number): CosmeticRule[] => {
+            return [
+                new CosmeticRule('example.com#%#//scriptlet("abort-on-property-read", "alert")', id),
+            ];
+        };
+
+        it('allow scriptlets and JS rules from user filter in all browsers', () => {
+            const userFilterRules = [
+                ...getScriptRules(USER_FILTER_ID),
+                ...getLocalScriptRules(USER_FILTER_ID),
+                ...getScriptletsRules(USER_FILTER_ID),
+            ];
+
+            const scriptText = CosmeticApi.getScriptText(userFilterRules);
+
+            const expectScriptText = userFilterRules.map((rule) => rule.getScript()).join('\n');
+
+            expect(scriptText).toStrictEqual(expectScriptText);
+        });
+
+        it('allow scriptlets and JS rules from custom filter in all browsers, except FirefoxAMO', () => {
+            const CUSTOM_FILTER_ID = 1001;
+
+            const customFilterRules = [
+                ...getScriptRules(CUSTOM_FILTER_ID),
+                ...getLocalScriptRules(CUSTOM_FILTER_ID),
+                ...getScriptletsRules(CUSTOM_FILTER_ID),
+            ];
+
+            const scriptText = CosmeticApi.getScriptText(customFilterRules);
+
+            const expectScriptText = [
+                ...getScriptRules(CUSTOM_FILTER_ID),
+                ...getLocalScriptRules(CUSTOM_FILTER_ID),
+                ...getScriptletsRules(CUSTOM_FILTER_ID),
+            ].map((rule) => rule.getScript()).join('\n');
+
+            expect(scriptText).toStrictEqual(expectScriptText);
+        });
+
+        it('allow scriptlets and JS rules (only from pre-built JSON) from custom filter in Firefox AMO', () => {
+            const CUSTOM_FILTER_ID = 1001;
+
+            const customFilterRules = [
+                ...getScriptRules(CUSTOM_FILTER_ID),
+                ...getLocalScriptRules(CUSTOM_FILTER_ID),
+                ...getScriptletsRules(CUSTOM_FILTER_ID),
+            ];
+
+            // Emulate Firefox AMO case
+            localScriptRulesService.setLocalScriptRules(localScriptRules);
+
+            const firefoxScriptText = CosmeticApi.getScriptText(customFilterRules);
+
+            const expectFirefoxScriptText = [
+                ...getLocalScriptRules(CUSTOM_FILTER_ID),
+                ...getScriptletsRules(CUSTOM_FILTER_ID),
+            ].map((rule) => rule.getScript()).join('\n');
+
+            expect(firefoxScriptText).toStrictEqual(expectFirefoxScriptText);
         });
     });
 });

@@ -253,12 +253,16 @@ class EngineApi {
     public getScriptsStringForUrl(url: string, option: CosmeticOption): string {
         const scriptRules = this.getScriptsForUrl(url, option);
 
+        // TODO: Add check for firefox AMO
+
         // scriptlet rules would are handled separately
         const scripts = scriptRules
             .filter((rule) => !rule.isScriptlet)
             .map((scriptRule) => scriptRule.getScript());
         // remove repeating scripts
         const scriptsCode = [...new Set(scripts)].join('\r\n');
+
+        // TODO: Check call to filtering log
 
         return `
                 (function () {

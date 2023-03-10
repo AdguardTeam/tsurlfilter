@@ -174,7 +174,6 @@ export class TsWebExtension implements ManifestV2AppInterface {
         return messagesApi.handleMessage;
     }
 
-    // TODO check why this is not used or described in the interface?
     /**
      * Sets prebuild local script rules.
      *

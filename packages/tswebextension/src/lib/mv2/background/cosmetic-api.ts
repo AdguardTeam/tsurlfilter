@@ -162,17 +162,21 @@ export class CosmeticApi {
 
         const scriptText = rules
             .filter((rule) => {
-                const filterId = rule.getFilterListId();
+                // Scriptlets should not be excluded for remote filters
+                if (rule.isScriptlet) {
+                    return true;
+                }
 
+                // User rules should not be excluded from remote filters
+                const filterId = rule.getFilterListId();
                 if (filterId === USER_FILTER_ID) {
                     return true;
                 }
 
-                const text = rule.getText();
-
                 /**
                  * @see {@link LocalScriptRulesService} for details about script source
                  */
+                const text = rule.getText();
                 return localScriptRulesService.isLocal(text);
             })
             .map((rule) => rule.getScript())
