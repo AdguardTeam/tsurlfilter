@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.64]
 
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.1`
+
 ### Fixed
 - Cosmetic rules applying if CssHitsCounter is disabled
 
