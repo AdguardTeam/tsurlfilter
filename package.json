@@ -25,6 +25,6 @@
     "packages/tsurlfilter/test/builders/*"
   ],
   "devDependencies": {
-    "lerna": "^6.2.0"
+    "lerna": "6.2.X"
   }
 }
