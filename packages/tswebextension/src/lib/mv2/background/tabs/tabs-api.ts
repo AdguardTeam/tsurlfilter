@@ -1,10 +1,10 @@
-import browser, { ExtensionTypes, Tabs } from 'webextension-polyfill';
+import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
 import { EventChannel } from '../../../common/utils/channels';
 import { logger } from '../../../common/utils/logger';
 import { allowlistApi } from '../allowlist';
-import { TabContext } from './tab-context';
+import { FrameRequestContext, TabContext } from './tab-context';
 import type { RequestContext } from '../request';
 import type { Frame } from './frame';
 
@@ -37,9 +37,18 @@ export interface TabsApiInterface {
 }
 
 /**
+ * Request context data related to the tab's frame.
+ */
+export type TabFrameRequestContext = FrameRequestContext & {
+    tabId: number;
+};
+
+/**
  * Tabs API. Wrapper around browser.tabs API.
  */
 export class TabsApi implements TabsApiInterface {
+    private static readonly MAIN_FRAME_ID = 0;
+
     public context = new Map<number, TabContext>();
 
     public onCreate = new EventChannel<TabContext>();
@@ -158,15 +167,15 @@ export class TabsApi implements TabsApiInterface {
      * @returns Frame data or null if not found.
      */
     public getTabMainFrame(tabId: number): Frame | null {
-        return this.getTabFrame(tabId, 0);
+        return this.getTabFrame(tabId, TabsApi.MAIN_FRAME_ID);
     }
 
     /**
      * Records request context to the tab context.
      *
-     * @param requestContext Request context.
+     * @param requestContext Tab's frame's request context.
      */
-    public handleFrameRequest(requestContext: RequestContext): void {
+    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
         const { tabId } = requestContext;
 
         const tabContext = this.context.get(tabId);

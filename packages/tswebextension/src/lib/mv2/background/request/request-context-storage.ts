@@ -6,6 +6,7 @@ import type {
 } from '@adguard/tsurlfilter';
 import ParsedCookie from '../services/cookie-filtering/parsed-cookie';
 import { EventChannel, EventChannelInterface, ContentType } from '../../../common';
+import { TabFrameRequestContext } from '../tabs/tabs-api';
 
 export const enum RequestContextState {
     BEFORE_REQUEST = 'BEFORE_REQUEST',
@@ -22,15 +23,10 @@ export const enum RequestContextState {
 /**
  * Request context data.
  */
-export type RequestContext = {
+export type RequestContext = TabFrameRequestContext & {
     state: RequestContextState;
-    requestId: string;
-    tabId: number;
-    frameId: number;
     timestamp: number; // record time in ms
-    requestUrl: string;
     referrerUrl: string;
-    requestType: RequestType;
     contentType: ContentType;
     requestFrameId: number;
     thirdParty: boolean;
@@ -93,6 +89,7 @@ export interface RequestContextStorageInterface {
      */
     find: (requestUrl: string, requestType: RequestType) => RequestContext | undefined;
 
+    // TODO: Check usage of these two event channels
     onRecord: EventChannelInterface<RequestStorageEvent>;
 
     onUpdate: EventChannelInterface<RequestStorageEvent>;

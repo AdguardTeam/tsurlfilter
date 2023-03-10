@@ -1,10 +1,11 @@
 import browser, { WebRequest } from 'webextension-polyfill';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { requestContextStorage, RequestContextState } from '../request-context-storage';
+import { requestContextStorage, RequestContextState, RequestContext } from '../request-context-storage';
 import { RequestEvent, RequestData } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
-import { tabsApi } from '../../tabs';
+import { TabFrameRequestContext, tabsApi } from '../../tabs';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -182,28 +183,44 @@ export class RequestEvents {
             requestFrameId = 0;
         }
 
+        // To mark requests started via navigation from the address bar (real
+        // request or pre-render, it does not matter) as first-party requests,
+        // we get only part of the request context to record only the tab and
+        // frame information before calculating the request referrer.
+        const tabFrameRequestContext: TabFrameRequestContext = {
+            requestUrl: url,
+            requestType,
+            requestId,
+            frameId,
+            tabId,
+        };
+
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            // Saves the current tab url to retrieve it correctly below.
+            tabsApi.handleFrameRequest(tabFrameRequestContext);
+        }
+
         const referrerUrl = originUrl
             || initiator
+            // Comparison of the requested url with the tab frame url in case of
+            // a navigation change from the browser address bar.
             || tabsApi.getTabMainFrame(tabId)?.url
             || tabsApi.getTabFrame(tabId, requestFrameId)?.url
             || url;
 
-        const thirdParty = isThirdPartyRequest(url, referrerUrl);
-
-        const context = requestContextStorage.record(requestId, {
-            state: RequestContextState.BEFORE_REQUEST,
-            requestId,
-            frameId,
-            tabId,
-            timestamp: timeStamp,
-            requestUrl: url,
-            referrerUrl,
-            requestType,
+        // Retrieve the rest part of the request context for record all fields.
+        const requestContext: RequestContext = {
+            ...tabFrameRequestContext,
             requestFrameId,
-            thirdParty,
+            state: RequestContextState.BEFORE_REQUEST,
+            timestamp: timeStamp,
+            thirdParty: isThirdPartyRequest(url, referrerUrl),
+            referrerUrl,
             contentType,
             method,
-        });
+        };
+
+        const context = requestContextStorage.record(requestId, requestContext);
 
         return { details, context };
     }

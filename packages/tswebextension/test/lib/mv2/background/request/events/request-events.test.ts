@@ -32,124 +32,238 @@ describe('Request Events', () => {
         thirdParty: true,
     };
 
-    beforeAll(() => {
+    it('onBeforeRequest with prerender request', async () => {
         RequestEvents.init();
-    });
 
-    it('onBeforeRequest', () => {
         const listener = jest.fn();
 
         RequestEvents.onBeforeRequest.addListener(listener);
 
         const timestamp = Date.now();
 
-        const details: WebRequest.OnBeforeRequestDetailsType = {
+        const prerenderRequestDetails: WebRequest.OnBeforeRequestDetailsType = {
             ...commonRequestData,
-            initiator: 'https://testcases.adguard.com',
+            // Tab id will be not the same with the current opened tab.
+            tabId: commonRequestData.tabId + 1,
             timeStamp: timestamp,
         };
 
-        const expectedContext = {
+        const prerenderRequestContext = {
             state: RequestContextState.BEFORE_REQUEST,
             timestamp,
             ...commonContextData,
+            tabId: commonRequestData.tabId + 1,
+            referrerUrl: commonRequestData.url,
+            thirdParty: false,
         };
 
         jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
-        browser.webRequest.onBeforeRequest.dispatch(details);
+        browser.webRequest.onBeforeRequest.dispatch(prerenderRequestDetails);
 
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
-    });
-
-    it('onBeforeSendHeaders', () => {
-        const listener = jest.fn();
-
-        RequestEvents.onBeforeSendHeaders.addListener(listener);
-
-        const timestamp = Date.now();
-
-        const details: WebRequest.OnBeforeSendHeadersDetailsType = {
+        // Then simulate request with navigation change.
+        const requestDetails: WebRequest.OnBeforeRequestDetailsType = {
             ...commonRequestData,
             timeStamp: timestamp,
+            url: 'https://example.org/',
         };
 
-        const expectedContext = {
-            state: RequestContextState.BEFORE_SEND_HEADERS,
-            timestamp,
+        const requestContext = {
             ...commonContextData,
+            state: RequestContextState.BEFORE_REQUEST,
+            timestamp,
+            referrerUrl: 'https://example.org/',
+            requestUrl: 'https://example.org/',
+            thirdParty: false,
         };
 
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+        browser.webRequest.onBeforeRequest.dispatch(requestDetails);
 
-        browser.webRequest.onBeforeSendHeaders.dispatch(details);
+        // First prerender request
+        expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({
+            details: prerenderRequestDetails,
+            context: prerenderRequestContext,
+        }));
 
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
+        // Second real navigation request
+        expect(listener).toHaveBeenNthCalledWith(2, expect.objectContaining({
+            details: requestDetails,
+            context: requestContext,
+        }));
     });
 
-    it('onSendHeaders', () => {
-        const listener = jest.fn();
-
-        RequestEvents.onSendHeaders.addListener(listener);
-
-        const timestamp = Date.now();
-
-        const details: WebRequest.OnSendHeadersDetailsType = {
-            ...commonRequestData,
-            timeStamp: timestamp,
-        };
-
-        const expectedContext = {
-            state: RequestContextState.SEND_HEADERS,
-            timestamp,
-            ...commonContextData,
-        };
-
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
-
-        browser.webRequest.onSendHeaders.dispatch(details);
-
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
-    });
-
-    it('onHeadersReceived', () => {
-        const listener = jest.fn();
-
-        RequestEvents.onHeadersReceived.addListener(listener);
-
-        const timestamp = Date.now();
-
-        const details: WebRequest.OnHeadersReceivedDetailsType = {
-            ...commonRequestData,
-            responseHeaders: [
-                {
-                    name: 'content-type',
-                    value: 'text/html; charset=UTF-8',
+    describe.each([
+        {
+            testName: 'onBeforeRequest',
+            testEventChannel: RequestEvents.onBeforeRequest,
+            browserEventChannel: browser.webRequest.onBeforeRequest,
+            details: <WebRequest.OnBeforeRequestDetailsType>{
+                ...commonRequestData,
+                initiator: 'https://testcases.adguard.com',
+            },
+            context: {
+                state: RequestContextState.BEFORE_REQUEST,
+                ...commonContextData,
+            },
+        },
+        {
+            testName: 'onBeforeSendHeaders',
+            testEventChannel: RequestEvents.onBeforeSendHeaders,
+            browserEventChannel: browser.webRequest.onBeforeSendHeaders,
+            details: <WebRequest.OnBeforeSendHeadersDetailsType>{
+                ...commonRequestData,
+            },
+            context: {
+                state: RequestContextState.BEFORE_SEND_HEADERS,
+                ...commonContextData,
+            },
+        },
+        {
+            testName: 'onSendHeaders',
+            testEventChannel: RequestEvents.onSendHeaders,
+            browserEventChannel: browser.webRequest.onSendHeaders,
+            details: <WebRequest.OnSendHeadersDetailsType>{
+                ...commonRequestData,
+            },
+            context: {
+                state: RequestContextState.SEND_HEADERS,
+                ...commonContextData,
+            },
+        },
+        {
+            testName: 'onHeadersReceived',
+            testEventChannel: RequestEvents.onHeadersReceived,
+            browserEventChannel: browser.webRequest.onHeadersReceived,
+            details: <WebRequest.OnHeadersReceivedDetailsType>{
+                ...commonRequestData,
+                responseHeaders: [
+                    {
+                        name: 'content-type',
+                        value: 'text/html; charset=UTF-8',
+                    },
+                ],
+                statusCode: 200,
+                statusLine: 'HTTP/1.1 200',
+            },
+            context: {
+                state: RequestContextState.HEADERS_RECEIVED,
+                responseHeaders: [
+                    {
+                        name: 'content-type',
+                        value: 'text/html; charset=UTF-8',
+                    },
+                ],
+                statusCode: 200,
+                ...commonContextData,
+            },
+        },
+        {
+            testName: 'onResponseStarted',
+            testEventChannel: RequestEvents.onResponseStarted,
+            browserEventChannel: browser.webRequest.onResponseStarted,
+            details: <WebRequest.OnResponseStartedDetailsType>{
+                ...commonRequestData,
+                fromCache: true,
+                ip: '0.0.0.0',
+                statusCode: 200,
+                statusLine: 'HTTP/1.1 200',
+            },
+            context: {
+                state: RequestContextState.RESPONSE_STARTED,
+                responseHeaders: [
+                    {
+                        name: 'content-type',
+                        value: 'text/html; charset=UTF-8',
+                    },
+                ],
+                statusCode: 200,
+                ...commonContextData,
+            },
+        },
+        {
+            testName: 'onCompleted',
+            testEventChannel: RequestEvents.onCompleted,
+            browserEventChannel: browser.webRequest.onCompleted,
+            details: <WebRequest.OnCompletedDetailsType>{
+                ...commonRequestData,
+                fromCache: true,
+                ip: '93.184.216.34',
+                responseHeaders: [
+                    {
+                        name: 'content-type',
+                        value: 'text/html; charset=UTF-8',
+                    },
+                ],
+                statusCode: 200,
+                statusLine: 'HTTP/1.1 200',
+                urlClassification: {
+                    firstParty: [],
+                    thirdParty: [],
                 },
-            ],
-            statusCode: 200,
-            statusLine: 'HTTP/1.1 200',
-            timeStamp: timestamp,
-        };
+                requestSize: 0,
+                responseSize: 0,
+                // Will be set it test body.
+                timeStamp: 0,
+            },
+            context: {
+                state: RequestContextState.COMPLETED,
+                responseHeaders: [
+                    {
+                        name: 'content-type',
+                        value: 'text/html; charset=UTF-8',
+                    },
+                ],
+                statusCode: 200,
+                ...commonContextData,
+            },
+        },
+        {
+            testName: 'onErrorOccurred',
+            testEventChannel: RequestEvents.onErrorOccurred,
+            browserEventChannel: browser.webRequest.onErrorOccurred,
+            details: <WebRequest.OnErrorOccurredDetailsType>{
+                ...commonRequestData,
+                error: 'net::ERR_CONNECTION_REFUSED',
+                fromCache: false,
+                initiator: 'https://example.com',
+            },
+            context: {
+                state: RequestContextState.ERROR,
+                responseHeaders: [
+                    {
+                        name: 'content-type',
+                        value: 'text/html; charset=UTF-8',
+                    },
+                ],
+                statusCode: 200,
+                ...commonContextData,
+            },
+        },
+    ])('listener called on ', ({
+        testName,
+        details,
+        context,
+        testEventChannel,
+        browserEventChannel,
+    }) => {
+        test(testName, () => {
+            RequestEvents.init();
 
-        const expectedContext = {
-            state: RequestContextState.HEADERS_RECEIVED,
-            responseHeaders: [
-                {
-                    name: 'content-type',
-                    value: 'text/html; charset=UTF-8',
-                },
-            ],
-            statusCode: 200,
-            timestamp,
-            ...commonContextData,
-        };
+            const listener = jest.fn();
 
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+            testEventChannel.addListener(listener);
 
-        browser.webRequest.onHeadersReceived.dispatch(details);
+            const timestamp = Date.now();
 
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
+            details.timeStamp = timestamp;
+            context.timestamp = timestamp;
+
+            jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+
+            browserEventChannel.dispatch(details);
+
+            expect(listener).toBeCalledWith({ details, context });
+        });
     });
 
     it('onAuthRequired', () => {
@@ -158,124 +272,5 @@ describe('Request Events', () => {
 
     it('onBeforeRedirect', () => {
         expect(browser.webRequest.onBeforeRedirect.addListener.calledOnce);
-    });
-
-    it('onResponseStarted', () => {
-        const listener = jest.fn();
-
-        RequestEvents.onResponseStarted.addListener(listener);
-
-        const timestamp = Date.now();
-
-        const details: WebRequest.OnResponseStartedDetailsType = {
-            ...commonRequestData,
-            fromCache: true,
-            ip: '0.0.0.0',
-            statusCode: 200,
-            statusLine: 'HTTP/1.1 200',
-            timeStamp: timestamp,
-        };
-
-        const expectedContext = {
-            state: RequestContextState.RESPONSE_STARTED,
-            responseHeaders: [
-                {
-                    name: 'content-type',
-                    value: 'text/html; charset=UTF-8',
-                },
-            ],
-            statusCode: 200,
-            timestamp,
-            ...commonContextData,
-        };
-
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
-
-        browser.webRequest.onResponseStarted.dispatch(details);
-
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
-    });
-
-    it('onCompleted', () => {
-        const listener = jest.fn();
-
-        RequestEvents.onCompleted.addListener(listener);
-
-        const timestamp = Date.now();
-
-        const details: WebRequest.OnCompletedDetailsType = {
-            ...commonRequestData,
-            fromCache: true,
-            ip: '93.184.216.34',
-            responseHeaders: [
-                {
-                    name: 'content-type',
-                    value: 'text/html; charset=UTF-8',
-                },
-            ],
-            statusCode: 200,
-            statusLine: 'HTTP/1.1 200',
-            timeStamp: timestamp,
-            urlClassification: {
-                firstParty: [],
-                thirdParty: [],
-            },
-            requestSize: 0,
-            responseSize: 0,
-        };
-
-        const expectedContext = {
-            state: RequestContextState.COMPLETED,
-            responseHeaders: [
-                {
-                    name: 'content-type',
-                    value: 'text/html; charset=UTF-8',
-                },
-            ],
-            statusCode: 200,
-            timestamp,
-            ...commonContextData,
-        };
-
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
-
-        browser.webRequest.onCompleted.dispatch(details);
-
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
-    });
-
-    it('onErrorOccurred', () => {
-        const listener = jest.fn();
-
-        RequestEvents.onErrorOccurred.addListener(listener);
-
-        const timestamp = Date.now();
-
-        const details: WebRequest.OnErrorOccurredDetailsType = {
-            ...commonRequestData,
-            error: 'net::ERR_CONNECTION_REFUSED',
-            fromCache: false,
-            initiator: 'https://example.com',
-            timeStamp: timestamp,
-        };
-
-        const expectedContext = {
-            state: RequestContextState.ERROR,
-            responseHeaders: [
-                {
-                    name: 'content-type',
-                    value: 'text/html; charset=UTF-8',
-                },
-            ],
-            statusCode: 200,
-            timestamp,
-            ...commonContextData,
-        };
-
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
-
-        browser.webRequest.onErrorOccurred.dispatch(details);
-
-        expect(listener).toBeCalledWith({ details, context: expectedContext });
     });
 });

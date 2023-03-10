@@ -36,6 +36,16 @@ export interface TabContextInterface {
 }
 
 /**
+ * Request context data related to the frame.
+ */
+export type FrameRequestContext = {
+    frameId: number;
+    requestId: string;
+    requestUrl: string;
+    requestType: RequestType;
+};
+
+/**
  * Tab context.
  */
 export class TabContext implements TabContextInterface {
@@ -102,7 +112,7 @@ export class TabContext implements TabContextInterface {
      *
      * @param requestContext Request context data.
      */
-    public handleFrameRequest(requestContext: RequestContext): void {
+    public handleFrameRequest(requestContext: FrameRequestContext): void {
         const {
             frameId,
             requestId,
@@ -157,7 +167,7 @@ export class TabContext implements TabContextInterface {
      *
      * @param requestContext Request context data.
      */
-    private handleMainFrameRequest(requestContext: RequestContext): void {
+    private handleMainFrameRequest(requestContext: FrameRequestContext): void {
         const {
             requestUrl,
             requestId,
