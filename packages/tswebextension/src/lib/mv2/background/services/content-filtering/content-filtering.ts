@@ -1,10 +1,15 @@
 import browser from 'webextension-polyfill';
-import { RequestType, CosmeticRule, NetworkRule } from '@adguard/tsurlfilter';
+import {
+    RequestType,
+    CosmeticRule,
+    NetworkRule,
+    NetworkRuleOption,
+} from '@adguard/tsurlfilter';
 
-import { RequestContext, requestContextStorage } from '../../request';
 import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';
 import { defaultFilteringLog } from '../../../../common';
+import type { RequestContext } from '../../request';
 
 /**
  * Content filtering module.
@@ -14,7 +19,7 @@ export class ContentFiltering {
     /**
      * Contains collection of supported request types for replace rules.
      */
-    private static supportedReplaceRulesRequestTypes: number[] = [
+    private static readonly supportedReplaceRulesRequestTypes: RequestType[] = [
         RequestType.Document,
         RequestType.SubDocument,
         RequestType.Script,
@@ -87,24 +92,53 @@ export class ContentFiltering {
     }
 
     /**
-     * On before request event handler.
+     * Checks if request content filtering disabled by exception rule with $content modifier.
      *
-     * @param requestId Request identifier.
+     * @param context Request context.
+     *
+     * @returns `true`, if content filtering disabled by exception rule with $content modifier,
+     * overwise returns `false`.
      */
-    public static onBeforeRequest(requestId: string): void {
-        if (!browser.webRequest.filterResponseData) {
-            return;
+    private static hasContentExceptionRule(context: RequestContext): boolean {
+        const { matchingResult } = context;
+
+        if (!matchingResult) {
+            return false;
         }
 
-        const context = requestContextStorage.get(requestId);
+        const rule = matchingResult.getBasicResult();
 
-        if (!context) {
-            return;
+        if (!rule) {
+            return false;
         }
 
+        // The $content modifier only applies with the exception rule.
+        // We don't need additional `rule.isAllowlist()` check.
+        return rule.isOptionEnabled(NetworkRuleOption.Content);
+    }
+
+    /**
+     * Checks if request method is supported.
+     *
+     * @param context Request context.
+     * @returns `true`, if request method is supported,
+     * overwise returns `false`.
+     */
+    private static isRequestMethodSupported(context: RequestContext): boolean {
         const { method } = context;
 
-        if (!(method === 'GET' || method === 'POST')) {
+        return method === 'GET' || method === 'POST';
+    }
+
+    /**
+     * On before request event handler.
+     *
+     * @param context Request context.
+     */
+    public static onBeforeRequest(context: RequestContext): void {
+        if (!browser.webRequest.filterResponseData
+            || !ContentFiltering.isRequestMethodSupported(context)
+            || ContentFiltering.hasContentExceptionRule(context)) {
             return;
         }
 

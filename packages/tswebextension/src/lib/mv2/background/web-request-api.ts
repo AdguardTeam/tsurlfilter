@@ -180,7 +180,7 @@ export class WebRequestApi {
             tabsApi.incrementTabBlockedRequestCount(tabId);
             hideRequestInitiatorElement(tabId, requestFrameId, requestUrl, requestType, thirdParty);
         } else {
-            ContentFiltering.onBeforeRequest(requestId);
+            ContentFiltering.onBeforeRequest(context);
         }
 
         return response;
