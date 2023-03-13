@@ -16,39 +16,43 @@ import { getPublicSuffix } from 'tldts';
  * * `example.com,~sub.example.com##banner` -- cosmetic rule
  */
 export class DomainModifier {
-    /** list of permitted domains or null */
+    /**
+     * List of permitted domains or null.
+     */
     public readonly permittedDomains: string[] | null;
 
-    /** list of restricted domains or null */
+    /**
+     * List of restricted domains or null.
+     */
     public readonly restrictedDomains: string[] | null;
 
     /**
      * Parses the `domains` string and initializes the object.
      *
-     * @param domains - domains string
-     * @param sep - separator (`,` or `|`)
+     * @param domainsStr Domains string.
+     * @param separator Separator — `,` or `|`.
      *
-     * @throws an error if the domains string is empty or invalid
+     * @throws An error if the domains string is empty or invalid
      */
-    constructor(domains: string, sep: string) {
-        if (!domains) {
+    constructor(domainsStr: string, separator: string) {
+        if (!domainsStr) {
             throw new SyntaxError('Modifier $domain cannot be empty');
         }
 
         const permittedDomains: string[] = [];
         const restrictedDomains: string[] = [];
 
-        const parts = domains.split(sep);
+        const parts = domainsStr.toLowerCase().split(separator);
         for (let i = 0; i < parts.length; i += 1) {
-            let domain = parts[i].toLocaleLowerCase();
+            let domain = parts[i].trim();
             let restricted = false;
             if (domain.startsWith('~')) {
                 restricted = true;
-                domain = domain.substring(1).trim();
+                domain = domain.substring(1);
             }
 
             if (domain === '') {
-                throw new SyntaxError(`Empty domain specified in "${domains}"`);
+                throw new SyntaxError(`Empty domain specified in "${domainsStr}"`);
             }
 
             if (restricted) {
