@@ -102,6 +102,8 @@ export class TabsCosmeticInjector {
                 cosmeticResult,
             });
 
+            frame.isCssInjected = true;
+
             CosmeticApi.applyJsRules({
                 url,
                 tabId,

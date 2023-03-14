@@ -20,6 +20,11 @@ export class Frame {
     public isJsInjected = false;
 
     /**
+     * Is css rules injected in frame.
+     */
+    public isCssInjected = false;
+
+    /**
      * Frame request id.
      */
     public requestId?: string;

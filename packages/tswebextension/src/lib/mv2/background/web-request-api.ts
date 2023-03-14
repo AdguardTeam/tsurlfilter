@@ -24,13 +24,20 @@ import {
 } from './request';
 import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
+import { isFirefox } from './utils';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
+export type InjectCosmeticParams = {
+    frameId: number,
+    tabId: number,
+    timestamp: number,
+    url: string,
+};
+
 /**
- * API for handling browser web request events.
- *
- * @class WebRequestApi
+ * API for applying rules from background service by handling
+ * Web Request API and web navigation events.
  */
 export class WebRequestApi {
     /**
@@ -47,6 +54,7 @@ export class WebRequestApi {
 
         // browser.webNavigation Events
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
+        browser.webNavigation.onDOMContentLoaded.addListener(WebRequestApi.onDomContentLoaded);
     }
 
     /**
@@ -330,8 +338,7 @@ export class WebRequestApi {
 
         if (!frame
             || !frame.cosmeticResult
-            || frame.isJsInjected
-        ) {
+            || frame.isJsInjected) {
             return;
         }
 
@@ -364,13 +371,39 @@ export class WebRequestApi {
      * This is handler for the last event from the request lifecycle.
      *
      * @param event On completed event.
-     * @param event.details On completed event details.
+     * @param event.context Request context.
      * @private
      */
     private static onCompleted({
-        details,
+        context,
     }: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
-        requestContextStorage.delete(details.requestId);
+        if (!context) {
+            return;
+        }
+
+        const {
+            requestId,
+            requestType,
+            tabId,
+            frameId,
+            requestUrl,
+            timestamp,
+        } = context;
+
+        /**
+         * If the request is a subdocument request in Firefox, try injecting frame cosmetic result into frame,
+         * because {@link WebRequestApi.onCommitted} can be not triggered.
+         */
+        if (isFirefox || requestType === RequestType.SubDocument) {
+            WebRequestApi.injectCosmetic({
+                frameId,
+                tabId,
+                timestamp,
+                url: requestUrl,
+            });
+        }
+
+        requestContextStorage.delete(requestId);
     }
 
     /**
@@ -383,59 +416,6 @@ export class WebRequestApi {
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
         requestContextStorage.delete(details.requestId);
-    }
-
-    /**
-     * On committed web navigation event handler.
-     *
-     * Injects necessary CSS and scripts into the web page.
-     *
-     * @param details Event details.
-     */
-    private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
-        const {
-            frameId,
-            tabId,
-            timeStamp,
-            url,
-        } = details;
-
-        const frame = tabsApi.getTabFrame(tabId, frameId);
-
-        if (!frame
-            || !frame.cosmeticResult
-            || !frame.requestId
-        ) {
-            return;
-        }
-
-        const { cosmeticResult, requestId } = frame;
-
-        CosmeticApi.applyCssRules({
-            tabId,
-            frameId,
-            cosmeticResult,
-        });
-
-        if (frame.isJsInjected) {
-            return;
-        }
-
-        const isDocumentFrame = frameId === MAIN_FRAME_ID;
-
-        CosmeticApi.applyJsRules({
-            requestId,
-            url,
-            tabId,
-            frameId,
-            cosmeticResult,
-            timestamp: timeStamp,
-            contentType: isDocumentFrame
-                ? ContentType.DOCUMENT
-                : ContentType.SUBDOCUMENT,
-        });
-
-        frame.isJsInjected = true;
     }
 
     /**
@@ -456,6 +436,88 @@ export class WebRequestApi {
                 || frameUrl === 'about:srcdoc'
                 // eslint-disable-next-line no-script-url
                 || frameUrl.indexOf('javascript:') > -1);
+    }
+
+    /**
+     * Injects cosmetic rules to specified frame based on data from frame and response context.
+     *
+     * If cosmetic result does not exist or it has been already applied, ignore injection.
+     *
+     * @param params Data required for rule injection.
+     */
+    private static injectCosmetic(params: InjectCosmeticParams): void {
+        const {
+            frameId,
+            tabId,
+            timestamp,
+            url,
+        } = params;
+
+        const frame = tabsApi.getTabFrame(tabId, frameId);
+
+        if (!frame
+            || !frame.cosmeticResult
+            || !frame.requestId) {
+            return;
+        }
+
+        const {
+            cosmeticResult,
+            requestId,
+            isCssInjected,
+            isJsInjected,
+        } = frame;
+
+        if (!isCssInjected) {
+            CosmeticApi.applyCssRules({
+                tabId,
+                frameId,
+                cosmeticResult,
+            });
+
+            frame.isCssInjected = true;
+        }
+
+        if (!isJsInjected) {
+            const isDocumentFrame = frameId === MAIN_FRAME_ID;
+
+            CosmeticApi.applyJsRules({
+                requestId,
+                url,
+                tabId,
+                frameId,
+                cosmeticResult,
+                timestamp,
+                contentType: isDocumentFrame
+                    ? ContentType.DOCUMENT
+                    : ContentType.SUBDOCUMENT,
+            });
+
+            frame.isJsInjected = true;
+        }
+    }
+
+    /**
+     * On committed web navigation event handler.
+     *
+     * Injects necessary CSS and scripts into the web page.
+     *
+     * @param details Event details.
+     */
+    private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
+        const {
+            frameId,
+            tabId,
+            timeStamp,
+            url,
+        } = details;
+
+        WebRequestApi.injectCosmetic({
+            frameId,
+            tabId,
+            timestamp: timeStamp,
+            url,
+        });
     }
 
     /**
