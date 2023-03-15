@@ -5,12 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased v2.x
+<!-- ## Released v2.x alpha versions: -->
+
+## v2.0.0-alpha.49
 
 ### Changed
 
 - Updated Scriptlets to v1.9.1
 
+
+<!-- ## Released v1.x versions: -->
 
 ## v1.0.77
 

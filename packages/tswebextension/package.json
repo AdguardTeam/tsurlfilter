@@ -76,7 +76,7 @@
     ]
   },
   "peerDependencies": {
-    "@adguard/tsurlfilter": "^2.0.0-alpha.47"
+    "@adguard/tsurlfilter": "^2.0.0-alpha.49"
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.68",
