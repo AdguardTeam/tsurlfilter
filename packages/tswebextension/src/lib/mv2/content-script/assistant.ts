@@ -13,7 +13,7 @@ export const initAssistant = (): void => {
 
     browser.runtime.onMessage.addListener(async (message) => {
         switch (message.type) {
-            case MessageType.INIT_ASSISTANT: {
+            case MessageType.InitAssistant: {
                 // If there is no assistant on the window after execute
                 // loading script - throw error.
                 if (window.adguardAssistant === undefined) {
@@ -24,13 +24,13 @@ export const initAssistant = (): void => {
 
                 window.adguardAssistant.start(null, (rules) => {
                     sendAppMessage({
-                        type: MessageType.ASSISTANT_CREATE_RULE,
+                        type: MessageType.AssistantCreateRule,
                         payload: { ruleText: rules },
                     });
                 });
                 break;
             }
-            case MessageType.CLOSE_ASSISTANT: {
+            case MessageType.CloseAssistant: {
                 if (window.adguardAssistant) {
                     window.adguardAssistant.close();
                 }

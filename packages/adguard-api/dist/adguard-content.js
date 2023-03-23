@@ -1362,7 +1362,7 @@ var browser_polyfill = __webpack_require__(2565);
 var browser_polyfill_default = /*#__PURE__*/__webpack_require__.n(browser_polyfill);
 ;// CONCATENATED MODULE: ../../node_modules/@adguard/extended-css/dist/extended-css.esm.js
 /**
- * @adguard/extended-css - v2.0.49 - Fri Feb 03 2023
+ * @adguard/extended-css - v2.0.51 - Thu Feb 16 2023
  * https://github.com/AdguardTeam/ExtendedCss#homepage
  * Copyright (c) 2023 AdGuard. Licensed GPL-3.0
  */
@@ -6989,34 +6989,32 @@ const setStyleToElement = (node, style) => {
   });
 };
 /**
- * Checks whether the `affectedElement` arg has APIs `IAffectedElement` type
- * before `beforeStyleApplied()` execution.
+ * Checks the required properties of `affectedElement`
+ * **before** `beforeStyleApplied()` execution.
  *
  * @param affectedElement Affected element.
  *
- * @returns False if any rule of affectedElement.rules has no defined 'content' style property
- * which is needed for `beforeStyleApplied()`.
+ * @returns False if there is no `node` or `rules`
+ * or `rules` is not an array.
  */
 
 const isIAffectedElement = affectedElement => {
-  return [...affectedElement.rules].every(rule => {
-    return rule.style && CONTENT_CSS_PROPERTY in rule.style;
-  });
+  return 'node' in affectedElement && 'rules' in affectedElement && affectedElement.rules instanceof Array;
 };
 /**
- * Checks whether the `affectedElement` arg has `AffectedElement` type
- * after `beforeStyleApplied()` execution.
- * Needed for proper internal usage.
+ * Checks the required properties of `affectedElement`
+ * **after** `beforeStyleApplied()` execution.
+ * These properties are needed for proper internal usage.
  *
  * @param affectedElement Affected element.
  *
- * @returns False if any style in affectedElement.rules has non-empty 'content' property.
+ * @returns False if there is no `node` or `rules`
+ * or `rules` is not an array.
  */
 
 
 const isAffectedElement = affectedElement => {
-  // simple checking of properties needed for following affectedElement usage
-  return 'node' in affectedElement && 'rules' in affectedElement && affectedElement.rules instanceof Array;
+  return 'node' in affectedElement && 'originalStyle' in affectedElement && 'rules' in affectedElement && affectedElement.rules instanceof Array;
 };
 /**
  * Applies style to the specified DOM node.
@@ -7038,7 +7036,7 @@ const applyStyle = (context, rawAffectedElement) => {
 
   if (context.beforeStyleApplied) {
     if (!isIAffectedElement(rawAffectedElement)) {
-      throw new Error("Rule style property 'content' should be defined");
+      throw new Error("Returned IAffectedElement should have 'node' and 'rules' properties");
     }
 
     affectedElement = context.beforeStyleApplied(rawAffectedElement);
@@ -7046,12 +7044,12 @@ const applyStyle = (context, rawAffectedElement) => {
     if (!affectedElement) {
       throw new Error("Callback 'beforeStyleApplied' should return IAffectedElement");
     }
-
-    if (!isAffectedElement(affectedElement)) {
-      throw new Error("Returned IAffectedElement should have 'node' and 'rules' properties");
-    }
   } else {
     affectedElement = rawAffectedElement;
+  }
+
+  if (!isAffectedElement(affectedElement)) {
+    throw new Error("Returned IAffectedElement should have 'node' and 'rules' properties");
   }
 
   const {
@@ -7691,18 +7689,17 @@ function __awaiter(thisArg, _arguments, P, generator) {
 // Separate file for enum and const to reduce bundle size,
 // because rollup cannot do tree-shaking with TypeScript
 const MESSAGE_HANDLER_NAME = 'tsWebExtension';
-// TODO: rename enum value
 var MessageType;
 (function (MessageType) {
-    MessageType["PROCESS_SHOULD_COLLAPSE"] = "PROCESS_SHOULD_COLLAPSE";
-    MessageType["GET_COSMETIC_DATA"] = "GET_COSMETIC_DATA";
-    MessageType["GET_CSS"] = "GET_CSS";
-    MessageType["GET_COOKIE_RULES"] = "GET_COOKIE_RULES";
-    MessageType["SAVE_COOKIE_LOG_EVENT"] = "SAVE_COOKIE_LOG_EVENT";
-    MessageType["INIT_ASSISTANT"] = "INIT_ASSISTANT";
-    MessageType["CLOSE_ASSISTANT"] = "CLOSE_ASSISTANT";
-    MessageType["ASSISTANT_CREATE_RULE"] = "ASSISTANT_CREATE_RULE";
-    MessageType["SAVE_CSS_HITS_STATS"] = "SAVE_CSS_HITS_STATS";
+    MessageType["ProcessShouldCollapse"] = "processShouldCollapse";
+    MessageType["GetCosmeticData"] = "getCosmeticData";
+    MessageType["GetCss"] = "getCss";
+    MessageType["GetCookieRules"] = "getCookieRules";
+    MessageType["SaveCookieLogEvent"] = "saveCookieLogEvent";
+    MessageType["InitAssistant"] = "initAssistant";
+    MessageType["CloseAssistant"] = "closeAssistant";
+    MessageType["AssistantCreateRule"] = "assistantCreateRule";
+    MessageType["SaveCssHitsStats"] = "saveCssHitsStats";
 })(MessageType || (MessageType = {}));
 
 // TODO check if we can return typed message here
@@ -8295,6 +8292,11 @@ class CssHitsCounter {
         if (this.observer) {
             this.observer.disconnect();
         }
+        /**
+         * To avoid cases where two css hits counters try to append and remove the
+         * same elements one after the other, we do not append already met nodes.
+         */
+        const probesWeakSet = new WeakSet();
         let timeoutId = null;
         this.observer = new MutationObserver(((mutationRecords) => {
             // Collect probe elements, count them, then remove from their targets
@@ -8312,10 +8314,18 @@ class CssHitsCounter {
                     }
                     const { target } = mutationRecord;
                     if (!node.parentNode && target) {
+                        // If this node has been appended to the DOM and counted once, do not add
+                        // it again.
+                        if (probesWeakSet.has(node)) {
+                            return;
+                        }
                         // Most likely this is a "probe" element that was added and then
                         // immediately removed from DOM.
                         // We re-add it and check if any rule matched it
                         probeElements.push(node);
+                        // To ensure that this "probe" node has only been added once to the DOM,
+                        // we add it to the weak set.
+                        probesWeakSet.add(node);
                         // CSS rules could be applied to the nodes inside probe element
                         // that's why we get all child elements of added node
                         ElementUtils.appendChildren(node, childrenOfProbeElements);
@@ -8549,7 +8559,7 @@ class ElementCollapser {
                 requestType,
             };
             const shouldCollapse = yield sendAppMessage({
-                type: MessageType.PROCESS_SHOULD_COLLAPSE,
+                type: MessageType.ProcessShouldCollapse,
                 payload,
             });
             if (!shouldCollapse) {
@@ -8569,7 +8579,7 @@ class CosmeticController {
      */
     constructor() {
         /**
-         * Number of {@link MessageType.GET_COSMETIC_DATA} requests.
+         * Number of {@link MessageType.GetCosmeticData} requests.
          */
         this.tries = 0;
         this.process = this.process.bind(this);
@@ -8583,12 +8593,12 @@ class CosmeticController {
         this.process();
     }
     /**
-     * Sends {@link MessageType.GET_COSMETIC_DATA} message to background and process response.
+     * Sends {@link MessageType.GetCosmeticData} message to background and process response.
      */
     process() {
         return __awaiter(this, void 0, void 0, function* () {
             const res = yield sendAppMessage({
-                type: MessageType.GET_COSMETIC_DATA,
+                type: MessageType.GetCosmeticData,
                 payload: {
                     documentUrl: window.location.href,
                 },
@@ -8599,7 +8609,7 @@ class CosmeticController {
         });
     }
     /**
-     * Process {@link MessageType.GET_COSMETIC_DATA} response from background.
+     * Process {@link MessageType.GetCosmeticData} response from background.
      *
      * If {@link cosmeticData.isAppStarted} is false, retry
      * request after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} milliseconds.
@@ -8651,18 +8661,18 @@ class CosmeticController {
     static createCssHitsCounter() {
         return new CssHitsCounter((stats) => {
             sendAppMessage({
-                type: MessageType.SAVE_CSS_HITS_STATS,
+                type: MessageType.SaveCssHitsStats,
                 payload: stats,
             });
         });
     }
 }
 /**
- * Retry timeout for {@link MessageType.GET_COSMETIC_DATA} request to background in milliseconds.
+ * Retry timeout for {@link MessageType.GetCosmeticData} request to background in milliseconds.
  */
 CosmeticController.GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
 /**
- * Max {@link MessageType.GET_COSMETIC_DATA} request limit.
+ * Max {@link MessageType.GetCosmeticData} request limit.
  */
 CosmeticController.MAX_GET_COSMETIC_DATA_TRIES = 200;
 
@@ -8675,7 +8685,7 @@ const initAssistant = () => {
     }
     browser_polyfill_default().runtime.onMessage.addListener((message) => __awaiter(void 0, void 0, void 0, function* () {
         switch (message.type) {
-            case MessageType.INIT_ASSISTANT: {
+            case MessageType.InitAssistant: {
                 // If there is no assistant on the window after execute
                 // loading script - throw error.
                 if (window.adguardAssistant === undefined) {
@@ -8686,13 +8696,13 @@ const initAssistant = () => {
                 }
                 window.adguardAssistant.start(null, (rules) => {
                     sendAppMessage({
-                        type: MessageType.ASSISTANT_CREATE_RULE,
+                        type: MessageType.AssistantCreateRule,
                         payload: { ruleText: rules },
                     });
                 });
                 break;
             }
-            case MessageType.CLOSE_ASSISTANT: {
+            case MessageType.CloseAssistant: {
                 if (window.adguardAssistant) {
                     window.adguardAssistant.close();
                 }
@@ -8755,7 +8765,7 @@ initAssistant();
  */
 (() => __awaiter(void 0, void 0, void 0, function* () {
     const response = yield sendAppMessage({
-        type: MessageType.GET_COOKIE_RULES,
+        type: MessageType.GetCookieRules,
         payload: {
             documentUrl: window.location.href,
         },
@@ -8767,7 +8777,7 @@ initAssistant();
         try {
             const cookieController = new CookieController(({ cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId, }) => {
                 sendAppMessage({
-                    type: MessageType.SAVE_COOKIE_LOG_EVENT,
+                    type: MessageType.SaveCookieLogEvent,
                     payload: {
                         cookieName,
                         cookieValue,

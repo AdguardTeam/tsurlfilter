@@ -56,7 +56,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
 
     constructor() {
         this.onBasicRuleApply = this.onBasicRuleApply.bind(this);
-        defaultFilteringLog.addEventListener(FilteringEventType.APPLY_BASIC_RULE, this.onBasicRuleApply);
+        defaultFilteringLog.addEventListener(FilteringEventType.ApplyBasicRule, this.onBasicRuleApply);
     }
 
     // map public API to event channel

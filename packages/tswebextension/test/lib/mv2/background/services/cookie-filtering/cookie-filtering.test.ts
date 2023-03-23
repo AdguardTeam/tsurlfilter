@@ -41,12 +41,12 @@ describe('Cookie filtering', () => {
         requestId = '1';
 
         context = {
-            state: RequestContextState.HEADERS_RECEIVED,
+            state: RequestContextState.HeadersReceived,
             requestId,
             requestUrl: 'https://example.org',
             referrerUrl: 'https://example.org',
             requestType: RequestType.Document,
-            contentType: ContentType.DOCUMENT,
+            contentType: ContentType.Document,
             statusCode: 200,
             tabId: 0,
             frameId: 0,
@@ -105,7 +105,7 @@ describe('Cookie filtering', () => {
         await runCase(rules, requestHeaders);
 
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
@@ -131,7 +131,7 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'pick',
@@ -157,7 +157,7 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders);
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'pick',
@@ -182,7 +182,7 @@ describe('Cookie filtering', () => {
         await runCase(rules, requestHeaders);
 
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
@@ -208,7 +208,7 @@ describe('Cookie filtering', () => {
         await runCase(rules, requestHeaders);
 
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
@@ -242,7 +242,7 @@ describe('Cookie filtering', () => {
         expect(responseHeaders).toEqual([]);
 
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'third_party_user',

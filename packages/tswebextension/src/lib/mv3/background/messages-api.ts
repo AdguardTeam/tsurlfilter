@@ -66,7 +66,7 @@ export default class MessagesApi {
 
         const { type } = message;
         switch (type) {
-            case CommonMessageType.GET_CSS: {
+            case CommonMessageType.GetCss: {
                 logger.debug('[HANDLE MESSAGE]: call getCss');
 
                 const res = getCssPayloadValidator.safeParse(message.payload);
@@ -87,7 +87,7 @@ export default class MessagesApi {
             case ExtendedMV3MessageType.GetCollectedLog: {
                 return declarativeFilteringLog.getCollected();
             }
-            case CommonMessageType.ASSISTANT_CREATE_RULE: {
+            case CommonMessageType.AssistantCreateRule: {
                 return this.handleAssistantCreateRuleMessage(
                     sender,
                     message.payload,

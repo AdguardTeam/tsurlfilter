@@ -15,7 +15,7 @@ import { ContentStream } from '@lib/mv2/background/services/content-filtering/co
 
 describe('Content filtering', () => {
     const requestContext: RequestContext = {
-        state: RequestContextState.BEFORE_REQUEST,
+        state: RequestContextState.BeforeRequest,
         requestId: '1',
         requestUrl: 'https://example.org',
         referrerUrl: 'https://example.org',
@@ -25,7 +25,7 @@ describe('Content filtering', () => {
         timestamp: 1643639355148,
         requestType: RequestType.Document,
         method: 'GET',
-        contentType: ContentType.DOCUMENT,
+        contentType: ContentType.Document,
         thirdParty: false,
     };
 

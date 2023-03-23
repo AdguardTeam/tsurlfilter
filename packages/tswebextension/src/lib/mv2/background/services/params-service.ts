@@ -68,7 +68,7 @@ export class ParamsService {
 
             if (url !== modifiedUrl) {
                 this.filteringLog.publishEvent({
-                    type: FilteringEventType.REMOVE_PARAM,
+                    type: FilteringEventType.RemoveParam,
                     data: {
                         removeParam: true,
                         eventId: nanoid(),

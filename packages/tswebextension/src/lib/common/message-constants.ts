@@ -3,15 +3,14 @@
 
 export const MESSAGE_HANDLER_NAME = 'tsWebExtension' as const;
 
-// TODO: rename enum value
 export enum MessageType {
-    PROCESS_SHOULD_COLLAPSE = 'PROCESS_SHOULD_COLLAPSE',
-    GET_COSMETIC_DATA = 'GET_COSMETIC_DATA',
-    GET_CSS = 'GET_CSS',
-    GET_COOKIE_RULES = 'GET_COOKIE_RULES',
-    SAVE_COOKIE_LOG_EVENT = 'SAVE_COOKIE_LOG_EVENT',
-    INIT_ASSISTANT = 'INIT_ASSISTANT',
-    CLOSE_ASSISTANT = 'CLOSE_ASSISTANT',
-    ASSISTANT_CREATE_RULE = 'ASSISTANT_CREATE_RULE',
-    SAVE_CSS_HITS_STATS = 'SAVE_CSS_HITS_STATS',
+    ProcessShouldCollapse = 'processShouldCollapse',
+    GetCosmeticData = 'getCosmeticData',
+    GetCss = 'getCss',
+    GetCookieRules = 'getCookieRules',
+    SaveCookieLogEvent = 'saveCookieLogEvent',
+    InitAssistant = 'initAssistant',
+    CloseAssistant = 'closeAssistant',
+    AssistantCreateRule = 'assistantCreateRule',
+    SaveCssHitsStats = 'saveCssHitsStats',
 }

@@ -137,7 +137,7 @@ export class ElementCollapser {
         } as ProcessShouldCollapsePayload;
 
         const shouldCollapse = await sendAppMessage({
-            type: MessageType.PROCESS_SHOULD_COLLAPSE,
+            type: MessageType.ProcessShouldCollapse,
             payload,
         });
 

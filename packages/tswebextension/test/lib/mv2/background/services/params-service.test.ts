@@ -23,7 +23,7 @@ describe('Params service', () => {
         const requestId = '12345';
 
         requestContextStorage.record(requestId, {
-            state: RequestContextState.BEFORE_REQUEST,
+            state: RequestContextState.BeforeRequest,
             requestId,
             requestUrl: url,
             referrerUrl: url,
@@ -35,7 +35,7 @@ describe('Params service', () => {
             timestamp: Date.now(),
             thirdParty: false,
             matchingResult: new MatchingResult(rulesText.map(((ruleText) => new NetworkRule(ruleText, 1))), null),
-            contentType: ContentType.DOCUMENT,
+            contentType: ContentType.Document,
         });
 
         return paramsService.getPurgedUrl(requestId);
@@ -66,7 +66,7 @@ describe('Params service', () => {
 
         expect(purgedUrl).toBe('https://example.org');
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_PARAM }),
+            expect.objectContaining({ type: FilteringEventType.RemoveParam }),
         );
     });
 
@@ -99,7 +99,7 @@ describe('Params service', () => {
 
         expect(purgedUrl).toBe('https://example.org?test=1');
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_PARAM }),
+            expect.objectContaining({ type: FilteringEventType.RemoveParam }),
         );
     });
 
@@ -112,7 +112,7 @@ describe('Params service', () => {
 
         expect(purgedUrl).toBe(null);
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_PARAM }),
+            expect.objectContaining({ type: FilteringEventType.RemoveParam }),
         );
     });
 });

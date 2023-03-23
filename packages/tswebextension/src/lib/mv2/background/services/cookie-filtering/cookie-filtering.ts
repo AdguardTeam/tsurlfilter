@@ -123,7 +123,7 @@ export class CookieFiltering {
                 }
 
                 this.filteringLog.publishEvent({
-                    type: FilteringEventType.COOKIE,
+                    type: FilteringEventType.Cookie,
                     data: {
                         eventId: nanoid(),
                         tabId: context.tabId,
@@ -133,7 +133,7 @@ export class CookieFiltering {
                         rule: bRule,
                         isModifyingCookieRule: false,
                         requestThirdParty: thirdParty,
-                        requestType: ContentType.COOKIE,
+                        requestType: ContentType.Cookie,
                         timestamp: Date.now(),
                     },
 
@@ -148,7 +148,7 @@ export class CookieFiltering {
                     responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
                     appliedRules.forEach((r) => {
                         this.filteringLog.publishEvent({
-                            type: FilteringEventType.COOKIE,
+                            type: FilteringEventType.Cookie,
                             data: {
                                 eventId: nanoid(),
                                 tabId,
@@ -159,7 +159,7 @@ export class CookieFiltering {
                                 isModifyingCookieRule: true,
                                 requestThirdParty: thirdParty,
                                 timestamp: Date.now(),
-                                requestType: ContentType.COOKIE,
+                                requestType: ContentType.Cookie,
                             },
                         });
                     });
@@ -280,7 +280,7 @@ export class CookieFiltering {
         if (bRule) {
             if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
                 this.filteringLog.publishEvent({
-                    type: FilteringEventType.COOKIE,
+                    type: FilteringEventType.Cookie,
                     data: {
                         eventId: nanoid(),
                         tabId,
@@ -291,7 +291,7 @@ export class CookieFiltering {
                         isModifyingCookieRule: false,
                         requestThirdParty: isThirdPartyCookie,
                         timestamp: Date.now(),
-                        requestType: ContentType.COOKIE,
+                        requestType: ContentType.Cookie,
                     },
                 });
             }
@@ -306,7 +306,7 @@ export class CookieFiltering {
                 if (await this.browserCookieApi.modifyCookie(cookie)) {
                     appliedRules.forEach((r) => {
                         this.filteringLog.publishEvent({
-                            type: FilteringEventType.COOKIE,
+                            type: FilteringEventType.Cookie,
                             data: {
                                 eventId: nanoid(),
                                 tabId,
@@ -317,7 +317,7 @@ export class CookieFiltering {
                                 isModifyingCookieRule: true,
                                 requestThirdParty: isThirdPartyCookie,
                                 timestamp: Date.now(),
-                                requestType: ContentType.COOKIE,
+                                requestType: ContentType.Cookie,
                             },
                         });
                     });

@@ -12,7 +12,7 @@ describe('Headers service', () => {
         requestUrl: 'https://example.org',
         referrerUrl: 'https://example.org',
         requestType: RequestType.Document,
-        contentType: ContentType.DOCUMENT,
+        contentType: ContentType.Document,
         tabId: 0,
         frameId: 0,
         requestFrameId: 0,
@@ -45,13 +45,13 @@ describe('Headers service', () => {
         let headersModified = headersService.onBeforeSendHeaders(context as RequestContext);
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
         context.matchingResult = new MatchingResult([
             new NetworkRule('||example.org^$removeheader=an-other', 0),
@@ -59,7 +59,7 @@ describe('Headers service', () => {
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         context.matchingResult = new MatchingResult([
@@ -68,7 +68,7 @@ describe('Headers service', () => {
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         context.matchingResult = new MatchingResult([
@@ -77,7 +77,7 @@ describe('Headers service', () => {
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeTruthy();
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
     });
 
@@ -85,13 +85,13 @@ describe('Headers service', () => {
         let headersModified = headersService.onHeadersReceived(context as RequestContext);
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         context.matchingResult = new MatchingResult([
@@ -100,7 +100,7 @@ describe('Headers service', () => {
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         context.matchingResult = new MatchingResult([
@@ -109,7 +109,7 @@ describe('Headers service', () => {
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
         expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
 
         context.matchingResult = new MatchingResult([
@@ -118,7 +118,7 @@ describe('Headers service', () => {
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeTruthy();
         expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
-            expect.objectContaining({ type: FilteringEventType.REMOVE_HEADER }),
+            expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
     });
 });

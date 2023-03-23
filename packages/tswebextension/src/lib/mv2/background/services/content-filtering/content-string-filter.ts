@@ -116,7 +116,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                         } = this.context;
 
                         this.filteringLog.publishEvent({
-                            type: FilteringEventType.APPLY_COSMETIC_RULE,
+                            type: FilteringEventType.ApplyCosmeticRule,
                             data: {
                                 tabId,
                                 eventId: requestId,
@@ -174,7 +174,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
         if (appliedRules.length > 0) {
             this.filteringLog.publishEvent({
-                type: FilteringEventType.REPLACE_RULE_APPLY,
+                type: FilteringEventType.ReplaceRuleApply,
                 data: {
                     tabId,
                     eventId: requestId,

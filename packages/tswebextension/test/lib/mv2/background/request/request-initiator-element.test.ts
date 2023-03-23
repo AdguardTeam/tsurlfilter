@@ -24,7 +24,7 @@ describe('Request Initiator Element', () => {
 
         hideRequestInitiatorElement(tabId, frameId, 'https://example.org', RequestType.SubDocument, true);
 
-        const expectedTags = [InitiatorTag.IFRAME, InitiatorTag.FRAME];
+        const expectedTags = [InitiatorTag.Iframe, InitiatorTag.Frame];
 
         let expectedCode = '';
 
@@ -41,7 +41,7 @@ describe('Request Initiator Element', () => {
 
         hideRequestInitiatorElement(tabId, frameId, 'https://example.org/image.png', RequestType.Image, true);
 
-        const expectedCode = `${InitiatorTag.IMAGE}[src$="//example.org/image.png"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
+        const expectedCode = `${InitiatorTag.Image}[src$="//example.org/image.png"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
 
         expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
     });
@@ -52,7 +52,7 @@ describe('Request Initiator Element', () => {
 
         hideRequestInitiatorElement(tabId, frameId, 'https://example.org/image.png', RequestType.Image, false);
 
-        const expectedCode = `${InitiatorTag.IMAGE}[src$="/image.png"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
+        const expectedCode = `${InitiatorTag.Image}[src$="/image.png"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
 
         expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
     });

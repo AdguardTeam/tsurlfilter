@@ -9,15 +9,15 @@ import { EventChannel, EventChannelInterface, ContentType } from '../../../commo
 import { TabFrameRequestContext } from '../tabs/tabs-api';
 
 export const enum RequestContextState {
-    BEFORE_REQUEST = 'BEFORE_REQUEST',
-    BEFORE_SEND_HEADERS = 'BEFORE_SEND_HEADERS',
-    SEND_HEADERS = 'SEND_HEADERS',
-    HEADERS_RECEIVED = 'HEADERS_RECEIVED',
-    AUTH_REQUIRED = 'AUTH_REQUIRED',
-    BEFORE_REDIRECT = 'BEFORE_REDIRECT',
-    RESPONSE_STARTED = 'RESPONSE_STARTED',
-    COMPLETED = 'COMPLETED',
-    ERROR = 'ERROR',
+    BeforeRequest = 'beforeRequest',
+    BeforeSendHeaders = 'beforeSendHeaders',
+    SendHeaders = 'sendHeaders',
+    HeadersReceived = 'headersReceived',
+    AuthRequired = 'authRequired',
+    BeforeRedirect = 'beforeRedirect',
+    ResponseStarted = 'responseStarted',
+    Completed = 'completed',
+    Error = 'error',
 }
 
 /**

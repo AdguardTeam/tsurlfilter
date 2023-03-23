@@ -67,7 +67,7 @@ export class DocumentBlockingService {
 
         // public filtering log event
         defaultFilteringLog.publishEvent({
-            type: FilteringEventType.APPLY_BASIC_RULE,
+            type: FilteringEventType.ApplyBasicRule,
             data: {
                 eventId: requestId,
                 tabId,

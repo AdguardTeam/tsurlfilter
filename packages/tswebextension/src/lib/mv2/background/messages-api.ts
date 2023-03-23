@@ -91,37 +91,37 @@ export class MessagesApi implements MessagesApiInterface {
         const { type } = message;
 
         switch (type) {
-            case MessageType.PROCESS_SHOULD_COLLAPSE: {
+            case MessageType.ProcessShouldCollapse: {
                 return this.handleProcessShouldCollapseMessage(
                     sender,
                     message.payload,
                 );
             }
-            case MessageType.GET_COSMETIC_DATA: {
+            case MessageType.GetCosmeticData: {
                 return this.handleContentScriptDataMessage(
                     sender,
                     message.payload,
                 );
             }
-            case MessageType.GET_COOKIE_RULES: {
+            case MessageType.GetCookieRules: {
                 return this.handleGetCookieRulesMessage(
                     sender,
                     message.payload,
                 );
             }
-            case MessageType.SAVE_COOKIE_LOG_EVENT: {
+            case MessageType.SaveCookieLogEvent: {
                 return this.handleSaveCookieLogEvent(
                     sender,
                     message.payload,
                 );
             }
-            case MessageType.ASSISTANT_CREATE_RULE: {
+            case MessageType.AssistantCreateRule: {
                 return this.handleAssistantCreateRuleMessage(
                     sender,
                     message.payload,
                 );
             }
-            case MessageType.SAVE_CSS_HITS_STATS: {
+            case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
             default:
@@ -261,7 +261,7 @@ export class MessagesApi implements MessagesApiInterface {
         const { data } = res;
 
         this.filteringLog.publishEvent({
-            type: FilteringEventType.COOKIE,
+            type: FilteringEventType.Cookie,
             data: {
                 eventId: nanoid(),
                 tabId: sender.tab.id,
@@ -272,7 +272,7 @@ export class MessagesApi implements MessagesApiInterface {
                 isModifyingCookieRule: false,
                 requestThirdParty: data.thirdParty,
                 timestamp: Date.now(),
-                requestType: ContentType.COOKIE,
+                requestType: ContentType.Cookie,
             },
         });
 
@@ -339,7 +339,7 @@ export class MessagesApi implements MessagesApiInterface {
             const rule = new CosmeticRule(stat.ruleText, stat.filterId);
 
             this.filteringLog.publishEvent({
-                type: FilteringEventType.APPLY_COSMETIC_RULE,
+                type: FilteringEventType.ApplyCosmeticRule,
                 data: {
                     tabId,
                     eventId: nanoid(),
@@ -347,7 +347,7 @@ export class MessagesApi implements MessagesApiInterface {
                     element: stat.element,
                     frameUrl: url,
                     frameDomain: getDomain(url) as string,
-                    requestType: ContentType.DOCUMENT,
+                    requestType: ContentType.Document,
                     timestamp: Date.now(),
                 },
             });

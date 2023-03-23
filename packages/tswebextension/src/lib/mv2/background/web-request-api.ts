@@ -104,7 +104,7 @@ export class WebRequestApi {
 
             if (requestType === RequestType.Document) {
                 defaultFilteringLog.publishEvent({
-                    type: FilteringEventType.TAB_RELOAD,
+                    type: FilteringEventType.TabReload,
                     data: {
                         tabId,
                     },
@@ -117,7 +117,7 @@ export class WebRequestApi {
         }
 
         defaultFilteringLog.publishEvent({
-            type: FilteringEventType.SEND_REQUEST,
+            type: FilteringEventType.SendRequest,
             data: {
                 tabId,
                 eventId: requestId,
@@ -254,7 +254,7 @@ export class WebRequestApi {
         details,
     }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
         defaultFilteringLog.publishEvent({
-            type: FilteringEventType.RECEIVE_RESPONSE,
+            type: FilteringEventType.ReceiveResponse,
             data: {
                 tabId: details.tabId,
                 eventId: details.requestId,
@@ -489,8 +489,8 @@ export class WebRequestApi {
                 cosmeticResult,
                 timestamp,
                 contentType: isDocumentFrame
-                    ? ContentType.DOCUMENT
-                    : ContentType.SUBDOCUMENT,
+                    ? ContentType.Document
+                    : ContentType.Subdocument,
             });
 
             frame.isJsInjected = true;
@@ -564,7 +564,7 @@ export class WebRequestApi {
             frameId,
             cosmeticResult,
             timestamp: timeStamp,
-            contentType: ContentType.SUBDOCUMENT,
+            contentType: ContentType.Subdocument,
         });
     }
 }

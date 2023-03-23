@@ -257,7 +257,7 @@ export class ContentStream {
         this.content += this.decoder!.decode(); // finish stream
 
         this.filteringLog.publishEvent({
-            type: FilteringEventType.CONTENT_FILTERING_START,
+            type: FilteringEventType.ContentFilteringStart,
             data: {
                 requestId: this.context.requestId,
             },
@@ -288,7 +288,7 @@ export class ContentStream {
         this.write(this.content);
 
         this.filteringLog.publishEvent({
-            type: FilteringEventType.CONTENT_FILTERING_FINISH,
+            type: FilteringEventType.ContentFilteringFinish,
             data: {
                 requestId: this.context.requestId,
             },

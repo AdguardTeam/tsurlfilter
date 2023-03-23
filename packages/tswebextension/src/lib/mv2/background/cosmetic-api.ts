@@ -279,7 +279,7 @@ export class CosmeticApi {
             for (const scriptRule of scriptRules) {
                 if (!scriptRule.isGeneric()) {
                     defaultFilteringLog.publishEvent({
-                        type: FilteringEventType.JS_INJECT,
+                        type: FilteringEventType.JsInject,
                         data: {
                             script: true,
                             tabId,

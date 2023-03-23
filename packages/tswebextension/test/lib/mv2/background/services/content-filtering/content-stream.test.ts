@@ -26,7 +26,7 @@ describe('Content stream', () => {
     };
 
     const context = {
-        state: RequestContextState.HEADERS_RECEIVED,
+        state: RequestContextState.HeadersReceived,
         requestId: '1',
         requestUrl: 'https://example.org',
         referrerUrl: 'https://example.org',

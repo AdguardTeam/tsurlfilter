@@ -212,7 +212,7 @@ export class RequestEvents {
         const requestContext: RequestContext = {
             ...tabFrameRequestContext,
             requestFrameId,
-            state: RequestContextState.BEFORE_REQUEST,
+            state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
             thirdParty: isThirdPartyRequest(url, referrerUrl),
             referrerUrl,
@@ -237,7 +237,7 @@ export class RequestEvents {
         const { requestId, timeStamp, requestHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.BEFORE_SEND_HEADERS,
+            state: RequestContextState.BeforeSendHeaders,
             timestamp: timeStamp,
             requestHeaders,
         });
@@ -257,7 +257,7 @@ export class RequestEvents {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.SEND_HEADERS,
+            state: RequestContextState.SendHeaders,
             timestamp: timeStamp,
         });
 
@@ -280,7 +280,7 @@ export class RequestEvents {
         } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.HEADERS_RECEIVED,
+            state: RequestContextState.HeadersReceived,
             responseHeaders,
             statusCode,
         });
@@ -300,7 +300,7 @@ export class RequestEvents {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.AUTH_REQUIRED,
+            state: RequestContextState.AuthRequired,
             timestamp: timeStamp,
         });
 
@@ -319,7 +319,7 @@ export class RequestEvents {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.BEFORE_REDIRECT,
+            state: RequestContextState.BeforeRedirect,
             timestamp: timeStamp,
         });
 
@@ -338,7 +338,7 @@ export class RequestEvents {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.RESPONSE_STARTED,
+            state: RequestContextState.ResponseStarted,
             timestamp: timeStamp,
         });
 
@@ -357,7 +357,7 @@ export class RequestEvents {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.COMPLETED,
+            state: RequestContextState.Completed,
             timestamp: timeStamp,
         });
 
@@ -376,7 +376,7 @@ export class RequestEvents {
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
-            state: RequestContextState.ERROR,
+            state: RequestContextState.Error,
             timestamp: timeStamp,
         });
 

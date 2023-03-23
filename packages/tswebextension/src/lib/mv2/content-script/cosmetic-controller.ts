@@ -17,17 +17,17 @@ import type { ContentScriptCosmeticData } from '../background/cosmetic-api';
  */
 export class CosmeticController {
     /**
-     * Retry timeout for {@link MessageType.GET_COSMETIC_DATA} request to background in milliseconds.
+     * Retry timeout for {@link MessageType.GetCosmeticData} request to background in milliseconds.
      */
     private static GET_COSMETIC_DATA_RETRY_TIMEOUT_MS = 100;
 
     /**
-     * Max {@link MessageType.GET_COSMETIC_DATA} request limit.
+     * Max {@link MessageType.GetCosmeticData} request limit.
      */
     private static MAX_GET_COSMETIC_DATA_TRIES = 200;
 
     /**
-     * Number of {@link MessageType.GET_COSMETIC_DATA} requests.
+     * Number of {@link MessageType.GetCosmeticData} requests.
      */
     private tries = 0;
 
@@ -53,11 +53,11 @@ export class CosmeticController {
     }
 
     /**
-     * Sends {@link MessageType.GET_COSMETIC_DATA} message to background and process response.
+     * Sends {@link MessageType.GetCosmeticData} message to background and process response.
      */
     private async process(): Promise<void> {
         const res = await sendAppMessage({
-            type: MessageType.GET_COSMETIC_DATA,
+            type: MessageType.GetCosmeticData,
             payload: {
                 documentUrl: window.location.href,
             },
@@ -69,7 +69,7 @@ export class CosmeticController {
     }
 
     /**
-     * Process {@link MessageType.GET_COSMETIC_DATA} response from background.
+     * Process {@link MessageType.GetCosmeticData} response from background.
      *
      * If {@link cosmeticData.isAppStarted} is false, retry
      * request after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} milliseconds.
@@ -139,7 +139,7 @@ export class CosmeticController {
     private static createCssHitsCounter(): CssHitsCounter {
         return new CssHitsCounter((stats) => {
             sendAppMessage({
-                type: MessageType.SAVE_CSS_HITS_STATS,
+                type: MessageType.SaveCssHitsStats,
                 payload: stats,
             });
         });

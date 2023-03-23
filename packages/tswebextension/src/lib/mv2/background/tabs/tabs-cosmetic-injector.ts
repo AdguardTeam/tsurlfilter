@@ -112,8 +112,8 @@ export class TabsCosmeticInjector {
                 requestId: TabsCosmeticInjector.generateFrameRequestId(),
                 timestamp: Date.now(),
                 contentType: isDocumentFrame
-                    ? ContentType.DOCUMENT
-                    : ContentType.SUBDOCUMENT,
+                    ? ContentType.Document
+                    : ContentType.Subdocument,
             });
 
             frame.isJsInjected = true;

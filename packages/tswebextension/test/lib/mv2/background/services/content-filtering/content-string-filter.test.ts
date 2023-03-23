@@ -9,7 +9,7 @@ import { ContentType, defaultFilteringLog } from '@lib/common';
 
 describe('Content string filter', () => {
     const context = {
-        state: RequestContextState.HEADERS_RECEIVED,
+        state: RequestContextState.HeadersReceived,
         requestId: '1',
         requestUrl: 'https://example.org',
         referrerUrl: 'https://example.org',
@@ -20,7 +20,7 @@ describe('Content string filter', () => {
         method: 'GET',
         status: 200,
         requestFrameId: 0,
-        contentType: ContentType.DOCUMENT,
+        contentType: ContentType.Document,
         thirdParty: false,
     };
 

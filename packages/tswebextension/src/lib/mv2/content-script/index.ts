@@ -31,7 +31,7 @@ initAssistant();
  */
 (async (): Promise<void> => {
     const response = await sendAppMessage({
-        type: MessageType.GET_COOKIE_RULES,
+        type: MessageType.GetCookieRules,
         payload: {
             documentUrl: window.location.href,
         },
@@ -53,7 +53,7 @@ initAssistant();
                     filterId,
                 }) => {
                     sendAppMessage({
-                        type: MessageType.SAVE_COOKIE_LOG_EVENT,
+                        type: MessageType.SaveCookieLogEvent,
                         payload: {
                             cookieName,
                             cookieValue,

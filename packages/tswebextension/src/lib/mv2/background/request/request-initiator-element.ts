@@ -7,9 +7,9 @@ import { CosmeticApi } from '../cosmetic-api';
  * If request is blocked by network rule, we try to collapse broken element from background page.
  */
 export const enum InitiatorTag {
-    FRAME = 'frame',
-    IFRAME = 'iframe',
-    IMAGE = 'img',
+    Frame = 'frame',
+    Iframe = 'iframe',
+    Image = 'img',
 }
 
 export const BACKGROUND_TAB_ID = -1;
@@ -29,9 +29,9 @@ export const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility
 function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null {
     switch (requestType) {
         case RequestType.SubDocument:
-            return [InitiatorTag.IFRAME, InitiatorTag.FRAME];
+            return [InitiatorTag.Iframe, InitiatorTag.Frame];
         case RequestType.Image:
-            return [InitiatorTag.IMAGE];
+            return [InitiatorTag.Image];
         default:
             return null;
     }

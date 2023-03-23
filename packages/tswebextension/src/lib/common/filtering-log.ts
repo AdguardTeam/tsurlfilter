@@ -10,20 +10,20 @@ import { EventChannel, EventChannelInterface } from './utils';
  * Types of filtering events that can occur during request processing.
  */
 export enum FilteringEventType {
-    SEND_REQUEST = 'SEND_REQUEST',
-    TAB_RELOAD = 'TAB_RELOAD',
-    APPLY_BASIC_RULE = 'APPLY_BASIC_RULE',
-    APPLY_COSMETIC_RULE = 'APPLY_COSMETIC_RULE',
-    APPLY_CSP_RULE = 'APPLY_CSP_RULE',
-    RECEIVE_RESPONSE = 'RECEIVE_RESPONSE',
-    COOKIE = 'COOKIE',
-    REMOVE_HEADER = 'REMOVE_HEADER',
-    REMOVE_PARAM = 'REMOVE_PARAM',
-    REPLACE_RULE_APPLY = 'REPLACE_RULE_APPLY',
-    CONTENT_FILTERING_START = 'CONTENT_FILTERING_START',
-    CONTENT_FILTERING_FINISH = 'CONTENT_FILTERING_FINISH',
-    STEALTH_ACTION = 'STEALTH_ACTION',
-    JS_INJECT = 'JS_INJECT',
+    SendRequest = 'sendRequest',
+    TabReload = 'tabReload',
+    ApplyBasicRule = 'applyBasicRule',
+    ApplyCosmeticRule = 'applyCosmeticRule',
+    ApplyCspRule = 'applyCspRule',
+    ReceiveResponse = 'receiveResponse',
+    Cookie = 'cookie',
+    RemoveHeader = 'removeHeader',
+    RemoveParam = 'removeParam',
+    ReplaceRuleApply = 'replaceRuleApply',
+    ContentFilteringStart = 'contentFilteringStart',
+    ContentFilteringFinish = 'contentFilteringFinish',
+    StealthAction = 'stealthAction',
+    JsInject = 'jsInject',
 }
 
 /**
@@ -56,7 +56,7 @@ export type SendRequestEventData = {
  * Dispatched by WebRequestApi manifest v2 module on request in onBeforeRequest event handler.
  */
 export type SendRequestEvent = {
-    type: FilteringEventType.SEND_REQUEST,
+    type: FilteringEventType.SendRequest,
     data: SendRequestEventData,
 };
 
@@ -71,7 +71,7 @@ export type PageReloadEventData = {
  * Dispatched by WebRequestApi manifest v2 module on document request type handling in onBeforeRequest event handler.
  */
 export type TabReloadEvent = {
-    type: FilteringEventType.TAB_RELOAD,
+    type: FilteringEventType.TabReload,
     data: PageReloadEventData,
 };
 
@@ -89,7 +89,7 @@ export type ApplyBasicRuleEventData = {
  * handler.
  */
 export type ApplyBasicRuleEvent = {
-    type: FilteringEventType.APPLY_BASIC_RULE,
+    type: FilteringEventType.ApplyBasicRule,
     data: ApplyBasicRuleEventData,
 };
 
@@ -111,7 +111,7 @@ export type ApplyCspRuleEventData = {
  * Dispatched by manifest v2 csp service.
  */
 export type ApplyCspRuleEvent = {
-    type: FilteringEventType.APPLY_CSP_RULE,
+    type: FilteringEventType.ApplyCspRule,
     data: ApplyCspRuleEventData,
 };
 
@@ -134,7 +134,7 @@ export type ApplyCosmeticRuleEventData = {
  * apply.
  */
 export type ApplyCosmeticRuleEvent = {
-    type: FilteringEventType.APPLY_COSMETIC_RULE,
+    type: FilteringEventType.ApplyCosmeticRule,
     data: ApplyCosmeticRuleEventData,
 };
 
@@ -151,7 +151,7 @@ export type ReceiveResponseEventData = {
  * Dispatched by WebRequestApi manifest v2 module on response in onHeadersReceived event handler.
  */
 export type ReceiveResponseEvent = {
-    type: FilteringEventType.RECEIVE_RESPONSE,
+    type: FilteringEventType.ReceiveResponse,
     data: ReceiveResponseEventData,
 };
 
@@ -176,7 +176,7 @@ export type CookieEventData = {
  * event handlers.
  */
 export type CookieEvent = {
-    type: FilteringEventType.COOKIE;
+    type: FilteringEventType.Cookie;
     data: CookieEventData;
 };
 
@@ -201,7 +201,7 @@ export type RemoveHeaderEventData = {
  * onHeadersReceived event handlers.
  */
 export type RemoveHeaderEvent = {
-    type: FilteringEventType.REMOVE_HEADER;
+    type: FilteringEventType.RemoveHeader;
     data: RemoveHeaderEventData;
 };
 
@@ -225,7 +225,7 @@ export type RemoveParamEventData = {
  * handler.
  */
 export type RemoveParamEvent = {
-    type: FilteringEventType.REMOVE_PARAM;
+    type: FilteringEventType.RemoveParam;
     data: RemoveParamEventData;
 };
 
@@ -242,7 +242,7 @@ export type ReplaceRuleApplyEventData = {
  * Dispatched by ContentStringFilter manifest v2 module on replace rule apply while content filtering process.
  */
 export type ReplaceRuleApplyEvent = {
-    type: FilteringEventType.REPLACE_RULE_APPLY;
+    type: FilteringEventType.ReplaceRuleApply;
     data: ReplaceRuleApplyEventData;
 };
 
@@ -257,7 +257,7 @@ export type ContentFilteringStartEventData = {
  * Dispatched by ContentStream manifest v2 module on start of data reading while content filtering process.
  */
 export type ContentFilteringStartEvent = {
-    type: FilteringEventType.CONTENT_FILTERING_START
+    type: FilteringEventType.ContentFilteringStart
     data: ContentFilteringStartEventData;
 };
 
@@ -272,7 +272,7 @@ export type ContentFilteringFinishEventData = {
  * Dispatched by ContentStream manifest v2 module on finish of data reading while content filtering process.
  */
 export type ContentFilteringFinishEvent = {
-    type: FilteringEventType.CONTENT_FILTERING_FINISH
+    type: FilteringEventType.ContentFilteringFinish
     data: ContentFilteringFinishEventData;
 };
 
@@ -292,7 +292,7 @@ export type StealthActionEventData = {
  * Dispatched by manifest v2 StealthApi on stealth action apply in onBeforeSendHeaders event handler.
  */
 export type StealthActionEvent = {
-    type: FilteringEventType.STEALTH_ACTION
+    type: FilteringEventType.StealthAction
     data: StealthActionEventData;
 };
 
@@ -315,7 +315,7 @@ export type JsInjectEventData = {
  * Dispatched by manifest v2 WebRequest API injectJsScript method.
  */
 export type JsInjectEvent = {
-    type: FilteringEventType.JS_INJECT
+    type: FilteringEventType.JsInject
     data: JsInjectEventData;
 };
 

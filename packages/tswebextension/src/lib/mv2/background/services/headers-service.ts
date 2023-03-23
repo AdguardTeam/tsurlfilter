@@ -59,7 +59,7 @@ export class HeadersService {
             if (HeadersService.applyRule(requestHeaders, rule, true)) {
                 isModified = true;
                 this.filteringLog.publishEvent({
-                    type: FilteringEventType.REMOVE_HEADER,
+                    type: FilteringEventType.RemoveHeader,
                     data: {
                         removeHeader: true,
                         headerName: rule.getAdvancedModifierValue()!,
@@ -116,7 +116,7 @@ export class HeadersService {
             if (HeadersService.applyRule(responseHeaders, rule, false)) {
                 isModified = true;
                 this.filteringLog.publishEvent({
-                    type: FilteringEventType.REMOVE_HEADER,
+                    type: FilteringEventType.RemoveHeader,
                     data: {
                         removeHeader: true,
                         headerName: rule.getAdvancedModifierValue()!,

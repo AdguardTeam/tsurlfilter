@@ -79,12 +79,12 @@ describe('Stealth service', () => {
     describe('Stealth service - headers', () => {
         const getContextWithHeaders = (headers: WebRequest.HttpHeaders): RequestContext => {
             return {
-                state: RequestContextState.BEFORE_SEND_HEADERS,
+                state: RequestContextState.BeforeSendHeaders,
                 requestId: '1',
                 requestUrl: 'https://example.org',
                 referrerUrl: 'https://example.org',
                 requestType: RequestType.Document,
-                contentType: ContentType.DOCUMENT,
+                contentType: ContentType.Document,
                 statusCode: 200,
                 tabId: 0,
                 frameId: 0,
@@ -125,7 +125,7 @@ describe('Stealth service', () => {
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'Referer',
                 value: 'http://other.org',
-            }]))).toBe(StealthActions.HIDE_REFERRER);
+            }]))).toBe(StealthActions.HideReferrer);
         });
 
         it('checks hide search query', () => {
@@ -140,7 +140,7 @@ describe('Stealth service', () => {
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'Referer',
                 value: 'http://www.google.com',
-            }]))).toBe(StealthActions.HIDE_SEARCH_QUERIES);
+            }]))).toBe(StealthActions.HideSearchQueries);
         });
 
         it('checks block chrome client data', () => {
@@ -150,7 +150,7 @@ describe('Stealth service', () => {
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'X-Client-Data',
                 value: 'some data',
-            }]))).toBe(StealthActions.BLOCK_CHROME_CLIENT_DATA);
+            }]))).toBe(StealthActions.BlockChromeClientData);
         });
 
         it('checks send-do-not-track', () => {
@@ -159,7 +159,7 @@ describe('Stealth service', () => {
 
             const context = getContextWithHeaders([]);
 
-            expect(service.processRequestHeaders(context)).toBe(StealthActions.SEND_DO_NOT_TRACK);
+            expect(service.processRequestHeaders(context)).toBe(StealthActions.SendDoNotTrack);
             expect(context.requestHeaders).toHaveLength(2);
             expect(context.requestHeaders![0].name).toBe('DNT');
             expect(context.requestHeaders![0].value).toBe('1');

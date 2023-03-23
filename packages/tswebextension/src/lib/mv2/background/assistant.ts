@@ -27,7 +27,7 @@ export class Assistant {
         );
 
         await messagesApi.sendMessage(tabId, {
-            type: MessageType.INIT_ASSISTANT,
+            type: MessageType.InitAssistant,
             tabId,
             assistantUrl: this.assistantUrl,
         });
@@ -40,7 +40,7 @@ export class Assistant {
      */
     public static async closeAssistant(tabId: number): Promise<void> {
         await messagesApi.sendMessage(tabId, {
-            type: MessageType.CLOSE_ASSISTANT,
+            type: MessageType.CloseAssistant,
         });
     }
 }

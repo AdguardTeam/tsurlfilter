@@ -17,7 +17,7 @@ export const initAssistant = (): void => {
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         switch (message.type) {
-            case MessageType.INIT_ASSISTANT: {
+            case MessageType.InitAssistant: {
                 if (typeof assistant === 'undefined') {
                     assistant = adguardAssistant();
                 } else {
@@ -26,7 +26,7 @@ export const initAssistant = (): void => {
 
                 assistant.start(null, async (ruleText: string) => {
                     const res = await sendAppMessage({
-                        type: MessageType.ASSISTANT_CREATE_RULE,
+                        type: MessageType.AssistantCreateRule,
                         payload: { ruleText },
                     });
                     if (!res) {
@@ -36,7 +36,7 @@ export const initAssistant = (): void => {
                 sendResponse(true);
                 break;
             }
-            case MessageType.CLOSE_ASSISTANT: {
+            case MessageType.CloseAssistant: {
                 if (assistant) {
                     assistant.close();
                     sendResponse(true);

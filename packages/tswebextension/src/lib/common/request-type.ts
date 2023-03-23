@@ -2,25 +2,28 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { WebRequest } from 'webextension-polyfill';
 
 /**
- * TODO: move contentType to frontend or delete?
+ * Request content type.
+ *
+ * NOTE: Do not use `const enum`,
+ * because this enum is imported in extension frontend writing in js.
  */
-export const enum ContentType {
-    DOCUMENT = 'DOCUMENT',
-    SUBDOCUMENT = 'SUBDOCUMENT',
-    SCRIPT = 'SCRIPT',
-    STYLESHEET = 'STYLESHEET',
-    OBJECT = 'OBJECT',
-    IMAGE = 'IMAGE',
-    XMLHTTPREQUEST = 'XMLHTTPREQUEST',
-    MEDIA = 'MEDIA',
-    FONT = 'FONT',
-    WEBSOCKET = 'WEBSOCKET',
-    WEBRTC = 'WEBRTC',
-    OTHER = 'OTHER',
-    CSP = 'CSP',
-    COOKIE = 'COOKIE',
-    PING = 'PING',
-    CSP_REPORT = 'CSP_REPORT',
+export enum ContentType {
+    Document = 'document',
+    Subdocument = 'subdocument',
+    Script = 'script',
+    Stylesheet = 'stylesheet',
+    Object = 'object',
+    Image = 'image',
+    XmlHttpRequest = 'xmlHttpRequest',
+    Media = 'media',
+    Font = 'font',
+    Websocket = 'websocket',
+    WebRtc = 'webRtc',
+    Other = 'other',
+    Csp = 'csp',
+    Cookie = 'cookie',
+    Ping = 'ping',
+    CspReport = 'cspReport',
 }
 
 export interface RequestTypeData {
@@ -38,69 +41,69 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
     switch (resourceType) {
         case 'main_frame':
             return {
-                contentType: ContentType.DOCUMENT,
+                contentType: ContentType.Document,
                 requestType: RequestType.Document,
             };
         case 'sub_frame':
             return {
-                contentType: ContentType.SUBDOCUMENT,
+                contentType: ContentType.Subdocument,
                 requestType: RequestType.SubDocument,
             };
         case 'stylesheet':
             return {
-                contentType: ContentType.STYLESHEET,
+                contentType: ContentType.Stylesheet,
                 requestType: RequestType.Stylesheet,
             };
         case 'script':
             return {
-                contentType: ContentType.SCRIPT,
+                contentType: ContentType.Script,
                 requestType: RequestType.Script,
             };
         case 'image':
         case 'imageset':
             return {
-                contentType: ContentType.IMAGE,
+                contentType: ContentType.Image,
                 requestType: RequestType.Image,
             };
         case 'object':
             return {
-                contentType: ContentType.OBJECT,
+                contentType: ContentType.Object,
                 requestType: RequestType.Object,
             };
         case 'xmlhttprequest':
             return {
-                contentType: ContentType.XMLHTTPREQUEST,
+                contentType: ContentType.XmlHttpRequest,
                 requestType: RequestType.XmlHttpRequest,
             };
         case 'ping':
         case 'beacon':
             return {
-                contentType: ContentType.PING,
+                contentType: ContentType.Ping,
                 requestType: RequestType.Ping,
             };
         case 'font':
             return {
-                contentType: ContentType.FONT,
+                contentType: ContentType.Font,
                 requestType: RequestType.Font,
             };
         case 'media':
             return {
-                contentType: ContentType.MEDIA,
+                contentType: ContentType.Media,
                 requestType: RequestType.Media,
             };
         case 'websocket':
             return {
-                contentType: ContentType.WEBSOCKET,
+                contentType: ContentType.Websocket,
                 requestType: RequestType.WebSocket,
             };
         case 'csp_report':
             return {
-                contentType: ContentType.CSP_REPORT,
+                contentType: ContentType.CspReport,
                 requestType: RequestType.Other,
             };
         default:
             return {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             };
     }

@@ -47,14 +47,14 @@ export class CspService {
                     });
 
                     defaultFilteringLog.publishEvent({
-                        type: FilteringEventType.APPLY_CSP_RULE,
+                        type: FilteringEventType.ApplyCspRule,
                         data: {
                             tabId,
                             eventId: requestId,
                             requestUrl,
                             frameUrl: referrerUrl,
                             frameDomain: getDomain(referrerUrl) as string,
-                            requestType: ContentType.CSP,
+                            requestType: ContentType.Csp,
                             rule,
                             timestamp: Date.now(),
                         },

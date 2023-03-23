@@ -28,7 +28,7 @@ describe('Request Events', () => {
         requestFrameId: 0,
         requestType: RequestType.Document,
         method: 'GET',
-        contentType: ContentType.DOCUMENT,
+        contentType: ContentType.Document,
         thirdParty: true,
     };
 
@@ -49,7 +49,7 @@ describe('Request Events', () => {
         };
 
         const prerenderRequestContext = {
-            state: RequestContextState.BEFORE_REQUEST,
+            state: RequestContextState.BeforeRequest,
             timestamp,
             ...commonContextData,
             tabId: commonRequestData.tabId + 1,
@@ -70,7 +70,7 @@ describe('Request Events', () => {
 
         const requestContext = {
             ...commonContextData,
-            state: RequestContextState.BEFORE_REQUEST,
+            state: RequestContextState.BeforeRequest,
             timestamp,
             referrerUrl: 'https://example.org/',
             requestUrl: 'https://example.org/',
@@ -102,7 +102,7 @@ describe('Request Events', () => {
                 initiator: 'https://testcases.adguard.com',
             },
             context: {
-                state: RequestContextState.BEFORE_REQUEST,
+                state: RequestContextState.BeforeRequest,
                 ...commonContextData,
             },
         },
@@ -114,7 +114,7 @@ describe('Request Events', () => {
                 ...commonRequestData,
             },
             context: {
-                state: RequestContextState.BEFORE_SEND_HEADERS,
+                state: RequestContextState.BeforeSendHeaders,
                 ...commonContextData,
             },
         },
@@ -126,7 +126,7 @@ describe('Request Events', () => {
                 ...commonRequestData,
             },
             context: {
-                state: RequestContextState.SEND_HEADERS,
+                state: RequestContextState.SendHeaders,
                 ...commonContextData,
             },
         },
@@ -146,7 +146,7 @@ describe('Request Events', () => {
                 statusLine: 'HTTP/1.1 200',
             },
             context: {
-                state: RequestContextState.HEADERS_RECEIVED,
+                state: RequestContextState.HeadersReceived,
                 responseHeaders: [
                     {
                         name: 'content-type',
@@ -169,7 +169,7 @@ describe('Request Events', () => {
                 statusLine: 'HTTP/1.1 200',
             },
             context: {
-                state: RequestContextState.RESPONSE_STARTED,
+                state: RequestContextState.ResponseStarted,
                 responseHeaders: [
                     {
                         name: 'content-type',
@@ -206,7 +206,7 @@ describe('Request Events', () => {
                 timeStamp: 0,
             },
             context: {
-                state: RequestContextState.COMPLETED,
+                state: RequestContextState.Completed,
                 responseHeaders: [
                     {
                         name: 'content-type',
@@ -228,7 +228,7 @@ describe('Request Events', () => {
                 initiator: 'https://example.com',
             },
             context: {
-                state: RequestContextState.ERROR,
+                state: RequestContextState.Error,
                 responseHeaders: [
                     {
                         name: 'content-type',

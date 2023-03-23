@@ -11,83 +11,83 @@ describe('Request Type', () => {
     it('correctly maps resource type with Request and Content Type', () => {
         const types: Record<WebRequest.ResourceType, RequestTypeData> = {
             main_frame: {
-                contentType: ContentType.DOCUMENT,
+                contentType: ContentType.Document,
                 requestType: RequestType.Document,
             },
             sub_frame: {
-                contentType: ContentType.SUBDOCUMENT,
+                contentType: ContentType.Subdocument,
                 requestType: RequestType.SubDocument,
             },
             stylesheet: {
-                contentType: ContentType.STYLESHEET,
+                contentType: ContentType.Stylesheet,
                 requestType: RequestType.Stylesheet,
             },
             script: {
-                contentType: ContentType.SCRIPT,
+                contentType: ContentType.Script,
                 requestType: RequestType.Script,
             },
             image: {
-                contentType: ContentType.IMAGE,
+                contentType: ContentType.Image,
                 requestType: RequestType.Image,
             },
             imageset: {
-                contentType: ContentType.IMAGE,
+                contentType: ContentType.Image,
                 requestType: RequestType.Image,
             },
             object: {
-                contentType: ContentType.OBJECT,
+                contentType: ContentType.Object,
                 requestType: RequestType.Object,
             },
             ping: {
-                contentType: ContentType.PING,
+                contentType: ContentType.Ping,
                 requestType: RequestType.Ping,
             },
             beacon: {
-                contentType: ContentType.PING,
+                contentType: ContentType.Ping,
                 requestType: RequestType.Ping,
             },
             font: {
-                contentType: ContentType.FONT,
+                contentType: ContentType.Font,
                 requestType: RequestType.Font,
             },
             media: {
-                contentType: ContentType.MEDIA,
+                contentType: ContentType.Media,
                 requestType: RequestType.Media,
             },
             websocket: {
-                contentType: ContentType.WEBSOCKET,
+                contentType: ContentType.Websocket,
                 requestType: RequestType.WebSocket,
             },
             csp_report: {
-                contentType: ContentType.CSP_REPORT,
+                contentType: ContentType.CspReport,
                 requestType: RequestType.Other,
             },
             xmlhttprequest: {
-                contentType: ContentType.XMLHTTPREQUEST,
+                contentType: ContentType.XmlHttpRequest,
                 requestType: RequestType.XmlHttpRequest,
             },
             object_subrequest: {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },
             xslt: {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },
             xml_dtd: {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },
             web_manifest: {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },
             speculative: {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },
             other: {
-                contentType: ContentType.OTHER,
+                contentType: ContentType.Other,
                 requestType: RequestType.Other,
             },
         };

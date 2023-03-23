@@ -49,7 +49,7 @@ const applyExtendedCss = (extendedCssRules: string[] | undefined): void => {
 
 (async (): Promise<void> => {
     const res = await sendAppMessage({
-        type: MessageType.GET_CSS,
+        type: MessageType.GetCss,
         payload: {
             url: document.location.href,
         },

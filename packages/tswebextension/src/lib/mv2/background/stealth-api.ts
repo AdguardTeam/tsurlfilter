@@ -143,7 +143,7 @@ export class StealthApi implements StealthApiInterface {
 
         const stealthActions = this.engine.processRequestHeaders(context);
 
-        return stealthActions !== StealthActions.NONE;
+        return stealthActions !== StealthActions.None;
     }
 
     /**

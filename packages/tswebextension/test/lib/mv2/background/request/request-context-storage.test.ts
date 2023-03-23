@@ -11,7 +11,7 @@ describe('Request Context Storage', () => {
         const requestId = '12345';
 
         const data: RequestContext = {
-            state: RequestContextState.BEFORE_REQUEST,
+            state: RequestContextState.BeforeRequest,
             requestId: '1',
             tabId: 1,
             frameId: 0,
@@ -21,7 +21,7 @@ describe('Request Context Storage', () => {
             requestFrameId: 0,
             requestType: RequestType.Document,
             method: 'GET',
-            contentType: ContentType.DOCUMENT,
+            contentType: ContentType.Document,
             thirdParty: false,
         };
 

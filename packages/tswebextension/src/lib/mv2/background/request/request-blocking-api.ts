@@ -145,7 +145,7 @@ export class RequestBlockingApi {
         tabId: number,
     ): void {
         defaultFilteringLog.publishEvent({
-            type: FilteringEventType.APPLY_BASIC_RULE,
+            type: FilteringEventType.ApplyBasicRule,
             data: {
                 eventId: requestId,
                 tabId,
