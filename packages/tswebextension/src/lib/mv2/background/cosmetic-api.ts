@@ -66,11 +66,15 @@ export class CosmeticApi {
     private static CSS_SELECTORS_PER_LINE = 50;
 
     /**
-     * Applies scripts from cosmetic result.
+     * Applies scripts from a cosmetic result. It is possible inject a script
+     * only once, because after the first inject, we set a flag in an isolated
+     * copy of the window and all next calls to `buildScriptText` will return
+     * nothing.
      *
      * @param scriptText Script text.
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @see {@link buildScriptText} for details about multiple injects.
      * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
@@ -259,10 +263,15 @@ export class CosmeticApi {
 
         const scriptRules = cosmeticResult.getScriptRules();
 
-        const scriptText = CosmeticApi.getScriptText(scriptRules);
+        let scriptText = CosmeticApi.getScriptText(scriptRules);
+        scriptText += stealthApi.getSetDomSignalScript();
 
         if (scriptText) {
             /**
+             * We can execute injectScript only once per frame, so we need to
+             * combine all the scripts into a single injection.
+             *
+             * @see {@link buildScriptText} for details about multiple injects.
              * @see {@link LocalScriptRulesService} for details about script source
              */
             CosmeticApi.injectScript(scriptText, tabId, frameId);
@@ -286,9 +295,6 @@ export class CosmeticApi {
                 }
             }
         }
-
-        const setDomSignalScript = stealthApi.getSetDomSignalScript();
-        CosmeticApi.injectScript(setDomSignalScript, tabId, frameId);
     }
 
     /**

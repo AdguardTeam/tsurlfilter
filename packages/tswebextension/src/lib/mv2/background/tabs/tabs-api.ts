@@ -423,9 +423,9 @@ export class TabsApi implements TabsApiInterface {
         const injectDetails = {
             code,
             frameId,
-            runAt: 'document_start',
+            runAt: 'document_start' as ExtensionTypes.RunAt,
             matchAboutBlank: true,
-        } as ExtensionTypes.InjectDetails;
+        };
 
         browser.tabs
             .executeScript(tabId, injectDetails)

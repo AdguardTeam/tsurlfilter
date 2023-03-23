@@ -47,7 +47,9 @@ const variableName = `scriptExecuted${Date.now()}`;
  */
 export const buildScriptText = (scriptText: string): string => {
     /**
-     * Executes scripts in a scope of the page.
+     * Executes scripts in a scope of the page, but the `window` fields are in
+     * an isolated scope, e.g. `window.${variableName}` will only be visible in
+     * this scope of the script, but not in the original scope of the page.
      * In order to prevent multiple script execution checks if script was already executed.
      * Sometimes in Firefox when content-filtering is applied to the page race condition happens.
      * This causes an issue when the page doesn't have its document.head or document.documentElement at the moment of
