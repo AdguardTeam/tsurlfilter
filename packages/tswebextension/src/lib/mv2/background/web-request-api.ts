@@ -1,3 +1,167 @@
+/**
+ * @file
+ * API for applying rules from background service
+ * by handling web Request API and web navigation events.
+ *
+ * Event data is aggregated into two contexts: {@link RequestContext},
+ * which contains data about the specified request
+ * and {@link TabContext} which contains data about the specified tab.
+ *
+ *
+ *  Applying {@link NetworkRule} from the background page:
+ *
+ * The {@link MatchingResult} of specified request is calculated and stored in context storages,
+ * at the time {@link RequestEvents.onBeforeRequest} is processed.
+ * The handler for this event also computes the response based on {@link MatchingResult}
+ * via {@link RequestBlockingApi.getBlockingResponse}.
+ * If the rule is blocking rule, the request will be cancelled, otherwise it will be handled by the next handlers.
+ * If content filtering is supported, it will be initialized for non-blocking requests.
+ *
+ * At {@link RequestEvents.onBeforeSendHeaders}, the request headers are modified or deleted
+ * based on the {@link MatchingResult} stored in {@link requestContextStorage}.
+ * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way.
+ *
+ * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
+ * on {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred} events.
+ *
+ *
+ *  Applying {@link CosmeticRule} from the background page.
+ *
+ * We calculate {@link CosmeticResult} and store it in {@link TabContext} context
+ * at the time {@link RequestEvents.onBeforeRequest} is processed.
+ *
+ * To get the scripts up and running as quickly as possible
+ * we try to inject them the first time during the {@link RequestEvents.onResponseStarted}.
+ *
+ * All cosmetic rules are then injected on the {@link browser.webNavigation.onCommitted} event.
+ *
+ * In Firefox, {@link browser.webNavigation.onCommitted} may not work for child frames,
+ * so we also try to inject cosmetic rules on {@link RequestEvents.onCompleted}.
+ *
+ * For frames without a source, we inject cosmetics on the {@link browser.webNavigation.onDOMContentLoaded} event.
+ *
+ * If a rule is successfully injected into one of the events being processed,
+ * a flag is set in the {@link TabContext} context to block re-injection.
+ *
+ *
+ *  Web Request API Event Handling:
+ *
+ *                                       ┌─────────────────────────────┐
+ * Matches {@link MatchingResult}        │                             │
+ * for the request.                      │       onBeforeRequest       ◄─┐
+ * If this is a frame request,           │                             │ │
+ * also matches the                      └──────────────┬──────────────┘ │
+ * {@link CosmeticResult}                               │                │
+ * for the specified frame.                             │                │
+ * If the request is neither blocked                    │                │
+ * nor redirected, apply the                            │                │
+ * $removeparam rules.                                  │                │
+ * In Firefox, if the request                           │                │
+ * is not blocked,                                      │                │
+ * initialize content filtering.                        │                │
+ *                                                      │                │
+ *                                                      │                │
+ *                                       ┌──────────────▼──────────────┐ │
+ * Removes or modifies request           │                             │ │
+ * headers based on                      │      onBeforeSendHeaders    ◄─┼┐
+ * {@link MatchingResult}.               │                             │ ││
+ *                                       └──────────────┬──────────────┘ ││
+ *                                                      │                ││
+ *                                       ┌──────────────▼──────────────┐ ││
+ *                                       │                             │ ││
+ *                                       │        onSendHeaders        │ ││
+ *                                       │                             │ ││
+ *                                       └──────────────┬──────────────┘ ││
+ *                                                      │                ││
+ *                                       ┌──────────────▼──────────────┐ ││
+ * Removes or modifies response          │                             │ ││
+ * headers based on                    ┌─┤      onHeadersReceived      │ ││
+ * {@link MatchingResult}.             │ │                             │ ││
+ *                                     │ └─────────────────────────────┘ ││
+ *                                     │                                 ││
+ *                                     │ ┌─────────────────────────────┐ ││
+ *                                     │ │                             │ ││
+ *                                     ├─►       onBeforeRedirect      ├─┴┤
+ *                                     │ │                             │  │
+ *                                     │ └─────────────────────────────┘  │
+ *                                     │                                  │
+ *                                     │ ┌─────────────────────────────┐  │
+ *                                     │ │                             │  │
+ *                                     ├─►        onAuthRequired       ├──┘
+ *                                     │ │                             │
+ *                                     │ └─────────────────────────────┘
+ *                                     │
+ *                                     │ ┌─────────────────────────────┐
+ * Try injecting JS rules into the     │ │                             │
+ * frame based on                      └─►      onResponseStarted      │
+ * {@link CosmeticRule}.                 │                             │
+ *                                       └──────────────┬──────────────┘
+ *                                                      │
+ *                                       ┌──────────────▼──────────────┐
+ * In Firefox, try injecting the         │                             │
+ * CSS and JS into the                   │         onCompleted         │
+ * subdocument frame based on            │                             │
+ * {@link CosmeticResult}.               └─────────────────────────────┘
+ * Remove the request information
+ * from {@link requestContextStorage}.
+ *
+ *                                       ┌─────────────────────────────┐
+ * Remove the request information        │                             │
+ * from {@link requestContextStorage}.   │       onErrorOccurred       │
+ *                                       │                             │
+ *                                       └─────────────────────────────┘.
+ *
+ *
+ *  Web Navigation API Event Handling:
+ *
+ *                                       ┌─────────────────────────────┐
+ *                                       │                             │
+ *                                       │  onCreatedNavigationTarget  │
+ *                                       │                             │
+ *                                       └──────────────┬──────────────┘
+ *                                                      │
+ *                                       ┌──────────────▼──────────────┐
+ *                                       │                             │
+ *                                       │       onBeforeNavigate      │
+ *                                       │                             │
+ *                                       └──────────────┬──────────────┘
+ *                                                      │
+ *                                       ┌──────────────▼──────────────┐
+ * Try injecting CSS and JS rules        │                             │
+ * into the frame with source            │         onCommitted         │
+ * based on {@link CosmeticRule}.        │                             │
+ *                                       └──────────────┬──────────────┘
+ *                                                      │
+ *                                       ┌──────────────▼──────────────┐
+ * Try injecting CSS and JS rules        │                             │
+ * into the subdocument frame            │      onDOMContentLoaded     ├─┐
+ * without source based on               │                             │ │
+ * {@link CosmeticRule}.                 └──────────────┬──────────────┘ │
+ *                                                      │                │
+ *                                       ┌──────────────▼──────────────┐ │
+ *                                       │                             │ │
+ *                                     ┌─┤         onCompleted         │ │
+ *                                     │ │                             │ │
+ *                                     │ └─────────────────────────────┘ │
+ *                                     │                                 │
+ *                                     │ ┌─────────────────────────────┐ │
+ *                                     │ │                             │ │
+ *                                     ├─►    onHistoryStateUpdated    ◄─┤
+ *                                     │ │                             │ │
+ *                                     │ └─────────────────────────────┘ │
+ *                                     │                                 │
+ *                                     │ ┌─────────────────────────────┐ │
+ *                                     │ │                             │ │
+ *                                     └─►  onReferenceFragmentUpdated ◄─┘
+ *                                       │                             │
+ *                                       └─────────────────────────────┘.
+ *
+ *                                       ┌─────────────────────────────┐
+ *                                       │                             │
+ *                                       │       onErrorOccurred       │
+ *                                       │                             │
+ *                                       └─────────────────────────────┘.
+ */
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
