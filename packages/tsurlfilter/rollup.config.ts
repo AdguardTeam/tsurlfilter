@@ -84,6 +84,8 @@ const esmConfig = {
         'src/rules/simple-regex.ts',
         'src/rules/cosmetic-rule-marker.ts',
         'src/rules/network-rule-options.ts',
+        'src/cookie-filtering/cookie-filtering.ts',
+        'src/headers-filtering/headers-service.ts',
     ],
     output: [
         {
