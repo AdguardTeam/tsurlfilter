@@ -1,21 +1,19 @@
 {
-  "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es5",
-    "module":"es2015",
-    "lib": ["esnext", "dom"],
-    "strict": true,
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "typeRoots": [
-      "./types",
-      "node_modules/@types",
-      "../../node_modules/@types"
-    ]
-  },
-  "include": [
-    "src"
-  ]
+    "extends": "./tsconfig.base.json",
+    "include": [
+        "src",
+        "test",
+        "rollup.config.ts",
+        "jest.config.ts",
+        "setupTests.ts",
+        "tasks",
+        ".eslintrc.js",
+        "src/lib/mv3/.eslintrc.js",
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@lib/*": ["src/lib/*"]
+        }
+    }
 }

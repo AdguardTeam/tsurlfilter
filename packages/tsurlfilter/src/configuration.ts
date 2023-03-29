@@ -1,13 +1,13 @@
 /**
  * Compatibility types are used to configure engine for better support of different libraries
  * For example:
- *  extension doesn't support $app modifier. So if we set in configuration CompatibilityTypes.extension,
+ *  extension doesn't support $app modifier. So if we set in configuration CompatibilityTypes.Extension,
  *  engine would ignore rules with $app modifier
  */
 export enum CompatibilityTypes {
-    extension = 1 << 0,
-    corelibs = 1 << 1,
-    dns = 1 << 2,
+    Extension = 1 << 0,
+    CoreLibs = 1 << 1,
+    Dns = 1 << 2,
 }
 
 /**
@@ -64,7 +64,7 @@ class Configuration implements IConfiguration {
     /**
      * compatibility flag
      */
-    public compatibility: CompatibilityTypes | null = CompatibilityTypes.extension;
+    public compatibility: CompatibilityTypes | null = CompatibilityTypes.Extension;
 
     constructor(inputConfig?: Partial<IConfiguration>) {
         const config = { ...this.defaultConfig, ...inputConfig };
@@ -79,6 +79,7 @@ type Partial<T> = {
     [P in keyof T]?: T[P];
 };
 
+// eslint-disable-next-line import/no-mutable-exports
 export let config = new Configuration();
 
 /**

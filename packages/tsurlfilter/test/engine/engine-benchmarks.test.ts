@@ -5,7 +5,10 @@ import console from 'console';
 import { performance } from 'perf_hooks';
 import { NetworkEngine } from '../../src/engine/network-engine';
 import {
-    CosmeticOption, Engine, Request, RequestType,
+    CosmeticOption,
+    Engine,
+    Request,
+    RequestType,
 } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -69,7 +72,7 @@ function testGetRequestType(requestType: string): RequestType {
         case 'document':
             // Consider document requests as sub_document. This is because the request
             // dataset does not contain sub_frame or main_frame but only 'document'.
-            return RequestType.Subdocument;
+            return RequestType.SubDocument;
         case 'stylesheet':
             return RequestType.Stylesheet;
         case 'font':
@@ -84,7 +87,7 @@ function testGetRequestType(requestType: string): RequestType {
         case 'fetch':
             return RequestType.XmlHttpRequest;
         case 'websocket':
-            return RequestType.Websocket;
+            return RequestType.WebSocket;
         default:
             return RequestType.Other;
     }
@@ -329,7 +332,7 @@ describe('Benchmarks', () => {
         console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
 
         const totalMatches = runEngine(requests, (request) => {
-            if (request.requestType !== RequestType.Subdocument) {
+            if (request.requestType !== RequestType.SubDocument) {
                 return false;
             }
 

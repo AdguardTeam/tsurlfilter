@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
+import { IConfiguration } from '@adguard/scriptlets';
 import { CosmeticRule, CosmeticRuleType } from '../../src/rules/cosmetic-rule';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { IConfiguration } from '@adguard/scriptlets';
 
 const parseParamsFromScript = (script: string): IConfiguration | null => {
     const matchArr = script.match(/\{"args.+"}/);

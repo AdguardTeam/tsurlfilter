@@ -74,13 +74,13 @@ export class CosmeticRuleParser {
         modifiersText?: string;
     } {
         const {
-            OPEN_BRACKET,
-            CLOSE_BRACKET,
-            SPECIAL_SYMBOL,
-            ESCAPE_CHARACTER,
+            OpenBracket,
+            CloseBracket,
+            SpecialSymbol,
+            EscapeCharacter,
         } = CosmeticRuleModifiersSyntax;
 
-        if (!rulePattern.startsWith(`${OPEN_BRACKET + SPECIAL_SYMBOL}`)) {
+        if (!rulePattern.startsWith(`${OpenBracket + SpecialSymbol}`)) {
             return { domainsText: rulePattern };
         }
 
@@ -88,7 +88,7 @@ export class CosmeticRuleParser {
 
         // The first two characters cannot be closing brackets
         for (let i = 2; i < rulePattern.length; i += 1) {
-            if (rulePattern[i] === CLOSE_BRACKET && rulePattern[i - 1] !== ESCAPE_CHARACTER) {
+            if (rulePattern[i] === CloseBracket && rulePattern[i - 1] !== EscapeCharacter) {
                 closeBracketIndex = i;
                 break;
             }
@@ -131,15 +131,15 @@ export class CosmeticRuleParser {
         }
 
         const {
-            ESCAPE_CHARACTER,
-            DELIMITER,
-            ASSIGNER,
+            EscapeCharacter,
+            Delimiter,
+            Assigner,
         } = CosmeticRuleModifiersSyntax;
 
         const modifiersTextArray = utils.splitByDelimiterWithEscapeCharacter(
             modifiersText,
-            DELIMITER,
-            ESCAPE_CHARACTER,
+            Delimiter,
+            EscapeCharacter,
             false,
             false,
         );
@@ -148,7 +148,7 @@ export class CosmeticRuleParser {
 
         for (let i = 0; i < modifiersTextArray.length; i += 1) {
             const modifierText = modifiersTextArray[i];
-            const assignerIndex = modifierText.indexOf(ASSIGNER);
+            const assignerIndex = modifierText.indexOf(Assigner);
 
             if (modifierText === 'path') {
                 // Empty path modifier without assigner and value will match only main page

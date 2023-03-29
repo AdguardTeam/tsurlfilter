@@ -71,7 +71,7 @@ describe('RuleFactory Builder Test', () => {
             engine: 'extension',
             version: '1.0',
             verbose: false,
-            compatibility: CompatibilityTypes.dns,
+            compatibility: CompatibilityTypes.Dns,
         };
 
         setConfiguration(config);

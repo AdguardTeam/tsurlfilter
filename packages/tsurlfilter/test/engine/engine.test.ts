@@ -108,7 +108,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const cspRule = '||example.org^$csp=frame-src \'none\'';
         const replaceRule = '||example.org^$replace=/text-to-be-replaced/new-text/i';
         const cookieRule = '||example.org^$cookie';
-        const removeParamRule = '||example.org^$removeparam=p1|p2';
+        const removeParamRule = '||example.org^$removeparam=p1';
         const rules = [cspRule, replaceRule, cookieRule, removeParamRule];
 
         const list = new StringRuleList(1, rules.join('\n'), false);

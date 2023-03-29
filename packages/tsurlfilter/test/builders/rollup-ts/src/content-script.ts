@@ -5,4 +5,3 @@ const contentScript = () => {
 };
 
 export { contentScript };
-

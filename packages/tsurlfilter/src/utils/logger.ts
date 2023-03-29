@@ -1,3 +1,4 @@
+/* eslint-disable import/no-mutable-exports */
 /**
  * Logger interface
  */

@@ -145,7 +145,10 @@ export class ScriptletParser {
         const saver = new ScriptletParser.WordSaver();
 
         const state = ScriptletParser.iterateWithTransitions(
-            ruleContent, transitions, ScriptletParser.TRANSITION.OPENED, { sep, saver },
+            ruleContent,
+            transitions,
+            ScriptletParser.TRANSITION.OPENED,
+            { sep, saver },
         );
 
         if (state !== 'closed') {

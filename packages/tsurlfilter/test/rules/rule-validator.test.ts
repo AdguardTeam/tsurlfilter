@@ -30,15 +30,15 @@ describe('RuleValidator', () => {
     });
 
     it('validates by compatibility', () => {
-        setConfiguration({ compatibility: CompatibilityTypes.extension });
+        setConfiguration({ compatibility: CompatibilityTypes.Extension });
         const invalidExtensionRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect(RuleValidator.validate(invalidExtensionRule).valid).toBeFalsy();
 
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
         const validCompilerRule = '@@||test.com^$generichide,app=iexplore.exe';
         expect(RuleValidator.validate(validCompilerRule).valid).toBeTruthy();
 
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs | CompatibilityTypes.extension });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs | CompatibilityTypes.Extension });
         const validCompilerRule2 = '@@||test.com^$generichide,app=iexplore.exe';
         expect(RuleValidator.validate(validCompilerRule2).valid).toBeFalsy();
     });
@@ -72,7 +72,7 @@ describe('RuleValidator', () => {
     it('validates jsonprune modifier', () => {
         // TODO: remove following comment and setConfiguration() after the implementation
         // $jsonprune is not implemented for extension yet
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
         const ruleText = '||example.org/*/*/$xmlhttprequest,jsonprune=\\$..[ac\\, ab]';
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
@@ -80,7 +80,7 @@ describe('RuleValidator', () => {
     it('validates hls modifier', () => {
         // TODO: remove following comment and setConfiguration() after the implementation
         // $hls is not implemented for extension yet
-        setConfiguration({ compatibility: CompatibilityTypes.corelibs });
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
         const ruleText = '||example.org^$hls=/#UPLYNK-SEGMENT:.*\\,ad/t';
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });

@@ -4,30 +4,42 @@
 
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
-*   [Idea](#idea)
-*   [Usage](#usage)
-    *   [API description](#api-description)
-        *   [Public classes](#public-classes)
-            *   [Engine](#engine)
-            *   [MatchingResult](#matching-result)
-            *   [CosmeticResult](#cosmetic-result)
-            *   [DnsEngine](#dns-engine)
-            *   [RuleConverter](#rule-converter)
-            *   [ContentFiltering](#content-filtering)
-            *   [StealthService](#stealth-service)
-            *   [RedirectsService](#redirect-service)
-            *   [CookieFiltering](#cookie-filtering)
-            *   [RuleValidator](#rule-validator)
-            *   [RuleSyntaxUtils](#rule-syntax-utils)
-            *   [DeclarativeConverter](#declarative-converter)
-        *   [Content script classes](#content-script-classes)
-            *   [CssHitsCounter](#css-hits-counter)
-            *   [CookieController](#cookie-controller)
-    *   [Sample extensions](#sample-extensions)
-*   [Development](#development)
-    *   [NPM scripts](#npm-scripts)
-    *   [Excluding peer dependencies](#excluding-peer-dependencies)
-    *   [Git hooks](#git-hooks)
+- [TSUrlFilter](#tsurlfilter)
+  - [ Idea](#-idea)
+  - [ Usage](#-usage)
+    - [ API description](#-api-description)
+      - [ Public classes](#-public-classes)
+      - [ Engine](#-engine)
+        - [**Constructor**](#constructor)
+        - [**matchRequest**](#matchrequest)
+        - [**matchFrame**](#matchframe)
+        - [Starting engine](#starting-engine)
+        - [Matching requests](#matching-requests)
+        - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+      - [ MatchingResult](#-matchingresult)
+        - [**getBasicResult**](#getbasicresult)
+        - [**getCosmeticOption**](#getcosmeticoption)
+        - [**Other rules**](#other-rules)
+      - [ CosmeticResult](#-cosmeticresult)
+        - [Applying cosmetic result - css](#applying-cosmetic-result---css)
+        - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+      - [ DnsEngine](#-dnsengine)
+        - [**Constructor**](#constructor-1)
+        - [**match**](#match)
+        - [Matching hostname](#matching-hostname)
+      - [ RuleConverter](#-ruleconverter)
+        - [**convertRules**](#convertrules)
+      - [ RuleValidator](#-rulevalidator)
+        - [Public methods](#public-methods)
+      - [ RuleSyntaxUtils](#-rulesyntaxutils)
+        - [Public methods](#public-methods-1)
+      - [ DeclarativeConverter](#-declarativeconverter)
+        - [Public methods](#public-methods-2)
+        - [Problems](#problems)
+  - [Development](#development)
+    - [ NPM scripts](#-npm-scripts)
+    - [ Excluding peerDependencies](#-excluding-peerdependencies)
+    - [ Git Hooks](#-git-hooks)
 
 ## <a id="idea"></a> Idea
 The idea is to have a single library that we can reuse for the following tasks:
@@ -278,209 +290,6 @@ The text will be processed line by line, converting each line from known externa
     public static convertRules(rulesText: string): string {
 ```
 
-#### <a id="content-filtering"></a> ContentFiltering
-
-Content filtering module, it applies html-filtering and $replace rules.
-The rules could be retrieved with parsing the result of `engine.matchRequest`.
-
-##### **Constructor**
-```
-    /**
-     * Creates an instance of content filtering module
-     *
-     * @param filteringLog
-     */
-    constructor(filteringLog: FilteringLog)
-```
-
-##### **apply**
-```
-    /**
-     * Applies content and replace rules to the request
-     *
-     * @param streamFilter stream filter implementation
-     * @param request
-     * @param contentType Content-Type header
-     * @param replaceRules array of replace rules
-     * @param htmlRules array of html-filtering rules
-     */
-    public apply(
-        streamFilter: StreamFilter,
-        request: Request,
-        contentType: string,
-        replaceRules: NetworkRule[],
-        htmlRules: CosmeticRule[],
-    ): void
-```
-
-##### Applying content-filtering rules
-```
-    const request = new Request(url, sourceUrl, requestType);
-    request.requestId = requestId;
-    request.tabId = tabId;
-    request.statusCode = statusCode;
-    request.method = method;
-
-    contentFiltering.apply(
-        chrome.webRequest.filterResponseData(requestId),
-        request,
-        'text/html; charset=utf-8',
-        replaceRules,
-        htmlRules,
-    );
-```
-
-#### <a id="stealth-service"></a> StealthService
-
-Stealth service module, it provides some special functionality
-like removing tracking parameters and cookie modifications
-
-##### **Constructor**
-```
-    /**
-     * Constructor
-     *
-     * @param config
-     */
-    constructor(config: StealthConfig)
-```
-
-##### Stealth configuration
-```
-    const stealthConfig = {
-        blockChromeClientData: false,
-        hideReferrer: false,
-        hideSearchQueries: false,
-        sendDoNotTrack: false,
-        selfDestructThirdPartyCookies: false,
-        selfDestructThirdPartyCookiesTime: 0,
-        selfDestructFirstPartyCookies: false,
-        selfDestructFirstPartyCookiesTime: 0,
-    };
-
-    this.stealthService = new StealthService(stealthConfig);
-```
-
-##### **getCookieRulesTexts**
-```
-    /**
-     * Returns synthetic set of rules matching the specified request
-     */
-    public getCookieRulesTexts(): string[]
-```
-
-##### **processRequestHeaders**
-```
-    /**
-     * Applies stealth actions to request headers
-     *
-     * @param requestUrl
-     * @param requestType
-     * @param requestHeaders
-     */
-    public processRequestHeaders(
-        requestUrl: string, requestType: RequestType, requestHeaders: HttpHeaders,
-    ): StealthActions
-```
-
-#### <a id="redirect-service"></a> RedirectsService
-Redirects service module applies `$redirect` rules.
-More details on sample extension.
-
-##### Init service
-```
-    const redirectsService = new RedirectsService();
-    await redirectsService.init();
-```
-
-##### Usage
-```
-    const result = engine.matchRequest(request);
-    const requestRule = result.getBasicResult();
-
-    if (requestRule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-        const redirectUrl = redirectsService.createRedirectUrl(requestRule.getAdvancedModifierValue());
-    }
-```
-
-#### <a id="headers-service"></a> HeadersService
-
-Headers service module, it provides headers modification functionality.
-See more about `$removeheader` modifier.
-
-##### **Constructor**
-```
-    /**
-     * Constructor
-     *
-     * @param filteringLog
-     */
-    constructor(filteringLog: FilteringLog)
-```
-
-#####  **onBeforeSendHeaders**
-```
-    /**
-     * On before send headers handler.
-     * Removes request headers.
-     *
-     * @param details
-     * @param rules
-     * @return if headers modified
-     */
-    public onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): boolean
-```
-
-##### **getCookieRules**
-```
-    /**
-     * On headers received handler.
-     * Remove response headers.
-     *
-     * @param details
-     * @param rules
-     * @return if headers modified
-     */
-    public onHeadersReceived(details: OnHeadersReceivedDetailsType, rules: NetworkRule[]): boolean
-```
-
-
-#### <a id="cookie-filtering"></a> CookieFiltering
-Cookie filtering module applies `$cookie` rules.
-Adds a listener for `CookieApi.setOnChangedListener(..)` then applies rules from `RulesFinder` to event cookie.
-
-##### **Constructor**
-Check `CookieApi` and `RulesFinder` interfaces
-```
-    /**
-     * Constructor
-     *
-     * @param cookieManager
-     * @param filteringLog
-     * @param rulesFinder
-     */
-    constructor(cookieManager: CookieApi, filteringLog: FilteringLog, rulesFinder: RulesFinder)
-```
-
-##### Public methods
-```
-    /**
-     * Parses response header set-cookie.
-     * Saves cookie third-party flag
-     *
-     * @param request
-     * @param responseHeaders Response headers
-     */
-    processResponseHeaders(request: Request, responseHeaders: Header[]): void;
-
-    /**
-     * Filters blocking first-party rules
-     *
-     * @param rules
-     */
-    getBlockingRules(rules: NetworkRule[]): NetworkRule[];
-```
-
 #### <a id="rule-validator"></a> RuleValidator
 This module is not used in the engine directly, but it can be used to validate filter rules in other libraries or tools
 
@@ -549,54 +358,23 @@ Failed  ||testcases.adguard.com$removeparam=p1case6
 Works   ||testcases.adguard.com$removeparam=p2case6
 ```
 
-#### <a id="content-script-classes"></a> Content script classes
-Classes provided for page context:
-
-#### <a id="css-hits-counter"></a> CssHitsCounter
-Class represents collecting css style hits process.
-
-##### Initialization:
-```
-    const cssHitsCounter = new CssHitsCounter((stats) => {
-        chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
-    });
-```
-
-#### <a id="cookie-controller"></a> CookieController
-This class applies cookie rules in page context
-
-##### Usage:
-```
-    const rulesData = rules.map((rule) => {
-        return {
-            ruleText: rule.getText(),
-            match: rule.getAdvancedModifierValue(),
-            isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
-            filterId: rule.getFilterListId();
-            isAllowlist: rule.isAllowlist(),
-        };
-    });
-
-    const cookieController = new CookieController((rule) => {
-        console.debug('On cookie rule applied');
-    });
-
-    cookieController.apply(rulesData);
-```
-
 ## Development
+
+This project is part of the `tsurlfilter` monorepo.
+It is highly recommended to use both `lerna` and `nx` for commands, as it will execute scripts in the correct order and can cache dependencies.
+
+```sh
+npx nx run @adguard/tsurlfilter:<script>
+```
 
 ### <a id="npm-scripts"></a> NPM scripts
 
--   `npm t`: Run test suite
--   `npm start`: Run `npm run build` in watch mode
--   `npm run test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
--   `npm run test:prod`: Run linting and generate coverage
--   `npm run test:benchmarks`: Run benchmark tests, inspect in `chrome://inspect`
--   `npm run build`: Generate bundles and typings, create docs
--   `npm run lint`: Lints code
--   `npm run commit`: Commit using conventional commit style ([husky](https://github.com/typicode/husky) will tell you to use it if you haven't :wink:)
--   `npm run build-extension`: Build sample chrome extension
+-   `t`: Run test suite
+-   `start`: Run `build` in watch mode
+-   `test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
+-   `test:prod`: Run linting and generate coverage
+-   `build`: Generate bundles and typings, create docs
+-   `lint`: Lints code
 
 ### <a id="excluding-peer-dependencies"></a> Excluding peerDependencies
 

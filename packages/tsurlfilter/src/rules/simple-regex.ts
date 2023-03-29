@@ -1,3 +1,4 @@
+/* eslint-disable prefer-regex-literals */
 import * as utils from '../utils/utils';
 
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/regexp
@@ -10,12 +11,12 @@ const reEscapedSpecialCharactersFull = /\\[.*+?^${}()|[\]\\]/g;
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings
 const escapeSequence: { [key: string]: string } = {
-    'n': '\n',
-    'r': '\r',
-    't': '\t',
-    'b': '\b',
-    'f': '\f',
-    'v': '\v',
+    n: '\n',
+    r: '\r',
+    t: '\t',
+    b: '\b',
+    f: '\f',
+    v: '\v',
 };
 
 /**

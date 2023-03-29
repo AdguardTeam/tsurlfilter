@@ -57,7 +57,7 @@ describe('Creating request', () => {
 
         const request2 = new Request('https://1.2.3.4/', 'https://1.2.3.4/', RequestType.Other);
         expect(request2.thirdParty).toEqual(false);
-    }); 
+    });
 
     it('parses subdomains', () => {
         const request = new Request('http://sub.sub.example.org/part', 'http://sub.example.org', RequestType.Other);
@@ -78,6 +78,7 @@ describe('Creating request', () => {
     });
 
     it('parses domains with complex public suffixes', () => {
+        // eslint-disable-next-line max-len
         const request = new Request('https://www.city.toyota.aichi.jp/part', 'https://www.city.toyota.aichi.jp/', RequestType.Other);
         expect(request.subdomains.sort())
             .toEqual(['www.city.toyota.aichi.jp', 'city.toyota.aichi.jp', 'toyota.aichi.jp', 'aichi.jp', 'jp'].sort());

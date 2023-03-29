@@ -1,11 +1,6 @@
 import scriptlets, { IConfiguration } from '@adguard/scriptlets';
-
 import * as rule from './rule';
-import {
-    CosmeticRuleMarker,
-    isExtCssMarker,
-    ADG_SCRIPTLET_MASK,
-} from './cosmetic-rule-marker';
+import { CosmeticRuleMarker, isExtCssMarker, ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import * as utils from '../utils/utils';
 import { getRelativeUrl } from '../utils/url';
@@ -15,7 +10,31 @@ import { Request } from '../request';
 import { Pattern } from './pattern';
 import { ScriptletParser } from '../engine/cosmetic-engine/scriptlet-parser';
 import { config } from '../configuration';
-import { logger } from '../utils/logger';
+
+/**
+ * Init script params
+ */
+interface InitScriptParams {
+    debug?: boolean,
+    request?: Request,
+}
+
+/**
+ * Get scriptlet data response type
+ */
+export type ScriptletData = {
+    params: IConfiguration,
+    func: (source: scriptlets.IConfiguration, args: string[]) => void
+};
+
+/**
+ * Script data type
+ */
+type ScriptData = {
+    code: string | null,
+    debug?: boolean,
+    domain?: string
+};
 
 /**
  * CosmeticRuleType is an enumeration of the possible
@@ -94,31 +113,6 @@ export const EXT_CSS_PSEUDO_INDICATORS = [
     ':matches-css-before(',
     ':matches-css-after(',
 ];
-
-/**
- * Init script params
- */
-interface InitScriptParams {
-    debug?: boolean,
-    request?: Partial<Request>,
-}
-
-/**
- * Get scriptlet data response type
- */
-type ScriptletData = {
-    params: IConfiguration,
-    func: (source: scriptlets.IConfiguration, args: string[]) => void
-};
-
-/**
- * Script data type
- */
-type ScriptData = {
-    code: string | null,
-    debug?: boolean,
-    domain?: string
-};
 
 /**
  * Implements a basic cosmetic rule.
@@ -299,15 +293,13 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Returns the script ready to be executed or null (if it failed to prepare a scriptlet/script to be executed)
-     * This function initializes and caches the scriptlet's code in a lazy manner.
-     * If it receives a new `InitScriptParams` argument afterwards, it will rebuild the
-     * scriptlet data.
+     * Returns script ready to execute or null
+     * Rebuilds scriptlet script if debug or domain params change
      * @param options
      */
     getScript(options: InitScriptParams = {}): string | null {
         const { debug = false, request = null } = options;
-        const scriptData = this.scriptData;
+        const { scriptData } = this;
 
         if (scriptData && !this.isScriptlet) {
             return scriptData.code;
@@ -326,70 +318,6 @@ export class CosmeticRule implements rule.IRule {
         this.initScript(options);
 
         return this.scriptData?.code ?? null;
-    }
-
-    /**
-     * Returns the scriptlet's data consisting of the scriptlet function and its arguments.
-     * This method is supposed to be used in the manifest V3 extension.
-     */
-    getScriptletData(): ScriptletData | null {
-        if (this.scriptletData) {
-            return this.scriptletData;
-        }
-
-        this.initScript();
-
-        return this.scriptletData;
-    }
-
-    /**
-     * Updates this.scriptData and if scriptlet this.scriptletData with js ready to execute
-     *
-     * @param options
-     */
-    initScript(options: InitScriptParams = {}) {
-        const { debug = false, request = null } = options;
-
-        const ruleContent = this.getContent();
-        if (!this.isScriptlet) {
-            this.scriptData = {
-                code: ruleContent,
-            };
-            return;
-        }
-
-        const scriptletContent = ruleContent.substring(ADG_SCRIPTLET_MASK.length);
-        const scriptletParams = ScriptletParser.parseRule(scriptletContent);
-
-        const params: scriptlets.IConfiguration = {
-            args: scriptletParams.args,
-            engine: config.engine || '',
-            name: scriptletParams.name,
-            ruleText: this.getText(),
-            verbose: debug,
-            domainName: request?.domain,
-            version: config.version || '',
-        };
-
-        let code = null;
-        try {
-            code = scriptlets.invoke(params);
-        } catch (e) {
-            // TODO: implement getErrorMessage()
-            logger.error((e as Error).message);
-        }
-
-        this.scriptData = {
-            code,
-            debug,
-            domain: request?.domain,
-        };
-
-        this.scriptletData = {
-            // TODO: check unknown scriptlet name in mv3 later
-            func: scriptlets.getScriptletFunction(params.name),
-            params: params,
-        };
     }
 
     /**
@@ -636,9 +564,9 @@ export class CosmeticRule implements rule.IRule {
 
         // discard css inject rules containing other unsafe selectors
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1920
-        if (/{.*image-set\(.*\)/gi.test(ruleContent) ||
-            /{.*image\(.*\)/gi.test(ruleContent) ||
-            /{.*cross-fade\(.*\)/gi.test(ruleContent)) {
+        if (/{.*image-set\(.*\)/gi.test(ruleContent)
+            || /{.*image\(.*\)/gi.test(ruleContent)
+            || /{.*cross-fade\(.*\)/gi.test(ruleContent)) {
             throw new SyntaxError('CSS modifying rule with unsafe style was omitted');
         }
 
@@ -688,9 +616,7 @@ export class CosmeticRule implements rule.IRule {
      * @param isExtCss
      * @private
      */
-    private static validate(
-        ruleText: string, type: CosmeticRuleType, content: string, isExtCss: boolean,
-    ): void {
+    private static validate(ruleText: string, type: CosmeticRuleType, content: string, isExtCss: boolean): void {
         if (type !== CosmeticRuleType.Css
             && type !== CosmeticRuleType.Js
             && type !== CosmeticRuleType.Html) {
@@ -713,11 +639,66 @@ export class CosmeticRule implements rule.IRule {
             CosmeticRule.validateJsRules(ruleText, content);
         }
 
-        if ((!isExtCss && utils.hasUnquotedSubstring(content, '/*')) ||
-            utils.hasUnquotedSubstring(content, ' /*') ||
-            utils.hasUnquotedSubstring(content, ' //')
+        if ((!isExtCss && utils.hasUnquotedSubstring(content, '/*'))
+            || utils.hasUnquotedSubstring(content, ' /*')
+            || utils.hasUnquotedSubstring(content, ' //')
         ) {
             throw new SyntaxError('Cosmetic rule should not contain comments');
         }
+    }
+
+    /**
+     * Returns the scriptlet's data consisting of the scriptlet function and its arguments.
+     * This method is supposed to be used in the manifest V3 extension.
+     */
+    getScriptletData(): ScriptletData | null {
+        if (this.scriptletData) {
+            return this.scriptletData;
+        }
+
+        this.initScript();
+
+        return this.scriptletData;
+    }
+
+    /**
+     * Updates this.scriptData and if scriptlet this.scriptletData with js ready to execute
+     *
+     * @param options
+     */
+    initScript(options: InitScriptParams = {}) {
+        const { debug = false, request = null } = options;
+
+        const ruleContent = this.getContent();
+        if (!this.isScriptlet) {
+            this.scriptData = {
+                code: ruleContent,
+            };
+            return;
+        }
+
+        const scriptletContent = ruleContent.substring(ADG_SCRIPTLET_MASK.length);
+        const scriptletParams = ScriptletParser.parseRule(scriptletContent);
+
+        const params: scriptlets.IConfiguration = {
+            args: scriptletParams.args,
+            engine: config.engine || '',
+            name: scriptletParams.name,
+            ruleText: this.getText(),
+            verbose: debug,
+            domainName: request?.domain,
+            version: config.version || '',
+        };
+
+        this.scriptData = {
+            code: scriptlets.invoke(params) ?? null,
+            debug,
+            domain: request?.domain,
+        };
+
+        this.scriptletData = {
+            func: scriptlets.getScriptletFunction(params.name),
+            params,
+        };
     }
 }

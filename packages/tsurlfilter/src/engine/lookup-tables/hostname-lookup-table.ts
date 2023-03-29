@@ -47,7 +47,8 @@ export class HostnameLookupTable implements ILookupTable {
         // Pattern: '||example.org^'
         if (pattern.startsWith(SimpleRegex.MASK_START_URL) && pattern.endsWith(SimpleRegex.MASK_SEPARATOR)) {
             hostname = pattern.slice(
-                SimpleRegex.MASK_START_URL.length, pattern.length - SimpleRegex.MASK_SEPARATOR.length,
+                SimpleRegex.MASK_START_URL.length,
+                pattern.length - SimpleRegex.MASK_SEPARATOR.length,
             );
         }
 

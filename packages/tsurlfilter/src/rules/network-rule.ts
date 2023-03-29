@@ -162,6 +162,12 @@ class BasicRuleParts {
     public allowlist: boolean | undefined;
 }
 
+// Flag that indicates that permitted ALL request types.
+export const PermittedAllRequestTypes = 0;
+// Flag that indicates that restricted ALL request types.
+export const RestrictedAllRequestTypes = 0;
+export type RequestTypeExtra = typeof PermittedAllRequestTypes | typeof RestrictedAllRequestTypes;
+
 /**
  * Basic network filtering rule.
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
@@ -191,11 +197,11 @@ export class NetworkRule implements rule.IRule {
     /** Flag with all disabled rule options */
     private disabledOptions: NetworkRuleOption = 0;
 
-    /** Flag with all permitted request types. 0 means ALL. */
-    private permittedRequestTypes: RequestType = 0;
+    /** Flag with all permitted request types. */
+    private permittedRequestTypes: RequestType | RequestTypeExtra = PermittedAllRequestTypes;
 
-    /** Flag with all restricted request types. 0 means NONE. */
-    private restrictedRequestTypes: RequestType = 0;
+    /** Flag with all restricted request types. */
+    private restrictedRequestTypes: RequestType | RequestTypeExtra = RestrictedAllRequestTypes;
 
     /**
      * Rule Advanced modifier
@@ -318,6 +324,14 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Gets list of denyAllow domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#denyallow-modifier
+     */
+    getDenyAllowDomains(): string[] | null {
+        return this.denyAllowDomains;
+    }
+
+    /**
      * Gets list of restricted domains.
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
      */
@@ -347,13 +361,13 @@ export class NetworkRule implements rule.IRule {
         return null;
     }
 
-    /** Flag with all permitted request types. 0 means ALL. */
-    getPermittedRequestTypes(): RequestType {
+    /** Flag with all permitted request types. 'PermittedAll' means ALL. */
+    getPermittedRequestTypes(): RequestType | RequestTypeExtra {
         return this.permittedRequestTypes;
     }
 
-    /** Flag with all restricted request types. 0 means NONE. */
-    getRestrictedRequestTypes(): RequestType {
+    /** Flag with all restricted request types. 'RestrictedAll' means NONE. */
+    getRestrictedRequestTypes(): RequestType | RequestTypeExtra {
         return this.restrictedRequestTypes;
     }
 
@@ -498,7 +512,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         const isDocumentType = request.requestType === RequestType.Document
-            || request.requestType === RequestType.Subdocument;
+            || request.requestType === RequestType.SubDocument;
 
         const hasOnlyExcludedDomains = (!this.permittedDomains || this.permittedDomains.length === 0)
             && this.restrictedDomains
@@ -623,14 +637,14 @@ export class NetworkRule implements rule.IRule {
      * matchRequestType checks if the request's type matches the rule properties
      * @param requestType - request type to check.
      */
-    public matchRequestType(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes !== 0) {
+    private matchRequestType(requestType: RequestType): boolean {
+        if (this.permittedRequestTypes !== PermittedAllRequestTypes) {
             if ((this.permittedRequestTypes & requestType) !== requestType) {
                 return false;
             }
         }
 
-        if (this.restrictedRequestTypes !== 0) {
+        if (this.restrictedRequestTypes !== RestrictedAllRequestTypes) {
             if ((this.restrictedRequestTypes & requestType) === requestType) {
                 return false;
             }
@@ -644,10 +658,10 @@ export class NetworkRule implements rule.IRule {
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes === 0
-            && this.restrictedRequestTypes === 0
+        if (this.permittedRequestTypes === PermittedAllRequestTypes
+            && this.restrictedRequestTypes === RestrictedAllRequestTypes
             && requestType !== RequestType.Document
-            && requestType !== RequestType.Subdocument) {
+            && requestType !== RequestType.SubDocument) {
             return false;
         }
 
@@ -700,7 +714,7 @@ export class NetworkRule implements rule.IRule {
             const hasCookieModifier = this.advancedModifier instanceof CookieModifier;
             const hasRemoveParamModifier = this.advancedModifier instanceof RemoveParamModifier;
             // https://github.com/AdguardTeam/tsurlfilter/issues/56
-            const isDnsCompatible = isCompatibleWith(CompatibilityTypes.dns);
+            const isDnsCompatible = isCompatibleWith(CompatibilityTypes.Dns);
 
             if (!hasCookieModifier && !hasRemoveParamModifier && !isDnsCompatible) {
                 if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
@@ -756,7 +770,7 @@ export class NetworkRule implements rule.IRule {
 
         // $popup should work accumulatively with requestType modifiers
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1992
-        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== 0) {
+        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== PermittedAllRequestTypes) {
             this.permittedRequestTypes |= RequestType.Document;
         } else if (this.isOptionEnabled(NetworkRuleOption.Popup)) {
             this.permittedRequestTypes = RequestType.Document;
@@ -1118,10 +1132,10 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Stylesheet, false);
                 break;
             case OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.Subdocument, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
             case NOT_MARK + OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.Subdocument, false);
+                this.setRequestType(RequestType.SubDocument, false);
                 break;
             case OPTIONS.OBJECT:
                 this.setRequestType(RequestType.Object, true);
@@ -1154,10 +1168,10 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Font, false);
                 break;
             case OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.Websocket, true);
+                this.setRequestType(RequestType.WebSocket, true);
                 break;
             case NOT_MARK + OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.Websocket, false);
+                this.setRequestType(RequestType.WebSocket, false);
                 break;
             case OPTIONS.OTHER:
                 this.setRequestType(RequestType.Other, true);
@@ -1215,7 +1229,7 @@ export class NetworkRule implements rule.IRule {
             // simple validation of jsonprune rules for compiler
             // https://github.com/AdguardTeam/FiltersCompiler/issues/168
             case OPTIONS.JSONPRUNE: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension does not support $jsonprune modifier yet');
                 }
                 this.setOptionEnabled(NetworkRuleOption.JsonPrune, true);
@@ -1226,7 +1240,7 @@ export class NetworkRule implements rule.IRule {
             // simple validation of hls rules for compiler
             // https://github.com/AdguardTeam/FiltersCompiler/issues/169
             case OPTIONS.HLS: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension does not support $hls modifier yet');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Hls, true);
@@ -1237,7 +1251,7 @@ export class NetworkRule implements rule.IRule {
 
             // Dns modifiers
             case OPTIONS.CLIENT: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $client modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Client, true);
@@ -1246,7 +1260,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.DNSREWRITE: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnsrewrite modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsRewrite, true);
@@ -1255,7 +1269,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.DNSTYPE: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnstype modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsType, true);
@@ -1264,7 +1278,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.CTAG: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $ctag modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Ctag, true);
@@ -1273,7 +1287,7 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.APP: {
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $app modifier');
                 }
                 this.appModifier = new AppModifier(optionValue);
@@ -1281,20 +1295,20 @@ export class NetworkRule implements rule.IRule {
             }
 
             case OPTIONS.NETWORK:
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $network modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
 
             case OPTIONS.EXTENSION:
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, true);
                 break;
             case NOT_MARK + OPTIONS.EXTENSION:
-                if (isCompatibleWith(CompatibilityTypes.extension)) {
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, false);

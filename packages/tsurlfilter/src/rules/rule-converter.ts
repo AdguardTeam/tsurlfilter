@@ -34,7 +34,7 @@ export class RuleConverter {
 
     private static FRAME_REPLACEMENT = '$1subdocument';
 
-    //eslint-disable-next-line max-len
+    // eslint-disable-next-line max-len
     private static SCRIPT_HAS_TEXT_REGEX = /##\^(script(\[[{a-z0-9-_.:}]*(="[{a-z0-9-_.:}]*")*\])*:(has-text|contains))\((?!\/.+\/\))/i;
 
     private static SCRIPT_HAS_TEXT_REGEX_SHORT = /(##\^script:(has-text|contains))\((?!\/.+\/\))/i;
@@ -236,7 +236,7 @@ export class RuleConverter {
 
         // Return attributes if there were any
         attributeStrings?.forEach((attrStr) => {
-            convertedRuleText = convertedRuleText + attrStr;
+            convertedRuleText += attrStr;
         });
 
         return convertedRuleText;
@@ -568,7 +568,8 @@ export class RuleConverter {
         if (RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX.test(ruleText)) {
             return `@@||${
                 ruleText.replace(
-                    RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX, RuleConverter.UBO_RESPONSE_HEADER_REPLACEMENT,
+                    RuleConverter.UBO_RESPONSE_HEADER_EXCEPTION_REGEX,
+                    RuleConverter.UBO_RESPONSE_HEADER_REPLACEMENT,
                 ).slice(0, -1)
             }`;
         }

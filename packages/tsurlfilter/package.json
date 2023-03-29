@@ -1,20 +1,51 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "1.0.79",
+  "version": "2.0.0",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
-  "types": "dist/types",
-  "main": "dist/tsurlfilter.umd.js",
+  "main": "dist/es/index.js",
   "module": "dist/es/index.js",
   "iife": "dist/tsurlfilter.iife.js",
-  "browser": "dist/tsurlfilter.browser.js",
+  "types": "dist/types/src/index.d.ts",
   "files": [
     "dist",
     "src"
   ],
+  "exports": {
+    ".": "./dist/es/index.js",
+    "./es/*": "./dist/es/*.js",
+    "./umd": "./dist/tsurlfilter.umd.js",
+    "./cli": "./dist/cli.js"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/types/src/index.d.ts"
+      ],
+      "es/request-type": [
+        "dist/types/src/request-type.d.ts"
+      ],
+      "es/cosmetic-rule-marker": [
+        "dist/types/src/rules/cosmetic-rule-marker.d.ts"
+      ],
+      "es/network-rule-options": [
+        "dist/types/src/rules/network-rule-options.d.ts"
+      ],
+      "es/simple-regex": [
+        "dist/types/src/rules/simple-regex.d.ts"
+      ],
+      "cli": [
+        "dist/types/cli/index.d.ts"
+      ]
+    }
+  },
+  "bin": {
+    "tsurlfilter": "dist/cli.js"
+  },
   "author": "AdGuard",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git"
+    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+    "directory": "packages/tsurlfilter"
   },
   "license": "GPL-3.0-only",
   "engines": {
@@ -23,29 +54,7 @@
   "bugs": {
     "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
   },
-  "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
-  "exports": {
-    ".": {
-      "require": "./dist/tsurlfilter.umd.js",
-      "import": "./dist/es"
-    },
-    "./*": "./*",
-    "./content-script": "./dist/es/content-script",
-    "./content-script/*": "./dist/es/content-script/*"
-  },
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/types/index.d.ts"
-      ],
-      "content-script": [
-        "dist/types/content-script/index.d.ts"
-      ],
-      "content-script/*": [
-        "dist/types/content-script/*"
-      ]
-    }
-  },
+  "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#readme",
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist && yarn build:types",
@@ -63,93 +72,60 @@
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",
     "increment": "yarn version --patch --no-git-tag-version",
-    "increment:alpha": "yarn version --prerelease --no-git-tag-version"
+    "increment:alpha": "yarn version --prerelease --no-git-tag-version",
+    "examples": "ts-node tasks/generate-examples"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
       "eslint"
     ]
   },
-  "jest": {
-    "resolver": "jest-node-exports-resolver",
-    "transform": {
-      ".(ts|tsx)": "ts-jest"
-    },
-    "testEnvironment": "node",
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/test/"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 90,
-        "functions": 95,
-        "lines": 95,
-        "statements": 95
-      }
-    },
-    "collectCoverageFrom": [
-      "src/*.{js,ts}",
-      "src/*/*.{js,ts}",
-      "src/*/*/*.{js,ts}"
-    ],
-    "setupFiles": [
-      "jest-webextension-mock"
-    ]
-  },
   "dependencies": {
-    "@adguard/extended-css": "^2.0.51",
     "@adguard/scriptlets": "^1.9.1",
-    "ip6addr": "^0.2.3",
-    "is-cidr": "^4.0.2",
-    "is-ip": "^3.1.0",
-    "lru_map": "^0.4.1",
-    "netmask": "^2.0.2",
-    "punycode": "^2.1.1",
-    "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2",
-    "tldts": "^5.6.45",
-    "webextension-polyfill": "^0.8.0"
+    "commander": "9.4.1",
+    "ip6addr": "0.2.3",
+    "is-cidr": "4.0.2",
+    "is-ip": "3.1.0",
+    "lru_map": "0.4.1",
+    "netmask": "2.0.2",
+    "punycode": "2.1.1",
+    "tldts": "5.6.45",
+    "zod": "3.19.1"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^21.0.1",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^13.0.6",
-    "@rollup/plugin-typescript": "^8.3.0",
-    "@types/ip6addr": "^0.2.3",
-    "@types/jest": "^27.0.3",
-    "@types/netmask": "^1.0.30",
-    "@types/node": "^18.11.11",
-    "@types/punycode": "^2.1.0",
-    "@types/rollup-plugin-node-globals": "^1.4.1",
-    "@types/webextension-polyfill": "^0.8.2",
-    "@typescript-eslint/eslint-plugin": "^5.18.0",
-    "@typescript-eslint/parser": "^5.18.0",
-    "coveralls": "^3.1.1",
-    "eslint": "^8.12.0",
-    "eslint-config-airbnb-typescript": "^16.0.0",
-    "eslint-plugin-import": "^2.25.3",
-    "jest": "27.3.1",
-    "jest-node-exports-resolver": "^1.1.6",
-    "jest-webextension-mock": "^3.7.19",
-    "lint-staged": "^12.1.2",
-    "lodash": "^4.17.21",
-    "rimraf": "^3.0.2",
-    "rollup": "^2.60.1",
-    "rollup-plugin-cleanup": "^3.2.1",
-    "rollup-plugin-node-globals": "^1.4.0",
-    "rollup-plugin-polyfill-node": "^0.7.0",
-    "rollup-plugin-terser": "^7.0.2",
-    "travis-deploy-once": "^5.0.11",
-    "ts-jest": "27.1.4",
-    "ts-node": "^10.7.0",
-    "tslib": "^2.3.1",
-    "typedoc": "^0.22.9",
-    "typescript": "^4.5.2"
+    "@rollup/plugin-commonjs": "22.0.2",
+    "@rollup/plugin-json": "4.1.0",
+    "@rollup/plugin-node-resolve": "13.3.0",
+    "@rollup/plugin-typescript": "8.3.4",
+    "@swc/core": "^1.3.27",
+    "@swc/jest": "^0.2.24",
+    "@types/ip6addr": "0.2.3",
+    "@types/jest": "28.1.6",
+    "@types/netmask": "1.0.30",
+    "@types/node": "18.7.1",
+    "@types/punycode": "2.1.0",
+    "@types/rollup-plugin-node-globals": "1.4.1",
+    "@typescript-eslint/eslint-plugin": "5.33.0",
+    "@typescript-eslint/parser": "5.33.0",
+    "coveralls": "3.1.1",
+    "eslint": "8.21.0",
+    "eslint-config-airbnb-typescript": "17.0.0",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-import-newlines": "1.2.3",
+    "eslint-plugin-jsdoc": "39.3.6",
+    "jest": "^29.3.1",
+    "lint-staged": "13.0.3",
+    "lodash": "4.17.21",
+    "rimraf": "3.0.2",
+    "rollup": "2.77.3",
+    "rollup-plugin-cleanup": "3.2.1",
+    "rollup-plugin-node-globals": "1.4.0",
+    "rollup-plugin-polyfill-node": "0.10.2",
+    "rollup-plugin-preserve-shebangs": "0.2.0",
+    "rollup-plugin-terser": "7.0.2",
+    "ts-node": "^10.9.1",
+    "tslib": "2.4.0",
+    "typedoc": "0.23.10",
+    "typescript": "4.7.4"
   }
 }

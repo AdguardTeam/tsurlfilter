@@ -1,6 +1,4 @@
-import {
-    NetworkRule, RequestType,
-} from '../../../src';
+import { NetworkRule, RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { DomainsLookupTable } from '../../../src/engine/lookup-tables/domains-lookup-table';
@@ -42,31 +40,23 @@ describe('Domains Lookup Table Tests', () => {
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(2);
 
-        expect(table.matchAll(new Request(
-            'http://other.com/', '', RequestType.Document,
-        ))).toHaveLength(0);
-        expect(table.matchAll(new Request(
-            'http://other.com/path', '', RequestType.Document,
-        ))).toHaveLength(0);
-        expect(table.matchAll(new Request(
-            'http://example.net/path', '', RequestType.Document,
-        ))).toHaveLength(0);
-        expect(table.matchAll(new Request(
-            'http://example.com/path', '', RequestType.Document,
-        ))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://other.com/path', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://example.net/path', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://example.com/path', '', RequestType.Document))).toHaveLength(0);
 
-        expect(table.matchAll(new Request(
-            'http://example.com/path', 'http://example.com', RequestType.Document,
-        ))).toHaveLength(1);
-        expect(table.matchAll(new Request(
-            'http://example.org/path', 'http://example.org', RequestType.Document,
-        ))).toHaveLength(1);
-        expect(table.matchAll(new Request(
-            'http://test.com/path', 'http://example.org', RequestType.Document,
-        ))).toHaveLength(1);
-        expect(table.matchAll(new Request(
-            'http://test.com/path', 'http://sub.example.org', RequestType.Document,
-        ))).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://example.com/path', 'http://example.com', RequestType.Document)),
+        ).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://example.org/path', 'http://example.org', RequestType.Document)),
+        ).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://test.com/path', 'http://example.org', RequestType.Document)),
+        ).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://test.com/path', 'http://sub.example.org', RequestType.Document)),
+        ).toHaveLength(1);
     });
 
     it('returns only unique rule', () => {
@@ -80,8 +70,8 @@ describe('Domains Lookup Table Tests', () => {
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(1);
 
-        expect(table.matchAll(new Request(
-            'http://base.com/path', 'http://base.com/', RequestType.Document,
-        ))).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://base.com/path', 'http://base.com/', RequestType.Document)),
+        ).toHaveLength(1);
     });
 });

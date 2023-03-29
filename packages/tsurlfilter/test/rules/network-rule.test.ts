@@ -379,8 +379,8 @@ describe('NetworkRule constructor', () => {
         checkRequestType('stylesheet', RequestType.Stylesheet, true);
         checkRequestType('~stylesheet', RequestType.Stylesheet, false);
 
-        checkRequestType('subdocument', RequestType.Subdocument, true);
-        checkRequestType('~subdocument', RequestType.Subdocument, false);
+        checkRequestType('subdocument', RequestType.SubDocument, true);
+        checkRequestType('~subdocument', RequestType.SubDocument, false);
 
         checkRequestType('object', RequestType.Object, true);
         checkRequestType('~object', RequestType.Object, false);
@@ -397,8 +397,8 @@ describe('NetworkRule constructor', () => {
         checkRequestType('font', RequestType.Font, true);
         checkRequestType('~font', RequestType.Font, false);
 
-        checkRequestType('websocket', RequestType.Websocket, true);
-        checkRequestType('~websocket', RequestType.Websocket, false);
+        checkRequestType('websocket', RequestType.WebSocket, true);
+        checkRequestType('~websocket', RequestType.WebSocket, false);
 
         checkRequestType('other', RequestType.Other, true);
         checkRequestType('~other', RequestType.Other, false);
@@ -718,7 +718,7 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('||example.org^$removeparam=p', 0);
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(true);
-        request = new Request('https://example.org/', null, RequestType.Subdocument);
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
         request = new Request('https://example.org/', null, RequestType.Script);
@@ -730,7 +730,7 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('||example.org^$removeparam=p,script', 0);
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(false);
-        request = new Request('https://example.org/', null, RequestType.Subdocument);
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
         expect(rule.match(request)).toEqual(false);
 
         request = new Request('https://example.org/', null, RequestType.Script);
@@ -742,7 +742,7 @@ describe('NetworkRule.match', () => {
         rule = new NetworkRule('||example.org^$removeparam=p,~script', 0);
         request = new Request('https://example.org/', null, RequestType.Document);
         expect(rule.match(request)).toEqual(true);
-        request = new Request('https://example.org/', null, RequestType.Subdocument);
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
         request = new Request('https://example.org/', null, RequestType.Script);
@@ -814,7 +814,7 @@ describe('NetworkRule.match', () => {
 
         // Match request url host
         rule = new NetworkRule('$domain=example.org', 0);
-        request = new Request('https://example.org/', 'https://example.com/', RequestType.Subdocument);
+        request = new Request('https://example.org/', 'https://example.com/', RequestType.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
         // Document or Subdocument only
@@ -1067,7 +1067,6 @@ describe('NetworkRule.isHigherPriority', () => {
         compareRulesPriority('@@||example.org$document', '@@||example.org$jsinject', true);
         compareRulesPriority('@@||example.org$document', '@@||example.org$extension', true);
 
-
         // $elemhide, $content, $urlblock, $jsinject, $extension -->  $document
         compareRulesPriority('@@||example.org$elemhide', '@@||example.org$document', false);
         compareRulesPriority('@@||example.org$content', '@@||example.org$document', false);
@@ -1106,8 +1105,11 @@ describe('NetworkRule.isHigherPriority', () => {
         // domain option count
         compareRulesPriority('||example.org$domain=~example.org', '||example.org$script,stylesheet', false);
         compareRulesPriority('||example.org$domain=~example.org', '||example.org$script,stylesheet,media', false);
-        compareRulesPriority('||example.org$domain=~example.org',
-            '||example.org$script,stylesheet,domain=~example.org', false);
+        compareRulesPriority(
+            '||example.org$domain=~example.org',
+            '||example.org$script,stylesheet,domain=~example.org',
+            false,
+        );
     });
 });
 

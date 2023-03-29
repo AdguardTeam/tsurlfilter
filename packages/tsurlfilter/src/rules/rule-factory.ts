@@ -57,6 +57,7 @@ export class RuleFactory {
                 return new NetworkRule(line, filterListId);
             }
         } catch (e) {
+            // TODO: Throw error
             logger.info(`Error: "${(e as Error).message}" in the rule: "${line}"`);
         }
 

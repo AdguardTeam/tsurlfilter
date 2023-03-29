@@ -422,7 +422,7 @@ describe('Scriptlets', () => {
         expect(res.length).toBe(1);
         expect(res[0]).toBe(exp);
 
-        rule = 'example.org##+js(ra.js, href, a#promo\\, div > .promo\\, a[href*="target"])';
+        rule = 'example.org##+js(ra.js, href, a#promo, div > .promo, a[href*="target"])';
         exp = 'example.org#%#//scriptlet(\'ubo-ra.js\', \'href\', \'a#promo, div > .promo, a[href*="target"]\')';
         res = RuleConverter.convertRule(rule);
 

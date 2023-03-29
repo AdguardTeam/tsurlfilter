@@ -317,13 +317,6 @@ describe('NetworkRule - redirect-rule rules', () => {
 });
 
 describe('NetworkRule - removeparam rules', () => {
-    it('check removeparam value list is correct', () => {
-        const modifier = new RemoveParamModifier('param|another');
-        expect(modifier).toBeTruthy();
-        const getValueList = modifier.getValueList();
-        expect(getValueList).toBeTruthy();
-        expect(getValueList).toEqual(['param', 'another']);
-    });
     it('works if removeparam modifier is correctly parsed', () => {
         let rule = new NetworkRule('$removeparam=param', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveParamModifier);
@@ -473,5 +466,21 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}`)).toBe(`${comPage}`);
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0&p1=1`);
+    });
+
+    it('check removeparam mv3 validity', () => {
+        expect(() => {
+            new RemoveParamModifier('p1|p2');
+        }).toThrowError(/Unsupported option*/);
+
+        const mv3GoodModifier = new RemoveParamModifier('p3');
+        expect(mv3GoodModifier.getValue()).toEqual('p3');
+        expect(mv3GoodModifier.getMV3Validity()).toBeTruthy();
+
+        const mv3BadModifier = new RemoveParamModifier('~p4');
+        expect(mv3BadModifier.getMV3Validity()).toBeFalsy();
+
+        const mv3BadModifier2 = new RemoveParamModifier('/P5/i');
+        expect(mv3BadModifier2.getMV3Validity()).toBeFalsy();
     });
 });

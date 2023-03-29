@@ -1,7 +1,10 @@
 import console from 'console';
 import fs from 'fs';
 import {
-    Engine, RuleStorage, setLogger, StringRuleList,
+    Engine,
+    RuleStorage,
+    setLogger,
+    StringRuleList,
 } from '../../src';
 
 describe('Start Engine Benchmark', () => {
