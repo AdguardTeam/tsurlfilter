@@ -21,19 +21,20 @@ Test:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
-    - stop-job:
-        success: 'true'
-        conditions:
-        - variable:
-            not-equals:
-              # Stop build when target PR branch not 'epic/tswebextension'
-              bamboo.repository.pr.targetBranch: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            # Ignore testing if pr target branch is "v1".
+            # Because @adguard/tswebextension is not implemented on this branch.
+            if [ "${bamboo.repository.pr.targetBranch}" == "v1" ]
+            then
+              echo "ignore tests on branch v1"
+              exit 0;
+            fi
+
             set -e
             set -x
 

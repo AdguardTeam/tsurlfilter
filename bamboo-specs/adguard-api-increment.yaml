@@ -21,20 +21,22 @@ Increment:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
-    # Stop increment when current branch not 'epic/tswebextension',
-    # because AdGuard API is only being worked on in the 'epic/tswebextension' branch
-    - stop-job:
-        success: 'true'
-        conditions:
-        - variable:
-            not-equals:
-              bamboo.planRepository.branchName: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            branch="${bamboo.planRepository.branchName}"
+      
+            # Throw error if current branch is not "master",
+            # because we do not deploy changes from other branches
+            if [ $branch != "master" ]
+            then
+              echo "increment is not supported on branch ${branch}"
+              exit 1;
+            fi
+
             set -e
             set -x
 
