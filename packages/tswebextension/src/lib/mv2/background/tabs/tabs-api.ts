@@ -429,7 +429,7 @@ export class TabsApi implements TabsApiInterface {
 
         browser.tabs
             .executeScript(tabId, injectDetails)
-            .catch(logger.error);
+            .catch(logger.debug);
     }
 
     /**
@@ -450,7 +450,7 @@ export class TabsApi implements TabsApiInterface {
 
         browser.tabs
             .insertCSS(tabId, injectDetails)
-            .catch(logger.error);
+            .catch(logger.debug);
     }
 }
 
