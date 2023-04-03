@@ -86,6 +86,7 @@ const esmConfig = {
         'src/rules/network-rule-options.ts',
         'src/cookie-filtering/cookie-filtering.ts',
         'src/headers-filtering/headers-service.ts',
+        'src/stealth/stealth-service.ts',
     ],
     output: [
         {
