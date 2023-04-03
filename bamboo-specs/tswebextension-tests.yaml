@@ -21,19 +21,20 @@ Test:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
-    - stop-job:
-        success: 'true'
-        conditions:
-        - variable:
-            not-equals:
-              # Stop build when target PR branch not 'epic/tswebextension'
-              bamboo.repository.pr.targetBranch: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            # Ignore testing if pr target branch is "v1".
+            # Because @adguard/tswebextension is not implemented on this branch.
+            if [ ! -z bamboo.repository.pr.targetBranch && bamboo.repository.pr.targetBranch == "v1" ]
+            then
+              echo "ignore tests on branch v1"
+              exit 0;
+            fi
+
             set -e
             set -x
 
@@ -42,16 +43,24 @@ Test:
 
             ls -alt
 
-            npx lerna@4 bootstrap
-            # For link dependencies
-            npx lerna@4 run --scope @adguard/tsurlfilter build
-            npx lerna@4 run --scope @adguard/tswebextension test:prod
-            npx lerna@4 run --scope @adguard/tswebextension build
+            # We need to fit into the new 1GB memory limit when running plans.
+            # To do this, memory for nodejs processes is limited. In addition to nodejs, the distribution running in the container also consumes memory, so we experimentally chose a value of 768.
+            # jest will start to use memory more sparingly if the flag is set explicitly. 
+            # It is important that the running commands are executed in the same thread.
+            export NODE_OPTIONS='--max-old-space-size=768'
+
+            npx lerna bootstrap
+
+            # build tsurlfilter first, because it is used in tswebextension tests
+            npx lerna run --scope @adguard/tsurlfilter build
+  
+            npx lerna run --scope @adguard/tswebextension test:prod
+            npx lerna run --scope @adguard/tswebextension build
 
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna@4 exec -- rm -rf node_modules
+            npx lerna clean -y
   final-tasks:
     - clean
   requirements:

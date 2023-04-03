@@ -2,8 +2,8 @@
 version: 2
 plan:
   project-key: AJL
-  key: TSWEBEXTENSIONINCREPIC
-  name: tswebextension - increment epic
+  key: TSWEBEXTENSIONINCR
+  name: tswebextension - increment
 variables:
   dockerContainer: adguard/node-ssh:16.17--1
 
@@ -21,20 +21,22 @@ Increment:
     volumes:
       "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
-    # Stop increment when current branch not 'epic/tswebextension',
-    # because tswebextension is only being worked on in the 'epic/tswebextension' branch
-    - stop-job:
-        success: 'true'
-        conditions:
-        - variable:
-            not-equals:
-              bamboo.planRepository.branchName: epic/tswebextension
     - checkout:
         force-clean-build: 'true'
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            branch="${bamboo.planRepository.branchName}"
+
+            # Throw error if current branch is not "master",
+            # because we do not deploy changes from other branches
+            if [ $branch != "master" ]
+            then
+              echo "increment is not supported on branch ${branch}"
+              exit 1;
+            fi
+
             set -e
             set -x
 
@@ -44,10 +46,7 @@ Increment:
             ls -alt
 
             # Increment tswebextension
-            npx lerna@4 run --scope @adguard/tswebextension increment
-            # Increment tsurlfilter alpha version for linking tswebextension,
-            # e.x. when install tswebextension in extension package
-            npx lerna@4 run --scope @adguard/tsurlfilter increment:alpha
+            npx lerna run --scope @adguard/tswebextension increment
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
