@@ -1,5 +1,7 @@
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 
+import { createInjectionFsm } from './injectionFsm';
+
 /**
  * Document level frame id.
  */
@@ -15,14 +17,14 @@ export class Frame {
     public url: string;
 
     /**
-     * Is js rules injected in frame.
+     * FSM for managing the injection of the JS rules.
      */
-    public isJsInjected = false;
+    public jsInjectionFsm = createInjectionFsm();
 
     /**
-     * Is css rules injected in frame.
+     * FSM for managing the injection of the Css rules.
      */
-    public isCssInjected = false;
+    public cssInjectionFsm = createInjectionFsm();
 
     /**
      * Frame request id.

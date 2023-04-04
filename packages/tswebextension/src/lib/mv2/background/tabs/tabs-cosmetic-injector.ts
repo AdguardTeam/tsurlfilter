@@ -6,7 +6,11 @@ import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { allowlistApi } from '../allowlist';
-import { CosmeticApi } from '../cosmetic-api';
+import {
+    type ApplyCssRulesParams,
+    type ApplyJsRulesParams,
+    CosmeticApi,
+} from '../cosmetic-api';
 import { engineApi } from '../engine-api';
 import { Frame, MAIN_FRAME_ID } from './frame';
 import { TabContext } from './tab-context';
@@ -94,17 +98,19 @@ export class TabsCosmeticInjector {
 
             frame.cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOption);
 
-            const { cosmeticResult } = frame;
+            const {
+                cosmeticResult,
+                cssInjectionFsm,
+                jsInjectionFsm,
+            } = frame;
 
-            CosmeticApi.applyCssRules({
+            const cssInjectionParams: ApplyCssRulesParams = {
                 tabId,
                 frameId,
                 cosmeticResult,
-            });
+            };
 
-            frame.isCssInjected = true;
-
-            CosmeticApi.applyJsRules({
+            const jsInjectionParams: ApplyJsRulesParams = {
                 url,
                 tabId,
                 frameId,
@@ -114,9 +120,10 @@ export class TabsCosmeticInjector {
                 contentType: isDocumentFrame
                     ? ContentType.Document
                     : ContentType.Subdocument,
-            });
+            };
 
-            frame.isJsInjected = true;
+            CosmeticApi.applyFrameCssRules(cssInjectionParams, cssInjectionFsm);
+            CosmeticApi.applyFrameJsRules(jsInjectionParams, jsInjectionFsm);
         });
     }
 

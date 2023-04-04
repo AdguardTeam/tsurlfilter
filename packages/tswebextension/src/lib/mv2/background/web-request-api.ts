@@ -170,10 +170,15 @@ import { tabsApi } from './tabs/tabs-api';
 import { MAIN_FRAME_ID } from './tabs/frame';
 import { findHeaderByName } from './utils/headers';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
+import { logger } from '../../common/utils/logger';
 import { ContentType } from '../../common/request-type';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 
-import { CosmeticApi } from './cosmetic-api';
+import {
+    CosmeticApi,
+    type ApplyJsRulesParams,
+    type ApplyCssRulesParams,
+} from './cosmetic-api';
 import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -500,9 +505,7 @@ export class WebRequestApi {
 
         const frame = tabContext.frames.get(frameId);
 
-        if (!frame
-            || !frame.cosmeticResult
-            || frame.isJsInjected) {
+        if (!frame || !frame.cosmeticResult) {
             return;
         }
 
@@ -516,9 +519,13 @@ export class WebRequestApi {
             return;
         }
 
-        const { cosmeticResult, url } = frame;
+        const {
+            cosmeticResult,
+            url,
+            jsInjectionFsm,
+        } = frame;
 
-        CosmeticApi.applyJsRules({
+        const injectionParams: ApplyJsRulesParams = {
             requestId,
             url,
             tabId,
@@ -526,9 +533,9 @@ export class WebRequestApi {
             cosmeticResult,
             timestamp,
             contentType,
-        });
+        };
 
-        frame.isJsInjected = true;
+        CosmeticApi.applyFrameJsRules(injectionParams, jsInjectionFsm);
     }
 
     /**
@@ -628,37 +635,30 @@ export class WebRequestApi {
         const {
             cosmeticResult,
             requestId,
-            isCssInjected,
-            isJsInjected,
+            cssInjectionFsm,
+            jsInjectionFsm,
         } = frame;
 
-        if (!isCssInjected) {
-            CosmeticApi.applyCssRules({
-                tabId,
-                frameId,
-                cosmeticResult,
-            });
+        const cssInjectionParams: ApplyCssRulesParams = {
+            tabId,
+            frameId,
+            cosmeticResult,
+        };
 
-            frame.isCssInjected = true;
-        }
+        const jsInjectionParams: ApplyJsRulesParams = {
+            requestId,
+            url,
+            tabId,
+            frameId,
+            cosmeticResult,
+            timestamp,
+            contentType: frameId === MAIN_FRAME_ID
+                ? ContentType.Document
+                : ContentType.Subdocument,
+        };
 
-        if (!isJsInjected) {
-            const isDocumentFrame = frameId === MAIN_FRAME_ID;
-
-            CosmeticApi.applyJsRules({
-                requestId,
-                url,
-                tabId,
-                frameId,
-                cosmeticResult,
-                timestamp,
-                contentType: isDocumentFrame
-                    ? ContentType.Document
-                    : ContentType.Subdocument,
-            });
-
-            frame.isJsInjected = true;
-        }
+        CosmeticApi.applyFrameCssRules(cssInjectionParams, cssInjectionFsm);
+        CosmeticApi.applyFrameJsRules(jsInjectionParams, jsInjectionFsm);
     }
 
     /**
@@ -715,20 +715,24 @@ export class WebRequestApi {
 
         const { cosmeticResult, requestId } = mainFrame;
 
-        CosmeticApi.applyCssRules({
-            tabId,
-            frameId,
-            cosmeticResult,
-        });
+        CosmeticApi
+            .applyCssRules({
+                tabId,
+                frameId,
+                cosmeticResult,
+            })
+            .catch(logger.debug);
 
-        CosmeticApi.applyJsRules({
-            requestId,
-            url,
-            tabId,
-            frameId,
-            cosmeticResult,
-            timestamp: timeStamp,
-            contentType: ContentType.Subdocument,
-        });
+        CosmeticApi
+            .applyJsRules({
+                requestId,
+                url,
+                tabId,
+                frameId,
+                cosmeticResult,
+                timestamp: timeStamp,
+                contentType: ContentType.Subdocument,
+            })
+            .catch(logger.debug);
     }
 }

@@ -11,6 +11,12 @@ import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi, tabsApi } from './tabs/tabs-api';
+import {
+    type InjectionFsm,
+    InjectionEvent,
+    InjectionState,
+} from './tabs/injectionFsm';
+import { logger } from '../../common/utils/logger';
 
 import type { ContentType } from '../../common/request-type';
 
@@ -52,18 +58,24 @@ export type ContentScriptCosmeticData = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi {
-    private static ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
+    private static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
 
-    private static INJECT_HIT_START = " content: 'adguard";
+    private static readonly INJECT_HIT_START = " content: 'adguard";
 
-    private static HIT_SEP = encodeURIComponent(';');
+    private static readonly HIT_SEP = encodeURIComponent(';');
 
-    private static HIT_END = "' !important; }";
+    private static readonly HIT_END = "' !important; }";
 
-    private static LINE_BREAK = '\r\n';
+    private static readonly LINE_BREAK = '\r\n';
 
     // Number of selectors in grouped selector list
-    private static CSS_SELECTORS_PER_LINE = 50;
+    private static readonly CSS_SELECTORS_PER_LINE = 50;
+
+    // Timeout for cosmetic injection retry on failure.
+    private static readonly INJECTION_RETRY_TIMEOUT_MS = 10;
+
+    // Max number of tries to inject cosmetic rules.
+    private static readonly INJECTION_MAX_TRIES = 100;
 
     /**
      * Applies scripts from a cosmetic result. It is possible inject a script
@@ -77,8 +89,8 @@ export class CosmeticApi {
      * @see {@link buildScriptText} for details about multiple injects.
      * @see {@link LocalScriptRulesService} for details about script source.
      */
-    public static injectScript(scriptText: string, tabId: number, frameId = 0): void {
-        TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+    public static async injectScript(scriptText: string, tabId: number, frameId = 0): Promise<void> {
+        return TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
     }
 
     /**
@@ -92,8 +104,8 @@ export class CosmeticApi {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static injectCss(cssText: string, tabId: number, frameId = 0): void {
-        TabsApi.injectCss(cssText, tabId, frameId);
+    public static async injectCss(cssText: string, tabId: number, frameId = 0): Promise<void> {
+        return TabsApi.injectCss(cssText, tabId, frameId);
     }
 
     /**
@@ -227,7 +239,7 @@ export class CosmeticApi {
      *
      * @param params Data for css rules injecting.
      */
-    public static applyCssRules(params: ApplyCssRulesParams): void {
+    public static async applyCssRules(params: ApplyCssRulesParams): Promise<void> {
         const {
             tabId,
             frameId,
@@ -241,7 +253,7 @@ export class CosmeticApi {
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
         if (cssText) {
-            CosmeticApi.injectCss(cssText, tabId, frameId);
+            await CosmeticApi.injectCss(cssText, tabId, frameId);
         }
     }
 
@@ -250,7 +262,7 @@ export class CosmeticApi {
      *
      * @param params Data for js rule injecting and logging.
      */
-    public static applyJsRules(params: ApplyJsRulesParams): void {
+    public static async applyJsRules(params: ApplyJsRulesParams): Promise<void> {
         const {
             tabId,
             frameId,
@@ -274,7 +286,7 @@ export class CosmeticApi {
              * @see {@link buildScriptText} for details about multiple injects.
              * @see {@link LocalScriptRulesService} for details about script source
              */
-            CosmeticApi.injectScript(scriptText, tabId, frameId);
+            await CosmeticApi.injectScript(scriptText, tabId, frameId);
 
             for (const scriptRule of scriptRules) {
                 if (!scriptRule.isGeneric()) {
@@ -295,6 +307,77 @@ export class CosmeticApi {
                 }
             }
         }
+    }
+
+    /**
+     * Apply js to specified frame based on provided data and injection FSM state.
+     *
+     * @param params The data required for the injection.
+     * @param fsm Injection finite state machine.
+     * @param tries The number of tries for the operation in case of failure.
+     */
+    public static applyFrameJsRules(
+        params: ApplyJsRulesParams,
+        fsm: InjectionFsm,
+        tries = 0,
+    ): void {
+        if (fsm.state !== InjectionState.Idle) {
+            return;
+        }
+
+        fsm.dispatch(InjectionEvent.Start);
+
+        CosmeticApi
+            .applyJsRules(params)
+            .then(() => {
+                fsm.dispatch(InjectionEvent.Success);
+            }).catch((e) => {
+                fsm.dispatch(InjectionEvent.Failure);
+
+                if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                    setTimeout(() => {
+                        CosmeticApi.applyFrameJsRules(params, fsm, tries + 1);
+                    }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+                } else {
+                    // TODO: implement getErrorMessage()
+                    logger.debug(e instanceof Error ? e.message : e);
+                }
+            });
+    }
+
+    /**
+     * Injects css to specified frame based on provided data and injection FSM state.
+     *
+     * @param params Data required for the injection.
+     * @param fsm Injection finite state machine.
+     * @param tries Number of tries for the operation in case of failure.
+     */
+    public static applyFrameCssRules(
+        params: ApplyCssRulesParams,
+        fsm: InjectionFsm,
+        tries = 0,
+    ): void {
+        if (fsm.state !== InjectionState.Idle) {
+            return;
+        }
+
+        fsm.dispatch(InjectionEvent.Start);
+
+        CosmeticApi
+            .applyCssRules(params)
+            .then(() => {
+                fsm.dispatch(InjectionEvent.Success);
+            }).catch((e) => {
+                fsm.dispatch(InjectionEvent.Failure);
+
+                if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                    setTimeout(() => {
+                        CosmeticApi.applyFrameCssRules(params, fsm, tries + 1);
+                    }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+                } else {
+                    logger.debug(e instanceof Error ? e.message : e);
+                }
+            });
     }
 
     /**

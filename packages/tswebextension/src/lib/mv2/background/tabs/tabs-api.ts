@@ -2,7 +2,6 @@ import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
 import { EventChannel } from '../../../common/utils/channels';
-import { logger } from '../../../common/utils/logger';
 import { allowlistApi } from '../allowlist';
 import { FrameRequestContext, TabContext } from './tab-context';
 import type { RequestContext } from '../request';
@@ -419,17 +418,15 @@ export class TabsApi implements TabsApiInterface {
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      */
-    public static injectScript(code: string, tabId: number, frameId?: number): void {
+    public static async injectScript(code: string, tabId: number, frameId?: number): Promise<void> {
         const injectDetails = {
             code,
             frameId,
-            runAt: 'document_start' as ExtensionTypes.RunAt,
+            runAt: 'document_start',
             matchAboutBlank: true,
-        };
+        } as ExtensionTypes.InjectDetails;
 
-        browser.tabs
-            .executeScript(tabId, injectDetails)
-            .catch(logger.debug);
+        await browser.tabs.executeScript(tabId, injectDetails);
     }
 
     /**
@@ -439,7 +436,7 @@ export class TabsApi implements TabsApiInterface {
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      */
-    public static injectCss(code: string, tabId: number, frameId?: number): void {
+    public static async injectCss(code: string, tabId: number, frameId?: number): Promise<void> {
         const injectDetails = {
             code,
             frameId,
@@ -448,9 +445,7 @@ export class TabsApi implements TabsApiInterface {
             cssOrigin: 'user',
         } as ExtensionTypes.InjectDetails;
 
-        browser.tabs
-            .insertCSS(tabId, injectDetails)
-            .catch(logger.debug);
+        await browser.tabs.insertCSS(tabId, injectDetails);
     }
 }
 
