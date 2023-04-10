@@ -22,7 +22,7 @@ class Storage {
     };
 
     // TODO: Add throttle
-    set = (key: string, value: any): Promise<void> => {
+    set = (key: string, value: unknown): Promise<void> => {
         return new Promise((resolve, reject) => {
             this.storage.set({ [key]: value }, () => {
                 if (chrome.runtime.lastError) {

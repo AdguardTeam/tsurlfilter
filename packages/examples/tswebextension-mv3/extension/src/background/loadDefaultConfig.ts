@@ -19,6 +19,7 @@ export const loadDefaultConfig = (): Configuration => {
         ruleSetsPath: 'filters/declarative',
         filteringLogEnabled: false,
         settings: {
+            assistantUrl: '',
             collectStats: true,
             allowlistInverted: false,
             allowlistEnabled: false,

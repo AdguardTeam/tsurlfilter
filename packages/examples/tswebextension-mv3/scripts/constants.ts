@@ -6,7 +6,8 @@ export const BUILD_PATH = path.join(__dirname, '../build');
 
 export const USER_DATA_PATH = path.join(__dirname, '../tmp');
 
-export const TESTCASES_BASE_URL = 'https://testcases.adguard.com';
+// TODO: can be used as common for examples/tswebextension-mv2 as well
+export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
@@ -21,6 +22,7 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     ruleSetsPath: 'filters/declarative',
     filteringLogEnabled: false,
     settings: {
+        assistantUrl: '',
         collectStats: true,
         allowlistEnabled: true,
         allowlistInverted: false,

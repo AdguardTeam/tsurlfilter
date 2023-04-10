@@ -80,7 +80,7 @@ const CSP_TEST_ID = 12;
                 // run test page
                 page.goto(`${TESTCASES_BASE_URL}/${testcase.link}`),
                 // wait until all tests are completed with disabled timeout
-                // eslint-disable-next-line @typescript-eslint/no-loop-func
+                // eslint-disable-next-line @typescript-eslint/no-loop-func, @typescript-eslint/no-explicit-any
                 page.waitForFunction(() => (<any>window).testsCompleted, undefined, { timeout: 0 }),
             ]);
 

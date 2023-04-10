@@ -9,6 +9,7 @@ declare global {
 }
 
 export const addQunitListeners = (logResultFnName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let qUnit: any;
 
     Object.defineProperty(window, 'QUnit', {
@@ -20,8 +21,10 @@ export const addQunitListeners = (logResultFnName: string) => {
             qUnit.on('runEnd', (details: LogDetails) => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (<any>window)[logResultFnName](Object.assign(details, { name }));
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (<any>window).testsCompleted = true;
             });
         },
@@ -45,5 +48,6 @@ export const waitUntilExtensionInitialized = async (eventName: string): Promise<
 };
 
 export const waitUntilTestsCompleted = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (<any>window).testsCompleted;
 };
