@@ -10,6 +10,7 @@
     "./mv3/utils": "./dist/mv3-utils.js",
     "./mv3/content-script": "./dist/content-script.mv3.js",
     "./content-script": "./dist/content-script.js",
+    "./content-script/css-hits-counter": "./dist/css-hits-counter.js",
     "./cli": "./dist/cli.js",
     "./assistant-inject": "./dist/assistant-inject.js"
   },
@@ -26,6 +27,9 @@
       ],
       "content-script": [
         "dist/types/lib/mv2/content-script/index.d.ts"
+      ],
+      "content-script/css-hits-counter": [
+        "dist/types/lib/mv2/content-script/css-hits-counter.d.ts"
       ],
       "cli": [
         "dist/types/cli/index.d.ts"

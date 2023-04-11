@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2023-04-11
+
+### Added
+- Separated export of CssHitsCounter to better tree shaking on external
+  applications.
+
+## [0.1.1] - 2023-04-04
+
+## Changed
+- Improved injection algorithm for cosmetic rules (js and css).
+  logic using the Finite State Machine to avoid double injections with
+  the previous boolean flag scheme.
+- Set injectScript and injectCss error to debug level.
+
+
+## [0.1.0] - 2023-03-31
+
+### Changed
+- Updated tsurlfilter to v2.0.
+
+
+## [0.0.68] - 2023-03-24
+
+### Added
+- Described event flow scheme for webRequestModule.
+
+### Fixed
+- Changed enums according to our guideline.
+
+
 ## [0.0.67] - 2023-03-23
 
 ### Fixed

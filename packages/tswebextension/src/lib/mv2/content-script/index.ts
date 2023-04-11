@@ -5,8 +5,9 @@ import { CookieController } from './cookie-controller';
 import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
 
-export * from '../../common/stealth-helper';
-export * from './cookie-controller';
+export { StealthHelper } from '../../common/stealth-helper';
+export { CookieController } from './cookie-controller';
+export { CssHitsCounter } from './css-hits-counter';
 
 const cosmeticController = new CosmeticController();
 cosmeticController.init();

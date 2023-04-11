@@ -48,6 +48,27 @@ const contentScriptConfig = {
     plugins: commonPlugins,
 };
 
+// Separate config for CssHitsCounter to better tree shake and do not export
+// browser-polyfill in the target application.
+const cssHitsCounterConfig = {
+    cache,
+    input: 'src/lib/mv2/content-script/css-hits-counter.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/css-hits-counter.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    external: [
+        '@adguard/extended-css',
+    ],
+    watch: {
+        include: 'src/lib/mv2/content-script/css-hits-counter.ts',
+    },
+    plugins: commonPlugins,
+};
+
 const contentScriptMv3Config = {
     cache,
     input: 'src/lib/mv3/content-script/index.ts',
@@ -189,6 +210,7 @@ export default [
     backgroundMv2Config,
     backgroundMv3Config,
     contentScriptConfig,
+    cssHitsCounterConfig,
     contentScriptMv3Config,
     cliConfig,
     mv3UtilsConfig,
