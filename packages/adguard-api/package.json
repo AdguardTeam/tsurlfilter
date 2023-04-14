@@ -31,9 +31,9 @@
   "author": "Adguard",
   "license": "GPL-3.0-only",
   "dependencies": {
-    "@adguard/assistant": "^4.3.63",
+    "@adguard/assistant": "^4.3.69",
     "@adguard/filters-downloader": "^1.1.14",
-    "@adguard/tswebextension": "^0.1.0",
+    "@adguard/tswebextension": "^0.1.2",
     "url": "^0.11.0",
     "webextension-polyfill": "0.10.0",
     "zod": "3.19.1"

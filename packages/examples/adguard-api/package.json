@@ -13,7 +13,7 @@
     "@adguard/api": "file:../../adguard-api"
   },
   "devDependencies": {
-    "@adguard/tswebextension": "^0.0.x",
+    "@adguard/tswebextension": "^0.1.2",
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-class-properties": "^7.16.0",
     "@babel/plugin-transform-runtime": "^7.16.4",
