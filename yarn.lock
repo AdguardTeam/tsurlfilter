@@ -7,7 +7,7 @@
   dependencies:
     "@adguard/assistant" "^4.3.69"
     "@adguard/filters-downloader" "^1.1.14"
-    "@adguard/tswebextension" "^0.1.0"
+    "@adguard/tswebextension" "^0.1.2"
     url "^0.11.0"
     webextension-polyfill "0.10.0"
     zod "3.19.1"
@@ -29,10 +29,10 @@
   dependencies:
     axios "^0.21.1"
 
-"@adguard/scriptlets@^1.9.1":
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.1.tgz#9e3c9276dcb012b6df199e0d7a00979823d9d71e"
-  integrity sha512-tFImP1uw6OXfMULnfQl88PgUgenNRUoQKip8iP6o1lrvgmcgSm5dfdylwLau5hlK3cwWtPug9QPupmZnCyZIQQ==
+"@adguard/scriptlets@^1.9.7":
+  version "1.9.7"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.7.tgz#dff4637122ba07bec79e48eb88cbb02cd0ba7167"
+  integrity sha512-MZZde1vYfKLLAyVIQKEsuQC2Roc07jjjLsyymuUV3vhh9NhMDTgRG+mVWNp2qAg8zDYEHjm18/R7i0Ir1kj/bQ==
   dependencies:
     "@babel/runtime" "^7.7.2"
     js-yaml "^3.13.1"
