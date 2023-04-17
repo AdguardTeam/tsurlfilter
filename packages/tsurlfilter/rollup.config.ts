@@ -63,6 +63,11 @@ const esmConfig = {
     ...commonConfig,
 };
 
+/**
+ * UMD build is needed for the FiltersCompiler and DNS dashboard.
+ *
+ * TODO: should be removed. AG-21466
+ */
 const umdConfig = {
     input: 'src/index.ts',
     output: [

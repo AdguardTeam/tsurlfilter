@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
-## [2.0.2] - 2023-04-15
+## [2.0.3] - 2023-04-17
+
+### Fixed
+
+- `require` export of `umd`
+
+
+## [2.0.2] - 2023-04-17
 
 ### Changed
 

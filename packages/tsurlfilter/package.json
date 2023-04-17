@@ -11,7 +11,10 @@
     "src"
   ],
   "exports": {
-    ".": "./dist/es/index.js",
+    ".": {
+      "import": "./dist/es/index.js",
+      "require": "./dist/tsurlfilter.umd.js"
+    },
     "./es/*": "./dist/es/*.js",
     "./umd": "./dist/tsurlfilter.umd.js",
     "./cli": "./dist/cli.js"

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
 
-## [0.1.3] - 2023-04-15
+## [0.1.3] - 2023-04-17
 
 ### Changed
 - Updated `@adguard/extended-css` to `v2.0.52`
