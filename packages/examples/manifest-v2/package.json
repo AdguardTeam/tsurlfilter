@@ -8,8 +8,8 @@
     "build": "babel-node ./scripts/build"
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.4.4",
-    "@adguard/tsurlfilter": "^0.7.37",
+    "@adguard/scriptlets": "^1.9.7",
+    "@adguard/tsurlfilter": "^1.0.80",
     "@babel/runtime": "^7.13.10"
   },
   "devDependencies": {

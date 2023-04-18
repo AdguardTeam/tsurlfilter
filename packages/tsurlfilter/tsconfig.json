@@ -18,5 +18,11 @@
   },
   "include": [
     "src"
-  ]
+  ],
+  "ts-node": {
+    "swc": true,
+    "compilerOptions": {
+      "module":"CommonJS",
+    }
+  }
 }

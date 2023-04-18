@@ -10,7 +10,7 @@
     "build:precompile-rules": "babel-node ./scripts/build/precompile-rules.js"
   },
   "dependencies": {
-    "@adguard/tsurlfilter": "^0.7.37"
+    "@adguard/tsurlfilter": "^1.0.80"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",
