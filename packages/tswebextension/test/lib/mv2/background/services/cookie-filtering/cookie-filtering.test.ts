@@ -22,7 +22,12 @@ jest.mock('@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
 BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
 
-const createTestHeaders = (headers: { name: string;value: string }[]): { name: string;value: string }[] => [
+type SimulatedHeader = {
+    name: string,
+    value: string,
+};
+
+const createTestHeaders = (headers: SimulatedHeader[]): SimulatedHeader[] => [
     { name: 'Header One', value: 'Header Value One' },
     ...headers,
 ];
@@ -142,6 +147,8 @@ describe('Cookie filtering', () => {
         });
     });
 
+    // TODO: Add more edge-cases
+
     it('checks cookie specific allowlist regex rule', async () => {
         const cookieRule = new NetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
         const allowlistRule = new NetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);
@@ -155,7 +162,12 @@ describe('Cookie filtering', () => {
             value: 'pick=test_value',
         }]);
 
-        await runCase(rules, requestHeaders);
+        const responseHeaders = createTestHeaders([{
+            name: 'Cookie',
+            value: 'pick=updated_value',
+        }]);
+
+        await runCase(rules, requestHeaders, responseHeaders);
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
             type: FilteringEventType.Cookie,
             data: expect.objectContaining({
@@ -179,14 +191,19 @@ describe('Cookie filtering', () => {
             value: 'c_user=test_value',
         }]);
 
-        await runCase(rules, requestHeaders);
+        const responseHeaders = createTestHeaders([{
+            name: 'Set-Cookie',
+            value: 'c_user=new_value',
+        }]);
+
+        await runCase(rules, requestHeaders, responseHeaders);
 
         expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
             type: FilteringEventType.Cookie,
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
-                cookieValue: 'test_value',
+                cookieValue: 'new_value',
                 rule: cookieRule,
                 isModifyingCookieRule: true,
                 requestThirdParty: false,

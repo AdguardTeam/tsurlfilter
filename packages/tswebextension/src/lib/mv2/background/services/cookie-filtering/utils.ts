@@ -1,6 +1,7 @@
 import { WebRequest } from 'webextension-polyfill';
 import ParsedCookie from './parsed-cookie';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
+import { logger } from '../..';
 
 /**
  * Cookie Utils.
@@ -112,14 +113,20 @@ export default class CookieUtils {
         const parts = setCookieValue.split(';').filter((s) => !!s);
         const nameValuePart = parts.shift();
         if (!nameValuePart) {
+            logger.debug(`Cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`);
             return null;
         }
 
         const nameValue = nameValuePart.split('=');
         const name = nameValue.shift();
-        // everything after the first =, joined by a "=" if there was more than one part
+        if (!name) {
+            logger.debug(`Cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            return null;
+        }
+        // Everything after the first =, joined by a "=" if there was more
+        // than one part.
         const value = nameValue.join('=');
-        const cookie = new ParsedCookie(name!, value, url);
+        const cookie = new ParsedCookie(name, value, url);
 
         parts.forEach((part) => {
             const sides = part.split('=');
@@ -140,6 +147,8 @@ export default class CookieUtils {
                 cookie.sameSite = optionValue;
             } else if (key === 'path') {
                 cookie.path = optionValue;
+            } else if (key === 'domain') {
+                cookie.domain = optionValue;
             }
         });
 
@@ -183,7 +192,7 @@ export default class CookieUtils {
      * @returns Set-Cookie string or null if it failed to serialize object.
      * @throws {TypeError} Thrown in case of invalid input data.
      */
-    static serializeCookie(cookie: ParsedCookie): string {
+    static serializeCookieToResponseHeader(cookie: ParsedCookie): string {
         if (!cookie) {
             throw new TypeError('empty cookie data');
         }
@@ -251,5 +260,17 @@ export default class CookieUtils {
         }
 
         return setCookieValue;
+    }
+
+    /**
+     * Serializes cookie data into a string suitable for Cookie header.
+     *
+     * @param cookies Array with {@link ParsedCookie}.
+     * @returns Cookie string or null if it failed to serialize object.
+     */
+    static serializeCookieToRequestHeader(cookies: ParsedCookie[]): string {
+        return cookies
+            .map((cookie) => `${cookie.name}=${cookie.value}`)
+            .join('; ');
     }
 }

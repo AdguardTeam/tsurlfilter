@@ -48,6 +48,25 @@ export default class BrowserCookieApi {
     }
 
     /**
+     * Search for cookies that match a given pattern.
+     *
+     * @param pattern Pattern of cookies to find.
+     *
+     * @returns List of found cookies.
+     */
+    async findCookies(pattern: Cookies.GetAllDetailsType): Promise<Cookies.Cookie[]> {
+        try {
+            const found = await browser.cookies.getAll(pattern);
+
+            return found;
+        } catch (e) {
+            logger.error((e as Error).message);
+        }
+
+        return [];
+    }
+
+    /**
      * Converts cookie to SetDetailsType.
      *
      * @param cookie Cookie for convert.
@@ -64,46 +83,46 @@ export default class BrowserCookieApi {
 
             /**
              * The name of the cookie. Empty by default if omitted.
-             * Optional.
              */
             name: cookie.name,
 
             /**
              * The value of the cookie. Empty by default if omitted.
-             * Optional.
              */
             value: cookie.value,
 
             /**
              * The domain of the cookie. If omitted, the cookie becomes a host-only cookie.
-             * Optional.
              */
             domain: cookie.domain,
 
             /**
              * Whether the cookie should be marked as Secure. Defaults to false.
-             * Optional.
              */
             secure: cookie.secure,
 
             /**
              * Whether the cookie should be marked as HttpOnly. Defaults to false.
-             * Optional.
              */
             httpOnly: cookie.httpOnly,
 
             /**
              * The cookie's same-site status.
-             * Optional.
              */
             sameSite: BrowserCookieApi.getSameSiteStatus(cookie.sameSite),
 
             /**
              * The expiration date of the cookie as the number of seconds since the UNIX epoch.
              * If omitted, the cookie becomes a session cookie.
-             * Optional.
              */
-            expirationDate: cookie.expires ? cookie.expires.getTime() : undefined,
+            expirationDate: cookie.expires
+                ? Math.floor(cookie.expires.getTime() / 1000)
+                : undefined,
+
+            /**
+             * The path of the cookie. Defaults to the path portion of the url parameter.
+             */
+            path: cookie.path,
         };
     }
 

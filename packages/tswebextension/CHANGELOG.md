@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - The cookies lifetime in Stealth Mode does not apply after the engine is
   started, only after restarting.
+- Incorrect work of $cookie rules: incorrect parsing of `domain` and `path`
+  fields leads to errors when using browser.cookies and creating multiple
+  "child" cookies for each sub-request with a more specific path, e.g. request
+  to '/assets/script.js' from '/' will create a new cookie for '/assets/'.
+- Wrong expirationDate for cookies.
+
+### Added
+- Applying $cookie rules to the requests before sending them to a server in the
+  onBeforeSendHeaders hook.
 
 
 ## [0.1.3] - 2023-04-17

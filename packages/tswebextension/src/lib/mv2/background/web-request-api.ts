@@ -396,7 +396,9 @@ export class WebRequestApi {
         // If the current request does not comply with any rules - we do not
         // need to call any other processing services (e.g. cookie, header)
         if (context?.matchingResult) {
-            cookieFiltering.onBeforeSendHeaders(context);
+            if (cookieFiltering.onBeforeSendHeaders(context)) {
+                requestHeadersModified = true;
+            }
 
             if (headersService.onBeforeSendHeaders(context)) {
                 requestHeadersModified = true;

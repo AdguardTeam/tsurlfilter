@@ -5,7 +5,7 @@ const TEST_URL = 'https://test.com/url';
 
 describe('Cookie utils - Set-Cookie headers parsing', () => {
     it('checks parse simple', () => {
-        let cookies = CookieUtils.parseSetCookieHeaders([], TEST_URL);
+        let cookies: ParsedCookie[] = CookieUtils.parseSetCookieHeaders([], TEST_URL);
         expect(cookies).toHaveLength(0);
 
         cookies = CookieUtils.parseSetCookieHeaders([
@@ -40,6 +40,24 @@ describe('Cookie utils - Set-Cookie headers parsing', () => {
         ], TEST_URL);
         expect(cookies).toHaveLength(0);
     });
+
+    it('checks parse hostname', () => {
+        const HOSTNAME = 'test.domain.com';
+        const PATH = '/';
+        const THREE_LEVEL_DOMAIN = `https://${HOSTNAME}${PATH}`;
+
+        const cookies = CookieUtils.parseSetCookieHeaders([{
+            name: 'set-cookie',
+            value: 'visitCount=3; Max-Age=2592000; Secure; HttpOnly; SameSite=Lax',
+        }], THREE_LEVEL_DOMAIN);
+
+        expect(cookies).toHaveLength(1);
+        expect(cookies[0].name).toBe('visitCount');
+        expect(cookies[0]!.value).toBe('3');
+        expect(cookies[0].url).toBe(THREE_LEVEL_DOMAIN);
+        expect(cookies[0].domain).toBeUndefined();
+        expect(cookies[0].path).toBe(PATH);
+    });
 });
 
 describe('Cookie utils - Set-Cookie parsing', () => {
@@ -49,7 +67,7 @@ describe('Cookie utils - Set-Cookie parsing', () => {
         expect(cookie!.name).toBe('value');
         expect(cookie!.value).toBe('123');
         expect(cookie!.url).toBe(TEST_URL);
-        expect(cookie!.domain).toBe('test.com');
+        expect(cookie!.domain).toBeUndefined();
     });
 
     it('checks parse complicated', () => {
@@ -59,7 +77,18 @@ describe('Cookie utils - Set-Cookie parsing', () => {
         expect(cookie!.name).toBe('user_session');
         expect(cookie!.value).toBe('wBDJ5-apskjfjkas124192--e5');
         expect(cookie!.url).toBe(TEST_URL);
-        expect(cookie!.domain).toBe('test.com');
+        expect(cookie!.domain).toBeUndefined();
+    });
+
+    it('parses cookie with domain', () => {
+        const DOMAIN = 'test.com';
+
+        const cookie = CookieUtils.parseSetCookie(`value=123; domain=${DOMAIN}`, TEST_URL);
+        expect(cookie).not.toBeNull();
+        expect(cookie!.name).toBe('value');
+        expect(cookie!.value).toBe('123');
+        expect(cookie!.url).toBe(TEST_URL);
+        expect(cookie!.domain).toBe(DOMAIN);
     });
 
     it('parses cookie with path', () => {
@@ -98,7 +127,7 @@ describe('Cookie utils - parsing cookies', () => {
         expect(cookies[0].name).toBe('first_name');
         expect(cookies[0]!.value).toBe('first_value');
         expect(cookies[0].url).toBe(TEST_URL);
-        expect(cookies[0].domain).toBe('test.com');
+        expect(cookies[0].domain).toBeUndefined();
     });
 
     it('checks parse secure', () => {
@@ -109,7 +138,7 @@ describe('Cookie utils - parsing cookies', () => {
         expect(cookies[0]!.value).toBe('first_value');
         expect(cookies[1]!.secure).toBe(true);
         expect(cookies[0].url).toBe(TEST_URL);
-        expect(cookies[0].domain).toBe('test.com');
+        expect(cookies[0].domain).toBeUndefined();
     });
 
     it('checks parse invalid', () => {
@@ -183,7 +212,7 @@ describe('Cookie utils - serialize cookie', () => {
         };
 
         expect(() => {
-            CookieUtils.serializeCookie(cookie as ParsedCookie);
+            CookieUtils.serializeCookieToResponseHeader(cookie as ParsedCookie);
         }).toThrow(TypeError);
     });
 
@@ -193,7 +222,7 @@ describe('Cookie utils - serialize cookie', () => {
             value: 'GH1.1.635223982.1507661197',
         };
 
-        const setCookieValue = CookieUtils.serializeCookie(cookie as ParsedCookie);
+        const setCookieValue = CookieUtils.serializeCookieToResponseHeader(cookie as ParsedCookie);
         expect(setCookieValue).toBe('_octo=GH1.1.635223982.1507661197');
     });
 
@@ -207,7 +236,7 @@ describe('Cookie utils - serialize cookie', () => {
             httpOnly: true,
         };
 
-        const setCookieValue = CookieUtils.serializeCookie(cookie as ParsedCookie);
+        const setCookieValue = CookieUtils.serializeCookieToResponseHeader(cookie as ParsedCookie);
         expect(setCookieValue)
             .toBe('_octo=GH1.1.635223982.1507661197; Path=/; Expires=Tue, 23 Oct 2018 13:40:11 GMT; HttpOnly; Secure');
     });

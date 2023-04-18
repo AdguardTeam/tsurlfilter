@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this,jsdoc/require-description-complete-sentence */
 import { nanoid } from 'nanoid';
 import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
+import { getDomain } from 'tldts';
 import {
     ContentType,
     defaultFilteringLog,
@@ -57,34 +58,136 @@ export class CookieFiltering {
      * Parses cookies from headers.
      *
      * @param context Request context.
+     *
+     * @returns True if headers were modified.
      */
-    public onBeforeSendHeaders(context: RequestContext): void {
+    public onBeforeSendHeaders(context: RequestContext): boolean {
         const { requestHeaders, requestUrl, requestId } = context;
         if (!requestHeaders || !requestUrl) {
-            return;
+            return false;
         }
 
         const cookieHeader = findHeaderByName(requestHeaders, 'Cookie');
 
         if (!cookieHeader?.value) {
-            return;
+            return false;
         }
 
         const cookies = CookieUtils.parseCookies(cookieHeader.value, requestUrl);
         if (cookies.length === 0) {
-            return;
+            return false;
         }
 
+        // Saves cookies to context
         requestContextStorage.update(requestId, { cookies });
+
+        // Removes cookies from browser with browser.cookies api, but not
+        // removing them from context to correct process them in headers.
+        // IMPORTANT: This method reads cookies from context, so it should be
+        // called before method that change headers, since that method will
+        // remove or change headers in context.
+        this.applyRules(context)
+            .catch((e) => {
+                logger.error((e as Error).message);
+            });
+
+        // Removes cookie from headers and updates context.
+        // Note: this method won't work in the extension build with manifest v3.
+        const headersModified = this.applyRulesToRequestCookieHeaders(context);
+
+        return headersModified;
     }
 
     /**
-     * Applies cookies to headers.
+     * Applies cookies to request headers.
      *
      * @param context Request context.
      * @returns True if headers were modified.
      */
-    private applyRulesToCookieHeaders(context: RequestContext): boolean {
+    private applyRulesToRequestCookieHeaders(context: RequestContext): boolean {
+        let headersModified = false;
+
+        const {
+            requestHeaders,
+            cookies,
+            matchingResult,
+            requestUrl,
+            thirdParty,
+            tabId,
+            requestId,
+        } = context;
+
+        if (!requestHeaders
+            || !matchingResult
+            || !requestUrl
+            || typeof thirdParty !== 'boolean'
+            || !cookies
+        ) {
+            return headersModified;
+        }
+
+        const cookieRules = matchingResult.getCookieRules();
+
+        for (let i = 0; i < cookies.length; i += 1) {
+            const cookie = cookies[i];
+
+            if (!cookie) {
+                continue;
+            }
+
+            const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, thirdParty);
+
+            if (bRule) {
+                if (!bRule.isAllowlist()) {
+                    // Remove from cookies array.
+                    cookies.splice(i, 1);
+                    // Move the loop counter back because we removed one element
+                    // from the iterated array.
+                    i -= 1;
+                    headersModified = true;
+                }
+
+                this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, thirdParty);
+            }
+
+            const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
+            if (mRules.length > 0) {
+                const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
+                if (appliedRules.length > 0) {
+                    headersModified = true;
+                }
+                appliedRules.forEach((r) => {
+                    this.recordCookieEvent(tabId, cookie, requestUrl, r, true, thirdParty);
+                });
+            }
+        }
+
+        if (headersModified) {
+            const cookieHeaderIndex = requestHeaders.findIndex((header) => header.name.toLowerCase() === 'cookie');
+            if (cookieHeaderIndex !== -1) {
+                if (cookies.length > 0) {
+                    // Update "cookie" header before send request to server.
+                    requestHeaders[cookieHeaderIndex].value = CookieUtils.serializeCookieToRequestHeader(cookies);
+                } else {
+                    // Empty cookies, delete header "Cookie".
+                    requestHeaders.splice(cookieHeaderIndex, 1);
+                }
+            }
+
+            // Update headers and cookies in context.
+            requestContextStorage.update(requestId, { requestHeaders, cookies });
+        }
+
+        return headersModified;
+    }
+
+    /**
+     * Applies cookies to response headers.
+     *
+     * @param context Request context.
+     * @returns True if headers were modified.
+     */
+    private applyRulesToResponseCookieHeaders(context: RequestContext): boolean {
         let headersModified = false;
 
         const {
@@ -122,22 +225,7 @@ export class CookieFiltering {
                     headersModified = true;
                 }
 
-                this.filteringLog.publishEvent({
-                    type: FilteringEventType.Cookie,
-                    data: {
-                        eventId: nanoid(),
-                        tabId: context.tabId,
-                        cookieName: cookie.name,
-                        cookieValue: cookie.value,
-                        frameDomain: cookie.domain,
-                        rule: bRule,
-                        isModifyingCookieRule: false,
-                        requestThirdParty: thirdParty,
-                        requestType: ContentType.Cookie,
-                        timestamp: Date.now(),
-                    },
-
-                });
+                this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, thirdParty);
             }
 
             const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
@@ -145,23 +233,12 @@ export class CookieFiltering {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
                 if (appliedRules.length > 0) {
                     headersModified = true;
-                    responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
+                    responseHeaders[i] = {
+                        name: 'set-cookie',
+                        value: CookieUtils.serializeCookieToResponseHeader(cookie),
+                    };
                     appliedRules.forEach((r) => {
-                        this.filteringLog.publishEvent({
-                            type: FilteringEventType.Cookie,
-                            data: {
-                                eventId: nanoid(),
-                                tabId,
-                                cookieName: cookie.name,
-                                cookieValue: cookie.value,
-                                frameDomain: cookie.domain,
-                                rule: r,
-                                isModifyingCookieRule: true,
-                                requestThirdParty: thirdParty,
-                                timestamp: Date.now(),
-                                requestType: ContentType.Cookie,
-                            },
-                        });
+                        this.recordCookieEvent(tabId, cookie, requestUrl, r, true, thirdParty);
                     });
                 }
             }
@@ -205,15 +282,19 @@ export class CookieFiltering {
             });
         }
 
-        // remove cookie headers
-        // this method won't work in the extension build with manifest v3
-        const headersModified = this.applyRulesToCookieHeaders(context);
-
-        // removes cookies with browser.cookie api
+        // Removes cookies from browser with browser.cookies api, but not
+        // removing them from context to correct process them in headers.
+        // IMPORTANT: This method reads cookies from context, so it should be
+        // called before method that change headers, since that method will
+        // remove or change headers in context.
         this.applyRules(context)
             .catch((e) => {
                 logger.error((e as Error).message);
             });
+
+        // Remove cookie headers.
+        // This method won't work in the extension build with manifest v3.
+        const headersModified = this.applyRulesToResponseCookieHeaders(context);
 
         return headersModified;
     }
@@ -246,7 +327,9 @@ export class CookieFiltering {
      * @param context Request context.
      */
     private async applyRules(context: RequestContext): Promise<void> {
-        const { matchingResult, cookies, tabId } = context;
+        const {
+            matchingResult, cookies, requestUrl, tabId,
+        } = context;
 
         if (!matchingResult || !cookies) {
             return;
@@ -255,10 +338,45 @@ export class CookieFiltering {
         const cookieRules = matchingResult.getCookieRules();
 
         const promises = cookies.map(async (cookie) => {
-            await this.applyRulesToCookie(cookie, cookieRules, tabId);
+            await this.applyRulesToCookie(cookie, cookieRules, requestUrl, tabId);
         });
 
         await Promise.all(promises);
+    }
+
+    /**
+     * Attempts to find a "parent" cookie with a wider "path" field,
+     * the scope of which includes the specified cookie from
+     * the function parameters.
+     *
+     * This needs to prevent create of multiple "child"-cookies
+     * and only modified expiration of general "parent"-cookie,
+     * which covered "children"-cookies by 'path' value.
+     *
+     * @param cookie Cookie, for which need to find the "parent" cookie.
+     *
+     * @returns Item of parent cookie {@link ParsedCookie} or null if not found.
+     */
+    private async findParentCookie(cookie: ParsedCookie): Promise<ParsedCookie | null> {
+        const pattern = {
+            url: cookie.url,
+            name: cookie.name,
+            domain: cookie.domain,
+            secure: cookie.secure,
+        };
+
+        const parentCookies = await this.browserCookieApi.findCookies(pattern);
+        const sortedParentCookies = parentCookies.sort((a, b) => a.path.length - b.path.length);
+
+        for (let i = 0; i < sortedParentCookies.length; i += 1) {
+            const parentCookie = sortedParentCookies[i];
+
+            if (cookie.path?.startsWith(parentCookie.path)) {
+                return ParsedCookie.fromBrowserCookie(parentCookie, cookie.url);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -266,11 +384,13 @@ export class CookieFiltering {
      *
      * @param cookie Cookie.
      * @param cookieRules Cookie rules.
+     * @param requestUrl Request URL, needs to record filtering event.
      * @param tabId Tab id.
      */
     private async applyRulesToCookie(
         cookie: ParsedCookie,
         cookieRules: NetworkRule[],
+        requestUrl: string,
         tabId: number,
     ): Promise<void> {
         const cookieName = cookie.name;
@@ -279,21 +399,7 @@ export class CookieFiltering {
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
             if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
-                this.filteringLog.publishEvent({
-                    type: FilteringEventType.Cookie,
-                    data: {
-                        eventId: nanoid(),
-                        tabId,
-                        cookieName: cookie.name,
-                        cookieValue: cookie.value,
-                        frameDomain: cookie.domain,
-                        rule: bRule,
-                        isModifyingCookieRule: false,
-                        requestThirdParty: isThirdPartyCookie,
-                        timestamp: Date.now(),
-                        requestType: ContentType.Cookie,
-                    },
-                });
+                this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, isThirdPartyCookie);
             }
 
             return;
@@ -301,25 +407,16 @@ export class CookieFiltering {
 
         const mRules = CookieRulesFinder.lookupModifyingRules(cookieName, cookieRules, isThirdPartyCookie);
         if (mRules.length > 0) {
-            const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
+            // Try to find "parent" cookie and modify it instead of creating
+            // "child copy" cookie.
+            const parentCookie = await this.findParentCookie(cookie);
+            const cookieToModify = parentCookie || cookie;
+
+            const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookieToModify, mRules);
             if (appliedRules.length > 0) {
-                if (await this.browserCookieApi.modifyCookie(cookie)) {
+                if (await this.browserCookieApi.modifyCookie(cookieToModify)) {
                     appliedRules.forEach((r) => {
-                        this.filteringLog.publishEvent({
-                            type: FilteringEventType.Cookie,
-                            data: {
-                                eventId: nanoid(),
-                                tabId,
-                                cookieName: cookie.name,
-                                cookieValue: cookie.value,
-                                frameDomain: cookie.domain,
-                                rule: r,
-                                isModifyingCookieRule: true,
-                                requestThirdParty: isThirdPartyCookie,
-                                timestamp: Date.now(),
-                                requestType: ContentType.Cookie,
-                            },
-                        });
+                        this.recordCookieEvent(tabId, cookieToModify, requestUrl, r, true, isThirdPartyCookie);
                     });
                 }
             }
@@ -327,7 +424,7 @@ export class CookieFiltering {
     }
 
     /**
-     * Modifies instance of BrowserCookie with provided rules.
+     * Modifies instance of {@link ParsedCookie} with provided rules.
      *
      * @param cookie Cookie modify.
      * @param rules Cookie matching rules.
@@ -368,6 +465,41 @@ export class CookieFiltering {
         }
 
         return appliedRules;
+    }
+
+    /**
+     * Records cookie event to filtering log.
+     *
+     * @param tabId Id of the tab.
+     * @param cookie Item of {@link ParsedCookie}.
+     * @param requestUrl URL of the request.
+     * @param rule Applied modifying or deleting rule.
+     * @param isModifyingCookieRule Is applied rule modifying or not.
+     * @param requestThirdParty Whether request third party or not.
+     */
+    private recordCookieEvent(
+        tabId: number,
+        cookie: ParsedCookie,
+        requestUrl: string,
+        rule: NetworkRule,
+        isModifyingCookieRule: boolean,
+        requestThirdParty: boolean,
+    ): void {
+        this.filteringLog.publishEvent({
+            type: FilteringEventType.Cookie,
+            data: {
+                eventId: nanoid(),
+                tabId,
+                cookieName: cookie.name,
+                cookieValue: cookie.value,
+                frameDomain: getDomain(requestUrl) || requestUrl,
+                rule,
+                isModifyingCookieRule,
+                requestThirdParty,
+                timestamp: Date.now(),
+                requestType: ContentType.Cookie,
+            },
+        });
     }
 }
 
