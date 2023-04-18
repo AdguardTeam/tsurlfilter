@@ -109,10 +109,7 @@ export class StealthApi implements StealthApiInterface {
      * @returns String rule list or null.
      */
     public getStealthModeRuleList(): StringRuleList | null {
-        if (!this.engine
-            || !this.isStealthModeEnabled
-            || !this.isFilteringEnabled
-        ) {
+        if (!this.engine || !this.isStealthModeEnabled) {
             return null;
         }
 
