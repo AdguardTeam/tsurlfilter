@@ -183,12 +183,13 @@ export class RuleConverter {
     }
 
     /**
-     * Validates scriptlet rule
+     * Validates AdGuard syntax scriptlet rule.
      *
-     * @param ruleText
+     * @param ruleText AdGuard scriptlet rule.
      */
     private static isValidScriptletRule(ruleText: string): boolean {
         try {
+            // checks whether the ADG scriptlet rule name is valid
             return scriptlets.isValidScriptletRule(ruleText);
         } catch (e) {
             return false;

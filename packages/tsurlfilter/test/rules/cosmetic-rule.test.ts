@@ -779,6 +779,15 @@ describe('Javascript rules', () => {
             args: ['arg'],
         });
     });
+
+    it('invalidate scriptlet rule with missed arg quote', () => {
+        const jsRuleContent = "//scriptlet('log', arg')";
+        const jsRule = `example.org#%#${jsRuleContent}`;
+
+        expect(() => {
+            new CosmeticRule(jsRule, 0);
+        }).toThrow(new SyntaxError('Invalid scriptlet'));
+    });
 });
 
 describe('HTML filtering rules (content rules)', () => {

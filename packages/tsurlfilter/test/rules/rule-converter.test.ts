@@ -457,6 +457,12 @@ describe('Scriptlets', () => {
         expect(res[0]).toBe(exp1);
         expect(res[1]).toBe(exp2);
     });
+
+    it('check the syntax of ADG rule', () => {
+        const rule = 'example.com#%#//scriptlet("abort-current-inline-script", console.log", "Hello")';
+        const result = RuleConverter.convertRule(rule);
+        expect(result).toHaveLength(0);
+    });
 });
 
 describe('Redirects', () => {
