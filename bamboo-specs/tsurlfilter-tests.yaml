@@ -35,12 +35,6 @@ Test:
 
             ls -alt
 
-            # We need to fit into the new 1GB memory limit when running plans.
-            # To do this, memory for nodejs processes is limited. In addition to nodejs, the distribution running in the container also consumes memory, so we experimentally chose a value of 768.
-            # jest will start to use memory more sparingly if the flag is set explicitly. 
-            # It is important that the running commands are executed in the same thread.
-            export NODE_OPTIONS='--max-old-space-size=768'
-
             npx lerna bootstrap
             npx lerna run --scope @adguard/tsurlfilter test:prod
             npx lerna run --scope @adguard/tsurlfilter build
