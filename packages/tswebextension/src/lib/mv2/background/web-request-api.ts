@@ -728,7 +728,7 @@ export class WebRequestApi {
         CosmeticApi
             .applyJsRules({
                 requestId,
-                url,
+                url: mainFrame.url,
                 tabId,
                 frameId,
                 cosmeticResult,
