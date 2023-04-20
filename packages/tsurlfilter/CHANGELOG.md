@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased
+
+### Changed
+
+- RuleConverter speed has been improved by 2x [#83](https://github.com/AdguardTeam/tsurlfilter/issues/83)
 
 ## [2.0.3] - 2023-04-17
 

@@ -1,9 +1,12 @@
 import scriptlets from '@adguard/scriptlets';
+
 import { logger } from '../utils/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
-import { RuleFactory } from './rule-factory';
 import { SimpleRegex } from './simple-regex';
+import { OPTIONS_DELIMITER } from './network-rule-options';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/utils';
+import { RuleFactory } from './rule-factory';
 
 interface ConversionOptions {
     /**
@@ -18,22 +21,6 @@ interface ConversionOptions {
 export class RuleConverter {
     private static CSS_RULE_REPLACE_PATTERN = /(.*):style\((.*)\)/g;
 
-    private static FIRST_PARTY_REGEX = /([$,])first-party/i;
-
-    private static FIRST_PARTY_REPLACEMENT = '$1~third-party';
-
-    private static XHR_REGEX = /([$,]~?)xhr/i;
-
-    private static XHR_REPLACEMENT = '$1xmlhttprequest';
-
-    private static CSS_REGEX = /([$,]~?)(css)(,|\W|$)/i;
-
-    private static CSS_REPLACEMENT = '$1stylesheet$3';
-
-    private static FRAME_REGEX = /([$,])frame/i;
-
-    private static FRAME_REPLACEMENT = '$1subdocument';
-
     // eslint-disable-next-line max-len
     private static SCRIPT_HAS_TEXT_REGEX = /##\^(script(\[[{a-z0-9-_.:}]*(="[{a-z0-9-_.:}]*")*\])*:(has-text|contains))\((?!\/.+\/\))/i;
 
@@ -46,32 +33,6 @@ export class RuleConverter {
     private static CSS_COMBINATORS_REGEX = />|\+|~/;
 
     private static SCRIPT_HAS_TEXT_REPLACEMENT = '$$$$script[tag-content="';
-
-    private static THIRD_PARTY_1P_3P_REGEX = /([$,])(1p|3p)/;
-
-    private static THIRD_PARTY_1P_REPLACEMENT = '$1~third-party';
-
-    private static THIRD_PARTY_3P_REPLACEMENT = '$1third-party';
-
-    private static GHIDE_REGEX = /(.+[^#]\$.*)(ghide)($|,.+)/i;
-
-    private static GENERICHIDE = 'generichide';
-
-    private static SHIDE_REGEX = /(.+[^#]\$.*)(shide)($|,.+)/i;
-
-    private static SPECIFICHIDE = 'specifichide';
-
-    private static EHIDE_REGEX = /(.+[^#]\$.*)(ehide)($|,.+)/i;
-
-    private static ELEMHIDE = 'elemhide';
-
-    private static QUERY_PRUNE_REGEX = /(.+[^#]\$.*)(queryprune)($|,|=.+)/i;
-
-    private static REMOVE_PARAM_REPLACEMENT = '$1removeparam$3';
-
-    private static DOC_REGEX = /(.+[^#]\$.*)(doc)($|,.+)/i;
-
-    private static DOC_REPLACEMENT = '$1document$3';
 
     private static UBO_RESPONSE_HEADER = '#^responseheader(';
 
@@ -132,15 +93,45 @@ export class RuleConverter {
     }
 
     /**
+     * Splits the given rule text into domain and options parts using the options delimiter ($).
+     * Returns the domain part and an array of options, or null if no options are present.
+     * @param ruleText - The rule text to be split.
+     */
+    private static splitIntoDomainAndOptions = (ruleText: string): [string, string[] | null] => {
+        let optionsDelimiterIdx = -1;
+        for (let i = ruleText.length - 1; i >= 0; i -= 1) {
+            if (
+                ruleText[i] === OPTIONS_DELIMITER
+                && ruleText[i + 1] !== '/' // not an end of regex /^bla$/
+                && ruleText[i - 1] !== '\\' // not a escaped delimiter
+            ) {
+                optionsDelimiterIdx = i;
+            }
+        }
+
+        if (optionsDelimiterIdx === -1) {
+            return [ruleText, null];
+        }
+
+        const domainPart = ruleText.slice(0, optionsDelimiterIdx);
+        const optionsPart = ruleText.slice(optionsDelimiterIdx + 1);
+        const optionsParts = splitByDelimiterWithEscapeCharacter(optionsPart, ',', '\\', false);
+
+        return [domainPart, optionsParts];
+    };
+
+    /**
+     * TODO for more efficient conversion build AST. And then use the modified AST for creating a
+     *  rule object.
      * Convert external scriptlet rule to AdGuard scriptlet syntax
      *
-     * @param rule
+     * @param rawRule
      * @param conversionOptions
      */
-    public static convertRule(rule: string, conversionOptions = {} as ConversionOptions): string[] {
-        if (rule.startsWith(SimpleRegex.MASK_COMMENT)
-            || rule.trim() === '') {
-            return [rule.trim()];
+    public static convertRule(rawRule: string, conversionOptions = {} as ConversionOptions): string[] {
+        const rule = rawRule.trim();
+        if (rule.startsWith(SimpleRegex.MASK_COMMENT) || rule === '') {
+            return [rule];
         }
 
         const comment = RuleConverter.convertUboComments(rule);
@@ -148,19 +139,40 @@ export class RuleConverter {
             return [comment];
         }
 
-        let converted = RuleConverter.convertCssInjection(rule);
-        converted = RuleConverter.convertPseudoElements(converted);
-        converted = RuleConverter.convertRemoveRule(converted);
-        converted = RuleConverter.replaceOptions(converted);
-        converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
-        converted = RuleConverter.convertUboMatchesPathRule(converted);
+        let converted = rule;
+        if (RuleFactory.isCosmetic(rule)) {
+            converted = RuleConverter.convertCssInjection(converted);
+            converted = RuleConverter.convertPseudoElements(converted);
+            converted = RuleConverter.convertRemoveRule(converted);
+            converted = RuleConverter.convertScriptHasTextToScriptTagContent(converted);
+            converted = RuleConverter.convertUboMatchesPathRule(converted);
 
-        const removeHeaderRule = RuleConverter.convertUboResponseHeaderRule(converted);
-        if (removeHeaderRule) {
-            return [removeHeaderRule];
+            // special case for ubo response header rule, it looks like cosmetic rule, but is converted to network rule
+            const removeHeaderRule = RuleConverter.convertUboResponseHeaderRule(converted);
+            if (removeHeaderRule) {
+                return [removeHeaderRule];
+            }
+        } else {
+            const domainAndOptions = RuleConverter.splitIntoDomainAndOptions(converted);
+            const domain = domainAndOptions[0];
+            let optionsParts = domainAndOptions[1];
+            if (optionsParts) {
+                optionsParts = RuleConverter.replaceOptions(optionsParts);
+                const ruleWithConvertedOptions = RuleConverter.convertOptions(
+                    domain,
+                    optionsParts,
+                    conversionOptions,
+                );
+                if (ruleWithConvertedOptions) {
+                    return ruleWithConvertedOptions;
+                }
+                converted = `${domain}$${optionsParts.join(',')}`;
+            }
         }
 
         const scriptletRules = scriptlets.convertScriptletToAdg(converted);
+        // TODO Check if isValidScriptletRule call is needed here, looks like convertScriptletToAdg
+        //  should already return a valid scriptlet.
         if (scriptletRules && scriptletRules.every((x) => RuleConverter.isValidScriptletRule(x))) {
             return scriptletRules;
         }
@@ -168,11 +180,6 @@ export class RuleConverter {
         const adgRedirectRule = RuleConverter.convertUboAndAbpRedirectsToAdg(converted);
         if (adgRedirectRule) {
             return [adgRedirectRule];
-        }
-
-        const ruleWithConvertedOptions = RuleConverter.convertOptions(converted, conversionOptions);
-        if (ruleWithConvertedOptions) {
-            return ruleWithConvertedOptions;
         }
 
         if (converted.includes(RuleConverter.UBO_HTML_RULE_MASK)) {
@@ -258,88 +265,66 @@ export class RuleConverter {
     }
 
     /**
-     * Converts rule options
-     * @param rule
-     * @param conversionOptions
+     * These option shortcuts will be converted to a more wordy AdGuard options.
      * @private
      */
-    private static convertOptions(rule: string, conversionOptions = {} as ConversionOptions): string[] | null {
-        const OPTIONS_DELIMITER = '$';
-        const ESCAPE_CHARACTER = '\\';
+    private static OPTIONS_CONVERSION_MAP = new Map<string, string>([
+        ['empty', 'redirect=nooptext'],
+        ['mp4', 'redirect=noopmp4-1s'],
+        ['inline-script', "csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:"],
+        ['inline-font', "csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:"],
+    ]);
+
+    /**
+     * Converts the rule options according to the conversion map and handles special cases.
+     * @param domainPart - The domain part of the rule.
+     * @param optionsParts - The options part of the rule as an array of strings.
+     * @param conversionOptions - Optional conversion options object.
+     * @private
+     */
+    private static convertOptions(
+        domainPart: string,
+        optionsParts: string[],
+        conversionOptions = {} as ConversionOptions,
+    ): string[] | null {
         const NAME_VALUE_SPLITTER = '=';
 
-        /* eslint-disable max-len */
-        const conversionMap = new Map<string, string>([
-            ['empty', 'redirect=nooptext'],
-            ['mp4', 'redirect=noopmp4-1s'],
-            ['inline-script', 'csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
-            ['inline-font', 'csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:'],
-        ]);
-        /* eslint-enable max-len */
-
-        let options;
-        let domainPart = '';
-
-        // Start looking from the prev to the last symbol
-        // If dollar sign is the last symbol - we simply ignore it.
-        for (let i = (rule.length - 2); i >= 0; i -= 1) {
-            const currChar = rule.charAt(i);
-            if (currChar !== OPTIONS_DELIMITER) {
-                continue;
-            }
-
-            if (i > 0 && rule.charAt(i - 1) !== ESCAPE_CHARACTER) {
-                domainPart = rule.substring(0, i);
-                options = rule.substring(i + 1);
-                // Options delimiter was found, doing nothing
-                break;
-            }
-        }
-
-        if (!options) {
-            return null;
-        }
-
-        const optionsParts = options.split(',');
-        let optionsConverted = false;
+        let areOptionsConverted = false;
 
         let updatedOptionsParts = optionsParts.map((optionsPart) => {
-            let convertedOptionsPart = conversionMap.get(optionsPart);
+            let convertedOptionsPart = RuleConverter.OPTIONS_CONVERSION_MAP.get(optionsPart);
 
-            // if option is $mp4, than it should go with $media option together
+            // If option is $mp4, then it should go with $media option together
             if (optionsPart === 'mp4') {
-                // check if media is not already among options
+                // Check if media is not already among options
                 if (!optionsParts.some((option) => option === 'media')) {
                     convertedOptionsPart = `${convertedOptionsPart},media`;
                 }
             }
 
             if (convertedOptionsPart) {
-                optionsConverted = true;
+                areOptionsConverted = true;
                 return convertedOptionsPart;
             }
 
             return optionsPart;
         });
 
-        // if has more than one csp modifiers, we merge them into one;
+        // If options have more than one csp modifiers, we merge them into one;
         const cspParts = updatedOptionsParts.filter((optionsPart) => optionsPart.startsWith('csp'));
-
         if (cspParts.length > 1) {
-            const allButCsp = updatedOptionsParts
-                .filter((optionsPart) => !optionsPart.startsWith('csp'));
-
+            const allButCsp = updatedOptionsParts.filter((optionsPart) => !optionsPart.startsWith('csp'));
             const cspValues = cspParts.map((cspPart) => cspPart.split(NAME_VALUE_SPLITTER)[1]);
 
             const updatedCspOption = `csp${NAME_VALUE_SPLITTER}${cspValues.join('; ')}`;
             updatedOptionsParts = allButCsp.concat(updatedCspOption);
         }
 
-        // options without all modifier
+        // Options without all modifier
         const hasAllOption = updatedOptionsParts.indexOf('all') > -1;
 
         if (hasAllOption && !conversionOptions.ignoreAllModifier) {
-            // $all modifier should be converted in 4 rules
+            // $all modifier should be converted in 4 rules:
             // ||example.org^$document,popup
             // ||example.org^
             // ||example.org^$inline-font
@@ -348,28 +333,30 @@ export class RuleConverter {
                 ['document', 'popup'],
                 ['inline-script'],
                 ['inline-font'],
-                [''], //
+                [''],
             ];
 
             return allOptionReplacers.map((replacers) => {
-                // remove replacer and all option from the list
+                // Remove replacer and all option from the list
                 const optionsButAllAndReplacer = updatedOptionsParts
                     .filter((option) => !(replacers.includes(option) || option === 'all'));
 
-                // try get converted values, used for INLINE_SCRIPT_OPTION, INLINE_FONT_OPTION
-                const convertedReplacers = replacers.map((replacer) => conversionMap.get(replacer) || replacer);
+                // Try get converted values, used for INLINE_SCRIPT_OPTION, INLINE_FONT_OPTION
+                const convertedReplacers = replacers.map((replacer) => {
+                    return RuleConverter.OPTIONS_CONVERSION_MAP.get(replacer) || replacer;
+                });
 
-                // add replacer to the list of options
+                // Add replacer to the list of options
                 const updatedOptionsString = [...convertedReplacers, ...optionsButAllAndReplacer]
                     .filter((entity) => entity)
                     .join(',');
 
-                // create a new rule
+                // Create a new rule
                 return updatedOptionsString.length < 1 ? domainPart : `${domainPart}$${updatedOptionsString}`;
             });
         }
 
-        if (optionsConverted) {
+        if (areOptionsConverted) {
             const updatedOptions = updatedOptionsParts.join(',');
             return [`${domainPart}$${updatedOptions}`];
         }
@@ -452,8 +439,9 @@ export class RuleConverter {
                 continue;
             }
 
-            if ((rule.indexOf(BEFORE, i) === i + 1 || rule.indexOf(AFTER, i) === i + 1)
-                    && rule[i - 1] !== SINGLE_COLON) {
+            if ((rule.indexOf(BEFORE, i) === i + 1
+                    || rule.indexOf(AFTER, i) === i + 1)
+                && rule[i - 1] !== SINGLE_COLON) {
                 modifiedRule += SINGLE_COLON;
                 modifiedRule += rule[i];
                 continue;
@@ -663,95 +651,42 @@ export class RuleConverter {
     }
 
     /**
-     * Some options have aliases and will be replaced:
-     *
-     * $first-party -> $~third-party
-     * $xhr -> $xmlhttprequest
-     * $css -> $stylesheet
-     * $frame -> $subdocument
-     * $1p -> $~third-party
-     * $3p -> $third-party
-     * ghide -> generichide
-     * ehide -> elemhide
-     * doc -> document
-     * queryprune -> removeparam
+     * Options aliases, used to convert non-AdGuard options to AdGuard options
      */
-    private static OPTIONS_ALIASES = [
-        {
-            alias: 'first-party',
-            regex: RuleConverter.FIRST_PARTY_REGEX,
-            replacement: RuleConverter.FIRST_PARTY_REPLACEMENT,
-        },
-        {
-            alias: 'xhr',
-            regex: RuleConverter.XHR_REGEX,
-            replacement: RuleConverter.XHR_REPLACEMENT,
-        },
-        {
-            alias: 'css',
-            regex: RuleConverter.CSS_REGEX,
-            replacement: RuleConverter.CSS_REPLACEMENT,
-        },
-        {
-            alias: 'frame',
-            regex: RuleConverter.FRAME_REGEX,
-            replacement: RuleConverter.FRAME_REPLACEMENT,
-        },
-        {
-            alias: 'queryprune',
-            regex: RuleConverter.QUERY_PRUNE_REGEX,
-            replacement: RuleConverter.REMOVE_PARAM_REPLACEMENT,
-        },
-        {
-            alias: 'doc',
-            regex: RuleConverter.DOC_REGEX,
-            replacement: RuleConverter.DOC_REPLACEMENT,
-        },
-        {
-            alias: '1p',
-            regex: RuleConverter.THIRD_PARTY_1P_3P_REGEX,
-            replacement: RuleConverter.THIRD_PARTY_1P_REPLACEMENT,
-        },
-        {
-            alias: '3p',
-            regex: RuleConverter.THIRD_PARTY_1P_3P_REGEX,
-            replacement: RuleConverter.THIRD_PARTY_3P_REPLACEMENT,
-        },
-        {
-            alias: 'ghide',
-            regex: RuleConverter.GHIDE_REGEX,
-            replacement: `$1${RuleConverter.GENERICHIDE}$3`,
-        },
-        {
-            alias: 'ehide',
-            regex: RuleConverter.EHIDE_REGEX,
-            replacement: `$1${RuleConverter.ELEMHIDE}$3`,
-        },
-        {
-            alias: 'shide',
-            regex: RuleConverter.SHIDE_REGEX,
-            replacement: `$1${RuleConverter.SPECIFICHIDE}$3`,
-        },
-    ];
+    private static OPTIONS_ALIASES: { [key: string]: string } = {
+        'first-party': '~third-party',
+        xhr: 'xmlhttprequest',
+        css: 'stylesheet',
+        frame: 'subdocument',
+        queryprune: 'removeparam',
+        doc: 'document',
+        '1p': '~third-party',
+        '3p': 'third-party',
+        ghide: 'generichide',
+        ehide: 'elemhide',
+        shide: 'specifichide',
+    };
 
     /**
-     * Replaces the options in aliases array
+     * Substitutes option aliases in the provided options array with their corresponding aliases.
      *
-     * @param {string} rule
-     * @return {string} convertedRule
+     * @param optionsParts - An array of options to replace aliases in.
+     * @returns - An array of options with aliases replaced.
      */
-    private static replaceOptions(rule: string): string {
-        if (rule.startsWith(SimpleRegex.MASK_COMMENT) || RuleFactory.isCosmetic(rule)) {
-            return rule;
-        }
-
-        let result = rule;
-        RuleConverter.OPTIONS_ALIASES.forEach((x) => {
-            if (result.includes(x.alias) && x.regex.test(result)) {
-                result = result.replace(x.regex, x.replacement);
+    private static replaceOptions(optionsParts: string[]): string[] {
+        const resultOptions = optionsParts.map((option) => {
+            const [optionNameRaw, optionValue] = option.split('=', 2);
+            const isNegated = optionNameRaw.startsWith('~');
+            const optionName = isNegated ? optionNameRaw.slice(1) : optionNameRaw;
+            const convertedOptionName = RuleConverter.OPTIONS_ALIASES[optionName];
+            if (!convertedOptionName) {
+                return option;
             }
+            const negationPrefix = isNegated ? '~' : '';
+            return optionValue
+                ? `${negationPrefix}${convertedOptionName}=${optionValue}`
+                : `${negationPrefix}${convertedOptionName}`;
         });
-
-        return result;
+        return resultOptions;
     }
 }
