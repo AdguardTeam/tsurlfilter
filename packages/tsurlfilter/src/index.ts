@@ -16,7 +16,6 @@ export * from './rules/rule';
 export * from './rules/rule-converter';
 export * from './rules/rule-factory';
 export * from './rules/simple-regex';
-export * from './rules/declarative-converter';
 export * from './modifiers/remove-header-modifier';
 export * from './modifiers/remove-param-modifier';
 export * from './modifiers/cookie-modifier';

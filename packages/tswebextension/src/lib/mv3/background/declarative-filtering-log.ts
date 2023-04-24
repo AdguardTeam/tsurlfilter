@@ -1,4 +1,4 @@
-import { IRuleSet, SourceRuleAndFilterId } from '@adguard/tsurlfilter';
+import { IRuleSet, SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
 
 /**
  * Information about applied declarative network rule.

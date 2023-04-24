@@ -64,6 +64,23 @@ const esmConfig = {
 };
 
 /**
+ * Declarative converter should be built separately
+ * because it has some regexp which are not supported in Safari browser
+ * so it throws an error in safari-web-extension. AG-21568
+ */
+const esmDeclarativeConverterConfig = {
+    input: 'src/rules/declarative-converter/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/es/declarative-converter.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    ...commonConfig,
+};
+
+/**
  * UMD build is needed for the FiltersCompiler and DNS dashboard.
  *
  * TODO: should be removed. AG-21466
@@ -132,6 +149,7 @@ const cliConfig = {
 
 export default [
     esmConfig,
+    esmDeclarativeConverterConfig,
     umdConfig,
     cliConfig,
 ];

@@ -3,7 +3,7 @@ import {
     Filter,
     ConversionResult,
     IFilter,
-} from '@adguard/tsurlfilter';
+} from '@adguard/tsurlfilter/es/declarative-converter';
 
 export { ConversionResult };
 

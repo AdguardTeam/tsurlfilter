@@ -36,6 +36,9 @@
       "es/simple-regex": [
         "dist/types/src/rules/simple-regex.d.ts"
       ],
+      "es/declarative-converter": [
+        "dist/types/src/rules/declarative-converter/index.d.ts"
+      ],
       "cli": [
         "dist/types/cli/index.d.ts"
       ]

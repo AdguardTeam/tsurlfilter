@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - RuleConverter speed has been improved by 2x [#83](https://github.com/AdguardTeam/tsurlfilter/issues/83)
+- Declarative converter build has been separated from the main package
+
 
 ## [2.0.3] - 2023-04-17
 

@@ -1,4 +1,4 @@
-import { IRuleSet } from '@adguard/tsurlfilter';
+import { IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { AppInterface, defaultFilteringLog } from '../../common';
 import { logger } from '../utils/logger';

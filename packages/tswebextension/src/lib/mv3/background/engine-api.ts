@@ -10,9 +10,10 @@ import {
     CosmeticOption,
     RuleConverter,
     ScriptletData,
-    IFilter,
     CosmeticRule,
 } from '@adguard/tsurlfilter';
+
+import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { getHost } from '../../common/utils';
 import { logger } from '../utils/logger';

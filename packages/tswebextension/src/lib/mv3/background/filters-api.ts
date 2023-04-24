@@ -1,4 +1,4 @@
-import { Filter, IFilter } from '@adguard/tsurlfilter';
+import { Filter, IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { getFilterName } from '../utils/get-filter-name';

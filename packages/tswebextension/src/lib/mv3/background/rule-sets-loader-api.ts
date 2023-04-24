@@ -11,7 +11,7 @@ import {
     RULES_COUNT_FILENAME,
     SOURCE_MAP_FILENAME_JSON,
     DeclarativeRuleValidator,
-} from '@adguard/tsurlfilter';
+} from '@adguard/tsurlfilter/es/declarative-converter';
 import { z as zod } from 'zod';
 
 /**
