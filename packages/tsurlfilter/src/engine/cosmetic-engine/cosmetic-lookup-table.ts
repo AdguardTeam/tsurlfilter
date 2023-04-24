@@ -1,7 +1,7 @@
 import { parse } from 'tldts';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
-import { fastHash } from '../../utils/utils';
+import { fastHash } from '../../utils/string-utils';
 import { RuleStorage } from '../../filterlist/rule-storage';
 import { Request } from '../../request';
 

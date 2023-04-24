@@ -2,7 +2,7 @@ import { ILookupTable } from './lookup-table';
 import { RuleStorage } from '../../filterlist/rule-storage';
 import { Request } from '../../request';
 import { DomainModifier } from '../../modifiers/domain-modifier';
-import { fastHash } from '../../utils/utils';
+import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../../rules/network-rule';
 
 /**

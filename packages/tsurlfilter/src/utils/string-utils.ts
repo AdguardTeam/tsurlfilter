@@ -1,5 +1,3 @@
-// TODO rename filename from utils.ts to string-utils.ts
-
 /**
  * Splits the string by the delimiter, ignoring escaped delimiters.
  *

@@ -3,7 +3,11 @@ import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
-import * as utils from '../utils/utils';
+import {
+    splitByDelimiterWithEscapeCharacter,
+    stringArraysEquals,
+    stringArraysHaveIntersection,
+} from '../utils/string-utils';
 import { IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
@@ -739,7 +743,7 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if there is an unsupported modifier
      */
     private loadOptions(options: string): void {
-        const optionParts = utils.splitByDelimiterWithEscapeCharacter(options, ',', '\\', false);
+        const optionParts = splitByDelimiterWithEscapeCharacter(options, ',', '\\', false);
 
         for (let i = 0; i < optionParts.length; i += 1) {
             const option = optionParts[i];
@@ -903,11 +907,11 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (!utils.stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+        if (!stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
             return false;
         }
 
-        if (!utils.stringArraysHaveIntersection(this.permittedDomains, specifiedRule.permittedDomains)) {
+        if (!stringArraysHaveIntersection(this.permittedDomains, specifiedRule.permittedDomains)) {
             return false;
         }
 

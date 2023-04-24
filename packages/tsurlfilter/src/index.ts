@@ -24,7 +24,7 @@ export * from './modifiers/replace-modifier';
 export * from './utils/logger';
 export * from './utils/rule-validator';
 export * from './utils/url';
-export * from './utils/utils';
+export * from './utils/string-utils';
 export { CosmeticRuleMarker } from './rules/cosmetic-rule-marker';
 export { CosmeticRuleParser } from './rules/cosmetic-rule-parser';
 export { RuleSyntaxUtils } from './utils/rule-syntax-utils';

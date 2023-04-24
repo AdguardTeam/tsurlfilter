@@ -1,5 +1,5 @@
 /* eslint-disable prefer-regex-literals */
-import * as utils from '../utils/utils';
+import { replaceAll, splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
 
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/regexp
 // should be escaped . * + ? ^ $ { } ( ) | [ ] / \
@@ -237,7 +237,7 @@ export class SimpleRegex {
         // Now escape "|" characters but avoid escaping them in the special places
         if (regex.startsWith(this.MASK_START_URL)) {
             regex = regex.substring(0, this.MASK_START_URL.length)
-                + utils.replaceAll(
+                + replaceAll(
                     regex.substring(this.MASK_START_URL.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
@@ -245,7 +245,7 @@ export class SimpleRegex {
                 + regex.substring(regex.length - this.MASK_PIPE.length);
         } else {
             regex = regex.substring(0, this.MASK_PIPE.length)
-                + utils.replaceAll(
+                + replaceAll(
                     regex.substring(this.MASK_PIPE.length, regex.length - this.MASK_PIPE.length),
                     this.MASK_PIPE,
                     `\\${this.MASK_PIPE}`,
@@ -254,8 +254,8 @@ export class SimpleRegex {
         }
 
         // Replace special URL masks
-        regex = utils.replaceAll(regex, this.MASK_ANY_CHARACTER, this.REGEX_ANY_CHARACTER);
-        regex = utils.replaceAll(regex, this.MASK_SEPARATOR, this.REGEX_SEPARATOR);
+        regex = replaceAll(regex, this.MASK_ANY_CHARACTER, this.REGEX_ANY_CHARACTER);
+        regex = replaceAll(regex, this.MASK_SEPARATOR, this.REGEX_SEPARATOR);
 
         // Replace start URL and pipes
         if (regex.startsWith(this.MASK_START_URL)) {
@@ -277,7 +277,7 @@ export class SimpleRegex {
      * @param str
      */
     public static patternFromString(str: string): RegExp {
-        const parts = utils.splitByDelimiterWithEscapeCharacter(str, '/', '\\', true);
+        const parts = splitByDelimiterWithEscapeCharacter(str, '/', '\\', true);
         let modifiers = (parts[1] || '');
         if (modifiers.indexOf('g') < 0) {
             modifiers += 'g';

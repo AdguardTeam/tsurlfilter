@@ -5,7 +5,7 @@ import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { SimpleRegex } from './simple-regex';
 import { OPTIONS_DELIMITER } from './network-rule-options';
-import { splitByDelimiterWithEscapeCharacter } from '../utils/utils';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
 import { RuleFactory } from './rule-factory';
 
 interface ConversionOptions {

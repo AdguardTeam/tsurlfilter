@@ -1,4 +1,4 @@
-import * as utils from '../utils/utils';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
 import { IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
@@ -40,7 +40,7 @@ export class ReplaceModifier implements IAdvancedModifier {
             };
         }
 
-        const parts = utils.splitByDelimiterWithEscapeCharacter(option, '/', '\\', true);
+        const parts = splitByDelimiterWithEscapeCharacter(option, '/', '\\', true);
 
         if (parts.length < 2 || parts.length > 3) {
             throw new Error(`Cannot parse ${option}`);

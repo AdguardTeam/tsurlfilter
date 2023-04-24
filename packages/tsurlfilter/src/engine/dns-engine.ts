@@ -1,7 +1,7 @@
 import { RuleStorage } from '../filterlist/rule-storage';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
-import { fastHash } from '../utils/utils';
+import { fastHash } from '../utils/string-utils';
 import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
 import { DnsResult } from './dns-result';

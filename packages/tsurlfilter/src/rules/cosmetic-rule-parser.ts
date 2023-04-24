@@ -1,4 +1,4 @@
-import * as utils from '../utils/utils';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
 import { COMMA_SEPARATOR, DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { CosmeticRuleModifiers, CosmeticRuleModifiersSyntax } from './cosmetic-rule-modifiers';
@@ -136,7 +136,7 @@ export class CosmeticRuleParser {
             Assigner,
         } = CosmeticRuleModifiersSyntax;
 
-        const modifiersTextArray = utils.splitByDelimiterWithEscapeCharacter(
+        const modifiersTextArray = splitByDelimiterWithEscapeCharacter(
             modifiersText,
             Delimiter,
             EscapeCharacter,

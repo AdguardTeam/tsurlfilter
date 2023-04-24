@@ -2,7 +2,7 @@ import scriptlets, { IConfiguration } from '@adguard/scriptlets';
 import * as rule from './rule';
 import { CosmeticRuleMarker, isExtCssMarker, ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
 import { DomainModifier } from '../modifiers/domain-modifier';
-import * as utils from '../utils/utils';
+import { hasUnquotedSubstring, indexOfAny } from '../utils/string-utils';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
 import { CosmeticRuleParser } from './cosmetic-rule-parser';
@@ -241,7 +241,7 @@ export class CosmeticRule implements rule.IRule {
             }
         }
 
-        let nameEndIndex = utils.indexOfAny(
+        let nameEndIndex = indexOfAny(
             selector,
             [' ', ',', '\t', '>', '(', '[', '.', '#', ':', '+', '~', '"', '\''],
             nameStartIndex + 1,
@@ -622,7 +622,7 @@ export class CosmeticRule implements rule.IRule {
             && type !== CosmeticRuleType.Html) {
             CosmeticRule.validatePseudoClasses(ruleText, content);
 
-            if (utils.hasUnquotedSubstring(content, '{')) {
+            if (hasUnquotedSubstring(content, '{')) {
                 throw new SyntaxError('Invalid cosmetic rule, wrong brackets');
             }
         }
@@ -639,10 +639,9 @@ export class CosmeticRule implements rule.IRule {
             CosmeticRule.validateJsRules(ruleText, content);
         }
 
-        if ((!isExtCss && utils.hasUnquotedSubstring(content, '/*'))
-            || utils.hasUnquotedSubstring(content, ' /*')
-            || utils.hasUnquotedSubstring(content, ' //')
-        ) {
+        if ((!isExtCss && hasUnquotedSubstring(content, '/*'))
+            || hasUnquotedSubstring(content, ' /*')
+            || hasUnquotedSubstring(content, ' //')) {
             throw new SyntaxError('Cosmetic rule should not contain comments');
         }
     }
