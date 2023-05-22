@@ -11,6 +11,7 @@ import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi, tabsApi } from './tabs/tabs-api';
+import { getErrorMessage } from '../../common/error';
 import {
     type InjectionFsm,
     InjectionEvent,
@@ -339,8 +340,7 @@ export class CosmeticApi {
                         CosmeticApi.applyFrameJsRules(params, fsm, tries + 1);
                     }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
                 } else {
-                    // TODO: implement getErrorMessage()
-                    logger.debug(e instanceof Error ? e.message : e);
+                    logger.debug(getErrorMessage(e));
                 }
             });
     }
@@ -375,7 +375,7 @@ export class CosmeticApi {
                         CosmeticApi.applyFrameCssRules(params, fsm, tries + 1);
                     }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
                 } else {
-                    logger.debug(e instanceof Error ? e.message : e);
+                    logger.debug(getErrorMessage(e));
                 }
             });
     }

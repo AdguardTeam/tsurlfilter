@@ -1,38 +1,69 @@
-/* eslint-disable max-len */
-import console from 'console';
 import * as stringUtils from '../../src/utils/string-utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
-    it('works if it splits with or without preserving tokens', () => {
-        let parts = stringUtils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', false);
-        expect(parts.length).toEqual(2);
+    it('works if splits plain strings with and w/o preserving all tokens', () => {
+        let result = stringUtils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', false);
+        let expected = ['example.org', 'example.com'];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', true);
-        expect(parts.length).toEqual(4);
+        // Empty tokens must be preserved correctly
+        result = stringUtils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com', ',', '\\', true);
+        expected = ['example.org', '', '', 'example.com'];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter('example.org\\,\\,\\,example.com', ',', '\\', true);
-        expect(parts.length).toEqual(1);
+        // Delimiters must be escaped correctly, with escape character removed
+        result = stringUtils.splitByDelimiterWithEscapeCharacter('example.org\\,\\,\\,example.com', ',', '\\', true);
+        expected = ['example.org,,,example.com'];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter('', ',', '\\', true);
-        expect(parts.length).toEqual(0);
+        // Empty string must return empty array
+        result = stringUtils.splitByDelimiterWithEscapeCharacter('', ',', '\\', true);
+        expected = [];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter(',example.org,example.com', ',', '\\', false);
-        expect(parts.length).toEqual(2);
+        // Check if index 0 delimiter is trimmed correctly
+        result = stringUtils.splitByDelimiterWithEscapeCharacter(',example.org,example.com', ',', '\\', false);
+        expected = ['example.org', 'example.com'];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter('/text-to-be-replaced/new-text/i', '/', '\\', true);
-        expect(parts.length).toEqual(3);
+        // Forward slash splitting
+        result = stringUtils.splitByDelimiterWithEscapeCharacter('/text-to-be-replaced/new-text/i', '/', '\\', true);
+        expected = ['text-to-be-replaced', 'new-text', 'i'];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter('/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/$1<\\/VAST>/', '/', '\\', true);
-        expect(parts.length).toEqual(3);
+        // Keep empty token after ending delimiter
+        result = stringUtils.splitByDelimiterWithEscapeCharacter(
+            '/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/$1<\\/VAST>/',
+            '/',
+            '\\',
+            true,
+        );
+        expected = ['(<VAST[\\s\\S]*?>)[\\s\\S]*</VAST>', '$1</VAST>', ''];
+        expect(result).toEqual(expected);
 
-        parts = stringUtils.splitByDelimiterWithEscapeCharacter('qwe\\,rty,1,2,3', ',', '\\', false, false);
-        expect(parts[0]).toEqual('qwe\\,rty');
+        // Remove empty token after ending delimiter
+        result = stringUtils.splitByDelimiterWithEscapeCharacter(
+            '/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/$1<\\/VAST>/',
+            '/',
+            '\\',
+            false,
+        );
+        expected = ['(<VAST[\\s\\S]*?>)[\\s\\S]*</VAST>', '$1</VAST>'];
+        expect(result).toEqual(expected);
+
+        // Keep empty token after delimiter for comma
+        result = stringUtils.splitByDelimiterWithEscapeCharacter('example.org,,,example.com,', ',', '\\', true);
+        expected = ['example.org', '', '', 'example.com', ''];
+        expect(result).toEqual(expected);
+
+        // Escape character should be kept if specified
+        result = stringUtils.splitByDelimiterWithEscapeCharacter('qwe\\,rty,1,2,3', ',', '\\', false, false);
+        expected = ['qwe\\,rty', '1', '2', '3'];
+        expect(result).toEqual(expected);
     });
 
     it('measures splitByDelimiterWithEscapeCharacter', async () => {
         const startParse = Date.now();
-
-        // 200000 iterations in 12774ms
 
         let count = 0;
         while (count < 2000) {
@@ -45,6 +76,7 @@ describe('splitByDelimiterWithEscapeCharacter', () => {
             expect(parts.length).toEqual(4);
         }
 
+        // eslint-disable-next-line no-console
         console.log(`Elapsed time: ${Date.now() - startParse}`);
     });
 });

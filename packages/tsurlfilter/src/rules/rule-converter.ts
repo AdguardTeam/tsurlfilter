@@ -5,7 +5,7 @@ import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { SimpleRegex } from './simple-regex';
 import { OPTIONS_DELIMITER } from './network-rule-options';
-import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
+import { parseOptionsString } from '../utils/parse-options-string';
 import { RuleFactory } from './rule-factory';
 
 interface ConversionOptions {
@@ -115,7 +115,7 @@ export class RuleConverter {
 
         const domainPart = ruleText.slice(0, optionsDelimiterIdx);
         const optionsPart = ruleText.slice(optionsDelimiterIdx + 1);
-        const optionsParts = splitByDelimiterWithEscapeCharacter(optionsPart, ',', '\\', false);
+        const optionsParts = parseOptionsString(optionsPart);
 
         return [domainPart, optionsParts];
     };

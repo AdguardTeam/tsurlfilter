@@ -3,11 +3,8 @@ import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
-import {
-    splitByDelimiterWithEscapeCharacter,
-    stringArraysEquals,
-    stringArraysHaveIntersection,
-} from '../utils/string-utils';
+import { parseOptionsString } from '../utils/parse-options-string';
+import { stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 import { IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
@@ -24,6 +21,7 @@ import {
     NOT_MARK,
     OPTIONS_DELIMITER,
 } from './network-rule-options';
+import { getErrorMessage } from '../common/error';
 import { RequestType } from '../request-type';
 import { ClientModifier } from '../modifiers/dns/client-modifier';
 import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
@@ -743,7 +741,13 @@ export class NetworkRule implements rule.IRule {
      * @throws an error if there is an unsupported modifier
      */
     private loadOptions(options: string): void {
-        const optionParts = splitByDelimiterWithEscapeCharacter(options, ',', '\\', false);
+        let optionParts;
+        try {
+            optionParts = parseOptionsString(options);
+        } catch (e) {
+            const errorMessage = getErrorMessage(e);
+            throw new Error(`Cannot parse ${options}: ${errorMessage}`);
+        }
 
         for (let i = 0; i < optionParts.length; i += 1) {
             const option = optionParts[i];

@@ -1,4 +1,4 @@
-import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
+import { parseOptionsString } from '../utils/parse-options-string';
 import { COMMA_SEPARATOR, DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { CosmeticRuleModifiers, CosmeticRuleModifiersSyntax } from './cosmetic-rule-modifiers';
@@ -130,19 +130,9 @@ export class CosmeticRuleParser {
             return null;
         }
 
-        const {
-            EscapeCharacter,
-            Delimiter,
-            Assigner,
-        } = CosmeticRuleModifiersSyntax;
+        const { Assigner } = CosmeticRuleModifiersSyntax;
 
-        const modifiersTextArray = splitByDelimiterWithEscapeCharacter(
-            modifiersText,
-            Delimiter,
-            EscapeCharacter,
-            false,
-            false,
-        );
+        const modifiersTextArray = parseOptionsString(modifiersText, false);
 
         const modifiers = Object.create(null);
 

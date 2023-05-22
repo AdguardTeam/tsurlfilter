@@ -1,64 +1,80 @@
 /**
- * Splits the string by the delimiter, ignoring escaped delimiters.
+ * Splits the string by the delimiter, ignoring escaped delimiters
+ * and without tokenizing.
+ * Works for plain strings that don't include string representation of
+ * complex entities, e.g $replace modifier values.
  *
- * @param str - string to split
+ * @param string - string to split
  * @param delimiter - delimiter
  * @param escapeCharacter - escape character
- * @param preserveAllTokens - if true, preserve empty parts
- * @param unescape - if true, delete EscapeCharacter
+ * @param preserveEmptyTokens - if true, preserve empty parts
+ * @param shouldUnescape - if true, unescape characters
  * @return array of string parts
  */
 export function splitByDelimiterWithEscapeCharacter(
-    str: string,
+    string: string,
     delimiter: string,
     escapeCharacter: string,
-    preserveAllTokens: boolean,
-    unescape = true,
+    preserveEmptyTokens: boolean,
+    shouldUnescape = true,
 ): string[] {
-    let parts: string[] = [];
-
-    if (!str) {
-        return parts;
+    if (!string) {
+        return [];
     }
 
-    if (str.startsWith(delimiter)) {
+    if (string.startsWith(delimiter)) {
         // eslint-disable-next-line no-param-reassign
-        str = str.substring(1);
+        string = string.substring(1);
     }
 
-    if (!str.includes(escapeCharacter)) {
-        parts = str.split(delimiter);
-        if (!preserveAllTokens) {
-            parts = parts.filter((x) => !!x);
+    let words: string[] = [];
+
+    if (!string.includes(escapeCharacter)) {
+        words = string.split(delimiter);
+        if (!preserveEmptyTokens) {
+            words = words.filter((word) => !!word);
         }
 
-        return parts;
+        return words;
     }
 
-    let sb: string[] = [];
-    for (let i = 0; i < str.length; i += 1) {
-        const c = str.charAt(i);
-        if (c === delimiter) {
-            if (i > 0 && str.charAt(i - 1) === escapeCharacter) {
-                if (unescape) {
-                    sb.splice(sb.length - 1, 1);
+    let chars: string[] = [];
+
+    const makeWord = () => {
+        const word = chars.join('');
+        words.push(word);
+        chars = [];
+    };
+
+    for (let i = 0; i < string.length; i += 1) {
+        const char = string.charAt(i);
+        const isLastChar = i === (string.length - 1);
+        if (char === delimiter) {
+            const isEscapedChar = i > 0 && string[i - 1] === escapeCharacter;
+            if (isEscapedChar) {
+                if (shouldUnescape) {
+                    chars.splice(chars.length - 1, 1);
                 }
-                sb.push(c);
-            } else if (preserveAllTokens || sb.length > 0) {
-                const part = sb.join('');
-                parts.push(part);
-                sb = [];
+                chars.push(char);
+            } else {
+                makeWord();
             }
+            if (isLastChar) {
+                makeWord();
+            }
+        } else if (isLastChar) {
+            chars.push(char);
+            makeWord();
         } else {
-            sb.push(c);
+            chars.push(char);
         }
     }
 
-    if (preserveAllTokens || sb.length > 0) {
-        parts.push(sb.join(''));
+    if (!preserveEmptyTokens) {
+        words = words.filter((word) => !!word);
     }
 
-    return parts;
+    return words;
 }
 
 /**
