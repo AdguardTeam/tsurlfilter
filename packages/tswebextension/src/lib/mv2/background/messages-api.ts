@@ -34,10 +34,15 @@ interface CookieRule {
     isAllowlist: boolean;
 }
 
+export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
+
+type MessageSenderMV2 = (tabId: number, message: unknown) => Promise<void>;
+
 export interface MessagesApiInterface {
-    sendMessage: (tabId: number, message: unknown) => Promise<void>;
-    handleMessage: (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
+    sendMessage: MessageSenderMV2;
+    handleMessage: MessageHandlerMV2;
 }
+
 // TODO: add long live connection
 // TODO: CollectHitStats
 /**

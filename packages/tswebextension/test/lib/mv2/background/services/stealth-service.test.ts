@@ -1,37 +1,45 @@
 import { WebRequest } from 'webextension-polyfill';
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
-import { ContentType, StealthConfig } from '@lib/common';
+import { ContentType } from '@lib/common';
 import { RequestContext, RequestContextState } from '@lib/mv2';
 import { StealthActions, StealthService } from '@lib/mv2/background/services/stealth-service';
 
+import type { AppContext } from '@lib/mv2/background/context';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
+type TestAppContext = AppContext & { configuration: NonNullable<AppContext['configuration']> };
 describe('Stealth service', () => {
-    let config: StealthConfig;
+    let appContext: TestAppContext;
 
     const filteringLog = new MockFilteringLog();
 
     beforeEach(() => {
-        config = {
-            blockChromeClientData: false,
-            hideReferrer: false,
-            hideSearchQueries: false,
-            sendDoNotTrack: false,
-            selfDestructThirdPartyCookies: false,
-            selfDestructThirdPartyCookiesTime: 0,
-            selfDestructFirstPartyCookies: false,
-            selfDestructFirstPartyCookiesTime: 0,
-            blockWebRTC: false,
-        };
+        appContext = {
+            configuration: {
+                settings: {
+                    stealth: {
+                        blockChromeClientData: false,
+                        hideReferrer: false,
+                        hideSearchQueries: false,
+                        sendDoNotTrack: false,
+                        selfDestructThirdPartyCookies: false,
+                        selfDestructThirdPartyCookiesTime: 0,
+                        selfDestructFirstPartyCookies: false,
+                        selfDestructFirstPartyCookiesTime: 0,
+                        blockWebRTC: false,
+                    },
+                },
+            },
+        } as TestAppContext;
     });
 
     describe('Cookies', () => {
         it('returns first-party cookies', () => {
-            config.selfDestructFirstPartyCookies = true;
-            config.selfDestructFirstPartyCookiesTime = 1;
+            appContext.configuration.settings.stealth.selfDestructFirstPartyCookies = true;
+            appContext.configuration.settings.stealth.selfDestructFirstPartyCookiesTime = 1;
 
-            const service = new StealthService(config, filteringLog);
+            const service = new StealthService(appContext, filteringLog);
 
             const cookieRulesTexts = service.getCookieRulesTexts();
             expect(cookieRulesTexts).toHaveLength(1);
@@ -39,22 +47,22 @@ describe('Stealth service', () => {
         });
 
         it('returns third-party cookies', () => {
-            config.selfDestructFirstPartyCookies = false;
-            config.selfDestructFirstPartyCookiesTime = 0;
+            appContext.configuration.settings.stealth.selfDestructFirstPartyCookies = false;
+            appContext.configuration.settings.stealth.selfDestructFirstPartyCookiesTime = 0;
 
-            config.selfDestructThirdPartyCookies = true;
-            config.selfDestructThirdPartyCookiesTime = 1;
+            appContext.configuration.settings.stealth.selfDestructThirdPartyCookies = true;
+            appContext.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = 1;
 
-            let service = new StealthService(config, filteringLog);
+            let service = new StealthService(appContext, filteringLog);
 
             let cookieRules = service.getCookieRulesTexts();
             expect(cookieRules).toHaveLength(1);
             expect(cookieRules[0]).toBe('$cookie=/.+/;maxAge=60,third-party');
 
-            config.selfDestructThirdPartyCookies = true;
-            config.selfDestructThirdPartyCookiesTime = 0;
+            appContext.configuration.settings.stealth.selfDestructThirdPartyCookies = true;
+            appContext.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = 0;
 
-            service = new StealthService(config, filteringLog);
+            service = new StealthService(appContext, filteringLog);
 
             cookieRules = service.getCookieRulesTexts();
             expect(cookieRules).toHaveLength(1);
@@ -62,12 +70,12 @@ describe('Stealth service', () => {
         });
 
         it('returns third-party and first-party cookies together', () => {
-            config.selfDestructFirstPartyCookies = true;
-            config.selfDestructFirstPartyCookiesTime = 0;
-            config.selfDestructThirdPartyCookies = true;
-            config.selfDestructThirdPartyCookiesTime = 1;
+            appContext.configuration.settings.stealth.selfDestructFirstPartyCookies = true;
+            appContext.configuration.settings.stealth.selfDestructFirstPartyCookiesTime = 0;
+            appContext.configuration.settings.stealth.selfDestructThirdPartyCookies = true;
+            appContext.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = 1;
 
-            const service = new StealthService(config, filteringLog);
+            const service = new StealthService(appContext, filteringLog);
 
             const cookieRules = service.getCookieRulesTexts();
             expect(cookieRules).toHaveLength(2);
@@ -100,7 +108,7 @@ describe('Stealth service', () => {
         };
 
         beforeEach(() => {
-            config = {
+            appContext.configuration.settings.stealth = {
                 blockChromeClientData: false,
                 hideReferrer: false,
                 hideSearchQueries: false,
@@ -114,8 +122,8 @@ describe('Stealth service', () => {
         });
 
         it('checks hide referrer', () => {
-            config.hideReferrer = true;
-            const service = new StealthService(config, filteringLog);
+            appContext.configuration.settings.stealth.hideReferrer = true;
+            const service = new StealthService(appContext, filteringLog);
 
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'Referer',
@@ -129,8 +137,8 @@ describe('Stealth service', () => {
         });
 
         it('checks hide search query', () => {
-            config.hideSearchQueries = true;
-            const service = new StealthService(config, filteringLog);
+            appContext.configuration.settings.stealth.hideSearchQueries = true;
+            const service = new StealthService(appContext, filteringLog);
 
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'Referer',
@@ -144,8 +152,8 @@ describe('Stealth service', () => {
         });
 
         it('checks block chrome client data', () => {
-            config.blockChromeClientData = true;
-            const service = new StealthService(config, filteringLog);
+            appContext.configuration.settings.stealth.blockChromeClientData = true;
+            const service = new StealthService(appContext, filteringLog);
 
             expect(service.processRequestHeaders(getContextWithHeaders([{
                 name: 'X-Client-Data',
@@ -154,8 +162,8 @@ describe('Stealth service', () => {
         });
 
         it('checks send-do-not-track', () => {
-            config.sendDoNotTrack = true;
-            const service = new StealthService(config, filteringLog);
+            appContext.configuration.settings.stealth.sendDoNotTrack = true;
+            const service = new StealthService(appContext, filteringLog);
 
             const context = getContextWithHeaders([]);
 
@@ -168,8 +176,8 @@ describe('Stealth service', () => {
         });
 
         it('checks global GPC value in the navigator', () => {
-            config.sendDoNotTrack = true;
-            const service = new StealthService(config, filteringLog);
+            appContext.configuration.settings.stealth.sendDoNotTrack = true;
+            const service = new StealthService(appContext, filteringLog);
 
             // Here we check that the function is written correctly in the string,
             // to avoid changing its form to a lambda function, for example.

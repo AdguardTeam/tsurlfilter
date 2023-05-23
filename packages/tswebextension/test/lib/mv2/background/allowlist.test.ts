@@ -1,7 +1,7 @@
 import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
 import { AllowlistApi } from '@lib/mv2/background/allowlist';
 import { engineApi } from '@lib/mv2/background/engine-api';
-import { getConfigFixture } from '../../../fixtures/config';
+import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
 describe('Allowlist Api', () => {
     let allowlistApi: AllowlistApi;
@@ -20,7 +20,7 @@ describe('Allowlist Api', () => {
         ];
 
         it.each(cases)('parses $input to $expected', ({ input, expected }) => {
-            const config = getConfigFixture();
+            const config = getConfigurationMv2Fixture();
 
             config.allowlist = input;
 
@@ -66,7 +66,7 @@ describe('Allowlist Api', () => {
             inverted,
             expected,
         }) => {
-            const config = getConfigFixture();
+            const config = getConfigurationMv2Fixture();
 
             config.allowlist = ['example.com'];
             config.settings.allowlistEnabled = enabled;
@@ -124,7 +124,7 @@ describe('Allowlist Api', () => {
             allowlist,
             expected,
         }) => {
-            const config = getConfigFixture();
+            const config = getConfigurationMv2Fixture();
 
             config.allowlist = allowlist;
             config.settings.allowlistEnabled = true;

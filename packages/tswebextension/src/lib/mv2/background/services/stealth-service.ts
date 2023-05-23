@@ -1,4 +1,4 @@
-import { RequestType } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { findHeaderByName, removeHeader } from '../utils/headers';
 import {
@@ -10,7 +10,8 @@ import {
     isThirdPartyRequest,
 } from '../../../common';
 
-import { RequestContext } from '../request';
+import type { RequestContext } from '../request';
+import type { AppContext } from '../context';
 
 /**
  * Stealth action bitwise masks used on the background page and on the filtering log page.
@@ -69,26 +70,32 @@ export class StealthService {
     ];
 
     /**
-     * Configuration.
-     */
-    private readonly config: StealthConfig;
-
-    /**
      * Filtering logger.
      */
     private readonly filteringLog: FilteringLogInterface;
 
     /**
+     * App context.
+     */
+    private readonly appContext: AppContext;
+
+    /**
+     * Configuration.
+     *
+     * @returns App Stealth configuration or undefined.
+     */
+    private get config(): StealthConfig | undefined {
+        return this.appContext.configuration?.settings.stealth;
+    }
+
+    /**
      * Constructor.
      *
-     * @param config Configuration.
+     * @param appContext App context.
      * @param filteringLog Filtering log.
      */
-    constructor(
-        config: StealthConfig,
-        filteringLog: FilteringLogInterface,
-    ) {
-        this.config = config;
+    constructor(appContext: AppContext, filteringLog: FilteringLogInterface) {
+        this.appContext = appContext;
         this.filteringLog = filteringLog;
     }
 
@@ -100,11 +107,11 @@ export class StealthService {
     public getCookieRulesTexts(): string[] {
         const result: string[] = [];
 
-        if (this.config.selfDestructFirstPartyCookies) {
+        if (this.config?.selfDestructFirstPartyCookies) {
             result.push(StealthService.generateCookieRuleText(this.config.selfDestructFirstPartyCookiesTime));
         }
 
-        if (this.config.selfDestructThirdPartyCookies) {
+        if (this.config?.selfDestructThirdPartyCookies) {
             result.push(StealthService.generateCookieRuleText(this.config.selfDestructThirdPartyCookiesTime, true));
         }
 
@@ -127,7 +134,7 @@ export class StealthService {
         }
 
         // Remove referrer for third-party requests
-        if (this.config.hideReferrer) {
+        if (this.config?.hideReferrer) {
             const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
             if (refHeader
                 && refHeader.value
@@ -139,7 +146,7 @@ export class StealthService {
 
         // Hide referrer in case of search engine is referrer
         const isMainFrame = requestType === RequestType.Document;
-        if (this.config.hideSearchQueries && isMainFrame) {
+        if (this.config?.hideSearchQueries && isMainFrame) {
             const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
             if (refHeader
                 && refHeader.value
@@ -151,14 +158,14 @@ export class StealthService {
         }
 
         // Remove X-Client-Data header
-        if (this.config.blockChromeClientData) {
+        if (this.config?.blockChromeClientData) {
             if (removeHeader(requestHeaders, StealthService.HEADERS.X_CLIENT_DATA)) {
                 stealthActions |= StealthActions.BlockChromeClientData;
             }
         }
 
         // Adding Do-Not-Track (DNT) header
-        if (this.config.sendDoNotTrack) {
+        if (this.config?.sendDoNotTrack) {
             requestHeaders.push(StealthService.HEADER_VALUES.DO_NOT_TRACK);
             requestHeaders.push(StealthService.HEADER_VALUES.GLOBAL_PRIVACY_CONTROL);
             stealthActions |= StealthActions.SendDoNotTrack;
@@ -184,7 +191,7 @@ export class StealthService {
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        if (this.config.sendDoNotTrack) {
+        if (this.config?.sendDoNotTrack) {
             return `;(function ${StealthHelper.setDomSignal.toString()})();`;
         }
 

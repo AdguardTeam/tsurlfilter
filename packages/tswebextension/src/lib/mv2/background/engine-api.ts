@@ -84,7 +84,7 @@ export class EngineApi implements EngineApiInterface {
         } = configuration;
 
         allowlistApi.configure(configuration);
-        await stealthApi.configure(configuration);
+
         documentBlockingService.configure(configuration);
 
         const lists: StringRuleList[] = [];

@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [0.2.0] - 2023-05-23
+
+### Added
+- New MV2 API methods for configuration updating without engine restart: `setFilteringEnabled`,`setCollectHitStats`, `setStealthModeEnabled`, `setSelfDestructFirstPartyCookies`, `setSelfDestructThirdPartyCookies`, `setSelfDestructThirdPartyCookies`, `setSelfDestructFirstPartyCookiesTime`, `setSelfDestructThirdPartyCookiesTime`, `setHideReferrer`, `setHideSearchQueries`, `setBlockChromeClientData`, `setSendDoNotTrack`, `setBlockWebRTC`.
+
+### Changed
+- Updated `getMessageHandler` API method return type.
+- `start`, `update` and `setFilteringEnabled` API methods flush browser in-memory cache. This change improve filtering on pages with service workers and inactive tabs.
 
 ### Fixed
-
+- Stealth module correctly sets browser privacy network settings based on `blockWebRTC`, `stealthModeEnabled` and `filteringEnabled` options
 - unique `eventId` for `FilteringEventType.JsInject` events
 
 

@@ -1,5 +1,4 @@
 /* eslint-disable class-methods-use-this */
-
 import { appContext } from './context';
 import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
@@ -7,7 +6,7 @@ import { tabsApi } from './tabs';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects/redirects-service';
 
-import { messagesApi } from './messages-api';
+import { messagesApi, type MessageHandlerMV2 } from './messages-api';
 import {
     type AppInterface,
     defaultFilteringLog,
@@ -23,26 +22,17 @@ import { Assistant } from './assistant';
 import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
-
-export interface ManifestV2AppInterface extends AppInterface<ConfigurationMV2, ConfigurationMV2Context, void> {
-    /**
-     * Returns message handler.
-     */
-    getMessageHandler: () => typeof messagesApi.handleMessage;
-
-    /**
-     * Sets prebuild local script rules.
-     *
-     * @see {@link LocalScriptRulesService}
-     * @param localScriptRules JSON object with pre-build JS rules.
-     */
-    setLocalScriptRules: (rules: LocalScriptRules) => void;
-}
+import { stealthApi } from './stealth-api';
 
 /**
  * App implementation for MV2.
  */
-export class TsWebExtension implements ManifestV2AppInterface {
+export class TsWebExtension implements AppInterface<
+ConfigurationMV2,
+ConfigurationMV2Context,
+void,
+MessageHandlerMV2
+> {
     /**
      * Fires on filtering log event.
      */
@@ -74,9 +64,14 @@ export class TsWebExtension implements ManifestV2AppInterface {
     /**
      * Gets app configuration context.
      *
+     * @throws Error if value not set.
      * @returns True if app started, else false.
      */
-    public get configuration(): ConfigurationMV2Context | undefined {
+    public get configuration(): ConfigurationMV2Context {
+        if (!appContext.configuration) {
+            throw new Error('Configuration not set!');
+        }
+
         return appContext.configuration;
     }
 
@@ -85,7 +80,7 @@ export class TsWebExtension implements ManifestV2AppInterface {
      *
      * @param value Status value.
      */
-    public set configuration(value: ConfigurationMV2Context | undefined) {
+    public set configuration(value: ConfigurationMV2Context) {
         appContext.configuration = value;
     }
 
@@ -102,12 +97,16 @@ export class TsWebExtension implements ManifestV2AppInterface {
      * Initializes {@link EngineApi} with passed {@link configuration}.
      * Starts request processing via {@link WebRequestApi} and tab tracking via {@link tabsApi}.
      *
+     * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
+     *
      * @param configuration App configuration.
      *
      * @throws Error if configuration is not valid.
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
         configurationMV2Validator.parse(configuration);
+
+        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
         logger.setVerbose(configuration.verbose);
 
@@ -119,8 +118,10 @@ export class TsWebExtension implements ManifestV2AppInterface {
         WebRequestApi.start();
         Assistant.assistantUrl = configuration.settings.assistantUrl;
 
+        await WebRequestApi.flushMemoryCache();
+        await stealthApi.updateWebRtcPrivacyPermissions();
+
         this.isStarted = true;
-        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
     }
 
     /**
@@ -136,6 +137,8 @@ export class TsWebExtension implements ManifestV2AppInterface {
      * Re-initializes {@link EngineApi} with passed {@link configuration}
      * and update tabs main frame rules based on new engine state.
      *
+     * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
+     *
      * Requires app is started.
      *
      * @param configuration App configuration.
@@ -149,12 +152,15 @@ export class TsWebExtension implements ManifestV2AppInterface {
 
         configurationMV2Validator.parse(configuration);
 
+        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
+
         logger.setVerbose(configuration.verbose);
 
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();
 
-        this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
+        await WebRequestApi.flushMemoryCache();
+        await stealthApi.updateWebRtcPrivacyPermissions();
     }
 
     /**
@@ -184,13 +190,13 @@ export class TsWebExtension implements ManifestV2AppInterface {
         return engineApi.getRulesCount();
     }
 
-    // TODO: types
     /**
-     * Returns message handler for MV2.
+     * Returns a message handler that will listen to internal messages,
+     * for example: message for get computed css for content-script.
      *
-     * @returns Message handler.
+     * @returns Messages handler.
      */
-    public getMessageHandler(): typeof messagesApi.handleMessage {
+    public getMessageHandler(): MessageHandlerMV2 {
         return messagesApi.handleMessage;
     }
 
@@ -203,6 +209,137 @@ export class TsWebExtension implements ManifestV2AppInterface {
      */
     public setLocalScriptRules(localScriptRules: LocalScriptRules): void {
         localScriptRulesService.setLocalScriptRules(localScriptRules);
+    }
+
+    /**
+     * Updates `filteringEnabled` configuration value without re-initialization of engine.
+     *
+     * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isFilteringEnabled `filteringEnabled` config value.
+     */
+    public async setFilteringEnabled(isFilteringEnabled: boolean): Promise<void> {
+        this.configuration.settings.filteringEnabled = isFilteringEnabled;
+
+        await WebRequestApi.flushMemoryCache();
+        await stealthApi.updateWebRtcPrivacyPermissions();
+    }
+
+    /**
+     * Updates `collectStats` configuration value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isCollectStats `collectStats` config value.
+     */
+    public setCollectHitStats(isCollectStats: boolean): void {
+        this.configuration.settings.collectStats = isCollectStats;
+    }
+
+    /**
+     * Updates `stealthModeEnabled` configuration value without re-initialization of engine.
+     * Also updates webRTC privacy.network settings on demand.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isStealthModeEnabled `stealthModeEnabled` config value.
+     */
+    public async setStealthModeEnabled(isStealthModeEnabled: boolean): Promise<void> {
+        this.configuration.settings.stealthModeEnabled = isStealthModeEnabled;
+
+        await stealthApi.updateWebRtcPrivacyPermissions();
+    }
+
+    /**
+     * Updates `selfDestructFirstPartyCookies` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isSelfDestructFirstPartyCookies `selfDestructFirstPartyCookies` stealth config value.
+     */
+    public setSelfDestructFirstPartyCookies(isSelfDestructFirstPartyCookies: boolean): void {
+        this.configuration.settings.stealth.selfDestructFirstPartyCookies = isSelfDestructFirstPartyCookies;
+    }
+
+    /**
+     * Updates `selfDestructThirdPartyCookies` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isSelfDestructThirdPartyCookies `selfDestructThirdPartyCookies` stealth config value.
+     */
+    public setSelfDestructThirdPartyCookies(isSelfDestructThirdPartyCookies: boolean): void {
+        this.configuration.settings.stealth.selfDestructThirdPartyCookies = isSelfDestructThirdPartyCookies;
+    }
+
+    /**
+     * Updates `selfDestructFirstPartyCookiesTime` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param selfDestructFirstPartyCookiesTime `selfDestructFirstPartyCookiesTime` stealth config value.
+     */
+    public setSelfDestructFirstPartyCookiesTime(selfDestructFirstPartyCookiesTime: number): void {
+        this.configuration.settings.stealth.selfDestructFirstPartyCookiesTime = selfDestructFirstPartyCookiesTime;
+    }
+
+    /**
+     * Updates `selfDestructThirdPartyCookiesTime` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param selfDestructThirdPartyCookiesTime `selfDestructThirdPartyCookiesTime` stealth config value.
+     */
+    public setSelfDestructThirdPartyCookiesTime(selfDestructThirdPartyCookiesTime: number): void {
+        this.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = selfDestructThirdPartyCookiesTime;
+    }
+
+    /**
+     * Updates `hideReferrer` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isHideReferrer `isHideReferrer` stealth config value.
+     */
+    public setHideReferrer(isHideReferrer: boolean): void {
+        this.configuration.settings.stealth.hideReferrer = isHideReferrer;
+    }
+
+    /**
+     * Updates `hideSearchQueries` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     */
+    public setHideSearchQueries(isHideSearchQueries: boolean): void {
+        this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
+    }
+
+    /**
+     * Updates `blockChromeClientData` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     */
+    public setBlockChromeClientData(isBlockChromeClientData: boolean): void {
+        this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
+    }
+
+    /**
+     * Updates `sendDoNotTrack` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     */
+    public setSendDoNotTrack(isSendDoNotTrack: boolean): void {
+        this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
+    }
+
+    /**
+     * Updates `blockWebRTC` stealth config value without re-initialization of engine.
+     * Also updates webRTC privacy.network settings on demand.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     */
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
+        this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
+
+        await stealthApi.updateWebRtcPrivacyPermissions();
     }
 
     /**

@@ -6,7 +6,7 @@ import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-err
 
 import FiltersApi, { UpdateStaticFiltersResult } from './filters-api';
 import UserRulesApi, { ConversionResult } from './user-rules-api';
-import MessagesApi, { MessagesHandlerType } from './messages-api';
+import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { TabsApi, tabsApi } from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
 import { engineApi } from './engine-api';
@@ -39,7 +39,12 @@ export type {
  * adding/editing/deleting custom filters or custom rules,
  * starting/stopping declarative filtering log.
  */
-export class TsWebExtension implements AppInterface<ConfigurationMV3, ConfigurationMV3Context, ConfigurationResult> {
+export class TsWebExtension implements AppInterface<
+ConfigurationMV3,
+ConfigurationMV3Context,
+ConfigurationResult,
+MessagesHandlerMV3
+> {
     /**
      * Fires on filtering log event.
      */
@@ -316,7 +321,7 @@ export class TsWebExtension implements AppInterface<ConfigurationMV3, Configurat
      *
      * @returns Messages handler.
      */
-    public getMessageHandler(): MessagesHandlerType {
+    public getMessageHandler(): MessagesHandlerMV3 {
         // Keep app context when handle message.
         const messagesApi = new MessagesApi(this);
         return messagesApi.handleMessage;

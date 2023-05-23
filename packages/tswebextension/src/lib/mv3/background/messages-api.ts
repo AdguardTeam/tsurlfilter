@@ -15,7 +15,7 @@ import {
 } from './messages';
 import { Assistant } from './assistant';
 
-export type MessagesHandlerType = (
+export type MessagesHandlerMV3 = (
     message: MessageMV3,
     sender: chrome.runtime.MessageSender,
 ) => Promise<unknown>;
@@ -23,7 +23,7 @@ export type MessagesHandlerType = (
 /**
  * MessageApi knows how to handle {@link MessageMV3}.
  */
-export default class MessagesApi {
+export class MessagesApi {
     /**
      * Stores link to {@link TsWebExtension} app to save context.
      */

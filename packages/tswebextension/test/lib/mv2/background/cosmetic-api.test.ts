@@ -3,7 +3,7 @@ import { localScriptRulesService } from '@lib/mv2/background/services/local-scri
 
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 import { USER_FILTER_ID } from '@lib/common/constants';
-import localScriptRules from '../../../fixtures/local_script_rules';
+import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
 
 /**
  * Creates cosmetic result for elemhide rules.
@@ -403,7 +403,7 @@ describe('cosmetic api', () => {
             ];
 
             // Emulate Firefox AMO case
-            localScriptRulesService.setLocalScriptRules(localScriptRules);
+            localScriptRulesService.setLocalScriptRules(getLocalScriptRulesFixture());
 
             const firefoxScriptText = CosmeticApi.getScriptText(customFilterRules);
 

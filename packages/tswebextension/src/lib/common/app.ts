@@ -1,10 +1,16 @@
 import { FilteringLogEvent } from './filtering-log';
 import { EventChannelInterface } from './utils';
 
-export interface AppInterface<TConfiguration, TConfigurationContext, TConfigurationResult> {
+export interface AppInterface<
+    TConfiguration,
+    TConfigurationContext,
+    TConfigurationResult,
+    TMessageHandler,
+> {
     /**
      * Configuration context.
      */
+    // TODO: make property required
     configuration?: TConfigurationContext;
 
     /**
@@ -54,5 +60,13 @@ export interface AppInterface<TConfiguration, TConfigurationContext, TConfigurat
     /**
      * Returns number of active rules.
      */
-    getRulesCount(): number,
+    getRulesCount: () => number;
+
+    /**
+     * Returns a message handler that will listen to internal messages,
+     * for example: message for get computed css for content-script.
+     *
+     * @returns Messages handler.
+     */
+    getMessageHandler: () => TMessageHandler;
 }

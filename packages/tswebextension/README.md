@@ -49,12 +49,25 @@ Table of content:
         - [onFilteringLogEvent](#onfilteringlogevent)
         - [isStarted](#isstarted)
       - [Methods](#methods)
-        - [start](#start)
-        - [configure](#configure)
-        - [stop](#stop)
-        - [openAssistant](#openassistant)
-        - [closeAssistant](#closeassistant)
-        - [getRulesCount](#getrulescount)
+        - [start()](#start)
+        - [configure()](#configure)
+        - [stop()](#stop)
+        - [openAssistant()](#openassistant)
+        - [closeAssistant()](#closeassistant)
+        - [getRulesCount()](#getrulescount)
+        - [getMessageHandler()](#getmessagehandler)
+        - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
+        - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+        - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
+        - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
+        - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
+        - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
+        - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
+        - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
+        - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
+        - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
+        - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
+        - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
   - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
     - [events](#events)
       - [sendRequest](#sendrequest)
@@ -74,8 +87,8 @@ Table of content:
     - [properties](#properties-1)
       - [onLogEvent](#onlogevent)
     - [methods](#methods-1)
-      - [addEventListener](#addeventlistener)
-      - [publishEvent](#publishevent)
+      - [addEventListener()](#addeventlistener)
+      - [publishEvent()](#publishevent)
   - [Development](#development)
 
 
@@ -383,39 +396,151 @@ Is app started.
 
 #### Methods
 
-##### start
+##### start()
 
 type: `(configuration: TConfiguration) => Promise<TConfigurationResult>`
 
 Starts the app.
 
-##### configure
+Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
+
+##### configure()
 
 type: `(configuration: TConfiguration) => Promise<TConfigurationResult>`
 
 Updates the configuration.
 
-##### stop
+Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
+
+##### stop()
 
 type: `() => Promise<void>`
 
 Stops the app.
 
-##### openAssistant
+##### openAssistant()
 
 type: `(tabId: number) => void`
 
 Opens the assistant in the specified tab.
 
-##### closeAssistant
+##### closeAssistant()
 
 type: `(tabId: number) => void`
 
-##### getRulesCount
+##### getRulesCount()
 
 type: `() => number`
 
 Returns number of active rules.
+
+##### getMessageHandler()
+
+type: `() => MessageHandlerMV2 | MessageHandlerMV3`
+
+Returns a message handler that will listen to internal messages, for example: message for get computed css for content-script.
+
+##### setFilteringEnabled() (MV2 only)
+
+type: `(isFilteringEnabled: boolean) => Promise<void>`
+
+Updates [filteringEnabled](#filteringenabled) configuration value without re-initialization of engine.
+
+Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setCollectHitStats() (MV2 only)
+
+type: `(isCollectStats: boolean) => void`
+
+Updates [collectStats](#collectstats) configuration value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setStealthModeEnabled() (MV2 only)
+
+type: `(value: isStealthModeEnabled) => Promise<void>`
+
+Updates [stealthModeEnabled](#stealthmodeenabled) configuration value without re-initialization of engine.
+
+Also updates webRTC privacy.network settings on demand.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setSelfDestructFirstPartyCookies() (MV2 only)
+
+type: `(isSelfDestructFirstPartyCookies: boolean) => void`
+
+Updates [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setSelfDestructThirdPartyCookies() (MV2 only)
+
+type: `(isSelfDestructThirdPartyCookies: boolean) => void`
+
+Updates [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setSelfDestructFirstPartyCookiesTime() (MV2 only)
+
+type: `(selfDestructFirstPartyCookiesTime: number) => void`
+
+Updates [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setSelfDestructThirdPartyCookiesTime() (MV2 only)
+
+type: `(selfDestructThirdPartyCookiesTime: number) => void`
+
+Updates [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setHideReferrer() (MV2 only)
+
+type: `(isHideReferrer: boolean) => void`
+
+Updates [hideReferrer](#hidereferrer) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setHideSearchQueries() (MV2 only)
+
+type: `(isHideSearchQueries: boolean) => void`
+
+Updates [hideSearchQueries](#hidesearchqueries) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setBlockChromeClientData() (MV2 only)
+
+type: `(isBlockChromeClientData: boolean) => void`
+
+Updates [blockChromeClientData](#blockchromeclientdata) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setSendDoNotTrack() (MV2 only)
+
+type: `(isSendDoNotTrack: boolean) => void`
+
+Updates [sendDoNotTrack](#senddonottrack) stealth config value without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
+##### setBlockWebRTC() (MV2 only)
+
+type: `(isBlockWebRTC: boolean) => Promise<void>`
+
+Updates [blockWebRTC](#blockwebrtc) stealth config value without re-initialization of engine.
+
+Also updates webRTC privacy.network settings on demand.
+
+Throws error if [configuration](#configuration) is not set.
 
 ## Filtering Log API (MV2 only)
 
@@ -516,7 +641,7 @@ type: `EventChannel<FilteringLogEvent>`
 Event channel for [filtering log events](#filtering-log-api-mv2-only).
 
 ### methods
-#### addEventListener
+#### addEventListener()
 
 type: 
 ```
@@ -525,7 +650,7 @@ type:
 
 Registers a listener for the specified filtering event type.
 
-#### publishEvent
+#### publishEvent()
 
 type:
 ```

@@ -242,6 +242,22 @@ export class WebRequestApi {
     }
 
     /**
+     * Flush browser in-memory cache.
+     *
+     * This function is called after an engine update or filtering switch to ensure
+     * that new rules are applied to requests that may have been cached by the browser.
+     */
+    public static async flushMemoryCache(): Promise<void> {
+        try {
+            await browser.webRequest.handlerBehaviorChanged();
+        } catch (e) {
+            // TODO: use getErrorMessage instead
+            const message = e instanceof Error ? e.message : String(e);
+            logger.error(message);
+        }
+    }
+
+    /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
      * @param details Request details.
