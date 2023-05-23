@@ -6,6 +6,7 @@ This repo contains typescript packages implementing AdGuard filtering engine.
 
 - tsurlfilter
 - tswebextension
+- agtree
 - examples/manifest-v2
 - examples/manifest-v3
 - examples/tswebextension-example

@@ -1,0 +1,10 @@
+*.log
+.DS_Store
+.swc
+.vscode
+coverage
+dist
+node_modules
+
+# Release file for npm.
+agtree.tgz
