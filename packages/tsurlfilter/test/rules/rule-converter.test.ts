@@ -553,15 +553,15 @@ describe('Ubo cosmetic rule with :matches-path(...)', () => {
             },
             {
                 source: 'blog.livedoor.jp##:matches-path(/sexykpopidol) #containerWrap > #container > .blog-title-outer + #content.hfeed',
-                expected: '[$path=/sexykpopidol]blog.livedoor.jp## #containerWrap > #container > .blog-title-outer + #content.hfeed',
+                expected: '[$path=/sexykpopidol]blog.livedoor.jp###containerWrap > #container > .blog-title-outer + #content.hfeed',
             },
             {
                 source: String.raw`www.google.*##:not(:matches-path(/\/search\?q=.*?tbm=shop/)) #test`,
-                expected: String.raw`[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*## #test`,
+                expected: String.raw`[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*###test`,
             },
             {
                 source: String.raw`exapmle.com##:matches-path(/\/[a|b|,]\/page\.html/) #test`,
-                expected: String.raw`[$path=/\\/\[a|b|\,\]\\/page\\.html/]exapmle.com## #test`,
+                expected: String.raw`[$path=/\\/\[a|b|\,\]\\/page\\.html/]exapmle.com###test`,
             },
             {
                 source: 'example.com#@#:not(:matches-path(/page))h1:style(background-color: blue !important)',

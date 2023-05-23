@@ -633,7 +633,9 @@ export class RuleConverter {
             isReversed ? reversedMatchesPathStartIndex : matchesPathStartIndex,
         );
 
-        const expressionTail = ruleText.slice(matchPathOperatorCloseBracketIndex + (isReversed ? 2 : 1));
+        const expressionTail = ruleText
+            .slice(matchPathOperatorCloseBracketIndex + (isReversed ? 2 : 1))
+            .trim();
 
         let path = ruleText.slice(pathStartIndex, matchPathOperatorCloseBracketIndex);
 
