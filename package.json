@@ -19,12 +19,19 @@
   "scripts": {
     "lint": "lerna run --parallel lint"
   },
-  "workspaces": [
-    "packages/*",
-    "packages/examples/*",
-    "packages/tsurlfilter/test/builders/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "packages/examples/*",
+      "packages/tsurlfilter/test/builders/*"
+    ],
+    "nohoist": [
+      "**/typescript",
+      "**/rollup",
+      "**/@typescript-eslint/**"
+    ] 
+  },
   "devDependencies": {
-    "lerna": "6.2.X"
+    "lerna": "^6.6.2"
   }
 }
