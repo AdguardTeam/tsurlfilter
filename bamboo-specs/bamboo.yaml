@@ -39,3 +39,18 @@
 
 ---
 !include 'adguard-api-permissions.yaml'
+
+---
+!include 'agtree-test.yaml'
+
+---
+!include 'agtree-increment.yaml'
+
+---
+!include 'agtree-build.yaml'
+
+---
+!include 'agtree-deploy.yaml'
+
+---
+!include 'agtree-permissions.yaml'
