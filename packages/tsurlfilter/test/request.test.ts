@@ -89,4 +89,16 @@ describe('Creating request', () => {
         expect(request.subdomains.sort()).toEqual(['localhost'].sort());
         expect(request.sourceSubdomains.sort()).toEqual(['localhost.test', 'test'].sort());
     });
+
+    it('handles empty hostname', () => {
+        expect(() => new Request('', 'example.com', RequestType.Other)).not.toThrow();
+
+        try {
+            // @ts-ignore
+            new Request(undefined, 'example.com', RequestType.Other);
+        } catch (e) {
+            expect(e).toBeInstanceOf(TypeError);
+            expect(e.message).toMatch(/Invalid request url:/);
+        }
+    });
 });

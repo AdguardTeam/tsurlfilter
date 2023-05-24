@@ -128,6 +128,10 @@ export class Request {
      * @throws
      */
     constructor(url: string, sourceUrl: string | null, requestType: RequestType) {
+        if (typeof url !== 'string') {
+            throw new TypeError(`Invalid request url: ${url}`);
+        }
+
         this.url = url;
         this.requestType = requestType;
 
