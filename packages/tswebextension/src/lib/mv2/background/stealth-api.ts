@@ -192,22 +192,25 @@ export class StealthApi {
                 });
             }
         } catch (e) {
-            logger.error(getErrorMessage(e));
+            logger.error(`Error updating privacy.network settings: ${getErrorMessage(e)}`);
         }
 
-        try {
-            if (webRTCDisabled) {
-                await browser.privacy.network.peerConnectionEnabled.set({
-                    value: false,
-                    scope: 'regular',
-                });
-            } else {
-                await browser.privacy.network.peerConnectionEnabled.clear({
-                    scope: 'regular',
-                });
+        // privacy.network.peerConnectionEnabled is currently only supported in Firefox
+        if (typeof browser.privacy.network.peerConnectionEnabled === 'object') {
+            try {
+                if (webRTCDisabled) {
+                    await browser.privacy.network.peerConnectionEnabled.set({
+                        value: false,
+                        scope: 'regular',
+                    });
+                } else {
+                    await browser.privacy.network.peerConnectionEnabled.clear({
+                        scope: 'regular',
+                    });
+                }
+            } catch (e) {
+                logger.error(`Error updating privacy.network settings: ${getErrorMessage(e)}`);
             }
-        } catch (e) {
-            logger.error(getErrorMessage(e));
         }
     }
 
