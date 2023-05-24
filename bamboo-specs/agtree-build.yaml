@@ -41,7 +41,7 @@ Build:
             npx lerna bootstrap
 
             # Build AGTree with Rollup
-            npx lerna run --scope @adguard/agtree build -- ${bamboo.varsYarn}
+            npx lerna run --scope @adguard/agtree build
 
             # Pack the AGTree package into a tarball
             cd packages/agtree/
