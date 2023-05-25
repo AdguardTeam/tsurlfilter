@@ -37,7 +37,7 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap
+            npx lerna bootstrap -- ${bamboo.varsYarn}
             npx lerna run --scope @adguard/api build
 
             cd packages/adguard-api/

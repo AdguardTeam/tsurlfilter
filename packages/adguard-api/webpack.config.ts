@@ -37,23 +37,17 @@ export default {
                 exclude: /node_modules/,
                 use: [
                     {
-                        loader: "babel-loader",
+                        loader: "swc-loader",
                         options: {
-                            presets: [
-                                [
-                                    "@babel/preset-env",
-                                    {
-                                        targets: {
-                                            chrome: "79",
-                                            firefox: "78",
-                                            opera: "66",
-                                        },
-                                        useBuiltIns: "usage",
-                                        corejs: { version: 3, proposals: true },
-                                    },
-                                ],
-                                "@babel/preset-typescript",
-                            ],
+                            env: {
+                                targets: {
+                                    chrome: 79,
+                                    firefox: 78,
+                                    opera: 66,
+                                },
+                                mode: "usage",
+                                coreJs: "3.30",
+                            },
                         },
                     },
                 ],

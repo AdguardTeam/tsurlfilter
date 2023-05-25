@@ -6,6 +6,7 @@ This repo contains typescript packages implementing AdGuard filtering engine.
 
 - tsurlfilter
 - tswebextension
+- adguard-api
 - agtree
 - examples/manifest-v2
 - examples/manifest-v3
@@ -23,6 +24,11 @@ See details in [`./packages/tsurlfilter`](/packages/tsurlfilter/README.md).
 
 TSWebExtension is a TypeScript library that wraps webextension api for tsurlfilter library. 
 See details in [`./packages/tswebextension`](/packages/tswebextension/README.md).
+
+### AdGuard API
+
+AdGuard API is a TypeScript filtering library that provides filter list management, ad filtering via [@adguard/tswebextension](/packages/tswebextension/README.md).
+See details in [`./packages/adguard-api`](/packages/adguard-api/README.md).
 
 ### Sample extensions
 

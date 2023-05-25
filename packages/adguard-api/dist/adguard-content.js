@@ -1362,7 +1362,7 @@ var browser_polyfill = __webpack_require__(2565);
 var browser_polyfill_default = /*#__PURE__*/__webpack_require__.n(browser_polyfill);
 ;// CONCATENATED MODULE: ../../node_modules/@adguard/extended-css/dist/extended-css.esm.js
 /**
- * @adguard/extended-css - v2.0.51 - Thu Feb 16 2023
+ * @adguard/extended-css - v2.0.52 - Fri Apr 14 2023
  * https://github.com/AdguardTeam/ExtendedCss#homepage
  * Copyright (c) 2023 AdGuard. Licensed GPL-3.0
  */
@@ -6673,12 +6673,6 @@ const isNumber = arg => {
   return typeof arg === 'number' && !Number.isNaN(arg);
 };
 
-const isSupported = typeof window.requestAnimationFrame !== 'undefined';
-const timeout = isSupported ? requestAnimationFrame : window.setTimeout;
-const deleteTimeout = isSupported ? cancelAnimationFrame : clearTimeout;
-const perf = isSupported ? performance : Date;
-const DEFAULT_THROTTLE_DELAY_MS = 150;
-
 /**
  * The purpose of ThrottleWrapper is to throttle calls of the function
  * that applies ExtendedCss rules. The reasoning here is that the function calls
@@ -6686,102 +6680,75 @@ const DEFAULT_THROTTLE_DELAY_MS = 150;
  * We do not want to apply rules on every mutation so we use this helper to make sure
  * that there is only one call in the given amount of time.
  */
+
 class ThrottleWrapper {
   /**
-   * The provided callback should be executed twice in this time frame:
-   * very first time and not more often than throttleDelayMs for further executions.
-   *
-   * @see {@link ThrottleWrapper.run}
-   */
-
-  /**
    * Creates new ThrottleWrapper.
+   * The {@link callback} should be executed not more often than {@link ThrottleWrapper.THROTTLE_DELAY_MS}.
    *
-   * @param context ExtendedCss context.
    * @param callback The callback.
-   * @param throttleMs Throttle delay in ms.
    */
-  constructor(context, callback, throttleMs) {
-    this.context = context;
+  constructor(callback) {
     this.callback = callback;
-    this.throttleDelayMs = throttleMs || DEFAULT_THROTTLE_DELAY_MS;
-    this.wrappedCb = this.wrappedCallback.bind(this);
+    this.executeCallback = this.executeCallback.bind(this);
   }
   /**
-   * Wraps the callback (which supposed to be `applyRules`),
-   * needed to update `lastRunTime` and clean previous timeouts for proper execution of the callback.
-   *
-   * @param timestamp Timestamp.
+   * Calls the {@link callback} function and update bounded throttle wrapper properties.
    */
 
 
-  wrappedCallback(timestamp) {
-    this.lastRunTime = isNumber(timestamp) ? timestamp : perf.now(); // `timeoutId` can be requestAnimationFrame-related
-    // so cancelAnimationFrame() as deleteTimeout() needs the arg to be defined
+  executeCallback() {
+    this.lastRunTime = performance.now();
 
-    if (this.timeoutId) {
-      deleteTimeout(this.timeoutId);
-      delete this.timeoutId;
+    if (isNumber(this.timerId)) {
+      clearTimeout(this.timerId);
+      delete this.timerId;
     }
 
-    clearTimeout(this.timerId);
-    delete this.timerId;
-
-    if (this.callback) {
-      this.callback(this.context);
-    }
+    this.callback();
   }
   /**
-   * Indicates whether there is a scheduled callback.
+   * Schedules the {@link executeCallback} function execution via setTimeout.
+   * It may triggered by MutationObserver job which may occur too ofter, so we limit the function execution:
    *
-   * @returns True if scheduled callback exists.
-   */
-
-
-  hasPendingCallback() {
-    return isNumber(this.timeoutId) || isNumber(this.timerId);
-  }
-  /**
-   * Schedules the function which applies ExtendedCss rules before the next animation frame.
+   * 1. If {@link timerId} is set, ignore the call, because the function is already scheduled to be executed;
    *
-   * Wraps function execution into `timeout` — requestAnimationFrame or setTimeout.
-   * For the first time runs the function without any condition.
-   * As it may be triggered by any mutation which may occur too ofter, we limit the function execution:
-   * 1. If `elapsedTime` since last function execution is less then set `throttleDelayMs`,
-   * next function call is hold till the end of throttle interval (subtracting `elapsed` from `throttleDelayMs`);
-   * 2. Do nothing if triggered again but function call which is on hold has not yet started its execution.
+   * 2. If {@link lastRunTime} is set, we need to check the time elapsed time since the last call. If it is
+   * less than {@link ThrottleWrapper.THROTTLE_DELAY_MS}, we schedule the function execution after the remaining time.
+   * 
+   * Otherwise, we execute the function asynchronously to ensure that it is executed 
+   * in the correct order with respect to DOM events, by deferring its execution until after 
+   * those tasks have completed.
    */
 
 
   run() {
-    if (this.hasPendingCallback()) {
+    if (isNumber(this.timerId)) {
       // there is a pending execution scheduled
       return;
     }
 
-    if (typeof this.lastRunTime !== 'undefined') {
-      const elapsedTime = perf.now() - this.lastRunTime;
+    if (isNumber(this.lastRunTime)) {
+      const elapsedTime = performance.now() - this.lastRunTime;
 
-      if (elapsedTime < this.throttleDelayMs) {
-        this.timerId = window.setTimeout(this.wrappedCb, this.throttleDelayMs - elapsedTime);
+      if (elapsedTime < ThrottleWrapper.THROTTLE_DELAY_MS) {
+        this.timerId = window.setTimeout(this.executeCallback, ThrottleWrapper.THROTTLE_DELAY_MS - elapsedTime);
         return;
       }
     }
-
-    this.timeoutId = timeout(this.wrappedCb);
-  }
-  /**
-   * Returns timestamp for 'now'.
-   *
-   * @returns Timestamp.
-   */
+    /**
+     * We use `setTimeout` instead `requestAnimationFrame`
+     * here because requestAnimationFrame can be delayed for a long time
+     * when the browser saves battery or the engine is heavily loaded.
+     */
 
 
-  static now() {
-    return perf.now();
+    this.timerId = window.setTimeout(this.executeCallback);
   }
 
 }
+
+_defineProperty(ThrottleWrapper, "THROTTLE_DELAY_MS", 150);
 
 const LAST_EVENT_TIMEOUT_MS = 10;
 const IGNORED_EVENTS = ['mouseover', 'mouseleave', 'mouseenter', 'mouseout'];
@@ -6852,79 +6819,79 @@ class EventTracker {
 
 }
 
-const isEventListenerSupported = typeof window.addEventListener !== 'undefined';
+/**
+ * We are trying to limit the number of callback calls by not calling it on all kind of "hover" events.
+ * The rationale behind this is that "hover" events often cause attributes modification,
+ * but re-applying extCSS rules will be useless as these attribute changes are usually transient.
+ *
+ * @param mutations DOM elements mutation records.
+ * @returns True if all mutations are about attributes changes, otherwise false.
+ */
 
-const observeDocument = (context, callback) => {
-  // We are trying to limit the number of callback calls by not calling it on all kind of "hover" events.
-  // The rationale behind this is that "hover" events often cause attributes modification,
-  // but re-applying extCSS rules will be useless as these attribute changes are usually transient.
-  const shouldIgnoreMutations = mutations => {
-    // ignore if all mutations are about attributes changes
-    return mutations.every(m => m.type === 'attributes');
-  };
-
-  if (natives.MutationObserver) {
-    context.domMutationObserver = new natives.MutationObserver(mutations => {
-      if (!mutations || mutations.length === 0) {
-        return;
-      }
-
-      const eventTracker = new EventTracker();
-
-      if (eventTracker.isIgnoredEventType() && shouldIgnoreMutations(mutations)) {
-        return;
-      } // save instance of EventTracker to context
-      // for removing its event listeners on disconnectDocument() while mainDisconnect()
+function shouldIgnoreMutations(mutations) {
+  // ignore if all mutations are about attributes changes
+  return !mutations.some(m => m.type !== 'attributes');
+}
+/**
+ * Adds new {@link context.domMutationObserver} instance and connect it to document.
+ * 
+ * @param context ExtendedCss context.
+ */
 
 
-      context.eventTracker = eventTracker;
-      callback();
-    });
-    context.domMutationObserver.observe(document, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['id', 'class']
-    });
-  } else if (isEventListenerSupported) {
-    document.addEventListener('DOMNodeInserted', callback, false);
-    document.addEventListener('DOMNodeRemoved', callback, false);
-    document.addEventListener('DOMAttrModified', callback, false);
-  }
-};
-
-const disconnectDocument = (context, callback) => {
-  var _context$eventTracker;
-
-  if (context.domMutationObserver) {
-    context.domMutationObserver.disconnect();
-  } else if (isEventListenerSupported) {
-    document.removeEventListener('DOMNodeInserted', callback, false);
-    document.removeEventListener('DOMNodeRemoved', callback, false);
-    document.removeEventListener('DOMAttrModified', callback, false);
-  } // clean up event listeners
-
-
-  (_context$eventTracker = context.eventTracker) === null || _context$eventTracker === void 0 ? void 0 : _context$eventTracker.stopTracking();
-};
-
-const mainObserve = (context, mainCallback) => {
+function observeDocument(context) {
   if (context.isDomObserved) {
     return;
-  } // handle dynamically added elements
+  } // enable dynamically added elements handling
 
 
   context.isDomObserved = true;
-  observeDocument(context, mainCallback);
-};
-const mainDisconnect = (context, mainCallback) => {
+  context.domMutationObserver = new natives.MutationObserver(mutations => {
+    if (!mutations || mutations.length === 0) {
+      return;
+    }
+
+    const eventTracker = new EventTracker();
+
+    if (eventTracker.isIgnoredEventType() && shouldIgnoreMutations(mutations)) {
+      return;
+    } // save instance of EventTracker to context
+    // for removing its event listeners on disconnectDocument() while mainDisconnect()
+
+
+    context.eventTracker = eventTracker;
+    context.scheduler.run();
+  });
+  context.domMutationObserver.observe(document, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['id', 'class']
+  });
+}
+/**
+ * Disconnect from {@link context.domMutationObserver}.
+ * 
+ * @param context ExtendedCss context.
+ */
+
+function disconnectDocument(context) {
   if (!context.isDomObserved) {
     return;
-  }
+  } // disable dynamically added elements handling
+
 
   context.isDomObserved = false;
-  disconnectDocument(context, mainCallback);
-};
+
+  if (context.domMutationObserver) {
+    context.domMutationObserver.disconnect();
+  } // clean up event listeners
+
+
+  if (context.eventTracker) {
+    context.eventTracker.stopTracking();
+  }
+}
 
 const CONTENT_ATTR_PREFIX_REGEXP = /^("|')adguard.+?/;
 /**
@@ -7360,7 +7327,7 @@ const applyRule = (context, ruleData) => {
   let startTime;
 
   if (isDebuggingMode) {
-    startTime = ThrottleWrapper.now();
+    startTime = performance.now();
   }
 
   const {
@@ -7404,7 +7371,7 @@ const applyRule = (context, ruleData) => {
   });
 
   if (isDebuggingMode && startTime) {
-    const elapsedTimeMs = ThrottleWrapper.now() - startTime;
+    const elapsedTimeMs = performance.now() - startTime;
 
     if (!ruleData.timingStats) {
       ruleData.timingStats = new TimingStats();
@@ -7427,7 +7394,7 @@ const applyRules = context => {
   // this caused MutationObserver to call recursively
   // https://github.com/AdguardTeam/ExtendedCss/issues/81
 
-  mainDisconnect(context, context.mainCallback);
+  disconnectDocument(context);
   context.parsedRules.forEach(ruleData => {
     const nodes = applyRule(context, ruleData);
     Array.prototype.push.apply(newSelectedElements, nodes); // save matched elements to ruleData as linked to applied rule
@@ -7463,15 +7430,10 @@ const applyRules = context => {
   } // After styles are applied we can start observe again
 
 
-  mainObserve(context, context.mainCallback);
+  observeDocument(context);
   printTimingInfo(context);
 };
 
-/**
- * Throttle timeout for ThrottleWrapper to execute applyRules().
- */
-
-const APPLY_RULES_DELAY = 150;
 /**
  * Result of selector validation.
  */
@@ -7497,14 +7459,11 @@ class ExtendedCss {
    * @param configuration ExtendedCss configuration.
    */
   constructor(configuration) {
-    if (!isBrowserSupported()) {
-      logger.error('Browser is not supported by ExtendedCss');
-    }
-
     if (!configuration) {
       throw new Error('ExtendedCss configuration should be provided.');
     }
 
+    this.applyRulesCallbackListener = this.applyRulesCallbackListener.bind(this);
     this.context = {
       beforeStyleApplied: configuration.beforeStyleApplied,
       debug: false,
@@ -7512,8 +7471,14 @@ class ExtendedCss {
       isDomObserved: false,
       removalsStatistic: {},
       parsedRules: [],
-      mainCallback: () => {}
-    }; // at least 'styleSheet' or 'cssRules' should be provided
+      scheduler: new ThrottleWrapper(this.applyRulesCallbackListener)
+    }; // TODO: throw an error instead of logging and handle it in related products.
+
+    if (!isBrowserSupported()) {
+      logger.error('Browser is not supported by ExtendedCss');
+      return;
+    } // at least 'styleSheet' or 'cssRules' should be provided
+
 
     if (!configuration.styleSheet && !configuration.cssRules) {
       throw new Error("ExtendedCss configuration should have 'styleSheet' or 'cssRules' defined.");
@@ -7541,17 +7506,22 @@ class ExtendedCss {
     this.context.debug = configuration.debug || this.context.parsedRules.some(ruleData => {
       return ruleData.debug === DEBUG_PSEUDO_PROPERTY_GLOBAL_VALUE;
     });
-    this.applyRulesScheduler = new ThrottleWrapper(this.context, applyRules, APPLY_RULES_DELAY);
-    this.context.mainCallback = this.applyRulesScheduler.run.bind(this.applyRulesScheduler);
 
     if (this.context.beforeStyleApplied && typeof this.context.beforeStyleApplied !== 'function') {
       // eslint-disable-next-line max-len
       throw new Error(`Invalid configuration. Type of 'beforeStyleApplied' should be a function, received: '${typeof this.context.beforeStyleApplied}'`);
     }
+  }
+  /**
+   * Invokes {@link applyRules} function with current app context.
+   * 
+   * This method is bound to the class instance in the constructor because it is called
+   * in {@link ThrottleWrapper} and on the DOMContentLoaded event.
+   */
 
-    this.applyRulesCallbackListener = () => {
-      applyRules(this.context);
-    };
+
+  applyRulesCallbackListener() {
+    applyRules(this.context);
   }
   /**
    * Initializes ExtendedCss.
@@ -7589,7 +7559,7 @@ class ExtendedCss {
 
 
   dispose() {
-    mainDisconnect(this.context, this.context.mainCallback);
+    disconnectDocument(this.context);
     this.context.affectedElements.forEach(el => {
       revertStyle(el);
     });
@@ -7624,12 +7594,12 @@ class ExtendedCss {
       throw new Error('Selector should be defined as a string.');
     }
 
-    const start = ThrottleWrapper.now();
+    const start = performance.now();
 
     try {
       return extCssDocument.querySelectorAll(selector);
     } finally {
-      const end = ThrottleWrapper.now();
+      const end = performance.now();
 
       if (!noTiming) {
         logger.info(`[ExtendedCss] Elapsed: ${Math.round((end - start) * 1000)} μs.`);
@@ -8826,8 +8796,7 @@ initAssistant();
  *
  * You should have received a copy of the GNU General Public License
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
- */
-
+ */ 
 
 })();
 

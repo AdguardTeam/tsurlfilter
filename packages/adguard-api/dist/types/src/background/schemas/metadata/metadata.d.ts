@@ -87,15 +87,15 @@ export declare const metadataValidator: zod.ZodObject<{
         description: zod.ZodOptional<zod.ZodString>;
         name: zod.ZodOptional<zod.ZodString>;
     }, "strip", zod.ZodTypeAny, {
-        name?: string | undefined;
-        description?: string | undefined;
         tagId: number;
         keyword: string;
+        description?: string | undefined;
+        name?: string | undefined;
     }, {
-        name?: string | undefined;
-        description?: string | undefined;
         tagId: number;
         keyword: string;
+        description?: string | undefined;
+        name?: string | undefined;
     }>, "many">;
 }, "strip", zod.ZodTypeAny, {
     groups: {
@@ -120,10 +120,10 @@ export declare const metadataValidator: zod.ZodObject<{
         version: string;
     }[];
     tags: {
-        name?: string | undefined;
-        description?: string | undefined;
         tagId: number;
         keyword: string;
+        description?: string | undefined;
+        name?: string | undefined;
     }[];
 }, {
     groups: {
@@ -148,10 +148,10 @@ export declare const metadataValidator: zod.ZodObject<{
         version: string;
     }[];
     tags: {
-        name?: string | undefined;
-        description?: string | undefined;
         tagId: number;
         keyword: string;
+        description?: string | undefined;
+        name?: string | undefined;
     }[];
 }>;
 export type Metadata = zod.infer<typeof metadataValidator>;

@@ -21,6 +21,9 @@ module.exports = {
         'import/prefer-default-export': 'off',
         'jsdoc/require-param-type': 'off',
         'jsdoc/require-returns-type': 'off',
+        'jsdoc/no-undefined-types': 'off',
+        // TODO: enable and fix src
+        'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/require-file-overview': 'error',
     },

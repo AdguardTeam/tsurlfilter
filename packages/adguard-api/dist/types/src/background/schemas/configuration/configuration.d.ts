@@ -66,18 +66,18 @@ export declare const configurationValidator: zod.ZodObject<{
      */
     filterRulesUrl: zod.ZodString;
 }, "strip", zod.ZodTypeAny, {
-    allowlist?: string[] | undefined;
-    blocklist?: string[] | undefined;
-    rules?: string[] | undefined;
     filters: number[];
     filtersMetadataUrl: string;
     filterRulesUrl: string;
+    allowlist?: string[] | undefined;
+    blocklist?: string[] | undefined;
+    rules?: string[] | undefined;
 }, {
-    allowlist?: string[] | undefined;
-    blocklist?: string[] | undefined;
-    rules?: string[] | undefined;
     filters: number[];
     filtersMetadataUrl: string;
     filterRulesUrl: string;
+    allowlist?: string[] | undefined;
+    blocklist?: string[] | undefined;
+    rules?: string[] | undefined;
 }>;
 export type Configuration = zod.infer<typeof configurationValidator>;
