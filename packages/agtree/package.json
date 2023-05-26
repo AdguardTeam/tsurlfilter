@@ -13,12 +13,13 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/AdguardTeam/AGTree.git"
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/agtree"
     },
     "bugs": {
-        "url": "https://github.com/AdguardTeam/AGTree/issues"
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
     },
-    "homepage": "https://github.com/AdguardTeam/AGTree#readme",
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme",
     "type": "module",
     "main": "dist/agtree.cjs",
     "module": "dist/agtree.esm.js",

@@ -4,9 +4,7 @@
   <picture>
     <source
       media="(prefers-color-scheme: dark)"
-      srcset="
-        https://cdn.adtidy.org/website/github.com/AGTree/agtree_darkmode.svg
-      "
+      srcset="https://cdn.adtidy.org/website/github.com/AGTree/agtree_darkmode.svg"
     />
     <img
       alt="AGTree"
@@ -60,7 +58,7 @@
       src="https://img.shields.io/npm/dm/@adguard/agtree"
       alt="NPM Downloads"
   /></a>
-  <a href="https://github.com/AdguardTeam/AGTree/blob/master/LICENSE"
+  <a href="https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/LICENSE"
     ><img src="https://img.shields.io/npm/l/@adguard/agtree" alt="License"
   /></a>
 </p>
