@@ -105,6 +105,66 @@ describe('String utils', () => {
         ).toEqual(['\'aa|bb\' "aaa | bb" \\|\\| \\| bbb']);
     });
 
+    test('isWhitespace', () => {
+        expect(StringUtils.isWhitespace('')).toEqual(false);
+        expect(StringUtils.isWhitespace('a')).toEqual(false);
+
+        expect(StringUtils.isWhitespace(' ')).toEqual(true);
+        expect(StringUtils.isWhitespace('\t')).toEqual(true);
+    });
+
+    test('isDigit', () => {
+        expect(StringUtils.isDigit('')).toEqual(false);
+        expect(StringUtils.isDigit('a')).toEqual(false);
+
+        for (let i = 0; i < 10; i += 1) {
+            expect(StringUtils.isDigit(String.fromCharCode(48 + i))).toEqual(true);
+        }
+    });
+
+    test('isSmallLetter', () => {
+        expect(StringUtils.isSmallLetter('')).toEqual(false);
+
+        // Exclude capital letters
+        for (let i = 0; i < 26; i += 1) {
+            expect(StringUtils.isSmallLetter(String.fromCharCode(65 + i))).toEqual(false);
+        }
+
+        for (let i = 0; i < 26; i += 1) {
+            expect(StringUtils.isSmallLetter(String.fromCharCode(97 + i))).toEqual(true);
+        }
+    });
+
+    test('isCapitalLetter', () => {
+        expect(StringUtils.isCapitalLetter('')).toEqual(false);
+
+        // Exclude small letters
+        for (let i = 0; i < 26; i += 1) {
+            expect(StringUtils.isCapitalLetter(String.fromCharCode(97 + i))).toEqual(false);
+        }
+
+        for (let i = 0; i < 26; i += 1) {
+            expect(StringUtils.isCapitalLetter(String.fromCharCode(65 + i))).toEqual(true);
+        }
+    });
+
+    test('isAlphaNumeric', () => {
+        expect(StringUtils.isAlphaNumeric('')).toEqual(false);
+        expect(StringUtils.isAlphaNumeric(' ')).toEqual(false);
+
+        for (let i = 0; i < 10; i += 1) {
+            expect(StringUtils.isAlphaNumeric(String.fromCharCode(48 + i))).toEqual(true);
+        }
+
+        for (let i = 0; i < 26; i += 1) {
+            expect(StringUtils.isAlphaNumeric(String.fromCharCode(65 + i))).toEqual(true);
+        }
+
+        for (let i = 0; i < 26; i += 1) {
+            expect(StringUtils.isAlphaNumeric(String.fromCharCode(97 + i))).toEqual(true);
+        }
+    });
+
     test('splitStringByUnescapedCharacter', () => {
         expect(StringUtils.splitStringByUnescapedCharacter('', '|')).toEqual(['']);
 
@@ -143,16 +203,16 @@ describe('String utils', () => {
     });
 
     test('isRegexPattern', () => {
-        expect(StringUtils.isRegexPattern('')).toBe(false);
-        expect(StringUtils.isRegexPattern('  ')).toBe(false);
-        expect(StringUtils.isRegexPattern('/')).toBe(false);
-        expect(StringUtils.isRegexPattern(' //')).toBe(false);
-        expect(StringUtils.isRegexPattern('//')).toBe(false);
+        expect(StringUtils.isRegexPattern('')).toBeFalsy();
+        expect(StringUtils.isRegexPattern('  ')).toBeFalsy();
+        expect(StringUtils.isRegexPattern('/')).toBeFalsy();
+        expect(StringUtils.isRegexPattern(' //')).toBeFalsy();
+        expect(StringUtils.isRegexPattern('//')).toBeFalsy();
 
-        expect(StringUtils.isRegexPattern('/a/')).toBe(true);
-        expect(StringUtils.isRegexPattern('/a/ ')).toBe(true); // trim
-        expect(StringUtils.isRegexPattern('  /a/   ')).toBe(true); // trim
-        expect(StringUtils.isRegexPattern('/^regex$/')).toBe(true);
+        expect(StringUtils.isRegexPattern('/a/')).toBeTruthy();
+        expect(StringUtils.isRegexPattern('/a/ ')).toBeTruthy(); // trim
+        expect(StringUtils.isRegexPattern('  /a/   ')).toBeTruthy(); // trim
+        expect(StringUtils.isRegexPattern('/^regex$/')).toBeTruthy();
     });
 
     test('escapeCharacter', () => {
@@ -213,5 +273,63 @@ describe('String utils', () => {
         expect(StringUtils.mergeStringByNewLines(StringUtils.splitStringByNewLinesEx('a\r\nb\nc\rd\n\n'))).toEqual(
             'a\r\nb\nc\rd\n\n',
         );
+    });
+
+    test('findNextWhitespaceCharacter', () => {
+        expect(StringUtils.findNextWhitespaceCharacter('')).toBe(0);
+        expect(StringUtils.findNextWhitespaceCharacter('  ')).toBe(0);
+        expect(StringUtils.findNextWhitespaceCharacter('a')).toBe(1);
+        expect(StringUtils.findNextWhitespaceCharacter(' a')).toBe(0);
+        expect(StringUtils.findNextWhitespaceCharacter(' a b')).toBe(0);
+        expect(StringUtils.findNextWhitespaceCharacter('     a b c')).toBe(0);
+        expect(StringUtils.findNextWhitespaceCharacter('a b c')).toBe(1);
+
+        // custom offset
+        expect(StringUtils.findNextWhitespaceCharacter('a b c', 2)).toBe(3);
+    });
+
+    test('isEOL', () => {
+        // empty, space, regular character, non-string
+        expect(StringUtils.isEOL('')).toBeFalsy();
+        expect(StringUtils.isEOL(' ')).toBeFalsy();
+        expect(StringUtils.isEOL('a')).toBeFalsy();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect(StringUtils.isEOL(<any>1)).toBeFalsy();
+
+        // line feed
+        expect(StringUtils.isEOL('\n')).toBeTruthy();
+
+        // carriage return
+        expect(StringUtils.isEOL('\r')).toBeTruthy();
+
+        // form feed
+        expect(StringUtils.isEOL('\f')).toBeTruthy();
+    });
+
+    test('skipWS', () => {
+        expect(StringUtils.skipWS('')).toBe(0);
+        expect(StringUtils.skipWS(' ')).toBe(1);
+        expect(StringUtils.skipWS('  ')).toBe(2);
+        expect(StringUtils.skipWS('a')).toBe(0);
+        expect(StringUtils.skipWS(' a')).toBe(1);
+        expect(StringUtils.skipWS(' a b')).toBe(1);
+        expect(StringUtils.skipWS('     a b c')).toBe(5);
+
+        // custom offset
+        expect(StringUtils.skipWS('a b c', 3)).toBe(4);
+    });
+
+    test('skipWSBack', () => {
+        expect(StringUtils.skipWSBack('')).toBe(-1);
+        expect(StringUtils.skipWSBack(' ')).toBe(-1);
+        expect(StringUtils.skipWSBack('  ')).toBe(-1);
+        expect(StringUtils.skipWSBack('a')).toBe(0);
+        expect(StringUtils.skipWSBack(' a')).toBe(1);
+        expect(StringUtils.skipWSBack(' a b')).toBe(3);
+        expect(StringUtils.skipWSBack('     a b c')).toBe(9);
+
+        // custom offset
+        expect(StringUtils.skipWSBack('a b c', 3)).toBe(2);
+        expect(StringUtils.skipWSBack('     a b c', 2)).toBe(-1);
     });
 });

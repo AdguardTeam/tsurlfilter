@@ -487,7 +487,7 @@ export class StringUtils {
             i += 1;
         }
 
-        return i;
+        return Math.min(i, pattern.length);
     }
 
     /**
@@ -504,24 +504,7 @@ export class StringUtils {
             i -= 1;
         }
 
-        return i;
-    }
-
-    /**
-     * Finds the next EOL character in the pattern (CR, LF, FF) or the end of the pattern.
-     *
-     * @param pattern Pattern to search
-     * @param start Start index
-     * @returns Index of the next EOL character or the length of the pattern
-     */
-    public static findNextEOL(pattern: string, start = 0): number {
-        for (let i = start; i < pattern.length; i += 1) {
-            if (StringUtils.isEOL(pattern[i])) {
-                return i;
-            }
-        }
-
-        return pattern.length;
+        return Math.max(i, -1);
     }
 
     /**
