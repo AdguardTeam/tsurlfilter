@@ -661,6 +661,12 @@ describe('LogicalExpressionParser', () => {
         expect(parseAndGenerate('!a||b')).toEqual('!a || b');
         expect(parseAndGenerate('a || !b')).toEqual('a || !b');
 
+        expect(parseAndGenerate('!(a)||b')).toEqual('!(a) || b');
+        expect(parseAndGenerate('a || !(b)')).toEqual('a || !(b)');
+
+        expect(parseAndGenerate('(!a)||b')).toEqual('(!a) || b');
+        expect(parseAndGenerate('a || (!b)')).toEqual('a || (!b)');
+
         expect(parseAndGenerate('a&&b')).toEqual('a && b');
         expect(parseAndGenerate('a && b')).toEqual('a && b');
 
@@ -696,6 +702,12 @@ describe('LogicalExpressionParser', () => {
         )).toEqual(
             // eslint-disable-next-line max-len
             '(((adguard)) && !adguard_ext_safari) && ((adguard_ext_android) || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+        );
+
+        // Invalid AST
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect(() => LogicalExpressionParser.generate(<any>{ type: 'Unknown' })).toThrowError(
+            'Unexpected node type',
         );
     });
 });

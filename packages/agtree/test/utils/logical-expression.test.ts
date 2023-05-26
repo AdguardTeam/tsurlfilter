@@ -3,6 +3,12 @@ import { LogicalExpressionUtils } from '../../src/utils/logical-expression';
 
 describe('LogicalExpressionUtils', () => {
     test('getVariables', () => {
+        // Invalid input
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect(() => LogicalExpressionUtils.getVariables(<any>{
+            type: 'Invalid',
+        })).toThrowError('Unexpected node type');
+
         expect(
             LogicalExpressionUtils.getVariables(
                 LogicalExpressionParser.parse('a'),
@@ -191,6 +197,35 @@ describe('LogicalExpressionUtils', () => {
     });
 
     test('evaluate', () => {
+        // Invalid AST
+        expect(() => LogicalExpressionUtils.evaluate(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            <any>{
+                type: 'Invalid',
+            },
+            {},
+        )).toThrowError("Unexpected AST node type 'Invalid'");
+
+        // Invalid right operand
+        expect(() => LogicalExpressionUtils.evaluate(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            <any>{
+                type: 'Operator',
+                operator: '&&',
+            },
+            {},
+        )).toThrowError('Unexpected right operand');
+
+        expect(() => LogicalExpressionUtils.evaluate(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            <any>{
+                type: 'Operator',
+                operator: '||',
+            },
+            {},
+        )).toThrowError('Unexpected right operand');
+
+        // Variable itself
         expect(
             LogicalExpressionUtils.evaluate(
                 LogicalExpressionParser.parse('a'),
@@ -205,6 +240,7 @@ describe('LogicalExpressionUtils', () => {
             ),
         ).toBeFalsy();
 
+        // Not operator
         expect(
             LogicalExpressionUtils.evaluate(
                 LogicalExpressionParser.parse('!a'),
@@ -233,6 +269,21 @@ describe('LogicalExpressionUtils', () => {
             ),
         ).toBeFalsy();
 
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('!!!a'),
+                { a: false },
+            ),
+        ).toBeTruthy();
+
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('!!!!a'),
+                { a: false },
+            ),
+        ).toBeFalsy();
+
+        // And operator
         expect(
             LogicalExpressionUtils.evaluate(
                 LogicalExpressionParser.parse('a && b'),
@@ -272,6 +323,42 @@ describe('LogicalExpressionUtils', () => {
             LogicalExpressionUtils.evaluate(
                 LogicalExpressionParser.parse('((a && (b))) && !!(!(c))'),
                 { a: true, b: true, c: false },
+            ),
+        ).toBeTruthy();
+
+        // Or operator
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('a || b'),
+                { a: false, b: true },
+            ),
+        ).toBeTruthy();
+
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('a || b'),
+                { a: true, b: false },
+            ),
+        ).toBeTruthy();
+
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('a || b'),
+                { a: true, b: true },
+            ),
+        ).toBeTruthy();
+
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('(a) || (b)'),
+                { a: true, b: true },
+            ),
+        ).toBeTruthy();
+
+        expect(
+            LogicalExpressionUtils.evaluate(
+                LogicalExpressionParser.parse('a || b || !c'),
+                { a: false, b: false, c: false },
             ),
         ).toBeTruthy();
 

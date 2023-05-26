@@ -162,6 +162,9 @@ export class LogicalExpressionParser {
                 );
             }
 
+            // We only use this function internally, so we can safely ignore this
+            // from the coverage report
+            // istanbul ignore next
             if (token.type !== type) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but got "${token.type}"`,
