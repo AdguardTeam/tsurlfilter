@@ -1,52 +1,66 @@
-import { z } from 'zod';
+import { z as zod } from 'zod';
+
+/**
+ * String presentation of log levels, for convenient users usage.
+ */
+export enum LogLevelName {
+    Error = 'error',
+    Warn = 'warn',
+    Info = 'info',
+    Debug = 'debug',
+}
+
+export const LogLevelEnum = zod.nativeEnum(LogLevelName);
+const LogLevelValidator = LogLevelEnum.optional();
+export type LogLevelType = zod.infer<typeof LogLevelValidator>;
 
 /**
  * Stealth mode configuration schema.
  */
-export const stealthConfigValidator = z.object({
+export const stealthConfigValidator = zod.object({
     /**
      * Should the application set a fixed lifetime from
      * {@link StealthConfig.selfDestructFirstPartyCookiesTime} for first-party
      * cookies.
      */
-    selfDestructFirstPartyCookies: z.boolean(),
+    selfDestructFirstPartyCookies: zod.boolean(),
 
     /**
      * Time in minutes to delete first-party cookies.
      */
-    selfDestructFirstPartyCookiesTime: z.number(),
+    selfDestructFirstPartyCookiesTime: zod.number(),
 
     /**
      * Should the application set a fixed lifetime from
      * {@link StealthConfig.selfDestructThirdPartyCookiesTime} for third-party
      * cookies.
      */
-    selfDestructThirdPartyCookies: z.boolean(),
+    selfDestructThirdPartyCookies: zod.boolean(),
 
     /**
      * Time in minutes to delete third-party cookies.
      */
-    selfDestructThirdPartyCookiesTime: z.number(),
+    selfDestructThirdPartyCookiesTime: zod.number(),
 
     /**
      * Should the application hide the origin referrer in third-party requests
      * by replacing the referrer url with the request url.
      */
-    hideReferrer: z.boolean(),
+    hideReferrer: zod.boolean(),
 
     /**
      * Should the application hide the original referrer from the search page
      * containing the search query in third-party queries, replacing
      * the referrer url with the request url.
      */
-    hideSearchQueries: z.boolean(),
+    hideSearchQueries: zod.boolean(),
 
     /**
      * For Google Chrome, it removes the 'X-Client-Data' header from
      * the requests, which contains information about the browser version
      * and modifications.
      */
-    blockChromeClientData: z.boolean(),
+    blockChromeClientData: zod.boolean(),
 
     /**
      * Includes HTTP headers 'DNT' and 'Sec-GPC' in all requests.
@@ -54,64 +68,64 @@ export const stealthConfigValidator = z.object({
      * @see https://en.wikipedia.org/wiki/Do_Not_Track
      * @see https://globalprivacycontrol.org
      */
-    sendDoNotTrack: z.boolean(),
+    sendDoNotTrack: zod.boolean(),
 
     /**
      * Blocks the possibility of leaking your IP address through WebRTC, even if
      * you use a proxy server or VPN.
      */
-    blockWebRTC: z.boolean(),
+    blockWebRTC: zod.boolean(),
 }).strict();
 
 /**
  * Stealth mode configuration type.
  * This type is inferred from the {@link stealthConfigValidator} schema.
  */
-export type StealthConfig = z.infer<typeof stealthConfigValidator>;
+export type StealthConfig = zod.infer<typeof stealthConfigValidator>;
 
 /**
  * Settings configuration schema.
  */
-export const settingsConfigValidator = z.object({
+export const settingsConfigValidator = zod.object({
     /**
      * If this flag is true, the application will work ONLY with domains
      * from the {@link Configuration.allowlist},
      * otherwise it will work everywhere EXCLUDING domains from the list.
      */
-    allowlistInverted: z.boolean(),
+    allowlistInverted: zod.boolean(),
 
     /**
      * Flag specifying {@link Configuration.allowlist} enable state.
      * We don't use allowlist array length condition for calculate enable state,
      * because it's not cover case with empty list in inverted mode.
      */
-    allowlistEnabled: z.boolean(),
+    allowlistEnabled: zod.boolean(),
 
     /**
      * Enables css hits counter if true.
      */
-    collectStats: z.boolean(),
+    collectStats: zod.boolean(),
 
     /**
      * Enables stealth mode if true.
      */
-    stealthModeEnabled: z.boolean(),
+    stealthModeEnabled: zod.boolean(),
 
     /**
      * Enables filtering if true.
      */
-    filteringEnabled: z.boolean(),
+    filteringEnabled: zod.boolean(),
 
     /**
      * Redirect url for $document rules.
      */
-    documentBlockingPageUrl: z.string().optional(),
+    documentBlockingPageUrl: zod.string().optional(),
 
     /**
      * Path to the assembled @adguard/assistant module. Necessary for lazy
      * on-demand loading of the assistant.
      */
-    assistantUrl: z.string(),
+    assistantUrl: zod.string(),
 
     /**
      * Stealth mode options.
@@ -123,33 +137,41 @@ export const settingsConfigValidator = z.object({
  * Settings configuration type.
  * This type is inferred from the {@link settingsConfigValidator} schema.
  */
-export type SettingsConfig = z.infer<typeof settingsConfigValidator>;
+export type SettingsConfig = zod.infer<typeof settingsConfigValidator>;
 
 /**
  * Generic app configuration schema.
  */
-export const configurationValidator = z.object({
+export const configurationValidator = zod.object({
     /**
      * List of hostnames or domains of sites, which should be excluded
      * from blocking or which should be included in blocking
      * depending on the value of {@link SettingsConfig.allowlistInverted} setting value.
      */
-    allowlist: z.string().array(),
+    allowlist: zod.string().array(),
 
     /**
      * List of domain names of sites, which should be temporary excluded from document blocking.
      */
-    trustedDomains: z.string().array(),
+    trustedDomains: zod.string().array(),
 
     /**
      * List of rules added by user.
      */
-    userrules: z.string().array(),
+    userrules: zod.string().array(),
 
     /**
      * Flag responsible for logging.
+     *
+     * @deprecated  Will be removed in the next minor version.
+     * Use {@link Configuration.logLevel} instead.
      */
-    verbose: z.boolean(),
+    verbose: zod.boolean().optional(),
+
+    /**
+     * Logging level.
+     */
+    logLevel: LogLevelValidator,
 
     settings: settingsConfigValidator,
 
@@ -159,4 +181,4 @@ export const configurationValidator = z.object({
  * Generic app configuration type.
  * This type is inferred from the {@link configurationValidator} schema.
  */
-export type Configuration = z.infer<typeof configurationValidator>;
+export type Configuration = zod.infer<typeof configurationValidator>;

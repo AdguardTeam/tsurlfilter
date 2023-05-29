@@ -252,11 +252,17 @@ type: `string[]`
 
 List of rules added by user.
 
-#### verbose
+#### verbose (deprecated)
 
-type: `boolean`
+type: `boolean | undefined`
 
-Flag responsible for logging.
+Optional flag responsible for logging. Defaults to true. Will be removed in the next minor version.
+
+#### logLevel
+
+type: `string | undefined`
+
+Optional flag that sets logging level, defaults to 'error'. Available levels: 'error', 'warn', 'info', 'debug'.
 
 #### settings
 

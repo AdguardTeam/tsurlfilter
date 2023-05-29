@@ -1,9 +1,9 @@
-import { FlexibleLoggerInterface } from '../../../../src/lib/common';
+import { LoggerInterface } from '../../../../src/lib/common';
 
 /**
  * Logger mock.
  */
-export class MockLogger implements FlexibleLoggerInterface {
+export class MockLogger implements LoggerInterface {
     setVerbose = jest.fn();
 
     error = jest.fn();

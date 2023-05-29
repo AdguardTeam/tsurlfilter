@@ -10,7 +10,6 @@ import { messagesApi, type MessageHandlerMV2 } from './messages-api';
 import {
     type AppInterface,
     defaultFilteringLog,
-    logger,
 } from '../../common';
 
 import {
@@ -108,8 +107,6 @@ MessageHandlerMV2
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
-        logger.setVerbose(configuration.verbose);
-
         RequestEvents.init();
         await redirectsService.start();
         await engineApi.startEngine(configuration);
@@ -153,8 +150,6 @@ MessageHandlerMV2
         configurationMV2Validator.parse(configuration);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
-
-        logger.setVerbose(configuration.verbose);
 
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();
@@ -349,11 +344,17 @@ MessageHandlerMV2
      * @returns Configuration context.
      */
     private static createConfigurationMV2Context(configuration: ConfigurationMV2): ConfigurationMV2Context {
-        const { filters, verbose, settings } = configuration;
+        const {
+            filters,
+            verbose,
+            logLevel,
+            settings,
+        } = configuration;
 
         return {
             filters: filters.map(({ filterId }) => filterId),
             verbose,
+            logLevel,
             settings,
         };
     }
