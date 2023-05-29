@@ -1,6 +1,11 @@
 import { ScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/scriptlet';
 import { AdblockSyntax } from '../../../../src/utils/adblockers';
-import { EMPTY } from '../../../../src/utils/constants';
+import {
+    CLOSE_PARENTHESIS,
+    EMPTY,
+    OPEN_PARENTHESIS,
+    SPACE,
+} from '../../../../src/utils/constants';
 
 describe('ScriptletInjectionBodyParser', () => {
     test('parseAdgAndUboScriptletCall', () => {
@@ -679,6 +684,94 @@ describe('ScriptletInjectionBodyParser', () => {
             () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet( , arg0)'),
         ).toThrowError(
             'Invalid AdGuard/uBlock scriptlet call, no scriptlet name specified',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet (a)'),
+        ).toThrowError(
+            'Invalid AdGuard/uBlock scriptlet call, whitespace is not allowed after the scriptlet call mask',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js (a)'),
+        ).toThrowError(
+            'Invalid AdGuard/uBlock scriptlet call, whitespace is not allowed after the scriptlet call mask',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet'),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no opening parentheses '${OPEN_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptletarg0'),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no opening parentheses '${OPEN_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js'),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no opening parentheses '${OPEN_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('jsarg0'),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no opening parentheses '${OPEN_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet(arg0'),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet(arg0, '),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js(arg0'),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js(arg0, '),
+        ).toThrowError(
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet(arg0)a'),
+        ).toThrowError(
+            // eslint-disable-next-line max-len
+            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet(arg0) a'),
+        ).toThrowError(
+            // eslint-disable-next-line max-len
+            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js(arg0)a'),
+        ).toThrowError(
+            // eslint-disable-next-line max-len
+            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js(arg0) a'),
+        ).toThrowError(
+            // eslint-disable-next-line max-len
+            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
         );
     });
 
@@ -2235,6 +2328,10 @@ describe('ScriptletInjectionBodyParser', () => {
         expect(() => ScriptletInjectionBodyParser.parseAbpSnippetCall(EMPTY)).toThrowError(
             'Invalid ABP snippet call, no scriptlets specified at all',
         );
+
+        expect(() => ScriptletInjectionBodyParser.parseAbpSnippetCall(SPACE)).toThrowError(
+            'Invalid ABP snippet call, no scriptlets specified at all',
+        );
     });
 
     test('parse', () => {
@@ -2583,6 +2680,90 @@ describe('ScriptletInjectionBodyParser', () => {
 
             return null;
         };
+
+        // Invalid
+        expect(
+            () => parseAndGenerate(
+                // eslint-disable-next-line max-len
+                'race start; hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ \'div[role=feed] div[role=article]\' a[href="#"][role="link"]; hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ \'div[role=feed] div[role=article]\' a[href^="?__cft__"]; hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ \'div[role=feed] div[role=article]\' a[href="#"][role="link"]>span>span>b; hide-if-matches-xpath \'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]\'; race stop;',
+                AdblockSyntax.Adg,
+            ),
+        ).toThrowError(
+            'AdGuard and uBlock syntaxes don\'t support multiple scriptlet calls in one rule',
+        );
+
+        expect(
+            () => parseAndGenerate(
+                // eslint-disable-next-line max-len
+                'race start; hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ \'div[role=feed] div[role=article]\' a[href="#"][role="link"]; hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ \'div[role=feed] div[role=article]\' a[href^="?__cft__"]; hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ \'div[role=feed] div[role=article]\' a[href="#"][role="link"]>span>span>b; hide-if-matches-xpath \'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]\'; race stop;',
+                AdblockSyntax.Ubo,
+            ),
+        ).toThrowError(
+            'AdGuard and uBlock syntaxes don\'t support multiple scriptlet calls in one rule',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.generate(
+                {
+                    type: 'ScriptletInjectionRuleBody',
+                    children: [],
+                },
+                AdblockSyntax.Adg,
+            ),
+        ).toThrowError(
+            'Invalid AST, no scriptlet calls specified',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.generate(
+                {
+                    type: 'ScriptletInjectionRuleBody',
+                    children: [
+                        {
+                            type: 'ParameterList',
+                            children: [],
+                        },
+                    ],
+                },
+                AdblockSyntax.Adg,
+            ),
+        ).toThrowError(
+            'Scriptlet name is not specified',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.generate(
+                {
+                    type: 'ScriptletInjectionRuleBody',
+                    children: [
+                        {
+                            type: 'ParameterList',
+                            children: [],
+                        },
+                    ],
+                },
+                AdblockSyntax.Ubo,
+            ),
+        ).toThrowError(
+            'Scriptlet name is not specified',
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.generate(
+                {
+                    type: 'ScriptletInjectionRuleBody',
+                    children: [
+                        {
+                            type: 'ParameterList',
+                            children: [],
+                        },
+                    ],
+                },
+                AdblockSyntax.Abp,
+            ),
+        ).toThrowError(
+            'Scriptlet name is not specified',
+        );
 
         expect(
             parseAndGenerate(

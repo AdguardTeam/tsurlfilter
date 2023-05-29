@@ -89,9 +89,10 @@ export class ScriptletInjectionBodyParser {
 
         // Find closing parentheses
         // eslint-disable-next-line max-len
-        const closingParenthesesIndex = StringUtils.skipWSBack(raw);
+        const closingParenthesesIndex = StringUtils.findUnescapedNonStringNonRegexChar(raw, CLOSE_PARENTHESIS, openingParenthesesIndex + 1);
 
-        if (raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS) {
+        // Closing parentheses should be present
+        if (closingParenthesesIndex === -1) {
             throw new AdblockSyntaxError(
                 // eslint-disable-next-line max-len
                 `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
@@ -99,7 +100,7 @@ export class ScriptletInjectionBodyParser {
             );
         }
 
-        // No unexpected characters after the closing parentheses
+        // Shouldn't have any characters after the closing parentheses
         if (StringUtils.skipWSBack(raw) !== closingParenthesesIndex) {
             throw new AdblockSyntaxError(
                 // eslint-disable-next-line max-len
@@ -170,26 +171,13 @@ export class ScriptletInjectionBodyParser {
                 semicolonIndex = raw.length;
             }
 
-            const scriptletCallEnd = StringUtils.skipWSBack(raw, semicolonIndex - 1) + 1;
-
-            if (scriptletCallEnd <= scriptletCallStart) {
-                break;
-            }
+            const scriptletCallEnd = Math.max(StringUtils.skipWSBack(raw, semicolonIndex - 1) + 1, scriptletCallStart);
 
             const params = ParameterListParser.parse(
                 raw.substring(scriptletCallStart, scriptletCallEnd),
                 SPACE,
                 shiftLoc(loc, scriptletCallStart),
             );
-
-            // Check if the scriptlet name is specified
-            if (params.children.length === 0) {
-                throw new AdblockSyntaxError(
-                    // eslint-disable-next-line max-len
-                    'Invalid ABP snippet call, no scriptlet name specified',
-                    locRange(loc, offset, raw.length),
-                );
-            }
 
             // Parse the scriptlet call
             result.children.push(params);
@@ -250,8 +238,12 @@ export class ScriptletInjectionBodyParser {
      * @throws If the rule body is not supported by the specified syntax
      * @throws If the AST is invalid
      */
-    public static generate(ast: ScriptletInjectionRuleBody, syntax: AdblockSyntax = AdblockSyntax.Adg): string {
+    public static generate(ast: ScriptletInjectionRuleBody, syntax: AdblockSyntax): string {
         let result = EMPTY;
+
+        if (ast.children.length === 0) {
+            throw new Error('Invalid AST, no scriptlet calls specified');
+        }
 
         // AdGuard and uBlock doesn't support multiple scriptlet calls in one rule
         if (syntax === AdblockSyntax.Adg || syntax === AdblockSyntax.Ubo) {
