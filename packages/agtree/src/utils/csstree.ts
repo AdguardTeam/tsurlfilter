@@ -143,6 +143,7 @@ export class CssTree {
                 if ('offset' in error && typeof error.offset === 'number') {
                     errorLoc = locRange(loc, error.offset, raw.length);
                 } else {
+                    // istanbul ignore next
                     errorLoc = locRange(loc, 0, raw.length);
                 }
 
@@ -152,7 +153,9 @@ export class CssTree {
                 );
             }
 
-            // Pass through
+            // Pass through any other error just in case, but theoretically it should never happen,
+            // so it is ok to ignore it from the coverage
+            // istanbul ignore next
             throw error;
         }
     }
@@ -166,6 +169,7 @@ export class CssTree {
      * @param loc Base location for the parsed node
      * @returns CSSTree node (AST)
      */
+    // istanbul ignore next
     // eslint-disable-next-line max-len
     public static parsePlain(raw: string, context: CssTreeParserContext, tolerant = false, loc = defaultLocation): CssNodePlain {
         return toPlainObject(

@@ -1,13 +1,139 @@
 import {
+    CssNode,
     DeclarationList,
+    List,
+    MediaQuery,
     MediaQueryList,
     Selector,
     SelectorList,
+    toPlainObject,
 } from '@adguard/ecss-tree';
 import { CssTree } from '../../src/utils/csstree';
 import { CssTreeParserContext } from '../../src/utils/csstree-constants';
 
 describe('CSSTree utils', () => {
+    test('shiftNodePosition', () => {
+        // Don't shift anything
+        expect(
+            toPlainObject(
+                CssTree.shiftNodePosition(
+                    CssTree.parse('#test', CssTreeParserContext.selector),
+                ),
+            ),
+        ).toMatchObject({
+            type: 'Selector',
+            loc: {
+                start: {
+                    offset: 0,
+                    line: 1,
+                    column: 1,
+                },
+                end: {
+                    offset: 5,
+                    line: 1,
+                    column: 6,
+                },
+            },
+            children: [
+                {
+                    type: 'IdSelector',
+                    loc: {
+                        start: {
+                            offset: 0,
+                            line: 1,
+                            column: 1,
+                        },
+                        end: {
+                            offset: 5,
+                            line: 1,
+                            column: 6,
+                        },
+                    },
+                    name: 'test',
+                },
+            ],
+        });
+
+        // Shift by 10 characters and 4 lines
+        expect(
+            toPlainObject(
+                CssTree.shiftNodePosition(
+                    CssTree.parse('#test', CssTreeParserContext.selector),
+                    {
+                        offset: 10,
+                        line: 5,
+                        column: 1,
+                    },
+                ),
+            ),
+        ).toMatchObject({
+            type: 'Selector',
+            loc: {
+                start: {
+                    offset: 10,
+                    line: 5,
+                    column: 1,
+                },
+                end: {
+                    offset: 15,
+                    line: 5,
+                    column: 6,
+                },
+            },
+            children: [
+                {
+                    type: 'IdSelector',
+                    loc: {
+                        start: {
+                            offset: 10,
+                            line: 5,
+                            column: 1,
+                        },
+                        end: {
+                            offset: 15,
+                            line: 5,
+                            column: 6,
+                        },
+                    },
+                    name: 'test',
+                },
+            ],
+        });
+    });
+
+    test('parse', () => {
+        // Invalid cases (strict mode)
+        expect(() => CssTree.parse('body { a }', CssTreeParserContext.rule)).toThrowError(
+            /^ECSSTree parsing error/,
+        );
+
+        // Tolerant mode parses invalid data as raw
+        expect(() => CssTree.parse('body { a }', CssTreeParserContext.rule, true)).not.toThrowError();
+
+        // Don't throw on invalid inputs
+        // No need to test all possible cases here, just a few of them, because we just
+        // wrap the original CSSTree.parse() function, which is already tested
+        expect(() => CssTree.parse('.a', CssTreeParserContext.selector)).not.toThrowError();
+        expect(() => CssTree.parse('a', CssTreeParserContext.selector)).not.toThrowError();
+        expect(() => CssTree.parse('#a', CssTreeParserContext.selector)).not.toThrowError();
+
+        // Syntactically complicated selector
+        expect(
+            () => CssTree.parse('[a="b"i] + *:not(.a, #b) ~ :contains(c)', CssTreeParserContext.selector),
+        ).not.toThrowError();
+
+        // Selector list
+        expect(() => CssTree.parse('a, b', CssTreeParserContext.selectorList)).not.toThrowError();
+
+        // Complex rule
+        expect(
+            () => CssTree.parse(
+                '[a="b"i] + *:not(.a, #b) ~ :contains(c"d) { padding: 2px !important; color: red; }',
+                CssTreeParserContext.rule,
+            ),
+        ).not.toThrowError();
+    });
+
     test('getSelectorExtendedCssNodes', () => {
         expect(
             CssTree.getSelectorExtendedCssNodes(<Selector>CssTree.parse('#test', CssTreeParserContext.selector)),
@@ -66,7 +192,9 @@ describe('CSSTree utils', () => {
 
     test('generateSelector', () => {
         const parseAndGenerate = (rawSelector: string) => {
-            return CssTree.generateSelector(<Selector>CssTree.parse(rawSelector, CssTreeParserContext.selector));
+            return CssTree.generateSelector(
+                <Selector>CssTree.parse(rawSelector, CssTreeParserContext.selector),
+            );
         };
 
         expect(parseAndGenerate('div')).toEqual('div');
@@ -107,9 +235,43 @@ describe('CSSTree utils', () => {
 
     test('generateSelectorList', () => {
         const parseAndGenerate = (selectorList: string) => {
-            // eslint-disable-next-line max-len
-            return CssTree.generateSelectorList(<SelectorList>CssTree.parse(selectorList, CssTreeParserContext.selectorList));
+            return CssTree.generateSelectorList(
+                <SelectorList>CssTree.parse(selectorList, CssTreeParserContext.selectorList),
+            );
         };
+
+        // Invalid AST
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateSelectorList(<any>{
+                type: 'SelectorList',
+            }),
+        ).toThrowError(
+            'Selector list cannot be empty',
+        );
+
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateSelectorList(<any>{
+                type: 'generateSelectorList',
+                children: new List(),
+            }),
+        ).toThrowError(
+            'Selector list cannot be empty',
+        );
+
+        expect(
+            () => CssTree.generateSelectorList(<SelectorList>{
+                type: 'SelectorList',
+                children: new List().fromArray([
+                    {
+                        type: 'Unknown',
+                    },
+                ]),
+            }),
+        ).toThrowError(
+            'Unexpected node type: Unknown',
+        );
 
         expect(parseAndGenerate('div,div')).toEqual('div, div');
         expect(parseAndGenerate('div, div')).toEqual('div, div');
@@ -141,6 +303,87 @@ describe('CSSTree utils', () => {
         ).toEqual(
             'div[data-advert] > #test ~ div[class="advert"][id="something"]:nth-child(3n+0):first-child, #test',
         );
+        expect(parseAndGenerate('#test:not(.a, .b)')).toEqual('#test:not(.a, .b)');
+
+        expect(
+            CssTree.generateSelector({
+                type: 'Selector',
+                children: new List<CssNode>().fromArray([
+                    {
+                        type: 'PseudoClassSelector',
+                        name: 'not',
+                        children: new List<CssNode>().fromArray([
+                            {
+                                type: 'SelectorList',
+                                children: new List<CssNode>().fromArray([
+                                    {
+                                        type: 'Selector',
+                                        children: new List<CssNode>().fromArray([
+                                            {
+                                                type: 'ClassSelector',
+                                                name: 'a',
+                                            },
+                                        ]),
+                                    },
+                                    {
+                                        type: 'Raw',
+                                        value: '/raw/',
+                                    },
+                                ]),
+                            },
+                        ]),
+                    },
+                ]),
+            }),
+        ).toEqual(
+            ':not(.a, /raw/)',
+        );
+    });
+
+    test('generateMediaQuery', () => {
+        const parseAndGenerate = (mediaQuery: string) => {
+            // eslint-disable-next-line max-len
+            return CssTree.generateMediaQuery(<MediaQuery>CssTree.parse(mediaQuery, CssTreeParserContext.mediaQuery));
+        };
+
+        // Invalid AST
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateMediaQuery(<any>{
+                type: 'MediaQuery',
+            }),
+        ).toThrowError(
+            'Media query cannot be empty',
+        );
+
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateMediaQuery(<any>{
+                type: 'MediaQuery',
+                children: new List(),
+            }),
+        ).toThrowError(
+            'Media query cannot be empty',
+        );
+
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateMediaQuery(<any>{
+                type: 'MediaQuery',
+                children: new List().fromArray([
+                    {
+                        type: 'Unknown',
+                    },
+                ]),
+            }),
+        ).toThrowError(
+            'Unexpected node type: Unknown',
+        );
+
+        expect(parseAndGenerate('screen')).toEqual('screen');
+        expect(parseAndGenerate('(max-width: 100px)')).toEqual(
+            '(max-width: 100px)',
+        );
     });
 
     test('generateMediaQueryList', () => {
@@ -148,6 +391,40 @@ describe('CSSTree utils', () => {
             // eslint-disable-next-line max-len
             return CssTree.generateMediaQueryList(<MediaQueryList>CssTree.parse(mediaQueryList, CssTreeParserContext.mediaQueryList));
         };
+
+        // Invalid AST
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateMediaQueryList(<any>{
+                type: 'MediaQueryList',
+            }),
+        ).toThrowError(
+            'Media query list cannot be empty',
+        );
+
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateMediaQueryList(<any>{
+                type: 'MediaQueryList',
+                children: new List(),
+            }),
+        ).toThrowError(
+            'Media query list cannot be empty',
+        );
+
+        expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => CssTree.generateMediaQueryList(<any>{
+                type: 'MediaQueryList',
+                children: new List().fromArray([
+                    {
+                        type: 'Unknown',
+                    },
+                ]),
+            }),
+        ).toThrowError(
+            'Unexpected node type: Unknown',
+        );
 
         expect(parseAndGenerate('screen and (max-width: 100px)')).toEqual('screen and (max-width: 100px)');
         expect(parseAndGenerate('screen and (max-width: 100px) and (min-width: 50px)')).toEqual(
@@ -158,6 +435,8 @@ describe('CSSTree utils', () => {
         expect(parseAndGenerate('screen and (max-width: 100px) and (min-width: 50px) and (orientation: landscape)')).toEqual(
             'screen and (max-width: 100px) and (min-width: 50px) and (orientation: landscape)',
         );
+
+        expect(parseAndGenerate('screen, print')).toEqual('screen, print');
     });
 
     test('generateBlock', () => {
