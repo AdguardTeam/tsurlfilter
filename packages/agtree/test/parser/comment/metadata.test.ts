@@ -6,15 +6,31 @@ describe('MetadataCommentRuleParser', () => {
         expect(MetadataCommentRuleParser.parse(EMPTY)).toBeNull();
         expect(MetadataCommentRuleParser.parse(SPACE)).toBeNull();
 
+        // Missing comment marker
+        expect(MetadataCommentRuleParser.parse('a:b')).toBeNull();
+
+        // Missing colon
         expect(MetadataCommentRuleParser.parse('!')).toBeNull();
         expect(MetadataCommentRuleParser.parse('!##')).toBeNull();
         expect(MetadataCommentRuleParser.parse('##')).toBeNull();
+
+        // Not a known metadata header
         expect(MetadataCommentRuleParser.parse('!aaa:bbb')).toBeNull();
         expect(MetadataCommentRuleParser.parse('! aaa: bbb')).toBeNull();
         expect(MetadataCommentRuleParser.parse('!aaa:bbb:ccc')).toBeNull();
         expect(MetadataCommentRuleParser.parse('! aaa: bbb: ccc')).toBeNull();
+
+        // Invalid syntax
         expect(MetadataCommentRuleParser.parse('!:::')).toBeNull();
         expect(MetadataCommentRuleParser.parse('! : : :')).toBeNull();
+
+        // Starts like a valid metadata header, but the valid title is followed by
+        // an unexpected character
+        expect(MetadataCommentRuleParser.parse('! Title a:')).toBeNull();
+
+        // Starts like a valid metadata header, but hasn't a value
+        expect(MetadataCommentRuleParser.parse('! Title:')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! Title:  ')).toBeNull();
 
         expect(MetadataCommentRuleParser.parse('! Title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
