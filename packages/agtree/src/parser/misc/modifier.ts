@@ -45,7 +45,7 @@ export class ModifierParser {
         const assignmentIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIER_ASSIGN_OPERATOR);
 
         // Find the end of the modifier
-        const modifierEnd = StringUtils.skipWSBack(raw) + 1;
+        const modifierEnd = Math.max(StringUtils.skipWSBack(raw) + 1, modifierNameStart);
 
         // Modifier name can't be empty
         if (modifierNameStart === modifierEnd) {

@@ -4,6 +4,63 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
+        // Invalid cases
+        expect(() => ModifierListParser.parse(',')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse(' , ')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse(',b')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a,')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a, ')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse(' a , ')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a,,')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a,b,')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a,,b')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a , , b')).toThrowError(
+            'Modifier name can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a=')).toThrowError(
+            'Modifier value can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a=,b')).toThrowError(
+            'Modifier value can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a,b=')).toThrowError(
+            'Modifier value can\'t be empty',
+        );
+
+        expect(() => ModifierListParser.parse('a, b = ')).toThrowError(
+            'Modifier value can\'t be empty',
+        );
+
         // Empty modifiers
         expect(ModifierListParser.parse(EMPTY)).toEqual<ModifierList>({
             type: 'ModifierList',

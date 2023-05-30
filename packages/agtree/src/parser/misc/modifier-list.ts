@@ -30,10 +30,9 @@ export class ModifierListParser {
             children: [],
         };
 
-        let offset = 0;
+        let offset = StringUtils.skipWS(raw);
 
-        // Skip whitespace before the modifier list
-        offset = StringUtils.skipWS(raw, offset);
+        let separatorIndex = -1;
 
         // Split modifiers by unescaped commas
         while (offset < raw.length) {
@@ -42,12 +41,12 @@ export class ModifierListParser {
 
             const modifierStart = offset;
 
-            // Find the index of the first unescaped "," character
-            const separatorStartIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
+            // Find the index of the first unescaped comma
+            separatorIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
 
-            const modifierEnd = separatorStartIndex === -1
-                ? StringUtils.skipWSBack(raw) + 1
-                : StringUtils.skipWSBack(raw, separatorStartIndex - 1) + 1;
+            const modifierEnd = separatorIndex === -1
+                ? raw.length
+                : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
 
             // Parse the modifier
             const modifier = ModifierParser.parse(
@@ -58,7 +57,17 @@ export class ModifierListParser {
             result.children.push(modifier);
 
             // Increment the offset to the next modifier (or the end of the string)
-            offset = separatorStartIndex === -1 ? raw.length : separatorStartIndex + 1;
+            offset = separatorIndex === -1 ? raw.length : separatorIndex + 1;
+        }
+
+        // Check if there are any modifiers after the last separator
+        if (separatorIndex !== -1) {
+            const modifierStart = StringUtils.skipWS(raw, separatorIndex + 1);
+
+            result.children.push(ModifierParser.parse(
+                raw.substring(modifierStart, raw.length),
+                shiftLoc(loc, modifierStart),
+            ));
         }
 
         return result;
