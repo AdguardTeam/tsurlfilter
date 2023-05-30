@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## Unreleased
+
+### Fixed
+
+- Domain matching for wildcard tld in rules
+
+
 ## [2.0.5] - 2023-04-24
 
 ### Changed

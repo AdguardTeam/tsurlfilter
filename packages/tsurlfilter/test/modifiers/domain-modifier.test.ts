@@ -184,6 +184,7 @@ describe('Domain modifier', () => {
         expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', ['example.*', 'test.com'])).toBeTruthy();
         expect(DomainModifier.isDomainOrSubdomainOfAny('sub.example.org', ['example.*', 'test.com'])).toBeTruthy();
         expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', ['one.*', 'example.*', 'test.com'])).toBeTruthy();
+        expect(DomainModifier.isDomainOrSubdomainOfAny('www.chrono24.ch', ['chrono24.*'])).toBeTruthy();
 
         expect(DomainModifier.isDomainOrSubdomainOfAny('example.com', ['test.*'])).toBeFalsy();
         expect(DomainModifier.isDomainOrSubdomainOfAny('subexample.org', ['example.*'])).toBeFalsy();

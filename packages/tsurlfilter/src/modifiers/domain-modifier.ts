@@ -124,7 +124,9 @@ export class DomainModifier {
     private static genTldWildcard(domainName: string): string {
         const tld = getPublicSuffix(domainName);
         if (tld) {
-            return `${domainName.slice(0, domainName.indexOf(`.${tld}`))}.*`;
+            // lastIndexOf() is needed not to match the domain, e.g. 'www.chrono24.ch'.
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2312.
+            return `${domainName.slice(0, domainName.lastIndexOf(`.${tld}`))}.*`;
         }
 
         return '';
