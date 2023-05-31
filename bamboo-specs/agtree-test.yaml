@@ -35,8 +35,8 @@ Test:
 
             ls -alt
 
-            # Bootstrap the packages
-            npx lerna bootstrap
+            # Bootstrap the package
+            npx lerna bootstrap --scope @adguard/agtree --include-dependencies
 
             # Check TypeScript types with TSC
             npx lerna run --scope @adguard/agtree check-types

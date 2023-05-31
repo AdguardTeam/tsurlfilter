@@ -35,9 +35,9 @@ Test:
 
             ls -alt
 
-            npx lerna bootstrap
-            npx lerna run --scope @adguard/tsurlfilter test:prod
-            npx lerna run --scope @adguard/tsurlfilter build
+            npx lerna bootstrap --scope @adguard/tsurlfilter --include-dependencies
+            npx lerna run --scope @adguard/tsurlfilter test:prod 
+            npx lerna run --scope @adguard/tsurlfilter build 
 
             # cleanup parent
             rm -rf node_modules

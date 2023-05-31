@@ -37,8 +37,8 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap
-            npx lerna run --scope @adguard/tswebextension build -- ${bamboo.varsYarn}
+            npx lerna bootstrap --scope @adguard/tswebextension --include-dependencies
+            npx lerna run --scope @adguard/tswebextension build
 
             cd packages/tswebextension/
             yarn pack --filename tswebextension.tgz

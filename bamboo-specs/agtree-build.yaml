@@ -37,8 +37,8 @@ Build:
 
             ls -alt
 
-            # Bootstrap the packages with Lerna
-            npx lerna bootstrap
+            # Bootstrap the package with Lerna
+            npx lerna bootstrap --scope @adguard/agtree --include-dependencies
 
             # Build AGTree with Rollup
             npx lerna run --scope @adguard/agtree build

@@ -37,7 +37,7 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap -- --silent --ignore-engines --ignore-platform --ignore-scripts
+            npx lerna bootstrap --scope @adguard/api --include-dependencies
             npx lerna run --scope @adguard/api build
 
             cd packages/adguard-api/

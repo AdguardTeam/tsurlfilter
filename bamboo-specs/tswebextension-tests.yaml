@@ -43,7 +43,7 @@ Test:
 
             ls -alt
 
-            npx lerna bootstrap
+            npx lerna bootstrap --scope @adguard/tswebextension --include-dependencies
 
             # build tsurlfilter first, because it is used in tswebextension tests
             npx lerna run --scope @adguard/tsurlfilter build
