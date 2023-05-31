@@ -171,7 +171,6 @@ import { MAIN_FRAME_ID } from './tabs/frame';
 import { findHeaderByName } from './utils/headers';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
-import { ContentType } from '../../common/request-type';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 
 import {
@@ -339,6 +338,19 @@ export class WebRequestApi {
 
             const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
 
+            /**
+             * We log js rules before injecting them to avoid duplicate logs,
+             * as they can be applied multiple times but only executed once.
+             * See {@link buildScriptText} for details.
+             */
+            CosmeticApi.logScriptRules({
+                tabId,
+                cosmeticResult,
+                url: requestUrl,
+                contentType,
+                timestamp,
+            });
+
             tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
 
             requestContextStorage.update(requestId, {
@@ -503,12 +515,9 @@ export class WebRequestApi {
         }
 
         const {
-            requestId,
             tabId,
             frameId,
             requestType,
-            contentType,
-            timestamp,
         } = context;
 
         if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
@@ -537,23 +546,15 @@ export class WebRequestApi {
             return;
         }
 
-        const {
-            cosmeticResult,
-            url,
-            jsInjectionFsm,
-        } = frame;
+        const { cosmeticResult } = frame;
 
         const injectionParams: ApplyJsRulesParams = {
-            requestId,
-            url,
             tabId,
             frameId,
             cosmeticResult,
-            timestamp,
-            contentType,
         };
 
-        CosmeticApi.applyFrameJsRules(injectionParams, jsInjectionFsm);
+        CosmeticApi.applyFrameJsRules(injectionParams);
     }
 
     /**
@@ -638,8 +639,6 @@ export class WebRequestApi {
         const {
             frameId,
             tabId,
-            timestamp,
-            url,
         } = params;
 
         const frame = tabsApi.getTabFrame(tabId, frameId);
@@ -650,12 +649,7 @@ export class WebRequestApi {
             return;
         }
 
-        const {
-            cosmeticResult,
-            requestId,
-            cssInjectionFsm,
-            jsInjectionFsm,
-        } = frame;
+        const { cosmeticResult } = frame;
 
         const cssInjectionParams: ApplyCssRulesParams = {
             tabId,
@@ -664,19 +658,13 @@ export class WebRequestApi {
         };
 
         const jsInjectionParams: ApplyJsRulesParams = {
-            requestId,
-            url,
             tabId,
             frameId,
             cosmeticResult,
-            timestamp,
-            contentType: frameId === MAIN_FRAME_ID
-                ? ContentType.Document
-                : ContentType.Subdocument,
         };
 
-        CosmeticApi.applyFrameCssRules(cssInjectionParams, cssInjectionFsm);
-        CosmeticApi.applyFrameJsRules(jsInjectionParams, jsInjectionFsm);
+        CosmeticApi.applyFrameCssRules(cssInjectionParams);
+        CosmeticApi.applyFrameJsRules(jsInjectionParams);
     }
 
     /**
@@ -719,7 +707,6 @@ export class WebRequestApi {
             tabId,
             frameId,
             url,
-            timeStamp,
         } = details;
 
         const mainFrame = tabsApi.getTabMainFrame(tabId);
@@ -731,7 +718,7 @@ export class WebRequestApi {
             return;
         }
 
-        const { cosmeticResult, requestId } = mainFrame;
+        const { cosmeticResult } = mainFrame;
 
         CosmeticApi
             .applyCssRules({
@@ -743,13 +730,9 @@ export class WebRequestApi {
 
         CosmeticApi
             .applyJsRules({
-                requestId,
-                url: mainFrame.url,
                 tabId,
                 frameId,
                 cosmeticResult,
-                timestamp: timeStamp,
-                contentType: ContentType.Subdocument,
             })
             .catch(logger.debug);
     }

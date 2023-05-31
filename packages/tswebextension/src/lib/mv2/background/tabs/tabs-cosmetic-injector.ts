@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid';
 import browser, { Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
@@ -8,7 +7,6 @@ import { ContentType } from '../../../common/request-type';
 import { allowlistApi } from '../allowlist';
 import {
     type ApplyCssRulesParams,
-    type ApplyJsRulesParams,
     CosmeticApi,
 } from '../cosmetic-api';
 import { engineApi } from '../engine-api';
@@ -20,12 +18,6 @@ import { tabsApi } from './tabs-api';
  * Injects cosmetic rules into tabs, opened before app initialization.
  */
 export class TabsCosmeticInjector {
-    /**
-     * Synthetic request id prefix for frames, opened before extension initialization.
-     * Used in filtering log for displaying cosmetic rule events.
-     */
-    private static SYNTHETIC_REQUEST_ID_PREFIX = 'synthetic';
-
     /**
      * Creates contexts for tabs opened before api initialization and
      * applies cosmetic rules for each frame.
@@ -98,11 +90,7 @@ export class TabsCosmeticInjector {
 
             frame.cosmeticResult = engineApi.getCosmeticResult(url, cosmeticOption);
 
-            const {
-                cosmeticResult,
-                cssInjectionFsm,
-                jsInjectionFsm,
-            } = frame;
+            const { cosmeticResult } = frame;
 
             const cssInjectionParams: ApplyCssRulesParams = {
                 tabId,
@@ -110,30 +98,23 @@ export class TabsCosmeticInjector {
                 cosmeticResult,
             };
 
-            const jsInjectionParams: ApplyJsRulesParams = {
-                url,
+            CosmeticApi.applyFrameCssRules(cssInjectionParams);
+
+            CosmeticApi.applyFrameJsRules({
                 tabId,
                 frameId,
                 cosmeticResult,
-                requestId: TabsCosmeticInjector.generateFrameRequestId(),
+            });
+
+            CosmeticApi.logScriptRules({
+                url,
+                tabId,
+                cosmeticResult,
                 timestamp: Date.now(),
                 contentType: isDocumentFrame
                     ? ContentType.Document
                     : ContentType.Subdocument,
-            };
-
-            CosmeticApi.applyFrameCssRules(cssInjectionParams, cssInjectionFsm);
-            CosmeticApi.applyFrameJsRules(jsInjectionParams, jsInjectionFsm);
+            });
         });
-    }
-
-    /**
-     * Generates synthetic request id for frame, opened before extension initialization.
-     * Used for logging js rule apply.
-     *
-     * @returns Request id.
-     */
-    private static generateFrameRequestId(): string {
-        return `${TabsCosmeticInjector.SYNTHETIC_REQUEST_ID_PREFIX}-${nanoid(7)}`;
     }
 }

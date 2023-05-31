@@ -13,11 +13,6 @@ import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi, tabsApi } from './tabs/tabs-api';
 import { getErrorMessage } from '../../common/error';
-import {
-    type InjectionFsm,
-    InjectionEvent,
-    InjectionState,
-} from './tabs/injectionFsm';
 import { logger } from '../../common/utils/logger';
 
 import type { ContentType } from '../../common/request-type';
@@ -26,8 +21,12 @@ export type ApplyJsRulesParams = {
     tabId: number,
     frameId: number,
     cosmeticResult: CosmeticResult,
+};
+
+export type LogJsRulesParams = {
+    tabId: number,
+    cosmeticResult: CosmeticResult,
     url: string,
-    requestId: string,
     contentType: ContentType,
     timestamp: number,
 };
@@ -178,25 +177,9 @@ export class CosmeticApi {
             return undefined;
         }
 
-        const scriptText = rules
-            .filter((rule) => {
-                // Scriptlets should not be excluded for remote filters
-                if (rule.isScriptlet) {
-                    return true;
-                }
+        const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
 
-                // User rules should not be excluded from remote filters
-                const filterId = rule.getFilterListId();
-                if (filterId === USER_FILTER_ID) {
-                    return true;
-                }
-
-                /**
-                 * @see {@link LocalScriptRulesService} for details about script source
-                 */
-                const text = rule.getText();
-                return localScriptRulesService.isLocal(text);
-            })
+        const scriptText = permittedRules
             .map((rule) => rule.getScript())
             .join('\n');
 
@@ -262,16 +245,13 @@ export class CosmeticApi {
     /**
      * Applies js rules to specific frame.
      *
-     * @param params Data for js rule injecting and logging.
+     * @param params Data for js rule injecting.
      */
     public static async applyJsRules(params: ApplyJsRulesParams): Promise<void> {
         const {
             tabId,
             frameId,
             cosmeticResult,
-            url,
-            contentType,
-            timestamp,
         } = params;
 
         const scriptRules = cosmeticResult.getScriptRules();
@@ -288,27 +268,51 @@ export class CosmeticApi {
              * @see {@link LocalScriptRulesService} for details about script source
              */
             await CosmeticApi.injectScript(scriptText, tabId, frameId);
+        }
+    }
 
-            for (const scriptRule of scriptRules) {
-                if (!scriptRule.isGeneric()) {
-                    defaultFilteringLog.publishEvent({
-                        type: FilteringEventType.JsInject,
-                        data: {
-                            script: true,
-                            tabId,
-                            // for proper filtering log request info rule displaying
-                            // event id should be unique for each event, not copied from request
-                            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
-                            eventId: nanoid(),
-                            requestUrl: url,
-                            frameUrl: url,
-                            frameDomain: getDomain(url) as string,
-                            requestType: contentType,
-                            timestamp,
-                            rule: scriptRule,
-                        },
-                    });
-                }
+    /**
+     * Logs js rules to specific frame.
+     *
+     * We need a separate function for logging because script rules can be logged before injection
+     * to avoid duplicate logs while the js rule is being applied.
+     *
+     * See {@link WebRequestApi.onBeforeRequest} for details.
+     *
+     * @param params Data for js rule logging.
+     */
+    public static logScriptRules(params: LogJsRulesParams): void {
+        const {
+            tabId,
+            cosmeticResult,
+            url,
+            contentType,
+            timestamp,
+        } = params;
+
+        const scriptRules = cosmeticResult.getScriptRules();
+
+        const permittedScriptRules = CosmeticApi.sanitizeScriptRules(scriptRules);
+
+        for (const scriptRule of permittedScriptRules) {
+            if (!scriptRule.isGeneric()) {
+                defaultFilteringLog.publishEvent({
+                    type: FilteringEventType.JsInject,
+                    data: {
+                        script: true,
+                        tabId,
+                        // for proper filtering log request info rule displaying
+                        // event id should be unique for each event, not copied from request
+                        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
+                        eventId: nanoid(),
+                        requestUrl: url,
+                        frameUrl: url,
+                        frameDomain: getDomain(url) as string,
+                        requestType: contentType,
+                        timestamp,
+                        rule: scriptRule,
+                    },
+                });
             }
         }
     }
@@ -317,70 +321,73 @@ export class CosmeticApi {
      * Apply js to specified frame based on provided data and injection FSM state.
      *
      * @param params The data required for the injection.
-     * @param fsm Injection finite state machine.
      * @param tries The number of tries for the operation in case of failure.
      */
-    public static applyFrameJsRules(
+    public static async applyFrameJsRules(
         params: ApplyJsRulesParams,
-        fsm: InjectionFsm,
         tries = 0,
-    ): void {
-        if (fsm.state !== InjectionState.Idle) {
-            return;
+    ): Promise<void> {
+        try {
+            await CosmeticApi.applyJsRules(params);
+        } catch (e) {
+            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                setTimeout(() => {
+                    CosmeticApi.applyFrameJsRules(params, tries + 1);
+                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            } else {
+                logger.debug(getErrorMessage(e));
+            }
         }
-
-        fsm.dispatch(InjectionEvent.Start);
-
-        CosmeticApi
-            .applyJsRules(params)
-            .then(() => {
-                fsm.dispatch(InjectionEvent.Success);
-            }).catch((e) => {
-                fsm.dispatch(InjectionEvent.Failure);
-
-                if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
-                    setTimeout(() => {
-                        CosmeticApi.applyFrameJsRules(params, fsm, tries + 1);
-                    }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
-                } else {
-                    logger.debug(getErrorMessage(e));
-                }
-            });
     }
 
     /**
      * Injects css to specified frame based on provided data and injection FSM state.
      *
      * @param params Data required for the injection.
-     * @param fsm Injection finite state machine.
      * @param tries Number of tries for the operation in case of failure.
      */
-    public static applyFrameCssRules(
+    public static async applyFrameCssRules(
         params: ApplyCssRulesParams,
-        fsm: InjectionFsm,
         tries = 0,
-    ): void {
-        if (fsm.state !== InjectionState.Idle) {
-            return;
+    ): Promise<void> {
+        try {
+            await CosmeticApi.applyCssRules(params);
+        } catch (e) {
+            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                setTimeout(() => {
+                    CosmeticApi.applyFrameCssRules(params, tries + 1);
+                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            } else {
+                logger.debug(getErrorMessage(e));
+            }
         }
+    }
 
-        fsm.dispatch(InjectionEvent.Start);
+    /**
+     * Filters insecure scripts from remote sources.
+     *
+     * @param rules Cosmetic rules.
+     * @returns Permitted script rules.
+     */
+    private static sanitizeScriptRules(rules: CosmeticRule[]): CosmeticRule[] {
+        return rules.filter((rule) => {
+            // Scriptlets should not be excluded for remote filters
+            if (rule.isScriptlet) {
+                return true;
+            }
 
-        CosmeticApi
-            .applyCssRules(params)
-            .then(() => {
-                fsm.dispatch(InjectionEvent.Success);
-            }).catch((e) => {
-                fsm.dispatch(InjectionEvent.Failure);
+            // User rules should not be excluded
+            const filterId = rule.getFilterListId();
+            if (filterId === USER_FILTER_ID) {
+                return true;
+            }
 
-                if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
-                    setTimeout(() => {
-                        CosmeticApi.applyFrameCssRules(params, fsm, tries + 1);
-                    }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
-                } else {
-                    logger.debug(getErrorMessage(e));
-                }
-            });
+            /**
+             * @see {@link LocalScriptRulesService} for details about script source
+             */
+            const text = rule.getText();
+            return localScriptRulesService.isLocal(text);
+        });
     }
 
     /**
