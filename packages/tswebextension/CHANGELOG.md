@@ -7,16 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [0.2.4] - 2023-06-05
+
+### Fixed
+- `hideRequestInitiatorElement` function return more accurate css selector src attribute value
+for first party requests.
+- `ElementCollapser` inject styles via isolated style tag.
+
+
 ## [0.2.3] - 2023-05-31
 
 ### Fixed
-- Script rules injection
+- Script rules injection.
 
 
 ## [0.2.2] - 2023-05-29
 
 ### Added
-- New `logLevel`optional property for MV2 configuration to control logging levels.
+- New `logLevel` optional property for MV2 configuration to control logging levels.
 
 ### Changed
 - `verbose` MV2 configuration property is now optional.

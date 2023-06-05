@@ -3,6 +3,7 @@ import { ProcessShouldCollapsePayload } from '../../common/message';
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { MessageType, sendAppMessage } from '../../common/content-script';
+import { HIDING_STYLE, createHidingCssRule } from '../common/hidden-style';
 
 type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
 
@@ -10,22 +11,109 @@ type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
  * Hides broken items after blocking a network request.
  */
 export class ElementCollapser {
+    private styleNode: HTMLStyleElement | undefined;
+
     /**
-     * Start listening for error events.
+     * Creates new element collapser.
      */
-    public static start(): void {
-        document.addEventListener('error', ElementCollapser.shouldCollapseElement, true);
-        // We need to listen for load events to hide blocked iframes (they don't raise error event)
-        document.addEventListener('load', ElementCollapser.shouldCollapseElement, true);
+    constructor() {
+        this.shouldCollapseElement = this.shouldCollapseElement.bind(this);
     }
 
     /**
-     * Stop listening for error events.
+     * Starts listening for error events.
      */
-    public static stop(): void {
-        document.removeEventListener('error', ElementCollapser.shouldCollapseElement, true);
+    public start(): void {
+        document.addEventListener('error', this.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
-        document.removeEventListener('load', ElementCollapser.shouldCollapseElement, true);
+        document.addEventListener('load', this.shouldCollapseElement, true);
+    }
+
+    /**
+     * Stops listening for error events.
+     */
+    public stop(): void {
+        document.removeEventListener('error', this.shouldCollapseElement, true);
+        // We need to listen for load events to hide blocked iframes (they don't raise error event)
+        document.removeEventListener('load', this.shouldCollapseElement, true);
+    }
+
+    /**
+     * Appends Css rule to {@link #styleNode} sheet.
+     *
+     * @param rule - Css rule text.
+     */
+    private appendCssRule(rule: string): void {
+        if (!this.styleNode) {
+            this.styleNode = document.createElement('style');
+            this.styleNode.setAttribute('type', 'text/css');
+            (document.head || document.documentElement).appendChild(this.styleNode);
+        }
+
+        if (this.styleNode.sheet) {
+            this.styleNode.sheet.insertRule(rule, this.styleNode.sheet.cssRules.length);
+        }
+    }
+
+    /**
+     * Checks if element should be collapsed by requirements.
+     *
+     * @param event Error or load event.
+     */
+    private async shouldCollapseElement(event: Event): Promise<void> {
+        const eventType = event.type;
+        const element = event.target as RequestInitiatorElement;
+
+        const tagName = element.tagName.toLowerCase();
+
+        const expectedEventType = (tagName === 'iframe'
+            || tagName === 'frame'
+            || tagName === 'embed'
+        ) ? 'load' : 'error';
+
+        if (eventType !== expectedEventType) {
+            return;
+        }
+
+        const requestType = ElementCollapser.getRequestTypeByInitiatorTagName(element.localName);
+
+        if (!requestType) {
+            return;
+        }
+
+        const elementUrl = ElementCollapser.getElementUrl(element);
+
+        if (!elementUrl) {
+            return;
+        }
+
+        if (ElementCollapser.isElementCollapsed(element)) {
+            return;
+        }
+
+        const payload: ProcessShouldCollapsePayload = {
+            elementUrl,
+            documentUrl: document.URL,
+            requestType,
+        };
+
+        const shouldCollapse = await sendAppMessage({
+            type: MessageType.ProcessShouldCollapse,
+            payload,
+        });
+
+        if (!shouldCollapse) {
+            return;
+        }
+
+        const srcAttribute = element.getAttribute('src');
+
+        if (srcAttribute) {
+            const rule = createHidingCssRule(tagName, CSS.escape(srcAttribute));
+            this.appendCssRule(rule);
+        } else {
+            element.setAttribute('style', HIDING_STYLE);
+        }
     }
 
     /**
@@ -92,62 +180,5 @@ export class ElementCollapser {
     private static isElementCollapsed(element: HTMLElement): boolean {
         const computedStyle = window.getComputedStyle(element);
         return (computedStyle && computedStyle.display === 'none');
-    }
-
-    /**
-     * Checks if element should be collapsed by requirements.
-     *
-     * @param event Error or load event.
-     */
-    private static async shouldCollapseElement(event: Event): Promise<void> {
-        const eventType = event.type;
-        const element = event.target as RequestInitiatorElement;
-
-        const tagName = element.tagName.toLowerCase();
-
-        const expectedEventType = (tagName === 'iframe'
-            || tagName === 'frame'
-            || tagName === 'embed'
-        ) ? 'load' : 'error';
-
-        if (eventType !== expectedEventType) {
-            return;
-        }
-
-        const requestType = ElementCollapser.getRequestTypeByInitiatorTagName(element.localName);
-
-        if (!requestType) {
-            return;
-        }
-
-        const elementUrl = ElementCollapser.getElementUrl(element);
-
-        if (!elementUrl) {
-            return;
-        }
-
-        if (ElementCollapser.isElementCollapsed(element)) {
-            return;
-        }
-
-        const payload = {
-            elementUrl,
-            documentUrl: document.URL,
-            requestType,
-        } as ProcessShouldCollapsePayload;
-
-        const shouldCollapse = await sendAppMessage({
-            type: MessageType.ProcessShouldCollapse,
-            payload,
-        });
-
-        if (!shouldCollapse) {
-            return;
-        }
-
-        element.setAttribute(
-            'style',
-            'display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important;',
-        );
     }
 }

@@ -383,7 +383,17 @@ export class WebRequestApi {
 
         if (response?.cancel) {
             tabsApi.incrementTabBlockedRequestCount(tabId);
-            hideRequestInitiatorElement(tabId, requestFrameId, requestUrl, requestType, thirdParty);
+
+            const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
+
+            hideRequestInitiatorElement(
+                tabId,
+                requestFrameId,
+                requestUrl,
+                mainFrameUrl || referrerUrl,
+                requestType,
+                thirdParty,
+            );
         } else {
             ContentFiltering.onBeforeRequest(context);
         }

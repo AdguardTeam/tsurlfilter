@@ -1,6 +1,7 @@
-import { RequestType } from '@adguard/tsurlfilter';
-
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { CosmeticApi } from '../cosmetic-api';
+import { createHidingCssRule, AttributeMatching } from '../../common/hidden-style';
+import { BACKGROUND_TAB_ID } from '../../../common/constants';
 
 /**
  * Some html tags can trigger network requests.
@@ -12,13 +13,53 @@ export const enum InitiatorTag {
     Image = 'img',
 }
 
-export const BACKGROUND_TAB_ID = -1;
-
 /**
- * Css, injected to broken element for hiding.
+ * Get relative path of first-party request for resource `src` attribute.
+ *
+ * @param requestUrl Resource url.
+ * @param documentUrl Url of the document in which the resource will be loaded.
+ *
+ * @returns Relative path of resource `src` attribute for css selector.
  */
-// eslint-disable-next-line max-len
-export const INITIATOR_TAG_HIDDEN_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
+function getRelativeSrcPath(
+    requestUrl: string,
+    documentUrl: string,
+): string {
+    const requestUrlData = new URL(requestUrl);
+    const documentUrlData = new URL(documentUrl);
+
+    const documentPathname = documentUrlData.pathname;
+
+    const requestPathname = requestUrlData.pathname;
+
+    const requestUrlTail = requestUrlData.search + requestUrlData.hash;
+
+    if (documentPathname === '/') {
+        return requestPathname + requestUrlTail;
+    }
+
+    // Check that partial pathnames match
+
+    const requestUrlPathParts = requestPathname.split('/').filter((part) => !!part);
+    const documentUrlPathParts = documentPathname.split('/').filter((part) => !!part);
+
+    const commonParts: string[] = [];
+
+    for (let i = 0; i < Math.min(requestUrlPathParts.length, documentUrlPathParts.length); i += 1) {
+        if (requestUrlPathParts[i] !== documentUrlPathParts[i]) {
+            const path = requestUrlPathParts.slice(i).join('/') + requestUrlTail;
+            // If first parts are matched, return path relative to document page
+            // else return path relative to host
+            return i > 0 ? path : `/${path}`;
+        }
+
+        commonParts.push(requestUrlPathParts[i]);
+    }
+
+    const commonPath = `/${commonParts.join('/')}`;
+
+    return requestPathname.substring(commonPath.length + 1) + requestUrlTail;
+}
 
 /**
  * Returns network request initiator tag by request type.
@@ -42,14 +83,16 @@ function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null
  *
  * @param tabId Tab id.
  * @param requestFrameId Request frame id.
- * @param url Request url.
+ * @param requestUrl Request url.
+ * @param documentUrl Document url.
  * @param requestType Request type.
  * @param isThirdParty Flag telling if request is third-party.
  */
 export function hideRequestInitiatorElement(
     tabId: number,
     requestFrameId: number,
-    url: string,
+    requestUrl: string,
+    documentUrl: string,
     requestType: RequestType,
     isThirdParty: boolean,
 ): void {
@@ -59,17 +102,21 @@ export function hideRequestInitiatorElement(
         return;
     }
 
-    // Strip the protocol and host name (for first-party requests) from the selector
-    let srcUrlStartIndex = url.indexOf('//');
-    if (!isThirdParty) {
-        srcUrlStartIndex = url.indexOf('/', srcUrlStartIndex + 2);
+    let src: string;
+    let matching: AttributeMatching;
+
+    if (isThirdParty) {
+        src = requestUrl.substring(requestUrl.indexOf('//'));
+        matching = AttributeMatching.Suffix;
+    } else {
+        src = getRelativeSrcPath(requestUrl, documentUrl);
+        matching = AttributeMatching.Strict;
     }
-    const srcUrl = url.substring(srcUrlStartIndex);
 
     let code = '';
 
     for (let i = 0; i < initiatorTags.length; i += 1) {
-        code += `${initiatorTags[i]}[src$="${srcUrl}"] ${INITIATOR_TAG_HIDDEN_STYLE}\n`;
+        code += createHidingCssRule(initiatorTags[i], src, matching);
     }
 
     CosmeticApi.injectCss(code, tabId, requestFrameId);

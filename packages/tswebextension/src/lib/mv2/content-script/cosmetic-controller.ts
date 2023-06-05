@@ -48,7 +48,8 @@ export class CosmeticController {
      * Init cosmetic processing.
      */
     public init(): void {
-        ElementCollapser.start();
+        const elementCollapser = new ElementCollapser();
+        elementCollapser.start();
         this.process();
     }
 
