@@ -75,6 +75,11 @@ export class TabContext implements TabContextInterface {
     public isSyntheticTab = true;
 
     /**
+     * Is document page request handled by memory cache or sw.
+     */
+    public isDocumentRequestCached = false;
+
+    /**
      * Context constructor.
      *
      * @param info Tab info.
@@ -91,8 +96,36 @@ export class TabContext implements TabContextInterface {
     public updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType): void {
         this.info = Object.assign(this.info, changeInfo);
 
-        // If the tab was updated it means that it wasn't used to send requests in the background
+        // If the tab was updated it means that it wasn't used to send requests in the background.
         this.isSyntheticTab = false;
+
+        // Update main frame data when we navigate to another page with document request caching enabled.
+        if (changeInfo.url) {
+            // Get current main frame.
+            const frame = this.frames.get(MAIN_FRAME_ID);
+
+            // If main frame url is the same as request url, do nothing.
+            if (frame?.url === changeInfo.url) {
+                return;
+            }
+
+            // If the main frame doesn't exist or its URL is different from the request URL,
+            // it means that the document request hasn't been processed by the WebRequestApi yet.
+            // In this case, we mark the tab as using the cache and update its context using the tabsApi.
+            this.isDocumentRequestCached = true;
+
+            // Update main frame data.
+            this.handleMainFrameRequest(changeInfo.url);
+        }
+
+        // When the cached page is reloaded, we need to manually update
+        // the main frame rule for correct document-level rule processing.
+        if (!changeInfo.url
+            && changeInfo.status === 'loading'
+            && this.isDocumentRequestCached
+            && this.info.url) {
+            this.handleMainFrameRequest(this.info.url);
+        }
     }
 
     /**
@@ -113,6 +146,10 @@ export class TabContext implements TabContextInterface {
      * @param requestContext Request context data.
      */
     public handleFrameRequest(requestContext: FrameRequestContext): void {
+        // This method is called in the WebRequest onBeforeRequest handler.
+        // It means that the request is being processed.
+        this.isDocumentRequestCached = false;
+
         const {
             frameId,
             requestId,
@@ -121,7 +158,7 @@ export class TabContext implements TabContextInterface {
         } = requestContext;
 
         if (requestType === RequestType.Document) {
-            this.handleMainFrameRequest(requestContext);
+            this.handleMainFrameRequest(requestUrl, requestId);
         } else {
             this.frames.set(frameId, new Frame(requestUrl, requestId));
         }
@@ -158,30 +195,26 @@ export class TabContext implements TabContextInterface {
     }
 
     /**
-     * Handles document request and stores data in main frame context.
+     * Handles document request and updates main frame context.
+     *
      * Also matches document level rule and store it {@link mainFrameRule}.
-     * This method is called before filtering processing in WebRequest onBeforeRequest handler.
      *
      * MatchingResult handles in {@link handleFrameMatchingResult}.
      * CosmeticResult handles in {@link handleFrameCosmeticResult}.
      *
-     * @param requestContext Request context data.
+     * @param requestUrl Request url.
+     * @param requestId Request id.
      */
-    private handleMainFrameRequest(requestContext: FrameRequestContext): void {
-        const {
-            requestUrl,
-            requestId,
-        } = requestContext;
-
-        // clear frames data on tab reload
+    private handleMainFrameRequest(requestUrl: string, requestId?: string): void {
+        // Clear frames data on tab reload.
         this.frames.clear();
 
-        // set new main frame data
+        // Set new main frame data.
         this.frames.set(MAIN_FRAME_ID, new Frame(requestUrl, requestId));
 
-        // calculate new main frame rule
+        // Calculate new main frame rule.
         this.mainFrameRule = allowlistApi.matchFrame(requestUrl);
-        // reset tab blocked count
+        // Reset tab blocked count.
         this.blockedRequestCount = 0;
     }
 
@@ -194,13 +227,10 @@ export class TabContext implements TabContextInterface {
     public static createNewTabContext(tab: TabInfo): TabContext {
         const tabContext = new TabContext(tab);
 
-        /**
-         * In some cases, tab is created while browser navigation processing.
-         * For example: when you navigate outside the browser or create new empty tab.
-         * `pendingUrl` represent url navigated to.
-         * We check it first.
-         * If server returns redirect, new main frame url will be processed in WebRequestApi.
-         */
+        // In some cases, tab is created while browser navigation processing.
+        // For example: when you navigate outside the browser or create new empty tab.
+        // `pendingUrl` represent url navigated to. We check it first.
+        // If server returns redirect, new main frame url will be processed in WebRequestApi.
         const url = tab.pendingUrl || tab.url;
 
         if (url) {
