@@ -86,7 +86,7 @@
     ]
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.9.7",
+    "@adguard/scriptlets": "^1.9.37",
     "commander": "9.4.1",
     "ip6addr": "0.2.3",
     "is-cidr": "4.0.2",
