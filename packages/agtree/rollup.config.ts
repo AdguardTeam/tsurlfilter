@@ -90,9 +90,6 @@ const browserPlugins = [
             {
                 find: '@adguard/ecss-tree',
                 replacement: path.join(
-                    // Lerna hoists "ecsstree" to the root "node_modules" directory,
-                    // so we need to go up two levels to get the actual path
-                    '../../',
                     'node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
                 ),
             },

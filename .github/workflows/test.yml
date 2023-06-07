@@ -25,15 +25,19 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # actions/setup-node@v3 already has caching under hood.
-          cache: 'yarn'
       - name: Run bash commands
         shell: bash
         run: |
           ls -alt
 
           # install deps
-          npx lerna bootstrap
+          npx lerna bootstrap --scope=@adguard/{agtree,tsurlfilter,tswebextension,api}
+
+          # agtree
+          npx lerna run --scope @adguard/agtree check-types
+          npx lerna run --scope @adguard/agtree lint
+          npx lerna run --scope @adguard/agtree test
+          npx lerna run --scope @adguard/agtree build
 
           # tsurlfilter
           npx lerna run --scope @adguard/tsurlfilter lint
