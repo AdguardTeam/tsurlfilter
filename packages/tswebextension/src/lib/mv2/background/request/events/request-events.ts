@@ -5,7 +5,7 @@ import { requestContextStorage, RequestContextState, RequestContext } from '../r
 import { RequestEvent, RequestData } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
-import { TabFrameRequestContext, tabsApi } from '../../tabs';
+import { MAIN_FRAME_ID, TabFrameRequestContext, tabsApi } from '../../tabs';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -145,7 +145,6 @@ export class RequestEvents {
         const {
             requestId,
             type,
-            frameId,
             tabId,
             parentFrameId,
             originUrl,
@@ -154,7 +153,7 @@ export class RequestEvents {
             timeStamp,
         } = details;
 
-        let { url } = details;
+        let { url, frameId } = details;
 
         /**
          * Truncate too long urls.
@@ -176,7 +175,12 @@ export class RequestEvents {
 
         const { requestType, contentType } = getRequestType(type);
 
-        let requestFrameId = type === 'main_frame' ? frameId : parentFrameId;
+        const idDocumentRequest = requestType === RequestType.Document;
+
+        // Pre-rendered documents can have a frame ID other than zero
+        frameId = idDocumentRequest ? MAIN_FRAME_ID : details.frameId;
+
+        let requestFrameId = idDocumentRequest ? frameId : parentFrameId;
 
         // Relate request to main_frame
         if (requestFrameId === -1) {
@@ -195,7 +199,7 @@ export class RequestEvents {
             tabId,
         };
 
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+        if (idDocumentRequest || requestType === RequestType.SubDocument) {
             // Saves the current tab url to retrieve it correctly below.
             tabsApi.handleFrameRequest(tabFrameRequestContext);
         }
