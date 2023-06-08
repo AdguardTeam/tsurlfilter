@@ -224,9 +224,9 @@ export class RequestEvents {
             method,
         };
 
-        const context = requestContextStorage.record(requestId, requestContext);
+        requestContextStorage.set(requestId, requestContext);
 
-        return { details, context };
+        return { details, context: requestContext };
     }
 
     /**

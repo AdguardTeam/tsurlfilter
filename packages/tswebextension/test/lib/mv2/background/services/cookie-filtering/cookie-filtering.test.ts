@@ -74,7 +74,7 @@ describe('Cookie filtering', () => {
         context.requestHeaders = requestHeaders;
         context.responseHeaders = responseHeaders;
 
-        requestContextStorage.record(requestId, context);
+        requestContextStorage.set(requestId, context);
 
         cookieFiltering.onBeforeSendHeaders(context);
 
@@ -291,7 +291,7 @@ describe('Cookie filtering', () => {
             context.matchingResult,
         );
 
-        requestContextStorage.record(requestId, context);
+        requestContextStorage.set(requestId, context);
 
         expect(cookieFiltering.getBlockingRules(context.tabId, context.frameId)).toHaveLength(2);
 
@@ -304,7 +304,7 @@ describe('Cookie filtering', () => {
         const rules: NetworkRule[] = [];
 
         context.matchingResult = new MatchingResult(rules, null);
-        requestContextStorage.record(requestId, context);
+        requestContextStorage.set(requestId, context);
 
         cookieFiltering.onBeforeSendHeaders(context);
 
@@ -315,7 +315,7 @@ describe('Cookie filtering', () => {
         requestContextStorage.delete(requestId);
 
         requestId += 1;
-        requestContextStorage.record(requestId, context);
+        requestContextStorage.set(requestId, context);
 
         cookieFiltering.onBeforeSendHeaders(context);
 

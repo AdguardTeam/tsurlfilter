@@ -22,7 +22,7 @@ describe('Params service', () => {
     ): string | null => {
         const requestId = '12345';
 
-        requestContextStorage.record(requestId, {
+        requestContextStorage.set(requestId, {
             state: RequestContextState.BeforeRequest,
             requestId,
             requestUrl: url,
