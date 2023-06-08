@@ -4,36 +4,7 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 import { EventChannel } from '../../../common/utils/channels';
 import { allowlistApi } from '../allowlist';
 import { FrameRequestContext, TabContext } from './tab-context';
-import type { RequestContext } from '../request';
-import type { Frame } from './frame';
-
-export interface TabsApiInterface {
-    start: () => Promise<void>
-    stop: () => void
-
-    getTabContext: (tabId: number) => TabContext | undefined
-    getTabFrameRule: (tabId: number) => NetworkRule | null
-    getTabFrame: (tabId: number, frameId: number) => Frame | null
-    getTabMainFrame: (tabId: number) => Frame | null
-
-    handleFrameRequest: (requestContext: RequestContext) => void
-    handleFrameCosmeticResult: (
-        tabId: number,
-        frameId: number,
-        cosmeticResult: CosmeticResult,
-    ) => void
-
-    handleFrameMatchingResult: (
-        tabId: number,
-        frameId: number,
-        matchingResult: MatchingResult,
-    ) => void
-
-    onCreate: EventChannel<TabContext>
-    onUpdate: EventChannel<TabContext>
-    onDelete: EventChannel<TabContext>
-    onActivate: EventChannel<TabContext>
-}
+import { type Frame, MAIN_FRAME_ID } from './frame';
 
 /**
  * Request context data related to the tab's frame.
@@ -45,9 +16,7 @@ export type TabFrameRequestContext = FrameRequestContext & {
 /**
  * Tabs API. Wrapper around browser.tabs API.
  */
-export class TabsApi implements TabsApiInterface {
-    private static readonly MAIN_FRAME_ID = 0;
-
+export class TabsApi {
     public context = new Map<number, TabContext>();
 
     public onCreate = new EventChannel<TabContext>();
@@ -121,22 +90,6 @@ export class TabsApi implements TabsApiInterface {
     }
 
     /**
-     * Sets frame data for the frame in the tab context.
-     *
-     * @param tabId Tab ID.
-     * @param frameId Frame ID.
-     * @param frameData Frame data.
-     */
-    public setTabFrame(tabId: number, frameId: number, frameData: Frame): void {
-        const tabContext = this.context.get(tabId);
-
-        if (tabContext) {
-            tabContext.frames.set(frameId, frameData);
-            this.onUpdate.dispatch(tabContext);
-        }
-    }
-
-    /**
      * Retrieves frame data for the frame in the tab context.
      *
      * @param tabId Tab ID.
@@ -166,7 +119,7 @@ export class TabsApi implements TabsApiInterface {
      * @returns Frame data or null if not found.
      */
     public getTabMainFrame(tabId: number): Frame | null {
-        return this.getTabFrame(tabId, TabsApi.MAIN_FRAME_ID);
+        return this.getTabFrame(tabId, MAIN_FRAME_ID);
     }
 
     /**
@@ -419,12 +372,12 @@ export class TabsApi implements TabsApiInterface {
      * @param frameId Frame ID.
      */
     public static async injectScript(code: string, tabId: number, frameId?: number): Promise<void> {
-        const injectDetails = {
+        const injectDetails: ExtensionTypes.InjectDetails = {
             code,
             frameId,
             runAt: 'document_start',
             matchAboutBlank: true,
-        } as ExtensionTypes.InjectDetails;
+        };
 
         await browser.tabs.executeScript(tabId, injectDetails);
     }
@@ -437,13 +390,13 @@ export class TabsApi implements TabsApiInterface {
      * @param frameId Frame ID.
      */
     public static async injectCss(code: string, tabId: number, frameId?: number): Promise<void> {
-        const injectDetails = {
+        const injectDetails: ExtensionTypes.InjectDetails = {
             code,
             frameId,
             runAt: 'document_start',
             matchAboutBlank: true,
             cssOrigin: 'user',
-        } as ExtensionTypes.InjectDetails;
+        };
 
         await browser.tabs.insertCSS(tabId, injectDetails);
     }
