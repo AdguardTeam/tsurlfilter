@@ -8,8 +8,9 @@ import {
     SelectorList,
     toPlainObject,
 } from '@adguard/ecss-tree';
-import { CssTree } from '../../src/utils/csstree';
+import { CssTree, ExtendedCssNodes } from '../../src/utils/csstree';
 import { CssTreeParserContext } from '../../src/utils/csstree-constants';
+import { EXTCSS_PSEUDO_CLASSES, EXTCSS_ATTRIBUTES } from '../../src/converter/pseudo';
 
 describe('CSSTree utils', () => {
     test('shiftNodePosition', () => {
@@ -134,59 +135,104 @@ describe('CSSTree utils', () => {
         ).not.toThrowError();
     });
 
-    test('getSelectorExtendedCssNodes', () => {
-        expect(
-            CssTree.getSelectorExtendedCssNodes(<Selector>CssTree.parse('#test', CssTreeParserContext.selector)),
-        ).toEqual({
-            attributes: [],
-            pseudos: [],
-        });
+    describe('getSelectorExtendedCssNodes', () => {
+        /**
+         * Wrapper for `getSelectorExtendedCssNodes()` that accepts selector as a string,
+         * just for convenience when writing tests
+         *
+         * @param selector Selector to check
+         * @returns `true` if selector has any extended CSS node, `false` otherwise
+         */
+        const getSelectorExtendedCssNodes = (selector: string): ExtendedCssNodes => {
+            return CssTree.getSelectorExtendedCssNodes(
+                <Selector>CssTree.parse(selector, CssTreeParserContext.selector),
+                EXTCSS_PSEUDO_CLASSES,
+                EXTCSS_ATTRIBUTES,
+            );
+        };
 
-        expect(
-            CssTree.getSelectorExtendedCssNodes(
-                <Selector>CssTree.parse('#test[-ext-contains="something"]', CssTreeParserContext.selector),
-            ),
-        ).toMatchObject({
-            attributes: [
-                {
-                    name: {
-                        type: 'Identifier',
-                        name: '-ext-contains',
+        test.each([
+            ['#test', {
+                attributes: [],
+                pseudos: [],
+            }],
+            ['div', {
+                attributes: [],
+                pseudos: [],
+            }],
+            ['.test', {
+                attributes: [],
+                pseudos: [],
+            }],
+            ['#test[-ext-contains="something"]', {
+                attributes: [
+                    {
+                        name: {
+                            type: 'Identifier',
+                            name: '-ext-contains',
+                        },
                     },
-                },
-            ],
-            pseudos: [],
+                ],
+                pseudos: [],
+            }],
+            [':contains(a)', {
+                attributes: [],
+                pseudos: [{
+                    name: 'contains',
+                    type: 'PseudoClassSelector',
+                }],
+            }],
+            ['#test[-ext-contains="something"]:-abp-has(.ad):if-not([ad]):not([some])::before', {
+                attributes: [
+                    {
+                        name: {
+                            type: 'Identifier',
+                            name: '-ext-contains',
+                        },
+                    },
+                ],
+                // Partial match, for important parts
+                pseudos: [
+                    {
+                        name: '-abp-has',
+                        type: 'PseudoClassSelector',
+                    },
+                    {
+                        name: 'if-not',
+                        type: 'PseudoClassSelector',
+                    },
+                ],
+            }],
+        ])('getSelectorExtendedCssNodes(%s)', (selector, expected) => {
+            expect(getSelectorExtendedCssNodes(selector)).toMatchObject(expected);
         });
+    });
 
-        expect(
-            CssTree.getSelectorExtendedCssNodes(
-                <Selector>(
-                    CssTree.parse(
-                        '#test[-ext-contains="something"]:-abp-has(.ad):if-not([ad]):not([some])::before',
-                        CssTreeParserContext.selector,
-                    )
-                ),
-            ),
-        ).toMatchObject({
-            attributes: [
-                {
-                    name: {
-                        type: 'Identifier',
-                        name: '-ext-contains',
-                    },
-                },
-            ],
-            // Partial match, for important parts
-            pseudos: [
-                {
-                    name: '-abp-has',
-                    type: 'PseudoClassSelector',
-                },
-                {
-                    name: 'if-not',
-                    type: 'PseudoClassSelector',
-                },
-            ],
+    describe('hasAnySelectorExtendedCssNode', () => {
+        /**
+         * Wrapper for `hasAnySelectorExtendedCssNode()` that accepts selector as a string,
+         * just for convenience when writing tests
+         *
+         * @param selector Selector to check
+         * @returns `true` if selector has any extended CSS node, `false` otherwise
+         */
+        const hasAnySelectorExtendedCssNode = (selector: string): boolean => {
+            return CssTree.hasAnySelectorExtendedCssNode(
+                <Selector>CssTree.parse(selector, CssTreeParserContext.selector),
+                EXTCSS_PSEUDO_CLASSES,
+                EXTCSS_ATTRIBUTES,
+            );
+        };
+
+        test.each([
+            ['#test', false],
+            ['div', false],
+            ['.test', false],
+            ['#test[-ext-contains="something"]', true],
+            [':contains(a)', true],
+            ['#test[-ext-contains="something"]:-abp-has(.ad):if-not([ad]):not([some])::before', true],
+        ])('hasAnySelectorExtendedCssNode(%s)', (selector, expected) => {
+            expect(hasAnySelectorExtendedCssNode(selector)).toBe(expected);
         });
     });
 

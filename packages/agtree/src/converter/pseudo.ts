@@ -2,7 +2,7 @@
  * Known ExtendedCSS elements
  */
 
-export const EXTCSS_PSEUDO_CLASSES = [
+export const EXTCSS_PSEUDO_CLASSES = new Set([
     // AdGuard
     // https://github.com/AdguardTeam/ExtendedCss
     'has',
@@ -31,9 +31,9 @@ export const EXTCSS_PSEUDO_CLASSES = [
     '-abp-has',
     '-abp-contains',
     '-abp-properties',
-];
+]);
 
-export const EXTCSS_ATTRIBUTES = [
+export const EXTCSS_ATTRIBUTES = new Set([
     // AdGuard
     '-ext-has',
     '-ext-if-not',
@@ -59,4 +59,4 @@ export const EXTCSS_ATTRIBUTES = [
     '-ext-abp-has',
     '-ext-abp-contains',
     '-ext-abp-properties',
-];
+]);

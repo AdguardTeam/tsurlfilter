@@ -17,8 +17,8 @@ import {
     DeclarationList,
     MediaQueryList,
     MediaQuery,
+    find,
 } from '@adguard/ecss-tree';
-import { EXTCSS_PSEUDO_CLASSES, EXTCSS_ATTRIBUTES } from '../converter/pseudo';
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
@@ -180,23 +180,29 @@ export class CssTree {
     /**
      * Walks through the CSSTree node and returns all ExtendedCSS nodes.
      *
-     * @param selectorAst CSSTree selector AST
+     * @param selectorAst Selector AST
+     * @param pseudoClasses List of the names of the pseudo classes to check
+     * @param attributeSelectors List of the names of the attribute selectors to check
      * @returns Extended CSS nodes (pseudos and attributes)
      */
-    public static getSelectorExtendedCssNodes(selectorAst: Selector): ExtendedCssNodes {
+    public static getSelectorExtendedCssNodes(
+        selectorAst: Selector,
+        pseudoClasses: Set<string>,
+        attributeSelectors: Set<string>,
+    ): ExtendedCssNodes {
         const pseudos: PseudoClassSelector[] = [];
         const attributes: AttributeSelector[] = [];
 
-        walk(selectorAst, (node: CssNode) => {
+        walk(selectorAst, (node) => {
             // Pseudo classes
             if (node.type === CssTreeNodeType.PseudoClassSelector) {
                 // Check if it's a known ExtendedCSS pseudo class
-                if (EXTCSS_PSEUDO_CLASSES.includes(node.name)) {
+                if (pseudoClasses.has(node.name)) {
                     pseudos.push(node);
                 }
             } else if (node.type === CssTreeNodeType.AttributeSelector) {
                 // Check if it's a known ExtendedCSS attribute
-                if (EXTCSS_ATTRIBUTES.includes(node.name.name)) {
+                if (attributeSelectors.has(node.name.name)) {
                     attributes.push(node);
                 }
             }
@@ -206,6 +212,41 @@ export class CssTree {
             pseudos,
             attributes,
         };
+    }
+
+    /**
+     * Checks if the selector contains any ExtendedCSS nodes. It is a faster alternative to
+     * `getSelectorExtendedCssNodes` if you only need to know if the selector contains any ExtendedCSS nodes,
+     * because it stops the search on the first ExtendedCSS node instead of going through the whole selector
+     * and collecting all ExtendedCSS nodes.
+     *
+     * @param selectorAst Selector AST
+     * @param pseudoClasses List of the names of the pseudo classes to check
+     * @param attributeSelectors List of the names of the attribute selectors to check
+     * @returns `true` if the selector contains any ExtendedCSS nodes
+     * @see {@link https://github.com/csstree/csstree/blob/master/docs/traversal.md#findast-fn}
+     */
+    public static hasAnySelectorExtendedCssNode(
+        selectorAst: Selector,
+        pseudoClasses: Set<string>,
+        attributeSelectors: Set<string>,
+    ): boolean {
+        return find(selectorAst, (node) => {
+            // Pseudo classes
+            if (node.type === CssTreeNodeType.PseudoClassSelector) {
+                // Check if it's a known ExtendedCSS pseudo class
+                if (pseudoClasses.has(node.name)) {
+                    return true;
+                }
+            } else if (node.type === CssTreeNodeType.AttributeSelector) {
+                // Check if it's a known ExtendedCSS attribute
+                if (attributeSelectors.has(node.name.name)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }) !== null;
     }
 
     /**

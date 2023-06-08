@@ -72,8 +72,13 @@ export { AdblockSyntaxError } from './parser/errors/adblock-syntax-error';
 export { FilterListParser } from './parser/filterlist';
 
 // Utils
+export { CssTree, ExtendedCssNodes } from './utils/csstree';
 export { DomainUtils } from './utils/domain';
 export { VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
+
+// Constants
+export { METADATA_HEADERS } from './converter/metadata';
+export { EXTCSS_PSEUDO_CLASSES, EXTCSS_ATTRIBUTES } from './converter/pseudo';
 
 // Version
 export { version } from './version';
