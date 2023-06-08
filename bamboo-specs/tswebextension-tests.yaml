@@ -43,18 +43,18 @@ Test:
 
             ls -alt
 
-            npx lerna bootstrap --scope @adguard/tswebextension --include-dependencies
+            npx lerna@6 bootstrap --scope @adguard/tswebextension --include-dependencies
 
             # build tsurlfilter first, because it is used in tswebextension tests
-            npx lerna run --scope @adguard/tsurlfilter build
+            npx lerna@6 run --scope @adguard/tsurlfilter build
   
-            npx lerna run --scope @adguard/tswebextension test:prod
-            npx lerna run --scope @adguard/tswebextension build
+            npx lerna@6 run --scope @adguard/tswebextension test:prod
+            npx lerna@6 run --scope @adguard/tswebextension build
 
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna clean -y
+            npx lerna@6 clean -y
   final-tasks:
     - clean
   requirements:

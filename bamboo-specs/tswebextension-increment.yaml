@@ -46,7 +46,7 @@ Increment:
             ls -alt
 
             # Increment tswebextension
-            npx lerna run --scope @adguard/tswebextension increment
+            npx lerna@6 run --scope @adguard/tswebextension increment
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

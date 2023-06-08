@@ -31,27 +31,27 @@ jobs:
           ls -alt
 
           # install deps
-          npx lerna bootstrap --scope=@adguard/{agtree,tsurlfilter,tswebextension,api}
+          npx lerna@6 bootstrap --scope=@adguard/{agtree,tsurlfilter,tswebextension,api}
 
           # agtree
-          npx lerna run --scope @adguard/agtree check-types
-          npx lerna run --scope @adguard/agtree lint
-          npx lerna run --scope @adguard/agtree test
-          npx lerna run --scope @adguard/agtree build
+          npx lerna@6 run --scope @adguard/agtree check-types
+          npx lerna@6 run --scope @adguard/agtree lint
+          npx lerna@6 run --scope @adguard/agtree test
+          npx lerna@6 run --scope @adguard/agtree build
 
           # tsurlfilter
-          npx lerna run --scope @adguard/tsurlfilter lint
-          npx lerna run --scope @adguard/tsurlfilter test:prod
-          npx lerna run --scope @adguard/tsurlfilter build
+          npx lerna@6 run --scope @adguard/tsurlfilter lint
+          npx lerna@6 run --scope @adguard/tsurlfilter test:prod
+          npx lerna@6 run --scope @adguard/tsurlfilter build
 
           # tswebextension
-          npx lerna run --scope @adguard/tswebextension lint
-          npx lerna run --scope @adguard/tswebextension test:prod
-          npx lerna run --scope @adguard/tswebextension build
+          npx lerna@6 run --scope @adguard/tswebextension lint
+          npx lerna@6 run --scope @adguard/tswebextension test:prod
+          npx lerna@6 run --scope @adguard/tswebextension build
 
           # api
-          npx lerna run --scope @adguard/api lint
-          npx lerna run --scope @adguard/api build
+          npx lerna@6 run --scope @adguard/api lint
+          npx lerna@6 run --scope @adguard/api build
   notify:
     needs: [ test ]
     # Secrets are not passed to workflows that are triggered by a pull request from a fork

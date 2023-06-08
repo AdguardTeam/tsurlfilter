@@ -37,8 +37,8 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap --scope @adguard/tswebextension --include-dependencies
-            npx lerna run --scope @adguard/tswebextension build
+            npx lerna@6 bootstrap --scope @adguard/tswebextension --include-dependencies
+            npx lerna@6 run --scope @adguard/tswebextension build
 
             cd packages/tswebextension/
             yarn pack --filename tswebextension.tgz
@@ -47,7 +47,7 @@ Build:
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna clean -y
+            npx lerna@6 clean -y
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt
         scope: RESULT

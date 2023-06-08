@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npx lerna run precommit --since 'origin/$(git branch --show-current)'
+npx lerna@6 run precommit --since 'origin/$(git branch --show-current)'

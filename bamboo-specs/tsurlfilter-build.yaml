@@ -37,8 +37,8 @@ Build:
 
             ls -alt
 
-            npx lerna bootstrap --scope @adguard/tsurlfilter --include-dependencies
-            npx lerna run --scope @adguard/tsurlfilter build 
+            npx lerna@6 bootstrap --scope @adguard/tsurlfilter --include-dependencies
+            npx lerna@6 run --scope @adguard/tsurlfilter build 
 
             cd packages/tsurlfilter/
             yarn pack --filename tsurlfilter.tgz
@@ -47,7 +47,7 @@ Build:
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
-            npx lerna clean -y
+            npx lerna@6 clean -y
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT

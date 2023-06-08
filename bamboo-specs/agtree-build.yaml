@@ -38,10 +38,10 @@ Build:
             ls -alt
 
             # Bootstrap the package with Lerna
-            npx lerna bootstrap --scope @adguard/agtree --include-dependencies
+            npx lerna@6 bootstrap --scope @adguard/agtree --include-dependencies
 
             # Build AGTree with Rollup
-            npx lerna run --scope @adguard/agtree build
+            npx lerna@6 run --scope @adguard/agtree build
 
             # Pack the AGTree package into a tarball
             cd packages/agtree/
@@ -52,7 +52,7 @@ Build:
             rm -rf node_modules
 
             # Cleanup child packages
-            npx lerna clean -y
+            npx lerna@6 clean -y
     - inject-variables:
         file: ./packages/agtree/dist/build.txt
         scope: RESULT
