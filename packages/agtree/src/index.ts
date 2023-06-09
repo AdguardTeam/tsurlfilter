@@ -71,6 +71,9 @@ export { ParameterListParser } from './parser/misc/parameter-list';
 export { AdblockSyntaxError } from './parser/errors/adblock-syntax-error';
 export { FilterListParser } from './parser/filterlist';
 
+// Converter
+export { HtmlRuleConverter } from './converter/html';
+
 // Utils
 export { CssTree, ExtendedCssNodes } from './utils/csstree';
 export { DomainUtils } from './utils/domain';

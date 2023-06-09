@@ -17,6 +17,7 @@ import {
     DeclarationList,
     MediaQueryList,
     MediaQuery,
+    PseudoClassSelectorPlain,
     find,
 } from '@adguard/ecss-tree';
 import {
@@ -27,6 +28,7 @@ import {
     CSS_IMPORTANT,
     DOT,
     EMPTY,
+    EQUALS,
     HASHMARK,
     OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
@@ -37,6 +39,7 @@ import { CssTreeNodeType, CssTreeParserContext } from './csstree-constants';
 import { AdblockSyntaxError } from '../parser/errors/adblock-syntax-error';
 import { LocationRange, defaultLocation } from '../parser/common';
 import { locRange } from './location';
+import { StringUtils } from './string';
 
 /**
  * Common CSSTree parsing options.
@@ -584,5 +587,120 @@ export class CssTree {
         });
 
         return result.trim();
+    }
+
+    /**
+     * Helper method to assert that the attribute selector has a value
+     *
+     * @param node Attribute selector node
+     */
+    public static assertAttributeSelectorHasStringValue(
+        node: AttributeSelector,
+    ): asserts node is AttributeSelector & { value: { type: 'String' } } {
+        if (!node.value || node.value.type !== CssTreeNodeType.String) {
+            throw new Error(
+                `Invalid argument '${node.value}' for '${node.name.name}', expected a string, but got '${
+                    node.value
+                        ? node.value.type
+                        : 'undefined'
+                }'`,
+            );
+        }
+    }
+
+    /**
+     * Helper method to assert that the pseudo-class selector has at least one argument
+     *
+     * @param node Pseudo-class selector node
+     */
+    public static assertPseudoClassHasAnyArgument(
+        node: PseudoClassSelectorPlain,
+    ): asserts node is PseudoClassSelectorPlain & { children: CssNodePlain[] } {
+        if (!node.children || node.children.length === 0) {
+            throw new Error(`Pseudo class '${node.name}' has no argument`);
+        }
+    }
+
+    /**
+     * Helper method to parse an attribute selector value as a number
+     *
+     * @param node Attribute selector node
+     * @returns Parsed attribute selector value as a number
+     * @throws If the attribute selector hasn't a string value or the string value is can't be parsed as a number
+     */
+    public static parseAttributeSelectorValueAsNumber(node: AttributeSelector): number {
+        CssTree.assertAttributeSelectorHasStringValue(node);
+        return StringUtils.parseNumber(node.value.value);
+    }
+
+    /**
+     * Helper method to parse a pseudo-class argument as a number
+     *
+     * @param node Pseudo-class selector node to parse
+     * @returns Parsed pseudo-class argument as a number
+     */
+    public static parsePseudoClassArgumentAsNumber(node: PseudoClassSelectorPlain): number {
+        // Check if the pseudo-class has at least one child
+        CssTree.assertPseudoClassHasAnyArgument(node);
+
+        // Check if the pseudo-class has only one child
+        if (node.children.length > 1) {
+            throw new Error(`Invalid argument '${node.name}', expected a number, but got multiple arguments`);
+        }
+
+        // Check if the pseudo-class argument is a string / number / raw
+        const argument = node.children[0];
+
+        if (
+            argument.type !== CssTreeNodeType.String
+            && argument.type !== CssTreeNodeType.Number
+            && argument.type !== CssTreeNodeType.Raw
+        ) {
+            throw new Error(
+                `Invalid argument '${
+                    node.name
+                }', expected a ${
+                    CssTreeNodeType.String
+                } or ${
+                    CssTreeNodeType.Number
+                } or ${
+                    CssTreeNodeType.Raw
+                }, but got '${argument.type}'`,
+            );
+        }
+
+        // Parse the argument as a number
+        return StringUtils.parseNumber(argument.value);
+    }
+
+    /**
+     * Helper method to create an attribute selector node
+     *
+     * @param name Name of the attribute
+     * @param value Value of the attribute
+     * @param matcher Matcher of the attribute
+     * @param flags Flags of the attribute
+     * @returns Attribute selector node
+     * @see {@link https://github.com/csstree/csstree/blob/master/docs/ast.md#attributeselector}
+     */
+    public static createAttributeSelectorNode(
+        name: string,
+        value: string,
+        matcher = EQUALS,
+        flags: string | null = null,
+    ): AttributeSelector {
+        return {
+            type: CssTreeNodeType.AttributeSelector,
+            name: {
+                type: CssTreeNodeType.Identifier,
+                name,
+            },
+            value: {
+                type: CssTreeNodeType.String,
+                value,
+            },
+            matcher,
+            flags,
+        };
     }
 }

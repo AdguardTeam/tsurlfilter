@@ -601,4 +601,31 @@ export class StringUtils {
 
         return result;
     }
+
+    /**
+     * Helper method to parse a raw string as a number
+     *
+     * @param raw Raw string to parse
+     * @returns Parsed number
+     * @throws If the raw string can't be parsed as a number
+     */
+    public static parseNumber(raw: string): number {
+        const result = parseInt(raw, 10);
+
+        if (Number.isNaN(result)) {
+            throw new Error('Expected a number');
+        }
+
+        return result;
+    }
+
+    /**
+     * Checks if the given value is a string.
+     *
+     * @param value Value to check
+     * @returns `true` if the value is a string, `false` otherwise
+     */
+    public static isString(value: unknown): value is string {
+        return typeof value === 'string';
+    }
 }
