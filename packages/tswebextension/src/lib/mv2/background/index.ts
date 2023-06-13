@@ -6,6 +6,7 @@ export {
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
+export * from './api';
 export * from './app';
 export * from './tabs';
 export * from './request';
