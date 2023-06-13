@@ -7,13 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [Unreleased]
+## [0.2.8] - 2023-06-13
 
-### Changes
-- `RequestContextStorage` now extends from `Map` 
+### Changed
+- `logLevel` configuration property type to `string`
+- `RequestContextStorage` to extend from `Map`
 
 ### Deleted
-- Removed `record`, `find` methods and `onUpdate`, `onCreate` events from `RequestContextStorage`.
+- `record`, `find` methods and `onUpdate`, `onCreate` events from `RequestContextStorage`.
 
 
 ## [0.2.6] - 2023-06-06
