@@ -8,7 +8,6 @@ import {
     AttributeSelector,
     SyntaxParseError,
     CssNode,
-    PseudoClassSelector,
     Selector,
     generate,
     CssNodePlain,
@@ -19,7 +18,11 @@ import {
     MediaQuery,
     PseudoClassSelectorPlain,
     find,
+    Block,
+    BlockPlain,
+    SelectorListPlain,
 } from '@adguard/ecss-tree';
+import cloneDeep from 'clone-deep';
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
@@ -40,6 +43,7 @@ import { AdblockSyntaxError } from '../parser/errors/adblock-syntax-error';
 import { LocationRange, defaultLocation } from '../parser/common';
 import { locRange } from './location';
 import { StringUtils } from './string';
+import { EXT_CSS_LEGACY_ATTRIBUTES, EXT_CSS_PSEUDO_CLASSES, FORBIDDEN_CSS_FUNCTIONS } from '../converter/css';
 
 /**
  * Common CSSTree parsing options.
@@ -52,20 +56,7 @@ const commonCssTreeOptions = {
     positions: true,
 };
 
-/**
- * Result interface for ExtendedCSS finder.
- */
-export interface ExtendedCssNodes {
-    /**
-     * ExtendedCSS pseudo classes.
-     */
-    pseudos: PseudoClassSelector[];
-
-    /**
-     * ExtendedCSS attributes.
-     */
-    attributes: AttributeSelector[];
-}
+const URL_FUNCTION = 'url';
 
 /**
  * Additional / helper functions for CSSTree.
@@ -181,40 +172,58 @@ export class CssTree {
     }
 
     /**
+     * Checks if the CSSTree node is an ExtendedCSS node.
+     *
+     * @param node Node to check
+     * @param pseudoClasses List of the names of the pseudo classes to check
+     * @param attributeSelectors List of the names of the attribute selectors to check
+     * @returns `true` if the node is an ExtendedCSS node, otherwise `false`
+     */
+    public static isExtendedCssNode(
+        node: CssNode | CssNodePlain,
+        pseudoClasses: Set<string>,
+        attributeSelectors: Set<string>,
+    ): boolean {
+        return (
+            (node.type === CssTreeNodeType.PseudoClassSelector && pseudoClasses.has(node.name))
+            || (node.type === CssTreeNodeType.AttributeSelector && attributeSelectors.has(node.name.name))
+        );
+    }
+
+    /**
      * Walks through the CSSTree node and returns all ExtendedCSS nodes.
      *
-     * @param selectorAst Selector AST
+     * @param selectorList Selector list (can be a string or a CSSTree node)
      * @param pseudoClasses List of the names of the pseudo classes to check
      * @param attributeSelectors List of the names of the attribute selectors to check
      * @returns Extended CSS nodes (pseudos and attributes)
+     * @see {@link https://github.com/csstree/csstree/blob/master/docs/ast.md#selectorlist}
      */
     public static getSelectorExtendedCssNodes(
-        selectorAst: Selector,
-        pseudoClasses: Set<string>,
-        attributeSelectors: Set<string>,
-    ): ExtendedCssNodes {
-        const pseudos: PseudoClassSelector[] = [];
-        const attributes: AttributeSelector[] = [];
+        selectorList: string | SelectorList | SelectorListPlain,
+        pseudoClasses: Set<string> = EXT_CSS_PSEUDO_CLASSES,
+        attributeSelectors: Set<string> = EXT_CSS_LEGACY_ATTRIBUTES,
+    ): CssNode[] {
+        // Parse the block if string is passed
+        let ast;
 
-        walk(selectorAst, (node) => {
-            // Pseudo classes
-            if (node.type === CssTreeNodeType.PseudoClassSelector) {
-                // Check if it's a known ExtendedCSS pseudo class
-                if (pseudoClasses.has(node.name)) {
-                    pseudos.push(node);
-                }
-            } else if (node.type === CssTreeNodeType.AttributeSelector) {
-                // Check if it's a known ExtendedCSS attribute
-                if (attributeSelectors.has(node.name.name)) {
-                    attributes.push(node);
-                }
+        if (StringUtils.isString(selectorList)) {
+            ast = CssTree.parse(selectorList, CssTreeParserContext.selectorList);
+        } else {
+            ast = cloneDeep(selectorList);
+        }
+
+        const nodes: CssNode[] = [];
+
+        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        walk(ast as any, (node) => {
+            if (CssTree.isExtendedCssNode(node, pseudoClasses, attributeSelectors)) {
+                nodes.push(node);
             }
         });
 
-        return {
-            pseudos,
-            attributes,
-        };
+        return nodes;
     }
 
     /**
@@ -223,33 +232,131 @@ export class CssTree {
      * because it stops the search on the first ExtendedCSS node instead of going through the whole selector
      * and collecting all ExtendedCSS nodes.
      *
-     * @param selectorAst Selector AST
+     * @param selectorList Selector list (can be a string or a CSSTree node)
      * @param pseudoClasses List of the names of the pseudo classes to check
      * @param attributeSelectors List of the names of the attribute selectors to check
      * @returns `true` if the selector contains any ExtendedCSS nodes
+     * @see {@link https://github.com/csstree/csstree/blob/master/docs/ast.md#selectorlist}
      * @see {@link https://github.com/csstree/csstree/blob/master/docs/traversal.md#findast-fn}
      */
     public static hasAnySelectorExtendedCssNode(
-        selectorAst: Selector,
-        pseudoClasses: Set<string>,
-        attributeSelectors: Set<string>,
+        selectorList: string | SelectorList | SelectorListPlain,
+        pseudoClasses: Set<string> = EXT_CSS_PSEUDO_CLASSES,
+        attributeSelectors: Set<string> = EXT_CSS_LEGACY_ATTRIBUTES,
     ): boolean {
-        return find(selectorAst, (node) => {
-            // Pseudo classes
-            if (node.type === CssTreeNodeType.PseudoClassSelector) {
-                // Check if it's a known ExtendedCSS pseudo class
-                if (pseudoClasses.has(node.name)) {
-                    return true;
-                }
-            } else if (node.type === CssTreeNodeType.AttributeSelector) {
-                // Check if it's a known ExtendedCSS attribute
-                if (attributeSelectors.has(node.name.name)) {
-                    return true;
-                }
-            }
+        // Parse the block if string is passed
+        let ast;
 
-            return false;
-        }) !== null;
+        if (StringUtils.isString(selectorList)) {
+            ast = CssTree.parse(selectorList, CssTreeParserContext.selectorList);
+        } else {
+            ast = cloneDeep(selectorList);
+        }
+
+        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return find(ast as any, (node) => CssTree.isExtendedCssNode(node, pseudoClasses, attributeSelectors)) !== null;
+    }
+
+    /**
+     * Checks if the node is a forbidden function (unsafe resource loading). Typically it is used to check
+     * if the node is a `url()` function, which is a security risk when using filter lists from untrusted
+     * sources.
+     *
+     * @param node Node to check
+     * @param forbiddenFunctions Set of the names of the functions to check
+     * @returns `true` if the node is a forbidden function
+     */
+    public static isForbiddenFunction(
+        node: CssNode | CssNodePlain,
+        forbiddenFunctions = FORBIDDEN_CSS_FUNCTIONS,
+    ): boolean {
+        return (
+            // General case: check if it's a forbidden function
+            (node.type === CssTreeNodeType.Function && forbiddenFunctions.has(node.name))
+            // Special case: CSSTree handles `url()` function in a separate node type,
+            // and we also should check if the `url()` are marked as a forbidden function
+            || (node.type === CssTreeNodeType.Url && forbiddenFunctions.has(URL_FUNCTION))
+        );
+    }
+
+    /**
+     * Gets the list of the forbidden function nodes in the declaration block. Typically it is used to get
+     * the list of the functions that can be used to load external resources, which is a security risk
+     * when using filter lists from untrusted sources.
+     *
+     * @param declarationList Declaration list to check (can be a string or a CSSTree node)
+     * @param forbiddenFunctions Set of the names of the functions to check
+     * @returns List of the forbidden function nodes in the declaration block (can be empty)
+     */
+    public static getForbiddenFunctionNodes(
+        declarationList: string | Block | BlockPlain,
+        forbiddenFunctions = FORBIDDEN_CSS_FUNCTIONS,
+    ): CssNode[] {
+        // Parse the block if string is passed
+        let ast;
+
+        if (StringUtils.isString(declarationList)) {
+            ast = CssTree.parse(declarationList, CssTreeParserContext.declarationList);
+        } else {
+            ast = cloneDeep(declarationList);
+        }
+
+        const nodes: CssNode[] = [];
+        // While walking the AST we should skip the nested functions,
+        // for example skip url()s in cross-fade(url(), url()), since
+        // cross-fade() itself is already a forbidden function
+        let inForbiddenFunction = false;
+
+        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        walk(ast as any, {
+            enter: (node: CssNode) => {
+                if (!inForbiddenFunction && CssTree.isForbiddenFunction(node, forbiddenFunctions)) {
+                    nodes.push(node);
+                    inForbiddenFunction = true;
+                }
+            },
+            leave: (node: CssNode) => {
+                if (inForbiddenFunction && CssTree.isForbiddenFunction(node, forbiddenFunctions)) {
+                    inForbiddenFunction = false;
+                }
+            },
+        });
+
+        return nodes;
+    }
+
+    /**
+     * Checks if the declaration block contains any forbidden functions. Typically it is used to check
+     * if the declaration block contains any functions that can be used to load external resources,
+     * which is a security risk when using filter lists from untrusted sources.
+     *
+     * @param declarationList Declaration list to check (can be a string or a CSSTree node)
+     * @param forbiddenFunctions Set of the names of the functions to check
+     * @returns `true` if the declaration block contains any forbidden functions
+     * @throws If you pass a string, but it is not a valid CSS
+     * @throws If you pass an invalid CSSTree node / AST
+     * @see {@link https://github.com/csstree/csstree/blob/master/docs/ast.md#declarationlist}
+     * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196}
+     * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1920}
+     */
+    public static hasAnyForbiddenFunction(
+        declarationList: string | Block | BlockPlain,
+        forbiddenFunctions = FORBIDDEN_CSS_FUNCTIONS,
+    ): boolean {
+        // Parse the block if string is passed
+        let ast;
+
+        if (StringUtils.isString(declarationList)) {
+            ast = CssTree.parse(declarationList, CssTreeParserContext.declarationList);
+        } else {
+            ast = cloneDeep(declarationList);
+        }
+
+        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return find(ast as any, (node) => CssTree.isForbiddenFunction(node, forbiddenFunctions)) !== null;
     }
 
     /**

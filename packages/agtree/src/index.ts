@@ -75,13 +75,13 @@ export { FilterListParser } from './parser/filterlist';
 export { HtmlRuleConverter } from './converter/html';
 
 // Utils
-export { CssTree, ExtendedCssNodes } from './utils/csstree';
+export { CssTree } from './utils/csstree';
 export { DomainUtils } from './utils/domain';
 export { VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
 
 // Constants
 export { METADATA_HEADERS } from './converter/metadata';
-export { EXTCSS_PSEUDO_CLASSES, EXTCSS_ATTRIBUTES } from './converter/pseudo';
+export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/css';
 
 // Version
 export { version } from './version';
