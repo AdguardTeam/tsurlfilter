@@ -2,7 +2,7 @@
 import { appContext } from './context';
 import { WebRequestApi } from './web-request-api';
 import { engineApi } from './engine-api';
-import { tabsApi } from './tabs';
+import { tabsApi } from './api';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects/redirects-service';
 
@@ -22,6 +22,7 @@ import { LocalScriptRules, localScriptRulesService } from './services/local-scri
 import { RequestEvents } from './request';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
 import { stealthApi } from './stealth-api';
+import { allowlistApi } from './allowlist';
 
 /**
  * App implementation for MV2.
@@ -84,6 +85,16 @@ MessageHandlerMV2
     }
 
     /**
+     * Tabs cosmetic injector.
+     * Used to inject cosmetic rules into opened tabs on extension start.
+     */
+    private readonly tabCosmeticInjector = new TabsCosmeticInjector(
+        engineApi,
+        allowlistApi,
+        tabsApi,
+    );
+
+    /**
      * Constructor.
      *
      * @param webAccessibleResourcesPath Path to web accessible resources for {@link resourcesService}.
@@ -110,7 +121,7 @@ MessageHandlerMV2
         RequestEvents.init();
         await redirectsService.start();
         await engineApi.startEngine(configuration);
-        await TabsCosmeticInjector.processOpenTabs();
+        await this.tabCosmeticInjector.processOpenTabs();
         await tabsApi.start();
         WebRequestApi.start();
         Assistant.assistantUrl = configuration.settings.assistantUrl;

@@ -15,7 +15,7 @@ import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { findHeaderByName } from '../../utils/headers';
 import { RequestContext, requestContextStorage } from '../../request';
-import { tabsApi } from '../../tabs';
+import { tabsApi } from '../../api';
 
 /**
  * Cookie filtering.

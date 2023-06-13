@@ -3,6 +3,8 @@ import { AllowlistApi } from '@lib/mv2/background/allowlist';
 import { engineApi } from '@lib/mv2/background/engine-api';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
+jest.mock('@lib/mv2/background/engine-api');
+
 describe('Allowlist Api', () => {
     let allowlistApi: AllowlistApi;
 

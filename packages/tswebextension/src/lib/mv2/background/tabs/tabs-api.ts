@@ -2,7 +2,7 @@ import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
 import { EventChannel } from '../../../common/utils/channels';
-import { allowlistApi } from '../allowlist';
+import type { AllowlistApi } from '../allowlist';
 import { FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
 
@@ -29,8 +29,12 @@ export class TabsApi {
 
     /**
      * Tabs API constructor.
+     *
+     * @param allowlistApi Allowlist API.
      */
-    constructor() {
+    constructor(
+        private readonly allowlistApi: AllowlistApi,
+    ) {
         this.handleTabCreate = this.handleTabCreate.bind(this);
         this.handleTabUpdate = this.handleTabUpdate.bind(this);
         this.handleTabActivate = this.handleTabActivate.bind(this);
@@ -153,7 +157,7 @@ export class TabsApi {
     ): void {
         const tabContext = this.context.get(tabId);
 
-        if (!tabContext || !cosmeticResult) {
+        if (!tabContext) {
             return;
         }
 
@@ -174,7 +178,7 @@ export class TabsApi {
     ): void {
         const tabContext = this.context.get(tabId);
 
-        if (!tabContext || !matchingResult) {
+        if (!tabContext) {
             return;
         }
 
@@ -236,11 +240,11 @@ export class TabsApi {
             return;
         }
 
-        tabContext.mainFrameRule = allowlistApi.matchFrame(tabContext.info.url);
+        tabContext.mainFrameRule = this.allowlistApi.matchFrame(tabContext.info.url);
     }
 
     /**
-     * Updates tab context data on extension initialization.
+     * Updates tab context data after filter engine load.
      */
     public async updateCurrentTabsMainFrameRules(): Promise<void> {
         const currentTabs = await browser.tabs.query({});
@@ -250,7 +254,7 @@ export class TabsApi {
         }
 
         for (const tab of currentTabs) {
-            if (tab.id) {
+            if (typeof tab.id === 'number') {
                 this.updateTabMainFrameRule(tab.id);
             }
         }
@@ -289,7 +293,7 @@ export class TabsApi {
             return null;
         }
 
-        const tabContext = TabContext.createNewTabContext(tab);
+        const tabContext = TabContext.createNewTabContext(tab, this.allowlistApi);
         this.context.set(tab.id, tabContext);
         this.onCreate.dispatch(tabContext);
         return tabContext;
@@ -401,5 +405,3 @@ export class TabsApi {
         await browser.tabs.insertCSS(tabId, injectDetails);
     }
 }
-
-export const tabsApi = new TabsApi();

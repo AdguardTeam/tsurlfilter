@@ -166,7 +166,7 @@ import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { engineApi } from './engine-api';
-import { tabsApi } from './tabs/tabs-api';
+import { tabsApi } from './api';
 import { MAIN_FRAME_ID } from './tabs/frame';
 import { findHeaderByName } from './utils/headers';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';

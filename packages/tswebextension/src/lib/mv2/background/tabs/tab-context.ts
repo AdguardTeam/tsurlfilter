@@ -4,36 +4,13 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 import type { Tabs } from 'webextension-polyfill';
 
 import { Frame, MAIN_FRAME_ID } from './frame';
-import { allowlistApi } from '../allowlist';
-import type { RequestContext } from '../request';
+import type { AllowlistApi } from '../allowlist';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
  */
 export type TabInfo = Tabs.Tab & { id: number };
-
-export interface TabContextInterface {
-    frames: Map<number, Frame>;
-
-    blockedRequestCount: number;
-
-    mainFrameRule: NetworkRule | null;
-
-    info: TabInfo;
-
-    isSyntheticTab: boolean;
-
-    updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType): void
-
-    incrementBlockedRequestCount(increment: number): void
-
-    handleFrameRequest(requestContext: RequestContext): void
-
-    handleFrameMatchingResult(frameId: number, matchingResult: MatchingResult | null): void
-
-    handleFrameCosmeticResult(frameId: number, cosmeticResult: CosmeticResult): void
-}
 
 /**
  * Request context data related to the frame.
@@ -48,7 +25,7 @@ export type FrameRequestContext = {
 /**
  * Tab context.
  */
-export class TabContext implements TabContextInterface {
+export class TabContext {
     /**
      * Frames context.
      */
@@ -65,11 +42,6 @@ export class TabContext implements TabContextInterface {
     public mainFrameRule: NetworkRule | null = null;
 
     /**
-     * Webextension API tab data.
-     */
-    public info: TabInfo;
-
-    /**
      * We mark these tabs as synthetic because they may not actually exist.
      */
     public isSyntheticTab = true;
@@ -82,9 +54,13 @@ export class TabContext implements TabContextInterface {
     /**
      * Context constructor.
      *
-     * @param info Tab info.
+     * @param info Webextension API tab data.
+     * @param allowlistApi Allowlist API.
      */
-    constructor(info: TabInfo) {
+    constructor(
+        public info: TabInfo,
+        private readonly allowlistApi: AllowlistApi,
+    ) {
         this.info = info;
     }
 
@@ -213,7 +189,7 @@ export class TabContext implements TabContextInterface {
         this.frames.set(MAIN_FRAME_ID, new Frame(requestUrl, requestId));
 
         // Calculate new main frame rule.
-        this.mainFrameRule = allowlistApi.matchFrame(requestUrl);
+        this.mainFrameRule = this.allowlistApi.matchFrame(requestUrl);
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
     }
@@ -221,11 +197,12 @@ export class TabContext implements TabContextInterface {
     /**
      * Creates context for new tab.
      *
-     * @param tab Tab info.
+     * @param tab Webextension API tab data.
+     * @param allowlistApi Allowlist API.
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo): TabContext {
-        const tabContext = new TabContext(tab);
+    public static createNewTabContext(tab: TabInfo, allowlistApi: AllowlistApi): TabContext {
+        const tabContext = new TabContext(tab, allowlistApi);
 
         // In some cases, tab is created while browser navigation processing.
         // For example: when you navigate outside the browser or create new empty tab.

@@ -5,7 +5,8 @@ import { requestContextStorage, RequestContextState, RequestContext } from '../r
 import { RequestEvent, RequestData } from './request-event';
 import { isChrome } from '../../utils/browser-detector';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
-import { MAIN_FRAME_ID, TabFrameRequestContext, tabsApi } from '../../tabs';
+import { MAIN_FRAME_ID, TabFrameRequestContext } from '../../tabs';
+import { tabsApi } from '../../api';
 
 const MAX_URL_LENGTH = 1024 * 16;
 

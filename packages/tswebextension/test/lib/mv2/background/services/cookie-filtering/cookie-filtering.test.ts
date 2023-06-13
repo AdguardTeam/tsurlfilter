@@ -10,7 +10,7 @@ import {
     requestContextStorage,
 } from '@lib/mv2/background/request/request-context-storage';
 import { FilteringEventType, ContentType } from '@lib/common';
-import { tabsApi } from '@lib/mv2/background/tabs';
+import { tabsApi } from '@lib/mv2/background/api';
 
 import { MockFilteringLog } from '../../../../common/mocks';
 

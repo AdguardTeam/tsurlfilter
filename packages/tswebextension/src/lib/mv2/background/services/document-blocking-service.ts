@@ -5,7 +5,7 @@ import type { NetworkRule } from '@adguard/tsurlfilter';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
 import { isChromium, isFirefox } from '../utils/browser-detector';
-import { tabsApi } from '../tabs/tabs-api';
+import { tabsApi } from '../api';
 import type { ConfigurationMV2 } from '../configuration';
 import type { WebRequestBlockingResponse } from '../request/request-blocking-api';
 

@@ -11,7 +11,8 @@ import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
-import { TabsApi, tabsApi } from './tabs/tabs-api';
+import { TabsApi } from './tabs/tabs-api';
+import { tabsApi } from './api';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 

@@ -23,7 +23,7 @@ import {
     ContentType,
 } from '../../common';
 import { Assistant } from './assistant';
-import { tabsApi } from './tabs';
+import { tabsApi } from './api';
 
 // TODO check if this was used somewhere else
 interface CookieRule {

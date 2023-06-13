@@ -5,7 +5,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../../common/filteri
 import { documentBlockingService } from '../services/document-blocking-service';
 import { redirectsService } from '../services/redirects/redirects-service';
 import { engineApi } from '../engine-api';
-import { tabsApi } from '../tabs';
+import { tabsApi } from '../api';
 
 export type WebRequestBlockingResponse = WebRequest.BlockingResponse | void;
 
