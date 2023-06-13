@@ -3,14 +3,21 @@ import { z as zod } from 'zod';
 /**
  * String presentation of log levels, for convenient users usage.
  */
-export enum LogLevelName {
+export const enum LogLevelName {
     Error = 'error',
     Warn = 'warn',
     Info = 'info',
     Debug = 'debug',
 }
 
-export const LogLevelEnum = zod.nativeEnum(LogLevelName);
+export const logLevelNames: [string, ...string[]] = [
+    LogLevelName.Error,
+    LogLevelName.Warn,
+    LogLevelName.Info,
+    LogLevelName.Debug,
+];
+
+export const LogLevelEnum = zod.enum(logLevelNames);
 const LogLevelValidator = LogLevelEnum.optional();
 export type LogLevelType = zod.infer<typeof LogLevelValidator>;
 

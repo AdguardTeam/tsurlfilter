@@ -3,6 +3,7 @@ import {
     Logger,
     LogLevelType,
     LogLevelName,
+    logLevelNames,
 } from '../../../src/lib/common';
 import { appContext } from '../../../src/lib/mv2/background/context';
 
@@ -120,6 +121,6 @@ describe('logger', () => {
         setLogLevel('invalid' as LogLevelType);
 
         expect(() => logger.error('message'))
-            .toThrow(`Logger only supports following levels: ${[Object.values(LogLevelName).join(', ')]}`);
+            .toThrow(`Logger only supports following levels: ${logLevelNames.join(', ')}`);
     });
 });

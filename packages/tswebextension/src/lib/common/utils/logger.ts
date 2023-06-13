@@ -1,9 +1,9 @@
-import { LogLevelEnum, LogLevelType, LogLevelName } from '../configuration';
+import { LogLevelType, LogLevelName, logLevelNames } from '../configuration';
 import { appContext } from '../../mv2/background/context';
 // TODO (v.zhelvis) move app context to common and make it generic.
 
 const DEFAULT_VERBOSE_FLAG = true;
-const DEFAULT_LOG_LEVEL: LogLevelType = LogLevelEnum.enum.Error;
+const DEFAULT_LOG_LEVEL: LogLevelType = LogLevelName.Error;
 
 /**
  * Number presentation of log levels. Order is important. Higher number, more messages to be visible.
@@ -53,16 +53,16 @@ export class Logger implements LoggerInterface {
         const logLevelString = appContext.configuration?.logLevel ?? DEFAULT_LOG_LEVEL;
 
         switch (logLevelString) {
-            case LogLevelEnum.enum.Error:
+            case LogLevelName.Error:
                 return LogLevelWeight.Error;
-            case LogLevelEnum.enum.Warn:
+            case LogLevelName.Warn:
                 return LogLevelWeight.Warn;
-            case LogLevelEnum.enum.Info:
+            case LogLevelName.Info:
                 return LogLevelWeight.Info;
-            case LogLevelEnum.enum.Debug:
+            case LogLevelName.Debug:
                 return LogLevelWeight.Debug;
             default:
-                throw new Error(`Logger only supports following levels: ${[Object.values(LogLevelName).join(', ')]}`);
+                throw new Error(`Logger only supports following levels: ${[logLevelNames.join(', ')]}`);
         }
     }
 
