@@ -1,0 +1,14 @@
+adg_any:
+  name: image
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#image-modifier
+  description: The rule corresponds to images requests.
+
+abp_any:
+  name: image
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
+  description: The rule corresponds to images requests.
+
+ubo_any:
+  name: image
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
+  description: The rule corresponds to images requests.

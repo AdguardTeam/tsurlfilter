@@ -1,0 +1,68 @@
+adg_os_any:
+  name: genericblock
+  description: Disables generic basic rules on pages that correspond to exception rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - extension
+    - jsinject
+    - content
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_ext_any:
+  name: genericblock
+  description: Disables generic basic rules on pages that correspond to exception rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - jsinject
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_cb_ios:
+  name: genericblock
+  description: Disables generic basic rules on pages that correspond to exception rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - jsinject
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_cb_safari:
+  name: genericblock
+  description: Disables generic basic rules on pages that correspond to exception rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - jsinject
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+abp_ext_any:
+  name: genericblock
+  description: Disables generic basic rules on pages that correspond to exception rule.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+  negatable: false
+  exception_only: true

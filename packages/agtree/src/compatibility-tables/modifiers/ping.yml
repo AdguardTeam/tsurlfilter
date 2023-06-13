@@ -1,0 +1,14 @@
+adg_any: 
+  name:	ping
+  description: The rule corresponds to requests caused by either navigator.sendBeacon() or the ping attribute on links.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#ping-modifier
+  
+abp_any: 
+  name:	ping
+  description: The rule corresponds to requests caused by either navigator.sendBeacon() or the ping attribute on links.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+  
+ubo_any: 
+  name:	ping
+  description: The rule corresponds to requests caused by either navigator.sendBeacon() or the ping attribute on links.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options

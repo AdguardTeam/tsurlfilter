@@ -1,0 +1,69 @@
+adg_os_any:
+  name: jsinject
+  description: Forbids adding of javascript code to the page.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - genericblock
+    - urlblock
+    - extension
+    - content
+    - xmlhttprequest
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_ext_any:
+  name: jsinject
+  description: Forbids adding of javascript code to the page.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - genericblock
+    - urlblock
+    - xmlhttprequest
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_cb_ios:
+  name: jsinject
+  description: Forbids adding of javascript code to the page.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - genericblock
+    - urlblock
+    - xmlhttprequest
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+
+adg_cb_safari:
+  name: jsinject
+  description: Forbids adding of javascript code to the page.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#jsinject-modifier
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - genericblock
+    - urlblock
+    - xmlhttprequest
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true

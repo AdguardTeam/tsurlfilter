@@ -1,0 +1,44 @@
+adg_any:
+  name: generichide
+  aliases:
+    - ghide
+  conflicts:
+    - domain
+    - genericblock
+    - urlblock
+    - extension
+    - jsinject
+    - content
+    - xmlhttprequest
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+  version_added: "0.0.1"
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#generichide-modifier
+  description: Disables all generic cosmetic rules.
+
+ubo_any:
+  name: generichide
+  aliases:
+    - ghide
+  conflicts:
+    - domain
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+  version_added: "0.0.1"
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#generichide
+  description: Disables all generic cosmetic rules.
+
+abp_any:
+  name: generichide
+  conflicts:
+    - domain
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+  version_added: "0.0.1"
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+  description: Disables all generic cosmetic rules.

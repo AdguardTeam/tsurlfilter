@@ -1,0 +1,14 @@
+adg_any:
+  name: font
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#font-modifier
+  description: The rule corresponds to requests for fonts, e.g. .woff filename extension.
+
+abp_any:
+  name: font
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
+  description: The rule corresponds to requests for fonts, e.g. .woff filename extension.
+
+ubo_any:
+  name: font
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
+  description: The rule corresponds to requests for fonts, e.g. .woff filename extension.

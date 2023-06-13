@@ -1,0 +1,214 @@
+adg_os_any:
+  name: redirect-rule
+  inverse_conflicts: true
+  conflicts:
+    - domain
+    - to
+    - third-party
+    - popup
+    - match-case
+    - header
+    - first-party
+    - document
+    - image
+    - stylesheet
+    - script
+    - object
+    - font
+    - media
+    - subdocument
+    - ping
+    - xmlhttprequest
+    - websocket
+    - other
+    - webrtc
+    - important
+    - badfilter
+    - app
+  value_format: |-
+    (?x)
+      ^(
+        1x1-transparent\.gif|
+        2x2-transparent\.png|
+        3x2-transparent\.png|
+        32x32-transparent\.png|
+        noopframe|
+        noopcss|
+        noopjs|
+        noopjson|
+        nooptext|
+        empty|
+        noopvmap-1\.0|
+        noopvast-2\.0|
+        noopvast-3\.0|
+        noopvast-4\.0|
+        noopmp3-0\.1s|
+        noopmp4-1s|
+        amazon-apstag|
+        ati-smarttag|
+        didomi-loader|
+        fingerprintjs2|
+        fingerprintjs3|
+        gemius|
+        google-analytics-ga|
+        google-analytics|
+        google-ima3|
+        googlesyndication-adsbygoogle|
+        googletagservices-gpt|
+        matomo|
+        metrika-yandex-tag|
+        metrika-yandex-watch|
+        naver-wcslog|
+        noeval|
+        pardot-1\.0|
+        prebid-ads|
+        prebid|
+        prevent-bab|
+        prevent-bab2|
+        prevent-fab-3\.2\.0|
+        prevent-popads-net|
+        scorecardresearch-beacon|
+        set-popads-dummy|
+        click2load\.html|
+      )?$
+  description: 'This is basically an alias to $redirect since it has the same "redirection" values and the logic is almost similar. The difference is that $redirect-rule is applied only in the case when the target request is blocked by a different basic rule.'
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
+
+adg_ext_any:
+  name: redirect-rule
+  inverse_conflicts: true
+  conflicts:
+    - domain
+    - to
+    - third-party
+    - popup
+    - match-case
+    - header
+    - first-party
+    - document
+    - image
+    - stylesheet
+    - script
+    - object
+    - font
+    - media
+    - subdocument
+    - ping
+    - xmlhttprequest
+    - websocket
+    - other
+    - webrtc
+    - important
+    - badfilter
+  value_format: |-
+    (?x)
+      ^(
+        1x1-transparent\.gif|
+        2x2-transparent\.png|
+        3x2-transparent\.png|
+        32x32-transparent\.png|
+        noopframe|
+        noopcss|
+        noopjs|
+        noopjson|
+        nooptext|
+        empty|
+        noopvmap-1\.0|
+        noopvast-2\.0|
+        noopvast-3\.0|
+        noopvast-4\.0|
+        noopmp3-0\.1s|
+        noopmp4-1s|
+        amazon-apstag|
+        ati-smarttag|
+        didomi-loader|
+        fingerprintjs2|
+        fingerprintjs3|
+        gemius|
+        google-analytics-ga|
+        google-analytics|
+        google-ima3|
+        googlesyndication-adsbygoogle|
+        googletagservices-gpt|
+        matomo|
+        metrika-yandex-tag|
+        metrika-yandex-watch|
+        naver-wcslog|
+        noeval|
+        pardot-1\.0|
+        prebid-ads|
+        prebid|
+        prevent-bab|
+        prevent-bab2|
+        prevent-fab-3\.2\.0|
+        prevent-popads-net|
+        scorecardresearch-beacon|
+        set-popads-dummy|
+        click2load\.html|
+      )?$
+  description: 'This is basically an alias to $redirect since it has the same "redirection" values and the logic is almost similar. The difference is that $redirect-rule is applied only in the case when the target request is blocked by a different basic rule.'
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
+
+ubo_ext_any:
+  name: redirect-rule
+  inverse_conflicts: true
+  conflicts:
+    - domain
+    - to
+    - third-party
+    - popup
+    - match-case
+    - header
+    - first-party
+    - document
+    - image
+    - stylesheet
+    - script
+    - object
+    - font
+    - media
+    - subdocument
+    - ping
+    - xmlhttprequest
+    - websocket
+    - other
+    - webrtc
+    - important
+    - badfilter
+  value_format: |-
+    (?x)
+      ^(
+        1x1\.gif|
+        2x2\.png|
+        3x2\.png|
+        32x32\.png|
+        noop\.css|
+        noop\.html|
+        noopframe|
+        noop\.js|
+        noop\.txt|
+        noop-0\.1s\.mp3|
+        noop-0\.5s\.mp3|
+        noop-1s\.mp4|
+        none|
+        click2load\.html|
+        addthis_widget\.js|
+        amazon_ads\.js|
+        amazon_apstag\.js|
+        monkeybroker\.js|
+        doubleclick_instream_ad_status|
+        google-analytics_ga\.js|
+        google-analytics_analytics\.js|
+        google-analytics_inpage_linkid\.js|
+        google-analytics_cx_api\.js|
+        google-ima\.js|
+        googletagservices_gpt\.js|
+        googletagmanager_gtm\.js|
+        googlesyndication_adsbygoogle\.js|
+        scorecardresearch_beacon\.js|
+        outbrain-widget\.js|
+        hd-main\.js
+      )
+      (:[0-9]+)?$
+  description: 'This is basically an alias to $redirect since it has the same "redirection" values and the logic is almost similar. The difference is that $redirect-rule is applied only in the case when the target request is blocked by a different basic rule.'
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect-rule

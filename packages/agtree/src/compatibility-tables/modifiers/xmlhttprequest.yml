@@ -1,0 +1,24 @@
+adg_any:
+  name:	xmlhttprequest
+  aliases:
+    - xhr
+  assignable: false
+  negatable: true
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#xmlhttprequest-modifier
+  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
+
+abp_any:
+  name:	xmlhttprequest
+  assignable: false
+  negatable: true
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
+
+ubo_any:
+  name:	xhr
+  aliases:
+    - xmlhttprequest
+  assignable: false
+  negatable: true
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#xhr
+  description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).

@@ -1,0 +1,50 @@
+adg_os_any:
+  name: csp
+  description: This modifier completely changes the rule behavior. If it is applied to a rule, it will not block the matching request. The response headers are going to be modified instead.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#csp-modifier
+  assignable: true
+  value_format: /[^,$]+/
+  conflicts:
+    - domain
+    - important
+    - subdocument
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+adg_ext_any:
+  name: csp
+  description: This modifier completely changes the rule behavior. If it is applied to a rule, it will not block the matching request. The response headers are going to be modified instead.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#csp-modifier
+  assignable: true
+  value_format: /[^,$]+/
+  conflicts:
+    - domain
+    - important
+    - subdocument
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+abp_ext_any:
+  name: csp
+  description: This modifier completely changes the rule behavior. If it is applied to a rule, it will not block the matching request. The response headers are going to be modified instead.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#content-security-policies
+  assignable: true
+  value_format: /[^,$]+/
+  conflicts:
+    - domain
+    - subdocument
+  inverse_conflicts: true
+  negatable: false
+ubo_ext_any:
+  name: csp
+  description: This modifier completely changes the rule behavior. If it is applied to a rule, it will not block the matching request. The response headers are going to be modified instead.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#csp
+  assignable: true
+  value_format: /[^,$]+/
+  conflicts:
+    - 1p
+    - 3p
+    - domain
+    - badfilter
+  inverse_conflicts: true
+  negatable: false

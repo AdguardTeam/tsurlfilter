@@ -1,0 +1,17 @@
+adg_any:
+  name: urlblock
+  conflicts:
+    - domain
+    - specifichide
+    - generichide
+    - elemhide
+    - extension
+    - jsinject
+    - content
+    - badfilter
+  inverse_conflicts: true
+  negatable: false
+  exception_only: true
+  version_added: "0.0.1"
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#urlblock-modifier
+  description: Disables blocking of all requests sent from the pages matching the rule.

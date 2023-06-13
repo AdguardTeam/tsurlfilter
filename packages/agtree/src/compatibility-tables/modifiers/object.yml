@@ -1,0 +1,14 @@
+adg_any: 
+  name:	object
+  description: The rule corresponds to browser plugins resources, e.g. Java or Flash
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#object-modifier
+
+abp_any: 
+  name:	object
+  description: The rule corresponds to browser plugins resources, e.g. Java or Flash.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+
+ubo_any: 
+  name:	object
+  description: The rule corresponds to browser plugins resources, e.g. Java or Flash.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
