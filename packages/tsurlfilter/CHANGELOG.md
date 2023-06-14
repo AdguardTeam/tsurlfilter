@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## [2.1.0] - 2023-06-14
+
+### Changed
+
+- The algorithm of priority calculation: adding more accurate calculation
+  of weights for each rule type - more details here
+  https://github.com/AdguardTeam/KnowledgeBase/pull/196.
+- `$all` modifier is one NetworkRule rule with all included options.
+- Removed `$csp` modifier from `$all` (`$inline-font` and `$inline-script`).
+- `$document` in blocking rule now just puts content-type: document (main_frame).
+- Exception with `$document` modifier, for example in rule
+  `@@||example.com^$document` is an alias for
+  `$content,jsinject,elemhide,urlblock`.
+  In all other cases, `$document` is treated as a regular content-type modifier.
+- Exceptions with `$urlblock` disables `$cookie` rules.
+- `$redirect` rules are higher in priority than blocking rules and exceptions.
+- `$important` is higher than all others.
+
 ## [2.0.7] - 2023-06-14
 
 ### Fixed

@@ -37,6 +37,23 @@ describe('TestNewMatchingResult', () => {
         expect(basicResult!.getText()).toEqual(sourceRuleText);
     });
 
+    it('works if document-level rule has lower priority than basic rule', () => {
+        const ruleText = '||example.com^$important';
+        const sourceRuleText = '@@||example.com^$document';
+
+        const rules = [new NetworkRule(ruleText, 0)];
+        const sourceRule = new NetworkRule(sourceRuleText, 0);
+
+        const result = new MatchingResult(rules, sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeTruthy();
+        expect(result.documentRule).toBeTruthy();
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult!.getText()).toEqual(ruleText);
+    });
+
     it('works if allowlist document-level rule is found', () => {
         const ruleText = '||example.org^';
         const sourceRuleText = '@@||example.com^$urlblock';
@@ -72,7 +89,7 @@ describe('TestNewMatchingResult', () => {
 
 describe('TestGetCosmeticOption', () => {
     let rules: NetworkRule[];
-    const sourceRule: NetworkRule | null = null;
+    let sourceRule: NetworkRule | null = null;
 
     it('works in simple case - no limitations', () => {
         rules = [new NetworkRule('||example.org^', 0)];
@@ -84,9 +101,9 @@ describe('TestGetCosmeticOption', () => {
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionAll);
     });
 
-    it('works with source allowlist rule', () => {
+    it('works with source allowlist rule and blocking rule', () => {
         rules = [new NetworkRule('||example.org^', 0)];
-        const allowlistSourceRule = new NetworkRule('@@||another.org^$document', 0);
+        const allowlistSourceRule = new NetworkRule('@@||another.org^$document,important', 0);
 
         const result = new MatchingResult(rules, allowlistSourceRule);
 
@@ -143,6 +160,19 @@ describe('TestGetCosmeticOption', () => {
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS | CosmeticOption.CosmeticOptionHtml);
     });
 
+    it('works with elemhide modifier and replace modifier', () => {
+        rules = [
+            new NetworkRule('||example.org^$replace=/test/test/', 0),
+            new NetworkRule('@@||example.org^$elemhide', 0),
+        ];
+
+        const result = new MatchingResult(rules, sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeTruthy();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS | CosmeticOption.CosmeticOptionHtml);
+    });
+
     it('works with $content modifier', () => {
         rules = [new NetworkRule('@@||example.org^$content', 0)];
 
@@ -165,6 +195,56 @@ describe('TestGetCosmeticOption', () => {
         expect(result).toBeTruthy();
         expect(result.getCosmeticOption()).toBeDefined();
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
+    });
+
+    it('works with $all modifier', () => {
+        rules = [new NetworkRule('||example.org^$all', 0)];
+
+        const result = new MatchingResult(rules, sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeTruthy();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionAll);
+    });
+
+    it('works with source allowlist rule and $all blocking rule', () => {
+        rules = [new NetworkRule('||example.org^$all', 0)];
+        const allowlistSourceRule = new NetworkRule('@@||example.org^$document', 0);
+
+        const result = new MatchingResult(rules, allowlistSourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeDefined();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
+    });
+
+    it('works with $all modifier and specifichide allowlist rule', () => {
+        rules = [
+            new NetworkRule('||example.org^$all', 0),
+            new NetworkRule('@@||example.org^$specifichide', 0),
+        ];
+
+        const result = new MatchingResult(rules, sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeDefined();
+        expect(result.getCosmeticOption()).toEqual(
+            CosmeticOption.CosmeticOptionAll ^ CosmeticOption.CosmeticOptionSpecificCSS,
+        );
+    });
+
+    it('works if document-level rule has lower priority than basic rule', () => {
+        const ruleText = '||example.com^$important';
+        const sourceRuleText = '@@||example.com^$document';
+
+        rules = [new NetworkRule(ruleText, 0)];
+        sourceRule = new NetworkRule(sourceRuleText, 0);
+
+        const result = new MatchingResult(rules, sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeDefined();
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionAll);
     });
 });
 
@@ -366,6 +446,25 @@ describe('TestNewMatchingResult - replace rules', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual('@@||example.org^$content');
+    });
+
+    it('work if @@||example.org^$document will be found', () => {
+        const ruleTexts = [
+            '||example.org^$replace=/test1/test2/g',
+            '@@||example.org^$document',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const replaceRules = result.getReplaceRules();
+        expect(replaceRules.length).toBe(1);
+
+        const basicResult = result.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        expect(basicResult!.getText()).toEqual('@@||example.org^$document');
     });
 
     it('checks only $document and $content rules disable $replace', () => {
@@ -651,10 +750,11 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()).toBeNull();
     });
 
-    it('checks that it is possible to exclude all redirects with allowlist rule', () => {
+    // eslint-disable-next-line max-len
+    it('checks that it is not possible to exclude all redirects with simple allowlist rule without using $important', () => {
         const ruleTexts = [
-            '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=2x2-transparent.png',
             '@@||ya.ru$document',
         ];
@@ -663,6 +763,20 @@ describe('TestNewMatchingResult - redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document');
+    });
+
+    it('checks that it is possible to exclude all redirects with important allowlist rule', () => {
+        const ruleTexts = [
+            '||ya.ru$redirect=1x1-transparent.gif',
+            '||ya.ru$redirect=1x1-transparent.gif,image',
+            '||ya.ru$redirect=2x2-transparent.png',
+            '@@||ya.ru$document,important',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
     });
 
     it('checks that important redirect rule negates allowlist rule', () => {
@@ -693,7 +807,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
     });
 
-    it('checks that common allowlist rule negates redirect rule', () => {
+    it('checks that common allowlist rule negates redirect rule without $important', () => {
         const ruleTexts = [
             '||*/redirect-exception-test.js$redirect=noopjs',
             '@@||*/redirect-exception-test.js',
@@ -703,6 +817,30 @@ describe('TestNewMatchingResult - redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js');
+    });
+
+    it('checks that common allowlist rule not negates redirect rule with $important', () => {
+        const ruleTexts = [
+            '||*/redirect-exception-test.js$redirect=noopjs,important',
+            '@@||*/redirect-exception-test.js',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('||*/redirect-exception-test.js$redirect=noopjs,important');
+    });
+
+    it('checks that common allowlist rule with $important negates redirect rule', () => {
+        const ruleTexts = [
+            '||*/redirect-exception-test.js$redirect=noopjs',
+            '@@||*/redirect-exception-test.js$important',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js$important');
     });
 
     it('checks that redirect allowlist rule negates redirect rule', () => {
@@ -743,6 +881,40 @@ describe('TestNewMatchingResult - redirect-rule rules', () => {
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
         expect(found!.getText()).toBe('||example.org^$redirect=noopjs');
+    });
+
+    it('checks if redirect and redirect-rule modifiers are ok together with blocking rule', () => {
+        const ruleTexts = [
+            '||example.org',
+            '||example.org^$redirect-rule=noopjs',
+            '||example.org^$redirect=noopjs',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getBasicResult();
+        expect(found).not.toBeNull();
+        expect(found!.getText()).toBe('||example.org^$redirect=noopjs');
+    });
+
+    it('checks if redirect and redirect-rule modifiers are ok together with different priorities', () => {
+        const ruleTexts = [
+            '||ya.ru',
+            '||ya.ru$redirect=nooptext',
+            '||ya.ru$redirect=nooptext,image',
+            '||ya.ru$redirect=nooptext,image,document',
+            '||ya.ru$redirect-rule=nooptext',
+            '||ya.ru$redirect-rule=nooptext,image',
+            '||ya.ru$redirect-rule=nooptext,image,document',
+        ];
+
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+
+        const result = new MatchingResult(rules, null);
+        const found = result.getBasicResult();
+        expect(found).not.toBeNull();
+        expect(found!.getText()).toBe('||ya.ru$redirect=nooptext,image');
     });
 
     it('returns redirect-rule if there is blocking rule', () => {

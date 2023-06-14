@@ -50,28 +50,6 @@ const DECLARATIVE_RESOURCE_TYPES_MAP = {
 };
 
 /**
- * Rule priority. Defaults to 1. When specified, should be >= 1. The higher the
- * number, the higher the priority.
- */
-export enum DeclarativeRulePriority {
-    DocumentException = 4,
-    ImportantException = 3,
-    Important = 2,
-    /**
-     * Base exception has default priority level because MV3 matching algorithm
-     * has following order of decreasing precedence:
-     * 1. "allow"
-     * 2. "allowAllRequests"
-     * 3. "block"
-     * 4. "upgradeScheme"
-     * 5. "redirect".
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#matching-algorithm}
-     */
-    Exception = 1,
-}
-
-/**
  * Abstract rule converter class.
  * Contains the generic logic for converting a {@link NetworkRule}
  * into a {@link DeclarativeRule}.
@@ -147,34 +125,19 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
-     * Rule priority. Defaults to 1. When specified, should be >= 1.
+     * Rule priority.
      *
-     * Document exceptions > allowlist + $important > $important >
-     * allowlist > basic rules.
+     * @see {@link NetworkRule.getPriorityWeight}
+     * @see {@link NetworkRule.priorityWeight}
+     * @see {@link NetworkRule.calculatePriorityWeight}
+     * @see {@link https://adguard.com/kb/en/general/ad-filtering/create-own-filters/#rule-priorities}
      *
      * @param rule Network rule.
      *
      * @returns Priority of the rule or null.
      */
     private static getPriority(rule: NetworkRule): number | null {
-        if (rule.isDocumentAllowlistRule()) {
-            return DeclarativeRulePriority.DocumentException;
-        }
-
-        const isImportant = rule.isOptionEnabled(NetworkRuleOption.Important);
-        const isAllowlist = rule.isAllowlist();
-
-        if (isImportant) {
-            return isAllowlist
-                ? DeclarativeRulePriority.ImportantException
-                : DeclarativeRulePriority.Important;
-        }
-
-        if (isAllowlist) {
-            return DeclarativeRulePriority.Exception;
-        }
-
-        return null;
+        return rule.getPriorityWeight();
     }
 
     /**
@@ -251,7 +214,7 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isAllowlist()) {
-            if (rule.isDocumentLevelAllowlistRule() || rule.isDocumentAllowlistRule()) {
+            if (rule.isDocumentLevelAllowlistRule()) {
                 return { type: RuleActionType.ALLOW_ALL_REQUESTS };
             }
 
@@ -435,7 +398,6 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Replace, name: '$replace' },
             { option: NetworkRuleOption.Generichide, name: '$generichide' },
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
-            { option: NetworkRuleOption.Mp4, name: '$mp4' },
         ];
 
         for (let i = 0; i < unsupportedOptions.length; i += 1) {
@@ -493,6 +455,7 @@ export abstract class DeclarativeRuleConverter {
             const regexArr = regexFilter.split('|');
             // TODO: Find how exactly the complexity of a rule is calculated.
             // The values maxGroups & maxGroupLength are obtained by testing.
+            // TODO: Fix these values based on Chrome Errors
             const maxGroups = 15;
             const maxGroupLength = 31;
             if (regexArr.length > maxGroups

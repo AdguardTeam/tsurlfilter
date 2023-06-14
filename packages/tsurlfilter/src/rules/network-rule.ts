@@ -28,6 +28,7 @@ import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
 import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
 import { CtagModifier } from '../modifiers/dns/ctag-modifier';
 import { Pattern } from './pattern';
+import { countEnabledBits, getBitCount } from '../utils/bit-utils';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -35,6 +36,8 @@ import { Pattern } from './pattern';
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#modifiers
  */
 export enum NetworkRuleOption {
+    /** No value is set. Syntax sugar to simplify code. */
+    NotSet = 0,
     /** $third-party modifier */
     ThirdParty = 1,
     /** $match-case modifier */
@@ -63,12 +66,6 @@ export enum NetworkRuleOption {
     Extension = 1 << 10,
     /** $stealth modifier */
     Stealth = 1 << 11,
-
-    // Content modifying
-    // $empty modifier
-    Empty = 1 << 12,
-    // $mp4 modifier
-    Mp4 = 1 << 13,
 
     // Other modifiers
 
@@ -103,13 +100,7 @@ export enum NetworkRuleOption {
     DnsType = 1 << 27,
     Ctag = 1 << 28,
 
-    // Document
-    Document = 1 << 29,
-
     // Groups (for validation)
-
-    /** Blacklist-only modifiers */
-    BlacklistOnly = Empty | Mp4,
 
     /** Allowlist-only modifiers */
     AllowlistOnly = Elemhide
@@ -128,18 +119,18 @@ export enum NetworkRuleOption {
     /**
      * Removeparam compatible modifiers
      *
-     * $removeparam rules are compatible only with content type modifiers ($script, $stylesheet, etc)
-     * and this list of modifiers:
+     * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
+     * except $document (using by default) and this list of modifiers:
      */
-    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase | Badfilter | Document,
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase | Badfilter,
 
     /**
      * Removeheader compatible modifiers
      *
-     * $removeheader rules are compatible only with content type modifiers ($script, $stylesheet, etc)
-     * and this list of modifiers:
+     * $removeheader rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
+     * except $document (using by default) and this list of modifiers:
      */
-    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter | Document,
+    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter,
 }
 
 /**
@@ -164,12 +155,6 @@ class BasicRuleParts {
     public allowlist: boolean | undefined;
 }
 
-// Flag that indicates that permitted ALL request types.
-export const PermittedAllRequestTypes = 0;
-// Flag that indicates that restricted ALL request types.
-export const RestrictedAllRequestTypes = 0;
-export type RequestTypeExtra = typeof PermittedAllRequestTypes | typeof RestrictedAllRequestTypes;
-
 /**
  * Basic network filtering rule.
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
@@ -193,17 +178,25 @@ export class NetworkRule implements rule.IRule {
      */
     private denyAllowDomains: string[] | null = null;
 
-    /** Flag with all enabled rule options */
-    private enabledOptions: NetworkRuleOption = 0;
+    /**
+     * Flag with all enabled rule options.
+     */
+    private enabledOptions: NetworkRuleOption = NetworkRuleOption.NotSet;
 
-    /** Flag with all disabled rule options */
-    private disabledOptions: NetworkRuleOption = 0;
+    /**
+     * Flag with all disabled rule options.
+     */
+    private disabledOptions: NetworkRuleOption = NetworkRuleOption.NotSet;
 
-    /** Flag with all permitted request types. */
-    private permittedRequestTypes: RequestType | RequestTypeExtra = PermittedAllRequestTypes;
+    /**
+     * Flag with all permitted request types.
+     */
+    private permittedRequestTypes: RequestType = RequestType.NotSet;
 
-    /** Flag with all restricted request types. */
-    private restrictedRequestTypes: RequestType | RequestTypeExtra = RestrictedAllRequestTypes;
+    /**
+     * Flag with all restricted request types.
+     */
+    private restrictedRequestTypes: RequestType = RequestType.NotSet;
 
     /**
      * Rule Advanced modifier
@@ -216,10 +209,97 @@ export class NetworkRule implements rule.IRule {
     private appModifier: IAppModifier | null = null;
 
     /**
-     * Priority weight
-     * Used in rules priority comparision
+     * Rule priority, which is needed when the engine has to choose between
+     * several rules matching the query. This value is calculated based on
+     * the rule modifiers enabled or disabled and rounded up
+     * to the smallest integer greater than or equal to the calculated weight
+     * in the {@link calculatePriorityWeight}.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-1
      */
-    private priorityWeight = 0;
+    private priorityWeight = 1;
+
+    /**
+     * Rules with base modifiers, from category 1, each of them adds 1
+     * to the weight of the rule.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-1
+     */
+    private static readonly CATEGORY_1_OPTIONS_MASK = NetworkRuleOption.ThirdParty
+        | NetworkRuleOption.MatchCase
+        | NetworkRuleOption.DnsRewrite;
+
+    /**
+     * The priority weight used in {@link calculatePriorityWeight} for rules
+     * with permitted request types.
+     * The value 50 is chosen in order to cover (with a margin) all possible
+     * combinations and variations of rules from categories with a lower
+     * priority (each of them adds 1 to the rule priority).
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2
+     */
+    private static readonly PermittedRequestTypeWeight = 50;
+
+    /**
+     * The priority weight used in {@link calculatePriorityWeight} for rules
+     * with allowed domains.
+     * The value 100 is chosen to cover all possible combinations and variations
+     * of rules from categories with a lower priority, for example a rule with
+     * one allowed query type will get priority 100 (50 + 50/1), but for allowed
+     * domains with any number of domains we will get at least 101 (for 100
+     * domains: 100 + 100/100; for 200 100 + 100/200; or even for 10000:
+     * 100 + 100/10000) because the resulting weight is rounded up.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-3
+     */
+    private static readonly PermittedDomainWeight = 100;
+
+    /**
+     * The priority weight used in {@link calculatePriorityWeight}
+     * for $redirect rules.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-6
+     */
+    private static readonly RedirectRuleWeight = 10 ** 3;
+
+    /**
+     * The priority weight used in {@link calculatePriorityWeight} for rules
+     * with specific exceptions.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-4
+     */
+    private static readonly SpecificExceptionsWeight = 10 ** 4;
+
+    /**
+     * Rules with specific exclusions, from category 4, each of them adds
+     * {@link SpecificExceptionsWeight} to the weight of the rule.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-4
+     */
+    private static readonly SPECIFIC_EXCLUSIONS_MASK = NetworkRuleOption.Elemhide
+        | NetworkRuleOption.Generichide
+        | NetworkRuleOption.Specifichide
+        | NetworkRuleOption.Content
+        | NetworkRuleOption.Urlblock
+        | NetworkRuleOption.Genericblock
+        | NetworkRuleOption.Jsinject
+        | NetworkRuleOption.Extension;
+
+    /**
+     * The priority weight used in {@link calculatePriorityWeight} for rules
+     * with allowlist mark '@@'.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-5
+     */
+    private static readonly AllowlistRuleWeight = 10 ** 5;
+
+    /**
+     * The priority weight used in {@link calculatePriorityWeight}
+     * for $important rules.
+     *
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-7
+     */
+    private static readonly ImportantRuleWeight = 10 ** 6;
 
     /**
      * Separates the rule pattern from the list of modifiers.
@@ -255,12 +335,35 @@ export class NetworkRule implements rule.IRule {
      */
     public static readonly OPTIONS = NETWORK_RULE_OPTIONS;
 
+    /**
+     * Returns the original text of the rule from which it was parsed.
+     *
+     * @returns Original text of the rule.
+     */
     getText(): string {
         return this.ruleText;
     }
 
+    /**
+     * Returns the identifier of the filter from which the rule was received.
+     *
+     * @returns Identifier of the filter from which the rule was received.
+     */
     getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Each rule has its own priority, which is necessary when several rules
+     * match the request and the filtering system needs to select one of them.
+     * Priority is measured as a positive integer.
+     * In the case of a conflict between two rules with the same priority value,
+     * it is not specified which one of them will be chosen.
+     *
+     * @returns Rule priority.
+     */
+    getPriorityWeight(): number {
+        return this.priorityWeight;
     }
 
     /**
@@ -280,7 +383,8 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Checks if the rule is a document-level allowlist rule
+     * Checks if the rule is a document-level allowlist rule with $urlblock or
+     * $genericblock or $content.
      * This means that the rule is supposed to disable or modify blocking
      * of the page subrequests.
      * For instance, `@@||example.org^$urlblock` unblocks all sub-requests.
@@ -293,20 +397,6 @@ export class NetworkRule implements rule.IRule {
         return this.isOptionEnabled(NetworkRuleOption.Urlblock)
             || this.isOptionEnabled(NetworkRuleOption.Genericblock)
             || this.isOptionEnabled(NetworkRuleOption.Content);
-    }
-
-    /**
-     * Checks if the rule is a document allowlist rule.
-     * For instance,
-     * "@@||example.org^$document"
-     * completely disables filtering on all pages at example.com and all subdomains.
-     */
-    isDocumentAllowlistRule(): boolean {
-        if (!this.isAllowlist()) {
-            return false;
-        }
-
-        return this.isOptionEnabled(NetworkRuleOption.Document);
     }
 
     /**
@@ -363,13 +453,19 @@ export class NetworkRule implements rule.IRule {
         return null;
     }
 
-    /** Flag with all permitted request types. 'PermittedAll' means ALL. */
-    getPermittedRequestTypes(): RequestType | RequestTypeExtra {
+    /**
+     * Flag with all permitted request types.
+     * The value {@link RequestType.NotSet} here means "all request types are allowed".
+     */
+    getPermittedRequestTypes(): RequestType {
         return this.permittedRequestTypes;
     }
 
-    /** Flag with all restricted request types. 'RestrictedAll' means NONE. */
-    getRestrictedRequestTypes(): RequestType | RequestTypeExtra {
+    /**
+     * Flag with all restricted request types.
+     * The value {@link RequestType.NotSet} here means "no type of request is restricted".
+     */
+    getRestrictedRequestTypes(): RequestType {
         return this.restrictedRequestTypes;
     }
 
@@ -640,13 +736,13 @@ export class NetworkRule implements rule.IRule {
      * @param requestType - request type to check.
      */
     private matchRequestType(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes !== PermittedAllRequestTypes) {
+        if (this.permittedRequestTypes !== RequestType.NotSet) {
             if ((this.permittedRequestTypes & requestType) !== requestType) {
                 return false;
             }
         }
 
-        if (this.restrictedRequestTypes !== RestrictedAllRequestTypes) {
+        if (this.restrictedRequestTypes !== RequestType.NotSet) {
             if ((this.restrictedRequestTypes & requestType) === requestType) {
                 return false;
             }
@@ -660,8 +756,8 @@ export class NetworkRule implements rule.IRule {
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes === PermittedAllRequestTypes
-            && this.restrictedRequestTypes === RestrictedAllRequestTypes
+        if (this.permittedRequestTypes === RequestType.NotSet
+            && this.restrictedRequestTypes === RequestType.NotSet
             && requestType !== RequestType.Document
             && requestType !== RequestType.SubDocument) {
             return false;
@@ -728,6 +824,8 @@ export class NetworkRule implements rule.IRule {
             }
         }
 
+        this.calculatePriorityWeight();
+
         this.pattern = new Pattern(pattern, this.isOptionEnabled(NetworkRuleOption.MatchCase));
     }
 
@@ -761,40 +859,17 @@ export class NetworkRule implements rule.IRule {
             this.loadOption(optionName, optionValue);
         }
 
-        // More specified rule has more priority
-        this.priorityWeight = optionParts.length;
-
         this.validateOptions();
+    }
 
-        // In the case of allowlist rules $document implicitly includes all other modifiers:
-        // `$content`, `$elemhide`, `$jsinject`, `$urlblock`.
-        if (this.isAllowlist() && this.isOptionEnabled(NetworkRuleOption.Document)) {
-            this.setOptionEnabled(NetworkRuleOption.Elemhide, true, true);
-            this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
-            this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
-            this.setOptionEnabled(NetworkRuleOption.Content, true, true);
-            this.priorityWeight += 4;
-        }
-
-        // $popup should work accumulatively with requestType modifiers
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1992
-        if (this.isOptionEnabled(NetworkRuleOption.Popup) && this.permittedRequestTypes !== PermittedAllRequestTypes) {
-            this.permittedRequestTypes |= RequestType.Document;
-        } else if (this.isOptionEnabled(NetworkRuleOption.Popup)) {
-            this.permittedRequestTypes = RequestType.Document;
-        }
-        // Rules of these types can be applied to documents only
-        // $jsinject, $elemhide, $urlblock, $genericblock, $generichide and $content for allowlist rules.
-        if (
-            this.isOptionEnabled(NetworkRuleOption.Jsinject)
-            || this.isOptionEnabled(NetworkRuleOption.Elemhide)
-            || this.isOptionEnabled(NetworkRuleOption.Content)
-            || this.isOptionEnabled(NetworkRuleOption.Urlblock)
-            || this.isOptionEnabled(NetworkRuleOption.Genericblock)
-            || this.isOptionEnabled(NetworkRuleOption.Generichide)
-        ) {
-            this.permittedRequestTypes = RequestType.Document;
-        }
+    /**
+     * Returns true if rule contains (enabled or disabled) specified option.
+     * Please note, that options have three state: enabled, disabled, undefined.
+     *
+     * @param option - rule option to check.
+     */
+    hasOption(option: NetworkRuleOption): boolean {
+        return this.isOptionEnabled(option) || this.isOptionDisabled(option);
     }
 
     /**
@@ -828,42 +903,9 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * Checks if the rule has higher priority that the specified rule
-     * allowlist + $important > $important > allowlist > basic rules
+     * allowlist + $important > $important > redirect > allowlist > basic rules
      */
     isHigherPriority(r: NetworkRule): boolean {
-        const important = this.isOptionEnabled(NetworkRuleOption.Important);
-        const rImportant = r.isOptionEnabled(NetworkRuleOption.Important);
-        if (this.isAllowlist() && important && !(r.isAllowlist() && rImportant)) {
-            return true;
-        }
-
-        if (r.isAllowlist() && rImportant && !(this.isAllowlist() && important)) {
-            return false;
-        }
-
-        if (important && !rImportant) {
-            return true;
-        }
-
-        if (rImportant && !important) {
-            return false;
-        }
-
-        if (this.isAllowlist() && !r.isAllowlist()) {
-            return true;
-        }
-
-        if (r.isAllowlist() && !this.isAllowlist()) {
-            return false;
-        }
-
-        const generic = this.isGeneric();
-        const rGeneric = r.isGeneric();
-        if (!generic && rGeneric) {
-            // specific rules have priority over generic rules
-            return true;
-        }
-
         return this.priorityWeight > r.priorityWeight;
     }
 
@@ -934,11 +976,11 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.disabledOptions !== 0) {
+        if (this.disabledOptions !== NetworkRuleOption.NotSet) {
             return false;
         }
 
-        if (this.enabledOptions !== 0) {
+        if (this.enabledOptions !== NetworkRuleOption.NotSet) {
             return ((this.enabledOptions
                     & NetworkRuleOption.OptionHostLevelRules)
                 | (this.enabledOptions
@@ -960,12 +1002,6 @@ export class NetworkRule implements rule.IRule {
      */
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
         if (!skipRestrictions) {
-            if (this.allowlist && (option & NetworkRuleOption.BlacklistOnly) === option) {
-                throw new SyntaxError(
-                    `Modifier ${NetworkRuleOption[option]} cannot be used in allowlist rule`,
-                );
-            }
-
             if (!this.allowlist && (option & NetworkRuleOption.AllowlistOnly) === option) {
                 throw new SyntaxError(
                     `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
@@ -1044,199 +1080,243 @@ export class NetworkRule implements rule.IRule {
 
         switch (optionName) {
             // General options
+            // $third-party, $~first-party
             case OPTIONS.THIRD_PARTY:
             case NOT_MARK + OPTIONS.FIRST_PARTY:
                 this.setOptionEnabled(NetworkRuleOption.ThirdParty, true);
                 break;
+            // $first-party, $~third-party
             case NOT_MARK + OPTIONS.THIRD_PARTY:
             case OPTIONS.FIRST_PARTY:
                 this.setOptionEnabled(NetworkRuleOption.ThirdParty, false);
                 break;
+            // $match-case
             case OPTIONS.MATCH_CASE:
                 this.setOptionEnabled(NetworkRuleOption.MatchCase, true);
                 break;
+            // $~match-case
             case NOT_MARK + OPTIONS.MATCH_CASE:
                 this.setOptionEnabled(NetworkRuleOption.MatchCase, false);
                 break;
+            // $important
             case OPTIONS.IMPORTANT:
                 this.setOptionEnabled(NetworkRuleOption.Important, true);
                 break;
-
-            // $domain modifier
-            case OPTIONS.DOMAIN: {
+            // $domain
+            case OPTIONS.DOMAIN:
+                // eslint-disable-next-line no-case-declarations
                 const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
                 this.permittedDomains = domainModifier.permittedDomains;
                 this.restrictedDomains = domainModifier.restrictedDomains;
                 break;
-            }
-            case OPTIONS.DENYALLOW: {
+            // $denyallow
+            case OPTIONS.DENYALLOW:
                 this.setDenyAllowDomains(optionValue);
                 break;
-            }
             // Document-level allowlist rules
+            // $elemhide
             case OPTIONS.ELEMHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Elemhide, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $generichide
             case OPTIONS.GENERICHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Generichide, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $specifichide
             case OPTIONS.SPECIFICHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Specifichide, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $genericblock
             case OPTIONS.GENERICBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Genericblock, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $jsinject
             case OPTIONS.JSINJECT:
                 this.setOptionEnabled(NetworkRuleOption.Jsinject, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $urlblock
             case OPTIONS.URLBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Urlblock, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $content
             case OPTIONS.CONTENT:
                 this.setOptionEnabled(NetworkRuleOption.Content, true);
+                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestType.SubDocument, true);
                 break;
-
-            // $document
+            // $document, $doc
             case OPTIONS.DOCUMENT:
             case OPTIONS.DOC:
-                this.setOptionEnabled(NetworkRuleOption.Document, true);
                 this.setRequestType(RequestType.Document, true);
+                // In the case of allowlist rules $document implicitly includes
+                // all these modifiers: `$content`, `$elemhide`, `$jsinject`,
+                // `$urlblock`.
+                if (this.isAllowlist()) {
+                    this.setOptionEnabled(NetworkRuleOption.Elemhide, true, true);
+                    this.setOptionEnabled(NetworkRuleOption.Jsinject, true, true);
+                    this.setOptionEnabled(NetworkRuleOption.Urlblock, true, true);
+                    this.setOptionEnabled(NetworkRuleOption.Content, true, true);
+                }
                 break;
+            // $~document, $~doc
             case NOT_MARK + OPTIONS.DOCUMENT:
             case NOT_MARK + OPTIONS.DOC:
-                this.setOptionEnabled(NetworkRuleOption.Document, false);
                 this.setRequestType(RequestType.Document, false);
                 break;
-            // Stealth mode $stealth
+            // $stealh
             case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
                 break;
-
-            // $popup blocking option
+            // $popup
             case OPTIONS.POPUP:
+                this.setRequestType(RequestType.Document, true);
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
-
-            // $empty and $mp4
-            // Deprecated in favor of $redirect
-            case OPTIONS.EMPTY:
-                this.setOptionEnabled(NetworkRuleOption.Empty, true);
-                break;
-            case OPTIONS.MP4:
-                this.setOptionEnabled(NetworkRuleOption.Mp4, true);
-                break;
-
             // Content type options
+            // $script
             case OPTIONS.SCRIPT:
                 this.setRequestType(RequestType.Script, true);
                 break;
+            // $~script
             case NOT_MARK + OPTIONS.SCRIPT:
                 this.setRequestType(RequestType.Script, false);
                 break;
+            // $stylesheet
             case OPTIONS.STYLESHEET:
                 this.setRequestType(RequestType.Stylesheet, true);
                 break;
+            // $~stylesheet
             case NOT_MARK + OPTIONS.STYLESHEET:
                 this.setRequestType(RequestType.Stylesheet, false);
                 break;
+            // $subdocument
             case OPTIONS.SUBDOCUMENT:
                 this.setRequestType(RequestType.SubDocument, true);
                 break;
+            // $~subdocument
             case NOT_MARK + OPTIONS.SUBDOCUMENT:
                 this.setRequestType(RequestType.SubDocument, false);
                 break;
+            // $object
             case OPTIONS.OBJECT:
                 this.setRequestType(RequestType.Object, true);
                 break;
+            // $~object
             case NOT_MARK + OPTIONS.OBJECT:
                 this.setRequestType(RequestType.Object, false);
                 break;
+            // $image
             case OPTIONS.IMAGE:
                 this.setRequestType(RequestType.Image, true);
                 break;
+            // $~image
             case NOT_MARK + OPTIONS.IMAGE:
                 this.setRequestType(RequestType.Image, false);
                 break;
+            // $xmlhttprequest
             case OPTIONS.XMLHTTPREQUEST:
                 this.setRequestType(RequestType.XmlHttpRequest, true);
                 break;
+            // $~xmlhttprequest
             case NOT_MARK + OPTIONS.XMLHTTPREQUEST:
                 this.setRequestType(RequestType.XmlHttpRequest, false);
                 break;
+            // $media
             case OPTIONS.MEDIA:
                 this.setRequestType(RequestType.Media, true);
                 break;
+            // $~media
             case NOT_MARK + OPTIONS.MEDIA:
                 this.setRequestType(RequestType.Media, false);
                 break;
+            // $font
             case OPTIONS.FONT:
                 this.setRequestType(RequestType.Font, true);
                 break;
+            // $~font
             case NOT_MARK + OPTIONS.FONT:
                 this.setRequestType(RequestType.Font, false);
                 break;
+            // $websocket
             case OPTIONS.WEBSOCKET:
                 this.setRequestType(RequestType.WebSocket, true);
                 break;
+            // $~websocket
             case NOT_MARK + OPTIONS.WEBSOCKET:
                 this.setRequestType(RequestType.WebSocket, false);
                 break;
+            // $other
             case OPTIONS.OTHER:
                 this.setRequestType(RequestType.Other, true);
                 break;
+            // $~other
             case NOT_MARK + OPTIONS.OTHER:
                 this.setRequestType(RequestType.Other, false);
                 break;
+            // $ping
             case OPTIONS.PING:
                 this.setRequestType(RequestType.Ping, true);
                 break;
+            // $~ping
             case NOT_MARK + OPTIONS.PING:
                 this.setRequestType(RequestType.Ping, false);
                 break;
-
             // Special modifiers
+            // $badfilter
             case OPTIONS.BADFILTER:
                 this.setOptionEnabled(NetworkRuleOption.Badfilter, true);
                 break;
-
+            // $csp
             case OPTIONS.CSP:
                 this.setOptionEnabled(NetworkRuleOption.Csp, true);
                 this.advancedModifier = new CspModifier(optionValue, this.isAllowlist());
                 break;
-
+            // $replace
             case OPTIONS.REPLACE:
                 this.setOptionEnabled(NetworkRuleOption.Replace, true);
                 this.advancedModifier = new ReplaceModifier(optionValue);
                 break;
-
+            // $cookie
             case OPTIONS.COOKIE:
                 this.setOptionEnabled(NetworkRuleOption.Cookie, true);
                 this.advancedModifier = new CookieModifier(optionValue);
                 break;
-
+            // $redirect
             case OPTIONS.REDIRECT:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
                 this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isAllowlist());
                 break;
-
+            // $redirect-rule
             case OPTIONS.REDIRECTRULE:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
                 this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isAllowlist(), true);
                 break;
-
+            // $removeparam
             case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
                 this.advancedModifier = new RemoveParamModifier(optionValue);
                 break;
-
+            // $removeheader
             case OPTIONS.REMOVEHEADER:
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
-
+            // $jsonprune
             // simple validation of jsonprune rules for compiler
             // https://github.com/AdguardTeam/FiltersCompiler/issues/168
-            case OPTIONS.JSONPRUNE: {
+            case OPTIONS.JSONPRUNE:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension does not support $jsonprune modifier yet');
                 }
@@ -1244,10 +1324,10 @@ export class NetworkRule implements rule.IRule {
                 // TODO: should be properly implemented later
                 // https://github.com/AdguardTeam/tsurlfilter/issues/71
                 break;
-            }
+            // $hls
             // simple validation of hls rules for compiler
             // https://github.com/AdguardTeam/FiltersCompiler/issues/169
-            case OPTIONS.HLS: {
+            case OPTIONS.HLS:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension does not support $hls modifier yet');
                 }
@@ -1255,73 +1335,84 @@ export class NetworkRule implements rule.IRule {
                 // TODO: should be properly implemented later
                 // https://github.com/AdguardTeam/tsurlfilter/issues/72
                 break;
-            }
-
             // Dns modifiers
-            case OPTIONS.CLIENT: {
+            // $client
+            case OPTIONS.CLIENT:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $client modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Client, true);
                 this.advancedModifier = new ClientModifier(optionValue);
                 break;
-            }
-
-            case OPTIONS.DNSREWRITE: {
+            // $dnsrewrite
+            case OPTIONS.DNSREWRITE:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnsrewrite modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsRewrite, true);
                 this.advancedModifier = new DnsRewriteModifier(optionValue);
                 break;
-            }
-
-            case OPTIONS.DNSTYPE: {
+            // $dnstype
+            case OPTIONS.DNSTYPE:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnstype modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsType, true);
                 this.advancedModifier = new DnsTypeModifier(optionValue);
                 break;
-            }
-
-            case OPTIONS.CTAG: {
+            // $ctag
+            case OPTIONS.CTAG:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $ctag modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Ctag, true);
                 this.advancedModifier = new CtagModifier(optionValue);
                 break;
-            }
-
-            case OPTIONS.APP: {
+            // $app
+            case OPTIONS.APP:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $app modifier');
                 }
                 this.appModifier = new AppModifier(optionValue);
                 break;
-            }
-
+            // $network
             case OPTIONS.NETWORK:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $network modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
-
+            // $extension
             case OPTIONS.EXTENSION:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, true);
                 break;
+            // $~extension
             case NOT_MARK + OPTIONS.EXTENSION:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
                 this.setOptionEnabled(NetworkRuleOption.Extension, false);
                 break;
-
+            // $all
+            case OPTIONS.ALL:
+                if (this.isAllowlist()) {
+                    throw new SyntaxError('Rule with $all modifier can not be allowlist rule');
+                }
+                // Set all request types
+                Object.values(RequestType).forEach((type) => {
+                    this.setRequestType(type, true);
+                });
+                this.setOptionEnabled(NetworkRuleOption.Popup, true);
+                break;
+            // $empty and $mp4
+            // Deprecated in favor of $redirect
+            case OPTIONS.EMPTY:
+            case OPTIONS.MP4:
+                // Do nothing.
+                break;
             default: {
                 // clear empty values
                 const modifierView = [optionName, optionValue]
@@ -1330,6 +1421,114 @@ export class NetworkRule implements rule.IRule {
                 throw new SyntaxError(`Unknown modifier: ${modifierView}`);
             }
         }
+    }
+
+    /**
+     * To calculate priority, we've categorized modifiers into different groups.
+     * These groups are ranked based on their priority, from lowest to highest.
+     * A modifier that significantly narrows the scope of a rule adds more
+     * weight to its total priority. Conversely, if a rule applies to a broader
+     * range of requests, its priority decreases.
+     *
+     * It's worth noting that there are cases where a single-parameter modifier
+     * has a higher priority than multi-parameter ones. For instance, in
+     * the case of `$domain=example.com|example.org`, a rule that includes two
+     * domains has a slightly broader effective area than a rule with one
+     * specified domain, therefore its priority is lower.
+     *
+     * The base priority weight of any rule is 1. If the calculated priority
+     * is a floating-point number, it will be **rounded up** to the smallest
+     * integer greater than or equal to the calculated weight.
+     *
+     * @see {@link NetworkRule.PermittedRequestTypeWeight}
+     * @see {@link NetworkRule.PermittedDomainWeight}
+     * @see {@link NetworkRule.SpecificExceptionsWeight}
+     * @see {@link NetworkRule.AllowlistRuleWeight}
+     * @see {@link NetworkRule.RedirectRuleWeight}
+     * @see {@link NetworkRule.ImportantRuleWeight}
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-counting}
+     */
+    private calculatePriorityWeight() {
+        // Base modifiers, category 1.
+        this.priorityWeight += countEnabledBits(this.enabledOptions, NetworkRule.CATEGORY_1_OPTIONS_MASK);
+        this.priorityWeight += countEnabledBits(this.disabledOptions, NetworkRule.CATEGORY_1_OPTIONS_MASK);
+
+        /**
+         * When dealing with a negated domain, app, method, or content-type,
+         * we add a point for the existence of the modifier itself, regardless
+         * of the quantity of negated domains or content-types. This is because
+         * the rule's scope is already infinitely broad. Put simply,
+         * by prohibiting multiple domains, content-types, methods or apps,
+         * the scope of the rule becomes only minimally smaller.
+         */
+        if (this.denyAllowDomains && this.denyAllowDomains.length > 0) {
+            this.priorityWeight += 1;
+        }
+
+        if (this.restrictedDomains && this.restrictedDomains.length > 0) {
+            this.priorityWeight += 1;
+        }
+
+        if (this.restrictedRequestTypes !== RequestType.NotSet) {
+            this.priorityWeight += 1;
+        }
+
+        /**
+         * Permitted content types, category 2.
+         * Specified content-types add `50 + 50 / number_of_content_types`,
+         * for example: `||example.com^$image,script` will add
+         * `50 + 50 / 2 = 50 + 25 = 75` to the total weight of the rule.
+         * The `$popup` also belongs to this category, because it implicitly
+         * adds the modifier `$document`.
+         * Similarly, specific exceptions add `$document,subdocument`.
+         */
+        if (this.permittedRequestTypes !== RequestType.NotSet) {
+            const numberOfPermittedRequestTypes = getBitCount(this.permittedRequestTypes);
+            // More permitted request types mean less priority weight.
+            const relativeWeight = NetworkRule.PermittedRequestTypeWeight / numberOfPermittedRequestTypes;
+            this.priorityWeight += NetworkRule.PermittedRequestTypeWeight + relativeWeight;
+        }
+
+        /**
+         * Permitted domains, category 3.
+         * Specified domains through `$domain` and specified applications
+         * through `$app` add `100 + 100 / number_domains (or number_applications)`,
+         * for example:
+         * `||example.com^$domain=example.com|example.org|example.net`
+         * will add `100 + 100 / 3 = 134.3 = 134` or
+         * `||example.com^$app=org.example.app1|org.example.app2`
+         * will add `100 + 100 / 2 = 151`.
+         */
+        if (this.permittedDomains && this.permittedDomains.length > 0) {
+            // More permitted domains mean less priority weight.
+            const relativeWeight = NetworkRule.PermittedDomainWeight / this.permittedDomains.length;
+            this.priorityWeight += NetworkRule.PermittedDomainWeight + relativeWeight;
+        }
+
+        // Redirect rules, category 4.
+        if (this.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            this.priorityWeight += NetworkRule.RedirectRuleWeight;
+        }
+
+        // Specific exceptions, category 5.
+        this.priorityWeight += NetworkRule.SpecificExceptionsWeight * countEnabledBits(
+            this.enabledOptions,
+            NetworkRule.SPECIFIC_EXCLUSIONS_MASK,
+        );
+
+        // Allowlist rules, category 6.
+        if (this.isAllowlist()) {
+            this.priorityWeight += NetworkRule.AllowlistRuleWeight;
+        }
+
+        // Important rules, category 7.
+        if (this.isOptionEnabled(NetworkRuleOption.Important)) {
+            this.priorityWeight += NetworkRule.ImportantRuleWeight;
+        }
+
+        // Round up to avoid overlap between different categories of rules.
+        this.priorityWeight = Math.ceil(this.priorityWeight);
     }
 
     /**

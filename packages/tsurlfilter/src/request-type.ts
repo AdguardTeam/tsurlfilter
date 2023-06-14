@@ -4,6 +4,8 @@
  * importing it into an extension.
  */
 export const RequestType = {
+    /** No value is set. Syntax sugar to simplify code. */
+    NotSet: 0,
     /** main frame */
     Document: 1,
     /** (iframe) $subdocument */

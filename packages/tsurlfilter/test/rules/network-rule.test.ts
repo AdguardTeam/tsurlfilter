@@ -94,6 +94,18 @@ describe('NetworkRule.parseRuleText', () => {
         expect(parts.allowlist).toEqual(false);
     });
 
+    it('works when it handles $all modifier', () => {
+        let parts = NetworkRule.parseRuleText('||example.org^$all');
+        expect(parts.pattern).toEqual('||example.org^');
+        expect(parts.options).toEqual('all');
+        expect(parts.allowlist).toEqual(false);
+
+        parts = NetworkRule.parseRuleText('@@||example.com^$all');
+        expect(parts.pattern).toEqual('||example.com^');
+        expect(parts.options).toEqual('all');
+        expect(parts.allowlist).toEqual(true);
+    });
+
     it('works when it handles incorrect rules properly', () => {
         expect(() => {
             NetworkRule.parseRuleText('@@');
@@ -106,6 +118,18 @@ describe('NetworkRule constructor', () => {
         const rule = new NetworkRule('||example.org^', 0);
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('||example.org^');
+        expect(rule.isAllowlist()).toEqual(false);
+        expect(rule.getShortcut()).toEqual('example.org');
+        expect(rule.isRegexRule()).toEqual(false);
+        expect(rule.getPermittedDomains()).toEqual(null);
+        expect(rule.getRestrictedDomains()).toEqual(null);
+        expect(rule.isGeneric()).toEqual(true);
+    });
+
+    it('works when it creates rule with $all', () => {
+        const rule = new NetworkRule('||example.org^$all', 0);
+        expect(rule.getFilterListId()).toEqual(0);
+        expect(rule.getText()).toEqual('||example.org^$all');
         expect(rule.isAllowlist()).toEqual(false);
         expect(rule.getShortcut()).toEqual('example.org');
         expect(rule.isRegexRule()).toEqual(false);
@@ -139,10 +163,10 @@ describe('NetworkRule constructor', () => {
         }).toThrowError('cannot be used in blacklist rule');
     });
 
-    it('throws error if blacklist-only modifiers used in allowlist rule - $empty', () => {
+    it('throws error if blacklist-only modifiers used in allowlist rule - $all', () => {
         expect(() => {
-            new NetworkRule('@@||example.org^$empty', 0);
-        }).toThrowError('cannot be used in allowlist rule');
+            new NetworkRule('@@||example.org^$all', 0);
+        }).toThrowError('Rule with $all modifier can not be allowlist rule');
     });
 
     it('works when it handles empty $domain modifier', () => {
@@ -221,15 +245,12 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('@@||example.org^$removeparam=p,badfilter', 0);
         expect(correct).toBeTruthy();
 
-        correct = new NetworkRule('@@||example.org^$removeparam=p,document', 0);
-        expect(correct).toBeTruthy();
-
         expect(() => {
-            new NetworkRule('||example.org^$removeparam=p,domain=test.com,popup', 0);
+            new NetworkRule('@@||example.org^$removeparam=p,document', 0);
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
 
         expect(() => {
-            new NetworkRule('||example.org^$removeparam=p,domain=test.com,mp4', 0);
+            new NetworkRule('||example.org^$removeparam=p,domain=test.com,popup', 0);
         }).toThrow(new SyntaxError('$removeparam rules are not compatible with some other modifiers'));
     });
 
@@ -255,15 +276,12 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('@@||example.org^$removeheader=header-name,badfilter', 0);
         expect(correct).toBeTruthy();
 
-        correct = new NetworkRule('@@||example.org^$removeheader=header-name,document', 0);
-        expect(correct).toBeTruthy();
-
         expect(() => {
-            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,popup', 0);
+            new NetworkRule('@@||example.org^$removeheader=header-name,document', 0);
         }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
 
         expect(() => {
-            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,mp4', 0);
+            new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,popup', 0);
         }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
     });
 
@@ -303,6 +321,17 @@ describe('NetworkRule constructor', () => {
         const rule = new NetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('$domain=ya.ru');
+    });
+
+    it('checks $all modifier compatibility', () => {
+        const correct = new NetworkRule('||example.org^$all', 0);
+        expect(correct).toBeTruthy();
+    });
+
+    it('works when it handles $all modifier', () => {
+        const rule = new NetworkRule('||example.com^$all', 0);
+        expect(rule.getFilterListId()).toEqual(0);
+        expect(rule.getText()).toEqual('||example.com^$all');
     });
 
     function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, allowlist = false): void {
@@ -352,23 +381,23 @@ describe('NetworkRule constructor', () => {
 
         checkModifier('popup', NetworkRuleOption.Popup, true);
         checkModifier('popup', NetworkRuleOption.Popup, true, true);
-        checkModifier('empty', NetworkRuleOption.Empty, true);
-        checkModifier('mp4', NetworkRuleOption.Mp4, true);
 
         checkModifier('extension', NetworkRuleOption.Extension, true);
         checkModifier('~extension', NetworkRuleOption.Extension, false);
 
         checkModifier('network', NetworkRuleOption.Network, true);
+
+        checkModifier('all', NetworkRuleOption.Popup, true);
     });
 
     function checkRequestType(name: string, requestType: RequestType, permitted: boolean): void {
         const rule = new NetworkRule(`||example.org^$${name}`, 0);
         if (permitted) {
             expect(rule.getPermittedRequestTypes()).toEqual(requestType);
-            expect(rule.getRestrictedRequestTypes()).toEqual(0);
+            expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.NotSet);
         } else {
             expect(rule.getRestrictedRequestTypes()).toEqual(requestType);
-            expect(rule.getPermittedRequestTypes()).toEqual(0);
+            expect(rule.getPermittedRequestTypes()).toEqual(RequestType.NotSet);
         }
     }
 
@@ -408,6 +437,14 @@ describe('NetworkRule constructor', () => {
 
         checkRequestType('document', RequestType.Document, true);
         checkRequestType('~document', RequestType.Document, false);
+
+        const rule = new NetworkRule('||example.org^$all', 0);
+        const allRequestTypes = Object.values(RequestType)
+            .reduce((prevValue: number, curValue: number) => {
+                return prevValue | curValue;
+            }, RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(allRequestTypes);
+        expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.NotSet);
     });
 
     function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
@@ -470,49 +507,51 @@ describe('NetworkRule constructor', () => {
     it('works if document modifier works properly', () => {
         let rule = new NetworkRule('||example.org^$document', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('@@||example.org^$document', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('||example.org^$document,script', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document | RequestType.Script);
 
         rule = new NetworkRule('||example.org^$document,popup', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('||example.org^$document,replace=/test/test2/', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('||example.org^$document,removeparam=p', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('||example.org^$~document', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionDisabled(NetworkRuleOption.Document));
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
+    });
+
+    it('works if all modifier works properly', () => {
+        const rule = new NetworkRule('||example.org^$all', -1);
+        expect(rule).toBeTruthy();
+        expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
+        const allRequestTypes = Object.values(RequestType)
+            .reduce((prevValue: number, curValue: number) => {
+                return prevValue | curValue;
+            }, RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(allRequestTypes);
     });
 
     it('works if doc modifier alias works properly', () => {
         let rule = new NetworkRule('||example.org^$doc', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionEnabled(NetworkRuleOption.Document));
         expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('||example.org^$~doc', -1);
         expect(rule).toBeTruthy();
-        expect(rule.isOptionDisabled(NetworkRuleOption.Document));
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
     });
 
@@ -525,7 +564,7 @@ describe('NetworkRule constructor', () => {
         rule = new NetworkRule('||example.org^$script,image,popup', -1);
         expect(rule).toBeTruthy();
         expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document | RequestType.Script | RequestType.Image);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Script | RequestType.Image | RequestType.Document);
     });
 });
 
@@ -983,6 +1022,47 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeTruthy();
     });
 
+    it('works when $all modifier is applied properly', () => {
+        let request: Request;
+        const rule = new NetworkRule('||example.org^$all', 0);
+
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Stylesheet);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Object);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.XmlHttpRequest);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Media);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Font);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.WebSocket);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Ping);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+    });
+
     it('works when $client modifier is applied properly', () => {
         let rule: NetworkRule;
         let request: Request;
@@ -1059,57 +1139,124 @@ describe('NetworkRule.isHigherPriority', () => {
         expect(l.isHigherPriority(r)).toBe(expected);
     }
 
-    it('checks rule priority', () => {
-        // $document --> $elemhide, $content, $urlblock, $jsinject, $extension
-        compareRulesPriority('@@||example.org$document', '@@||example.org$elemhide', true);
-        compareRulesPriority('@@||example.org$document', '@@||example.org$content', true);
-        compareRulesPriority('@@||example.org$document', '@@||example.org$urlblock', true);
-        compareRulesPriority('@@||example.org$document', '@@||example.org$jsinject', true);
-        compareRulesPriority('@@||example.org$document', '@@||example.org$extension', true);
+    const priorityCases = [
+        {
+            key: 'basicModifiers',
+            cases: [
+                ['||example.org', '||example.org$first-party', false],
+                ['||example.org$first-party', '||example.org', true],
+                ['||example.org$first-party', '||example.org$third-party', false],
+                ['||example.org$first-party,match-case', '||example.org$first-party', true],
+                ['||example.org$domain=~example.com', '||example.org$first-party', false],
+                ['||example.org$domain=~example.com|~example.org', '||example.org$first-party', false],
+                ['||example.org$~document', '||example.org$first-party', false],
+                ['||example.org$~document,~script', '||example.org$first-party', false],
+                ['||example.org$~document,~script', '||example.org$domain=~example.com', false],
+                ['||example.org$~document,~script', '||example.org$domain=~example.com|~example.org', false],
+                // 1 negated domain === 2 negated domains
+                ['||example.org$domain=~example.org|~example.com', '||example.org$domain=~example.org', false],
+            ],
+        },
+        {
+            key: 'allowedContentTypes',
+            cases: [
+                // 1 content-type -> 2 content-types
+                ['||example.org$script', '||example.org$script,stylesheet', true],
+                // 1 content-type -> negated content-type
+                ['||example.org$script', '||example.org$~script', true],
+                ['||example.org$document', '||example.org$~document', true],
+                // $popup explicity adds $document content-type
+                ['||example.org$popup', '||example.org$document,subdocument', true],
+                // content-types -> negated domains
+                ['||example.org$script', '||example.org$domain=~example.org', true],
+                ['||example.org$script,stylesheet', '||example.org$domain=~example.org', true],
+                ['||example.org$script,stylesheet,media', '||example.org$domain=~example.org', true],
+                ['||example.org$script,stylesheet,domain=~example.org', '||example.org$domain=~example.org', true],
+                ['||example.org$document', '||example.org$all', true],
+                ['||example.org$script,stylesheet,media', '||example.org$all', true],
+                ['||example.org$script,stylesheet,domain=~example.org', '||example.org$all', true],
+            ],
+        },
+        {
+            key: 'allowedDomains',
+            cases: [
+                ['||example.org$domain=example.*', '||example.org$domain=example.com', false],
+                ['||example.org$domain=example.*', '||example.org$domain=example.com|example.org', true],
+                ['||example.org$domain=example.org', '||example.org$script,stylesheet', true],
+                // 1 domain -> 1 content-type
+                ['||example.org$domain=example.org', '||example.org$script', true],
+                // 1 domain -> 2 domains
+                ['||example.org$domain=example.org', '||example.org$domain=example.*|adguard.*', true],
+                ['||example.org$domain=example.org', '||example.org$domain=example.com|example.org', true],
+                // 2 domains -> 3 domains
+                ['||example.org$domain=domain=example.*|adguard.*', '||example.org$domain=example.com|example.org|example.net', true],
+                ['||example.org$domain=example.com|example.org', '||example.org$domain=example.com|example.org|example.net', true],
+                ['||example.org$script,domain=a.com,denyallow=x.com|y.com', '||example.org$script,domain=a.com', true],
+            ],
+        },
+        {
+            key: 'redirectRules',
+            cases: [
+                ['||example.org^$document,redirect=nooptext', '||example.org^$document', true],
+                ['||example.org^$redirect=nooptext', '||example.org$all', true],
+            ],
+        },
+        {
+            key: 'specificExclusions',
+            cases: [
+                ['@@||example.org$elemhide', '||example.org$document', true],
+                ['@@||example.org$generichide', '||example.org$document', true],
+                ['@@||example.org$specifichide', '||example.org$document', true],
+                ['@@||example.org$content', '||example.org$document', true],
+                ['@@||example.org$urlblock', '||example.org$document', true],
+                ['@@||example.org$genericblock', '||example.org$document', true],
+                ['@@||example.org$jsinject', '||example.org$document', true],
+                ['@@||example.org$extension', '||example.org$document', true],
+            ],
+        },
+        {
+            key: 'allowlistRules',
+            cases: [
+                // `@@.*$document` - is an alias to `@@.*$elemhide,content,jsinject,urlblock,popup,document`
+                ['@@||example.org$document', '@@||example.org$elemhide', true],
+                ['@@||example.org$document', '@@||example.org$content', true],
+                ['@@||example.org$document', '@@||example.org$urlblock', true],
+                ['@@||example.org$document', '@@||example.org$jsinject', true],
+                ['@@||example.org$document', '@@||example.org$extension', true],
+                ['@@||example.org$document,subdocument', '@@||example.org$elemhide', true],
+            ],
+        },
+        {
+            key: 'importantRules',
+            cases: [
+                ['||example.org^$document,redirect=nooptext,important', '||example.org^$document,redirect=nooptext', true],
+                ['||example.org$domain=example.com,important', '||example.org^$document,important', true],
+                ['@@||example.org$domain=example.com,important', '@@||example.org$domain=example.com|example.net,important', true],
+            ],
+        },
+    ];
 
-        // $elemhide, $content, $urlblock, $jsinject, $extension -->  $document
-        compareRulesPriority('@@||example.org$elemhide', '@@||example.org$document', false);
-        compareRulesPriority('@@||example.org$content', '@@||example.org$document', false);
-        compareRulesPriority('@@||example.org$urlblock', '@@||example.org$document', false);
-        compareRulesPriority('@@||example.org$jsinject', '@@||example.org$document', false);
-        compareRulesPriority('@@||example.org$extension', '@@||example.org$document', false);
+    priorityCases.forEach((casesGroup, currentIndex) => {
+        describe(`respects group of ${casesGroup.key}`, () => {
+            const lowerPriorityGroups = priorityCases.slice(0, currentIndex);
+            const lowerPriorityCases = lowerPriorityGroups
+                .map(({ cases }) => cases)
+                .flat(1);
 
-        compareRulesPriority('@@||example.org$important', '@@||example.org$important', false);
-        compareRulesPriority('@@||example.org$important', '||example.org$important', true);
-        compareRulesPriority('@@||example.org$important', '@@||example.org', true);
-        compareRulesPriority('@@||example.org$important', '||example.org', true);
+            const cases: (string | boolean)[][] = [];
+            casesGroup.cases.forEach((item) => {
+                // Check case itself
+                cases.push(item);
+                // Add a comparison with all past and lower priority groups
+                lowerPriorityCases.forEach((lowerPriorityCase) => {
+                    cases.push([item[0], lowerPriorityCase[1], true]);
+                });
+            });
 
-        // $important -> allowlist
-        compareRulesPriority('||example.org$important', '@@||example.org$important', false);
-        compareRulesPriority('||example.org$important', '||example.org$important', false);
-        compareRulesPriority('||example.org$important', '@@||example.org', true);
-        compareRulesPriority('||example.org$important', '||example.org', true);
-
-        // allowlist -> basic
-        compareRulesPriority('@@||example.org', '@@||example.org$important', false);
-        compareRulesPriority('@@||example.org', '||example.org$important', false);
-        compareRulesPriority('@@||example.org', '@@||example.org', false);
-        compareRulesPriority('@@||example.org', '||example.org', true);
-
-        compareRulesPriority('||example.org', '@@||example.org$important', false);
-        compareRulesPriority('||example.org', '||example.org$important', false);
-        compareRulesPriority('||example.org', '@@||example.org', false);
-        compareRulesPriority('||example.org', '||example.org', false);
-
-        // specific -> generic
-        compareRulesPriority('||example.org$domain=example.org', '||example.org$script,stylesheet', true);
-
-        // more modifiers -> less modifiers
-        compareRulesPriority('||example.org$script,stylesheet', '||example.org$script', true);
-
-        // domain option count
-        compareRulesPriority('||example.org$domain=~example.org', '||example.org$script,stylesheet', false);
-        compareRulesPriority('||example.org$domain=~example.org', '||example.org$script,stylesheet,media', false);
-        compareRulesPriority(
-            '||example.org$domain=~example.org',
-            '||example.org$script,stylesheet,domain=~example.org',
-            false,
-        );
+            test.each(cases)('%s is a higher priority than %s, expected: %s', (left, right, expectedResult) => {
+                compareRulesPriority(left as string, right as string, expectedResult as boolean);
+            });
+        });
     });
 });
 

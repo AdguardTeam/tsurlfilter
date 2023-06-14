@@ -14,6 +14,7 @@ export enum FilteringEventType {
     TabReload = 'tabReload',
     ApplyBasicRule = 'applyBasicRule',
     ApplyCosmeticRule = 'applyCosmeticRule',
+    // TODO: Doesn't look like it's being used.
     ApplyCspRule = 'applyCspRule',
     ReceiveResponse = 'receiveResponse',
     Cookie = 'cookie',

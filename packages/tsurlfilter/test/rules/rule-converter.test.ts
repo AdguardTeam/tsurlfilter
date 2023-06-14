@@ -324,38 +324,16 @@ describe('Options', () => {
         checkConversionResult('example.com$~xhr', 'example.com$~xmlhttprequest');
     });
 
-    it('converts rules with $all modifier into few rules', () => {
+    it('converts rule with $all modifier into one rule', () => {
         let rule = '||example.org^$all';
         let actual = RuleConverter.convertRule(rule);
-        let exp1 = '||example.org^$document,popup';
-        let exp2 = '||example.org^';
-        let exp3 = '||example.org^$csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:';
-        let exp4 = '||example.org^$csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:';
 
-        expect(actual).toHaveLength(4);
-        expect(actual).toContain(exp1);
-        expect(actual).toContain(exp2);
-        expect(actual).toContain(exp3);
-        expect(actual).toContain(exp4);
+        expect(actual).toHaveLength(1);
+        expect(actual).toContain(rule);
 
         // test rule with more options
         rule = '||example.org^$all,important';
         actual = RuleConverter.convertRule(rule);
-        exp1 = '||example.org^$document,popup,important';
-        exp2 = '||example.org^$important';
-        exp3 = '||example.org^$csp=script-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:,important';
-        exp4 = '||example.org^$csp=font-src \'self\' \'unsafe-eval\' http: https: data: blob: mediastream: filesystem:,important';
-
-        expect(actual).toHaveLength(4);
-        expect(actual).toContain(exp1);
-        expect(actual).toContain(exp2);
-        expect(actual).toContain(exp3);
-        expect(actual).toContain(exp4);
-    });
-
-    it('does not covert rules with $all modifier if ignoreAllModifier parameter used', () => {
-        const rule = '||example.org^$all';
-        const actual = RuleConverter.convertRule(rule, { ignoreAllModifier: true });
 
         expect(actual).toHaveLength(1);
         expect(actual).toContain(rule);

@@ -47,6 +47,7 @@ export const NETWORK_RULE_OPTIONS = {
     DNSREWRITE: 'dnsrewrite',
     DNSTYPE: 'dnstype',
     CTAG: 'ctag',
+    ALL: 'all',
 };
 
 export const OPTIONS_DELIMITER = '$';

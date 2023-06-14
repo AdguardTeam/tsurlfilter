@@ -1,7 +1,4 @@
 import { TooComplexRegexpError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
-import {
-    DeclarativeRulePriority,
-} from '../../../src/rules/declarative-converter/grouped-rules-converters/abstract-rule-converter';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import { NetworkRule } from '../../../src/rules/network-rule';
 import { IndexedRule } from '../../../src/rules/rule';
@@ -40,6 +37,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(declarativeRule).toEqual({
             id: ruleId,
+            priority: 1,
             action: {
                 type: 'block',
             },
@@ -64,7 +62,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(declarativeRule).toEqual({
             id: ruleId,
-            priority: DeclarativeRulePriority.Exception,
+            priority: 100001,
             action: {
                 type: 'allow',
             },
@@ -89,7 +87,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(declarativeRule).toEqual({
             id: ruleId,
-            priority: DeclarativeRulePriority.ImportantException,
+            priority: 1100001,
             action: {
                 type: 'allow',
             },
@@ -115,6 +113,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(thirdPartyDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -137,6 +136,7 @@ describe('DeclarativeRuleConverter', () => {
 
         expect(negateFirstPartyDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -163,6 +163,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(firstPartyDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -184,6 +185,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(negateFirstPartyDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -210,6 +212,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(domainDeclarative).toEqual({
             id: ruleId,
+            priority: 201,
             action: {
                 type: 'block',
             },
@@ -231,6 +234,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(multipleDomainDeclarative).toEqual({
             id: ruleId,
+            priority: 152,
             action: {
                 type: 'block',
             },
@@ -253,6 +257,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(negateDomainDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -279,6 +284,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(scriptRuleDeclarative).toEqual({
             id: ruleId,
+            priority: 101,
             action: {
                 type: 'block',
             },
@@ -300,6 +306,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(negatedScriptRuleDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -350,6 +357,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(matchCaseDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -370,6 +378,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(negatedMatchCaseDeclarative).toEqual({
             id: ruleId,
+            priority: 2,
             action: {
                 type: 'block',
             },
@@ -396,6 +405,7 @@ describe('DeclarativeRuleConverter', () => {
 
         expect(declarativeRule).toEqual({
             id: ruleId,
+            priority: 1,
             action: {
                 type: 'block',
             },
@@ -451,7 +461,7 @@ describe('DeclarativeRuleConverter', () => {
         );
 
         expect(errors).toHaveLength(1);
-        expect(errors).toContainEqual(err);
+        expect(errors[0]).toStrictEqual(err);
     });
 
     it('converts regex negative lookahead', () => {
@@ -505,6 +515,7 @@ describe('DeclarativeRuleConverter', () => {
 
             expect(declarativeRule).toEqual({
                 id: ruleId,
+                priority: 201,
                 action: {
                     type: 'block',
                 },
@@ -534,6 +545,7 @@ describe('DeclarativeRuleConverter', () => {
 
             expect(declarativeRule).toEqual({
                 id: ruleId,
+                priority: 2,
                 action: {
                     type: 'block',
                 },
@@ -565,6 +577,7 @@ describe('DeclarativeRuleConverter', () => {
 
         expect(declarativeRule).toStrictEqual({
             id: ruleId,
+            priority: 1101,
             action: {
                 type: 'redirect',
                 redirect: {
@@ -599,6 +612,7 @@ describe('DeclarativeRuleConverter', () => {
 
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
+                priority: 252,
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '/adguard_circle.png',
@@ -630,8 +644,8 @@ describe('DeclarativeRuleConverter', () => {
             );
 
             expect(declarativeRule).toStrictEqual({
-                priority: 1,
                 id: ruleId,
+                priority: 100252,
                 action: { type: 'allow' },
                 condition: {
                     urlFilter: '/adguard_dns_map.png',
@@ -666,6 +680,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRule).toEqual({
                 id: ruleId,
+                priority: 1,
                 action: {
                     type: 'redirect',
                     redirect: {
@@ -698,6 +713,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRule).toEqual({
                 id: ruleId,
+                priority: 1,
                 action: {
                     type: 'redirect',
                     redirect: {
@@ -730,45 +746,47 @@ describe('DeclarativeRuleConverter', () => {
             const { declarativeRules } = DeclarativeRulesConverter.convert(
                 [[filterId, rules]],
             );
-            expect(declarativeRules)
-                .toEqual(expect.arrayContaining([{
-                    id: firstGroupedRuleId,
-                    action: {
-                        type: 'redirect',
-                        redirect: {
-                            transform: {
-                                queryTransform: {
-                                    removeParams: [
-                                        'p1case1',
-                                        'p2case1',
-                                        'P3Case1',
-                                    ],
-                                },
+            expect(declarativeRules[0]).toStrictEqual({
+                id: firstGroupedRuleId,
+                priority: 101,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: [
+                                    'p1case1',
+                                    'p2case1',
+                                    'P3Case1',
+                                ],
                             },
                         },
                     },
-                    condition: {
-                        urlFilter: '||testcases.adguard.com',
-                        resourceTypes: ['xmlhttprequest'],
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }, {
-                    id: secondGroupedRuleId,
-                    action: {
-                        type: 'redirect',
-                        redirect: {
-                            transform: {
-                                queryTransform: {
-                                    removeParams: ['p1case2'],
-                                },
+                },
+                condition: {
+                    urlFilter: '||testcases.adguard.com',
+                    resourceTypes: ['xmlhttprequest'],
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: secondGroupedRuleId,
+                priority: 101,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['p1case2'],
                             },
                         },
                     },
-                    condition: {
-                        resourceTypes: ['xmlhttprequest'],
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }]));
+                },
+                condition: {
+                    resourceTypes: ['xmlhttprequest'],
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
         });
 
         it('converts $removeparam resource type xmlhttprequest', () => {
@@ -786,6 +804,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRule).toEqual({
                 id: ruleId,
+                priority: 101,
                 action: {
                     type: 'redirect',
                     redirect: {
@@ -802,6 +821,55 @@ describe('DeclarativeRuleConverter', () => {
                     urlFilter: '||testcases.adguard.com',
                 },
             });
+        });
+    });
+
+    it('converts all rule', () => {
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            ['||example.org^$all', '||test.com^$document'],
+        );
+        const { declarativeRules } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+        expect(declarativeRules[0]).toStrictEqual({
+            id: 1,
+            priority: 56,
+            action: {
+                type: 'block',
+            },
+            condition: {
+                urlFilter: '||example.org^',
+                isUrlFilterCaseSensitive: false,
+                resourceTypes: [
+                    'main_frame',
+                    'sub_frame',
+                    'stylesheet',
+                    'script',
+                    'image',
+                    'font',
+                    'object',
+                    'xmlhttprequest',
+                    'ping',
+                    'media',
+                    'websocket',
+                    'other',
+                ],
+            },
+        });
+        expect(declarativeRules[1]).toStrictEqual({
+            id: 2,
+            priority: 101,
+            action: {
+                type: 'block',
+            },
+            condition: {
+                urlFilter: '||test.com^',
+                resourceTypes: ['main_frame'],
+                isUrlFilterCaseSensitive: false,
+            },
         });
     });
 });

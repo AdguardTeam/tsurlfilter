@@ -48,7 +48,7 @@ export class MatchingResult {
 
     /**
      * Redirect rules - a set of rules redirecting request
-     * See $redirect modifier
+     * See $redirect and $redirect-rule modifiers
      */
     public readonly redirectRules: NetworkRule[] | null;
 
@@ -74,8 +74,9 @@ export class MatchingResult {
     /**
      * Creates an instance of the MatchingResult struct and fills it with the rules.
      *
-     * @param rules network rules
-     * @param sourceRule source rule
+     * @param rules A list of network rules that match the request.
+     * @param sourceRule A rule that matches the document that is a source
+     * of the request, i.e. document-level exclusions.
      */
     constructor(rules: NetworkRule[], sourceRule: NetworkRule | null) {
         this.basicRule = null;
@@ -86,7 +87,6 @@ export class MatchingResult {
         this.removeParamRules = null;
         this.removeHeaderRules = null;
         this.redirectRules = null;
-        this.cspRules = null;
         this.stealthRule = null;
 
         // eslint-disable-next-line no-param-reassign
@@ -160,7 +160,7 @@ export class MatchingResult {
             }
 
             // Check blocking rules against $genericblock / $urlblock
-            if (!rule.isAllowlist()) {
+            if (!rule.isAllowlist() && this.documentRule?.isHigherPriority(rule)) {
                 if (!basicAllowed) {
                     continue;
                 }
@@ -178,9 +178,10 @@ export class MatchingResult {
     /**
      * GetBasicResult returns a rule that should be applied to the web request.
      * Possible outcomes are:
-     * returns nil -- bypass the request.
-     * returns a allowlist rule -- bypass the request.
+     * returns nil -- allow the request.
+     * returns an allowlist rule -- allow the request.
      * returns a blocking rule -- block the request.
+     * returns a redirect rule -- redirect the request.
      *
      * @return {NetworkRule | null} basic result rule
      */
@@ -196,33 +197,31 @@ export class MatchingResult {
         }
 
         // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#replace-modifier
-        // 1. $replace rules have a higher priority than other basic rules (including exception rules).
-        //  So if a request corresponds to two different rules one of which has the $replace modifier,
-        //  this rule will be applied.
-        // 2. $document exception rules and rules with $content or $replace modifiers do disable $replace rules
-        //  for requests matching them.
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-extra
+        // $replace rules have a higher priority than other basic rules (including exception rules).
+        // So if a request corresponds to two different rules one of which has the $replace modifier,
+        // this rule will be applied.
         if (this.replaceRules) {
-            if (basic && basic.isAllowlist()) {
-                if (basic.isDocumentAllowlistRule()) {
-                    return basic;
-                }
-
-                if (basic.isOptionEnabled(NetworkRuleOption.Replace)
-                    || basic.isOptionEnabled(NetworkRuleOption.Content)) {
-                    return basic;
-                }
+            const isReplaceOrContent = basic?.isOptionEnabled(NetworkRuleOption.Replace)
+                || basic?.isOptionEnabled(NetworkRuleOption.Content);
+            // If basic rule is an exception with $replace or $content modifier,
+            // then basic rule will disable $replace rules.
+            if (basic?.isAllowlist() && isReplaceOrContent) {
+                return basic;
             }
 
+            // Otherwise null is returned to allow the request, because we need
+            // to get response first to then apply the $replace rules to
+            // the response.
             return null;
         }
 
-        // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#redirect-modifier
         // Redirect rules have a high priority
+        // https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#redirect-modifier
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-6
         const redirectRule = this.getRedirectRule();
-        if (redirectRule) {
-            if (!basic || !basic.isHigherPriority(redirectRule)) {
-                return redirectRule;
-            }
+        if (redirectRule && (!basic || !basic.isHigherPriority(redirectRule))) {
+            return redirectRule;
         }
 
         return basic;
@@ -234,34 +233,39 @@ export class MatchingResult {
      * @return {CosmeticOption} mask
      */
     getCosmeticOption(): CosmeticOption {
-        if (this.basicRule?.isDocumentAllowlistRule() || this.documentRule?.isDocumentAllowlistRule()) {
-            return CosmeticOption.CosmeticOptionNone;
+        const { basicRule, documentRule } = this;
+
+        let rule = basicRule;
+        // We choose a non-empty rule and the one of the two with the higher
+        // priority in order to accurately calculate cosmetic options.
+        if ((!rule && documentRule) || (rule && documentRule?.isHigherPriority(rule))) {
+            rule = documentRule;
         }
 
-        if (!this.basicRule || !this.basicRule.isAllowlist()) {
+        if (!rule || !rule.isAllowlist()) {
             return CosmeticOption.CosmeticOptionAll;
         }
 
         let option = CosmeticOption.CosmeticOptionAll;
 
-        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Elemhide)) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Elemhide)) {
             option ^= CosmeticOption.CosmeticOptionGenericCSS;
             option ^= CosmeticOption.CosmeticOptionSpecificCSS;
         }
 
-        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Generichide)) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Generichide)) {
             option ^= CosmeticOption.CosmeticOptionGenericCSS;
         }
 
-        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Specifichide)) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Specifichide)) {
             option ^= CosmeticOption.CosmeticOptionSpecificCSS;
         }
 
-        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Jsinject)) {
             option ^= CosmeticOption.CosmeticOptionJS;
         }
 
-        if (this.basicRule.isOptionEnabled(NetworkRuleOption.Content)) {
+        if (rule.isOptionEnabled(NetworkRuleOption.Content)) {
             option ^= CosmeticOption.CosmeticOptionHtml;
         }
 
@@ -381,49 +385,47 @@ export class MatchingResult {
     }
 
     /**
-     * Returns a redirect rule
+     * Returns a redirect rule or null if redirect rules are empty.
+     * $redirect-rule is only returned if there's a blocking rule also matching
+     * this request.
      */
-    getRedirectRule(): NetworkRule | null {
+    private getRedirectRule(): NetworkRule | null {
         if (!this.redirectRules) {
             return null;
         }
 
+        // Apply allowlist $redirect rules.
         let result = MatchingResult.filterAdvancedModifierRules(
             this.redirectRules,
             (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
         );
 
+        // Filters only not allowlist rules.
         result = result.filter((r) => !r.isAllowlist());
 
-        const conditionalRedirectRules = result.filter((x) => {
-            const redirectModifier = x.getAdvancedModifier() as RedirectModifier;
-            return redirectModifier.isRedirectingOnlyBlocked;
+        // Splits $redirect and $redirect-rule into separate arrays.
+        const conditionalRedirectRules: NetworkRule[] = [];
+        const allWeatherRedirectRules: NetworkRule[] = [];
+        result.forEach((rule) => {
+            const redirectModifier = rule.getAdvancedModifier() as RedirectModifier;
+            if (redirectModifier.isRedirectingOnlyBlocked) {
+                conditionalRedirectRules.push(rule);
+            } else {
+                allWeatherRedirectRules.push(rule);
+            }
         });
-        const allWeatherRedirectRules = result.filter((x) => !conditionalRedirectRules.includes(x));
 
         if (allWeatherRedirectRules.length > 0) {
-            return allWeatherRedirectRules.sort(
-                (a, b) => (b.isOptionEnabled(NetworkRuleOption.Important)
-                        && !a.isOptionEnabled(NetworkRuleOption.Important) ? 1 : -1),
-            )[0];
+            return allWeatherRedirectRules
+                .sort((a, b) => (b.isHigherPriority(a) ? 1 : -1))[0];
         }
 
-        if (conditionalRedirectRules.length === 0) {
-            return null;
+        if (conditionalRedirectRules.length > 0 && this.basicRule && !this.basicRule.isAllowlist()) {
+            return conditionalRedirectRules
+                .sort((a, b) => (b.isHigherPriority(a) ? 1 : -1))[0];
         }
 
-        const resultRule = conditionalRedirectRules.sort(
-            (a, b) => (b.isOptionEnabled(NetworkRuleOption.Important)
-                        && !a.isOptionEnabled(NetworkRuleOption.Important) ? 1 : -1),
-        )[0];
-        const redirectModifier = resultRule.getAdvancedModifier() as RedirectModifier;
-        if (redirectModifier && redirectModifier.isRedirectingOnlyBlocked) {
-            if (!(this.basicRule && !this.basicRule.isAllowlist())) {
-                return null;
-            }
-        }
-
-        return resultRule;
+        return null;
     }
 
     /**
@@ -435,7 +437,7 @@ export class MatchingResult {
         }
 
         const basic = this.getBasicResult();
-        if (basic?.isDocumentAllowlistRule()) {
+        if (basic?.isAllowlist() && basic.isOptionEnabled(NetworkRuleOption.Urlblock)) {
             return [];
         }
 

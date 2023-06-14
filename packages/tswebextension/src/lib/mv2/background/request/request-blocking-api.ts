@@ -92,7 +92,7 @@ export class RequestBlockingApi {
         }
 
         if (requestType === RequestType.Document) {
-            if (rule.isOptionEnabled(NetworkRuleOption.Document)) {
+            if ((rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document) {
                 return documentBlockingService.getDocumentBlockingResponse(
                     requestId,
                     requestUrl,
@@ -112,11 +112,6 @@ export class RequestBlockingApi {
             }
 
             // Other url blocking rules are not applicable to main frame
-            return undefined;
-        }
-
-        // Replace rules are processed in content-filtering
-        if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
             return undefined;
         }
 

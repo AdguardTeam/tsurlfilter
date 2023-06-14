@@ -378,6 +378,30 @@ describe('TestEngineMatchRequest - document modifier', () => {
     });
 });
 
+describe('TestEngineMatchRequest - all modifier', () => {
+    it('respects $all modifier with all request types in blocking rules', () => {
+        const allBlockingRuleText = '||example.org^$all';
+        const baseRuleList = new StringRuleList(1, [
+            allBlockingRuleText,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request('http://example.org/', null, RequestType.Document);
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(allBlockingRuleText);
+
+        request = new Request('http://other.org/', null, RequestType.Document);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).toBeNull();
+
+        request = new Request('http://example.org/', null, RequestType.Image);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()!.getText()).toBe(allBlockingRuleText);
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;
@@ -551,7 +575,7 @@ describe('TestEngineCosmeticResult - js', () => {
 });
 
 describe('$urlblock modifier', () => {
-    it('should have higher priority than important', () => {
+    it('should not have higher priority than important', () => {
         const important = '||example.com$important';
         const urlblock = '@@||example.org$urlblock';
 
@@ -565,7 +589,7 @@ describe('$urlblock modifier', () => {
         const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
         const result = engine.matchRequest(request, frameRule).getBasicResult();
         expect(result).toBeTruthy();
-        expect(result?.getText()).toEqual(urlblock);
+        expect(result?.getText()).toEqual(important);
     });
 });
 

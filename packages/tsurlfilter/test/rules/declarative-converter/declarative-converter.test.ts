@@ -29,13 +29,14 @@ describe('DeclarativeConverter', () => {
         const ruleId = 1;
 
         expect(declarativeRules).toHaveLength(1);
-        expect(declarativeRules).toContainEqual({
+        expect(declarativeRules[0]).toStrictEqual({
             id: ruleId,
             action: { type: 'block' },
             condition: {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
             },
+            priority: 1,
         });
     });
 
@@ -49,7 +50,7 @@ describe('DeclarativeConverter', () => {
         const ruleId = 1;
 
         expect(declarativeRules).toHaveLength(1);
-        expect(declarativeRules).toContainEqual({
+        expect(declarativeRules[0]).toEqual({
             id: ruleId,
             action: { type: 'block' },
             condition: {
@@ -57,6 +58,7 @@ describe('DeclarativeConverter', () => {
                 domainType: 'thirdParty',
                 isUrlFilterCaseSensitive: false,
             },
+            priority: 2,
         });
     });
 
@@ -75,13 +77,14 @@ describe('DeclarativeConverter', () => {
             const ruleId = 3;
 
             expect(declarativeRules).toHaveLength(1);
-            expect(declarativeRules).toContainEqual({
+            expect(declarativeRules[0]).toEqual({
                 id: ruleId,
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
                     isUrlFilterCaseSensitive: false,
                 },
+                priority: 1,
             });
         });
 
@@ -108,13 +111,14 @@ describe('DeclarativeConverter', () => {
             const ruleId = 4;
 
             expect(declarativeRules).toHaveLength(1);
-            expect(declarativeRules).toContainEqual({
+            expect(declarativeRules[0]).toEqual({
                 id: ruleId,
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
                     isUrlFilterCaseSensitive: false,
                 },
+                priority: 1,
             });
         });
     });
@@ -143,26 +147,26 @@ describe('DeclarativeConverter', () => {
         const { declarativeRules } = await ruleSet.serialize();
 
         expect(declarativeRules).toHaveLength(2);
-        expect(declarativeRules).toEqual(expect.arrayContaining([{
+        expect(declarativeRules[0]).toStrictEqual({
             id: 1,
-            priority: 4,
+            priority: 140101,
             action: { type: 'allowAllRequests' },
             condition: {
                 isUrlFilterCaseSensitive: false,
                 resourceTypes: ['main_frame'],
                 urlFilter: '||example.org^',
             },
-        },
-        {
+        });
+        expect(declarativeRules[1]).toEqual({
             id: 2,
-            priority: 1,
+            priority: 110076,
             action: { type: 'allowAllRequests' },
             condition: {
                 isUrlFilterCaseSensitive: false,
-                resourceTypes: ['main_frame'],
+                resourceTypes: ['main_frame', 'sub_frame'],
                 urlFilter: '||example.com^',
             },
-        }]));
+        });
     });
 
     it('returns original rule text for specified declarative rule', async () => {
@@ -201,23 +205,24 @@ describe('DeclarativeConverter', () => {
             const { declarativeRules } = await ruleSet.serialize();
 
             expect(declarativeRules).toHaveLength(2);
-            expect(declarativeRules).toEqual(
-                expect.arrayContaining([{
-                    id: 1,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.org^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }, {
-                    id: 2,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.com^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }]),
-            );
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.org^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: 2,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.com^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
         });
 
         it('work with max number of rules in many filter', async () => {
@@ -238,37 +243,42 @@ describe('DeclarativeConverter', () => {
             const { declarativeRules } = await ruleSet.serialize();
 
             expect(declarativeRules).toHaveLength(4);
-            expect(declarativeRules).toEqual(
-                expect.arrayContaining([{
-                    id: 1,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.org^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }, {
-                    id: 2,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.com^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }, {
-                    id: 3,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.net^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }, {
-                    id: 4,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.co.uk^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }]),
-            );
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.org^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: 2,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.com^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[2]).toStrictEqual({
+                id: 3,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.net^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[3]).toStrictEqual({
+                id: 4,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.co.uk^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
         });
 
         it('work with max number of regexp rules', async () => {
@@ -285,26 +295,27 @@ describe('DeclarativeConverter', () => {
             const { declarativeRules } = await ruleSet.serialize();
 
             expect(declarativeRules).toHaveLength(2);
-            expect(declarativeRules).toEqual(
-                expect.arrayContaining([{
-                    id: 1,
-                    action: { type: 'block' },
-                    condition: {
-                        initiatorDomains: ['plasma.3dn.ru'],
-                        isUrlFilterCaseSensitive: false,
-                        regexFilter: '/.s/src/[a-z0-9]*.js/',
-                    },
-                }, {
-                    id: 2,
-                    action: { type: 'block' },
-                    condition: {
-                        domainType: 'thirdParty',
-                        regexFilter: '/dbp/pre/',
-                        resourceTypes: ['script'],
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }]),
-            );
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 201,
+                action: { type: 'block' },
+                condition: {
+                    initiatorDomains: ['plasma.3dn.ru'],
+                    isUrlFilterCaseSensitive: false,
+                    regexFilter: '/.s/src/[a-z0-9]*.js/',
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: 2,
+                priority: 102,
+                action: { type: 'block' },
+                condition: {
+                    domainType: 'thirdParty',
+                    regexFilter: '/dbp/pre/',
+                    resourceTypes: ['script'],
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
         });
 
         it('return limitations errors', async () => {
@@ -326,30 +337,31 @@ describe('DeclarativeConverter', () => {
             const { declarativeRules } = await ruleSet.serialize();
 
             expect(declarativeRules).toHaveLength(2);
-            expect(declarativeRules).toEqual(
-                expect.arrayContaining([{
-                    id: 1,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.org^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }, {
-                    id: 2,
-                    action: { type: 'block' },
-                    condition: {
-                        urlFilter: '||example.com^',
-                        isUrlFilterCaseSensitive: false,
-                    },
-                }]),
-            );
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.org^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: 2,
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example.com^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
 
             const msg = 'After conversion, too many declarative rules remain: '
                 + '3 exceeds the limit provided - 2';
             const err = new TooManyRulesError(msg, [2], maxNumberOfRules, 1);
 
             expect(limitations).toHaveLength(1);
-            expect(limitations).toContainEqual(err);
+            expect(limitations[0]).toStrictEqual(err);
         });
     });
 

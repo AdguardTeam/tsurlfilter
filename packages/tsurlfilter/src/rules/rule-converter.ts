@@ -8,13 +8,6 @@ import { OPTIONS_DELIMITER } from './network-rule-options';
 import { parseOptionsString } from '../utils/parse-options-string';
 import { RuleFactory } from './rule-factory';
 
-interface ConversionOptions {
-    /**
-     * If converter should convert rules with all modifier
-     */
-    ignoreAllModifier?: boolean;
-}
-
 /**
  * Rule converter class
  */
@@ -75,15 +68,14 @@ export class RuleConverter {
      * Converts rules text
      *
      * @param rulesText
-     * @param conversionOptions
      */
-    public static convertRules(rulesText: string, conversionOptions = {} as ConversionOptions): string {
+    public static convertRules(rulesText: string): string {
         const result = [];
 
         const lines = rulesText.split(/\r?\n/);
         for (const line of lines) {
             try {
-                result.push(...RuleConverter.convertRule(line, conversionOptions));
+                result.push(...RuleConverter.convertRule(line));
             } catch (e) {
                 logger.warn((e as Error).message);
             }
@@ -127,9 +119,8 @@ export class RuleConverter {
      * Convert external scriptlet rule to AdGuard scriptlet syntax
      *
      * @param rawRule
-     * @param conversionOptions
      */
-    public static convertRule(rawRule: string, conversionOptions = {} as ConversionOptions): string[] {
+    public static convertRule(rawRule: string): string[] {
         const rule = rawRule.trim();
         if (rule.startsWith(SimpleRegex.MASK_COMMENT) || rule === '') {
             return [rule];
@@ -162,7 +153,6 @@ export class RuleConverter {
                 const ruleWithConvertedOptions = RuleConverter.convertOptions(
                     domain,
                     optionsParts,
-                    conversionOptions,
                 );
                 if (ruleWithConvertedOptions) {
                     return ruleWithConvertedOptions;
@@ -280,13 +270,11 @@ export class RuleConverter {
      * Converts the rule options according to the conversion map and handles special cases.
      * @param domainPart - The domain part of the rule.
      * @param optionsParts - The options part of the rule as an array of strings.
-     * @param conversionOptions - Optional conversion options object.
      * @private
      */
     private static convertOptions(
         domainPart: string,
         optionsParts: string[],
-        conversionOptions = {} as ConversionOptions,
     ): string[] | null {
         const NAME_VALUE_SPLITTER = '=';
 
@@ -319,42 +307,6 @@ export class RuleConverter {
 
             const updatedCspOption = `csp${NAME_VALUE_SPLITTER}${cspValues.join('; ')}`;
             updatedOptionsParts = allButCsp.concat(updatedCspOption);
-        }
-
-        // Options without all modifier
-        const hasAllOption = updatedOptionsParts.indexOf('all') > -1;
-
-        if (hasAllOption && !conversionOptions.ignoreAllModifier) {
-            // $all modifier should be converted in 4 rules:
-            // ||example.org^$document,popup
-            // ||example.org^
-            // ||example.org^$inline-font
-            // ||example.org^$inline-script
-            const allOptionReplacers = [
-                ['document', 'popup'],
-                ['inline-script'],
-                ['inline-font'],
-                [''],
-            ];
-
-            return allOptionReplacers.map((replacers) => {
-                // Remove replacer and all option from the list
-                const optionsButAllAndReplacer = updatedOptionsParts
-                    .filter((option) => !(replacers.includes(option) || option === 'all'));
-
-                // Try get converted values, used for INLINE_SCRIPT_OPTION, INLINE_FONT_OPTION
-                const convertedReplacers = replacers.map((replacer) => {
-                    return RuleConverter.OPTIONS_CONVERSION_MAP.get(replacer) || replacer;
-                });
-
-                // Add replacer to the list of options
-                const updatedOptionsString = [...convertedReplacers, ...optionsButAllAndReplacer]
-                    .filter((entity) => entity)
-                    .join(',');
-
-                // Create a new rule
-                return updatedOptionsString.length < 1 ? domainPart : `${domainPart}$${updatedOptionsString}`;
-            });
         }
 
         if (areOptionsConverted) {

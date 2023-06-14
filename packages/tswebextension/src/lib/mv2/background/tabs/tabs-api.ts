@@ -263,6 +263,10 @@ export class TabsApi {
     /**
      * Checks if tab is a new tab.
      *
+     * TODO: Change in AG-22715: if the lifetime of the tab is less than N
+     * seconds (for example 5 seconds), then it is a popup and we close it. If
+     * the opposite is true, then we block it with a stub.
+     *
      * @param tabId Tab ID.
      * @returns True if tab is a new tab.
      */
