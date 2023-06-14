@@ -24,7 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `$content,jsinject,elemhide,urlblock`.
   In all other cases, `$document` is treated as a regular content-type modifier.
 - Exceptions with `$urlblock` disables `$cookie` rules.
-- `$redirect` rules are higher in priority than blocking rules and exceptions.
+- `$redirect` rules are higher in priority than blocking rules.
+- Exceptions are higher in priority than `$redirect` and blocking rules.
 - `$important` is higher than all others.
 
 ## [2.0.7] - 2023-06-14
