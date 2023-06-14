@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## [2.0.7] - 2023-06-14
+
+### Fixed
+
+- Do not remove escape characters from regexp modifiers values during `RuleConverter.convertRule()`
+
+
 ## [2.0.6] - 2023-06-06
 
 ### Changed

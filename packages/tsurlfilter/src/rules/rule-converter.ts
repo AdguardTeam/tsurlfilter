@@ -115,7 +115,8 @@ export class RuleConverter {
 
         const domainPart = ruleText.slice(0, optionsDelimiterIdx);
         const optionsPart = ruleText.slice(optionsDelimiterIdx + 1);
-        const optionsParts = parseOptionsString(optionsPart);
+        // do not remove escape characters from regexp modifiers values
+        const optionsParts = parseOptionsString(optionsPart, false);
 
         return [domainPart, optionsParts];
     };

@@ -92,6 +92,22 @@ describe('parseOptionsString', () => {
         /* eslint-enable no-useless-escape */
     });
 
+    it('parses $hls correctly', () => {
+        // Unescaped comma in rule modifier value
+        const optionsPart = String.raw`hls=/#UPLYNK-SEGMENT:.*\,ad/t`;
+        let expected: string[];
+        let actual: string[];
+
+        actual = parseOptionsString(optionsPart);
+        expected = [String.raw`hls=/#UPLYNK-SEGMENT:.*,ad/t`];
+        expect(actual).toEqual(expected);
+
+        // do not remove escape characters from the string during RuleConverter.convertRule()
+        actual = parseOptionsString(optionsPart, false);
+        expected = [String.raw`hls=/#UPLYNK-SEGMENT:.*\,ad/t`];
+        expect(actual).toEqual(expected);
+    });
+
     it('works with edge cases', () => {
         // Parses options when both $removeparam and $replace are present
         let str = 'path=/page.html,removeparam=/^kk=w{3,}$/,domain=a.com|b.com,replace=/w{3,}/test/gi';

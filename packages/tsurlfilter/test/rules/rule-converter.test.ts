@@ -379,6 +379,18 @@ describe('Options', () => {
         checkConversionResult('||www.ynet.co.il^$important,websocket,1p,domain=www.ynet.co.il', '||www.ynet.co.il^$important,websocket,~third-party,domain=www.ynet.co.il');
         checkConversionResult('spiele-umsonst.de##.left > div.right[style$="1px;"]', 'spiele-umsonst.de##.left > div.right[style$="1px;"]');
     });
+
+    it('converts hls option properly', () => {
+        const rule = '||example.org^$hls=/#UPLYNK-SEGMENT:.*\\,ad/t';
+        // converted rule should be the same as original
+        checkConversionResult(rule, rule);
+    });
+
+    it('converts jsonprune option properly', () => {
+        const rule = '||example.org/*/*/$xmlhttprequest,jsonprune=\\$..[ac\\, ab]';
+        // converted rule should be the same as original
+        checkConversionResult(rule, rule);
+    });
 });
 
 describe('Scriptlets', () => {
