@@ -11,7 +11,7 @@ import {
 import { Frame, MAIN_FRAME_ID } from './frame';
 import { TabContext } from './tab-context';
 import type { EngineApi } from '../engine-api';
-import type { AllowlistApi } from '../allowlist';
+import type { DocumentApi } from '../document-api';
 import type { TabsApi } from './tabs-api';
 
 /**
@@ -22,12 +22,12 @@ export class TabsCosmeticInjector {
      * Create instance of TabsCosmeticInjector.
      *
      * @param engineApi Engine API.
-     * @param allowlistApi  Allowlist API.
+     * @param documentApi  Document API.
      * @param tabsApi  Tabs API.
      */
     constructor(
         private readonly engineApi: EngineApi,
-        private readonly allowlistApi: AllowlistApi,
+        private readonly documentApi: DocumentApi,
         private readonly tabsApi: TabsApi,
     ) {}
 
@@ -61,14 +61,14 @@ export class TabsCosmeticInjector {
             return;
         }
 
-        const tabContext = new TabContext(tab, this.allowlistApi);
+        const tabContext = new TabContext(tab, this.documentApi);
 
         const tabId = tab.id;
 
         this.tabsApi.context.set(tabId, tabContext);
 
         if (tab.url) {
-            tabContext.mainFrameRule = this.allowlistApi.matchFrame(tab.url);
+            tabContext.mainFrameRule = this.documentApi.matchFrame(tab.url);
         }
 
         const frames = await browser.webNavigation.getAllFrames({ tabId });

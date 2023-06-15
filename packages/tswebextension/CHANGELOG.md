@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [Unreleased]
+
+### Added
+- new `DocumentApi` class, with frame-matching taking into account the state of the `Allowlist`.
+
+### Changed
+- `AllowlistApi` renamed to `Allowlist`. `matchFrame` method moved to `DocumentApi` class.
+
+
 ## [0.3.0] - 2023-06-14
 
 ### Changed

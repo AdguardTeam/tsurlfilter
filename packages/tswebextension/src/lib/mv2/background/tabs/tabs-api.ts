@@ -2,7 +2,7 @@ import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
 import { EventChannel } from '../../../common/utils/channels';
-import type { AllowlistApi } from '../allowlist';
+import type { DocumentApi } from '../document-api';
 import { FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
 
@@ -30,10 +30,10 @@ export class TabsApi {
     /**
      * Tabs API constructor.
      *
-     * @param allowlistApi Allowlist API.
+     * @param documentApi Document API.
      */
     constructor(
-        private readonly allowlistApi: AllowlistApi,
+        private readonly documentApi: DocumentApi,
     ) {
         this.handleTabCreate = this.handleTabCreate.bind(this);
         this.handleTabUpdate = this.handleTabUpdate.bind(this);
@@ -240,7 +240,7 @@ export class TabsApi {
             return;
         }
 
-        tabContext.mainFrameRule = this.allowlistApi.matchFrame(tabContext.info.url);
+        tabContext.mainFrameRule = this.documentApi.matchFrame(tabContext.info.url);
     }
 
     /**
@@ -297,7 +297,7 @@ export class TabsApi {
             return null;
         }
 
-        const tabContext = TabContext.createNewTabContext(tab, this.allowlistApi);
+        const tabContext = TabContext.createNewTabContext(tab, this.documentApi);
         this.context.set(tab.id, tabContext);
         this.onCreate.dispatch(tabContext);
         return tabContext;

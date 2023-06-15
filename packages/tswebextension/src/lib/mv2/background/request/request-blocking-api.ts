@@ -4,8 +4,7 @@ import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilte
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { documentBlockingService } from '../services/document-blocking-service';
 import { redirectsService } from '../services/redirects/redirects-service';
-import { engineApi } from '../engine-api';
-import { tabsApi } from '../api';
+import { tabsApi, engineApi } from '../api';
 
 export type WebRequestBlockingResponse = WebRequest.BlockingResponse | void;
 

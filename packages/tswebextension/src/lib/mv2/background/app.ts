@@ -1,10 +1,14 @@
 /* eslint-disable class-methods-use-this */
 import { appContext } from './context';
 import { WebRequestApi } from './web-request-api';
-import { engineApi } from './engine-api';
-import { tabsApi } from './api';
+import {
+    tabsApi,
+    engineApi,
+    documentApi,
+} from './api';
 import { resourcesService } from './services/resources-service';
 import { redirectsService } from './services/redirects/redirects-service';
+import { documentBlockingService } from './services/document-blocking-service';
 
 import { messagesApi, type MessageHandlerMV2 } from './messages-api';
 import {
@@ -22,7 +26,6 @@ import { LocalScriptRules, localScriptRulesService } from './services/local-scri
 import { RequestEvents } from './request';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
 import { stealthApi } from './stealth-api';
-import { allowlistApi } from './allowlist';
 
 /**
  * App implementation for MV2.
@@ -90,7 +93,7 @@ MessageHandlerMV2
      */
     private readonly tabCosmeticInjector = new TabsCosmeticInjector(
         engineApi,
-        allowlistApi,
+        documentApi,
         tabsApi,
     );
 
@@ -120,6 +123,7 @@ MessageHandlerMV2
 
         RequestEvents.init();
         await redirectsService.start();
+        documentBlockingService.configure(configuration);
         await engineApi.startEngine(configuration);
         await this.tabCosmeticInjector.processOpenTabs();
         await tabsApi.start();
@@ -162,6 +166,7 @@ MessageHandlerMV2
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
+        documentBlockingService.configure(configuration);
         await engineApi.startEngine(configuration);
         await tabsApi.updateCurrentTabsMainFrameRules();
 

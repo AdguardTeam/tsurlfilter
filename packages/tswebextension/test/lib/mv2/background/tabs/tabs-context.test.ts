@@ -2,13 +2,22 @@ import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { TabContext, type TabInfo } from '@lib/mv2/background/tabs/tab-context';
 import { Frame, MAIN_FRAME_ID } from '@lib/mv2/background/tabs/frame';
-import { allowlistApi } from '@lib/mv2/background/allowlist';
+import { Allowlist } from '@lib/mv2/background/allowlist';
+import { EngineApi } from '@lib/mv2/background/engine-api';
+import { DocumentApi } from '@lib/mv2/background/document-api';
+import { appContext } from '@lib/mv2/background/context';
+import { stealthApi } from '@lib/mv2/background/stealth-api';
 
 jest.mock('@lib/mv2/background/allowlist');
+jest.mock('@lib/mv2/background/engine-api');
+jest.mock('@lib/mv2/background/document-api');
+jest.mock('@lib/mv2/background/stealth-api');
+jest.mock('@lib/mv2/background/context');
 
 describe('TabContext', () => {
     let tabInfo: TabInfo;
     let tabContext: TabContext;
+    let documentApi: DocumentApi;
 
     beforeEach(() => {
         tabInfo = {
@@ -17,7 +26,11 @@ describe('TabContext', () => {
             url: 'https://example.com',
         } as TabInfo;
 
-        tabContext = new TabContext(tabInfo, allowlistApi);
+        const allowlist = new Allowlist();
+        const engineApi = new EngineApi(allowlist, appContext, stealthApi);
+        documentApi = new DocumentApi(allowlist, engineApi);
+
+        tabContext = new TabContext(tabInfo, documentApi);
     });
 
     afterEach(() => {
@@ -60,7 +73,7 @@ describe('TabContext', () => {
             tabContext.updateTabInfo(changeInfo);
 
             expect(tabContext.isDocumentRequestCached).toBe(true);
-            expect(allowlistApi.matchFrame).toBeCalledWith(changeInfo.url);
+            expect(documentApi.matchFrame).toBeCalledWith(changeInfo.url);
         });
 
         it('should handle cached document page relaod on tab update', () => {
@@ -69,7 +82,7 @@ describe('TabContext', () => {
             tabContext.isDocumentRequestCached = true;
             tabContext.updateTabInfo(changeInfo);
 
-            expect(allowlistApi.matchFrame).toBeCalledWith(tabInfo.url);
+            expect(documentApi.matchFrame).toBeCalledWith(tabInfo.url);
         });
     });
 
@@ -94,7 +107,7 @@ describe('TabContext', () => {
 
             tabContext.handleFrameRequest(frameRequestContext);
 
-            expect(allowlistApi.matchFrame).toBeCalledWith(frameRequestContext.requestUrl);
+            expect(documentApi.matchFrame).toBeCalledWith(frameRequestContext.requestUrl);
             expect(tabContext.frames.get(frameRequestContext.frameId)).toEqual(
                 new Frame(
                     frameRequestContext.requestUrl,
@@ -113,7 +126,7 @@ describe('TabContext', () => {
 
             tabContext.handleFrameRequest(frameRequestContext);
 
-            expect(allowlistApi.matchFrame).not.toBeCalledWith(frameRequestContext.requestUrl);
+            expect(documentApi.matchFrame).not.toBeCalledWith(frameRequestContext.requestUrl);
             expect(tabContext.frames.get(frameRequestContext.frameId)).toEqual(
                 new Frame(
                     frameRequestContext.requestUrl,
@@ -159,9 +172,9 @@ describe('TabContext', () => {
         it('should create a new TabContext instance with the correct properties', () => {
             Object.assign(tabInfo, { pendingUrl: 'https://another.com' });
 
-            const context = TabContext.createNewTabContext(tabInfo, allowlistApi);
+            const context = TabContext.createNewTabContext(tabInfo, documentApi);
 
-            expect(allowlistApi.matchFrame).toBeCalledWith(tabInfo.pendingUrl);
+            expect(documentApi.matchFrame).toBeCalledWith(tabInfo.pendingUrl);
             expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new Frame(tabInfo.pendingUrl!));
         });
     });

@@ -1,19 +1,19 @@
 import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
-import { Configuration } from '../../common/configuration';
-import { getDomain } from '../../common/utils/url';
-import { engineApi } from './engine-api';
+import { ALLOWLIST_FILTER_ID } from '../../common/constants';
+import type { Configuration } from '../../common/configuration';
 
 /**
- * Allowlist service.
+ * The allowlist is used to exclude certain websites from filtering.
+ * Blocking rules are not applied to the sites in the list.
+ * The allow list can also be inverted.
+ * In inverted mode, the application will unblock ads everywhere except for the sites added to this list.
  */
-export class AllowlistApi {
-    static allowlistFilterId = 100;
+export class Allowlist {
+    public domains: string[] = [];
 
-    domains: string[] = [];
+    public inverted = false;
 
-    inverted = false;
-
-    enabled = false;
+    public enabled = false;
 
     /**
      * Configures allowlist state based on app configuration.
@@ -51,9 +51,9 @@ export class AllowlistApi {
     public getAllowlistRules(): StringRuleList | null {
         if (this.enabled && !this.inverted) {
             return new StringRuleList(
-                AllowlistApi.allowlistFilterId,
+                ALLOWLIST_FILTER_ID,
                 this.domains.map((domain) => {
-                    return AllowlistApi.createAllowlistRuleString(domain);
+                    return Allowlist.createAllowlistRuleString(domain);
                 }).join('\n'),
             );
         }
@@ -62,61 +62,19 @@ export class AllowlistApi {
     }
 
     /**
-     * Match frame rule based on allowlist state.
-     *
-     * @param frameUrl Frame url.
-     * @returns Matched rule or null.
-     */
-    public matchFrame(frameUrl: string): NetworkRule | null {
-        /**
-         * If inverted allowlist enabled, use specific matching strategy.
-         */
-        if (this.enabled && this.inverted) {
-            return this.matchFrameInverted(frameUrl);
-        }
-
-        /**
-         * If allowlist mode is default, request rule from engine.
-         * If allowlist is enabled, rules have already loaded.
-         */
-        return engineApi.matchFrame(frameUrl);
-    }
-
-    /**
-     * Creates allowlist rule for domains that are not in the inverted list.
-     * In other cases returns engine matched rule.
-     *
-     * @param frameUrl Frame url.
-     * @returns Matched rule or null.
-     */
-    private matchFrameInverted(frameUrl: string): NetworkRule | null {
-        const domain = getDomain(frameUrl);
-
-        if (!domain) {
-            return null;
-        }
-
-        if (!this.domains.includes(domain)) {
-            return AllowlistApi.createAllowlistRule(domain);
-        }
-
-        return engineApi.matchFrame(frameUrl);
-    }
-
-    /**
      * Creates allowlist rule for domain.
      *
      * @param domain Domain name.
      * @returns Allowlist rule or null.
      */
-    private static createAllowlistRule(domain: string): null | NetworkRule {
+    public static createAllowlistRule(domain: string): null | NetworkRule {
         if (!domain) {
             return null;
         }
 
-        const ruleString = AllowlistApi.createAllowlistRuleString(domain);
+        const ruleString = Allowlist.createAllowlistRuleString(domain);
 
-        return new NetworkRule(ruleString, AllowlistApi.allowlistFilterId);
+        return new NetworkRule(ruleString, ALLOWLIST_FILTER_ID);
     }
 
     /**
@@ -129,5 +87,3 @@ export class AllowlistApi {
         return String.raw`@@///(www\.)?${domain}/$document,important`;
     }
 }
-
-export const allowlistApi = new AllowlistApi();

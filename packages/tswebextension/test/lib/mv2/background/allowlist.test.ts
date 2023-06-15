@@ -1,18 +1,16 @@
-import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
-import { AllowlistApi } from '@lib/mv2/background/allowlist';
-import { engineApi } from '@lib/mv2/background/engine-api';
+import { StringRuleList, NetworkRule } from '@adguard/tsurlfilter';
+import { Allowlist } from '@lib/mv2/background/allowlist';
+import { ALLOWLIST_FILTER_ID } from '@lib/common/constants';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
-jest.mock('@lib/mv2/background/engine-api');
-
 describe('Allowlist Api', () => {
-    let allowlistApi: AllowlistApi;
+    let allowlist: Allowlist;
 
     beforeEach(() => {
-        allowlistApi = new AllowlistApi();
+        allowlist = new Allowlist();
     });
 
-    describe('Parses hostnames from allowlist', () => {
+    describe('configure method', () => {
         const cases = [
             { input: ['example.com'], expected: ['example.com'] },
             { input: ['www.example.com'], expected: ['example.com'] },
@@ -21,42 +19,42 @@ describe('Allowlist Api', () => {
             { input: ['www.sub.sub.example.com'], expected: ['sub.sub.example.com'] },
         ];
 
-        it.each(cases)('parses $input to $expected', ({ input, expected }) => {
+        it.each(cases)('should parse $input to $expected', ({ input, expected }) => {
             const config = getConfigurationMv2Fixture();
 
             config.allowlist = input;
 
-            allowlistApi.configure(config);
+            allowlist.configure(config);
 
-            expect(allowlistApi.domains).toStrictEqual(expected);
+            expect(allowlist.domains).toStrictEqual(expected);
         });
     });
 
-    describe('Gets allowlist rules', () => {
+    describe('getAllowlistRules method', () => {
         const cases = [
             {
-                title: 'returns filter list, when API is enabled and  not inverted',
+                title: 'should return filter list, when API is enabled and  not inverted',
                 enabled: true,
                 inverted: false,
                 expected: new StringRuleList(
-                    AllowlistApi.allowlistFilterId,
+                    ALLOWLIST_FILTER_ID,
                     '@@///(www\\.)?example.com/$document,important',
                 ),
             },
             {
-                title: 'returns null, when API is enabled and inverted',
+                title: 'should return null, when API is enabled and inverted',
                 enabled: true,
                 inverted: true,
                 expected: null,
             },
             {
-                title: 'returns null, when API is disabled and not inverted',
+                title: 'should return null, when API is disabled and not inverted',
                 enabled: false,
                 inverted: false,
                 expected: null,
             },
             {
-                title: 'returns null, when allowlist is disabled and inverted',
+                title: 'should return null, when allowlist is disabled and inverted',
                 enabled: false,
                 inverted: true,
                 expected: null,
@@ -74,69 +72,26 @@ describe('Allowlist Api', () => {
             config.settings.allowlistEnabled = enabled;
             config.settings.allowlistInverted = inverted;
 
-            allowlistApi.configure(config);
+            allowlist.configure(config);
 
-            expect(allowlistApi.getAllowlistRules()).toStrictEqual(expected);
+            expect(allowlist.getAllowlistRules()).toStrictEqual(expected);
         });
     });
 
-    describe('Matches frame rule', () => {
-        const mockRule = new NetworkRule('test', 0);
+    describe('static createAllowlistRule method', () => {
+        it('should return allowlist rule, when domain is specified', () => {
+            const domain = 'example.com';
 
-        let matchFrameSpy: jest.SpyInstance<NetworkRule | null, [frameUrl: string]>;
-
-        beforeAll(() => {
-            matchFrameSpy = jest.spyOn(engineApi, 'matchFrame').mockReturnValue(mockRule);
-        });
-
-        afterAll(() => {
-            matchFrameSpy.mockRestore();
-        });
-
-        const cases = [
-            {
-                title: 'call engine.matchFrame, when API is not inverted',
-                inverted: false,
-                url: 'https://example.com',
-                allowlist: ['example.com'],
-                expected: mockRule,
-            },
-            {
-                title: 'call engine.matchFrame, when domain is allowlisted and API is inverted',
-                inverted: true,
-                url: 'https://example.com',
-                allowlist: ['example.com'],
-                expected: mockRule,
-            },
-            {
-                title: 'returns custom rule, when domain is not allowlisted and API is inverted',
-                inverted: true,
-                url: 'https://example.com',
-                allowlist: [],
-                expected: new NetworkRule(
-                    '@@///(www\\.)?example.com/$document,important',
-                    AllowlistApi.allowlistFilterId,
+            expect(Allowlist.createAllowlistRule(domain)).toStrictEqual(
+                new NetworkRule(
+                    String.raw`@@///(www\.)?${domain}/$document,important`,
+                    ALLOWLIST_FILTER_ID,
                 ),
-            },
-        ];
+            );
+        });
 
-        it.each(cases)('$title', ({
-            inverted,
-            url,
-            allowlist,
-            expected,
-        }) => {
-            const config = getConfigurationMv2Fixture();
-
-            config.allowlist = allowlist;
-            config.settings.allowlistEnabled = true;
-            config.settings.allowlistInverted = inverted;
-
-            allowlistApi.configure(config);
-
-            allowlistApi.matchFrame(url);
-
-            expect(allowlistApi.matchFrame(url)).toStrictEqual(expected);
+        it('should return null, when domain is empty', () => {
+            expect(Allowlist.createAllowlistRule('')).toBeNull();
         });
     });
 });

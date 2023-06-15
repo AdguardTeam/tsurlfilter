@@ -4,7 +4,7 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 import type { Tabs } from 'webextension-polyfill';
 
 import { Frame, MAIN_FRAME_ID } from './frame';
-import type { AllowlistApi } from '../allowlist';
+import type { DocumentApi } from '../document-api';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
@@ -55,11 +55,11 @@ export class TabContext {
      * Context constructor.
      *
      * @param info Webextension API tab data.
-     * @param allowlistApi Allowlist API.
+     * @param documentApi Document API.
      */
     constructor(
         public info: TabInfo,
-        private readonly allowlistApi: AllowlistApi,
+        private readonly documentApi: DocumentApi,
     ) {
         this.info = info;
     }
@@ -189,7 +189,7 @@ export class TabContext {
         this.frames.set(MAIN_FRAME_ID, new Frame(requestUrl, requestId));
 
         // Calculate new main frame rule.
-        this.mainFrameRule = this.allowlistApi.matchFrame(requestUrl);
+        this.mainFrameRule = this.documentApi.matchFrame(requestUrl);
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
     }
@@ -201,7 +201,7 @@ export class TabContext {
      * @param allowlistApi Allowlist API.
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo, allowlistApi: AllowlistApi): TabContext {
+    public static createNewTabContext(tab: TabInfo, allowlistApi: DocumentApi): TabContext {
         const tabContext = new TabContext(tab, allowlistApi);
 
         // In some cases, tab is created while browser navigation processing.

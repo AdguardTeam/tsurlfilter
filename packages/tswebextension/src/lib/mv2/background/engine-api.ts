@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 import browser from 'webextension-polyfill';
 import {
     StringRuleList,
@@ -15,13 +14,13 @@ import {
     RuleConverter,
 } from '@adguard/tsurlfilter';
 
-import { getHost } from '../../common';
-import { allowlistApi } from './allowlist';
-import { stealthApi } from './stealth-api';
-import { ConfigurationMV2 } from './configuration';
-import { appContext } from './context';
-import { documentBlockingService } from './services/document-blocking-service';
 import { USER_FILTER_ID } from '../../common/constants';
+import { getHost } from '../../common/utils/url';
+
+import type { Allowlist } from './allowlist';
+import type { StealthApi } from './stealth-api';
+import type { ConfigurationMV2 } from './configuration';
+import type { AppContext } from './context';
 
 /**
  * Request Match Query.
@@ -33,33 +32,12 @@ export interface MatchQuery {
     frameRule?: NetworkRule | null;
 }
 
-export interface EngineApiInterface {
-    startEngine: (configuration: ConfigurationMV2) => Promise<void>;
-
-    /**
-     * Gets matching result for request.
-     */
-    matchRequest: (matchQuery: MatchQuery) => MatchingResult | null;
-
-    /**
-     * Matches current frame url and returns document-level rule if found.
-     */
-    matchFrame: (frameUrl: string) => NetworkRule | null;
-
-    /**
-     * Gets cosmetic result for the specified hostname and cosmetic options.
-     */
-    getCosmeticResult: (url: string, option: CosmeticOption) => CosmeticResult;
-
-    getRulesCount: () => number;
-}
-
-const ASYNC_LOAD_CHINK_SIZE = 5000;
-
 /**
  * TSUrlFilter Engine wrapper.
  */
-export class EngineApi implements EngineApiInterface {
+export class EngineApi {
+    private static readonly ASYNC_LOAD_CHINK_SIZE = 5000;
+
     private engine: Engine | undefined;
 
     /**
@@ -68,8 +46,21 @@ export class EngineApi implements EngineApiInterface {
      * @returns True if filtering is enabled, otherwise returns false.
      */
     public get isFilteringEnabled(): boolean {
-        return Boolean(appContext.configuration?.settings.filteringEnabled);
+        return Boolean(this.appContext.configuration?.settings.filteringEnabled);
     }
+
+    /**
+     * Creates Engine Api instance.
+     *
+     * @param allowlist Allowlist.
+     * @param appContext App context.
+     * @param stealthApi Stealth Api.
+     */
+    constructor(
+        private readonly allowlist: Allowlist,
+        private readonly appContext: AppContext,
+        private readonly stealthApi: StealthApi,
+    ) {}
 
     /**
      * Starts engine.
@@ -83,9 +74,7 @@ export class EngineApi implements EngineApiInterface {
             verbose,
         } = configuration;
 
-        allowlistApi.configure(configuration);
-
-        documentBlockingService.configure(configuration);
+        this.allowlist.configure(configuration);
 
         const lists: StringRuleList[] = [];
 
@@ -106,12 +95,12 @@ export class EngineApi implements EngineApiInterface {
             lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
-        const allowlistRules = allowlistApi.getAllowlistRules();
+        const allowlistRules = this.allowlist.getAllowlistRules();
         if (allowlistRules) {
             lists.push(allowlistRules);
         }
 
-        const stealthModeList = stealthApi.getStealthModeRuleList();
+        const stealthModeList = this.stealthApi.getStealthModeRuleList();
         if (stealthModeList) {
             lists.push(stealthModeList);
         }
@@ -133,7 +122,7 @@ export class EngineApi implements EngineApiInterface {
         */
         const engine = new Engine(ruleStorage, true);
 
-        await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
+        await engine.loadRulesAsync(EngineApi.ASYNC_LOAD_CHINK_SIZE);
 
         this.engine = engine;
     }
@@ -211,5 +200,3 @@ export class EngineApi implements EngineApiInterface {
         return this.engine ? this.engine.getRulesCount() : 0;
     }
 }
-
-export const engineApi = new EngineApi();

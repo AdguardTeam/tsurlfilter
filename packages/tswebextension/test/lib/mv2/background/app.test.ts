@@ -2,7 +2,7 @@ import type { Runtime } from 'webextension-polyfill';
 
 import { Assistant } from '@lib/mv2/background/assistant';
 import { TsWebExtension } from '@lib/mv2/background/app';
-import { engineApi } from '@lib/mv2/background/engine-api';
+import { engineApi } from '@lib/mv2/background/api';
 import { messagesApi } from '@lib/mv2/background/messages-api';
 import type { ConfigurationMV2 } from '@lib/mv2/background/configuration';
 import type { Message } from '@lib/common/message';
@@ -33,7 +33,7 @@ describe('TsWebExtension', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        jest.resetAllMocks();
     });
 
     it('should be created correctly', () => {

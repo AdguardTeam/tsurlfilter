@@ -7,17 +7,29 @@ import type {
 } from '@adguard/tsurlfilter';
 import { TabFrameRequestContext, TabsApi } from '@lib/mv2/background/tabs/tabs-api';
 import { TabContext, TabInfo } from '@lib/mv2/background/tabs/tab-context';
-import { allowlistApi } from '@lib/mv2/background/allowlist';
 import { Frame, MAIN_FRAME_ID } from '@lib/mv2/background/tabs/frame';
+import { Allowlist } from '@lib/mv2/background/allowlist';
+import { EngineApi } from '@lib/mv2/background/engine-api';
+import { DocumentApi } from '@lib/mv2/background/document-api';
+import { appContext } from '@lib/mv2/background/context';
+import { stealthApi } from '@lib/mv2/background/stealth-api';
 
 jest.mock('@lib/mv2/background/allowlist');
+jest.mock('@lib/mv2/background/engine-api');
+jest.mock('@lib/mv2/background/document-api');
+jest.mock('@lib/mv2/background/stealth-api');
+jest.mock('@lib/mv2/background/context');
 jest.mock('@lib/mv2/background/tabs/tab-context');
 
 describe('TabsApi', () => {
     let tabsApi: TabsApi;
+    let documentApi: DocumentApi;
 
     beforeEach(() => {
-        tabsApi = new TabsApi(allowlistApi);
+        const allowlist = new Allowlist();
+        const engineApi = new EngineApi(allowlist, appContext, stealthApi);
+        documentApi = new DocumentApi(allowlist, engineApi);
+        tabsApi = new TabsApi(documentApi);
     });
 
     afterEach(() => {
@@ -25,7 +37,7 @@ describe('TabsApi', () => {
     });
 
     const createTestTabContext = (): TabContext => {
-        return new TabContext({} as TabInfo, allowlistApi);
+        return new TabContext({} as TabInfo, documentApi);
     };
 
     describe('start method', () => {
@@ -96,7 +108,7 @@ describe('TabsApi', () => {
         it('should handle frame request for the tab context', () => {
             const tabId = 1;
 
-            const tabContext = new TabContext({} as TabInfo, allowlistApi);
+            const tabContext = createTestTabContext();
 
             tabsApi.context.set(tabId, tabContext);
 
@@ -230,7 +242,7 @@ describe('TabsApi', () => {
 
             const mainFrameRule = {} as NetworkRule;
 
-            jest.spyOn(allowlistApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
+            jest.spyOn(documentApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
 
             tabsApi.updateTabMainFrameRule(tabId);
 
@@ -240,7 +252,7 @@ describe('TabsApi', () => {
         it('should not update tab context main frame rule if tab context is not found', () => {
             tabsApi.updateTabMainFrameRule(1);
 
-            expect(allowlistApi.matchFrame).not.toBeCalled();
+            expect(documentApi.matchFrame).not.toBeCalled();
         });
     });
 

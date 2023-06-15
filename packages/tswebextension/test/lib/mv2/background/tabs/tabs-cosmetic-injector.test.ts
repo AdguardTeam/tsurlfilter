@@ -1,7 +1,10 @@
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
-import { engineApi } from '@lib/mv2/background/engine-api';
-import { allowlistApi } from '@lib/mv2/background/allowlist';
+import { EngineApi } from '@lib/mv2/background/engine-api';
+import { Allowlist } from '@lib/mv2/background/allowlist';
+import { DocumentApi } from '@lib/mv2/background/document-api';
+import { appContext } from '@lib/mv2/background/context';
+import { stealthApi } from '@lib/mv2/background/stealth-api';
 import { TabsApi } from '@lib/mv2/background/tabs/tabs-api';
 import { TabsCosmeticInjector } from '@lib/mv2/background/tabs/tabs-cosmetic-injector';
 import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
@@ -10,13 +13,20 @@ import { ContentType } from '@lib/common/request-type';
 jest.mock('@lib/mv2/background/engine-api');
 jest.mock('@lib/mv2/background/allowlist');
 jest.mock('@lib/mv2/background/cosmetic-api');
+jest.mock('@lib/mv2/background/context');
+jest.mock('@lib/mv2/background/stealth-api');
+jest.mock('@lib/mv2/background/document-api');
 
 describe('TabsCosmeticInjector', () => {
     let tabCosmeticInjector: TabsCosmeticInjector;
+    let engineApi: EngineApi;
 
     beforeEach(() => {
-        const tabsApi = new TabsApi(allowlistApi);
-        tabCosmeticInjector = new TabsCosmeticInjector(engineApi, allowlistApi, tabsApi);
+        const allowlist = new Allowlist();
+        engineApi = new EngineApi(allowlist, appContext, stealthApi);
+        const documentApi = new DocumentApi(allowlist, engineApi);
+        const tabsApi = new TabsApi(documentApi);
+        tabCosmeticInjector = new TabsCosmeticInjector(engineApi, documentApi, tabsApi);
     });
 
     afterEach(() => {
