@@ -282,19 +282,6 @@ export class WebRequestApi {
             requestFrameId,
         } = context;
 
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            tabsApi.handleFrameRequest(context);
-
-            if (requestType === RequestType.Document) {
-                defaultFilteringLog.publishEvent({
-                    type: FilteringEventType.TabReload,
-                    data: {
-                        tabId,
-                    },
-                });
-            }
-        }
-
         if (!isHttpOrWsRequest(requestUrl)) {
             return undefined;
         }

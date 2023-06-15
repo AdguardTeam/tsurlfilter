@@ -5,6 +5,11 @@ import type { Tabs } from 'webextension-polyfill';
 
 import { Frame, MAIN_FRAME_ID } from './frame';
 import type { DocumentApi } from '../document-api';
+import {
+    type FilteringLog,
+    defaultFilteringLog,
+    FilteringEventType,
+} from '../../../common/filtering-log';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
@@ -56,10 +61,12 @@ export class TabContext {
      *
      * @param info Webextension API tab data.
      * @param documentApi Document API.
+     * @param filteringLog Filtering Log API.
      */
     constructor(
         public info: TabInfo,
         private readonly documentApi: DocumentApi,
+        private readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.info = info;
     }
@@ -192,6 +199,14 @@ export class TabContext {
         this.mainFrameRule = this.documentApi.matchFrame(requestUrl);
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
+
+        // dispatch filtering log reload event
+        this.filteringLog.publishEvent({
+            type: FilteringEventType.TabReload,
+            data: {
+                tabId: this.info.id,
+            },
+        });
     }
 
     /**

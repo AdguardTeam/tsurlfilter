@@ -188,12 +188,12 @@ export class RequestEvents {
 
         const { requestType, contentType } = getRequestType(type);
 
-        const idDocumentRequest = requestType === RequestType.Document;
+        const isDocumentRequest = requestType === RequestType.Document;
 
         // Pre-rendered documents can have a frame ID other than zero
-        frameId = idDocumentRequest ? MAIN_FRAME_ID : details.frameId;
+        frameId = isDocumentRequest ? MAIN_FRAME_ID : details.frameId;
 
-        let requestFrameId = idDocumentRequest ? frameId : parentFrameId;
+        let requestFrameId = isDocumentRequest ? frameId : parentFrameId;
 
         // Relate request to main_frame
         if (requestFrameId === -1) {
@@ -212,7 +212,7 @@ export class RequestEvents {
             tabId,
         };
 
-        if (idDocumentRequest || requestType === RequestType.SubDocument) {
+        if (isDocumentRequest || requestType === RequestType.SubDocument) {
             // Saves the current tab url to retrieve it correctly below.
             tabsApi.handleFrameRequest(tabFrameRequestContext);
         }
