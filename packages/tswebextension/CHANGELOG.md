@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `AllowlistApi` renamed to `Allowlist`. `matchFrame` method moved to `DocumentApi` class.
 
+### Fixed
+- Extra headers detection in chromium browsers
+
 
 ## [0.3.0] - 2023-06-14
 

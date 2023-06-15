@@ -3,12 +3,18 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { requestContextStorage, RequestContextState, RequestContext } from '../request-context-storage';
 import { RequestEvent, RequestData } from './request-event';
-import { isChrome } from '../../utils/browser-detector';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
 import { MAIN_FRAME_ID, TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
 
 const MAX_URL_LENGTH = 1024 * 16;
+
+type ChromiumBrowser = typeof browser & {
+    webRequest: {
+        OnHeadersReceivedOptions: unknown
+        OnBeforeSendHeadersOptions: unknown
+    }
+};
 
 /**
  * Request events class.
@@ -72,7 +78,10 @@ export class RequestEvents {
 
         const onBeforeSendHeadersOptions: WebRequest.OnBeforeSendHeadersOptions[] = ['requestHeaders', 'blocking'];
 
-        if (isChrome) {
+        const onBeforeSendHeadersOptionTypes = (browser as ChromiumBrowser).webRequest.OnBeforeSendHeadersOptions;
+
+        if (typeof onBeforeSendHeadersOptionTypes !== 'undefined'
+            && Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')) {
             onBeforeSendHeadersOptions.push('extraHeaders');
         }
 
@@ -91,7 +100,10 @@ export class RequestEvents {
 
         const onHeadersReceivedOptions: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders', 'blocking'];
 
-        if (isChrome) {
+        const onHeadersReceivedOptionTypes = (browser as ChromiumBrowser).webRequest.OnHeadersReceivedOptions;
+
+        if (typeof onHeadersReceivedOptionTypes !== 'undefined'
+            && Object.prototype.hasOwnProperty.call(onBeforeSendHeadersOptionTypes, 'EXTRA_HEADERS')) {
             onHeadersReceivedOptions.push('extraHeaders');
         }
 
