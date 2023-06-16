@@ -12,6 +12,7 @@ import {
     CosmeticResult,
     CosmeticOption,
     RuleConverter,
+    HTTPMethod,
 } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
@@ -30,6 +31,7 @@ export interface MatchQuery {
     frameUrl: string;
     requestType: RequestType;
     frameRule?: NetworkRule | null;
+    method?: HTTPMethod;
 }
 
 /**
@@ -142,6 +144,7 @@ export class EngineApi {
             requestUrl,
             frameUrl,
             requestType,
+            method,
         } = matchQuery;
 
         let { frameRule } = matchQuery;
@@ -150,6 +153,7 @@ export class EngineApi {
             requestUrl,
             frameUrl,
             requestType,
+            method,
         );
 
         if (!frameRule) {

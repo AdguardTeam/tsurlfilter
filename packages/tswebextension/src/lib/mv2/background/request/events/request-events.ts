@@ -1,5 +1,6 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+import { HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState, RequestContext } from '../request-context-storage';
 import { RequestEvent, RequestData } from './request-event';
@@ -234,7 +235,7 @@ export class RequestEvents {
             thirdParty: isThirdPartyRequest(url, referrerUrl),
             referrerUrl,
             contentType,
-            method,
+            method: method as HTTPMethod,
         };
 
         requestContextStorage.set(requestId, requestContext);

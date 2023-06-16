@@ -1,5 +1,5 @@
 import type { WebRequest } from 'webextension-polyfill';
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
 
 import type { ContentType } from '../../../common';
 import type ParsedCookie from '../services/cookie-filtering/parsed-cookie';
@@ -27,7 +27,7 @@ export type RequestContext = TabFrameRequestContext & {
     contentType: ContentType;
     requestFrameId: number;
     thirdParty: boolean;
-    method: string;
+    method: HTTPMethod;
 
     requestHeaders?: WebRequest.HttpHeaders;
     responseHeaders?: WebRequest.HttpHeaders;

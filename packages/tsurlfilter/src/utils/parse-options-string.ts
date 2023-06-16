@@ -196,7 +196,7 @@ const parseRegexpValue: ModifierValueParser = (string, startIndex, pattern) => {
             /**
              * Unescape ',' and '$' for regexp parts of pattern,
              * as escapes are forced by modifiers syntax,
-             * e.g https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#replace-modifier
+             * e.g https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
              */
             chars.splice(chars.length - 1, 1);
             chars.push(c);

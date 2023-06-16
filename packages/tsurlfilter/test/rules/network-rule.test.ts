@@ -4,6 +4,7 @@ import {
     NetworkRuleOption,
     Request,
     RequestType,
+    HTTPMethod,
 } from '../../src';
 
 describe('NetworkRule.parseRuleText', () => {
@@ -221,6 +222,24 @@ describe('NetworkRule constructor', () => {
         expect(() => {
             new NetworkRule('||baddomain.com^$app', 0);
         }).toThrow(new SyntaxError('$app modifier cannot be empty'));
+    });
+
+    it('throws error if $method modifier value is invalid', () => {
+        expect(() => {
+            new NetworkRule('||baddomain.com^$method=get', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$method=', 0);
+        }).toThrow(new SyntaxError('$method modifier value cannot be empty'));
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$method=invalid', 0);
+        }).toThrow(new SyntaxError('Invalid $method modifier value: INVALID'));
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$method=get|~post', 0);
+        }).toThrow(new SyntaxError('Negated values cannot be mixed with non-negated values: get|~post'));
     });
 
     it('checks removeparam modifier compatibility', () => {
@@ -1129,6 +1148,33 @@ describe('NetworkRule.match', () => {
         request.clientIP = '2001::c1:ffee';
         expect(rule.match(request)).toBeFalsy();
     });
+
+    it('applies $method modifier properly', () => {
+        // Correctly matches method that is specified in permitted methods list
+        let rule = new NetworkRule('||example.org^$method=get|delete', 0);
+        let request = new Request('https://example.org/', 'https://example.org/', RequestType.Script, HTTPMethod.GET);
+        expect(rule.match(request)).toBeTruthy();
+
+        request.method = HTTPMethod.DELETE;
+        expect(rule.match(request)).toBeTruthy();
+
+        request.method = HTTPMethod.POST;
+        expect(rule.match(request)).toBeFalsy();
+
+        // Correctly matches method that is not present in restricted methods list
+        rule = new NetworkRule('@@||example.org^$method=~get|~head', 0);
+        request = new Request('https://example.org/', 'https://example.org/', RequestType.Script, HTTPMethod.POST);
+        expect(rule.match(request)).toBeTruthy();
+
+        request.method = HTTPMethod.PUT;
+        expect(rule.match(request)).toBeTruthy();
+
+        request.method = HTTPMethod.GET;
+        expect(rule.match(request)).toBeFalsy();
+
+        request.method = HTTPMethod.HEAD;
+        expect(rule.match(request)).toBeFalsy();
+    });
 });
 
 describe('NetworkRule.isHigherPriority', () => {
@@ -1175,6 +1221,14 @@ describe('NetworkRule.isHigherPriority', () => {
                 ['||example.org$document', '||example.org$all', true],
                 ['||example.org$script,stylesheet,media', '||example.org$all', true],
                 ['||example.org$script,stylesheet,domain=~example.org', '||example.org$all', true],
+                // 1 method -> 2 methods
+                ['||example.org$method=get', '||example.org$method=get|post', true],
+                // 1 method -> negated method
+                ['||example.org$method=get', '||example.org$method=~get', true],
+                // methods are even
+                ['||example.org$method=get', '||example.org$method=options', false],
+                // methods = content types
+                ['||example.org$method=get', '||example.org$script', false],
             ],
         },
         {

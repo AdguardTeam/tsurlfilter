@@ -307,6 +307,7 @@ export class WebRequestApi {
             frameUrl: referrerUrl,
             requestType,
             frameRule: tabsApi.getTabFrameRule(tabId),
+            method,
         });
 
         if (!result) {

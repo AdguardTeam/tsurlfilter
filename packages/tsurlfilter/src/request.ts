@@ -2,6 +2,7 @@ import { parse } from 'tldts';
 import type { IResult } from 'tldts-core';
 
 import { RequestType } from './request-type';
+import { HTTPMethod } from './modifiers/method-modifier';
 
 /**
  * Request represents a web request with all it's necessary properties
@@ -43,7 +44,7 @@ export class Request {
     /**
      * Method name
      */
-    public method: string | undefined;
+    public method: HTTPMethod | undefined;
 
     /**
      * Request tab identifier
@@ -124,16 +125,18 @@ export class Request {
      * @param url - request URL
      * @param sourceUrl - source URL
      * @param requestType - request type
+     * @param method - request method
      *
      * @throws
      */
-    constructor(url: string, sourceUrl: string | null, requestType: RequestType) {
+    constructor(url: string, sourceUrl: string | null, requestType: RequestType, method?: HTTPMethod) {
         if (typeof url !== 'string') {
             throw new TypeError(`Invalid request url: ${url}`);
         }
 
         this.url = url;
         this.requestType = requestType;
+        this.method = method;
 
         this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
         this.sourceUrl = Request.compactUrl(sourceUrl);

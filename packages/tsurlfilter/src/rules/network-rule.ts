@@ -6,14 +6,16 @@ import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { parseOptionsString } from '../utils/parse-options-string';
 import { stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 import { IAdvancedModifier } from '../modifiers/advanced-modifier';
+import { IValueListModifier } from '../modifiers/value-list-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
-import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
+import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import {
     ESCAPE_CHARACTER,
     MASK_ALLOWLIST,
@@ -99,6 +101,9 @@ export enum NetworkRuleOption {
     DnsRewrite = 1 << 26,
     DnsType = 1 << 27,
     Ctag = 1 << 28,
+
+    // $method modifier
+    Method = 1 << 30,
 
     // Groups (for validation)
 
@@ -209,6 +214,11 @@ export class NetworkRule implements rule.IRule {
     private appModifier: IAppModifier | null = null;
 
     /**
+     * Rule Method modifier
+     */
+    private methodModifier: IValueListModifier<HTTPMethod> | null = null;
+
+    /**
      * Rule priority, which is needed when the engine has to choose between
      * several rules matching the query. This value is calculated based on
      * the rule modifiers enabled or disabled and rounded up
@@ -231,14 +241,14 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
-     * with permitted request types.
+     * with permitted request types and methods.
      * The value 50 is chosen in order to cover (with a margin) all possible
      * combinations and variations of rules from categories with a lower
      * priority (each of them adds 1 to the rule priority).
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2
      */
-    private static readonly PermittedRequestTypeWeight = 50;
+    private static readonly CategoryTwoWeight = 50;
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
@@ -252,7 +262,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-3
      */
-    private static readonly PermittedDomainWeight = 100;
+    private static readonly CategoryThreeWeight = 100;
 
     /**
      * The priority weight used in {@link calculatePriorityWeight}
@@ -260,7 +270,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-6
      */
-    private static readonly RedirectRuleWeight = 10 ** 3;
+    private static readonly CategoryFourWeight = 10 ** 3;
 
     /**
      * The priority weight used in {@link calculatePriorityWeight} for rules
@@ -268,7 +278,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-4
      */
-    private static readonly SpecificExceptionsWeight = 10 ** 4;
+    private static readonly CategoryFiveWeight = 10 ** 4;
 
     /**
      * Rules with specific exclusions, from category 4, each of them adds
@@ -291,7 +301,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-5
      */
-    private static readonly AllowlistRuleWeight = 10 ** 5;
+    private static readonly CategorySixWeight = 10 ** 5;
 
     /**
      * The priority weight used in {@link calculatePriorityWeight}
@@ -299,7 +309,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-7
      */
-    private static readonly ImportantRuleWeight = 10 ** 6;
+    private static readonly CategorySevenWeight = 10 ** 6;
 
     /**
      * Separates the rule pattern from the list of modifiers.
@@ -454,6 +464,28 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Gets list of permitted methods.
+     * See https://kb.adguard.com/general/how-to-create-your-own-ad-filters#method-modifier
+     */
+    getRestrictedMethods(): HTTPMethod[] | null {
+        if (this.methodModifier) {
+            return this.methodModifier.restrictedValues;
+        }
+        return null;
+    }
+
+    /**
+     * Gets list of restricted methods.
+     * See https://kb.adguard.com/general/how-to-create-your-own-ad-filters#method-modifier
+     */
+    getPermittedMethods(): HTTPMethod[] | null {
+        if (this.methodModifier) {
+            return this.methodModifier.permittedValues;
+        }
+        return null;
+    }
+
+    /**
      * Flag with all permitted request types.
      * The value {@link RequestType.NotSet} here means "all request types are allowed".
      */
@@ -513,6 +545,10 @@ export class NetworkRule implements rule.IRule {
     match(request: Request, useShortcut = true): boolean {
         // Regex rules should not be tested by shortcut
         if (useShortcut && !this.matchShortcut(request)) {
+            return false;
+        }
+
+        if (this.isOptionEnabled(NetworkRuleOption.Method) && !this.matchMethod(request.method)) {
             return false;
         }
 
@@ -764,6 +800,31 @@ export class NetworkRule implements rule.IRule {
         }
 
         return this.matchRequestType(requestType);
+    }
+
+    /**
+     * Checks if request's method matches with the rule
+     *
+     * @param method request's method
+     * @returns true, if rule must be applied to the request
+     */
+    private matchMethod(method: HTTPMethod | undefined): boolean {
+        if (!method || !MethodModifier.isHTTPMethod(method)) {
+            return false;
+        }
+
+        /**
+         * Request's method must be either explicitly
+         * permitted or not be included in list of restricted methods
+         * for the rule to apply
+         */
+        const permittedMethods = this.getPermittedMethods();
+        if (permittedMethods?.includes(method)) {
+            return true;
+        }
+
+        const restrictedMethods = this.getRestrictedMethods();
+        return !!restrictedMethods && !restrictedMethods.includes(method);
     }
 
     /**
@@ -1113,6 +1174,12 @@ export class NetworkRule implements rule.IRule {
             case OPTIONS.DENYALLOW:
                 this.setDenyAllowDomains(optionValue);
                 break;
+            // $method modifier
+            case OPTIONS.METHOD: {
+                this.setOptionEnabled(NetworkRuleOption.Method, true);
+                this.methodModifier = new MethodModifier(optionValue);
+                break;
+            }
             // Document-level allowlist rules
             // $elemhide
             case OPTIONS.ELEMHIDE:
@@ -1470,12 +1537,16 @@ export class NetworkRule implements rule.IRule {
             this.priorityWeight += 1;
         }
 
+        if (this.methodModifier?.restrictedValues && this.methodModifier.restrictedValues.length > 0) {
+            this.priorityWeight += 1;
+        }
+
         if (this.restrictedRequestTypes !== RequestType.NotSet) {
             this.priorityWeight += 1;
         }
 
         /**
-         * Permitted content types, category 2.
+         * Category 2: permitted request types and methods.
          * Specified content-types add `50 + 50 / number_of_content_types`,
          * for example: `||example.com^$image,script` will add
          * `50 + 50 / 2 = 50 + 25 = 75` to the total weight of the rule.
@@ -1486,12 +1557,18 @@ export class NetworkRule implements rule.IRule {
         if (this.permittedRequestTypes !== RequestType.NotSet) {
             const numberOfPermittedRequestTypes = getBitCount(this.permittedRequestTypes);
             // More permitted request types mean less priority weight.
-            const relativeWeight = NetworkRule.PermittedRequestTypeWeight / numberOfPermittedRequestTypes;
-            this.priorityWeight += NetworkRule.PermittedRequestTypeWeight + relativeWeight;
+            const relativeWeight = NetworkRule.CategoryTwoWeight / numberOfPermittedRequestTypes;
+            this.priorityWeight += NetworkRule.CategoryTwoWeight + relativeWeight;
+        }
+
+        if (this.methodModifier?.permittedValues && this.methodModifier.permittedValues.length > 0) {
+            // More permitted request methods mean less priority weight.
+            const relativeWeight = NetworkRule.CategoryTwoWeight / this.methodModifier.permittedValues.length;
+            this.priorityWeight += NetworkRule.CategoryTwoWeight + relativeWeight;
         }
 
         /**
-         * Permitted domains, category 3.
+         * Category 3: permitted domains.
          * Specified domains through `$domain` and specified applications
          * through `$app` add `100 + 100 / number_domains (or number_applications)`,
          * for example:
@@ -1502,29 +1579,29 @@ export class NetworkRule implements rule.IRule {
          */
         if (this.permittedDomains && this.permittedDomains.length > 0) {
             // More permitted domains mean less priority weight.
-            const relativeWeight = NetworkRule.PermittedDomainWeight / this.permittedDomains.length;
-            this.priorityWeight += NetworkRule.PermittedDomainWeight + relativeWeight;
+            const relativeWeight = NetworkRule.CategoryThreeWeight / this.permittedDomains.length;
+            this.priorityWeight += NetworkRule.CategoryThreeWeight + relativeWeight;
         }
 
-        // Redirect rules, category 4.
+        // Category 4: redirect rules.
         if (this.isOptionEnabled(NetworkRuleOption.Redirect)) {
-            this.priorityWeight += NetworkRule.RedirectRuleWeight;
+            this.priorityWeight += NetworkRule.CategoryFourWeight;
         }
 
-        // Specific exceptions, category 5.
-        this.priorityWeight += NetworkRule.SpecificExceptionsWeight * countEnabledBits(
+        // Category 5: specific exceptions.
+        this.priorityWeight += NetworkRule.CategoryFiveWeight * countEnabledBits(
             this.enabledOptions,
             NetworkRule.SPECIFIC_EXCLUSIONS_MASK,
         );
 
-        // Allowlist rules, category 6.
+        // Category 6: allowlist rules.
         if (this.isAllowlist()) {
-            this.priorityWeight += NetworkRule.AllowlistRuleWeight;
+            this.priorityWeight += NetworkRule.CategorySixWeight;
         }
 
-        // Important rules, category 7.
+        // Category 7: important rules.
         if (this.isOptionEnabled(NetworkRuleOption.Important)) {
-            this.priorityWeight += NetworkRule.ImportantRuleWeight;
+            this.priorityWeight += NetworkRule.CategorySevenWeight;
         }
 
         // Round up to avoid overlap between different categories of rules.

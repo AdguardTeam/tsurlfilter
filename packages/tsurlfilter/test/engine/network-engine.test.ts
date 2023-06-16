@@ -1,5 +1,5 @@
 import { NetworkEngine } from '../../src/engine/network-engine';
-import { Request } from '../../src';
+import { Request, HTTPMethod } from '../../src';
 import { StringRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { RequestType } from '../../src/request-type';
@@ -36,6 +36,24 @@ describe('TestMatchAllowlistRule', () => {
 
         expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(exceptionRule);
+    });
+
+    it('finds correct $method rule', () => {
+        const rule = '||example.org^';
+        const exceptionRule = '@@||example.org^$method=post';
+
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule, exceptionRule]));
+        const request = new Request('http://example.org/', '', RequestType.Script, HTTPMethod.POST);
+        let result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(exceptionRule);
+
+        request.method = HTTPMethod.GET;
+        result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
     });
 });
 

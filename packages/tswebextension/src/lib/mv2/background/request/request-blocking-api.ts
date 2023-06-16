@@ -69,6 +69,7 @@ export class RequestBlockingApi {
      * @param rule Matched rule.
      * @param requestId Request id.
      * @param requestUrl Request url.
+     * @param method Request method.
      * @param requestType Request type.
      * @param tabId Tab id.
      *
