@@ -410,6 +410,20 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Checks if the rule completely disables filtering.
+     */
+    isFilteringDisabled(): boolean {
+        if (!this.isAllowlist()) {
+            return false;
+        }
+
+        return this.isOptionEnabled(NetworkRuleOption.Elemhide)
+            && this.isOptionEnabled(NetworkRuleOption.Content)
+            && this.isOptionEnabled(NetworkRuleOption.Urlblock)
+            && this.isOptionEnabled(NetworkRuleOption.Jsinject);
+    }
+
+    /**
      * The longest part of pattern without any special characters.
      * It is used to improve the matching performance.
      */

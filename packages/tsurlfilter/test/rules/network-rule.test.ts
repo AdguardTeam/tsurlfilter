@@ -1314,6 +1314,19 @@ describe('NetworkRule.isHigherPriority', () => {
     });
 });
 
+describe('NetworkRule.isFilteringDisabled', () => {
+    const cases = [
+        { rule: '@@||example.org^$document', expected: true },
+        { rule: '@@||example.org^$elemhide,urlblock,content,jsinject', expected: true },
+        { rule: '@@||example.org^$elemhide,jsinject,content', expected: false },
+        { rule: '||example.org^$document', expected: false },
+    ];
+
+    it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
+        expect((new NetworkRule(rule, 0)).isFilteringDisabled()).toBe(expected);
+    });
+});
+
 describe('Misc', () => {
     it('checks isHostLevelNetworkRule', () => {
         let rule;
