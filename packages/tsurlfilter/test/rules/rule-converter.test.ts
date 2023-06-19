@@ -358,8 +358,14 @@ describe('Options', () => {
         checkConversionResult('spiele-umsonst.de##.left > div.right[style$="1px;"]', 'spiele-umsonst.de##.left > div.right[style$="1px;"]');
     });
 
+    it('converts removeparam option properly', () => {
+        const rule = String.raw`||example.org^$removeparam=/^__s=[A-Za-z0-9]{6\,}/`;
+        // converted rule should be the same as original
+        checkConversionResult(rule, rule);
+    });
+
     it('converts hls option properly', () => {
-        const rule = '||example.org^$hls=/#UPLYNK-SEGMENT:.*\\,ad/t';
+        const rule = String.raw`||example.org^$hls=/#UPLYNK-SEGMENT:.*\,ad/t`;
         // converted rule should be the same as original
         checkConversionResult(rule, rule);
     });

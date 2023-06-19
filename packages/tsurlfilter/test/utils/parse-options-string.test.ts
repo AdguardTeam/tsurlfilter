@@ -82,29 +82,11 @@ describe('parseOptionsString', () => {
         expect(result).toEqual(expected);
     });
 
-    it('unescapes "," in regexp parts of patterns', () => {
-        /* eslint-disable no-useless-escape */
-        // Unescapes comma
-        const str = String.raw`replace=/\,window.location="[\w\d:\/.-]+"//`;
-        const expected = [String.raw`replace=/,window.location="[\w\d:\/.-]+"//`];
-        const result = parseOptionsString(str);
-        expect(result).toEqual(expected);
-        /* eslint-enable no-useless-escape */
-    });
-
     it('parses $hls correctly', () => {
-        // Unescaped comma in rule modifier value
+        // Escaped comma in rule modifier value stays escaped
         const optionsPart = String.raw`hls=/#UPLYNK-SEGMENT:.*\,ad/t`;
-        let expected: string[];
-        let actual: string[];
-
-        actual = parseOptionsString(optionsPart);
-        expected = [String.raw`hls=/#UPLYNK-SEGMENT:.*,ad/t`];
-        expect(actual).toEqual(expected);
-
-        // do not remove escape characters from the string during RuleConverter.convertRule()
-        actual = parseOptionsString(optionsPart, false);
-        expected = [String.raw`hls=/#UPLYNK-SEGMENT:.*\,ad/t`];
+        const expected = [String.raw`hls=/#UPLYNK-SEGMENT:.*\,ad/t`];
+        const actual = parseOptionsString(optionsPart);
         expect(actual).toEqual(expected);
     });
 

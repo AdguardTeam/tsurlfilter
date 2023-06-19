@@ -20,18 +20,23 @@ type ProcessedToken = Token<Exclude<TokenType, TokenType.Raw>>;
 const enum SpecialModifier {
     Replace = 'replace',
     Removeparam = 'removeparam',
+    Hls = 'hls',
 }
-
-const isSpecialModifierToken = (
-    token: Token,
-): token is Token<TokenType.SpecialModifier> => token.type === TokenType.SpecialModifier;
 
 /**
  * Array of special modifiers allow to check for modifier name more efficient
  * by avoiding Object.values(SpecialModifier) calls in custom type-guard while
  * allowing the usage of 'const enum' for SpecialModifier
  */
-const SpecialModifiers = [SpecialModifier.Replace, SpecialModifier.Removeparam];
+const SpecialModifiers = [
+    SpecialModifier.Replace,
+    SpecialModifier.Removeparam,
+    SpecialModifier.Hls,
+];
+
+const isSpecialModifierToken = (
+    token: Token,
+): token is Token<TokenType.SpecialModifier> => token.type === TokenType.SpecialModifier;
 
 const enum ModifierValueType {
     Regexp = 'regexp',
@@ -94,9 +99,14 @@ type ModifierPatterns = {
     [key in SpecialModifier]: Pattern;
 };
 
+/**
+ * TODO (s.atroschenko) git rid of necessity of adding modifier names for simple regexp values (removaparam, hls):
+ * use unified 'simple-regexp' pattern instead
+ */
 const modifiersPatterns: ModifierPatterns = {
     [SpecialModifier.Replace]: [Phase.Regexp, Phase.Replacement, Phase.Flags],
     [SpecialModifier.Removeparam]: [Phase.Regexp, Phase.Flags],
+    [SpecialModifier.Hls]: [Phase.Regexp, Phase.Flags],
 } as const;
 
 /**
@@ -164,7 +174,6 @@ const parseRegexpValue: ModifierValueParser = (string, startIndex, pattern) => {
 
         if (c === SpecialCharacter.RegexpDelimiter && isUnescapedChar) {
             // Step into the next pattern phase
-            // currentPhase = phaseGenerator.next().value;
             nextPhase();
         }
 
@@ -188,18 +197,6 @@ const parseRegexpValue: ModifierValueParser = (string, startIndex, pattern) => {
             } else {
                 throw new Error('Unexpected options delimiter or end of options string.');
             }
-        } else if (
-            currentPhase === Phase.Regexp
-            && (c === SpecialCharacter.OptionDelimiter)
-            && !isUnescapedChar
-        ) {
-            /**
-             * Unescape ',' and '$' for regexp parts of pattern,
-             * as escapes are forced by modifiers syntax,
-             * e.g https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
-             */
-            chars.splice(chars.length - 1, 1);
-            chars.push(c);
         } else {
             chars.push(c);
         }
