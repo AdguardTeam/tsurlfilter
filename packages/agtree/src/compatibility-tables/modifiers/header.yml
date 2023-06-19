@@ -1,20 +1,26 @@
 adg_os_any:
   name: header
-  description: 'The $header modifier allows matching the HTTP response having a specific header with (optionally) a specific value.'
+  description: |-
+    The $header modifier allows matching the HTTP response
+    having a specific header with (optionally) a specific value.
   assignable: true
   value_format: /^[A-z0-9-]+(:.+|)$/
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#header-modifier
 
 adg_ext_any:
   name: header
-  description: 'The $header modifier allows matching the HTTP response having a specific header with (optionally) a specific value.'
+  description: |-
+    The $header modifier allows matching the HTTP response
+    having a specific header with (optionally) a specific value.
   assignable: true
   value_format: /^[A-z0-9-]+(:.+|)$/
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#header-modifier
 
 ubo_ext_any:
   name: header
-  description: 'The $header modifier allows matching the HTTP response having a specific header with (optionally) a specific value.'
+  description: |-
+    The $header modifier allows matching the HTTP response
+    having a specific header with (optionally) a specific value.
   assignable: true
   value_format: /^[A-z0-9-]+(:.+|)$/
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#header

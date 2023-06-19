@@ -1,13 +1,18 @@
 adg_os_any:
   name: cookie
-  description: The $cookie modifier completely changes rule behavior. Instead of blocking a request, this modifier makes us suppress or modify the Cookie and Set-Cookie headers.
+  description: |-
+    The $cookie modifier completely changes rule behavior.
+    Instead of blocking a request, this modifier makes us suppress or modify the Cookie and Set-Cookie headers.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#cookie-modifier
   assignable: true
   value_format: ^([^;=\s]*?)((?:;(maxAge=\d+;?)?|(sameSite=(lax|none|strict);?)?){1,3})(?<!;)$
   negatable: false
+
 adg_ext_any:
   name: cookie
-  description: The $cookie modifier completely changes rule behavior. Instead of blocking a request, this modifier makes us suppress or modify the Cookie and Set-Cookie headers.
+  description: |-
+    The $cookie modifier completely changes rule behavior.
+    Instead of blocking a request, this modifier makes us suppress or modify the Cookie and Set-Cookie headers.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#cookie-modifier
   assignable: true
   value_format: ^([^;=\s]*?)((?:;(maxAge=\d+;?)?|(sameSite=(lax|none|strict);?)?){1,3})(?<!;)$

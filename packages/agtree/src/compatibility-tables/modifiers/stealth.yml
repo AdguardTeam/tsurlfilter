@@ -1,45 +1,49 @@
 adg_os_any:
   name: stealth
-  description: 'Disables the Stealth Mode module for all corresponding pages and requests.'
+  description: Disables the Stealth Mode module for all corresponding pages and requests.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier
   assignable: true
   negatable: false
   exception_only: true
   # TODO: implement validation
-  # value_format: 
+  # value_format:
+
 adg_ext_chrome:
   name: stealth
-  description: 'Disables the Stealth Mode module for all corresponding pages and requests.'
+  description: Disables the Stealth Mode module for all corresponding pages and requests.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier
   assignable: true
   negatable: false
   exception_only: true
   # TODO: implement validation
-  # value_format: 
+  # value_format:
+
 adg_ext_firefox:
   name: stealth
-  description: 'Disables the Stealth Mode module for all corresponding pages and requests.'
+  description: Disables the Stealth Mode module for all corresponding pages and requests.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier
   assignable: true
   negatable: false
   exception_only: true
   # TODO: implement validation
-  # value_format: 
+  # value_format:
+
 adg_ext_opera:
   name: stealth
-  description: 'Disables the Stealth Mode module for all corresponding pages and requests.'
+  description: Disables the Stealth Mode module for all corresponding pages and requests.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier
   assignable: true
   negatable: false
   exception_only: true
   # TODO: implement validation
-  # value_format: 
+  # value_format:
+
 adg_ext_edge:
   name: stealth
-  description: 'Disables the Stealth Mode module for all corresponding pages and requests.'
+  description: Disables the Stealth Mode module for all corresponding pages and requests.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier
   assignable: true
   negatable: false
   exception_only: true
   # TODO: implement validation
-  # value_format: 
+  # value_format:

@@ -18,7 +18,9 @@ adg_os_any:
   value_format: /^\/.+\/.*\/$/
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
-  description: This modifier completely changes the rule behavior. If it is applied, the rule will not block the request. The response is going to be modified instead.
+  description: |-
+    This modifier completely changes the rule behavior.
+    If it is applied, the rule will not block the request. The response is going to be modified instead.
 
 adg_ext_firefox:
   name:	replace
@@ -39,4 +41,6 @@ adg_ext_firefox:
   value_format: /^\/.+\/.*\/$/
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
-  description: This modifier completely changes the rule behavior. If it is applied, the rule will not block the request. The response is going to be modified instead.
+  description: |-
+    This modifier completely changes the rule behavior.
+    If it is applied, the rule will not block the request. The response is going to be modified instead.

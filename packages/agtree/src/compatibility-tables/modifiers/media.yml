@@ -2,16 +2,25 @@ adg_any:
   name: media
   negatable: true
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#media-modifier
-  description: A restriction of third-party and own requests. A third-party request is a request from a different domain. For example, a request to example.org, from domain.com is a third-party request.
+  description: |-
+    A restriction of third-party and own requests.
+    A third-party request is a request from a different domain.
+    For example, a request to example.org, from domain.com is a third-party request.
 
 abp_any:
   name: media
   negatable: true
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
-  description: A restriction of third-party and own requests. A third-party request is a request from a different domain. For example, a request to example.org, from domain.com is a third-party request.
+  description: |-
+    A restriction of third-party and own requests.
+    A third-party request is a request from a different domain.
+    For example, a request to example.org, from domain.com is a third-party request.
 
 ubo_any:
   name: media
   negatable: true
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
-  description: A restriction of third-party and own requests. A third-party request is a request from a different domain. For example, a request to example.org, from domain.com is a third-party request.
+  description: |-
+    A restriction of third-party and own requests.
+    A third-party request is a request from a different domain.
+    For example, a request to example.org, from domain.com is a third-party request.

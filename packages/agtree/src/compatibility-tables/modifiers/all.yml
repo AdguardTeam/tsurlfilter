@@ -1,0 +1,29 @@
+adg_os_any:
+  name: all
+  description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  negatable: false
+
+adg_ext_any:
+  name: all
+  description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  negatable: false
+
+adg_cb_ios:
+  name: all
+  description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  negatable: false
+
+adg_cb_safari:
+  name: all
+  description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  negatable: false
+
+ubo_ext_any:
+  name: all
+  description: The all option is equivalent to specifying all network-based types + popup, document, inline-font and inline-script.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#all
+  negatable: false

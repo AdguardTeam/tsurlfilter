@@ -13,6 +13,6 @@ adg_os_any:
     - badfilter
   inverse_conflicts: true
   exception_only: true
-  version_added: "0.0.1"
+  version_added: 0.0.1
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#extension-modifier
   description: Disables all userscripts on the pages matching this rule.

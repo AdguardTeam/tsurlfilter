@@ -1,17 +1,23 @@
 adg_any:
   name: webrtc
   deprecated: true
-  deprecation_message: This modifier is deprecated and is no longer supported. Rules with it are considered as invalid. If you need to suppress WebRTC, consider using the [nowebrtc scriptlet](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#nowebrtc).
+  deprecation_message: |-
+    This modifier is deprecated and is no longer supported.
+    Rules with it are considered as invalid. If you need to suppress WebRTC, consider using
+    the [nowebrtc scriptlet](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#nowebrtc).
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#webrtc-modifier
 
 ubo_any:
   name: webrtc
   deprecated: true
-  deprecation_message: This modifier is deprecated and is no longer supported. If you need to suppress WebRTC, consider using the [nowebrtc scriptlet](https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-).
+  deprecation_message: |-
+    This modifier is deprecated and is no longer supported.
+    If you need to suppress WebRTC, consider using
+    the [nowebrtc scriptlet](https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-).
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax
 
 abp_any:
   name: webrtc
-  version_added: "1.13.3"
+  version_added: 1.13.3
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
   description: The rule applies only to WebRTC connections.

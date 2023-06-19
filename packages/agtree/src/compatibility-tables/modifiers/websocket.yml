@@ -2,22 +2,27 @@ adg_os_any:
   name: websocket
   description: The rule applies only to WebSocket connections.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#websocket-modifier
+
 adg_ext_any:
   name: websocket
   description: The rule applies only to WebSocket connections.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#websocket-modifier
+
 adg_cb_ios:
   name: websocket
   description: The rule applies only to WebSocket connections.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#websocket-modifier
+
 adg_cb_safari:
   name: websocket
   description: The rule applies only to WebSocket connections.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#websocket-modifier
+
 abp_ext_any:
   name: websocket
   description: The rule applies only to WebSocket connections.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+
 ubo_ext_any:
   name: websocket
   description: The rule applies only to WebSocket connections.

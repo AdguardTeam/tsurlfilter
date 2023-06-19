@@ -71,7 +71,11 @@ adg_os_any:
         set-popads-dummy|
         click2load\.html|
       )?$
-  description: 'This is basically an alias to $redirect since it has the same "redirection" values and the logic is almost similar. The difference is that $redirect-rule is applied only in the case when the target request is blocked by a different basic rule.'
+  description: |-
+    This is basically an alias to $redirect
+    since it has the same "redirection" values and the logic is almost similar.
+    The difference is that $redirect-rule is applied only in the case
+    when the target request is blocked by a different basic rule.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
 
 adg_ext_any:
@@ -146,7 +150,11 @@ adg_ext_any:
         set-popads-dummy|
         click2load\.html|
       )?$
-  description: 'This is basically an alias to $redirect since it has the same "redirection" values and the logic is almost similar. The difference is that $redirect-rule is applied only in the case when the target request is blocked by a different basic rule.'
+  description: |-
+    This is basically an alias to $redirect
+    since it has the same "redirection" values and the logic is almost similar.
+    The difference is that $redirect-rule is applied only in the case
+    when the target request is blocked by a different basic rule.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
 
 ubo_ext_any:
@@ -210,5 +218,9 @@ ubo_ext_any:
         hd-main\.js
       )
       (:[0-9]+)?$
-  description: 'This is basically an alias to $redirect since it has the same "redirection" values and the logic is almost similar. The difference is that $redirect-rule is applied only in the case when the target request is blocked by a different basic rule.'
+  description: |-
+    This is basically an alias to $redirect
+    since it has the same "redirection" values and the logic is almost similar.
+    The difference is that $redirect-rule is applied only in the case
+    when the target request is blocked by a different basic rule.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect-rule

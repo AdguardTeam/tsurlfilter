@@ -1,6 +1,9 @@
-adg_os_any: 
+adg_os_any:
   name:	jsonprune
   assignable: true
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#jsonprune-modifier
-  description: $jsonprune rules modify the response to a matching request by removing JSON items that match a modified JSONPath expression. They do not modify responses which are not valid JSON documents.
+  description: |-
+    $jsonprune rules modify the response to a matching request
+    by removing JSON items that match a modified JSONPath expression.
+    They do not modify responses which are not valid JSON documents.

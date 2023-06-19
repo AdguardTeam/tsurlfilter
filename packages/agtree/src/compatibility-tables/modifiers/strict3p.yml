@@ -1,4 +1,6 @@
-ubo_any: 
+ubo_any:
   name:	strict3p
-  description: 'This new strict3p option can check for strict partyness. For example, a network request qualifies as 3rd-party as soon as the context and the request hostnames are different.'
+  description: |-
+    This new strict3p option can check for strict partyness.
+    For example, a network request qualifies as 3rd-party if the context and the request hostnames are different.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#strict3p

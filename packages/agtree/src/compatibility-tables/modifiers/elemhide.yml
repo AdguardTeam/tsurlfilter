@@ -5,7 +5,7 @@ adg_any:
   negatable: false
   exception_only: true
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#elemhide-modifier
-  description: 'Disables any cosmetic rules on the pages matching the rule.'
+  description: Disables any cosmetic rules on the pages matching the rule.
 
 abp_any:
   name: elemhide
@@ -14,7 +14,7 @@ abp_any:
   negatable: false
   exception_only: true
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
-  description: 'Disables any cosmetic rules on the pages matching the rule.'
+  description: Disables any cosmetic rules on the pages matching the rule.
 
 ubo_any:
   name: elemhide
@@ -23,4 +23,4 @@ ubo_any:
   negatable: false
   exception_only: true
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#elemhide-1
-  description: 'Disables any cosmetic rules on the pages matching the rule.'
+  description: Disables any cosmetic rules on the pages matching the rule.

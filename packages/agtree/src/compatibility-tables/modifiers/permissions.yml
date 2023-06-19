@@ -1,0 +1,17 @@
+adg_os_any:
+  name: permissions
+  description: |-
+    For the requests matching a $permissions rule, ad blocker strengthens response's feature policy
+    by adding additional feature policy equal to the $permissions modifier contents.
+    $permissions rules are applied independently from any other rule type.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#permissions-modifier
+  version_added: CoreLibs 1.11
+  assignable: true
+  # TODO: Implement validation
+  # value_format:
+  negatable: false
+  conflicts:
+    - domain
+    - important
+    - subdocument
+  inverse_conflicts: true

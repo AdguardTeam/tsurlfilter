@@ -1,0 +1,19 @@
+adg_any:
+  name: first-party
+  aliases:
+    - 1p
+    # TODO: We need to figure out the right AST handling under the hood
+    - ~third-party
+  negatable: false
+  # TODO: change link in docs to first-party modifier when it will be available
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#third-party-modifier
+  description: A restriction of first-party requests. Equal to ~third-party
+
+ubo_any:
+  name: first-party
+  aliases:
+    - 1p
+    - ~third-party
+  negatable: false
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#1p
+  description: A restriction of first-party requests. Equal to ~third-party

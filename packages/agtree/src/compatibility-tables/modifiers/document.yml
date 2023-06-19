@@ -1,31 +1,48 @@
 adg_os_any:
   name: document
-  description: The rule corresponds to the main frame document requests, i.e. HTML documents that are loaded in the browser tab.
+  description: |-
+    The rule corresponds to the main frame document requests,
+    i.e. HTML documents that are loaded in the browser tab.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
+
 adg_ext_any:
   name: document
-  description: The rule corresponds to the main frame document requests, i.e. HTML documents that are loaded in the browser tab.
+  description: |-
+    The rule corresponds to the main frame document requests,
+    i.e. HTML documents that are loaded in the browser tab.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
+
 adg_cb_ios:
   name: document
-  description: The rule corresponds to the main frame document requests, i.e. HTML documents that are loaded in the browser tab.
+  description: |-
+    The rule corresponds to the main frame document requests,
+    i.e. HTML documents that are loaded in the browser tab.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
+
 adg_cb_safari:
   name: document
-  description: The rule corresponds to the main frame document requests, i.e. HTML documents that are loaded in the browser tab.
+  description: |-
+    The rule corresponds to the main frame document requests,
+    i.e. HTML documents that are loaded in the browser tab.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
+
 abp_ext_any:
   name: document
-  description: The rule corresponds to the main frame document requests, i.e. HTML documents that are loaded in the browser tab.
+  description: |-
+    The rule corresponds to the main frame document requests,
+    i.e. HTML documents that are loaded in the browser tab.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#allowlist
   negatable: false
+
 ubo_ext_any:
   name: document
-  description: The rule corresponds to the main frame document requests, i.e. HTML documents that are loaded in the browser tab.
+  description: |-
+    The rule corresponds to the main frame document requests,
+    i.e. HTML documents that are loaded in the browser tab.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#document
   aliases:
     - doc

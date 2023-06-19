@@ -1,14 +1,20 @@
-adg_any: 
+adg_any:
   name:	popup
-  description: 'Pages opened in a new tab or window Note: Filters will not block pop-ups by default, only if the $popup type option is specified.'
+  description: |-
+    Pages opened in a new tab or window.
+    Note: Filters will not block pop-ups by default, only if the $popup type option is specified.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
-  
-abp_any: 
+
+abp_any:
   name:	popup
-  description: 'Pages opened in a new tab or window Note: Filters will not block pop-ups by default, only if the $popup type option is specified.'
+  description: |-
+    Pages opened in a new tab or window.
+    Note: Filters will not block pop-ups by default, only if the $popup type option is specified.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
-  
-ubo_any: 
+
+ubo_any:
   name:	popup
-  description: 'Pages opened in a new tab or window Note: Filters will not block pop-ups by default, only if the $popup type option is specified.'
+  description: |-
+    Pages opened in a new tab or window.
+    Note: Filters will not block pop-ups by default, only if the $popup type option is specified.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options

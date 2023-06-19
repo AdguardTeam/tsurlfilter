@@ -1,0 +1,32 @@
+adg_os_any:
+  name: method
+  description: |-
+    This modifier limits the rule scope to requests that use the specified set of HTTP methods.
+    Negated methods are allowed.
+  negatable: false
+  assignable: true
+  # TODO: implement validation
+  # value_format:
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier
+
+adg_ext_any:
+  name: method
+  description: |-
+    This modifier limits the rule scope to requests that use the specified set of HTTP methods.
+    Negated methods are allowed.
+  negatable: false
+  assignable: true
+  # TODO: implement validation
+  # value_format:
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier
+
+ubo_ext_any:
+  name: method
+  description: |-
+    This modifier limits the rule scope to requests that use the specified set of HTTP methods.
+    Negated methods are allowed.
+  negatable: false
+  assignable: true
+  # TODO: implement validation
+  # value_format:
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#method

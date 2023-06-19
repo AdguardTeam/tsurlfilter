@@ -1,14 +1,20 @@
-adg_any: 
+adg_any:
   name:	match-case
-  description: 'This modifier defines a rule which applies only to addresses that match the case. Default rules are case-insensitive.'
+  description: |-
+    This modifier defines a rule which applies only to addresses that match the case.
+    Default rules are case-insensitive.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#match-case-modifier
 
-abp_any: 
+abp_any:
   name:	match-case
-  description: 'This modifier defines a rule which applies only to addresses that match the case. Default rules are case-insensitive.'
+  description: |-
+    This modifier defines a rule which applies only to addresses that match the case.
+    Default rules are case-insensitive.
   docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
 
-ubo_any: 
+ubo_any:
   name:	match-case
-  description: 'This modifier defines a rule which applies only to addresses that match the case. Default rules are case-insensitive.'
+  description: |-
+    This modifier defines a rule which applies only to addresses that match the case.
+    Default rules are case-insensitive.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#match-case

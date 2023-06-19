@@ -2,28 +2,38 @@ adg_os_any:
   name: badfilter
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
-  description: The rules with the $badfilter modifier disable other basic rules to which they refer. It means that the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+  description: |-
+    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
 
 adg_ext_any:
   name: badfilter
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
-  description: The rules with the $badfilter modifier disable other basic rules to which they refer. It means that the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+  description: |-
+    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
 
 adg_cb_ios:
   name: badfilter
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
-  description: The rules with the $badfilter modifier disable other basic rules to which they refer. It means that the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+  description: |-
+    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
 
 adg_cb_safari:
   name: badfilter
   negatable: false
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
-  description: The rules with the $badfilter modifier disable other basic rules to which they refer. It means that the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+  description: |-
+    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
 
 ubo_ext_any:
   name: badfilter
   negatable: false
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#badfilter
-  description: The rules with the $badfilter modifier disable other basic rules to which they refer. It means that the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+  description: |-
+    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).

@@ -1,8 +1,10 @@
 adg_os_any:
   name: hls
-  description: $hls rules modify the response of a matching request. They are intended as a convenient way to remove segments from HLS playlists (RFC 8216).
+  description: |-
+    The $hls rules modify the response of a matching request.
+    They are intended as a convenient way to remove segments from HLS playlists (RFC 8216).
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#hls-modifier
-  version_added: "CoreLibs 1.10"
+  version_added: CoreLibs 1.10
   conflicts:
     - domain
     - third-party
