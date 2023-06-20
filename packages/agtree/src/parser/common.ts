@@ -182,6 +182,11 @@ export interface Node {
      * Every node should support a loc property, which refers to the location of the node in the source code.
      */
     loc?: LocationRange;
+
+    /**
+     * Optionally the raw representation of the node in the source code.
+     */
+    raw?: string;
 }
 
 /**

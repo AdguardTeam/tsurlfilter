@@ -46,6 +46,7 @@ import { CommentRuleParser } from '../comment';
  * compatible with the given adblocker. This is a completely natural behavior, meaningful
  * checking of compatibility is not done at the parser level.
  */
+// TODO: Make raw body parsing optional
 export class CosmeticRuleParser {
     /**
      * Determines whether a rule is a cosmetic rule. The rule is considered cosmetic if it
@@ -179,7 +180,10 @@ export class CosmeticRuleParser {
                         modifiers,
                         domains,
                         separator,
-                        body: CssInjectionBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                        body: {
+                            ...CssInjectionBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                            raw: rawBody,
+                        },
                     };
                 }
 
@@ -195,7 +199,10 @@ export class CosmeticRuleParser {
                     modifiers,
                     domains,
                     separator,
-                    body: ElementHidingBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                    body: {
+                        ...ElementHidingBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                        raw: rawBody,
+                    },
                 };
 
             // ADG CSS injection / ABP snippet injection
@@ -217,7 +224,10 @@ export class CosmeticRuleParser {
                         modifiers,
                         domains,
                         separator,
-                        body: CssInjectionBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                        body: {
+                            ...CssInjectionBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                            raw: rawBody,
+                        },
                     };
                 }
 
@@ -242,7 +252,10 @@ export class CosmeticRuleParser {
                         modifiers,
                         domains,
                         separator,
-                        body: ScriptletInjectionBodyParser.parse(rawBody, AdblockSyntax.Abp, shiftLoc(loc, bodyStart)),
+                        body: {
+                            ...ScriptletInjectionBodyParser.parse(rawBody, AdblockSyntax.Abp, shiftLoc(loc, bodyStart)),
+                            raw: rawBody,
+                        },
                     };
                 }
 
@@ -275,7 +288,10 @@ export class CosmeticRuleParser {
                     modifiers,
                     domains,
                     separator,
-                    body: ScriptletInjectionBodyParser.parse(rawBody, AdblockSyntax.Ubo, shiftLoc(loc, bodyStart)),
+                    body: {
+                        ...ScriptletInjectionBodyParser.parse(rawBody, AdblockSyntax.Ubo, shiftLoc(loc, bodyStart)),
+                        raw: rawBody,
+                    },
                 };
 
             // ADG JS / scriptlet injection
@@ -296,7 +312,10 @@ export class CosmeticRuleParser {
                         modifiers,
                         domains,
                         separator,
-                        body: ScriptletInjectionBodyParser.parse(rawBody, AdblockSyntax.Ubo, shiftLoc(loc, bodyStart)),
+                        body: {
+                            ...ScriptletInjectionBodyParser.parse(rawBody, AdblockSyntax.Ubo, shiftLoc(loc, bodyStart)),
+                            raw: rawBody,
+                        },
                     };
                 }
 
@@ -325,6 +344,7 @@ export class CosmeticRuleParser {
                         type: 'Value',
                         loc: locRange(loc, bodyStart, bodyEnd),
                         value: rawBody,
+                        raw: rawBody,
                     },
                 };
 
@@ -350,13 +370,17 @@ export class CosmeticRuleParser {
                     modifiers,
                     domains,
                     separator,
-                    body: HtmlFilteringBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                    body: {
+                        ...HtmlFilteringBodyParser.parse(rawBody, shiftLoc(loc, bodyStart)),
+                        raw: rawBody,
+                    },
                 };
 
             // ADG HTML filtering
             case '$$':
             case '$@$':
                 body = HtmlFilteringBodyParser.parse(rawBody, shiftLoc(loc, bodyStart));
+                body.raw = rawBody;
 
                 if (body.body.type === 'Function') {
                     throw new AdblockSyntaxError(

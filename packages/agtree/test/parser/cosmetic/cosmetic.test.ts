@@ -38,6 +38,8 @@ describe('CosmeticRuleParser', () => {
         expect(CosmeticRuleParser.isCosmeticRule('$$script[tag-content="antiadblock"]')).toBeTruthy();
     });
 
+    // TODO: Implement a more generic test for all cosmetic rules, based on test.each(...)
+
     test('parse', async () => {
         // Valid elemhide
         expect(CosmeticRuleParser.parse('##.ad')).toMatchObject({
@@ -56,7 +58,10 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, '##'.length)),
+            body: {
+                ...ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, '##'.length)),
+                raw: '.ad',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net##.ad')).toMatchObject({
@@ -75,7 +80,10 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, 'example.com,~example.net##'.length)),
+            body: {
+                ...ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, 'example.com,~example.net##'.length)),
+                raw: '.ad',
+            },
         });
 
         expect(CosmeticRuleParser.parse('#@#.ad')).toMatchObject({
@@ -94,7 +102,10 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#',
             },
-            body: ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, '#@#'.length)),
+            body: {
+                ...ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, '#@#'.length)),
+                raw: '.ad',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#@#.ad')).toMatchObject({
@@ -113,7 +124,10 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#',
             },
-            body: ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length)),
+            body: {
+                ...ElementHidingBodyParser.parse('.ad', shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length)),
+                raw: '.ad',
+            },
         });
 
         // Valid elemhide (extended)
@@ -133,10 +147,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#?#',
             },
-            body: ElementHidingBodyParser.parse(
-                '.ad:-abp-has(.ad)',
-                shiftLoc(defaultLocation, '#?#'.length),
-            ),
+            body: {
+                ...ElementHidingBodyParser.parse(
+                    '.ad:-abp-has(.ad)',
+                    shiftLoc(defaultLocation, '#?#'.length),
+                ),
+                raw: '.ad:-abp-has(.ad)',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#?#.ad:-abp-has(.ad)')).toMatchObject({
@@ -155,10 +172,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#?#',
             },
-            body: ElementHidingBodyParser.parse(
-                '.ad:-abp-has(.ad)',
-                shiftLoc(defaultLocation, 'example.com,~example.net#?#'.length),
-            ),
+            body: {
+                ...ElementHidingBodyParser.parse(
+                    '.ad:-abp-has(.ad)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#?#'.length),
+                ),
+                raw: '.ad:-abp-has(.ad)',
+            },
         });
 
         expect(CosmeticRuleParser.parse('#@?#.ad:-abp-has(.ad)')).toMatchObject({
@@ -177,10 +197,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@?#',
             },
-            body: ElementHidingBodyParser.parse(
-                '.ad:-abp-has(.ad)',
-                shiftLoc(defaultLocation, '#@?#'.length),
-            ),
+            body: {
+                ...ElementHidingBodyParser.parse(
+                    '.ad:-abp-has(.ad)',
+                    shiftLoc(defaultLocation, '#@?#'.length),
+                ),
+                raw: '.ad:-abp-has(.ad)',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#@?#.ad:-abp-has(.ad)')).toMatchObject({
@@ -199,10 +222,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@?#',
             },
-            body: ElementHidingBodyParser.parse(
-                '.ad:-abp-has(.ad)',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@?#'.length),
-            ),
+            body: {
+                ...ElementHidingBodyParser.parse(
+                    '.ad:-abp-has(.ad)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@?#'.length),
+                ),
+                raw: '.ad:-abp-has(.ad)',
+            },
         });
 
         // CSS injections (AdGuard)
@@ -222,10 +248,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body { padding: 0; }',
-                shiftLoc(defaultLocation, '#$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body { padding: 0; }',
+                    shiftLoc(defaultLocation, '#$#'.length),
+                ),
+                raw: 'body { padding: 0; }',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#$#body { padding: 0; }')).toMatchObject({
@@ -244,10 +273,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body { padding: 0; }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body { padding: 0; }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
+                ),
+                raw: 'body { padding: 0; }',
+            },
         });
 
         expect(CosmeticRuleParser.parse('#@$#body { padding: 0; }')).toMatchObject({
@@ -266,10 +298,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body { padding: 0; }',
-                shiftLoc(defaultLocation, '#@$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body { padding: 0; }',
+                    shiftLoc(defaultLocation, '#@$#'.length),
+                ),
+                raw: 'body { padding: 0; }',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#@$#body { padding: 0; }')).toMatchObject({
@@ -288,10 +323,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body { padding: 0; }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body { padding: 0; }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
+                ),
+                raw: 'body { padding: 0; }',
+            },
         });
 
         // CSS injections with media queries (AdGuard)
@@ -313,10 +351,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
-                shiftLoc(defaultLocation, '#$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                    shiftLoc(defaultLocation, '#$#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+            },
         });
 
         expect(
@@ -337,10 +378,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media(min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
-                shiftLoc(defaultLocation, '#$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media(min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                    shiftLoc(defaultLocation, '#$#'.length),
+                ),
+                raw: '@media(min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+            },
         });
 
         expect(
@@ -363,10 +407,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+            },
         });
 
         expect(
@@ -389,10 +436,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+            },
         });
 
         // CSS injections with Extended CSS (AdGuard)
@@ -412,10 +462,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:-abp-has(.ad) { padding: 0; }',
-                shiftLoc(defaultLocation, '#$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:-abp-has(.ad) { padding: 0; }',
+                    shiftLoc(defaultLocation, '#$?#'.length),
+                ),
+                raw: 'body:-abp-has(.ad) { padding: 0; }',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#$?#body:-abp-has(.ad) { padding: 0; }')).toMatchObject({
@@ -434,10 +487,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:-abp-has(.ad) { padding: 0; }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:-abp-has(.ad) { padding: 0; }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$?#'.length),
+                ),
+                raw: 'body:-abp-has(.ad) { padding: 0; }',
+            },
         });
 
         expect(CosmeticRuleParser.parse('#@$?#body:-abp-has(.ad) { padding: 0; }')).toMatchObject({
@@ -456,10 +512,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:-abp-has(.ad) { padding: 0; }',
-                shiftLoc(defaultLocation, '#@$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:-abp-has(.ad) { padding: 0; }',
+                    shiftLoc(defaultLocation, '#@$?#'.length),
+                ),
+                raw: 'body:-abp-has(.ad) { padding: 0; }',
+            },
         });
 
         expect(CosmeticRuleParser.parse('example.com,~example.net#@$?#body:-abp-has(.ad) { padding: 0; }')).toMatchObject({
@@ -478,10 +537,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:-abp-has(.ad) { padding: 0; }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:-abp-has(.ad) { padding: 0; }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$?#'.length),
+                ),
+                raw: 'body:-abp-has(.ad) { padding: 0; }',
+            },
         });
 
         // CSS injections with Extended CSS and media queries (AdGuard)
@@ -505,10 +567,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
-                shiftLoc(defaultLocation, '#$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+                    shiftLoc(defaultLocation, '#$?#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+            },
         });
 
         expect(
@@ -531,10 +596,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$?#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+            },
         });
 
         expect(
@@ -557,10 +625,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
-                shiftLoc(defaultLocation, '#@$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+                    shiftLoc(defaultLocation, '#@$?#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+            },
         });
 
         expect(
@@ -583,10 +654,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$?#',
             },
-            body: CssInjectionBodyParser.parse(
-                '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$?#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$?#'.length),
+                ),
+                raw: '@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0 !important; } }',
+            },
         });
 
         // CSS injection (uBlock Origin)
@@ -610,10 +684,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:style(padding: 0;)',
-                shiftLoc(defaultLocation, '##'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:style(padding: 0;)',
+                    shiftLoc(defaultLocation, '##'.length),
+                ),
+                raw: 'body:style(padding: 0;)',
+            },
         });
 
         expect(
@@ -636,10 +713,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:style(padding: 0;)',
-                shiftLoc(defaultLocation, 'example.com,~example.net##'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:style(padding: 0;)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net##'.length),
+                ),
+                raw: 'body:style(padding: 0;)',
+            },
         });
 
         expect(
@@ -662,10 +742,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:style(padding: 0;)',
-                shiftLoc(defaultLocation, '#@#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:style(padding: 0;)',
+                    shiftLoc(defaultLocation, '#@#'.length),
+                ),
+                raw: 'body:style(padding: 0;)',
+            },
         });
 
         expect(
@@ -688,10 +771,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body:style(padding: 0;)',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body:style(padding: 0;)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length),
+                ),
+                raw: 'body:style(padding: 0;)',
+            },
         });
 
         // CSS injection with ExtendedCSS and media queries (uBlock Origin)
@@ -715,10 +801,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: CssInjectionBodyParser.parse(
-                'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
-                shiftLoc(defaultLocation, '##'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                    shiftLoc(defaultLocation, '##'.length),
+                ),
+                raw: 'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+            },
         });
 
         expect(
@@ -741,10 +830,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: CssInjectionBodyParser.parse(
-                'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
-                shiftLoc(defaultLocation, 'example.com,~example.net##'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net##'.length),
+                ),
+                raw: 'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+            },
         });
 
         expect(
@@ -767,10 +859,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
-                shiftLoc(defaultLocation, '#@#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                    shiftLoc(defaultLocation, '#@#'.length),
+                ),
+                raw: 'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+            },
         });
 
         expect(
@@ -793,10 +888,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#',
             },
-            body: CssInjectionBodyParser.parse(
-                'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length),
-            ),
+            body: {
+                ...CssInjectionBodyParser.parse(
+                    'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length),
+                ),
+                raw: 'body > .container:has-text(/ad/):matches-media((min-width: 1024px) and (max-width: 1920px)):style(padding: 0 !important;)',
+            },
         });
 
         // Scriptlet injections (AdGuard)
@@ -820,11 +918,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#%#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                "//scriptlet('scriptlet0', 'arg0', 'arg1')",
-                AdblockSyntax.Adg,
-                shiftLoc(defaultLocation, '#%#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+                    AdblockSyntax.Adg,
+                    shiftLoc(defaultLocation, '#%#'.length),
+                ),
+                raw: "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+            },
         });
 
         expect(
@@ -847,11 +948,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#%#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                "//scriptlet('scriptlet0', 'arg0', 'arg1')",
-                AdblockSyntax.Adg,
-                shiftLoc(defaultLocation, 'example.com,~example.net#%#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+                    AdblockSyntax.Adg,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#%#'.length),
+                ),
+                raw: "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+            },
         });
 
         expect(
@@ -874,11 +978,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@%#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                "//scriptlet('scriptlet0', 'arg0', 'arg1')",
-                AdblockSyntax.Adg,
-                shiftLoc(defaultLocation, '#@%#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+                    AdblockSyntax.Adg,
+                    shiftLoc(defaultLocation, '#@%#'.length),
+                ),
+                raw: "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+            },
         });
 
         expect(
@@ -901,11 +1008,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@%#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                "//scriptlet('scriptlet0', 'arg0', 'arg1')",
-                AdblockSyntax.Adg,
-                shiftLoc(defaultLocation, 'example.com,~example.net#@%#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+                    AdblockSyntax.Adg,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@%#'.length),
+                ),
+                raw: "//scriptlet('scriptlet0', 'arg0', 'arg1')",
+            },
         });
 
         // Scriptlet injections (uBlock Origin)
@@ -929,11 +1039,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##+',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'js(scriptlet0, arg0, arg1)',
-                AdblockSyntax.Ubo,
-                shiftLoc(defaultLocation, '##+'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'js(scriptlet0, arg0, arg1)',
+                    AdblockSyntax.Ubo,
+                    shiftLoc(defaultLocation, '##+'.length),
+                ),
+                raw: 'js(scriptlet0, arg0, arg1)',
+            },
         });
 
         expect(
@@ -956,11 +1069,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##+',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'js(scriptlet0, arg0, arg1)',
-                AdblockSyntax.Ubo,
-                shiftLoc(defaultLocation, 'example.com,~example.net##+'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'js(scriptlet0, arg0, arg1)',
+                    AdblockSyntax.Ubo,
+                    shiftLoc(defaultLocation, 'example.com,~example.net##+'.length),
+                ),
+                raw: 'js(scriptlet0, arg0, arg1)',
+            },
         });
 
         expect(
@@ -983,11 +1099,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#+',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'js(scriptlet0, arg0, arg1)',
-                AdblockSyntax.Ubo,
-                shiftLoc(defaultLocation, '#@#+'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'js(scriptlet0, arg0, arg1)',
+                    AdblockSyntax.Ubo,
+                    shiftLoc(defaultLocation, '#@#+'.length),
+                ),
+                raw: 'js(scriptlet0, arg0, arg1)',
+            },
         });
 
         expect(
@@ -1010,11 +1129,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#+',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'js(scriptlet0, arg0, arg1)',
-                AdblockSyntax.Ubo,
-                shiftLoc(defaultLocation, 'example.com,~example.net#@#+'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'js(scriptlet0, arg0, arg1)',
+                    AdblockSyntax.Ubo,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@#+'.length),
+                ),
+                raw: 'js(scriptlet0, arg0, arg1)',
+            },
         });
 
         // Scriptlet injections (Adblack Plus)
@@ -1038,11 +1160,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg0 arg1',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, '#$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg0 arg1',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, '#$#'.length),
+                ),
+                raw: 'scriptlet0 arg0 arg1',
+            },
         });
 
         expect(
@@ -1065,11 +1190,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg0 arg1',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg0 arg1',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
+                ),
+                raw: 'scriptlet0 arg0 arg1',
+            },
         });
 
         expect(
@@ -1092,11 +1220,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg0 arg1',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, '#@$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg0 arg1',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, '#@$#'.length),
+                ),
+                raw: 'scriptlet0 arg0 arg1',
+            },
         });
 
         expect(
@@ -1119,11 +1250,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg0 arg1',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg0 arg1',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
+                ),
+                raw: 'scriptlet0 arg0 arg1',
+            },
         });
 
         // Scriptlet injections (Adblock Syntax) - multiple scriptlets in one rule
@@ -1147,11 +1281,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, '#$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, '#$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+            },
         });
 
         // Redundant ; at the end of the rule
@@ -1175,11 +1312,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, '#$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, '#$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+            },
         });
 
         expect(
@@ -1202,11 +1342,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+            },
         });
 
         // Redundant ; at the end of the rule
@@ -1230,11 +1373,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+            },
         });
 
         expect(
@@ -1257,11 +1403,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, '#@$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, '#@$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+            },
         });
 
         // Redundant ; at the end of the rule
@@ -1285,11 +1434,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, '#@$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, '#@$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+            },
         });
 
         expect(
@@ -1312,11 +1464,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11',
+            },
         });
 
         // Redundant ; at the end of the rule
@@ -1340,11 +1495,14 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@$#',
             },
-            body: ScriptletInjectionBodyParser.parse(
-                'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
-                AdblockSyntax.Abp,
-                shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
-            ),
+            body: {
+                ...ScriptletInjectionBodyParser.parse(
+                    'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+                    AdblockSyntax.Abp,
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@$#'.length),
+                ),
+                raw: 'scriptlet0 arg00 arg01; scriptlet1 arg10 arg11;',
+            },
         });
 
         // HTML filtering rules (AdGuard)
@@ -1368,10 +1526,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '$$',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script[tag-content="adblock"]',
-                shiftLoc(defaultLocation, '$$'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script[tag-content="adblock"]',
+                    shiftLoc(defaultLocation, '$$'.length),
+                ),
+                raw: 'script[tag-content="adblock"]',
+            },
         });
 
         expect(
@@ -1394,10 +1555,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '$$',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script[tag-content="adblock"]',
-                shiftLoc(defaultLocation, 'example.com,~example.net$$'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script[tag-content="adblock"]',
+                    shiftLoc(defaultLocation, 'example.com,~example.net$$'.length),
+                ),
+                raw: 'script[tag-content="adblock"]',
+            },
         });
 
         expect(
@@ -1420,10 +1584,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '$@$',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script[tag-content="adblock"]',
-                shiftLoc(defaultLocation, '$@$'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script[tag-content="adblock"]',
+                    shiftLoc(defaultLocation, '$@$'.length),
+                ),
+                raw: 'script[tag-content="adblock"]',
+            },
         });
 
         expect(
@@ -1446,10 +1613,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '$@$',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script[tag-content="adblock"]',
-                shiftLoc(defaultLocation, 'example.com,~example.net$@$'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script[tag-content="adblock"]',
+                    shiftLoc(defaultLocation, 'example.com,~example.net$@$'.length),
+                ),
+                raw: 'script[tag-content="adblock"]',
+            },
         });
 
         // HTML filtering rules (uBlock Origin)
@@ -1473,10 +1643,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock)',
-                shiftLoc(defaultLocation, '##^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock)',
+                    shiftLoc(defaultLocation, '##^'.length),
+                ),
+                raw: 'script:has-text(adblock)',
+            },
         });
 
         expect(
@@ -1499,10 +1672,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock)',
-                shiftLoc(defaultLocation, 'example.com,~example.net##^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net##^'.length),
+                ),
+                raw: 'script:has-text(adblock)',
+            },
         });
 
         expect(
@@ -1525,10 +1701,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock)',
-                shiftLoc(defaultLocation, '#@#^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock)',
+                    shiftLoc(defaultLocation, '#@#^'.length),
+                ),
+                raw: 'script:has-text(adblock)',
+            },
         });
 
         expect(
@@ -1551,10 +1730,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock)',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@#^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@#^'.length),
+                ),
+                raw: 'script:has-text(adblock)',
+            },
         });
 
         // HTML filtering rules (uBlock Origin) - multiple selectors
@@ -1578,10 +1760,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock), script:has-text(detector)',
-                shiftLoc(defaultLocation, '##^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock), script:has-text(detector)',
+                    shiftLoc(defaultLocation, '##^'.length),
+                ),
+                raw: 'script:has-text(adblock), script:has-text(detector)',
+            },
         });
 
         expect(
@@ -1604,10 +1789,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock), script:has-text(detector)',
-                shiftLoc(defaultLocation, 'example.com,~example.net##^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock), script:has-text(detector)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net##^'.length),
+                ),
+                raw: 'script:has-text(adblock), script:has-text(detector)',
+            },
         });
 
         expect(
@@ -1630,10 +1818,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock), script:has-text(detector)',
-                shiftLoc(defaultLocation, '#@#^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock), script:has-text(detector)',
+                    shiftLoc(defaultLocation, '#@#^'.length),
+                ),
+                raw: 'script:has-text(adblock), script:has-text(detector)',
+            },
         });
 
         expect(
@@ -1656,10 +1847,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '#@#^',
             },
-            body: HtmlFilteringBodyParser.parse(
-                'script:has-text(adblock), script:has-text(detector)',
-                shiftLoc(defaultLocation, 'example.com,~example.net#@#^'.length),
-            ),
+            body: {
+                ...HtmlFilteringBodyParser.parse(
+                    'script:has-text(adblock), script:has-text(detector)',
+                    shiftLoc(defaultLocation, 'example.com,~example.net#@#^'.length),
+                ),
+                raw: 'script:has-text(adblock), script:has-text(detector)',
+            },
         });
 
         // JS injections (AdGuard)
@@ -1691,6 +1885,7 @@ describe('CosmeticRuleParser', () => {
                     '#%#const a = 2;'.length,
                 ),
                 value: 'const a = 2;',
+                raw: 'const a = 2;',
             },
         });
 
@@ -1722,6 +1917,7 @@ describe('CosmeticRuleParser', () => {
                     'example.com,~example.net#%#const a = 2;'.length,
                 ),
                 value: 'const a = 2;',
+                raw: 'const a = 2;',
             },
         });
 
@@ -1753,6 +1949,7 @@ describe('CosmeticRuleParser', () => {
                     '#@%#const a = 2;'.length,
                 ),
                 value: 'const a = 2;',
+                raw: 'const a = 2;',
             },
         });
 
@@ -1784,6 +1981,7 @@ describe('CosmeticRuleParser', () => {
                     'example.com,~example.net#@%#const a = 2;'.length,
                 ),
                 value: 'const a = 2;',
+                raw: 'const a = 2;',
             },
         });
 
@@ -1811,10 +2009,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: ElementHidingBodyParser.parse(
-                '.ad',
-                shiftLoc(defaultLocation, '[$app=com.something]##'.length),
-            ),
+            body: {
+                ...ElementHidingBodyParser.parse(
+                    '.ad',
+                    shiftLoc(defaultLocation, '[$app=com.something]##'.length),
+                ),
+                raw: '.ad',
+            },
         });
 
         expect(CosmeticRuleParser.parse('[$app=com.something,b=c]example.com,~example.net##.ad')).toMatchObject({
@@ -1840,10 +2041,13 @@ describe('CosmeticRuleParser', () => {
                 ),
                 value: '##',
             },
-            body: ElementHidingBodyParser.parse(
-                '.ad',
-                shiftLoc(defaultLocation, '[$app=com.something,b=c]example.com,~example.net##'.length),
-            ),
+            body: {
+                ...ElementHidingBodyParser.parse(
+                    '.ad',
+                    shiftLoc(defaultLocation, '[$app=com.something,b=c]example.com,~example.net##'.length),
+                ),
+                raw: '.ad',
+            },
         });
 
         // Invalid
