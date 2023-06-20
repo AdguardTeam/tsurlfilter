@@ -44,6 +44,7 @@ module.exports = {
 
         // types described in ts
         'jsdoc/require-param-type': 'off',
+        'jsdoc/no-undefined-types': 'off',
         'jsdoc/require-returns-type': 'off',
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
@@ -72,6 +73,6 @@ module.exports = {
                 ],
             },
         ],
-        'jsdoc/require-description-complete-sentence': ['error'],
+        'jsdoc/require-description-complete-sentence': ['warn'],
     },
 };
