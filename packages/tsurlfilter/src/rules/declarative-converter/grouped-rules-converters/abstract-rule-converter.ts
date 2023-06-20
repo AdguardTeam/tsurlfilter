@@ -348,32 +348,46 @@ export abstract class DeclarativeRuleConverter {
     /**
      * Checks if a network rule can be converted to a declarative format or not.
      * We skip the following modifiers:
-     * $removeparam - if it contains a negation, or regexp,
-     * or the rule is a allowlist;
+     *
+     * all specific exceptions:
      * $elemhide;
+     * $generichide;
+     * $specifichide;
+     * $genericblock;
      * $jsinject;
-     * $cookie;
+     * $urlblock;
+     * $content;
+     * $extension;
+     * $stealth;
+     *
+     * other:
+     * $popup;
      * $csp;
      * $replace;
-     * $generichide;
-     * $stealth;
-     * $mp4.
+     * $cookie;
+     * $redirect - if the rule is a allowlist;
+     * $removeparam - if it contains a negation, or regexp,
+     * or the rule is a allowlist;
+     * $removeheader;
+     * $jsonprune;
+     * $hls.
      *
      * @param rule - Network rule.
      *
      * @returns UnsupportedModifierError if not applicable OR null.
      */
     private static checkNetworkRuleApplicable(rule: NetworkRule): UnsupportedModifierError | null {
-        const checkRemoveParamModifierFn = (r: NetworkRule): UnsupportedModifierError | null => {
-            // TODO: Check Rule.requestDomains, maybe we can use them for
-            // generate allowrule for $removeparam
-            if (r.isAllowlist()) {
-                const msg = 'Network allowlist rule with $removeparam modifier '
-                + `is not supported: "${rule.getText()}"`;
-
-                return new UnsupportedModifierError(msg, r);
-            }
-
+        /**
+         * Checks if the $redirect values in the provided network rule
+         * are supported for conversion to MV3.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const checkRemoveParamModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
             const removeParam = r.getAdvancedModifier() as RemoveParamModifier;
             if (!removeParam.getMV3Validity()) {
                 const msg = 'Network rule with $removeparam modifier with '
@@ -385,38 +399,94 @@ export abstract class DeclarativeRuleConverter {
             return null;
         };
 
+        /**
+         * Checks if the provided rule is an allowlist rule.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        const checkAllowRulesFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            if (r.isAllowlist()) {
+                const msg = `Network allowlist rule with ${name} modifier is not supported: "${rule.getText()}"`;
+                return new UnsupportedModifierError(msg, r);
+            }
+
+            return null;
+        };
+
+        /**
+         * Checks if the specified modifier is the only one the rule has.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        const checkOnlyOneModifier = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            // TODO: Remove small hack with "reparsing" rule to extract only options part.
+            const { options } = NetworkRule.parseRuleText(r.getText());
+            if (options === name.replace('$', '')) {
+                const msg = `Network rule only one enabled modifier ${name} is not supported: "${rule.getText()}"`;
+                return new UnsupportedModifierError(msg, r);
+            }
+
+            return null;
+        };
+
         const unsupportedOptions = [
+            /* Specific exceptions */
+            { option: NetworkRuleOption.Elemhide, name: '$elemhide' },
+            { option: NetworkRuleOption.Generichide, name: '$generichide' },
+            { option: NetworkRuleOption.Specifichide, name: '$specifichide' },
+            { option: NetworkRuleOption.Genericblock, name: '$genericblock' },
+            { option: NetworkRuleOption.Jsinject, name: '$jsinject' },
+            { option: NetworkRuleOption.Urlblock, name: '$urlblock' },
+            { option: NetworkRuleOption.Content, name: '$content' },
+            { option: NetworkRuleOption.Extension, name: '$extension' },
+            { option: NetworkRuleOption.Stealth, name: '$stealth' },
+            /* Specific exceptions */
+            {
+                option: NetworkRuleOption.Popup,
+                name: '$popup',
+                customChecks: [checkOnlyOneModifier],
+            },
+            { option: NetworkRuleOption.Csp, name: '$csp' },
+            { option: NetworkRuleOption.Replace, name: '$replace' },
+            { option: NetworkRuleOption.Cookie, name: '$cookie' },
+            {
+                option: NetworkRuleOption.Redirect,
+                name: '$redirect',
+                customChecks: [checkAllowRulesFn],
+            },
             {
                 option: NetworkRuleOption.RemoveParam,
                 name: '$removeparam',
-                customCheck: checkRemoveParamModifierFn,
+                customChecks: [checkAllowRulesFn, checkRemoveParamModifierFn],
             },
-            { option: NetworkRuleOption.Elemhide, name: '$elemhide' },
-            { option: NetworkRuleOption.Jsinject, name: '$jsinject' },
-            { option: NetworkRuleOption.Cookie, name: '$cookie' },
-            { option: NetworkRuleOption.Csp, name: '$csp' },
-            { option: NetworkRuleOption.Replace, name: '$replace' },
-            { option: NetworkRuleOption.Generichide, name: '$generichide' },
-            { option: NetworkRuleOption.Stealth, name: '$stealth' },
+            { option: NetworkRuleOption.RemoveHeader, name: '$removeheader' },
+            { option: NetworkRuleOption.JsonPrune, name: '$jsonprune' },
+            { option: NetworkRuleOption.Hls, name: '$hls' },
         ];
 
         for (let i = 0; i < unsupportedOptions.length; i += 1) {
-            const { option, name, customCheck } = unsupportedOptions[i];
+            const { option, name, customChecks } = unsupportedOptions[i];
             if (!rule.isSingleOptionEnabled(option)) {
                 continue;
             }
 
-            if (customCheck) {
-                const err = customCheck(rule);
-                if (!err) {
-                    continue;
+            if (customChecks) {
+                for (let j = 0; j < customChecks.length; j += 1) {
+                    const err = customChecks[j](rule, name);
+                    if (err) {
+                        return err;
+                    }
                 }
-
-                return err;
+            } else {
+                const msg = `Unsupported option "${name}" found in the rule: "${rule.getText()}"`;
+                return new UnsupportedModifierError(msg, rule);
             }
-
-            const msg = `Unsupported option "${name}" found in the rule: "${rule.getText()}"`;
-            return new UnsupportedModifierError(msg, rule);
         }
 
         return null;

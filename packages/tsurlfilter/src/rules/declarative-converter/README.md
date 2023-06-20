@@ -697,22 +697,7 @@ Bug: currently converted to simple blocking rules
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||domain.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
-]
+[]
 
 ```
 <a name="basic_modifiers__$match-case"></a>
@@ -1452,7 +1437,7 @@ Not convertible to DNR in MV3, but uses tsurlfilter's [CosmeticEngine](https://g
 ```
 <a name="exception_rules_modifiers__$content"></a>
 ## $content
-<b>Status</b>: not supported
+<b>Status</b>: not implemented yet
 <br/>
 <b>MV3 limitations:</b>
 <br/>
@@ -1468,23 +1453,7 @@ Bug: currently converted to allowAllRequests rules
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 110076
-	}
-]
+[]
 
 ```
 <a name="exception_rules_modifiers__$jsinject"></a>
@@ -1506,7 +1475,7 @@ Bug: currently converted to allowAllRequests rules
 ```
 <a name="exception_rules_modifiers__$urlblock"></a>
 ## $urlblock
-<b>Status</b>: implemented not correctly
+<b>Status</b>: not implemented yet
 <br/>
 <b>MV3 limitations:</b>
 <br/>
@@ -1526,28 +1495,12 @@ Bug: disables cosmetic rules
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 110076
-	}
-]
+[]
 
 ```
 <a name="exception_rules_modifiers__$stealth"></a>
 ## $stealth
-<b>Status</b>: partial support, not implemented yet
+<b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
 <br/>
@@ -1594,7 +1547,7 @@ example 2
 ```
 <a name="exception_rules_modifiers__$genericblock"></a>
 ## $genericblock
-<b>Status</b>: supported
+<b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
 <br/>
@@ -1606,23 +1559,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 110076
-	}
-]
+[]
 
 ```
 <a name="exception_rules_modifiers__$specifichide"></a>
@@ -1639,23 +1576,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 110076
-	}
-]
+[]
 
 ```
 <br />
@@ -2127,7 +2048,7 @@ example 5
 ```
 <a name="advanced_capabilities__$all"></a>
 ## $all
-<b>Status</b>: supported
+<b>Status</b>: not implemented yet
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2386,22 +2307,7 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/undefined"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101001
-	}
-]
+[]
 
 ```
 example 4
@@ -2413,22 +2319,7 @@ example 4
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101001
-	}
-]
+[]
 
 ```
 example 5
@@ -2803,7 +2694,7 @@ returns an empty response to all requests to example.org and all subdomains.
 ```
 <a name="advanced_capabilities__$mp4"></a>
 ## $mp4
-<b>Status</b>: deprecated
+<b>Status</b>: not implemented yet, deprecated
 <br/>
 <b>Examples:</b>
 <br/>
@@ -3039,19 +2930,7 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
+[]
 
 ```
 example 2
@@ -3063,19 +2942,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
+[]
 
 ```
 example 3
@@ -3087,19 +2954,7 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 example 4
@@ -3111,25 +2966,13 @@ example 4
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 example 5
 
 ```adblock
-$removeheader
+||example.org^$removeheader=refresh
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -3141,49 +2984,13 @@ $removeheader
 example 6
 
 ```adblock
-||example.org^$removeheader=refresh
-```
-
-↓↓↓↓ converted to ↓↓↓↓
-
-```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
-
-```
-example 7
-
-```adblock
 ||example.org^$removeheader=request:x-client-data
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
+[]
 
 ```
 <a name="not_supported_in_extension"></a>

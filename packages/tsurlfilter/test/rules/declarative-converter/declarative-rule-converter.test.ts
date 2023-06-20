@@ -824,6 +824,31 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
+    it('ignores rules with single one modifier enabled - popup', () => {
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            ['||example.org^$popup', '||test.com^$document,popup'],
+        );
+        const { declarativeRules } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+        );
+        expect(declarativeRules.length).toBe(1);
+        expect(declarativeRules[0]).toStrictEqual({
+            id: 2,
+            priority: 101,
+            action: {
+                type: 'block',
+            },
+            condition: {
+                urlFilter: '||test.com^',
+                resourceTypes: ['main_frame'],
+                isUrlFilterCaseSensitive: false,
+            },
+        });
+    });
+
     it('converts all rule', () => {
         const filterId = 0;
 
@@ -834,6 +859,7 @@ describe('DeclarativeRuleConverter', () => {
         const { declarativeRules } = DeclarativeRulesConverter.convert(
             [[filterId, rules]],
         );
+        expect(declarativeRules.length).toBe(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
             priority: 56,
@@ -868,6 +894,53 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||test.com^',
                 resourceTypes: ['main_frame'],
+                isUrlFilterCaseSensitive: false,
+            },
+        });
+    });
+
+    it('ignore exceptions rules with non-blocking modifiers', () => {
+        const filterId = 0;
+
+        const rules = createRulesFromText(
+            filterId,
+            [
+                '||example.com/script.js$script,redirect=noopjs',
+                '||example.com^$image',
+                '@@||example.com^$redirect',
+            ],
+        );
+        const { declarativeRules } = DeclarativeRulesConverter.convert(
+            [[filterId, rules]],
+            { resourcesPath: '/path/to/resources' },
+        );
+        expect(declarativeRules.length).toBe(2);
+        expect(declarativeRules[0]).toStrictEqual({
+            id: 1,
+            priority: 1101,
+            action: {
+                type: 'redirect',
+                redirect: {
+                    extensionPath: '/path/to/resources/noopjs.js',
+                },
+            },
+            condition: {
+                urlFilter: '||example.com/script.js',
+                resourceTypes: [
+                    'script',
+                ],
+                isUrlFilterCaseSensitive: false,
+            },
+        });
+        expect(declarativeRules[1]).toStrictEqual({
+            id: 2,
+            priority: 101,
+            action: {
+                type: 'block',
+            },
+            condition: {
+                urlFilter: '||example.com^',
+                resourceTypes: ['image'],
                 isUrlFilterCaseSensitive: false,
             },
         });

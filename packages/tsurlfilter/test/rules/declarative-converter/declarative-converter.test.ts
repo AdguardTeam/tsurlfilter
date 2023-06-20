@@ -136,7 +136,7 @@ describe('DeclarativeConverter', () => {
         expect(declarativeRules).toHaveLength(0);
     });
 
-    it('respects document, urlblock modifiers', async () => {
+    it('respects document and ignores urlblock modifiers', async () => {
         const filter = createFilter([
             '@@||example.org^$document',
             '@@||example.com^$urlblock',
@@ -146,7 +146,7 @@ describe('DeclarativeConverter', () => {
         );
         const { declarativeRules } = await ruleSet.serialize();
 
-        expect(declarativeRules).toHaveLength(2);
+        expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
             priority: 140101,
@@ -155,16 +155,6 @@ describe('DeclarativeConverter', () => {
                 isUrlFilterCaseSensitive: false,
                 resourceTypes: ['main_frame'],
                 urlFilter: '||example.org^',
-            },
-        });
-        expect(declarativeRules[1]).toEqual({
-            id: 2,
-            priority: 110076,
-            action: { type: 'allowAllRequests' },
-            condition: {
-                isUrlFilterCaseSensitive: false,
-                resourceTypes: ['main_frame', 'sub_frame'],
-                urlFilter: '||example.com^',
             },
         });
     });

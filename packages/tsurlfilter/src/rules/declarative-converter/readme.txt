@@ -234,7 +234,7 @@ page$domain=targetdomain.com|~example.org
 @@||example.com^$elemhide
 
 ! ## $content
-! <b>Status</b>: not supported
+! <b>Status</b>: not implemented yet
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -252,7 +252,7 @@ page$domain=targetdomain.com|~example.org
 @@||example.com^$jsinject
 
 ! ## $urlblock
-! <b>Status</b>: implemented not correctly
+! <b>Status</b>: not implemented yet
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -267,7 +267,7 @@ page$domain=targetdomain.com|~example.org
 @@||example.com^$urlblock
 
 ! ## $stealth
-! <b>Status</b>: partial support, not implemented yet
+! <b>Status</b>: not implemented yet
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -284,7 +284,7 @@ page$domain=targetdomain.com|~example.org
 @@||example.com^$generichide
 
 ! ## $genericblock
-! <b>Status</b>: supported
+! <b>Status</b>: not implemented yet
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -563,10 +563,8 @@ $xmlhttprequest,removeparam=p1case2
 ! example 4
 @@||example.org^$removeheader=header
 ! example 5
-$removeheader
-! example 6
 ||example.org^$removeheader=refresh
-! example 7
+! example 6
 ||example.org^$removeheader=request:x-client-data
 
 ! # Not supported in extension
