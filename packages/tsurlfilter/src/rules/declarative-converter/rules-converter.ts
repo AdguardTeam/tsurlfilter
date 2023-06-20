@@ -27,6 +27,10 @@ import {
 
 export type FilterIdsWithRules = [number, IndexedRule[]];
 export type FiltersIdsWithRules = FilterIdsWithRules[];
+export type ScannedFilters = {
+    errors: Error[],
+    filters: FiltersIdsWithRules,
+};
 
 type FiltersIdsWithRulesGroups = [number, GroupedRules][];
 
@@ -330,13 +334,14 @@ export class DeclarativeRulesConverter {
             sourceMapValues,
             declarativeRules,
             regexpRulesCount,
-            errors,
+            errors: errors.concat(otherErrors),
             limitations,
         };
     }
 
     /**
-     * Filters rules that have been affected by $badfilter rules.
+     * Filters rules that have been affected by $badfilter rules and
+     * groups them by modifiers.
      *
      * @param filtersWithRules List with filters ids and indexed rules.
      *

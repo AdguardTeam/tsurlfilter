@@ -13,11 +13,18 @@ export class RuleFactory {
      * Creates rule of suitable class from text string
      * It returns null if the line is empty or if it is a comment
      *
+     * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
+     *
      * @param text rule string
      * @param filterListId list id
      * @param ignoreNetwork do not create network rules
      * @param ignoreCosmetic do not create cosmetic rules
      * @param ignoreHost do not create host rules
+     * @param silent Log the error for `true`, otherwise throw an exception on
+     * a rule creation
+     *
+     * @throws Error when `silent` flag is passed as false on rule creation error.
+     *
      * @return IRule object or null
      */
     public static createRule(
@@ -26,6 +33,7 @@ export class RuleFactory {
         ignoreNetwork = false,
         ignoreCosmetic = false,
         ignoreHost = true,
+        silent = true,
     ): IRule | null {
         if (!text || RuleFactory.isComment(text)) {
             return null;
@@ -57,8 +65,12 @@ export class RuleFactory {
                 return new NetworkRule(line, filterListId);
             }
         } catch (e) {
-            // TODO: Throw error
-            logger.info(`Error: "${(e as Error).message}" in the rule: "${line}"`);
+            const msg = `"${(e as Error).message}" in the rule: "${line}"`;
+            if (silent) {
+                logger.info(`Error: ${msg}`);
+            } else {
+                throw new Error(msg);
+            }
         }
 
         return null;

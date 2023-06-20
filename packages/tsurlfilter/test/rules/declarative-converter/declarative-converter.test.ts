@@ -5,6 +5,8 @@ import {
     EmptyOrNegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../../../src/rules/declarative-converter/errors/converter-options-errors';
+import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
+import { NetworkRule } from '../../../src/rules/network-rule';
 
 const createFilter = (
     rules: string[],
@@ -412,6 +414,100 @@ describe('DeclarativeConverter', () => {
 
             const msg = 'Maximum number of regexp rules cannot be less than 0';
             await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
+        });
+    });
+
+    describe('uses RuleConverter to convert rules to AG syntax', () => {
+        it('converts deprecated modifier mp4 to redirect rule', async () => {
+            const filter = createFilter(['||example.org^$mp4']);
+            const { ruleSets: [ruleSet] } = await converter.convert(
+                [filter],
+                { resourcesPath: '/path/to/resources' },
+            );
+
+            const { declarativeRules } = await ruleSet.serialize();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1101,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        extensionPath: '/path/to/resources/noopmp4.mp4',
+                    },
+                },
+                condition: {
+                    urlFilter: '||example.org^',
+                    resourceTypes: ['media'],
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+        });
+
+        it('converts deprecated modifier $empty to redirect rule', async () => {
+            const filter = createFilter(['||example.org^$empty']);
+            const { ruleSets: [ruleSet] } = await converter.convert(
+                [filter],
+                { resourcesPath: '/path/to/resources' },
+            );
+
+            const { declarativeRules } = await ruleSet.serialize();
+
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1001,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        extensionPath: '/path/to/resources/nooptext.js',
+                    },
+                },
+                condition: {
+                    urlFilter: '||example.org^',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+        });
+    });
+
+    describe('return errors when passed bad rules', () => {
+        it('return error for not supported modifier in NetworkRule', async () => {
+            const filter = createFilter(['@@$webrtc,domain=example.com']);
+            const { ruleSets: [ruleSet], errors } = await converter.convert(
+                [filter],
+            );
+
+            const { declarativeRules } = await ruleSet.serialize();
+
+            // eslint-disable-next-line max-len
+            const err = new Error('"Unknown modifier: webrtc" in the rule: "@@$webrtc,domain=example.com"');
+            expect(declarativeRules.length).toBe(0);
+            expect(errors.length).toBe(1);
+            expect(errors[0]).toStrictEqual(err);
+        });
+
+        it('return error for not supported modifier in DNR', async () => {
+            const modifierName = '$replace';
+            const rule = '||example.org^$replace=/X/Y/';
+            const filter = createFilter([rule]);
+            const { ruleSets: [ruleSet], errors } = await converter.convert(
+                [filter],
+            );
+
+            const { declarativeRules } = await ruleSet.serialize();
+
+            const networkRule = new NetworkRule(rule, 0);
+
+            const err = new UnsupportedModifierError(
+                `Unsupported option "${modifierName}" found in the rule: "${rule}"`,
+                networkRule,
+            );
+
+            expect(declarativeRules.length).toBe(0);
+            expect(errors.length).toBe(1);
+            expect(errors[0]).toStrictEqual(err);
         });
     });
 });

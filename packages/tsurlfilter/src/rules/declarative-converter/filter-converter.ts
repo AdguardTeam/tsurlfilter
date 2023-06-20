@@ -6,16 +6,16 @@
 import { IRuleSetContentProvider, RuleSet } from './rule-set';
 import { FilterScanner } from './filter-scanner';
 import { SourceMap } from './source-map';
-import { IFilter } from './filter';
-import { DeclarativeRulesConverter, FilterIdsWithRules } from './rules-converter';
+import type { IFilter } from './filter';
+import { DeclarativeRulesConverter } from './rules-converter';
 import {
     ResourcesPathError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRegexpRulesError,
 } from './errors/converter-options-errors';
-import { ConversionResult } from './conversion-result';
-import { DeclarativeConverterOptions } from './declarative-converter-options';
-import type { FiltersIdsWithRules } from './rules-converter';
+import type { ConversionResult } from './conversion-result';
+import type { DeclarativeConverterOptions } from './declarative-converter-options';
+import type { ScannedFilters, FilterIdsWithRules } from './rules-converter';
 
 /**
  * The interface for the declarative filter converter describes what the filter
@@ -77,15 +77,25 @@ export class DeclarativeFilterConverter implements IFilterConverter {
      * indexed filter rules {@link IndexedRule}.
      */
     // eslint-disable-next-line class-methods-use-this
-    private async scanRules(filterList: IFilter[]): Promise<FiltersIdsWithRules> {
+    private async scanRules(filterList: IFilter[]): Promise<ScannedFilters> {
+        const res: ScannedFilters = {
+            errors: [],
+            filters: [],
+        };
+
         const promises = filterList.map(async (filter) => {
             const scanner = await FilterScanner.createNew(filter);
-            const tuple: FilterIdsWithRules = [filter.getId(), scanner.getIndexedRules()];
+            const { errors, rules } = scanner.getIndexedRules();
+            const tuple: FilterIdsWithRules = [filter.getId(), rules];
+
+            res.errors.push(...errors);
 
             return tuple;
         });
 
-        return Promise.all(promises);
+        res.filters = await Promise.all(promises);
+
+        return res;
     }
 
     /**
@@ -157,8 +167,11 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             limitations: [],
         };
 
-        const filtersWithRules = await this.scanRules(filterList);
-        filtersWithRules.forEach((filterIdWithRules) => {
+        const scanned = await this.scanRules(filterList);
+
+        converted.errors.push(...scanned.errors);
+
+        scanned.filters.forEach((filterIdWithRules: FilterIdsWithRules) => {
             const [filterId] = filterIdWithRules;
             const {
                 sourceMapValues,
@@ -213,9 +226,10 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             DeclarativeFilterConverter.checkConverterOptions(options);
         }
 
-        const filtersWithRules = await this.scanRules(filterList);
+        const scanned = await this.scanRules(filterList);
+
         const combinedConvertedRules = DeclarativeRulesConverter.convert(
-            filtersWithRules,
+            scanned.filters,
             options,
         );
 
@@ -248,7 +262,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         return {
             ruleSets: [ruleSet],
-            errors,
+            errors: errors.concat(scanned.errors),
             limitations,
         };
     }

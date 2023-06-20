@@ -260,7 +260,9 @@ export class RuleConverter {
      * @private
      */
     private static OPTIONS_CONVERSION_MAP = new Map<string, string>([
+        // See https://adguard.com/kb/general/ad-filtering/create-own-filters/#empty-modifier
         ['empty', 'redirect=nooptext'],
+        // See https://adguard.com/kb/general/ad-filtering/create-own-filters/#mp4-modifier
         ['mp4', 'redirect=noopmp4-1s'],
         ['inline-script', "csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:"],
         ['inline-font', "csp=font-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:"],

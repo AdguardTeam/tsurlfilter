@@ -1,4 +1,5 @@
 import { IndexedRule } from '../rule';
+import { RuleConverter } from '../rule-converter';
 import { RuleFactory } from '../rule-factory';
 
 import { IFilter } from './filter';
@@ -7,8 +8,13 @@ import { IFilter } from './filter';
  * IFilterScanner describes a method that should return indexed rules.
  */
 interface IFilterScanner {
-    getIndexedRules(): IndexedRule[];
+    getIndexedRules(): ScannedRulesWithErrors;
 }
+
+export type ScannedRulesWithErrors = {
+    errors: Error[],
+    rules: IndexedRule[],
+};
 
 /**
  * FilterScanner returns indexed, only network rules from IFilter's content.
@@ -51,30 +57,62 @@ export class FilterScanner implements IFilterScanner {
      *
      * @returns List of indexed rules.
      */
-    public getIndexedRules(): IndexedRule[] {
+    public getIndexedRules(): ScannedRulesWithErrors {
         const { filterContent, filterId } = this;
 
-        const indexedRules = filterContent
-            .map((line, idx): IndexedRule | null => {
-                if (!line) {
-                    return null;
+        const errors: Error[] = [];
+        const rules: IndexedRule[] = [];
+
+        for (let lineIndex = 0; lineIndex < filterContent.length; lineIndex += 1) {
+            const line = filterContent[lineIndex];
+            if (!line) {
+                continue;
+            }
+
+            let rulesConvertedToAGSyntax: string[] = [];
+
+            // Try to convert to AG syntax.
+            try {
+                rulesConvertedToAGSyntax = RuleConverter.convertRule(line);
+            } catch (e: unknown) {
+                errors.push(e as Error);
+
+                // Skip this line because it does not convert to AG syntax.
+                continue;
+            }
+
+            // Now convert to IRule and then IndexedRule.
+            for (let rulesIndex = 0; rulesIndex < rulesConvertedToAGSyntax.length; rulesIndex += 1) {
+                const ruleConvertedToAGSyntax = rulesConvertedToAGSyntax[rulesIndex];
+
+                try {
+                    // Create IndexedRule from AG rule
+                    const rule = RuleFactory.createRule(
+                        ruleConvertedToAGSyntax,
+                        filterId,
+                        false,
+                        true, // ignore cosmetic rules
+                        true, // ignore host rules
+                        false, // throw exception on creating rule error.
+                    );
+
+                    // If rule is not empty - pack to IndexedRule
+                    // and add it to the result array.
+                    const indexedRule = rule
+                        ? new IndexedRule(rule, lineIndex)
+                        : null;
+                    if (indexedRule) {
+                        rules.push(indexedRule);
+                    }
+                } catch (e: unknown) {
+                    errors.push(e as Error);
                 }
+            }
+        }
 
-                // TODO: Add error capture
-                const rule = RuleFactory.createRule(
-                    line,
-                    filterId,
-                    false,
-                    true, // ignore cosmetic rules
-                    true, // ignore host rules
-                );
-
-                return rule
-                    ? new IndexedRule(rule, idx)
-                    : null;
-            })
-            .filter((rule): rule is IndexedRule => rule !== null);
-
-        return indexedRules;
+        return {
+            errors,
+            rules,
+        };
     }
 }
