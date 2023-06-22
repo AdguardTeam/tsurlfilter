@@ -1,7 +1,5 @@
 adg_any:
   name:	object-subrequest
-  assignable: false
-  negatable: true
   deprecated: true
   deprecation_message: |-
     $object-subrequest modifier is deprecated and is no longer supported. 
