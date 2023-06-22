@@ -1,0 +1,7 @@
+adg_any:
+  name:	object-subrequest
+  assignable: false
+  negatable: true
+  deprecated: true
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#object-subrequest-modifier
+  description: The rule corresponds to requests by browser plugins (it is usually Flash).

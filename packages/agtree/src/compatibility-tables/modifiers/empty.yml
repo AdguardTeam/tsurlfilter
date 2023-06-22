@@ -1,0 +1,29 @@
+adg_os_any:
+  name: empty
+  assignable: true
+  negatable: false
+  deprecated: true
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
+  description: |-
+    As a response to blocked request AdGuard will emulate a blank response from the server with 200 OK status.
+    Equivalent to $replace modifier with nooptext value.
+
+adg_ext_any:
+  name: empty
+  assignable: true
+  negatable: false
+  deprecated: true
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
+  description: |-
+    As a response to blocked request AdGuard will emulate a blank response from the server with 200 OK status.
+    Equivalent to $replace modifier with nooptext value.
+
+ubo_ext_any:
+  name: empty
+  assignable: true
+  negatable: false
+  deprecated: true
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#empty
+  description: |-
+    As a response to blocked request uBlock will emulate a blank response from the server with 200 OK status.
+    Equivalent to $replace modifier with nooptext value.
