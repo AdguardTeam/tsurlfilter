@@ -1,6 +1,6 @@
 adg_os_any:
   name: mp4
-  assignable: true
+  assignable: false
   negatable: false
   deprecated: true
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
@@ -10,7 +10,7 @@ adg_os_any:
 
 adg_ext_any:
   name: mp4
-  assignable: true
+  assignable: false
   negatable: false
   deprecated: true
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
@@ -20,7 +20,7 @@ adg_ext_any:
 
 ubo_ext_any:
   name: mp4
-  assignable: true
+  assignable: false
   negatable: false
   deprecated: true
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#mp4
