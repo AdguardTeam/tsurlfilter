@@ -16,7 +16,9 @@ export class ModifierParser {
      *
      * @param raw Raw modifier string
      * @param loc Location of the modifier
+     *
      * @returns Parsed modifier
+     * @throws An error if modifier name or value is empty.
      */
     public static parse(raw: string, loc = defaultLocation): Modifier {
         let offset = 0;

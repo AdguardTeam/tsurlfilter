@@ -71,6 +71,9 @@ export { ParameterListParser } from './parser/misc/parameter-list';
 export { AdblockSyntaxError } from './parser/errors/adblock-syntax-error';
 export { FilterListParser } from './parser/filterlist';
 
+// Validator
+export { ModifierValidator } from './validator';
+
 // Converter
 export { HtmlRuleConverter } from './converter/html';
 

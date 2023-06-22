@@ -1,3 +1,9 @@
+/**
+ * @file Raw compatibility tables data reexport from yaml files.
+ *
+ * @ts-nocheck is used here once instead of adding @ts-ignore for each import.
+ */
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 

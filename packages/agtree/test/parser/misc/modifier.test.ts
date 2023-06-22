@@ -140,6 +140,45 @@ describe('ModifierParser', () => {
                 },
             );
 
+            expect(ModifierParser.parse('a=~b')).toMatchObject(
+                {
+                    type: 'Modifier',
+                    loc: {
+                        start: {
+                            offset: 0,
+                        },
+                        end: {
+                            offset: 4,
+                        },
+                    },
+                    modifier: {
+                        type: 'Value',
+                        loc: {
+                            start: {
+                                offset: 0,
+                            },
+                            end: {
+                                offset: 1,
+                            },
+                        },
+                        value: 'a',
+                    },
+                    value: {
+                        type: 'Value',
+                        loc: {
+                            start: {
+                                offset: 2,
+                            },
+                            end: {
+                                offset: 4,
+                            },
+                        },
+                        value: '~b',
+                    },
+                    exception: false,
+                },
+            );
+
             expect(ModifierParser.parse(' a = b ')).toMatchObject(
                 {
                     type: 'Modifier',
