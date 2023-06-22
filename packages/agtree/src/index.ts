@@ -75,13 +75,38 @@ export { FilterListParser } from './parser/filterlist';
 export { HtmlRuleConverter } from './converter/html';
 
 // Utils
+export {
+    ADG_SCRIPTLET_MASK,
+    AGLINT_COMMAND_PREFIX,
+    CLASSIC_DOMAIN_SEPARATOR,
+    DOMAIN_EXCEPTION_MARKER,
+    HINT_MARKER,
+    IF,
+    INCLUDE,
+    MODIFIERS_SEPARATOR,
+    MODIFIER_ASSIGN_OPERATOR,
+    MODIFIER_DOMAIN_SEPARATOR,
+    MODIFIER_EXCEPTION_MARKER,
+    NETWORK_RULE_EXCEPTION_MARKER,
+    NETWORK_RULE_SEPARATOR,
+    PREPROCESSOR_MARKER,
+    SAFARI_CB_AFFINITY,
+    UBO_SCRIPTLET_MASK,
+} from './utils/constants';
+export { AdblockSyntax } from './utils/adblockers';
+export { CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { CssTree } from './utils/csstree';
+export { CssTreeNodeType, CssTreeParserContext } from './utils/csstree-constants';
 export { DomainUtils } from './utils/domain';
 export { VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
+export { shiftLoc, locRange } from './utils/location';
 
 // Constants
 export { METADATA_HEADERS } from './converter/metadata';
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/css';
+
+// Re-export everything from ECSSTree
+export * as ECSSTree from '@adguard/ecss-tree';
 
 // Version
 export { version } from './version';
