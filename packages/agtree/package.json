@@ -40,7 +40,7 @@
         "clean-types": "rimraf dist/types",
         "coverage": "jest --runInBand --coverage",
         "increment": "yarn version --patch --no-git-tag-version",
-        "lint": "eslint . --ext .ts",
+        "lint": "eslint . --cache --ext .ts",
         "precommit": "yarn check-types && yarn lint && yarn test",
         "test": "jest --runInBand"
     },

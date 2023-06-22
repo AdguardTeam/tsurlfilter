@@ -81,7 +81,7 @@ export class ModifierValidator {
     /**
      * Simply checks whether the modifier exists in any adblocker.
      *
-     * @param modifier Name of the modifier as string OR already parsed modifier AST node.
+     * @param rawModifier Modifier as string OR already parsed modifier AST node.
      *
      * @returns True if modifier exists, false otherwise.
      * If given modifier is a string and it cannot be parsed as a valid modifier,

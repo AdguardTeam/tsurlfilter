@@ -1,6 +1,7 @@
 /**
  * Checks whether the given value is defined.
- * @param value
+ *
+ * @param value Value to check.
  *
  * @returns True if the value type is not 'undefined'.
  */
