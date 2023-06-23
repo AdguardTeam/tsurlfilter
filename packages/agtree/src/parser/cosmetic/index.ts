@@ -410,12 +410,16 @@ export class CosmeticRuleParser {
     }
 
     /**
-     * Converts a cosmetic rule AST into a string.
+     * Generates the rule pattern from the AST.
      *
      * @param ast Cosmetic rule AST
-     * @returns Raw string
+     * @returns Raw rule pattern
+     * @example
+     * - '##.foo' → ''
+     * - 'example.com,example.org##.foo' → 'example.com,example.org'
+     * - '[$path=/foo/bar]example.com##.foo' → '[$path=/foo/bar]example.com'
      */
-    public static generate(ast: AnyCosmeticRule): string {
+    public static generatePattern(ast: AnyCosmeticRule): string {
         let result = EMPTY;
 
         // AdGuard modifiers (if any)
@@ -429,35 +433,69 @@ export class CosmeticRuleParser {
         // Domain list (if any)
         result += DomainListParser.generate(ast.domains);
 
-        // Separator
-        result += ast.separator.value;
+        return result;
+    }
+
+    /**
+     * Generates the rule body from the AST.
+     *
+     * @param ast Cosmetic rule AST
+     * @returns Raw rule body
+     * @example
+     * - '##.foo' → '.foo'
+     * - 'example.com,example.org##.foo' → '.foo'
+     * - 'example.com#%#//scriptlet('foo')' → '//scriptlet('foo')'
+     */
+    public static generateBody(ast: AnyCosmeticRule): string {
+        let result = EMPTY;
 
         // Body
         switch (ast.type) {
             case CosmeticRuleType.ElementHidingRule:
-                result += ElementHidingBodyParser.generate(ast.body);
+                result = ElementHidingBodyParser.generate(ast.body);
                 break;
 
             case CosmeticRuleType.CssInjectionRule:
-                result += CssInjectionBodyParser.generate(ast.body, ast.syntax);
+                result = CssInjectionBodyParser.generate(ast.body, ast.syntax);
                 break;
 
             case CosmeticRuleType.HtmlFilteringRule:
-                result += HtmlFilteringBodyParser.generate(ast.body, ast.syntax);
+                result = HtmlFilteringBodyParser.generate(ast.body, ast.syntax);
                 break;
 
             case CosmeticRuleType.JsInjectionRule:
                 // Native JS code
-                result += ast.body.value;
+                result = ast.body.value;
                 break;
 
             case CosmeticRuleType.ScriptletInjectionRule:
-                result += ScriptletInjectionBodyParser.generate(ast.body, ast.syntax);
+                result = ScriptletInjectionBodyParser.generate(ast.body, ast.syntax);
                 break;
 
             default:
                 throw new Error('Unknown cosmetic rule type');
         }
+
+        return result;
+    }
+
+    /**
+     * Converts a cosmetic rule AST into a string.
+     *
+     * @param ast Cosmetic rule AST
+     * @returns Raw string
+     */
+    public static generate(ast: AnyCosmeticRule): string {
+        let result = EMPTY;
+
+        // Pattern
+        result += CosmeticRuleParser.generatePattern(ast);
+
+        // Separator
+        result += ast.separator.value;
+
+        // Body
+        result += CosmeticRuleParser.generateBody(ast);
 
         return result;
     }

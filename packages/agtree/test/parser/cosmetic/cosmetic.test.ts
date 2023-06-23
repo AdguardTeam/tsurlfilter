@@ -2106,6 +2106,61 @@ describe('CosmeticRuleParser', () => {
         );
     });
 
+    describe('generatePattern', () => {
+        test.each([
+            // no pattern at all
+            { rule: '##.ad', expected: '' },
+            // classic domain list
+            { rule: 'example.com,~example.net##.ad', expected: 'example.com,~example.net' },
+            // ADG modifier list + classic domain list
+            { rule: '[$path=/foo/bar]example.com,~example.net##.foo', expected: '[$path=/foo/bar]example.com,~example.net' },
+            // Only ADG modifier list
+            { rule: '[$path=/foo/bar]##.foo', expected: '[$path=/foo/bar]' },
+        ])('should generate pattern \'$expected\' from \'$rule\'', ({ rule, expected }) => {
+            const ast = CosmeticRuleParser.parse(rule);
+
+            if (ast) {
+                expect(CosmeticRuleParser.generatePattern(ast)).toEqual(expected);
+            } else {
+                throw new Error(`Failed to parse '${rule}'`);
+            }
+        });
+    });
+
+    describe('generateBody', () => {
+        test.each([
+            // element hiding
+            { rule: '##.ad', expected: '.ad' },
+            { rule: '##.ad,section:contains("ad")', expected: '.ad, section:contains("ad")' },
+            // CSS injection (ADG)
+            { rule: '#$#* { color: red; }', expected: '* { color: red; }' },
+            { rule: '#$#:contains(ad) { color: red; padding: 0 !important; }', expected: ':contains(ad) { color: red; padding: 0 !important; }' },
+            // CSS injection (uBO)
+            { rule: '##body:style(padding:0)', expected: 'body:style(padding: 0;)' },
+            { rule: '##:contains(ad):style(color: red; padding: 0 !important;)', expected: ':contains(ad):style(color: red; padding: 0 !important;)' },
+            // Scriptlet injection (ADG)
+            { rule: '#%#//scriptlet(\'foo\', \'bar\')', expected: '//scriptlet(\'foo\', \'bar\')' },
+            // Scriptlet injection (uBO)
+            { rule: '##+js(foo, bar)', expected: 'js(foo, bar)' },
+            // ABP snippet injection
+            { rule: '#$#abp-snippet foo bar', expected: 'abp-snippet foo bar' },
+            // HTML filtering (ADG)
+            { rule: '$$script[tag-content="ads"]', expected: 'script[tag-content="ads"]' },
+            // HTML filtering (uBO)
+            { rule: '##^script:has-text(ads)', expected: 'script:has-text(ads)' },
+            // JS injection (ADG)
+            { rule: '#%#const a = 2;', expected: 'const a = 2;' },
+        ])('should generate body \'$expected\' from \'$rule\'', ({ rule, expected }) => {
+            const ast = CosmeticRuleParser.parse(rule);
+
+            if (ast) {
+                expect(CosmeticRuleParser.generateBody(ast)).toEqual(expected);
+            } else {
+                throw new Error(`Failed to parse '${rule}'`);
+            }
+        });
+    });
+
     test('generate', async () => {
         const parseAndGenerate = (raw: string) => {
             const ast = CosmeticRuleParser.parse(raw);
