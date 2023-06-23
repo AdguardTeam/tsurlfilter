@@ -15,6 +15,7 @@ import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { ToModifier } from '../modifiers/to-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import {
     ESCAPE_CHARACTER,
@@ -104,6 +105,9 @@ export enum NetworkRuleOption {
 
     // $method modifier
     Method = 1 << 30,
+
+    // $to modifier
+    To = 1 << 31,
 
     // Groups (for validation)
 
@@ -217,6 +221,11 @@ export class NetworkRule implements rule.IRule {
      * Rule Method modifier
      */
     private methodModifier: IValueListModifier<HTTPMethod> | null = null;
+
+    /**
+     * Rule To modifier
+     */
+    private toModifier: IValueListModifier<string> | null = null;
 
     /**
      * Rule priority, which is needed when the engine has to choose between
@@ -456,6 +465,28 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Get list of permitted $to values.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier
+     */
+    getPermittedToValues(): string[] | null {
+        if (this.toModifier) {
+            return this.toModifier.permittedValues;
+        }
+        return null;
+    }
+
+    /**
+     * Get list of restricted $to values.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier
+     */
+    getRestrictedToValues(): string[] | null {
+        if (this.toModifier) {
+            return this.toModifier.restrictedValues;
+        }
+        return null;
+    }
+
+    /**
      * Gets list of permitted domains.
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
      */
@@ -592,6 +623,10 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
+        if (this.isOptionEnabled(NetworkRuleOption.To) && !this.matchToModifier(request.hostname)) {
+            return false;
+        }
+
         if (!this.matchDnsType(request.dnsType)) {
             return false;
         }
@@ -696,6 +731,31 @@ export class NetworkRule implements rule.IRule {
         }
 
         return true;
+    }
+
+    /**
+     * Checks if request target matches with specified domains
+     *
+     * @param domain request's domain
+     * @return true if request domain matches with specified domains
+     */
+    private matchToModifier(domain: string): boolean {
+        if (!this.toModifier) {
+            return true;
+        }
+        /**
+         * Request's domain must be either explicitly
+         * permitted and not be included in list of restricted domains
+         * for the rule to apply
+         */
+        const permittedDomains = this.getPermittedToValues();
+        const restrictedDomains = this.getRestrictedToValues();
+        const isPermittedDomain = !!permittedDomains
+            && DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
+        const isRestrictedDomain = !!restrictedDomains
+            && DomainModifier.isDomainOrSubdomainOfAny(domain, restrictedDomains);
+
+        return isPermittedDomain && !isRestrictedDomain;
     }
 
     /**
@@ -1194,6 +1254,12 @@ export class NetworkRule implements rule.IRule {
                 this.methodModifier = new MethodModifier(optionValue);
                 break;
             }
+            // $to modifier
+            case OPTIONS.TO: {
+                this.setOptionEnabled(NetworkRuleOption.To, true);
+                this.toModifier = new ToModifier(optionValue);
+                break;
+            }
             // Document-level allowlist rules
             // $elemhide
             case OPTIONS.ELEMHIDE:
@@ -1556,6 +1622,12 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (this.restrictedRequestTypes !== RequestType.NotSet) {
+            this.priorityWeight += 1;
+        }
+
+        // $to modifier is basically a replacement for a regular expression
+        // See https://github.com/AdguardTeam/KnowledgeBase/pull/196#discussion_r1221401215
+        if (this.toModifier) {
             this.priorityWeight += 1;
         }
 

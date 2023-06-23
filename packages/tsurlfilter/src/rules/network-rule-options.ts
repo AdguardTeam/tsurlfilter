@@ -48,6 +48,7 @@ export const NETWORK_RULE_OPTIONS = {
     DNSTYPE: 'dnstype',
     CTAG: 'ctag',
     METHOD: 'method',
+    TO: 'to',
     ALL: 'all',
 };
 

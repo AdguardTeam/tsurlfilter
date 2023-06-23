@@ -242,6 +242,34 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('Negated values cannot be mixed with non-negated values: get|~post'));
     });
 
+    it('throws error if $to modifier value is invalid', () => {
+        expect(() => {
+            new NetworkRule('/ads$to=example.org|~example.com', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$to=', 0);
+        }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$to=example.org|', 0);
+        }).toThrow(new SyntaxError('Empty domain specified in "example.org|"'));
+    });
+
+    it('thorws error if $to modfiier value is invalid', () => {
+        expect(() => {
+            new NetworkRule('||*/ads^$to=evil.com', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule('|*/ads^$to=', 0);
+        }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
+
+        expect(() => {
+            new NetworkRule('|*/ads^$to=evil.com|', 0);
+        }).toThrow(new SyntaxError('Empty domain specified in "evil.com|"'));
+    });
+
     it('checks removeparam modifier compatibility', () => {
         let correct = new NetworkRule('||example.org^$removeparam=p,domain=test.com,third-party,match-case', 0);
         expect(correct).toBeTruthy();
@@ -1175,6 +1203,42 @@ describe('NetworkRule.match', () => {
         request.method = HTTPMethod.HEAD;
         expect(rule.match(request)).toBeFalsy();
     });
+
+    it('applies $to modifier properly', () => {
+        let rule: NetworkRule;
+        let request: Request;
+        rule = new NetworkRule('/ads$to=~evil.*|good.*,script', 0);
+
+        expect(rule.getRestrictedToValues()).toHaveLength(1);
+        expect(rule.getPermittedToValues()).toHaveLength(1);
+
+        // Correctly matches domain that is specified in permitted domains list
+        rule = new NetworkRule('/ads^$to=evil.com', 0);
+        request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeTruthy();
+        request = new Request('https://good.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeFalsy();
+
+        // Correctly matches subdomain that is specified in permitted domains list
+        rule = new NetworkRule('/ads^$to=sub.evil.com', 0);
+        request = new Request('https://sub.evil.com/ads', 'https://example.org/', RequestType.Image);
+        expect(rule.match(request)).toBeTruthy();
+
+        // Inverted value excludes subdomain from matching
+        rule = new NetworkRule('/ads^$to=evil.com|~sub.one.evil.com', 0);
+
+        request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://one.evil.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://sub.one.evil.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeFalsy();
+
+        request = new Request('https://sub.two.evil.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeTruthy();
+    });
 });
 
 describe('NetworkRule.isHigherPriority', () => {
@@ -1201,6 +1265,10 @@ describe('NetworkRule.isHigherPriority', () => {
                 ['||example.org$~document,~script', '||example.org$domain=~example.com|~example.org', false],
                 // 1 negated domain === 2 negated domains
                 ['||example.org$domain=~example.org|~example.com', '||example.org$domain=~example.org', false],
+                // $to > simple blocking rule
+                ['/ads$to=example.org', '||example.org/ads', true],
+                // $to < $domain
+                ['/ads$domain=example.org', '/ads$to=example.org', true],
             ],
         },
         {
@@ -1307,8 +1375,8 @@ describe('NetworkRule.isHigherPriority', () => {
                 });
             });
 
-            test.each(cases)('%s is a higher priority than %s, expected: %s', (left, right, expectedResult) => {
-                compareRulesPriority(left as string, right as string, expectedResult as boolean);
+            test.each(cases)('%s is a higher priority than %s, expected: %s', (left: string, right: string, expectedResult: boolean) => {
+                compareRulesPriority(left, right, expectedResult);
             });
         });
     });

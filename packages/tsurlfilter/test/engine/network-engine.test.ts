@@ -55,6 +55,18 @@ describe('TestMatchAllowlistRule', () => {
         expect(result).toBeTruthy();
         expect(result && result.getText()).toEqual(rule);
     });
+
+    it('finds correct $to rule', () => {
+        const rule = '||evil.com^';
+        const exceptionRule = '@@/ads^$to=good.evil.com';
+
+        const engine = new NetworkEngine(createTestRuleStorage(1, [rule, exceptionRule]));
+        const request = new Request('http://evil.com/', '', RequestType.Script);
+        const result = engine.match(request);
+
+        expect(result).toBeTruthy();
+        expect(result && result.getText()).toEqual(rule);
+    });
 });
 
 describe('TestMatchImportantRule', () => {
