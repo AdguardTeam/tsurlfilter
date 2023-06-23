@@ -12,7 +12,7 @@ adg_ext_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
   description: |-
     As a response to blocked request AdGuard will emulate a blank response from the server with 200 OK status.
-    Equivalent to $replace modifier with nooptext value.
+    Equivalent to $redirect modifier with nooptext value.
 
 ubo_ext_any:
   name: empty
