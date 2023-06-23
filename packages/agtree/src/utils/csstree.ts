@@ -18,9 +18,8 @@ import {
     MediaQuery,
     PseudoClassSelectorPlain,
     find,
-    Block,
-    BlockPlain,
     SelectorListPlain,
+    DeclarationListPlain,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
 import {
@@ -290,7 +289,7 @@ export class CssTree {
      * @returns List of the forbidden function nodes in the declaration block (can be empty)
      */
     public static getForbiddenFunctionNodes(
-        declarationList: string | Block | BlockPlain,
+        declarationList: string | DeclarationList | DeclarationListPlain,
         forbiddenFunctions = FORBIDDEN_CSS_FUNCTIONS,
     ): CssNode[] {
         // Parse the block if string is passed
@@ -342,7 +341,7 @@ export class CssTree {
      * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1920}
      */
     public static hasAnyForbiddenFunction(
-        declarationList: string | Block | BlockPlain,
+        declarationList: string | DeclarationList | DeclarationListPlain,
         forbiddenFunctions = FORBIDDEN_CSS_FUNCTIONS,
     ): boolean {
         // Parse the block if string is passed
