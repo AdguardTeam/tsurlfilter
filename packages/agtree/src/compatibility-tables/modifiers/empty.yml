@@ -20,4 +20,4 @@ ubo_ext_any:
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#empty
   description: |-
     As a response to blocked request uBlock will emulate a blank response from the server with 200 OK status.
-    Equivalent to $replace modifier with nooptext value.
+    Equivalent to $redirect modifier with nooptext value.
