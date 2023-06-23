@@ -1,9 +1,10 @@
 # Table of contents
 1. [Description](#description)
 1. [MV3 specific limitations](#mv3_specific_limitations)
+    1. [allowrules](#mv3_specific_limitations__allowrules)
     1. [$document](#mv3_specific_limitations__$document)
-    1. [$all](#mv3_specific_limitations__$all)
     1. [$removeparam](#mv3_specific_limitations__$removeparam)
+    1. [$removeheader](#mv3_specific_limitations__$removeheader)
     1. [$redirect-rule](#mv3_specific_limitations__$redirect-rule)
 1. [Basic examples](#basic_examples)
 1. [Basic modifiers](#basic_modifiers)
@@ -65,27 +66,33 @@ rules and describes some MV3-specific limitations of the converted rules.
 
 <a name="mv3_specific_limitations"></a>
 # MV3 specific limitations
+<a name="mv3_specific_limitations__allowrules"></a>
+## allowrules
+Allowrules currently are not supported for these modifiers:
+1. all specific exceptions: '$elemhide', '$generichide', '$specifichide', '$genericblock', '$jsinject', '$urlblock', '$content', '$stealth'.
+1. `$redirect`
+1. `$removeparam`
+1. `$removeheader`
+
 <a name="mv3_specific_limitations__$document"></a>
 ## $document
 During convertion process $document modificator is expanded into
-$elemhide, $content, $urlblock, $jsinject and $extension,
+$elemhide, $content, $urlblock, $jsinject,
 of which:
 - $content - not supported in the MV3;
-- $extension - not supported in extension;
 - $elemhide, $jsinject - not implemented yet;
 - $urlblock - converted not correctly (allow all requests not on the specified
 url, but FROM specified url and also disables cosmetic rules).
 So we still convert the $document-rules, but not 100% correctly.
 
-<a name="mv3_specific_limitations__$all"></a>
-## $all
-To convert a $all rule, a network rule must be modified to accept multiple
-modifiers from the same rule, for example, as it works with the
-"multi"-modifier $document.
-
 <a name="mv3_specific_limitations__$removeparam"></a>
 ## $removeparam
 Groups of $removeparam rules with the same conditions are combined into one
+rule only within one filter.
+
+<a name="mv3_specific_limitations__$removeheader"></a>
+## $removeheader
+Groups of $removeheader rules with the same conditions are combined into one
 rule only within one filter.
 
 <a name="mv3_specific_limitations__$redirect-rule"></a>
@@ -684,8 +691,6 @@ example 2
 <br/>
 Cannot be converted to MV3 Declarative Rule, but maybe can be implemented on
 the content-script side
-<br/>
-Bug: currently converted to simple blocking rules
 <br/>
 <b>Examples:</b>
 <br/>
@@ -1715,7 +1720,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
 <b>MV3 limitations:</b>
 <br/>
 Works only within the scope of one static filter or within the scope of all
-dynamic rules (custom filters with user rules).
+dynamic rules (custom filters and user rules).
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2641,13 +2646,16 @@ returns an empty response to all requests to example.org and all subdomains.
 	{
 		"id": 1,
 		"action": {
-			"type": "block"
+			"type": "redirect",
+			"redirect": {
+				"extensionPath": "/path/to/resources/nooptext.js"
+			}
 		},
 		"condition": {
 			"urlFilter": "||example.org^",
 			"isUrlFilterCaseSensitive": false
 		},
-		"priority": 1
+		"priority": 1001
 	}
 ]
 
@@ -2712,13 +2720,19 @@ block a video downloads from ||example.com/videos/* and changes the response to 
 	{
 		"id": 1,
 		"action": {
-			"type": "block"
+			"type": "redirect",
+			"redirect": {
+				"extensionPath": "/path/to/resources/noopmp4.mp4"
+			}
 		},
 		"condition": {
 			"urlFilter": "||example.com/videos/",
+			"resourceTypes": [
+				"media"
+			],
 			"isUrlFilterCaseSensitive": false
 		},
-		"priority": 1
+		"priority": 1101
 	}
 ]
 
@@ -2729,11 +2743,13 @@ block a video downloads from ||example.com/videos/* and changes the response to 
 <br/>
 <b>MV3 limitations:</b>
 <br/>
+Allowlist rules are not supported
+<br/>
 Regexps, negation and allow-rules are not supported
 <br/>
 Rules with the same matching condition are combined into one, but only within
 the scope of one static filter or within the scope of all dynamic rules
-(custom filters with user rules).
+(custom filters and user rules).
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2782,19 +2798,39 @@ $removeparam=~param
 example 3
 
 ```adblock
-$removeparam=~/regexp/
+$removeparam=utm_source
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "redirect",
+			"redirect": {
+				"transform": {
+					"queryTransform": {
+						"removeParams": [
+							"utm_source"
+						]
+					}
+				}
+			}
+		},
+		"condition": {
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 4
 
 ```adblock
-@@||example.org^$removeparam
+$removeparam=~/regexp/
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2806,7 +2842,7 @@ example 4
 example 5
 
 ```adblock
-@@||example.org^$removeparam=param
+@@||example.org^$removeparam
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2818,7 +2854,7 @@ example 5
 example 6
 
 ```adblock
-@@||example.org^$removeparam=/regexp/
+@@||example.org^$removeparam=param
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2830,7 +2866,7 @@ example 6
 example 7
 
 ```adblock
-$removeparam=/^(utm_source|utm_medium|utm_term)=/
+@@||example.org^$removeparam=/regexp/
 ```
 
 ↓↓↓↓ converted to ↓↓↓↓
@@ -2842,6 +2878,18 @@ $removeparam=/^(utm_source|utm_medium|utm_term)=/
 example 8
 
 ```adblock
+$removeparam=/^(utm_source|utm_medium|utm_term)=/
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[]
+
+```
+example 9
+
+```adblock
 $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 ```
 
@@ -2851,7 +2899,7 @@ $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 []
 
 ```
-example 9.
+example 10
 Group of similar remove param rules will be combined into one
 
 ```adblock
@@ -2917,7 +2965,13 @@ $xmlhttprequest,removeparam=p1case2
 ```
 <a name="advanced_capabilities__$removeheader"></a>
 ## $removeheader
-<b>Status</b>: not implemented yet
+<b>Status</b>: supported
+<br/>
+Allowlist rules are not supported
+<br/>
+Rules with the same matching condition are combined into one, but only within
+the scope of one static filter or within the scope of all dynamic rules
+(custom filters and user rules).
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2930,7 +2984,42 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"header": "header-name",
+					"operation": "remove"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"csp_report",
+				"media",
+				"websocket",
+				"webtransport",
+				"webbundle",
+				"other"
+			]
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 2
@@ -2942,7 +3031,42 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"requestHeaders": [
+				{
+					"header": "header-name",
+					"operation": "remove"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"csp_report",
+				"media",
+				"websocket",
+				"webtransport",
+				"webbundle",
+				"other"
+			]
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 3
@@ -2957,7 +3081,7 @@ example 3
 []
 
 ```
-example 4
+example 4 (with limitations)
 
 ```adblock
 @@||example.org^$removeheader=header
@@ -2978,7 +3102,42 @@ example 5
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"header": "refresh",
+					"operation": "remove"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"csp_report",
+				"media",
+				"websocket",
+				"webtransport",
+				"webbundle",
+				"other"
+			]
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 6
@@ -2990,7 +3149,91 @@ example 6
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"requestHeaders": [
+				{
+					"header": "x-client-data",
+					"operation": "remove"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"csp_report",
+				"media",
+				"websocket",
+				"webtransport",
+				"webbundle",
+				"other"
+			]
+		},
+		"priority": 1
+	}
+]
+
+```
+example 8
+
+```adblock
+$removeheader=location,domain=example.com
+```
+
+↓↓↓↓ converted to ↓↓↓↓
+
+```json
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"header": "location",
+					"operation": "remove"
+				}
+			]
+		},
+		"condition": {
+			"initiatorDomains": [
+				"example.com"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"csp_report",
+				"media",
+				"websocket",
+				"webtransport",
+				"webbundle",
+				"other"
+			]
+		},
+		"priority": 201
+	}
+]
 
 ```
 <a name="not_supported_in_extension"></a>

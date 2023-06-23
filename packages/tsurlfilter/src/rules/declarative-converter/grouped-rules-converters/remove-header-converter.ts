@@ -8,11 +8,16 @@ import { ConvertedRules } from '../converted-result';
 import { DeclarativeRuleConverter } from './abstract-rule-converter';
 
 /**
- * Describes how to convert $removeparam rules.
+ * Describes how to convert $removeheader rules.
+ *
+ * TODO: Add checks for rules containing the $removeheader and
+ * incompatible modifiers: '$domain', '$third-party', '$important', '$app',
+ * '$match-case', '$script', '$stylesheet, etc.
+ *
  */
-export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
+export class RemoveHeaderRulesConverter extends DeclarativeRuleConverter {
     /**
-     * Converts indexed rules grouped by $removeparam into declarative rules:
+     * Converts indexed rules grouped by $removeheader into declarative rules:
      * for each rule looks for similar rules and groups them into a new rule.
      *
      * @param filterId Filter id.
@@ -37,7 +42,8 @@ export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
             const template = JSON.parse(JSON.stringify(rule));
 
             delete template.id;
-            delete template.action.redirect?.transform?.queryTransform?.removeParams;
+            delete template.action.requestHeaders;
+            delete template.action.responseHeaders;
 
             return JSON.stringify(template);
         };
@@ -51,9 +57,22 @@ export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
             }
 
             // If found rule-sibling to join
-            const params = rule.action.redirect?.transform?.queryTransform?.removeParams || [];
-            // Then combine remove params
-            ruleToJoin.action.redirect?.transform?.queryTransform?.removeParams?.push(...params);
+            const { responseHeaders, requestHeaders } = rule.action;
+            // Then combine remove headers
+            if (responseHeaders) {
+                if (ruleToJoin.action.responseHeaders) {
+                    ruleToJoin.action.responseHeaders.push(...responseHeaders);
+                } else {
+                    ruleToJoin.action.responseHeaders = responseHeaders;
+                }
+            }
+            if (requestHeaders) {
+                if (ruleToJoin.action.requestHeaders) {
+                    ruleToJoin.action.requestHeaders.push(...requestHeaders);
+                } else {
+                    ruleToJoin.action.requestHeaders = requestHeaders;
+                }
+            }
 
             return ruleToJoin.id;
         };
@@ -68,7 +87,7 @@ export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
                     id,
                 );
             } catch (e) {
-                const err = RemoveParamRulesConverter.catchErrorDuringConversion(rule, index, id, e);
+                const err = RemoveHeaderRulesConverter.catchErrorDuringConversion(rule, index, id, e);
                 errors.push(err);
                 return;
             }

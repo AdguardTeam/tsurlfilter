@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `$to` modifier to match requests by target domains and subdomains.
 - In the MV3 declarative converter, the obsolete `$mp4` and `$empty` are now
   converted by replacing them with `$redirect` rules.
+- Support for $removeheader rule in the MV3 converter.
 
 ## [2.1.2] - 2023-06-19
 

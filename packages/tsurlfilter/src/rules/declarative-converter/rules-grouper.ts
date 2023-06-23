@@ -4,7 +4,8 @@ import { IndexedRule } from '../rule';
 export enum RulesGroup {
     Regular = 0,
     RemoveParam = 1,
-    BadFilter = 2,
+    RemoveHeader = 2,
+    BadFilter = 3,
 }
 
 export type GroupedRules = { [key in RulesGroup]: IndexedRule[] };
@@ -29,6 +30,10 @@ export class DeclarativeRulesGrouper {
             return RulesGroup.RemoveParam;
         }
 
+        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+            return RulesGroup.RemoveHeader;
+        }
+
         if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
             return RulesGroup.BadFilter;
         }
@@ -46,6 +51,7 @@ export class DeclarativeRulesGrouper {
     public static splitRulesByGroups(rules: IndexedRule[]): GroupedRules {
         const rulesToProcess: GroupedRules = {
             [RulesGroup.RemoveParam]: [],
+            [RulesGroup.RemoveHeader]: [],
             [RulesGroup.BadFilter]: [],
             [RulesGroup.Regular]: [],
         };

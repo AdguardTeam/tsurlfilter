@@ -17,6 +17,8 @@ import {
     RuleCondition,
     DomainType,
     Redirect,
+    HeaderOperation,
+    RuleActionHeaders,
 } from '../declarative-rule';
 import {
     TooComplexRegexpError,
@@ -25,9 +27,10 @@ import {
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
 import { ConvertedRules } from '../converted-result';
-import { IndexedRule } from '../../rule';
+import { IRule, IndexedRule } from '../../rule';
 import { ResourcesPathError } from '../errors/converter-options-errors';
 import { RedirectModifier } from '../../../modifiers/redirect-modifier';
+import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 
 /**
  * Map request types to declarative types.
@@ -189,6 +192,44 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Returns rule modify headers action.
+     *
+     * @param rule Network rule.
+     *
+     * @returns  Modify headers action, which describes which headers should
+     * be changed: added, set or deleted.
+     */
+    private static getModifyHeadersAction(rule: NetworkRule): RuleActionHeaders | null {
+        if (!rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+            return null;
+        }
+
+        const removeHeaderModifier = rule.getAdvancedModifier() as RemoveHeaderModifier;
+
+        const removeRequestHeader = removeHeaderModifier.getApplicableHeaderName(true);
+        if (removeRequestHeader) {
+            return {
+                requestHeaders: [{
+                    header: removeRequestHeader,
+                    operation: HeaderOperation.Remove,
+                }],
+            };
+        }
+
+        const removeResponseHeader = removeHeaderModifier.getApplicableHeaderName(false);
+        if (removeResponseHeader) {
+            return {
+                responseHeaders: [{
+                    header: removeResponseHeader,
+                    operation: HeaderOperation.Remove,
+                }],
+            };
+        }
+
+        return null;
+    }
+
+    /**
      * Rule action.
      *
      * @param rule Network rule.
@@ -200,25 +241,38 @@ export abstract class DeclarativeRuleConverter {
      * with the request.
      */
     private getAction(rule: NetworkRule): RuleAction {
-        // TODO: RuleActionType
-        //  - 'upgradeScheme' = 'upgradeScheme',
-        //  - 'modifyHeaders' = 'modifyHeaders',
+        if (rule.isAllowlist()) {
+            if (rule.isFilteringDisabled()) {
+                return { type: RuleActionType.ALLOW_ALL_REQUESTS };
+            }
+
+            return { type: RuleActionType.ALLOW };
+        }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)
-         || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
-        ) {
+            || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
             return {
                 type: RuleActionType.REDIRECT,
                 redirect: this.getRedirectAction(rule),
             };
         }
 
-        if (rule.isAllowlist()) {
-            if (rule.isDocumentLevelAllowlistRule()) {
-                return { type: RuleActionType.ALLOW_ALL_REQUESTS };
+        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+            const modifyHeadersAction = DeclarativeRuleConverter.getModifyHeadersAction(rule);
+
+            if (modifyHeadersAction?.requestHeaders) {
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    requestHeaders: modifyHeadersAction.requestHeaders,
+                };
             }
 
-            return { type: RuleActionType.ALLOW };
+            if (modifyHeadersAction?.responseHeaders) {
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    responseHeaders: modifyHeadersAction.responseHeaders,
+                };
+            }
         }
 
         return { type: RuleActionType.BLOCK };
@@ -290,6 +344,35 @@ export abstract class DeclarativeRuleConverter {
         // set isUrlFilterCaseSensitive
         condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
 
+        /**
+         * Here we need to set 'main_frame' to apply to document requests
+         * as well (because by default it applies to all requests except
+         * document).
+         * And if we specify 'main_frame', then we also need to specify all
+         * other types, so that it works not only for document requests, but
+         * also for all other types of requests.
+         */
+        const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
+        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader) && emptyResourceTypes && !rule.isAllowlist()) {
+            condition.resourceTypes = [
+                ResourceType.MainFrame,
+                ResourceType.SubFrame,
+                ResourceType.Stylesheet,
+                ResourceType.Script,
+                ResourceType.Image,
+                ResourceType.Font,
+                ResourceType.Object,
+                ResourceType.XmlHttpRequest,
+                ResourceType.Ping,
+                ResourceType.CspReport,
+                ResourceType.Media,
+                ResourceType.WebSocket,
+                ResourceType.WebTransport,
+                ResourceType.WebBundle,
+                ResourceType.Other,
+            ];
+        }
+
         return condition;
     }
 
@@ -346,6 +429,9 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * TODO: Move this method to separate static class, because it accumulates
+     * a lot of logic tied to different types of rules and the method gets
+     * really puffy.
      * Checks if a network rule can be converted to a declarative format or not.
      * We skip the following modifiers:
      *
@@ -368,7 +454,8 @@ export abstract class DeclarativeRuleConverter {
      * $redirect - if the rule is a allowlist;
      * $removeparam - if it contains a negation, or regexp,
      * or the rule is a allowlist;
-     * $removeheader;
+     * $removeheader - if it contains a title from a prohibited list
+     * (see {@link RemoveHeaderModifier.FORBIDDEN_HEADERS});
      * $jsonprune;
      * $hls.
      *
@@ -435,6 +522,29 @@ export abstract class DeclarativeRuleConverter {
             return null;
         };
 
+        /**
+         * Checks if the $removeparam values in the provided network rule
+         * are supported for conversion to MV3.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const checkRemoveHeaderModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            const removeHeader = r.getAdvancedModifier() as RemoveHeaderModifier;
+            if (!removeHeader.isValid) {
+                return new UnsupportedModifierError(
+                    // eslint-disable-next-line max-len
+                    `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${r.getText()}"`,
+                    r,
+                );
+            }
+
+            return null;
+        };
+
         const unsupportedOptions = [
             /* Specific exceptions */
             { option: NetworkRuleOption.Elemhide, name: '$elemhide' },
@@ -465,7 +575,11 @@ export abstract class DeclarativeRuleConverter {
                 name: '$removeparam',
                 customChecks: [checkAllowRulesFn, checkRemoveParamModifierFn],
             },
-            { option: NetworkRuleOption.RemoveHeader, name: '$removeheader' },
+            {
+                option: NetworkRuleOption.RemoveHeader,
+                name: '$removeheader',
+                customChecks: [checkAllowRulesFn, checkRemoveHeaderModifierFn],
+            },
             { option: NetworkRuleOption.JsonPrune, name: '$jsonprune' },
             { option: NetworkRuleOption.Hls, name: '$hls' },
         ];
@@ -553,6 +667,38 @@ export abstract class DeclarativeRuleConverter {
         }
 
         return null;
+    }
+
+    /**
+     * Checks the captured conversion error, if it is one of the expected
+     * conversion errors - returns it, otherwise adds information about
+     * the original rule, packages it into a new error and returns it.
+     *
+     * @param rule An error was caught while converting this rule.
+     * @param index Index of {@link IndexedRule}.
+     * @param id Identifier of the desired declarative rule.
+     * @param e Captured error.
+     *
+     * @returns Initial error or new packaged error.
+     */
+    protected static catchErrorDuringConversion(
+        rule: IRule,
+        index: number,
+        id: number,
+        e: unknown,
+    ): Error {
+        if (e instanceof EmptyResourcesError
+            || e instanceof TooComplexRegexpError
+            || e instanceof UnsupportedModifierError
+            || e instanceof UnsupportedRegexpError
+        ) {
+            return e;
+        }
+
+        const msg = `Non-categorized error during a conversion rule: ${rule.getText()} (index - ${index}, id - ${id})`;
+        return e instanceof Error
+            ? new Error(msg, { cause: e })
+            : new Error(msg);
     }
 
     /**

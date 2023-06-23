@@ -80,6 +80,11 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     private readonly value: string;
 
     /**
+     * Is rule valid or not.
+     */
+    private readonly valid: boolean;
+
+    /**
      * Constructor
      *
      * @param value
@@ -94,9 +99,12 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
 
         this.isRequestModifier = this.value.startsWith(RemoveHeaderModifier.REQUEST_PREFIX);
         const headerName = this.isRequestModifier
-            ? this.value.substring(RemoveHeaderModifier.REQUEST_PREFIX.length) : this.value;
+            ? this.value.substring(RemoveHeaderModifier.REQUEST_PREFIX.length)
+            : this.value;
 
-        this.applicableHeaderName = RemoveHeaderModifier.isAllowedHeader(headerName) ? headerName : null;
+        // Values with ":" are not supported in MV3 declarative rules, e.g. "$removeheader=dnt:1"
+        this.valid = RemoveHeaderModifier.isAllowedHeader(headerName) && !headerName.includes(':');
+        this.applicableHeaderName = this.valid ? headerName : null;
     }
 
     /**
@@ -104,6 +112,13 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
      */
     public getValue(): string {
         return this.value;
+    }
+
+    /**
+     * Modifier validity
+     */
+    public get isValid(): boolean {
+        return this.valid;
     }
 
     /**

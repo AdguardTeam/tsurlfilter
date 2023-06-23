@@ -12,18 +12,13 @@ import { DeclarativeRule } from './declarative-rule';
 import { ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
+import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-header-converter';
 import { Source } from './source-map';
 import { LimitationError, TooManyRulesError, TooManyRegexpRulesError } from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';
 import { DeclarativeRulesGrouper, GroupedRules, RulesGroup } from './rules-grouper';
 import { DeclarativeConverterOptions } from './declarative-converter-options';
-import {
-    ConversionError,
-    EmptyResourcesError,
-    InvalidDeclarativeRuleError,
-    TooComplexRegexpError,
-    UnsupportedRegexpError,
-} from './errors/conversion-errors';
+import { ConversionError, InvalidDeclarativeRuleError } from './errors/conversion-errors';
 
 export type FilterIdsWithRules = [number, IndexedRule[]];
 export type FiltersIdsWithRules = FilterIdsWithRules[];
@@ -50,6 +45,7 @@ export class DeclarativeRulesConverter {
     static converters = {
         [RulesGroup.Regular]: RegularRulesConverter,
         [RulesGroup.RemoveParam]: RemoveParamRulesConverter,
+        [RulesGroup.RemoveHeader]: RemoveHeaderRulesConverter,
         [RulesGroup.BadFilter]: BadFilterRulesConverter,
     };
 
@@ -209,17 +205,12 @@ export class DeclarativeRulesConverter {
         const convertedRulesErrorsIndex = new Map<number, ConversionError[]>();
         convertedRulesErrors.forEach((e) => {
             // Checks only errors of converted declarative rules
-            if (e instanceof EmptyResourcesError
-                || e instanceof TooComplexRegexpError
-                || e instanceof UnsupportedRegexpError
-            ) {
-                const errorsList = convertedRulesErrorsIndex.get(e.declarativeRule.id);
-                const newValue = errorsList
-                    ? errorsList.concat(e)
-                    : [e];
+            const errorsList = convertedRulesErrorsIndex.get(e.declarativeRule.id);
+            const newValue = errorsList
+                ? errorsList.concat(e)
+                : [e];
 
-                convertedRulesErrorsIndex.set(e.declarativeRule.id, newValue);
-            }
+            convertedRulesErrorsIndex.set(e.declarativeRule.id, newValue);
         });
 
         // TODO: Lazy creation of index

@@ -1,4 +1,7 @@
-import { TooComplexRegexpError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
+import {
+    TooComplexRegexpError,
+    UnsupportedModifierError,
+} from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import { NetworkRule } from '../../../src/rules/network-rule';
 import { IndexedRule } from '../../../src/rules/rule';
@@ -14,7 +17,7 @@ const createRulesFromText = (
         .map((r) => {
             const rule = RuleFactory.createRule(r, filterId);
             return rule
-            // eslint-disable-next-line no-plusplus
+                // eslint-disable-next-line no-plusplus
                 ? new IndexedRule(rule, idx++)
                 : null;
         })
@@ -447,7 +450,7 @@ describe('DeclarativeRuleConverter', () => {
 
         const {
             errors,
-            declarativeRules: [declarativeRule],
+            declarativeRules,
         } = DeclarativeRulesConverter.convert(
             [[filterId, rules]],
         );
@@ -457,9 +460,12 @@ describe('DeclarativeRuleConverter', () => {
         const err = new TooComplexRegexpError(
             `More complex regex than allowed: "${networkRule.getText()}"`,
             networkRule,
-            declarativeRule,
+            // Note that the declarative rule will be "undefined" due to
+            // a conversion error, but this will not prevent error checking
+            declarativeRules[0],
         );
 
+        expect(declarativeRules).toHaveLength(0);
         expect(errors).toHaveLength(1);
         expect(errors[0]).toStrictEqual(err);
     });
@@ -509,9 +515,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
 
             expect(declarativeRule).toEqual({
                 id: ruleId,
@@ -539,9 +543,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
 
             expect(declarativeRule).toEqual({
                 id: ruleId,
@@ -606,9 +608,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
 
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
@@ -639,9 +639,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
 
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
@@ -675,9 +673,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 priority: 1,
@@ -708,9 +704,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 priority: 1,
@@ -799,9 +793,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
-            );
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 priority: 101,
@@ -834,7 +826,7 @@ describe('DeclarativeRuleConverter', () => {
         const { declarativeRules } = DeclarativeRulesConverter.convert(
             [[filterId, rules]],
         );
-        expect(declarativeRules.length).toBe(1);
+        expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
             id: 2,
             priority: 101,
@@ -859,7 +851,7 @@ describe('DeclarativeRuleConverter', () => {
         const { declarativeRules } = DeclarativeRulesConverter.convert(
             [[filterId, rules]],
         );
-        expect(declarativeRules.length).toBe(2);
+        expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
             priority: 56,
@@ -914,7 +906,7 @@ describe('DeclarativeRuleConverter', () => {
             [[filterId, rules]],
             { resourcesPath: '/path/to/resources' },
         );
-        expect(declarativeRules.length).toBe(2);
+        expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
             priority: 1101,
@@ -943,6 +935,419 @@ describe('DeclarativeRuleConverter', () => {
                 resourceTypes: ['image'],
                 isUrlFilterCaseSensitive: false,
             },
+        });
+    });
+
+    describe('check removeheader', () => {
+        it('converts $removeheader rules for responseHeaders', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||example.com$removeheader=refresh'],
+            );
+            const ruleId = 1;
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRule).toStrictEqual({
+                id: ruleId,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'refresh', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+        });
+
+        it('converts $removeheader rules for requestHeaders', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||example.com$removeheader=request:location'],
+            );
+            const ruleId = 1;
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRule).toStrictEqual({
+                id: ruleId,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    requestHeaders: [
+                        { header: 'location', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+        });
+
+        it('converts removeheader rules for both: response and request', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '||example.com$removeheader=location',
+                    '||example.com$removeheader=request:location',
+                ],
+            );
+            const ruleId = 1;
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRule).toStrictEqual({
+                id: ruleId,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{ header: 'location', operation: 'remove' }],
+                    requestHeaders: [{ header: 'location', operation: 'remove' }],
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+        });
+
+        it('returns errors on unsupported headers in removeheader rules', async () => {
+            const ruleWithUnsupportedHeaders = [
+                '||example.com$removeheader=origin',
+                '||example.com$removeheader=content-type',
+            ];
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    ruleWithUnsupportedHeaders[0],
+                    '||example.com$removeheader=location',
+                    ruleWithUnsupportedHeaders[1],
+                ],
+            );
+
+            const {
+                declarativeRules,
+                errors,
+            } = await DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 2,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'location', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+
+            const networkRules = [
+                new NetworkRule(ruleWithUnsupportedHeaders[0], filterId),
+                new NetworkRule(ruleWithUnsupportedHeaders[1], filterId),
+            ];
+            const expectedErrors = [
+                new UnsupportedModifierError(
+                    // eslint-disable-next-line max-len
+                    `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${networkRules[0].getText()}"`,
+                    networkRules[0],
+                ),
+                new UnsupportedModifierError(
+                    // eslint-disable-next-line max-len
+                    `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${networkRules[1].getText()}"`,
+                    networkRules[1],
+                ),
+            ];
+
+            expect(errors).toHaveLength(2);
+            expect(errors[0]).toStrictEqual(expectedErrors[0]);
+            expect(errors[1]).toStrictEqual(expectedErrors[1]);
+        });
+
+        it('converts removeheader rules for responseHeaders and skips general allowlist rule', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '||example.org$removeheader=refresh',
+                    '||example.org$removeheader=location',
+                    '@@||example.org/path/$removeheader',
+                ],
+            );
+
+            const { declarativeRules } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'refresh', operation: 'remove' },
+                        { header: 'location', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    urlFilter: '||example.org',
+                    isUrlFilterCaseSensitive: false,
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+        });
+
+        // eslint-disable-next-line max-len
+        it('converts $removeheader rules for responseHeaders and skips general allowlist rule and for other domain', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '||example.org^$removeheader=refresh',
+                    '||example.org^$removeheader=location',
+                    '||example.com^$removeheader=refresh',
+                    '@@||example.org^$removeheader',
+                ],
+            );
+
+            const { declarativeRules } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'refresh', operation: 'remove' },
+                        { header: 'location', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    urlFilter: '||example.org^',
+                    isUrlFilterCaseSensitive: false,
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: 3,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'refresh', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    urlFilter: '||example.com^',
+                    isUrlFilterCaseSensitive: false,
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
+        });
+
+        it('skips convert bad values', () => {
+            const filterId = 0;
+            const badRule = '||example.com$removeheader=dnt:1';
+            const rules = createRulesFromText(0, [badRule]);
+
+            const {
+                declarativeRules,
+                errors,
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+
+            const networkRule = new NetworkRule(badRule, filterId);
+            const err = new UnsupportedModifierError(
+                // eslint-disable-next-line max-len
+                `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${networkRule.getText()}"`,
+                networkRule,
+            );
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toStrictEqual(err);
+        });
+
+        it('combine several $removeheader rule', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '||example.com$removeheader=header1',
+                    '||example.com$removeheader=request:header2',
+                    '||example.com$removeheader=header3',
+                    '||example.com$removeheader=request:header4',
+                ],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert([[filterId, rules]]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'header1', operation: 'remove' },
+                        { header: 'header3', operation: 'remove' },
+                    ],
+                    requestHeaders: [
+                        { header: 'header2', operation: 'remove' },
+                        { header: 'header4', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    isUrlFilterCaseSensitive: false,
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'csp_report',
+                        'media',
+                        'websocket',
+                        'webtransport',
+                        'webbundle',
+                        'other',
+                    ],
+                },
+            });
         });
     });
 });

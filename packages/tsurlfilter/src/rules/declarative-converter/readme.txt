@@ -6,24 +6,29 @@
 ! <br />
 !
 ! # MV3 specific limitations
+! ## allowrules
+! Allowrules currently don't supported in these modifiers:
+! 1. all specific exceptions: '$elemhide', '$generichide', '$specifichide', '$genericblock', '$jsinject', '$urlblock', '$content', '$stealth'.
+! 1. `$redirect`
+! 1. `$removeparam`
+! 1. `$removeheader`
+!
 ! ## $document
 ! During convertion process $document modificator is expanded into
-! $elemhide, $content, $urlblock, $jsinject and $extension,
+! $elemhide, $content, $urlblock, $jsinject,
 ! of which:
 ! - $content - not supported in the MV3;
-! - $extension - not supported in extension;
 ! - $elemhide, $jsinject - not implemented yet;
 ! - $urlblock - converted not correctly (allow all requests not on the specified
 ! url, but FROM specified url and also disables cosmetic rules).
 ! So we still convert the $document-rules, but not 100% correctly.
 !
-! ## $all
-! To convert a $all rule, a network rule must be modified to accept multiple
-! modifiers from the same rule, for example, as it works with the
-! "multi"-modifier $document.
-!
 ! ## $removeparam
 ! Groups of $removeparam rules with the same conditions are combined into one
+! rule only within one filter.
+!
+! ## $removeheader
+! Groups of $removeheader rules with the same conditions are combined into one
 ! rule only within one filter.
 !
 ! ## $redirect-rule
@@ -111,8 +116,6 @@ page$domain=targetdomain.com|~example.org
 ! <br/>
 ! Cannot be converted to MV3 Declarative Rule, but maybe can be implemented on
 ! the content-script side
-! <br/>
-! Bug: currently converted to simple blocking rules
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -330,7 +333,7 @@ page$domain=targetdomain.com|~example.org
 ! <b>MV3 limitations:</b>
 ! <br/>
 ! Works only within the scope of one static filter or within the scope of all
-! dynamic rules (custom filters with user rules).
+! dynamic rules (custom filters and user rules).
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -517,11 +520,13 @@ $cookie=/__utm[a-z]/
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
+! Allowlist rules are not supported
+! <br/>
 ! Regexps, negation and allow-rules are not supported
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
 ! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters with user rules).
+! (custom filters and user rules).
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -531,18 +536,20 @@ $cookie=/__utm[a-z]/
 ! example 2
 $removeparam=~param
 ! example 3
-$removeparam=~/regexp/
+$removeparam=utm_source
 ! example 4
-@@||example.org^$removeparam
+$removeparam=~/regexp/
 ! example 5
-@@||example.org^$removeparam=param
+@@||example.org^$removeparam
 ! example 6
-@@||example.org^$removeparam=/regexp/
+@@||example.org^$removeparam=param
 ! example 7
-$removeparam=/^(utm_source|utm_medium|utm_term)=/
+@@||example.org^$removeparam=/regexp/
 ! example 8
+$removeparam=/^(utm_source|utm_medium|utm_term)=/
+! example 9
 $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
-! example 9.
+! example 10
 ! Group of similar remove param rules will be combined into one
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
@@ -550,7 +557,13 @@ $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 $xmlhttprequest,removeparam=p1case2
 
 ! ## $removeheader
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
+! <br/>
+! Allowlist rules are not supported
+! <br/>
+! Rules with the same matching condition are combined into one, but only within
+! the scope of one static filter or within the scope of all dynamic rules
+! (custom filters and user rules).
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -560,12 +573,14 @@ $xmlhttprequest,removeparam=p1case2
 ||example.org^$removeheader=request:header-name
 ! example 3
 @@||example.org^$removeheader
-! example 4
+! example 4 (with limitations)
 @@||example.org^$removeheader=header
 ! example 5
 ||example.org^$removeheader=refresh
 ! example 6
 ||example.org^$removeheader=request:x-client-data
+! example 8
+$removeheader=location,domain=example.com
 
 ! # Not supported in extension
 

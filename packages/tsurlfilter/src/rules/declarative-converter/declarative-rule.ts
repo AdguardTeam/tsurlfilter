@@ -131,6 +131,8 @@ const RuleActionValidator = zod.strictObject({
 
 export type RuleAction = zod.infer<typeof RuleActionValidator>;
 
+export type RuleActionHeaders = Pick<RuleAction, 'requestHeaders' | 'responseHeaders'>;
+
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RequestMethod
  */
@@ -161,6 +163,10 @@ const RuleConditionValidator = zod.strictObject({
     regexFilter: zod.string().optional(),
     requestDomains: zod.string().array().optional(),
     requestMethods: zod.string().array().optional(),
+    /**
+     * If none of the `excludedResourceTypes` and `resourceTypes` are specified,
+     * all resource types except "main_frame" will be matched.
+     */
     resourceTypes: zod.nativeEnum(ResourceType).array().optional(),
     tabIds: zod.number().array().optional(),
     urlFilter: zod.string().optional(),

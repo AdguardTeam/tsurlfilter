@@ -1,12 +1,6 @@
 import { NetworkRule } from '../../network-rule';
 import { IndexedRule } from '../../rule';
-import {
-    ConversionError,
-    EmptyResourcesError,
-    TooComplexRegexpError,
-    UnsupportedModifierError,
-    UnsupportedRegexpError,
-} from '../errors/conversion-errors';
+import { ConversionError } from '../errors/conversion-errors';
 import { DeclarativeRule } from '../declarative-rule';
 import { Source } from '../source-map';
 import { ConvertedRules } from '../converted-result';
@@ -49,18 +43,8 @@ export class RegularRulesConverter extends DeclarativeRuleConverter {
                     id,
                 );
             } catch (e) {
-                if (e instanceof EmptyResourcesError
-                    || e instanceof TooComplexRegexpError
-                    || e instanceof UnsupportedModifierError
-                    || e instanceof UnsupportedRegexpError
-                ) {
-                    errors.push(e);
-                    return;
-                }
-
-                const msg = 'Non-categorized error during a conversion rule: '
-                    + `${rule.getText()} (index - ${index}, id - ${id})`;
-                errors.push(new Error(msg, { cause: e as Error }));
+                const err = RegularRulesConverter.catchErrorDuringConversion(rule, index, id, e);
+                errors.push(err);
                 return;
             }
 

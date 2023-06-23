@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { NetworkRule, NetworkRuleOption } from '../../src';
+import { NetworkRule, NetworkRuleOption, RemoveHeaderModifier } from '../../src';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
@@ -467,8 +467,10 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0&p1=1`);
     });
+});
 
-    it('check removeparam mv3 validity', () => {
+describe('NetworkRule - mv3 validity', () => {
+    it('check $removeparam mv3 validity', () => {
         expect(() => {
             new RemoveParamModifier('p1|p2');
         }).toThrowError(/Unsupported option*/);
@@ -482,5 +484,17 @@ describe('NetworkRule - removeparam rules', () => {
 
         const mv3BadModifier2 = new RemoveParamModifier('/P5/i');
         expect(mv3BadModifier2.getMV3Validity()).toBeFalsy();
+    });
+
+    it('check $removeheader validity', () => {
+        const mv3GoodModifier = new RemoveHeaderModifier('location', false);
+        expect(mv3GoodModifier.getValue()).toEqual('location');
+        expect(mv3GoodModifier.isValid).toBeTruthy();
+
+        const mv3BadModifier = new RemoveHeaderModifier('origin', false);
+        expect(mv3BadModifier.isValid).toBeFalsy();
+
+        const mv3BadModifier2 = new RemoveHeaderModifier('content-type', false);
+        expect(mv3BadModifier2.isValid).toBeFalsy();
     });
 });
