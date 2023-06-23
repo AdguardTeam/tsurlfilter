@@ -1,0 +1,10 @@
+adg_any:
+  name:	object-subrequest
+  deprecated: true
+  deprecation_message: |-
+    $object-subrequest modifier is deprecated and is no longer supported.
+    Rules with it are considered as invalid. The rule corresponds to requests by browser plugins (it is usually Flash).
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#object-subrequest-modifier
+  description: |-
+    $object-subrequest modifier is deprecated and is no longer supported.
+    Rules with it are considered as invalid. The rule corresponds to requests by browser plugins (it is usually Flash).

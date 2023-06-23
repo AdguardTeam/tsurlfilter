@@ -1,0 +1,23 @@
+adg_os_any:
+  name: mp4
+  negatable: false
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
+  description: |-
+    As a response to blocked request AdGuard returns a short video placeholder.
+    Equivalent to $redirect modifier with noopmp4-1s value.
+
+adg_ext_any:
+  name: mp4
+  negatable: false
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#mp4-modifier
+  description: |-
+    As a response to blocked request AdGuard returns a short video placeholder.
+    Equivalent to $redirect modifier with noopmp4-1s value.
+
+ubo_ext_any:
+  name: mp4
+  negatable: false
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#mp4
+  description: |-
+    As a response to blocked request a short video placeholder is returned.
+    Equivalent to $redirect modifier with noopmp4-1s value.

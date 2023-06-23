@@ -1,0 +1,23 @@
+adg_os_any:
+  name: empty
+  negatable: false
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
+  description: |-
+    This modifier is deprecated in favor of the $redirect modifier.
+    Rules with $empty are converting into $redirect=nooptext now.
+
+adg_ext_any:
+  name: empty
+  negatable: false
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#empty-modifier
+  description: |-
+    This modifier is deprecated in favor of the $redirect modifier.
+    Rules with $empty are converting into $redirect=nooptext now.
+
+ubo_ext_any:
+  name: empty
+  negatable: false
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#empty
+  description: |-
+    This modifier is deprecated in favor of the $redirect modifier.
+    Rules with $empty are converting into $redirect=nooptext now.
