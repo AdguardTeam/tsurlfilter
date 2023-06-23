@@ -16,15 +16,21 @@ import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import yaml from '@rollup/plugin-yaml';
 import path from 'path';
-import pkg from './package.json' assert { type: 'json' };
+import { readFileSync } from 'fs';
 
-// Common constants
 const ROOT_DIR = './';
-const DIST_DIR = path.join(ROOT_DIR, 'dist');
-const BASE_NAME = 'AGTree';
 const BASE_FILE_NAME = 'agtree';
+const BASE_NAME = 'AGTree';
+const PKG_FILE_NAME = 'package.json';
+
+const distDir = path.join(ROOT_DIR, 'dist');
+const pkgFileLocation = path.join(ROOT_DIR, PKG_FILE_NAME);
+
+// Read package.json
+const pkg = JSON.parse(readFileSync(pkgFileLocation, 'utf-8'));
 
 // Check if the package.json file has all required fields
+// (we need them for the banner)
 const REQUIRED_PKG_FIELDS = [
     'author',
     'homepage',
@@ -33,8 +39,8 @@ const REQUIRED_PKG_FIELDS = [
 ];
 
 for (const field of REQUIRED_PKG_FIELDS) {
-    if (!pkg[field]) {
-        throw new Error(`Missing required field "${field}" in package.json`);
+    if (!(field in pkg)) {
+        throw new Error(`Missing required field "${field}" in ${PKG_FILE_NAME}`);
     }
 }
 
@@ -132,7 +138,7 @@ const cjs = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(DIST_DIR, `${BASE_FILE_NAME}.cjs`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.cjs`),
             format: 'cjs',
             exports: 'auto',
             sourcemap: false,
@@ -147,7 +153,7 @@ const esm = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(DIST_DIR, `${BASE_FILE_NAME}.esm.js`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.esm.js`),
             format: 'esm',
             sourcemap: false,
             banner,
@@ -161,7 +167,7 @@ const umd = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(DIST_DIR, `${BASE_FILE_NAME}.umd.min.js`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.umd.min.js`),
             name: BASE_NAME,
             format: 'umd',
             sourcemap: false,
@@ -176,7 +182,7 @@ const iife = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(DIST_DIR, `${BASE_FILE_NAME}.iife.min.js`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.iife.min.js`),
             name: BASE_NAME,
             format: 'iife',
             sourcemap: false,
@@ -192,7 +198,7 @@ const dts = {
     input: path.join(ROOT_DIR, 'dist', 'types', 'src', 'index.d.ts'),
     output: [
         {
-            file: path.join(DIST_DIR, `${BASE_FILE_NAME}.d.ts`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.d.ts`),
             format: 'es',
             banner,
         },

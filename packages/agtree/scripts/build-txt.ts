@@ -4,13 +4,22 @@
 import fs from 'fs';
 import path from 'path';
 import * as url from 'url';
-import pkg from '../package.json' assert { type: 'json' };
-
-const PATH = '../dist';
-const FILENAME = 'build.txt';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+
+const UPPER_LEVEL = '../';
+
+const DIST_FOLDER_NAME = 'dist';
+const OUTPUT_FILE_NAME = 'build.txt';
+const PKG_FILE_NAME = 'package.json';
+
+// Computed constants
+const distFolderLocation = path.join(__dirname, UPPER_LEVEL, DIST_FOLDER_NAME);
+const pkgFileLocation = path.join(__dirname, UPPER_LEVEL, PKG_FILE_NAME);
+
+// Read package.json
+const pkg = JSON.parse(fs.readFileSync(pkgFileLocation, 'utf-8'));
 
 if (!pkg.version) {
     throw new Error('Missing required field "version" in package.json');
@@ -18,13 +27,14 @@ if (!pkg.version) {
 
 const main = (): void => {
     const content = `version=${pkg.version}`;
-    const dir = path.resolve(__dirname, PATH);
 
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
+    // Create the dist folder if it doesn't exist
+    if (!fs.existsSync(distFolderLocation)) {
+        fs.mkdirSync(distFolderLocation);
     }
 
-    const file = path.resolve(dir, FILENAME);
+    // Write the output file
+    const file = path.resolve(distFolderLocation, OUTPUT_FILE_NAME);
     fs.writeFileSync(file, content);
 
     // eslint-disable-next-line no-console

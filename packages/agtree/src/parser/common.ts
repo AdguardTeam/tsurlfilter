@@ -72,7 +72,7 @@ export const defaultLocation: Location = {
  * - If the rule is `! This is just a comment`, then the marker will be `!`.
  * - If the rule is `# This is just a comment`, then the marker will be `#`.
  */
-export enum CommentMarker {
+export const enum CommentMarker {
     /**
      * Regular comment marker. It is supported by all ad blockers.
      */
@@ -89,7 +89,7 @@ export enum CommentMarker {
  * Represents the main categories that an adblock rule can belong to.
  * Of course, these include additional subcategories.
  */
-export enum RuleCategory {
+export const enum RuleCategory {
     /**
      * Empty "rules" that are only containing whitespaces. These rules are handled just for convenience.
      */
@@ -120,7 +120,7 @@ export enum RuleCategory {
 /**
  * Represents possible comment types.
  */
-export enum CommentRuleType {
+export const enum CommentRuleType {
     AgentCommentRule = 'AgentCommentRule',
     CommentRule = 'CommentRule',
     ConfigCommentRule = 'ConfigCommentRule',
@@ -132,7 +132,7 @@ export enum CommentRuleType {
 /**
  * Represents possible cosmetic rule types.
  */
-export enum CosmeticRuleType {
+export const enum CosmeticRuleType {
     ElementHidingRule = 'ElementHidingRule',
     CssInjectionRule = 'CssInjectionRule',
     ScriptletInjectionRule = 'ScriptletInjectionRule',
@@ -143,31 +143,97 @@ export enum CosmeticRuleType {
 /**
  * Represents possible cosmetic rule separators.
  */
-export type CosmeticRuleSeparator =
-    // Regular CSS elemhide
-    | '##'
-    | '#@#'
-    // Extended CSS elemhide
-    | '#?#'
-    | '#@?#'
-    // ABP snippet / ADG CSS injection
-    | '#$#'
-    | '#@$#'
-    // ADG Extended CSS injection
-    | '#$?#'
-    | '#@$?#'
-    // uBO scriptlet
-    | '##+'
-    | '#@#+'
-    // ADG JS injection (including scriptlets)
-    | '#%#'
-    | '#@%#'
-    // uBO HTML filtering
-    | '##^'
-    | '#@#^'
-    // ADG HTML filtering
-    | '$$'
-    | '$@$';
+export const enum CosmeticRuleSeparator {
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    ElementHiding = '##',
+
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    ElementHidingException = '#@#',
+
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    ExtendedElementHiding = '#?#',
+
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    ExtendedElementHidingException = '#@?#',
+
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    AbpSnippet = '#$#',
+
+    /**
+     * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
+     */
+    AbpSnippetException = '#@$#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    AdgCssInjection = '#$#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    AdgCssInjectionException = '#@$#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    AdgExtendedCssInjection = '#$?#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
+     */
+    AdgExtendedCssInjectionException = '#@$?#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+     */
+    AdgJsInjection = '#%#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
+     */
+    AdgJsInjectionException = '#@%#',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
+     */
+    AdgHtmlFiltering = '$$',
+
+    /**
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
+     */
+    AdgHtmlFilteringException = '$@$',
+
+    /**
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
+     */
+    UboScriptletInjection = '##+',
+
+    /**
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
+     */
+    UboScriptletInjectionException = '#@#+',
+
+    /**
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
+     */
+    UboHtmlFiltering = '##^',
+
+    /**
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
+     */
+    UboHtmlFilteringException = '#@#^',
+}
 
 /**
  * Represents a basic node in the AST.
