@@ -2,19 +2,19 @@ adg_any:
   name: elemhide
   aliases:
     - ehide
+  description: Disables any cosmetic rules on the pages matching the rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#elemhide-modifier
   negatable: false
   exception_only: true
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#elemhide-modifier
-  description: Disables any cosmetic rules on the pages matching the rule.
 
 abp_any:
   name: elemhide
   aliases:
     - ehide
+  description: Disables any cosmetic rules on the pages matching the rule.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
   negatable: false
   exception_only: true
-  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
-  description: Disables any cosmetic rules on the pages matching the rule.
 
 ubo_any:
   name: elemhide

@@ -1,20 +1,14 @@
 adg_any:
-  name:	script
-  assignable: false
-  negatable: true
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#script-modifier
+  name: script
   description: The rule corresponds to script requests, e.g. javascript, vbscript.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#script-modifier
 
 abp_any:
-  name:	script
-  assignable: false
-  negatable: true
-  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+  name: script
   description: The rule corresponds to script requests, e.g. javascript, vbscript.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
 
 ubo_any:
-  name:	script
-  assignable: false
-  negatable: true
-  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options
+  name: script
   description: The rule corresponds to script requests, e.g. javascript, vbscript.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#options

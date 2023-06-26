@@ -2,6 +2,10 @@ adg_any:
   name: specifichide
   aliases:
     - shide
+  description: |-
+    Disables all specific element hiding and CSS rules, but not general ones.
+    Has an opposite effect to `$generichide`.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#specifichide-modifier
   conflicts:
     - domain
     - genericblock
@@ -14,22 +18,18 @@ adg_any:
   inverse_conflicts: true
   negatable: false
   exception_only: true
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#specifichide-modifier
-  description: |-
-    Disables all specific element hiding and CSS rules, but not general ones.
-    Has an opposite effect to $generichide.
 
 ubo_any:
   name: specifichide
   aliases:
     - shide
+  description: |-
+    Disables all specific element hiding and CSS rules, but not general ones.
+    Has an opposite effect to `$generichide`.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#specifichide
   conflicts:
     - domain
     - badfilter
   inverse_conflicts: true
   negatable: false
   exception_only: true
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#specifichide
-  description: |-
-    Disables all specific element hiding and CSS rules, but not general ones.
-    Has an opposite effect to $generichide.

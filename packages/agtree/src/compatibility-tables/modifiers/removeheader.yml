@@ -1,5 +1,7 @@
 adg_os_any:
   name: removeheader
+  description: Rules with the `$removeheader` modifier are intended to remove headers from HTTP requests and responses.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#removeheader-modifier
   conflicts:
     - domain
     - third-party
@@ -20,6 +22,9 @@ adg_os_any:
     - websocket
     - other
     - webrtc
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
   # Enable free-spacing and case-insensitive mode for the regex
   value_format: |-
     (?xi)
@@ -84,14 +89,11 @@ adg_os_any:
         # Any other header name is allowed, if it matches the following regex
         [A-z0-9-]+
       $
-  inverse_conflicts: true
-  assignable: true
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#removeheader-modifier
-  description: Rules with $removeheader modifier are intended to remove headers from HTTP requests and responses.
 
 adg_ext_any:
   name: removeheader
+  description: Rules with the `$removeheader` modifier are intended to remove headers from HTTP requests and responses.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#removeheader-modifier
   conflicts:
     - domain
     - third-party
@@ -112,6 +114,9 @@ adg_ext_any:
     - websocket
     - other
     - webrtc
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
   # Enable free-spacing and case-insensitive mode for the regex
   value_format: |-
     (?xi)
@@ -176,8 +181,3 @@ adg_ext_any:
         # Any other header name is allowed, if it matches the following regex
         [A-z0-9-]+
       $
-  inverse_conflicts: true
-  assignable: true
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#removeheader-modifier
-  description: Rules with $removeheader modifier are intended to remove headers from HTTP requests and responses.

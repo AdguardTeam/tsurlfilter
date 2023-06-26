@@ -2,23 +2,23 @@ adg_any:
   name: domain
   aliases:
     - from
+  description: The `$domain` modifier limits the rule application area to a list of domains and their subdomains.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier
   assignable: true
   value_format: pipe_separated_domains
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier
-  description: The $domain modifier limits the rule application area to a list of domains and their subdomains.
 
 abp_any:
   name: domain
+  description: The `$domain` modifier limits the rule application area to a list of domains and their subdomains.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#domain-restrictions
   assignable: true
   value_format: pipe_separated_domains
-  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#domain-restrictions
-  description: The $domain modifier limits the rule application area to a list of domains and their subdomains.
 
 ubo_any:
   name: domain
   aliases:
     - from
+  description: The `$domain` modifier limits the rule application area to a list of domains and their subdomains.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#from
   assignable: true
   value_format: pipe_separated_domains
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#from
-  description: The $domain modifier limits the rule application area to a list of domains and their subdomains.

@@ -1,9 +1,9 @@
 ubo_ext_any:
   name: popunder
-  negatable: false
-  block_only: true
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#popunder
   description: |-
     To block "popunders" windows/tabs where the original page redirects to an advertisement
     and the desired content loads in the newly created one.
     To be used in the same manner as the popup filter option, except that it will block popunders.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#popunder
+  negatable: false
+  block_only: true

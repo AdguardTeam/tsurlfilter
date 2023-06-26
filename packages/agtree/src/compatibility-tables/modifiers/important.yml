@@ -1,15 +1,15 @@
 adg_any:
   name: important
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#important-modifier
   description: |-
-    The $important modifier applied to a rule increases its priority
-    over any other rule without $important modifier. Even over basic exception rules.
+    The `$important` modifier applied to a rule increases its priority
+    over any other rule without `$important` modifier. Even over basic exception rules.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#important-modifier
+  negatable: false
 
 ubo_any:
   name: important
-  negatable: false
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#important
   description: |-
-    The $important modifier applied to a rule increases its priority
-    over any other rule without $important modifier. Even over basic exception rules.
+    The `$important` modifier applied to a rule increases its priority
+    over any other rule without `$important` modifier. Even over basic exception rules.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#important
+  negatable: false

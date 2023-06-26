@@ -4,6 +4,8 @@ adg_os_any:
     The rule corresponds to the main frame document requests,
     i.e. HTML documents that are loaded in the browser tab.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
+  # TODO: it shall be negatable as content-type modifier in future
+  # so it should be changed later (here and below)
   negatable: false
 
 adg_ext_any:
@@ -40,10 +42,10 @@ abp_ext_any:
 
 ubo_ext_any:
   name: document
+  aliases:
+    - doc
   description: |-
     The rule corresponds to the main frame document requests,
     i.e. HTML documents that are loaded in the browser tab.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#document
-  aliases:
-    - doc
   negatable: false

@@ -1,22 +1,16 @@
 adg_any:
-  name:	subdocument
-  assignable: false
-  negatable: true
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#subdocument-modifier
+  name: subdocument
   description: The rule corresponds to requests for built-in pages — HTML tags frame and iframe.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#subdocument-modifier
 
 abp_any:
-  name:	subdocument
-  assignable: false
-  negatable: true
-  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
+  name: subdocument
   description: The rule corresponds to requests for built-in pages — HTML tags frame and iframe.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options
 
 ubo_any:
-  name:	subdocument
+  name: subdocument
   aliases:
     - frame
-  assignable: false
-  negatable: true
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#frame
   description: The rule corresponds to requests for built-in pages — HTML tags frame and iframe.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#frame

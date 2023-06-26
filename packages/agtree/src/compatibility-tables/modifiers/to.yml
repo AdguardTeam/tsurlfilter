@@ -1,8 +1,11 @@
+# TODO: add adg_os_any after CoreLibs 1.13 release
+# https://adguard.com/kb/general/ad-filtering/create-own-filters/#to-modifier
+
 ubo_ext_any:
   name: to
-  assignable: true
-  negatable: false
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#to
   description: |-
     The main motivation of this option is
-    to give static network filtering engine an equivalent of DNR's requestDomains and excludedRequestDomains.
+    to give static network filtering engine an equivalent of DNR's `requestDomains` and `excludedRequestDomains`.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#to
+  assignable: true
+  negatable: false

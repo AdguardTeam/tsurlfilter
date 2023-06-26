@@ -9,23 +9,23 @@ Each file contains an object,
 where the key is the [actual adblocker ID](../README.md#supported-adblockers-and-platforms)
 and the value is the object with the following fields:
 
-| Field | Description | Type | Default value |
+| Field | Description | Type | Default value [**] |
 | --- | --- | --- | --- |
 | `name` [*] | Name of the actual modifier. | `string` | |
-| `aliases` | List of aliases for the modifier (if any). | `string[]` | `[]` (no aliases) |
+| `aliases` | List of aliases for the modifier (if any). | `string[]\|null` | `null` (no aliases) |
 | `description` | Short description of the actual modifier. If not specified or it's value is `null`, then the description is not available. | `string\|null` | `null` |
 | `docs` | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available. | `string\|null` | `null` |
 | `version_added` | The version of the adblocker when the modifier was added. | `string\|null` | `null` |
 | `version_removed` | The version of the adblocker when the modifier was removed. | `string\|null` | `null` |
 | `deprecated` | Describes whether the scriptlet is deprecated. | `boolean` | `false` |
 | `deprecation_message` | Message that describes why the scriptlet is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
-| `conflicts` | List of modifiers that are incompatible with the actual one. | `string[]` | `[]` (no conflicts) |
+| `conflicts` | List of modifiers that are incompatible with the actual one. | `string[]\|null` | `null` (no conflicts) |
 | `inverse_conflicts` | The actual modifier is incompatible with all other modifiers, except the ones listed in `conflicts`. | `boolean` | `false` |
 | `assignable` | Describes whether the actual modifier supports value assignment. For example, `domain` is assignable, so it can be used like this: `$domain=domain.com\|~subdomain.domain.com`, where `=` is the assignment operator and `domain.com\|~subdomain.domain.com` is the value. | `boolean` | `false` |
-| `value_format` | Describes the format of the value. See [Value format](#value-format) for more details. | `string\|null` | `null` |
 | `negatable` | Describes whether the actual modifier can be negated. For example, `third-party` is negatable, so it can be used like this: `~third-party`. | `boolean` | `true` |
 | `block_only` | The actual modifier can only be used in blocking rules, it cannot be used in exceptions. If it's value is `true`, then the modifier can be used only in blocking rules. `exception_only` and `block_only` cannot be used together (they are mutually exclusive). | `boolean` | `false` |
 | `exception_only` | The actual modifier can only be used in exceptions, it cannot be used in blocking rules. If it's value is `true`, then the modifier can be used only in exceptions. `exception_only` and `block_only` cannot be used together (they are mutually exclusive). | `boolean` | `false` |
+| `value_format` | Describes the format of the value. See [Value format](#value-format) for more details. | `string\|null` | `null` |
 
 ### Value format
 
@@ -65,3 +65,9 @@ The value format describes the format of the modifier value. It can be one of th
 > `*`: The field is required.
 
 [*]: #footnote-asterisk-1 "The field is required"
+
+### <a name="footnote-asterisk-2"></a>
+
+> `**`: Default value may not be specified in .yml files.
+
+[**]: #footnote-asterisk-2 "Default value may not be specified in .yml files."

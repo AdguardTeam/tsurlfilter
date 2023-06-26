@@ -1,5 +1,9 @@
 adg_os_any:
-  name:	replace
+  name: replace
+  description: |-
+    This modifier completely changes the rule behavior.
+    If it is applied, the rule will not block the request. The response is going to be modified instead.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
   conflicts:
     - app
     - domain
@@ -15,15 +19,15 @@ adg_os_any:
     - badfilter
   inverse_conflicts: true
   assignable: true
-  value_format: /^\/.+\/.*\/$/
   negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
+  value_format: /^\/.+\/.*\/$/
+
+adg_ext_firefox:
+  name: replace
   description: |-
     This modifier completely changes the rule behavior.
     If it is applied, the rule will not block the request. The response is going to be modified instead.
-
-adg_ext_firefox:
-  name:	replace
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
   conflicts:
     - domain
     - document
@@ -38,9 +42,5 @@ adg_ext_firefox:
     - badfilter
   inverse_conflicts: true
   assignable: true
-  value_format: /^\/.+\/.*\/$/
   negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier
-  description: |-
-    This modifier completely changes the rule behavior.
-    If it is applied, the rule will not block the request. The response is going to be modified instead.
+  value_format: /^\/.+\/.*\/$/

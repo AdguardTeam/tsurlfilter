@@ -1,39 +1,39 @@
 adg_os_any:
   name: badfilter
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   description: |-
-    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
-    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+    The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  negatable: false
 
 adg_ext_any:
   name: badfilter
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   description: |-
-    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
-    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+    The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  negatable: false
 
 adg_cb_ios:
   name: badfilter
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   description: |-
-    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
-    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+    The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  negatable: false
 
 adg_cb_safari:
   name: badfilter
-  negatable: false
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   description: |-
-    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
-    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+    The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  negatable: false
 
 ubo_ext_any:
   name: badfilter
-  negatable: false
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#badfilter
   description: |-
-    The rules with the $badfilter modifier disable other basic rules to which they refer. It means that
-    the text of the disabled rule should match the text of the $badfilter rule (without the $badfilter modifier).
+    The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
+    the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#badfilter
+  negatable: false

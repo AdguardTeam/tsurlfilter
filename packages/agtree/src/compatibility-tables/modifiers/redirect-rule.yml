@@ -1,6 +1,11 @@
 adg_os_any:
   name: redirect-rule
-  inverse_conflicts: true
+  description: |-
+    This is basically an alias to `$redirect`
+    since it has the same "redirection" values and the logic is almost similar.
+    The difference is that `$redirect-rule` is applied only in the case
+    when the target request is blocked by a different basic rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
   conflicts:
     - domain
     - to
@@ -25,6 +30,9 @@ adg_os_any:
     - important
     - badfilter
     - app
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
   value_format: |-
     (?x)
       ^(
@@ -71,16 +79,15 @@ adg_os_any:
         set-popads-dummy|
         click2load\.html|
       )?$
-  description: |-
-    This is basically an alias to $redirect
-    since it has the same "redirection" values and the logic is almost similar.
-    The difference is that $redirect-rule is applied only in the case
-    when the target request is blocked by a different basic rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
 
 adg_ext_any:
   name: redirect-rule
-  inverse_conflicts: true
+  description: |-
+    This is basically an alias to `$redirect`
+    since it has the same "redirection" values and the logic is almost similar.
+    The difference is that `$redirect-rule` is applied only in the case
+    when the target request is blocked by a different basic rule.
+  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
   conflicts:
     - domain
     - to
@@ -104,6 +111,9 @@ adg_ext_any:
     - webrtc
     - important
     - badfilter
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
   value_format: |-
     (?x)
       ^(
@@ -150,16 +160,15 @@ adg_ext_any:
         set-popads-dummy|
         click2load\.html|
       )?$
-  description: |-
-    This is basically an alias to $redirect
-    since it has the same "redirection" values and the logic is almost similar.
-    The difference is that $redirect-rule is applied only in the case
-    when the target request is blocked by a different basic rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
 
 ubo_ext_any:
   name: redirect-rule
-  inverse_conflicts: true
+  description: |-
+    This is basically an alias to `$redirect`
+    since it has the same "redirection" values and the logic is almost similar.
+    The difference is that `$redirect-rule` is applied only in the case
+    when the target request is blocked by a different basic rule.
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect-rule
   conflicts:
     - domain
     - to
@@ -183,6 +192,9 @@ ubo_ext_any:
     - webrtc
     - important
     - badfilter
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
   value_format: |-
     (?x)
       ^(
@@ -218,9 +230,3 @@ ubo_ext_any:
         hd-main\.js
       )
       (:[0-9]+)?$
-  description: |-
-    This is basically an alias to $redirect
-    since it has the same "redirection" values and the logic is almost similar.
-    The difference is that $redirect-rule is applied only in the case
-    when the target request is blocked by a different basic rule.
-  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect-rule
