@@ -43,6 +43,12 @@ describe('General', () => {
         expect(rules[2]).toBe(domain1);
     });
 
+    it('works if unescaped $ (modifiers separator) is present inside regexp value of domain part of the rule', () => {
+        const result = RuleConverter.convertRule(String.raw`/\/\?[0-9a-zA-Z]{32}&[0-9]{5}&(https?|undefined$)/$1p,script`);
+        expect(result).toHaveLength(1);
+        expect(result).toEqual([String.raw`/\/\?[0-9a-zA-Z]{32}&[0-9]{5}&(https?|undefined$)/$~third-party,script`]);
+    });
+
     it('works if ubo script tag rules are converted properly', () => {
         let result = RuleConverter.convertRule('example.com##^script:has-text(12313)');
         expect(result).toHaveLength(1);

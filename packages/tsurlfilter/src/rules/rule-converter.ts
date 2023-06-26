@@ -65,6 +65,13 @@ export class RuleConverter {
     private static REMOVE_RULE_REPLACER = ' { remove: true; }';
 
     /**
+     * Special characters
+     */
+    private static REGEXP_DELIMITER = '/';
+
+    private static ESCAPING_SLASH = '\\';
+
+    /**
      * Converts rules text
      *
      * @param rulesText
@@ -87,24 +94,28 @@ export class RuleConverter {
     /**
      * Splits the given rule text into domain and options parts using the options delimiter ($).
      * Returns the domain part and an array of options, or null if no options are present.
+     *
      * @param ruleText - The rule text to be split.
+     * @returns [domain, options] or [domain, null] if no options are present.
      */
     private static splitIntoDomainAndOptions = (ruleText: string): [string, string[] | null] => {
         let optionsDelimiterIdx = -1;
+        let inRegExp = false;
         for (let i = ruleText.length - 1; i >= 0; i -= 1) {
-            if (
-                ruleText[i] === OPTIONS_DELIMITER
-                && ruleText[i + 1] !== '/' // not an end of regex /^bla$/
-                && ruleText[i - 1] !== '\\' // not a escaped delimiter
-            ) {
+            if (!inRegExp && ruleText[i] === OPTIONS_DELIMITER) {
                 optionsDelimiterIdx = i;
+                break;
+            }
+            if (
+                ruleText[i] === this.REGEXP_DELIMITER
+                && (i === 0 || ruleText[i - 1] !== this.ESCAPING_SLASH)
+            ) {
+                inRegExp = !inRegExp;
             }
         }
-
         if (optionsDelimiterIdx === -1) {
             return [ruleText, null];
         }
-
         const domainPart = ruleText.slice(0, optionsDelimiterIdx);
         const optionsPart = ruleText.slice(optionsDelimiterIdx + 1);
         // do not remove escape characters from regexp modifiers values
