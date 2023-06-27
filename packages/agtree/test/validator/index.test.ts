@@ -7,16 +7,61 @@ describe('ModifierValidator', () => {
 
             const supportedModifiers = [
                 'app',
+                'badfilter',
+                'cname',
+                'content',
+                'cookie',
+                'csp',
+                'denyallow',
+                'document',
                 'domain',
-                'jsinject',
-                'redirect-rule',
-                'removeheader',
+                'elemhide',
+                'empty',
+                'first-party',
+                'extension',
+                'font',
+                'genericblock',
+                'generichide',
+                'header',
                 'hls',
+                'image',
+                'important',
+                'inline-font',
+                'inline-script',
+                'jsinject',
+                'jsonprune',
+                'match-case',
+                'media',
+                'method',
+                'mp4',
+                'network',
+                'object',
+                'other',
+                'permissions',
+                'ping',
+                'popunder',
+                'popup',
+                'redirect-rule',
+                'redirect',
+                'removeheader',
+                'removeparam',
                 'script',
-                'xmlhttprequest',
+                'specifichide',
+                'stealth',
+                'strict1p',
+                'strict3p',
+                'stylesheet',
+                'subdocument',
                 'third-party',
-                '3p',
+                'to',
+                'urlblock',
+                'webrtc',
+                'websocket',
+                'xmlhttprequest',
+                // noop
+                '_',
                 // aliases are supported
+                '3p',
                 'ghide',
                 'from',
                 'frame',
@@ -31,8 +76,6 @@ describe('ModifierValidator', () => {
                 'invalid',
                 // deprecated modifiers are not supported
                 'object-subrequest',
-                'empty',
-                'mp4',
                 '',
                 'domain=',
                 // few modifiers are not supported
@@ -76,12 +119,12 @@ describe('ModifierValidator', () => {
             });
 
             const unsupportedModifiers = [
-                // empty
+                // invalid
                 {
                     type: 'Modifier',
                     modifier: {
                         type: 'Value',
-                        value: 'empty',
+                        value: 'invalid',
                     },
                     exception: false,
                 },
@@ -95,7 +138,7 @@ describe('ModifierValidator', () => {
                     exception: true,
                 },
             ];
-            test.each(unsupportedModifiers)('%s', (modifierName) => {
+            test.each(unsupportedModifiers)('$modifier.value', (modifierName) => {
                 expect(modifierValidator.exists(modifierName)).toBeFalsy();
             });
         });

@@ -3,25 +3,49 @@
  */
 
 /**
- * Modifier data for specific platform in yaml files, e.g. adg_os_any, ubo_ext_any, etc.
+ * List of properties names for modifier data.
+ * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/src/compatibility-tables/modifiers/README.md#file-structure}
  */
-type SpecificPlatformModifierData = {
-    name: string;
-    aliases?: string[];
-    description?: string | null;
-    docs?: string | null;
-    deprecated?: boolean;
-    deprecation_message?: string | null;
-    conflicts?: string[];
-    inverse_conflicts?: boolean;
-    assignable?: boolean;
-    value_format?: string | null;
-    negatable?: boolean;
-    block_only?: boolean;
-    exception_only?: boolean;
+export const enum SpecificKey {
+    Name = 'name',
+    Aliases = 'aliases',
+    Description = 'description',
+    Docs = 'docs',
+    Deprecated = 'deprecated',
+    DeprecationMessage = 'deprecation_message',
+    Conflicts = 'conflicts',
+    InverseConflicts = 'inverse_conflicts',
+    Assignable = 'assignable',
+    Negatable = 'negatable',
+    BlockOnly = 'block_only',
+    ExceptionOnly = 'exception_only',
+    ValueFormat = 'value_format',
     // TODO: following fields should be handled later
-    // version_added?: string | null;
-    // version_removed?: string | null;
+    // VersionAdded = 'version_added',
+    // VersionRemoved = 'version_removed',
+}
+
+/**
+ * Specific platform modifier data type
+ * where all properties are required.
+ */
+export type SpecificPlatformModifierData = {
+    [SpecificKey.Name]: string;
+    [SpecificKey.Aliases]: string[] | null;
+    [SpecificKey.Description]: string | null;
+    [SpecificKey.Docs]: string | null;
+    [SpecificKey.Deprecated]: boolean;
+    [SpecificKey.DeprecationMessage]: string | null;
+    [SpecificKey.Conflicts]: string[] | null;
+    [SpecificKey.InverseConflicts]: boolean;
+    [SpecificKey.Assignable]: boolean;
+    [SpecificKey.Negatable]: boolean;
+    [SpecificKey.BlockOnly]: boolean;
+    [SpecificKey.ExceptionOnly]: boolean;
+    [SpecificKey.ValueFormat]: string | null;
+    // TODO: following fields should be handled later
+    // [SpecificKey.VersionAdded]?: string | null;
+    // [SpecificKey.VersionRemoved]?: string | null;
 };
 
 /**
@@ -39,3 +63,8 @@ export type ModifierData = {
 export type RawModifierData = {
     [key: string]: ModifierData;
 };
+
+/**
+ * Modifier data map prepared from raw modifiers data.
+ */
+export type ModifierDataMap = Map<string, ModifierData>;

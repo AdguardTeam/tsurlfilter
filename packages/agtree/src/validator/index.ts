@@ -2,32 +2,10 @@
  * @file Validator for modifiers.
  */
 
-import { type ModifierData, rawModifiersData } from '../compatibility-tables';
+import { type ModifierData, type ModifierDataMap, getModifiersData } from '../compatibility-tables';
 import { Modifier } from '../parser/common';
 import { ModifierParser } from '../parser/misc/modifier';
-import { isUndefined } from '../utils/common';
 import { StringUtils } from '../utils/string';
-
-/**
- * Modifier data map prepared from raw modifiers data.
- */
-type ModifierDataMap = Map<string, ModifierData>;
-
-/**
- * Prepares raw modifiers data into a data map.
- *
- * @returns Map of parsed modifiers data.
- */
-const getModifiersData = (): ModifierDataMap => {
-    const dataMap = new Map<string, ModifierData>();
-
-    Object.keys(rawModifiersData).forEach((modifierId: string) => {
-        const modifierData = rawModifiersData[modifierId];
-        dataMap.set(modifierId, modifierData);
-    });
-
-    return dataMap;
-};
 
 /**
  * Collects names and aliases for all supported modifiers.
@@ -47,7 +25,7 @@ const getAllSupportedModifierNames = (dataMap: ModifierDataMap): Set<string> => 
                 return;
             }
             names.add(blockerData.name);
-            if (isUndefined(blockerData.aliases)) {
+            if (!blockerData.aliases) {
                 return;
             }
             blockerData.aliases.forEach((alias) => names.add(alias));
