@@ -4,6 +4,7 @@
 
 /**
  * List of properties names for modifier data.
+ *
  * @see {@link https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/src/compatibility-tables/modifiers/README.md#file-structure}
  */
 export const enum SpecificKey {

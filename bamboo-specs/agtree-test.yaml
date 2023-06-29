@@ -41,6 +41,9 @@ Test:
             # Check TypeScript types with TSC
             npx lerna@6 run --scope @adguard/agtree check-types
 
+            # Validate compatibility tables
+            npx lerna@6 run --scope @adguard/agtree check-compatibility-tables
+
             # Check code with ESLint
             npx lerna@6 run --scope @adguard/agtree lint
 
