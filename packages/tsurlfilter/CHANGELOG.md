@@ -8,29 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased
+
+### Added
+- Support for $csp modifier in the MV3 converter.
+- Scheme for converting network rules into declarative rules.
+
 ## [2.1.3] - 2023-06-26
 
 ### Added
 - New `$to` modifier to match requests by target domains and subdomains.
 - In the MV3 declarative converter, the obsolete `$mp4` and `$empty` are now
   converted by replacing them with `$redirect` rules.
-- Support for $removeheader rule in the MV3 converter.
+- Support for $removeheader modifier in the MV3 converter.
 
 ### Fixed
-- rule converter incorrectly converting network rules with regexp.
+- Rule converter incorrectly converting network rules with regexp.
 
 ## [2.1.2] - 2023-06-19
 
 ### Fixed
 
-- unwanted escape character removal when running `RuleConverter.convertRule()` on rules with regexp-value modifiers
+- Unwanted escape character removal when running `RuleConverter.convertRule()` on rules with regexp-value modifiers
 
 ## [2.1.1] - 2023-06-16
 
 ### Added
 
-- new `$method` modifier to match requests by HTTP method.
-- new `NetworkRule` method `isFilteringDisabled` to check if rule is completely disabled filtering.
+- New `$method` modifier to match requests by HTTP method.
+- New `NetworkRule` method `isFilteringDisabled` to check if rule is completely disabled filtering.
 
 
 ## [2.1.0] - 2023-06-14

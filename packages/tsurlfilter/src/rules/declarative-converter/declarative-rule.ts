@@ -8,6 +8,8 @@
 
 import { z as zod } from 'zod';
 
+import { RequestType } from '../../request-type';
+
 /**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-DomainType
  */
@@ -29,12 +31,13 @@ export enum ResourceType {
     Object = 'object',
     XmlHttpRequest = 'xmlhttprequest',
     Ping = 'ping',
-    CspReport = 'csp_report',
     Media = 'media',
     WebSocket = 'websocket',
-    WebTransport = 'webtransport',
-    WebBundle = 'webbundle',
     Other = 'other',
+    // Temporary not using
+    // CspReport = 'csp_report',
+    // WebTransport = 'webtransport',
+    // WebBundle = 'webbundle',
 }
 
 /**
@@ -185,3 +188,23 @@ export const DeclarativeRuleValidator = zod.strictObject({
 });
 
 export type DeclarativeRule = zod.infer<typeof DeclarativeRuleValidator>;
+
+/**
+ * Map request types to declarative types.
+ */
+export const DECLARATIVE_RESOURCE_TYPES_MAP = {
+    [ResourceType.MainFrame]: RequestType.Document,
+    [ResourceType.SubFrame]: RequestType.SubDocument,
+    [ResourceType.Stylesheet]: RequestType.Stylesheet,
+    [ResourceType.Script]: RequestType.Script,
+    [ResourceType.Image]: RequestType.Image,
+    [ResourceType.Font]: RequestType.Font,
+    [ResourceType.Object]: RequestType.Object,
+    [ResourceType.XmlHttpRequest]: RequestType.XmlHttpRequest,
+    [ResourceType.Ping]: RequestType.Ping,
+    // TODO: what should match this resource type?
+    // [ResourceType.CSP_REPORT]: RequestType.Document,
+    [ResourceType.Media]: RequestType.Media,
+    [ResourceType.WebSocket]: RequestType.WebSocket,
+    [ResourceType.Other]: RequestType.Other,
+};

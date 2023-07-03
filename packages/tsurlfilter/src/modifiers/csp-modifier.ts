@@ -1,5 +1,7 @@
 import { IAdvancedModifier } from './advanced-modifier';
 
+export const CSP_HEADER_NAME = 'Content-Security-Policy';
+
 /**
  * Csp modifier class
  */

@@ -6,7 +6,6 @@ import { LimitationError } from './errors/limitation-errors';
 export type ConvertedRules = {
     sourceMapValues: Source[],
     declarativeRules: DeclarativeRule[],
-    regexpRulesCount: number,
     errors: (ConversionError | Error)[],
     limitations?: LimitationError[],
 };

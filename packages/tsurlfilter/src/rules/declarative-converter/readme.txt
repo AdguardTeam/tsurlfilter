@@ -7,11 +7,12 @@
 !
 ! # MV3 specific limitations
 ! ## allowrules
-! Allowrules currently don't supported in these modifiers:
+! Allowrules currently are not supported for these modifiers:
 ! 1. all specific exceptions: '$elemhide', '$generichide', '$specifichide', '$genericblock', '$jsinject', '$urlblock', '$content', '$stealth'.
 ! 1. `$redirect`
 ! 1. `$removeparam`
 ! 1. `$removeheader`
+! 1. `$csp`
 !
 ! ## $document
 ! During convertion process $document modificator is expanded into
@@ -29,6 +30,10 @@
 !
 ! ## $removeheader
 ! Groups of $removeheader rules with the same conditions are combined into one
+! rule only within one filter.
+!
+! ## $csp
+! Groups of $csp rules with the same conditions are combined into one
 ! rule only within one filter.
 !
 ! ## $redirect-rule
@@ -383,7 +388,13 @@ page$domain=targetdomain.com|~example.org
 @@||example.org/page/*$replace=/Z/Y/
 
 ! ## $csp
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
+! <br/>
+! Allowlist rules are not supported
+! <br/>
+! Rules with the same matching condition are combined into one, but only within
+! the scope of one static filter or within the scope of all dynamic rules
+! (custom filters and user rules).
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

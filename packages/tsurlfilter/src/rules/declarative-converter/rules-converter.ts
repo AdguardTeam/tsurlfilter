@@ -13,6 +13,7 @@ import { ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
 import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-header-converter';
+import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
 import { Source } from './source-map';
 import { LimitationError, TooManyRulesError, TooManyRegexpRulesError } from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';
@@ -44,6 +45,7 @@ export class DeclarativeRulesConverter {
      */
     static converters = {
         [RulesGroup.Regular]: RegularRulesConverter,
+        [RulesGroup.Csp]: CspRulesConverter,
         [RulesGroup.RemoveParam]: RemoveParamRulesConverter,
         [RulesGroup.RemoveHeader]: RemoveHeaderRulesConverter,
         [RulesGroup.BadFilter]: BadFilterRulesConverter,
@@ -54,8 +56,8 @@ export class DeclarativeRulesConverter {
      * applies $badfilter rules, then for each group of rules (inside one
      * filter) runs specified converter.
      *
-     * TODO: The $removeParam converter can also combine rules across
-     * multiple filters.
+     * TODO: The $removeparam, $removeheader, $csp converters can also combine
+     * rules across multiple filters.
      *
      * @see {@link DeclarativeRulesConverter.converters}.
      *
@@ -75,7 +77,6 @@ export class DeclarativeRulesConverter {
         let converted: ConvertedRules = {
             sourceMapValues: [],
             declarativeRules: [],
-            regexpRulesCount: 0,
             errors: [],
         };
 
@@ -87,7 +88,6 @@ export class DeclarativeRulesConverter {
             const {
                 sourceMapValues,
                 declarativeRules,
-                regexpRulesCount,
                 errors,
             } = this.convertRules(
                 filterId,
@@ -98,7 +98,6 @@ export class DeclarativeRulesConverter {
 
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
             converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
-            converted.regexpRulesCount += regexpRulesCount;
             converted.errors = converted.errors.concat(errors);
         });
 
@@ -133,7 +132,6 @@ export class DeclarativeRulesConverter {
         const converted: ConvertedRules = {
             sourceMapValues: [],
             declarativeRules: [],
-            regexpRulesCount: 0,
             errors: [],
         };
 
@@ -144,9 +142,8 @@ export class DeclarativeRulesConverter {
             const {
                 sourceMapValues,
                 declarativeRules,
-                regexpRulesCount,
                 errors,
-            } = converter.convertRules(
+            } = converter.convert(
                 filterId,
                 groupsRules[key],
                 lastUsedId,
@@ -154,7 +151,6 @@ export class DeclarativeRulesConverter {
 
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
             converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
-            converted.regexpRulesCount += regexpRulesCount;
             converted.errors = converted.errors.concat(errors);
         });
 
@@ -183,7 +179,7 @@ export class DeclarativeRulesConverter {
         // rule conversion errors if we remove the transformed rule associated
         // with those errors
         let {
-            declarativeRules, sourceMapValues, regexpRulesCount, errors,
+            declarativeRules, sourceMapValues, errors,
         } = converted;
 
         const convertedRulesErrors: InvalidDeclarativeRuleError[] = [];
@@ -308,7 +304,6 @@ export class DeclarativeRulesConverter {
             }
 
             declarativeRules = filteredRules;
-            regexpRulesCount = Math.min(maxNumberOfRegexpRules, regexpRulesCounter);
         }
 
         // Make array from index
@@ -324,7 +319,6 @@ export class DeclarativeRulesConverter {
         return {
             sourceMapValues,
             declarativeRules,
-            regexpRulesCount,
             errors: errors.concat(otherErrors),
             limitations,
         };
