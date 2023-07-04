@@ -1,3 +1,4 @@
+import { isUndefined } from '../utils/common';
 import { rawModifiersData } from './raw-modifiers';
 import {
     type ModifierData,
@@ -31,7 +32,11 @@ const prepareBlockerData = (blockerId: string, rawModifierData: ModifierData): S
         [SpecificKey.Conflicts]: rawData[SpecificKey.Conflicts] || null,
         [SpecificKey.InverseConflicts]: rawData[SpecificKey.InverseConflicts] || false,
         [SpecificKey.Assignable]: rawData[SpecificKey.Assignable] || false,
-        [SpecificKey.Negatable]: rawData[SpecificKey.Negatable] || true,
+        // 'negatable' should be checked whether it is undefined or not
+        // because if it is 'false', default value 'true' will override it
+        [SpecificKey.Negatable]: isUndefined(rawData[SpecificKey.Negatable])
+            ? true
+            : rawData[SpecificKey.Negatable],
         [SpecificKey.BlockOnly]: rawData[SpecificKey.BlockOnly] || false,
         [SpecificKey.ExceptionOnly]: rawData[SpecificKey.ExceptionOnly] || false,
         [SpecificKey.ValueFormat]: rawData[SpecificKey.ValueFormat] || null,
