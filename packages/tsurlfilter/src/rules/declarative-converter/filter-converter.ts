@@ -176,7 +176,6 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             const {
                 sourceMapValues,
                 declarativeRules,
-                regexpRulesCount,
                 errors,
                 limitations,
             } = DeclarativeRulesConverter.convert(
@@ -200,7 +199,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             const ruleSet = new RuleSet(
                 `ruleset_${filterId}`,
                 declarativeRules.length,
-                regexpRulesCount,
+                declarativeRules.filter((d) => d.condition.regexFilter).length,
                 ruleSetContent,
             );
 
@@ -236,7 +235,6 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         const {
             sourceMapValues,
             declarativeRules,
-            regexpRulesCount,
             errors,
             limitations = [],
         } = combinedConvertedRules;
@@ -256,7 +254,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         const ruleSet = new RuleSet(
             DeclarativeFilterConverter.COMBINED_RULESET_ID,
             declarativeRules.length,
-            regexpRulesCount,
+            declarativeRules.filter((d) => d.condition.regexFilter).length,
             ruleSetContent,
         );
 

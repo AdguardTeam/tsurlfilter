@@ -9,6 +9,7 @@
 
 // Please keep imports and exports in alphabetical order
 
+import all from './modifiers/all.yml';
 import app from './modifiers/app.yml';
 import badfilter from './modifiers/badfilter.yml';
 import cname from './modifiers/cname.yml';
@@ -67,6 +68,7 @@ import xmlhttprequest from './modifiers/xmlhttprequest.yml';
 import { type RawModifierData } from './types';
 
 export const rawModifiersData: RawModifierData = {
+    all,
     app,
     badfilter,
     cname,

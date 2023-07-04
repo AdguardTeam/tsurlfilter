@@ -1,3 +1,5 @@
+import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
+import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
 import {
     TooComplexRegexpError,
     UnsupportedModifierError,
@@ -23,6 +25,8 @@ const createRulesFromText = (
         })
         .filter((r) => r) as IndexedRule[];
 };
+
+const allResourcesTypes = Object.values(ResourceType);
 
 describe('DeclarativeRuleConverter', () => {
     it('converts simple blocking rules', () => {
@@ -861,20 +865,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 isUrlFilterCaseSensitive: false,
-                resourceTypes: [
-                    'main_frame',
-                    'sub_frame',
-                    'stylesheet',
-                    'script',
-                    'image',
-                    'font',
-                    'object',
-                    'xmlhttprequest',
-                    'ping',
-                    'media',
-                    'websocket',
-                    'other',
-                ],
+                resourceTypes: allResourcesTypes,
             },
         });
         expect(declarativeRules[1]).toStrictEqual({
@@ -962,23 +953,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
         });
@@ -1006,23 +981,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
         });
@@ -1052,23 +1011,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
         });
@@ -1105,23 +1048,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
 
@@ -1173,23 +1100,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||example.org',
                     isUrlFilterCaseSensitive: false,
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
         });
@@ -1222,23 +1133,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||example.org^',
                     isUrlFilterCaseSensitive: false,
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -1253,23 +1148,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||example.com^',
                     isUrlFilterCaseSensitive: false,
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
-                    ],
+                    resourceTypes: allResourcesTypes,
                 },
             });
         });
@@ -1329,23 +1208,113 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||example.com',
                     isUrlFilterCaseSensitive: false,
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'csp_report',
-                        'media',
-                        'websocket',
-                        'webtransport',
-                        'webbundle',
-                        'other',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+    });
+
+    describe('check $csp', () => {
+        it('converts $csp rules', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||example.com$csp=frame-src \'none\''],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: 'append',
+                        value: 'frame-src \'none\'',
+                    }],
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.com',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('combine several $csp rule', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '||example.com$csp=frame-src \'none\'',
+                    '||example.com$csp=script-src \'self\' \'unsafe-eval\' http: https:',
+                    '||example.com$csp=worker-src \'none\',subdocument',
+                    '$csp=worker-src \'none\',domain=example.org|example.net',
+                ],
+            );
+
+            const { declarativeRules } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(3);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: 'append',
+                        value: 'frame-src \'none\'; script-src \'self\' \'unsafe-eval\' http: https:',
+                    }],
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    resourceTypes: allResourcesTypes,
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: 3,
+                priority: 101,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: 'append',
+                        value: 'worker-src \'none\'',
+                    }],
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    resourceTypes: ['sub_frame'],
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+            expect(declarativeRules[2]).toStrictEqual({
+                id: 4,
+                priority: 151,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: CSP_HEADER_NAME,
+                        operation: 'append',
+                        value: 'worker-src \'none\'',
+                    }],
+                },
+                condition: {
+                    initiatorDomains: [
+                        'example.org',
+                        'example.net',
                     ],
+                    resourceTypes: allResourcesTypes,
+                    isUrlFilterCaseSensitive: false,
                 },
             });
         });
