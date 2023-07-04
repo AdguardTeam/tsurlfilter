@@ -26,6 +26,8 @@ const prepareBlockerData = (blockerId: string, rawModifierData: ModifierData): S
         [SpecificKey.Docs]: rawData[SpecificKey.Docs] || null,
         [SpecificKey.Deprecated]: rawData[SpecificKey.Deprecated] || false,
         [SpecificKey.DeprecationMessage]: rawData[SpecificKey.DeprecationMessage] || null,
+        [SpecificKey.Removed]: rawData[SpecificKey.Removed] || false,
+        [SpecificKey.RemovalMessage]: rawData[SpecificKey.RemovalMessage] || null,
         [SpecificKey.Conflicts]: rawData[SpecificKey.Conflicts] || null,
         [SpecificKey.InverseConflicts]: rawData[SpecificKey.InverseConflicts] || false,
         [SpecificKey.Assignable]: rawData[SpecificKey.Assignable] || false,

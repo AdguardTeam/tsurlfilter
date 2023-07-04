@@ -17,8 +17,10 @@ and the value is the object with the following fields:
 | `docs` | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available. | `string\|null` | `null` |
 | `version_added` | The version of the adblocker when the modifier was added. | `string\|null` | `null` |
 | `version_removed` | The version of the adblocker when the modifier was removed. | `string\|null` | `null` |
-| `deprecated` | Describes whether the scriptlet is deprecated. | `boolean` | `false` |
-| `deprecation_message` | Message that describes why the scriptlet is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
+| `deprecated` | Describes whether the modifier is deprecated; for _soon-to-be removed_ features. | `boolean` | `false` |
+| `deprecation_message` | Message that describes why the modifier is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
+| `removed` | Describes whether the modifier is removed; for _already removed_ features. | `boolean` | `false` |
+| `removal_message` | Message that describes why the modifier is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
 | `conflicts` | List of modifiers that are incompatible with the actual one. | `string[]\|null` | `null` (no conflicts) |
 | `inverse_conflicts` | The actual modifier is incompatible with all other modifiers, except the ones listed in `conflicts`. | `boolean` | `false` |
 | `assignable` | Describes whether the actual modifier supports value assignment. For example, `domain` is assignable, so it can be used like this: `$domain=domain.com\|~subdomain.domain.com`, where `=` is the assignment operator and `domain.com\|~subdomain.domain.com` is the value. | `boolean` | `false` |

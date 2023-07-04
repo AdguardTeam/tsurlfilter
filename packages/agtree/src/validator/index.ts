@@ -9,7 +9,8 @@ import { StringUtils } from '../utils/string';
 
 /**
  * Collects names and aliases for all supported modifiers.
- * Deprecated modifiers are not included.
+ * Deprecated modifiers are included because they are still supported
+ * but removed modifiers are not included.
  *
  * @param dataMap Parsed all modifiers data.
  *
@@ -20,8 +21,8 @@ const getAllSupportedModifierNames = (dataMap: ModifierDataMap): Set<string> => 
     dataMap.forEach((modifierData: ModifierData) => {
         Object.keys(modifierData).forEach((blockerId) => {
             const blockerData = modifierData[blockerId];
-            // do not include deprecated modifiers
-            if (blockerData.deprecated) {
+            // do not include removed modifiers as they are not supported
+            if (blockerData.removed) {
                 return;
             }
             names.add(blockerData.name);

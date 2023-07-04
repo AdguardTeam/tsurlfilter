@@ -2,9 +2,9 @@ adg_any:
   name: webrtc
   description: The rule applies only to WebRTC connections.
   docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#webrtc-modifier
-  deprecated: true
-  deprecation_message: |-
-    This modifier is deprecated and is no longer supported.
+  removed: true
+  removal_message: |-
+    This modifier is removed and is no longer supported.
     Rules with it are considered as invalid. If you need to suppress WebRTC, consider using
     the [nowebrtc scriptlet](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#nowebrtc).
 
@@ -12,9 +12,9 @@ ubo_any:
   name: webrtc
   description: The rule applies only to WebRTC connections.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax
-  deprecated: true
-  deprecation_message: |-
-    This modifier is deprecated and is no longer supported.
+  removed: true
+  removal_message: |-
+    This modifier is removed and is no longer supported.
     If you need to suppress WebRTC, consider using
     the [nowebrtc scriptlet](https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-).
 
