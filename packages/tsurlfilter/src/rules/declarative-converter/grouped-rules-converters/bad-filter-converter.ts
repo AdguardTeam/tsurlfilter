@@ -17,7 +17,7 @@ export class BadFilterRulesConverter extends DeclarativeRuleConverter {
      * @returns Empty converted rules.
      */
     // eslint-disable-next-line class-methods-use-this
-    public convertRules(
+    public convert(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         filterId: number,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -28,7 +28,6 @@ export class BadFilterRulesConverter extends DeclarativeRuleConverter {
         return {
             sourceMapValues: [],
             declarativeRules: [],
-            regexpRulesCount: 0,
             errors: [],
         };
     }

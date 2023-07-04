@@ -175,11 +175,12 @@ describe('DeclarativeConverter', () => {
         const { ruleSets: [ruleSet] } = await converter.convert([filter]);
 
         let sources = await ruleSet.getRulesById(1);
-        const originalRules = sources.map(({ sourceRule }) => sourceRule);
+        let originalRules = sources.map(({ sourceRule }) => sourceRule);
         expect(originalRules).toEqual(expect.arrayContaining(rules));
 
         sources = await ruleSet.getRulesById(4);
-        expect(sources[0].sourceRule).toEqual(additionalRule);
+        originalRules = sources.map(({ sourceRule }) => sourceRule);
+        expect(originalRules).toEqual(expect.arrayContaining([additionalRule]));
     });
 
     describe('respects limitations', () => {

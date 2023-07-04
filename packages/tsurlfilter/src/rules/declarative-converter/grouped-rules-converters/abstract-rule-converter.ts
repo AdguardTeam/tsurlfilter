@@ -1,7 +1,100 @@
+/* eslint-disable jsdoc/require-description-complete-sentence */
+/* eslint-disable jsdoc/no-multi-asterisks */
 /**
  * @file Describes how to convert one {@link NetworkRule} into one or many
- * {@link DeclarativeRule|declarative rules} .
+ * {@link DeclarativeRule|declarative rules}.
+ *
+ *      Heir classes                                           DeclarativeConverter
+ *
+ *                            │                                         │
+ *    *override layer*        │              *protected layer*          │              *private layer*
+ *                            │                                         │
+ *                            │                                         │
+ * Subclasses should define   │    Converts a set of indexed rules      │
+ * the logic in this method.  │    into declarative rules while         │
+ *                            │    handling errors.                     │
+ *  ┌─────────────────────┐   │   ┌───────────────────────────┐         │
+ *  │                     │   │   │                           │         │
+ *  │  abstract convert() ├───┼──►│  protected convertRules() │         │
+ *  │                     │   │   │                           │         │
+ *  └─────────────────────┘   │   └─────────────┬─────────────┘         │
+ *                            │                 │                       │
+ *                            │                 │                       │
+ *                            │   ┌─────────────▼─────────────┐         │
+ *                            │   │                           │         │
+ *                            │   │  protected convertRule()  ├─────────┼───────────────────────┐
+ *                            │   │                           │         │                       │
+ *                            │   └───────────────────────────┘         │                       │
+ *                            │   Transforms a single Network Rule      │     ┌─────────────────▼───────────────────┐
+ *                            │   into one or several                   │     │                                     │
+ *                            │   declarative rules.                    │  ┌──┤ static checkNetworkRuleApplicable() │
+ *                            │                                         │  │  │                                     │
+ *                            │                                         │  │  └─────────────────────────────────────┘
+ *                            │                                         │  │  Verifies whether the conversion of
+ *                            │                                         │  │  a Network Rule is supported.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌──────────────────────────┐
+ *                            │                                         │  └──►                          │
+ *                            │                                         │     │   private getAction()    │
+ *                            │                                         │  ┌──┤                          │
+ *                            │                                         │  │  └──────────────────────────┘
+ *                            │                                         │  │  Generates the action section
+ *                            │                                         │  │  of a declarative rule.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌────────────────────────────────────┐
+ *                            │                                         │  └──►                                    │
+ *                            │                                         │     │     private getRedirectAction()    │
+ *                            │                                         │     │  static getModifyHeadersAction()   │
+ *                            │                                         │     │ static getAddingCspHeadersAction() │
+ *                            │                                         │  ┌──┤                                    │
+ *                            │                                         │  │  └────────────────────────────────────┘
+ *                            │                                         │  │  Modifier-specific methods. A distinct
+ *                            │                                         │  │  section will be created for each modifier.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌─────────────────────────┐
+ *                            │                                         │  └──►                         │
+ *                            │                                         │     │  static getCondition()  │
+ *                            │                                         │  ┌──┤                         │
+ *                            │                                         │  │  └─────────────────────────┘
+ *                            │                                         │  │  Generates the condition section
+ *                            │                                         │  │  of a declarative rule.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌────────────────────────┐
+ *                            │                                         │  └──►                        │
+ *                            │                                         │     │  static getPriority()  │
+ *                            │                                         │  ┌──┤                        │
+ *                            │                                         │  │  └────────────────────────┘
+ *                            │                                         │  │  Generates the priority of
+ *                            │                                         │  │  a declarative rule.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌───────────────────────────────────────┐
+ *                            │                                         │  └──►                                       │
+ *                            │                                         │     │static checkDeclarativeRuleApplicable()│
+ *                            │                                         │  ┌──┤                                       │
+ *                            │                                         │  │  └───────────────────────────────────────┘
+ *                            │                                         │  │  After conversion, checks if the generated
+ *                            │                                         │  │  declarative rule contains any unsupported
+ *                            │                                         │  │  values.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌─────────────────────────────────────┐
+ *                            │                                         │  └──►                                     │
+ *                            │                                         │     │ static catchErrorDuringConversion() │
+ *                            │               ┌─────────────────────────┼─────┤                                     │
+ *                            │               │                         │     └─────────────────────────────────────┘
+ *                            │   ┌───────────▼────────────────────┐    │     Handles errors during conversion.
+ *                            │   │                                │    │
+ *                            │   │ protected groupConvertedRules()│    │
+ *                            │   │                                │    │
+ *                            │   └────────────────────────────────┘    │
+ *                            │                                         │
+ *                            │   Groups converted declarative rules    │
+ *                            │   using the provided grouper-functions. │
+ *                            │                                         │
+ *                            │   This method is optional and is not    │
+ *                            │   used by all derived classes.          │
+ *                            │                                         │
  */
+/* eslint-enable */
 
 import punycode from 'punycode/';
 import { redirects } from '@adguard/scriptlets';
@@ -19,6 +112,8 @@ import {
     Redirect,
     HeaderOperation,
     RuleActionHeaders,
+    ModifyHeaderInfo,
+    DECLARATIVE_RESOURCE_TYPES_MAP,
 } from '../declarative-rule';
 import {
     TooComplexRegexpError,
@@ -31,31 +126,18 @@ import { IRule, IndexedRule } from '../../rule';
 import { ResourcesPathError } from '../errors/converter-options-errors';
 import { RedirectModifier } from '../../../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
+import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 
 /**
- * Map request types to declarative types.
- */
-const DECLARATIVE_RESOURCE_TYPES_MAP = {
-    [ResourceType.MainFrame]: RequestType.Document,
-    [ResourceType.SubFrame]: RequestType.SubDocument,
-    [ResourceType.Stylesheet]: RequestType.Stylesheet,
-    [ResourceType.Script]: RequestType.Script,
-    [ResourceType.Image]: RequestType.Image,
-    [ResourceType.Font]: RequestType.Font,
-    [ResourceType.Object]: RequestType.Object,
-    [ResourceType.XmlHttpRequest]: RequestType.XmlHttpRequest,
-    [ResourceType.Ping]: RequestType.Ping,
-    // TODO: what should match this resource type?
-    // [ResourceType.CSP_REPORT]: RequestType.Document,
-    [ResourceType.Media]: RequestType.Media,
-    [ResourceType.WebSocket]: RequestType.WebSocket,
-    [ResourceType.Other]: RequestType.Other,
-};
-
-/**
- * Abstract rule converter class.
  * Contains the generic logic for converting a {@link NetworkRule}
  * into a {@link DeclarativeRule}.
+ *
+ * Descendant classes must override the {@link convert} method,
+ * where some logic must be defined for each rule type.
+ *
+ * Also descendant classes can use {@link convertRules}, {@link convertRule} and
+ * {@link groupConvertedRules} methods, which contains the general logic of
+ * transformation and grouping of rules.
  */
 export abstract class DeclarativeRuleConverter {
     /**
@@ -196,7 +278,7 @@ export abstract class DeclarativeRuleConverter {
      *
      * @param rule Network rule.
      *
-     * @returns  Modify headers action, which describes which headers should
+     * @returns Modify headers action, which describes which headers should
      * be changed: added, set or deleted.
      */
     private static getModifyHeadersAction(rule: NetworkRule): RuleActionHeaders | null {
@@ -223,6 +305,30 @@ export abstract class DeclarativeRuleConverter {
                     header: removeResponseHeader,
                     operation: HeaderOperation.Remove,
                 }],
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns rule modify headers action with adding CSP headers to response.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Add headers action, which describes which headers should be added.
+     */
+    private static getAddingCspHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
+        if (!rule.isOptionEnabled(NetworkRuleOption.Csp)) {
+            return null;
+        }
+
+        const cspHeaderValue = rule.getAdvancedModifierValue();
+        if (cspHeaderValue) {
+            return {
+                operation: HeaderOperation.Append,
+                header: CSP_HEADER_NAME,
+                value: cspHeaderValue,
             };
         }
 
@@ -271,6 +377,16 @@ export abstract class DeclarativeRuleConverter {
                 return {
                     type: RuleActionType.MODIFY_HEADERS,
                     responseHeaders: modifyHeadersAction.responseHeaders,
+                };
+            }
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
+            const addCspHeadersAction = DeclarativeRuleConverter.getAddingCspHeadersAction(rule);
+            if (addCspHeadersAction) {
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    responseHeaders: [addCspHeadersAction],
                 };
             }
         }
@@ -353,7 +469,8 @@ export abstract class DeclarativeRuleConverter {
          * also for all other types of requests.
          */
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader) && emptyResourceTypes && !rule.isAllowlist()) {
+        if ((rule.isOptionEnabled(NetworkRuleOption.RemoveHeader) || rule.isOptionEnabled(NetworkRuleOption.Csp))
+            && emptyResourceTypes && !rule.isAllowlist()) {
             condition.resourceTypes = [
                 ResourceType.MainFrame,
                 ResourceType.SubFrame,
@@ -364,11 +481,8 @@ export abstract class DeclarativeRuleConverter {
                 ResourceType.Object,
                 ResourceType.XmlHttpRequest,
                 ResourceType.Ping,
-                ResourceType.CspReport,
                 ResourceType.Media,
                 ResourceType.WebSocket,
-                ResourceType.WebTransport,
-                ResourceType.WebBundle,
                 ResourceType.Other,
             ];
         }
@@ -515,7 +629,7 @@ export abstract class DeclarativeRuleConverter {
             // TODO: Remove small hack with "reparsing" rule to extract only options part.
             const { options } = NetworkRule.parseRuleText(r.getText());
             if (options === name.replace('$', '')) {
-                const msg = `Network rule only one enabled modifier ${name} is not supported: "${rule.getText()}"`;
+                const msg = `Network rule with only one enabled modifier ${name} is not supported: "${rule.getText()}"`;
                 return new UnsupportedModifierError(msg, r);
             }
 
@@ -562,7 +676,11 @@ export abstract class DeclarativeRuleConverter {
                 name: '$popup',
                 customChecks: [checkOnlyOneModifier],
             },
-            { option: NetworkRuleOption.Csp, name: '$csp' },
+            {
+                option: NetworkRuleOption.Csp,
+                name: '$csp',
+                customChecks: [checkAllowRulesFn],
+            },
             { option: NetworkRuleOption.Replace, name: '$replace' },
             { option: NetworkRuleOption.Cookie, name: '$cookie' },
             {
@@ -681,7 +799,7 @@ export abstract class DeclarativeRuleConverter {
      *
      * @returns Initial error or new packaged error.
      */
-    protected static catchErrorDuringConversion(
+    private static catchErrorDuringConversion(
         rule: IRule,
         index: number,
         id: number,
@@ -702,14 +820,147 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Converts the provided set of indexed rules into declarative rules,
+     * collecting source rule identifiers for declarative rules
+     * and catching conversion errors.
+     *
+     * @param filterId An identifier for the filter.
+     * @param rules Indexed rules.
+     * @param offsetId Offset for the IDs of the converted rules.
+     *
+     * @returns Transformed declarative rules with their sources
+     * and caught conversion errors.
+     */
+    protected convertRules(
+        filterId: number,
+        rules: IndexedRule[],
+        offsetId: number,
+    ): ConvertedRules {
+        const res: ConvertedRules = {
+            declarativeRules: [],
+            errors: [],
+            sourceMapValues: [],
+        };
+
+        rules.forEach(({ rule, index }: IndexedRule) => {
+            const id = offsetId + index;
+            let converted: DeclarativeRule[] = [];
+
+            try {
+                converted = this.convertRule(
+                    rule as NetworkRule,
+                    id,
+                );
+            } catch (e) {
+                const err = DeclarativeRuleConverter.catchErrorDuringConversion(rule, index, id, e);
+                res.errors.push(err);
+                return;
+            }
+
+            // For each converted declarative rule save it's source.
+            converted.forEach((dRule) => {
+                res.sourceMapValues.push({
+                    declarativeRuleId: dRule.id,
+                    sourceRuleIndex: index,
+                    filterId,
+                });
+                res.declarativeRules.push(dRule);
+            });
+        });
+
+        return res;
+    }
+
+    /**
+     * This function groups similar rules among those already converted into
+     * declarative rules. If a similar rule is found, it combines the two
+     * declarative rules into one.
+     *
+     * @param converted An instance of {@link ConvertedRules} that includes
+     * converted declarative rules, recorded errors, and a hash mapping
+     * declarative rule IDs to corresponding source test rule IDs.
+     * @param createRuleTemplate A function that stores the template of
+     * a declarative rule. This template is used to compare different
+     * declarative rules.
+     * @param combineRulePair A function that attempts to find a similar
+     * declarative rule by comparing rule templates. If a match is found,
+     * it merges the two declarative rules into one and returns combined rule.
+     *
+     * @returns Object with grouped similar declarative rules.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    protected groupConvertedRules(
+        converted: ConvertedRules,
+        createRuleTemplate: (rule: DeclarativeRule) => string,
+        combineRulePair: (sourceRule: DeclarativeRule, ruleToMerge: DeclarativeRule) => DeclarativeRule,
+    ): ConvertedRules {
+        const rulesTemplates = new Map<string, DeclarativeRule>();
+
+        const saveRuleTemplate = (rule: DeclarativeRule): void => {
+            const template = createRuleTemplate(rule);
+            rulesTemplates.set(template, rule);
+        };
+
+        const result: ConvertedRules = {
+            declarativeRules: [],
+            sourceMapValues: [],
+            errors: converted.errors,
+        };
+
+        const { sourceMapValues, declarativeRules } = converted;
+
+        declarativeRules.forEach((dRule) => {
+            // Trying to find a declarative rule for siblings.
+            const template = createRuleTemplate(dRule);
+            const siblingDeclarativeRule = rulesTemplates.get(template);
+
+            // Finds the source rule identifier.
+            const source = sourceMapValues.find((s) => s.declarativeRuleId === dRule.id);
+            if (source === undefined) {
+                result.errors.push(new Error(`Cannot find source for converted rule "${dRule}"`));
+                return;
+            }
+
+            // If a similar rule is found, the function combines the two
+            // declarative rules into one and returns the resulting combined rule.
+            if (siblingDeclarativeRule) {
+                const combinedRule = combineRulePair(siblingDeclarativeRule, dRule);
+                // Updates template.
+                saveRuleTemplate(combinedRule);
+
+                // Updates the declarative rule identified for the merged rule.
+                result.sourceMapValues.push({
+                    ...source,
+                    declarativeRuleId: combinedRule.id,
+                });
+            } else {
+                // If not found - saves the template part of the declarative
+                // rule to compare it with next values.
+                saveRuleTemplate(dRule);
+
+                // Keeps the source unchanged because the current rule
+                // has not been merged.
+                result.sourceMapValues.push(source);
+            }
+        });
+
+        result.declarativeRules = Array.from(rulesTemplates.values());
+
+        return result;
+    }
+
+    /**
      * Converts provided bunch of indexed rules to declarative rules
      * via generating source map for it and catching errors of conversations.
      *
      * @param filterId Filter id.
      * @param rules Indexed rules.
      * @param offsetId Offset for the IDs of the converted rules.
+     *
+     * @returns Object of {@link ConvertedRules} which containing declarative
+     * rules, source rule identifiers, errors and counter of regexp rules.
      */
-    abstract convertRules(
+    abstract convert(
         filterId: number,
         rules: IndexedRule[],
         offsetId: number,

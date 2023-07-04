@@ -14,6 +14,8 @@ export const enum SpecificKey {
     Docs = 'docs',
     Deprecated = 'deprecated',
     DeprecationMessage = 'deprecation_message',
+    Removed = 'removed',
+    RemovalMessage = 'removal_message',
     Conflicts = 'conflicts',
     InverseConflicts = 'inverse_conflicts',
     Assignable = 'assignable',
@@ -37,6 +39,8 @@ export type SpecificPlatformModifierData = {
     [SpecificKey.Docs]: string | null;
     [SpecificKey.Deprecated]: boolean;
     [SpecificKey.DeprecationMessage]: string | null;
+    [SpecificKey.Removed]: boolean;
+    [SpecificKey.RemovalMessage]: string | null;
     [SpecificKey.Conflicts]: string[] | null;
     [SpecificKey.InverseConflicts]: boolean;
     [SpecificKey.Assignable]: boolean;

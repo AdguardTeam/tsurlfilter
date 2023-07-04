@@ -120,6 +120,8 @@ const SCHEMA_MAP = {
             version_removed: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
             deprecated: ss.defaulted(ss.boolean(), false),
             deprecation_message: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+            removed: ss.defaulted(ss.boolean(), false),
+            removal_message: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
             conflicts: ss.defaulted(ss.array(ss.nonempty(ss.string())), []),
             inverse_conflicts: ss.defaulted(ss.boolean(), false),
             assignable: ss.defaulted(ss.boolean(), false),
