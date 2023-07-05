@@ -1,6 +1,6 @@
 import * as TSUrlFilter from '@adguard/tsurlfilter';
 
-const background = () => {
+const background = (): void => {
     console.log(TSUrlFilter);
 };
 

@@ -47,7 +47,7 @@ Test:
 
             # build tsurlfilter first, because it is used in tswebextension tests
             npx lerna@6 run --scope @adguard/tsurlfilter build
-  
+
             npx lerna@6 run --scope @adguard/tswebextension test:prod
             npx lerna@6 run --scope @adguard/tswebextension build
 

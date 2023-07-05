@@ -30,7 +30,7 @@ Increment:
             branch="${bamboo.planRepository.branchName}"
 
             # Throw error if current branch is neither "master" nor "v1",
-            # because we do not deploy changes from other branches 
+            # because we do not deploy changes from other branches
             if [ $branch != "master" && $branch != "v1" ]
             then
               echo "increment is not supported on branch ${branch}"

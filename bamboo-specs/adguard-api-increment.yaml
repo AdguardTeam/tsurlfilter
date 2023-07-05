@@ -28,7 +28,7 @@ Increment:
         scripts:
           - |-
             branch="${bamboo.planRepository.branchName}"
-      
+
             # Throw error if current branch is not "master",
             # because we do not deploy changes from other branches
             if [ $branch != "master" ]
