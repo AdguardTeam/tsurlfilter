@@ -53,7 +53,7 @@ export class CspService {
                             eventId: requestId,
                             requestUrl,
                             frameUrl: referrerUrl,
-                            frameDomain: getDomain(referrerUrl) as string,
+                            frameDomain: getDomain(referrerUrl),
                             requestType: ContentType.Csp,
                             rule,
                             timestamp: Date.now(),

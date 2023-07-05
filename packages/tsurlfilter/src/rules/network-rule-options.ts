@@ -49,6 +49,7 @@ export const NETWORK_RULE_OPTIONS = {
     CTAG: 'ctag',
     METHOD: 'method',
     TO: 'to',
+    PERMISSIONS: 'permissions',
     ALL: 'all',
 };
 

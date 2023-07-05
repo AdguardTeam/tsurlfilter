@@ -373,6 +373,34 @@ describe('TestNewMatchingResult - csp rules', () => {
     });
 });
 
+describe('TestNewMatchingResult - permissions rules', () => {
+    const permissionsRule = String.raw`/ads^$permissions=sync-xhr=()\,accelerometer=self,domain=example.org`;
+    const globalAllowlistRule = '@@||example.org^$permissions';
+
+    it('works if permissions rule is found', () => {
+        const rules = [new NetworkRule(permissionsRule, 0)];
+        const result = new MatchingResult(rules, null);
+
+        expect(result).toBeTruthy();
+        const permissionsRules = result.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(1);
+        expect(permissionsRules[0].getText()).toBe(permissionsRule);
+    });
+
+    it('works if permissions global allowlist rule is found', () => {
+        const rules = [
+            new NetworkRule(permissionsRule, 0),
+            new NetworkRule(globalAllowlistRule, 0),
+        ];
+
+        const result = new MatchingResult(rules, null);
+        expect(result).toBeTruthy();
+        const cspRules = result.getPermissionsPolicyRules();
+        expect(cspRules.length).toBe(1);
+        expect(cspRules[0].getText()).toBe(globalAllowlistRule);
+    });
+});
+
 describe('TestNewMatchingResult - replace rules', () => {
     it('works if replace rules are found', () => {
         const rules = [

@@ -21,6 +21,7 @@ export enum ContentType {
     WebRtc = 'webRtc',
     Other = 'other',
     Csp = 'csp',
+    PermissionsPolicy = 'permissionsPolicy',
     Cookie = 'cookie',
     Ping = 'ping',
     CspReport = 'cspReport',

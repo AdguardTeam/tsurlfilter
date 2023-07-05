@@ -65,6 +65,12 @@ export class MatchingResult {
     public readonly removeHeaderRules: NetworkRule[] | null;
 
     /**
+     * Permissions rules - a set of rules modifying permissions policy
+     * See $permissions modifier
+     */
+    public readonly permissionsRules: NetworkRule[] | null;
+
+    /**
      * StealthRule - this is a allowlist rule that negates stealth mode features
      * Note that the stealth rule can be be received from both rules and sourceRules
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
@@ -88,6 +94,7 @@ export class MatchingResult {
         this.removeHeaderRules = null;
         this.redirectRules = null;
         this.stealthRule = null;
+        this.permissionsRules = null;
 
         // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
@@ -156,6 +163,14 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Stealth)) {
                 this.stealthRule = rule;
+                continue;
+            }
+
+            if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+                if (!this.permissionsRules) {
+                    this.permissionsRules = [];
+                }
+                this.permissionsRules.push(rule);
                 continue;
             }
 
@@ -382,6 +397,33 @@ export class MatchingResult {
         });
 
         return Array.from(rulesByDirective.values());
+    }
+
+    /**
+     * Returns an array of permission policy rules
+     */
+    getPermissionsPolicyRules(): NetworkRule[] {
+        if (!this.permissionsRules) {
+            return [];
+        }
+
+        const permissionsRules: NetworkRule[] = [];
+
+        for (const rule of this.permissionsRules) {
+            if (rule.isAllowlist()) {
+                /**
+                 * Allowlist with $permissions modifier disables
+                 * all the $permissions rules on all the pages matching the rule pattern.
+                 */
+                if (!rule.getAdvancedModifierValue()) {
+                    return [rule];
+                }
+            } else {
+                permissionsRules.push(rule);
+            }
+        }
+
+        return permissionsRules;
     }
 
     /**

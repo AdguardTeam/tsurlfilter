@@ -256,6 +256,33 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('Empty domain specified in "example.org|"'));
     });
 
+    it('throws error if $permissions modifier value is invalid', () => {
+        expect(() => {
+            new NetworkRule(String.raw`||example.org$permissions=permissions=oversized-images=()\,clipboard-read=(self)`, 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule(String.raw`@@||example.org$permissions`, 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule(String.raw`||example.org$permissions`, 0);
+        }).toThrow(new SyntaxError('Invalid $permissions rule: permissions directive must not be empty'));
+
+        expect(() => {
+            new NetworkRule(String.raw`@@||example.org$permissions=geolocation=*`, 0);
+        }).toThrow(new SyntaxError('Allowlist $permissions rule should not have directive specified: "geolocation=*"'));
+
+        // Must throw on unsupported modifiers
+        expect(() => {
+            new NetworkRule(String.raw`||example.org$match-case,permissions=geolocation=(self)`, 0);
+        }).toThrow(new SyntaxError('$permissions rules are not compatible with some other modifiers'));
+
+        expect(() => {
+            new NetworkRule(String.raw`||example.org$important,permissions=geolocation=(self)`, 0);
+        }).not.toThrow();
+    });
+
     it('thorws error if $to modfiier value is invalid', () => {
         expect(() => {
             new NetworkRule('||*/ads^$to=evil.com', 0);

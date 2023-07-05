@@ -182,6 +182,7 @@ import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
 import { CspService } from './services/csp-service';
+import { permissionsPolicyService } from './services/permissions-policy-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -292,9 +293,9 @@ export class WebRequestApi {
                 tabId,
                 eventId: requestId,
                 requestUrl,
-                requestDomain: getDomain(requestUrl) as string,
+                requestDomain: getDomain(requestUrl),
                 frameUrl: referrerUrl,
-                frameDomain: getDomain(referrerUrl) as string,
+                frameDomain: getDomain(referrerUrl),
                 requestType: contentType,
                 timestamp,
                 requestThirdParty: thirdParty,
@@ -481,6 +482,9 @@ export class WebRequestApi {
 
         if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
             if (CspService.onHeadersReceived(context)) {
+                responseHeadersModified = true;
+            }
+            if (permissionsPolicyService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
         }

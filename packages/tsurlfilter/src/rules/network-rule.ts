@@ -16,6 +16,7 @@ import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
+import { PermissionsModifier } from '../modifiers/permissions-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import {
     ESCAPE_CHARACTER,
@@ -73,41 +74,44 @@ export enum NetworkRuleOption {
     // Other modifiers
 
     /** $popup modifier */
-    Popup = 1 << 14,
+    Popup = 1 << 12,
     /** $csp modifier */
-    Csp = 1 << 15,
+    Csp = 1 << 13,
     /** $replace modifier */
-    Replace = 1 << 16,
+    Replace = 1 << 14,
     /** $cookie modifier */
-    Cookie = 1 << 17,
+    Cookie = 1 << 15,
     /** $redirect modifier */
-    Redirect = 1 << 18,
+    Redirect = 1 << 16,
     /** $badfilter modifier */
-    Badfilter = 1 << 19,
+    Badfilter = 1 << 17,
     /** $removeparam modifier */
-    RemoveParam = 1 << 20,
+    RemoveParam = 1 << 18,
     /** $removeheader modifier */
-    RemoveHeader = 1 << 21,
+    RemoveHeader = 1 << 19,
     /** $jsonprune modifier */
-    JsonPrune = 1 << 22,
+    JsonPrune = 1 << 20,
     /** $hls modifier */
-    Hls = 1 << 23,
+    Hls = 1 << 21,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 24,
+    Network = 1 << 22,
 
     /** dns modifiers */
-    Client = 1 << 25,
-    DnsRewrite = 1 << 26,
-    DnsType = 1 << 27,
-    Ctag = 1 << 28,
+    Client = 1 << 23,
+    DnsRewrite = 1 << 24,
+    DnsType = 1 << 25,
+    Ctag = 1 << 26,
 
     // $method modifier
-    Method = 1 << 30,
+    Method = 1 << 27,
 
     // $to modifier
-    To = 1 << 31,
+    To = 1 << 28,
+
+    // $permissions modifier
+    Permissions = 1 << 29,
 
     // Groups (for validation)
 
@@ -140,6 +144,13 @@ export enum NetworkRuleOption {
      * except $document (using by default) and this list of modifiers:
      */
     RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter,
+
+    /**
+     * Permissions compatible modifiers
+     *
+     * $permissions is compatible with the limited list of modifiers: $doma
+     */
+    PermissionsCompatibleOptions = Permissions | Important | Badfilter,
 }
 
 /**
@@ -1460,6 +1471,10 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
+            case OPTIONS.PERMISSIONS:
+                this.setOptionEnabled(NetworkRuleOption.Permissions, true);
+                this.advancedModifier = new PermissionsModifier(optionValue, this.isAllowlist());
+                break;
             // $jsonprune
             // simple validation of jsonprune rules for compiler
             // https://github.com/AdguardTeam/FiltersCompiler/issues/168
@@ -1702,6 +1717,20 @@ export class NetworkRule implements rule.IRule {
             this.validateRemoveParamRule();
         } else if (this.advancedModifier instanceof RemoveHeaderModifier) {
             this.validateRemoveHeaderRule();
+        } else if (this.advancedModifier instanceof PermissionsModifier) {
+            this.validatePermissionsRule();
+        }
+    }
+
+    /**
+     * $permissions rules are not compatible with any other
+     * modifiers except $domain, $important, and $subdocument.
+     * The rules with any other modifiers are considered invalid and will be discarded.
+     */
+    private validatePermissionsRule(): void {
+        if ((this.enabledOptions | NetworkRuleOption.PermissionsCompatibleOptions)
+                !== NetworkRuleOption.PermissionsCompatibleOptions) {
+            throw new SyntaxError('$permissions rules are not compatible with some other modifiers');
         }
     }
 
