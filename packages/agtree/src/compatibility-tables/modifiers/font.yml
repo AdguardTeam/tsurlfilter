@@ -1,6 +1,6 @@
 adg_any:
   name: font
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#font-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#font-modifier
   description: The rule corresponds to requests for fonts, e.g. `.woff` filename extension.
 
 abp_any:

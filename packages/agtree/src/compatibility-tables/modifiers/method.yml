@@ -3,7 +3,7 @@ adg_os_any:
   description: |-
     This modifier limits the rule scope to requests that use the specified set of HTTP methods.
     Negated methods are allowed.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#method-modifier
   negatable: false
   assignable: true
   # TODO: implement validation
@@ -14,7 +14,7 @@ adg_ext_any:
   description: |-
     This modifier limits the rule scope to requests that use the specified set of HTTP methods.
     Negated methods are allowed.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#method-modifier
   negatable: false
   assignable: true
   # TODO: implement validation

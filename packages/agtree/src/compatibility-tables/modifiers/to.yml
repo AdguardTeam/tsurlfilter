@@ -1,5 +1,5 @@
 # TODO: add adg_os_any after CoreLibs 1.13 release
-# https://adguard.com/kb/general/ad-filtering/create-own-filters/#to-modifier
+# https://adguard.app/kb/general/ad-filtering/create-own-filters/#to-modifier
 
 ubo_ext_any:
   name: to

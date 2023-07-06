@@ -1,7 +1,7 @@
 adg_any:
   name: urlblock
   description: Disables blocking of all requests sent from the pages matching the rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#urlblock-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#urlblock-modifier
   conflicts:
     - domain
     - specifichide

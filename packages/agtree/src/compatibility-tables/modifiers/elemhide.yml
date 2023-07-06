@@ -3,7 +3,7 @@ adg_any:
   aliases:
     - ehide
   description: Disables any cosmetic rules on the pages matching the rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#elemhide-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#elemhide-modifier
   negatable: false
   exception_only: true
 

@@ -1,7 +1,7 @@
 adg_os_any:
   name: redirect
   description: Used to redirect web requests to a local "resource".
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
   assignable: true
   negatable: false
   # TODO: implement validation
@@ -10,7 +10,7 @@ adg_os_any:
 adg_ext_any:
   name: redirect
   description: Used to redirect web requests to a local "resource".
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
   assignable: true
   negatable: false
   # TODO: implement validation

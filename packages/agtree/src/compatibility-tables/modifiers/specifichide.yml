@@ -5,7 +5,7 @@ adg_any:
   description: |-
     Disables all specific element hiding and CSS rules, but not general ones.
     Has an opposite effect to `$generichide`.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#specifichide-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#specifichide-modifier
   conflicts:
     - domain
     - genericblock

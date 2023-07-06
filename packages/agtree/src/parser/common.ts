@@ -724,6 +724,7 @@ export interface ModifierList extends Node {
  * `domain` and the value property will be `example.com`.
  */
 export interface Modifier extends Node {
+    // TODO: change 'modifier' to 'name'
     /**
      * Modifier name
      */

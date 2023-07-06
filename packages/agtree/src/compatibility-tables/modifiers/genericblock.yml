@@ -1,7 +1,7 @@
 adg_os_any:
   name: genericblock
   description: Disables generic basic rules on pages that correspond to exception rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
     - specifichide
@@ -18,7 +18,7 @@ adg_os_any:
 adg_ext_any:
   name: genericblock
   description: Disables generic basic rules on pages that correspond to exception rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
     - specifichide
@@ -33,7 +33,7 @@ adg_ext_any:
 adg_cb_ios:
   name: genericblock
   description: Disables generic basic rules on pages that correspond to exception rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
     - specifichide
@@ -48,7 +48,7 @@ adg_cb_ios:
 adg_cb_safari:
   name: genericblock
   description: Disables generic basic rules on pages that correspond to exception rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#genericblock-modifier
   conflicts:
     - domain
     - specifichide

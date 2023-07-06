@@ -3,7 +3,7 @@ adg_os_any:
   description: |-
     This is basically a Firewall-kind of rules allowing to fully block
     or unblock access to a specified remote address.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#network-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#network-modifier
   conflicts:
     - app
   inverse_conflicts: true

@@ -5,7 +5,7 @@ adg_os_any:
     since it has the same "redirection" values and the logic is almost similar.
     The difference is that `$redirect-rule` is applied only in the case
     when the target request is blocked by a different basic rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
   conflicts:
     - domain
     - to
@@ -87,7 +87,7 @@ adg_ext_any:
     since it has the same "redirection" values and the logic is almost similar.
     The difference is that `$redirect-rule` is applied only in the case
     when the target request is blocked by a different basic rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier
   conflicts:
     - domain
     - to

@@ -1,6 +1,6 @@
 adg_os_any:
   name: content
   description: Disables HTML filtering and `$replace` rules on the pages that match the rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#content-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#content-modifier
   negatable: false
   exception_only: true

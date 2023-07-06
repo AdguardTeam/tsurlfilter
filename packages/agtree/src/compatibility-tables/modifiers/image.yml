@@ -1,7 +1,7 @@
 adg_any:
   name: image
   description: The rule corresponds to images requests.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#image-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#image-modifier
 
 abp_any:
   name: image

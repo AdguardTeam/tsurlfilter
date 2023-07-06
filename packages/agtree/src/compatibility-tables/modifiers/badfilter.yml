@@ -3,7 +3,7 @@ adg_os_any:
   description: |-
     The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
     the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   negatable: false
 
 adg_ext_any:
@@ -11,7 +11,7 @@ adg_ext_any:
   description: |-
     The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
     the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   negatable: false
 
 adg_cb_ios:
@@ -19,7 +19,7 @@ adg_cb_ios:
   description: |-
     The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
     the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   negatable: false
 
 adg_cb_safari:
@@ -27,7 +27,7 @@ adg_cb_safari:
   description: |-
     The rules with the `$badfilter` modifier disable other basic rules to which they refer. It means that
     the text of the disabled rule should match the text of the `$badfilter` rule (without the `$badfilter` modifier).
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#badfilter-modifier
   negatable: false
 
 ubo_ext_any:

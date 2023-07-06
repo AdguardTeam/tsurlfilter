@@ -4,6 +4,12 @@ import { ModifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { INVALID_ERROR_PREFIX } from '../../src/validator/constants';
 
+const DOCS_BASE_URL = {
+    ADG: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/',
+    UBO: 'https://github.com/gorhill/uBlock/wiki/Static-filter-syntax',
+    ABP: 'https://help.adblockplus.org/',
+};
+
 /**
  * Returns modifier AST node for given rawModifier.
  *
@@ -327,7 +333,6 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // toBeTruthy() is not used because non-empty string can be returned which is truthy
                 const validationResult = modifierValidator.validateUbo(modifier);
                 expect(validationResult.ok).toBeTruthy();
             });
@@ -459,7 +464,6 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // toBeTruthy() is not used because non-empty string can be returned which is truthy
                 const validationResult = modifierValidator.validateAbp(modifier);
                 expect(validationResult.ok).toBeTruthy();
             });
@@ -540,6 +544,112 @@ describe('ModifierValidator', () => {
                 // second argument is 'true' for blocking rules
                 const validationResult = modifierValidator.validateAbp(modifier, true);
                 expect(validationResult.ok).toBeTruthy();
+            });
+        });
+    });
+
+    describe('getAdgDocumentationLink', () => {
+        const modifierValidator = new ModifierValidator();
+
+        describe('has docs', () => {
+            const modifiers = [
+                'denyallow',
+                'domain=example.com',
+                'third-party',
+                'important',
+                // deprecated
+                'empty',
+                'mp4',
+                // 'webrtc' is removed and not supported but it has docs url
+                'webrtc',
+            ];
+            test.each(modifiers)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                const docsUrl = modifierValidator.getAdgDocumentationLink(modifier);
+                expect(docsUrl?.startsWith(DOCS_BASE_URL.ADG)).toBeTruthy();
+            });
+        });
+
+        describe('no docs', () => {
+            const modifiers = [
+                // not existent
+                'protobuf',
+                // not supported by ADG
+                'cname',
+            ];
+            test.each(modifiers)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                const docsUrl = modifierValidator.getAdgDocumentationLink(modifier);
+                expect(docsUrl).toBeNull();
+            });
+        });
+    });
+
+    describe('getUboDocumentationLink', () => {
+        const modifierValidator = new ModifierValidator();
+
+        describe('has docs', () => {
+            const modifiers = [
+                'cname',
+                'from=example.com',
+                'third-party',
+                'important',
+                // deprecated modifiers
+                'empty',
+                'mp4',
+                // 'webrtc' is removed and not supported but it has docs url
+                'webrtc',
+            ];
+            test.each(modifiers)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                const docsUrl = modifierValidator.getUboDocumentationLink(modifier);
+                expect(docsUrl?.startsWith(DOCS_BASE_URL.UBO)).toBeTruthy();
+            });
+        });
+
+        describe('no docs', () => {
+            const modifiers = [
+                // not existent
+                'protobuf',
+                // not supported by UBO
+                'removeheader',
+            ];
+            test.each(modifiers)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                const docsUrl = modifierValidator.getUboDocumentationLink(modifier);
+                expect(docsUrl).toBeNull();
+            });
+        });
+    });
+
+    describe('getAbpDocumentationLink', () => {
+        const modifierValidator = new ModifierValidator();
+
+        describe('has docs', () => {
+            const modifiers = [
+                'domain=example.com',
+                'third-party',
+                'webrtc',
+            ];
+            test.each(modifiers)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                const docsUrl = modifierValidator.getAbpDocumentationLink(modifier);
+                expect(docsUrl?.startsWith(DOCS_BASE_URL.ABP)).toBeTruthy();
+            });
+        });
+
+        describe('no docs', () => {
+            const modifiers = [
+                // not existent
+                'protobuf',
+                // not supported by ABP
+                'denyallow',
+                'important',
+            ];
+            test.each(modifiers)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                const docsUrl = modifierValidator.getAbpDocumentationLink(modifier);
+                expect(docsUrl).toBeNull();
             });
         });
     });

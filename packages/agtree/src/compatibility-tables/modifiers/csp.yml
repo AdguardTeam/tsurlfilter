@@ -4,7 +4,7 @@ adg_os_any:
     This modifier completely changes the rule behavior.
     If it is applied to a rule, it will not block the matching request.
     The response headers are going to be modified instead.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#csp-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#csp-modifier
   conflicts:
     - domain
     - important
@@ -21,7 +21,7 @@ adg_ext_any:
     This modifier completely changes the rule behavior.
     If it is applied to a rule, it will not block the matching request.
     The response headers are going to be modified instead.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#csp-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#csp-modifier
   conflicts:
     - domain
     - important
