@@ -1,28 +1,28 @@
 adg_os_any:
   name: all
   description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#all-modifier
   negatable: false
   block_only: true
 
 adg_ext_any:
   name: all
   description: $all modifier is made of $document, $popup, and all content-type modifiers combined.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#all-modifier
   negatable: false
   block_only: true
 
 adg_cb_ios:
   name: all
   description: The `$all` modifier is made of `$document`, `$popup`, and all content-type modifiers combined.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#all-modifier
   negatable: false
   block_only: true
 
 adg_cb_safari:
   name: all
   description: The `$all` modifier is made of `$document`, `$popup`, and all content-type modifiers combined.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#all-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#all-modifier
   negatable: false
   block_only: true
 

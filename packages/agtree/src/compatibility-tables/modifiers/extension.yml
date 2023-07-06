@@ -1,7 +1,7 @@
 adg_os_any:
   name: extension
   description: Disables all userscripts on the pages matching this rule.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#extension-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#extension-modifier
   conflicts:
     - domain
     - specifichide

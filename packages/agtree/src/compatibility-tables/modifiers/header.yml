@@ -3,7 +3,7 @@ adg_os_any:
   description: |-
     The `$header` modifier allows matching the HTTP response
     having a specific header with (optionally) a specific value.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#header-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#header-modifier
   assignable: true
   value_format: /^[A-z0-9-]+(:.+|)$/
 
@@ -12,7 +12,7 @@ adg_ext_any:
   description: |-
     The `$header` modifier allows matching the HTTP response
     having a specific header with (optionally) a specific value.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#header-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#header-modifier
   assignable: true
   value_format: /^[A-z0-9-]+(:.+|)$/
 

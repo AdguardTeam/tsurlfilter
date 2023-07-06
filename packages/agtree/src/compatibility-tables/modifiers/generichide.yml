@@ -3,7 +3,7 @@ adg_any:
   aliases:
     - ghide
   description: Disables all generic cosmetic rules.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#generichide-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#generichide-modifier
   conflicts:
     - domain
     - genericblock

@@ -3,7 +3,7 @@ adg_any:
   aliases:
     - from
   description: The `$domain` modifier limits the rule application area to a list of domains and their subdomains.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#domain-modifier
   assignable: true
   negatable: false
   value_format: pipe_separated_domains

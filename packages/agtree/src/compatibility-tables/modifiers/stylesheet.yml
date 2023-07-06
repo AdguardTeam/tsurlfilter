@@ -1,7 +1,7 @@
 adg_any:
   name: stylesheet
   description: The rule corresponds to CSS files requests.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#stylesheet-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#stylesheet-modifier
 
 abp_any:
   name: stylesheet

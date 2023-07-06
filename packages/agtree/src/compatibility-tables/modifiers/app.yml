@@ -3,6 +3,6 @@ adg_os_any:
   description: |-
     The `$app` modifier lets you narrow the rule coverage down to a specific application or a list of applications.
     The modifier's behavior and syntax perfectly match the corresponding basic rules `$app` modifier.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#app-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#app-modifier
   assignable: true
   negatable: false

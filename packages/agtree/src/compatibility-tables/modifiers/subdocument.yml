@@ -1,7 +1,7 @@
 adg_any:
   name: subdocument
   description: The rule corresponds to requests for built-in pages — HTML tags frame and iframe.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#subdocument-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#subdocument-modifier
 
 abp_any:
   name: subdocument

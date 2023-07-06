@@ -1,7 +1,7 @@
 adg_any:
   name: webrtc
   description: The rule applies only to WebRTC connections.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#webrtc-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#webrtc-modifier
   removed: true
   removal_message: |-
     This modifier is removed and is no longer supported.

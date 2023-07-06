@@ -3,7 +3,7 @@ adg_os_any:
   description: |-
     The rule corresponds to the main frame document requests,
     i.e. HTML documents that are loaded in the browser tab.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#document-modifier
   # TODO: it shall be negatable as content-type modifier in future
   # so it should be changed later (here and below)
   negatable: false
@@ -13,7 +13,7 @@ adg_ext_any:
   description: |-
     The rule corresponds to the main frame document requests,
     i.e. HTML documents that are loaded in the browser tab.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
 
 adg_cb_ios:
@@ -21,7 +21,7 @@ adg_cb_ios:
   description: |-
     The rule corresponds to the main frame document requests,
     i.e. HTML documents that are loaded in the browser tab.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
 
 adg_cb_safari:
@@ -29,7 +29,7 @@ adg_cb_safari:
   description: |-
     The rule corresponds to the main frame document requests,
     i.e. HTML documents that are loaded in the browser tab.
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#document-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#document-modifier
   negatable: false
 
 abp_ext_any:

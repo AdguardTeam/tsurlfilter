@@ -1,15 +1,6 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 
-const contentScriptConfig = {
-    input: 'src/content-script.ts',
-    output: {
-        dir: 'dist',
-        format: 'cjs',
-    },
-    plugins: [typescript(), resolve()]
-};
-
 const cssHitsCounterConfig = {
     input: 'src/css-hits-counter.ts',
     output: {
@@ -30,6 +21,5 @@ const backgroundConfig = {
 
 export default [
     backgroundConfig,
-    contentScriptConfig,
     cssHitsCounterConfig,
 ];

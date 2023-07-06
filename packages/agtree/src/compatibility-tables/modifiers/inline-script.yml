@@ -6,7 +6,7 @@ adg_os_any:
     ```adblock
     ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:
     ```
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#inline-script-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#inline-script-modifier
 
 adg_ext_any:
   name: inline-script
@@ -16,7 +16,7 @@ adg_ext_any:
     ```adblock
     ||example.org^$csp=script-src 'self' 'unsafe-eval' http: https: data: blob: mediastream: filesystem:
     ```
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#inline-script-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#inline-script-modifier
 
 ubo_ext_any:
   name: inline-script

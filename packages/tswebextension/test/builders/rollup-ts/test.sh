@@ -5,15 +5,15 @@ echo "Testing bundling with rollup-ts"
 # install other deps
 yarn install
 
-# pack @adguard/tsurlfilter
+# pack @adguard/tswebextension
 curr_path="test/builders/rollup-ts"
-tsurlfilter="tsurlfilter.tgz"
-(cd ../../.. && yarn pack --filename $curr_path/$tsurlfilter)
+tswebextension="tswebextension.tgz"
+(cd ../../.. && yarn pack --filename $curr_path/$tswebextension)
 
-# unzip to @adguard/tsurlfilter to node_modules
-tsurlfilter_nm="node_modules/@adguard/tsurlfilter"
-mkdir -p $tsurlfilter_nm
-tar -xzf tsurlfilter.tgz -C $tsurlfilter_nm
+# unzip to @adguard/tswebextension to node_modules
+tswebextension_nm="node_modules/@adguard/tswebextension"
+mkdir -p $tswebextension_nm
+tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 
 # bundle with rollup
 yarn build
@@ -30,7 +30,6 @@ else
    echo "$filename is less than or equal to $max_size bytes"
 fi
 
-rm $tsurlfilter
+rm $tswebextension
 
 echo "Testing bundling with rollup-ts ended successfully"
-

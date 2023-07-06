@@ -55,6 +55,40 @@ const getAllModifierNames = (dataMap: ModifierDataMap): Set<string> => {
 };
 
 /**
+ * Returns modifier data for given modifier name and adblocker.
+ *
+ * @param modifiersData Parsed all modifiers data map.
+ * @param blockerPrefix Prefix of the adblocker, e.g. 'adg_', 'ubo_', or 'abp_'.
+ * @param modifierName Modifier name.
+ *
+ * @returns Modifier data or `null` if not found.
+ */
+const getSpecificBlockerData = (
+    modifiersData: ModifierDataMap,
+    blockerPrefix: string,
+    modifierName: string,
+): SpecificPlatformModifierData | null => {
+    let specificBlockerData: SpecificPlatformModifierData | null = null;
+
+    modifiersData.forEach((modifierData: ModifierData) => {
+        Object.keys(modifierData).forEach((blockerId) => {
+            const blockerData = modifierData[blockerId];
+            if (blockerData.name === modifierName
+                || (blockerData.aliases && blockerData.aliases.includes(modifierName))) {
+                // modifier is found by name or alias
+                // so its support by specific adblocker should be checked
+                if (blockerId.startsWith(blockerPrefix)) {
+                    // so maybe other data objects should be checked as well (not sure)
+                    specificBlockerData = blockerData;
+                }
+            }
+        });
+    });
+
+    return specificBlockerData;
+};
+
+/**
  * Returns invalid validation result with given error message.
  *
  * @param error Error message.
@@ -86,25 +120,10 @@ const validateForBlocker = (
     modifier: Modifier,
     isBlocking: boolean,
 ): ValidationResult => {
-    // needed for validation of negation, assignment, etc.
-    let specificBlockerData: SpecificPlatformModifierData | undefined;
-
     const modifierName = modifier.modifier.value;
 
-    modifiersData.forEach((modifierData: ModifierData) => {
-        Object.keys(modifierData).forEach((blockerId) => {
-            const blockerData = modifierData[blockerId];
-            if (blockerData.name === modifierName
-                || (blockerData.aliases && blockerData.aliases.includes(modifierName))) {
-                // modifier is found by name or alias
-                // so its support by specific adblocker should be checked
-                if (blockerId.startsWith(blockerPrefix)) {
-                    // so maybe other data objects should be checked as well (not sure)
-                    specificBlockerData = blockerData;
-                }
-            }
-        });
-    });
+    // needed for validation of negation, assignment, etc.
+    const specificBlockerData = getSpecificBlockerData(modifiersData, blockerPrefix, modifierName);
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
@@ -162,6 +181,24 @@ const validateForBlocker = (
 };
 
 /**
+ * Returns documentation URL for given modifier and adblocker.
+ *
+ * @param modifiersData Parsed all modifiers data map.
+ * @param blockerPrefix Prefix of the adblocker, e.g. 'adg_', 'ubo_', or 'abp_'.
+ * @param modifier Parsed modifier AST node.
+ *
+ * @returns Documentation URL or `null` if not found.
+ */
+const getBlockerDocumentationLink = (
+    modifiersData: ModifierDataMap,
+    blockerPrefix: string,
+    modifier: Modifier,
+): string | null => {
+    const specificBlockerData = getSpecificBlockerData(modifiersData, blockerPrefix, modifier.modifier.value);
+    return specificBlockerData?.docs || null;
+};
+
+/**
  * Modifier validator class.
  */
 export class ModifierValidator {
@@ -184,17 +221,14 @@ export class ModifierValidator {
         this.allModifierNames = getAllModifierNames(this.modifiersData);
     }
 
-    // TODO: check the statement about deprecated modifiers.
     /**
      * Simply checks whether the modifier exists in any adblocker.
      *
-     * **Deprecated** modifiers are considered as **existent**.
+     * **Deprecated** and **removed** modifiers are considered as **existent**.
      *
      * @param modifier Already parsed modifier AST node.
      *
      * @returns True if modifier exists, false otherwise.
-     * If given modifier is a string and it cannot be parsed as a valid modifier,
-     * e.g. 'domain=', false is returned.
      */
     public exists = (modifier: Modifier): boolean => {
         return this.allModifierNames.has(modifier.modifier.value);
@@ -246,5 +280,47 @@ export class ModifierValidator {
             return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
         }
         return validateForBlocker(this.modifiersData, BLOCKER_PREFIX.ABP, modifier, isBlocking);
+    };
+
+    /**
+     * Returns AdGuard documentation URL for given modifier.
+     *
+     * @param modifier Parsed modifier AST node.
+     *
+     * @returns AdGuard documentation URL or `null` if not found.
+     */
+    public getAdgDocumentationLink = (modifier: Modifier): string | null => {
+        if (!this.exists(modifier)) {
+            return null;
+        }
+        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX.ADG, modifier);
+    };
+
+    /**
+     * Returns Ublock Origin documentation URL for given modifier.
+     *
+     * @param modifier Parsed modifier AST node.
+     *
+     * @returns Ublock Origin documentation URL or `null` if not found.
+     */
+    public getUboDocumentationLink = (modifier: Modifier): string | null => {
+        if (!this.exists(modifier)) {
+            return null;
+        }
+        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX.UBO, modifier);
+    };
+
+    /**
+     * Returns AdBlock Plus documentation URL for given modifier.
+     *
+     * @param modifier Parsed modifier AST node.
+     *
+     * @returns AdBlock Plus documentation URL or `null` if not found.
+     */
+    public getAbpDocumentationLink = (modifier: Modifier): string | null => {
+        if (!this.exists(modifier)) {
+            return null;
+        }
+        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX.ABP, modifier);
     };
 }

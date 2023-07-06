@@ -6,7 +6,7 @@ adg_any:
     - ~third-party
   description: A restriction of first-party requests. Equal to `~third-party`.
   # TODO: change link in docs to first-party modifier when it will be available
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#third-party-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#third-party-modifier
   negatable: false
 
 ubo_any:

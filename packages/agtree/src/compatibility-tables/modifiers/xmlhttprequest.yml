@@ -3,7 +3,7 @@ adg_any:
   aliases:
     - xhr
   description: The rule applies only to ajax requests (requests sent via javascript object XMLHttpRequest).
-  docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#xmlhttprequest-modifier
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#xmlhttprequest-modifier
 
 abp_any:
   name: xmlhttprequest
