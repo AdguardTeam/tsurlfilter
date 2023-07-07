@@ -243,6 +243,10 @@ describe('ModifierValidator', () => {
                     expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
+                    actual: 'network=8.8.8.8',
+                    expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                },
+                {
                     actual: 'third-party=true',
                     expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
                 },
