@@ -2,6 +2,7 @@ import { z as zod } from 'zod';
 
 import {
     messageValidator as commonMessageValidator,
+    getCssPayloadValidator as commonGetCssPayloadValidator,
     MessageType as CommonMessageType,
 } from '../../common';
 
@@ -16,3 +17,9 @@ export const messageMV3Validator = commonMessageValidator.extend({
 });
 
 export type MessageMV3 = zod.infer<typeof messageMV3Validator>;
+
+export const getCssPayloadValidator = commonGetCssPayloadValidator.extend({
+    referrer: zod.string(),
+});
+
+export type GetCssPayload = zod.infer<typeof getCssPayloadValidator>;

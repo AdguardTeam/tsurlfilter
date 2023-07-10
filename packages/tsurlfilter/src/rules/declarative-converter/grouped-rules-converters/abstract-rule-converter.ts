@@ -25,13 +25,13 @@
  *                            │   │  protected convertRule()  ├─────────┼───────────────────────┐
  *                            │   │                           │         │                       │
  *                            │   └───────────────────────────┘         │                       │
- *                            │   Transforms a single Network Rule      │     ┌─────────────────▼───────────────────┐
- *                            │   into one or several                   │     │                                     │
- *                            │   declarative rules.                    │  ┌──┤ static checkNetworkRuleApplicable() │
- *                            │                                         │  │  │                                     │
- *                            │                                         │  │  └─────────────────────────────────────┘
- *                            │                                         │  │  Verifies whether the conversion of
- *                            │                                         │  │  a Network Rule is supported.
+ *                            │   Transforms a single Network Rule      │     ┌─────────────────▼────────────────────┐
+ *                            │   into one or several                   │     │                                      │
+ *                            │   declarative rules.                    │  ┌──┤ static checkNetworkRuleConvertible() │
+ *                            │                                         │  │  │                                      │
+ *                            │                                         │  │  └──────────────────────────────────────┘
+ *                            │                                         │  │  Checks if network rule conversion
+ *                            │                                         │  │  is supported and if it is needed at all.
  *                            │                                         │  │
  *                            │                                         │  │  ┌──────────────────────────┐
  *                            │                                         │  └──►                          │
@@ -515,9 +515,12 @@ export abstract class DeclarativeRuleConverter {
         rule: NetworkRule,
         id: number,
     ): DeclarativeRule[] {
-        const unsupportedErr = DeclarativeRuleConverter.checkNetworkRuleApplicable(rule);
-        if (unsupportedErr) {
-            throw unsupportedErr;
+        // If the rule is not convertible - method will throw an error.
+        const shouldConvert = DeclarativeRuleConverter.checkNetworkRuleConvertible(rule);
+
+        // The rule does not require conversion.
+        if (!shouldConvert) {
+            return [];
         }
 
         const declarativeRule: DeclarativeRule = {
@@ -546,13 +549,11 @@ export abstract class DeclarativeRuleConverter {
      * TODO: Move this method to separate static class, because it accumulates
      * a lot of logic tied to different types of rules and the method gets
      * really puffy.
+     *
      * Checks if a network rule can be converted to a declarative format or not.
      * We skip the following modifiers:
      *
-     * all specific exceptions:
-     * $elemhide;
-     * $generichide;
-     * $specifichide;
+     * All specific exceptions:
      * $genericblock;
      * $jsinject;
      * $urlblock;
@@ -560,7 +561,13 @@ export abstract class DeclarativeRuleConverter {
      * $extension;
      * $stealth;
      *
-     * other:
+     * Following specific exceptions are not require conversion, but they
+     * are used in the {@link MatchingResult.getCosmeticOption}:
+     * $elemhide
+     * $generichide;
+     * $specifichide;
+     *
+     * Other:
      * $popup;
      * $csp;
      * $replace;
@@ -575,9 +582,13 @@ export abstract class DeclarativeRuleConverter {
      *
      * @param rule - Network rule.
      *
-     * @returns UnsupportedModifierError if not applicable OR null.
+     * @throws Error with type {@link UnsupportedModifierError} if the rule is not
+     * convertible.
+     *
+     * @returns Boolean flag - `false` if the rule does not require conversion
+     * and `true` if the rule is convertible.
      */
-    private static checkNetworkRuleApplicable(rule: NetworkRule): UnsupportedModifierError | null {
+    private static checkNetworkRuleConvertible(rule: NetworkRule): boolean {
         /**
          * Checks if the $redirect values in the provided network rule
          * are supported for conversion to MV3.
@@ -661,9 +672,9 @@ export abstract class DeclarativeRuleConverter {
 
         const unsupportedOptions = [
             /* Specific exceptions */
-            { option: NetworkRuleOption.Elemhide, name: '$elemhide' },
-            { option: NetworkRuleOption.Generichide, name: '$generichide' },
-            { option: NetworkRuleOption.Specifichide, name: '$specifichide' },
+            { option: NetworkRuleOption.Elemhide, name: '$elemhide', skipConversion: true },
+            { option: NetworkRuleOption.Generichide, name: '$generichide', skipConversion: true },
+            { option: NetworkRuleOption.Specifichide, name: '$specifichide', skipConversion: true },
             { option: NetworkRuleOption.Genericblock, name: '$genericblock' },
             { option: NetworkRuleOption.Jsinject, name: '$jsinject' },
             { option: NetworkRuleOption.Urlblock, name: '$urlblock' },
@@ -703,25 +714,35 @@ export abstract class DeclarativeRuleConverter {
         ];
 
         for (let i = 0; i < unsupportedOptions.length; i += 1) {
-            const { option, name, customChecks } = unsupportedOptions[i];
+            const {
+                option,
+                name,
+                customChecks,
+                skipConversion,
+            } = unsupportedOptions[i];
+
             if (!rule.isSingleOptionEnabled(option)) {
                 continue;
+            }
+
+            if (skipConversion) {
+                return false;
             }
 
             if (customChecks) {
                 for (let j = 0; j < customChecks.length; j += 1) {
                     const err = customChecks[j](rule, name);
-                    if (err) {
-                        return err;
+                    if (err !== null) {
+                        throw err;
                     }
                 }
             } else {
                 const msg = `Unsupported option "${name}" found in the rule: "${rule.getText()}"`;
-                return new UnsupportedModifierError(msg, rule);
+                throw new UnsupportedModifierError(msg, rule);
             }
         }
 
-        return null;
+        return true;
     }
 
     /**

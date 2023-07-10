@@ -1319,4 +1319,21 @@ describe('DeclarativeRuleConverter', () => {
             });
         });
     });
+
+    describe('skips convert cosmetic exclusions modifiers without errors', () => {
+        const cosmeticExclusionsModifiers = ['elemhide', 'specifichide', 'generichide'];
+
+        it.each(cosmeticExclusionsModifiers)('skips %s', (modifier) => {
+            const badRule = `@@||example.com$${modifier}`;
+            const rules = createRulesFromText(0, [badRule]);
+
+            const {
+                declarativeRules,
+                errors,
+            } = DeclarativeRulesConverter.convert([[0, rules]]);
+
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(0);
+        });
+    });
 });

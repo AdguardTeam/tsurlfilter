@@ -124,6 +124,7 @@ export const config: Configuration = {
                     context: 'extension',
                     from: 'filters',
                     to: 'filters',
+                    noErrorOnMissing: true,
                 },
             ],
         }),

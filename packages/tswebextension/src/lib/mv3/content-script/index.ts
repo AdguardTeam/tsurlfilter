@@ -2,6 +2,7 @@ import { ExtendedCss } from '@adguard/extended-css';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
+import type { GetCssPayload } from '../background/messages';
 import { logger } from '../utils/logger';
 
 import { initAssistant } from './assistant';
@@ -48,11 +49,14 @@ const applyExtendedCss = (extendedCssRules: string[] | undefined): void => {
 };
 
 (async (): Promise<void> => {
+    const payload: GetCssPayload = {
+        url: document.location.href,
+        referrer: document.referrer,
+    };
+
     const res = await sendAppMessage({
         type: MessageType.GetCss,
-        payload: {
-            url: document.location.href,
-        },
+        payload,
     });
 
     logger.debug('[GET_CSS]: result ', res);

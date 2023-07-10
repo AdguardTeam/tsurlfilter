@@ -11,6 +11,8 @@ import {
     RuleConverter,
     ScriptletData,
     CosmeticRule,
+    NetworkRule,
+    MatchingResult,
 } from '@adguard/tsurlfilter';
 
 import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -27,6 +29,16 @@ const USER_FILTER_ID = 0;
 type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
     filters: IFilter[],
 };
+
+/**
+ * Request Match Query, contains request details.
+ */
+interface MatchQuery {
+    requestUrl: string;
+    sourceUrl: string;
+    requestType: RequestType;
+    frameRule?: NetworkRule | null;
+}
 
 export type CosmeticRules = {
     css: string[],
@@ -109,6 +121,21 @@ class EngineApi {
     }
 
     /**
+     * Matches current frame and returns document-level allowlist rule if found.
+     *
+     * @param frameUrl Url of current frame.
+     *
+     * @returns Document-level allowlist rule if found, otherwise null.
+     */
+    public matchFrame(frameUrl: string): NetworkRule | null {
+        if (!this.engine) {
+            return null;
+        }
+
+        return this.engine.matchFrame(frameUrl);
+    }
+
+    /**
      * Gets cosmetic result for the specified url and cosmetic options if
      * engine is started.
      * Otherwise returns empty CosmeticResult.
@@ -124,8 +151,9 @@ class EngineApi {
 
         const frameUrl = getHost(url);
 
+        // Checks if an allowlist rule exists at the document level,
+        // then discards all cosmetic rules.
         const frameRule = this.engine.matchFrame(url);
-
         if (frameRule?.isAllowlist()) {
             return new CosmeticResult();
         }
@@ -239,6 +267,34 @@ class EngineApi {
         });
 
         return scriptletDataList;
+    }
+
+    /**
+     * Matches the specified request against the filtering engine and returns the matching result.
+     *
+     * @param matchQuery Item of {@link MatchQuery}, contains request details.
+     *
+     * @returns Item of {@link MatchingResult} or null, if engine is not started.
+     */
+    public matchRequest(matchQuery: MatchQuery): MatchingResult | null {
+        if (!this.engine) {
+            return null;
+        }
+
+        const {
+            requestUrl,
+            sourceUrl,
+            requestType,
+            frameRule,
+        } = matchQuery;
+
+        const request = new Request(
+            requestUrl,
+            sourceUrl,
+            requestType,
+        );
+
+        return this.engine.matchRequest(request, frameRule);
     }
 
     /**

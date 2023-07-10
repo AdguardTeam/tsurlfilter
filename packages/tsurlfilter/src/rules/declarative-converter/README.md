@@ -70,7 +70,7 @@ rules and describes some MV3-specific limitations of the converted rules.
 <a name="mv3_specific_limitations__allowrules"></a>
 ## allowrules
 Allowrules currently are not supported for these modifiers:
-1. all specific exceptions: '$elemhide', '$generichide', '$specifichide', '$genericblock', '$jsinject', '$urlblock', '$content', '$stealth'.
+1. some specific exceptions: '$genericblock', '$jsinject', '$urlblock', '$content', '$stealth'.
 1. `$redirect`
 1. `$removeparam`
 1. `$removeheader`
@@ -1428,11 +1428,11 @@ example 2
 # Exception rules modifiers
 <a name="exception_rules_modifiers__$elemhide"></a>
 ## $elemhide
-<b>Status</b>: not implemented yet
+<b>Status</b>: is supported but not converted.
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Not convertible to DNR in MV3, but uses tsurlfilter's [CosmeticEngine](https://github.com/AdguardTeam/tsurlfilter/blob/epic/tswebextension/packages/tsurlfilter/src/engine/cosmetic-engine/cosmetic-engine.ts#L15) for work
+Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension) uses content-script to request cosmetic rules from tsurlfilter's with [MatchingResult.getCosmeticOption](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/engine/matching-result.ts#L235), where $elemhide, $specifichide and $generichide will be applied.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -1542,7 +1542,11 @@ example 2
 ```
 <a name="exception_rules_modifiers__$generichide"></a>
 ## $generichide
-<b>Status</b>: not implemented yet
+<b>Status</b>: is supported but not converted.
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension) uses content-script to request cosmetic rules from tsurlfilter's with [MatchingResult.getCosmeticOption](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/engine/matching-result.ts#L235), where $elemhide, $specifichide and $generichide will be applied.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -1576,7 +1580,11 @@ example 2
 ```
 <a name="exception_rules_modifiers__$specifichide"></a>
 ## $specifichide
-<b>Status</b>: not implemented yet
+<b>Status</b>: is supported but not converted.
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension) uses content-script to request cosmetic rules from tsurlfilter's with [MatchingResult.getCosmeticOption](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/engine/matching-result.ts#L235), where $elemhide, $specifichide and $generichide will be applied.
 <br/>
 <b>Examples:</b>
 <br/>
