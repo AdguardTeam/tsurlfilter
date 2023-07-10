@@ -52,6 +52,7 @@ export type GetExtendedCssPayloadValidator = z.infer<typeof getExtendedCssPayloa
  */
 export const getCssPayloadValidator = z.object({
     url: z.string(),
+    referrer: z.string(),
 }).strict();
 
 /**

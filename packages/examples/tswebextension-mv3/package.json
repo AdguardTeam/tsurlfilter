@@ -5,11 +5,11 @@
   "author": "adguard@adguard.com",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "yarn build:precompile-rules && yarn build:extension",
+    "build": "yarn lint && yarn build:precompile-rules && yarn build:extension",
     "build:extension": "node -r esbuild-register ./scripts/build",
     "build:tsurl": "cd ../../tsurlfilter && yarn build",
     "build:tsweb": "cd ../../tswebextension && yarn build",
-    "build:precompile-rules": "yarn lint && node -r esbuild-register ./scripts/precompile-rules.ts",
+    "build:precompile-rules": "node -r esbuild-register ./scripts/precompile-rules.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
     "tswebextension": "tswebextension",
     "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r esbuild-register ./scripts/browser-test/index.ts"
@@ -45,6 +45,7 @@
     "playwright": "^1.27.1",
     "rimraf": "^3.0.2",
     "style-loader": "^3.3.1",
+    "typescript": "4.7.4",
     "webpack": "^5.64.2"
   }
 }

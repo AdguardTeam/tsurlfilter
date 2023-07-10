@@ -1,4 +1,4 @@
-import { CosmeticOption } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter';
 
 import { getAssistantCreateRulePayloadValidator, getCssPayloadValidator } from '../../common';
 import { isHttpOrWsRequest } from '../../common/utils';
@@ -74,15 +74,15 @@ export class MessagesApi {
                     return undefined;
                 }
 
-                let { url } = res.data;
+                const { referrer, url } = res.data;
 
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
                 // When document url for iframe is about:blank then we use tab url
                 if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
-                    url = sender.tab.url;
+                    return this.getCss(sender.tab.url, referrer, true);
                 }
 
-                return this.getCss(url);
+                return this.getCss(url, referrer);
             }
             case ExtendedMV3MessageType.GetCollectedLog: {
                 return declarativeFilteringLog.getCollected();
@@ -104,17 +104,35 @@ export class MessagesApi {
     /**
      * Builds css for specified url.
      *
-     * @param url Url for which build css.
+     * @param requestUrl Url for which build css.
+     * @param referrerUrl Referrer url of the request.
+     * @param isSubDocument Is request from iframe or not; defaults to false.
      *
-     * @returns Cosmetic css.
+     * @returns Cosmetic css or undefined if there are no css rules for this request.
      */
-    private getCss(url: string): CosmeticRules | undefined {
-        logger.debug('[GET CSS]: received call', url);
+    private getCss(requestUrl: string, referrerUrl: string, isSubDocument = false): CosmeticRules | undefined {
+        logger.debug('[GET CSS]: received call', requestUrl);
 
         if (this.tsWebExtension.isStarted) {
+            const result = engineApi.matchRequest({
+                requestUrl,
+                sourceUrl: referrerUrl,
+                // Always RequestType.Document or RequestType.SubDocument,
+                // because in MV3 we request CSS for the already loaded page
+                // from content-script.
+                requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
+                frameRule: engineApi.matchFrame(requestUrl),
+            });
+
+            const cosmeticOption = result?.getCosmeticOption();
+
+            if (cosmeticOption === undefined) {
+                return undefined;
+            }
+
             return engineApi.buildCosmeticCss(
-                url,
-                CosmeticOption.CosmeticOptionAll,
+                requestUrl,
+                cosmeticOption,
                 false,
                 false,
             );

@@ -4,7 +4,7 @@ import { NetworkRule } from '../../../network-rule';
  * Describes an error when a source network rule contains some of
  * the unsupported modifiers.
  *
- * @see {@link DeclarativeRuleConverter.checkNetworkRuleApplicable} for more details.
+ * @see {@link DeclarativeRuleConverter.checkNetworkRuleConvertible} for more details.
  */
 export class UnsupportedModifierError extends Error {
     networkRule: NetworkRule;

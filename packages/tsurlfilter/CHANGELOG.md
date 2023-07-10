@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for $csp modifier in the MV3 converter.
 - Scheme for converting network rules into declarative rules.
 
+### Changed
+- Converting rules in MV3 with these modifiers `$elemhide`, `$specifichide`
+  and `$generichide` now does not cause any errors and is simply skipped.
+
 ## [2.1.3] - 2023-06-26
 
 ### Added
