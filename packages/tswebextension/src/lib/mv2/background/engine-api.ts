@@ -164,6 +164,28 @@ export class EngineApi {
     }
 
     /**
+     * Searched for cosmetic rules by match query.
+     *
+     * @param matchQuery Query against which the request would be matched.
+     * @returns Cosmetic result.
+     */
+    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+        if (!this.engine || !this.isFilteringEnabled) {
+            return new CosmeticResult();
+        }
+
+        const matchingResult = this.matchRequest(matchQuery);
+
+        if (!matchingResult) {
+            return new CosmeticResult();
+        }
+
+        const cosmeticOption = matchingResult.getCosmeticOption();
+
+        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
+    }
+
+    /**
      * Matches current frame url and returns rule if found.
      *
      * @param frameUrl Frame url.

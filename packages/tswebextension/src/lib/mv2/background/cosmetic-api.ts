@@ -1,8 +1,7 @@
+/* eslint-disable jsdoc/require-returns */
 import { nanoid } from 'nanoid';
-import type {
-    CosmeticResult,
-    CosmeticRule,
-} from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { appContext } from './context';
 import { getDomain } from '../../common/utils/url';
@@ -12,7 +11,8 @@ import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
-import { tabsApi } from './api';
+import { MAIN_FRAME_ID } from './tabs/frame';
+import { engineApi, tabsApi } from './api';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 
@@ -209,10 +209,29 @@ export class CosmeticApi {
             extCssRules: null,
         };
 
-        const frame = tabsApi.getTabFrame(tabId, frameId);
+        const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!frame?.cosmeticResult) {
+        if (!tabContext) {
             return data;
+        }
+
+        const frame = tabContext.frames.get(frameId);
+
+        if (!frame) {
+            return data;
+        }
+
+        /**
+         * Cosmetic result may not be committed to frame context during worker request processing.
+         * We use engine request as a fallback for this case.
+         */
+        if (!frame?.cosmeticResult) {
+            frame.cosmeticResult = engineApi.matchCosmetic({
+                requestUrl: frame.url,
+                frameUrl: frame.url,
+                requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
+                frameRule: tabContext.mainFrameRule,
+            });
         }
 
         data.extCssRules = CosmeticApi.getExtCssRules(frame.cosmeticResult, areHitsStatsCollected);
