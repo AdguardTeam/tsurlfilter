@@ -87,12 +87,8 @@ export class DocumentBlockingService {
             rule.getText(),
         );
 
-        // Firefox doesn't allow redirects to extension pages
-        // We set blocking page url via browser.tabs api for bypassing this limitation
-        if (isFirefox) {
-            DocumentBlockingService.reloadTabWithBlockingPage(tabId, blockingUrl);
         // Chrome doesn't allow to show extension pages in incognito mode
-        } else if (isChromium && tabsApi.isIncognitoTab(tabId)) {
+        if (isChromium && tabsApi.isIncognitoTab(tabId)) {
             // Closing tab before opening a new one may lead to browser crash (Chromium)
             browser.tabs.create({ url: blockingUrl })
                 .then(() => {
@@ -101,9 +97,14 @@ export class DocumentBlockingService {
                 .catch((e) => {
                     logger.warn(`Can't open info page about blocked domain. Err: ${e}`);
                 });
+        } else {
+            // Browser doesn't allow redirects to extension pages which are not listed in web
+            // accessible resources. We set blocking page url via browser.tabs
+            // api for bypassing this limitation.
+            DocumentBlockingService.reloadTabWithBlockingPage(tabId, blockingUrl);
         }
 
-        return { redirectUrl: blockingUrl };
+        return { cancel: true };
     }
 
     /**

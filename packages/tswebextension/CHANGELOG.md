@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [0.3.6] - 2023-07-11
+
+### Fixed
+- Rules with the `$popup` modifier were ignored and showed an incorrect dummy
+  page instead of closing the tab.
+- In some cases, rules with the `$document` modifier did not show the dummy page.
+
 ## [0.3.5] - 2023-07-11
 
 ### Fixed
