@@ -325,19 +325,6 @@ export class WebRequestApi {
 
             const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
 
-            /**
-             * We log js rules before injecting them to avoid duplicate logs,
-             * as they can be applied multiple times but only executed once.
-             * See {@link buildScriptText} for details.
-             */
-            CosmeticApi.logScriptRules({
-                tabId,
-                cosmeticResult,
-                url: requestUrl,
-                contentType,
-                timestamp,
-            });
-
             tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
 
             requestContextStorage.update(requestId, {
@@ -577,6 +564,8 @@ export class WebRequestApi {
             frameId,
             requestUrl,
             timestamp,
+            contentType,
+            cosmeticResult,
         } = context;
 
         /**
@@ -589,6 +578,17 @@ export class WebRequestApi {
                 tabId,
                 timestamp,
                 url: requestUrl,
+            });
+        }
+
+        if (cosmeticResult
+            && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+            CosmeticApi.logScriptRules({
+                tabId,
+                cosmeticResult,
+                url: requestUrl,
+                contentType,
+                timestamp,
             });
         }
 
