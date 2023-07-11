@@ -91,16 +91,17 @@ export class RequestBlockingApi {
             return undefined;
         }
 
+        // If the request is a document request.
         if (requestType === RequestType.Document) {
-            if ((rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document) {
-                return documentBlockingService.getDocumentBlockingResponse(
-                    requestId,
-                    requestUrl,
-                    rule,
-                    tabId,
-                );
+            // First, make sure that the content-types of the matching rule include
+            // the content-type of the document.
+            if ((rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                return undefined;
             }
 
+            // Blocking rule can be with $popup modifier - in this case we need
+            // to close the tab as soon as possible.
+            // https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#popup-modifier
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
                 const isNewTab = tabsApi.isNewPopupTab(tabId);
 
@@ -111,8 +112,14 @@ export class RequestBlockingApi {
                 }
             }
 
-            // Other url blocking rules are not applicable to main frame
-            return undefined;
+            // For all other blocking rules, we return our dummy page with the
+            // option to temporarily disable blocking for the specified domain.
+            return documentBlockingService.getDocumentBlockingResponse(
+                requestId,
+                requestUrl,
+                rule,
+                tabId,
+            );
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
