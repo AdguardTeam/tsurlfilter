@@ -41,7 +41,13 @@ export default class BrowserCookieApi {
 
             return true;
         } catch (e) {
-            logger.error((e as Error).message);
+            // If `domain` contains the `path` part, the cookie cannot be saved,
+            // since `domain` can only contain hostname.
+            if (cookie.domain?.includes('/')) {
+                logger.info((e as Error).message);
+            } else {
+                logger.error((e as Error).message);
+            }
         }
 
         return false;
