@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## [2.1.4] - 2023-07-13
 
 ### Added
 - Support for $csp modifier in the MV3 converter.
@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Converting rules in MV3 with these modifiers `$elemhide`, `$specifichide`
   and `$generichide` now does not cause any errors and is simply skipped.
+
+### Fixed
+- Matching result caching for rules with `$method` modifier
+
 
 ## [2.1.3] - 2023-06-26
 
