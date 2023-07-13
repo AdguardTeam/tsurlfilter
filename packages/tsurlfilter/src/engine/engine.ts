@@ -109,6 +109,10 @@ export class Engine {
     matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
         let cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
 
+        if (request.method) {
+            cacheKey += `#${request.method}`;
+        }
+
         /**
          * Add frame url text to the key to avoid caching,
          * because allowlist rules are not stored in the engine
