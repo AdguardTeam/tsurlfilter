@@ -15,3 +15,4 @@ adg_os_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_format: /^(?!.*([^\\](,|\$|\/))).*$/

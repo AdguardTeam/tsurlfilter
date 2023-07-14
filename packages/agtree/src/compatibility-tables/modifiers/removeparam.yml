@@ -4,8 +4,7 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#removeparam-modifier
   assignable: true
   negatable: false
-  # TODO: implement validation
-  # value_format:
+  value_format: /^(?!.*([^\\](,|\$|\/))).*$/
 
 adg_ext_any:
   name: removeparam
@@ -13,8 +12,7 @@ adg_ext_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#removeparam-modifier
   assignable: true
   negatable: false
-  # TODO: implement validation
-  # value_format:
+  value_format: /^(?!.*([^\\](,|\$|\/))).*$/
 
 ubo_ext_any:
   name: removeparam
@@ -22,5 +20,4 @@ ubo_ext_any:
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#removeparam
   assignable: true
   negatable: false
-  # TODO: implement validation
-  # value_format:
+  value_format: /^(?!.*([^\\](,|\$|\/))).*$/

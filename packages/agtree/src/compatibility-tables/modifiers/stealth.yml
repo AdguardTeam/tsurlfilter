@@ -5,8 +5,27 @@ adg_os_any:
   assignable: true
   negatable: false
   exception_only: true
-  # TODO: implement validation
-  # value_format:
+  value_format: |-
+    (?x)
+      ^(?!\|)\b(?:(
+        searchqueries|
+        donottrack|
+        3p-cookie|
+        1p-cookie|
+        3p-cache|
+        3p-auth|
+        webrtc|
+        push|
+        location|
+        flash|
+        java|
+        referrer|
+        useragent|
+        ip|
+        xclientdata|
+        dpi|
+        \|?
+      )\b)+(?<!\|)$
 
 adg_ext_chrome:
   name: stealth
@@ -15,8 +34,18 @@ adg_ext_chrome:
   assignable: true
   negatable: false
   exception_only: true
-  # TODO: implement validation
-  # value_format:
+  value_format: |-
+    (?x)
+      ^(?!\|)\b(?:(
+        searchqueries|
+        donottrack|
+        3p-cookie|
+        1p-cookie|
+        webrtc|
+        referrer|
+        xclientdata
+        |\|?
+      )\b)+(?<!\|)$
 
 adg_ext_firefox:
   name: stealth
@@ -25,8 +54,17 @@ adg_ext_firefox:
   assignable: true
   negatable: false
   exception_only: true
-  # TODO: implement validation
-  # value_format:
+  value_format: |-
+    (?x)
+      ^(?!\|)\b(?:(
+        searchqueries|
+        donottrack|
+        3p-cookie|
+        1p-cookie|
+        webrtc|
+        referrer|
+        |\|?
+      )\b)+(?<!\|)$
 
 adg_ext_opera:
   name: stealth
@@ -35,8 +73,17 @@ adg_ext_opera:
   assignable: true
   negatable: false
   exception_only: true
-  # TODO: implement validation
-  # value_format:
+  value_format: |-
+    (?x)
+      ^(?!\|)\b(?:(
+        searchqueries|
+        donottrack|
+        3p-cookie|
+        1p-cookie|
+        webrtc|
+        referrer|
+        |\|?
+      )\b)+(?<!\|)$
 
 adg_ext_edge:
   name: stealth
@@ -45,5 +92,14 @@ adg_ext_edge:
   assignable: true
   negatable: false
   exception_only: true
-  # TODO: implement validation
-  # value_format:
+  value_format: |-
+    (?x)
+      ^(?!\|)\b(?:(
+        searchqueries|
+        donottrack|
+        3p-cookie|
+        1p-cookie|
+        webrtc|
+        referrer|
+        |\|?
+      )\b)+(?<!\|)$

@@ -7,3 +7,4 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#jsonprune-modifier
   assignable: true
   negatable: false
+  value_format: /^\\\$\.(?!.*([^\\](,|\$|\/))).*$/

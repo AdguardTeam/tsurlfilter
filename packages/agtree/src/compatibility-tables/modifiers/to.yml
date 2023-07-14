@@ -9,3 +9,4 @@ ubo_ext_any:
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#to
   assignable: true
   negatable: false
+  value_format: pipe_separated_domains
