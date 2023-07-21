@@ -4,7 +4,7 @@ import type { NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
-import { isChromium, isFirefox } from '../utils/browser-detector';
+import { isChromium } from '../utils/browser-detector';
 import { tabsApi } from '../api';
 import type { ConfigurationMV2 } from '../configuration';
 import type { WebRequestBlockingResponse } from '../request/request-blocking-api';
@@ -48,14 +48,14 @@ export class DocumentBlockingService {
     /**
      * Processes $document modifier rule matched request in {@link RequestBlockingApi.getBlockingResponse}.
      *
-     * @param requestId Request id.
+     * @param eventId Request event id.
      * @param requestUrl Url of processed request.
      * @param rule {@link NetworkRule} Instance of matched rule.
      * @param tabId TabId of processed request.
      * @returns Blocking response or null {@link WebRequestApi.onBeforeRequest}.
      */
     public getDocumentBlockingResponse(
-        requestId: string,
+        eventId: string,
         requestUrl: string,
         rule: NetworkRule,
         tabId: number,
@@ -69,7 +69,7 @@ export class DocumentBlockingService {
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
-                eventId: requestId,
+                eventId,
                 tabId,
                 rule,
             },

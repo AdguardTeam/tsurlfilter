@@ -1,10 +1,7 @@
-import {
-    NetworkRule,
-    CosmeticRule,
-} from '@adguard/tsurlfilter';
+import type { NetworkRule, CosmeticRule } from '@adguard/tsurlfilter';
 
-import { ContentType } from './request-type';
-import { EventChannel, EventChannelInterface } from './utils';
+import type { ContentType } from './request-type';
+import { EventChannel, type EventChannelInterface } from './utils';
 
 /**
  * Types of filtering events that can occur during request processing.

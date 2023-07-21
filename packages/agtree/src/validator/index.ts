@@ -9,12 +9,13 @@ import {
     getModifiersData,
 } from '../compatibility-tables';
 import { Modifier } from '../parser/common';
+import { AdblockSyntax } from '../utils/adblockers';
 import { INVALID_ERROR_PREFIX } from './constants';
 
 const BLOCKER_PREFIX = {
-    ADG: 'adg_',
-    UBO: 'ubo_',
-    ABP: 'abp_',
+    [AdblockSyntax.Adg]: 'adg_',
+    [AdblockSyntax.Ubo]: 'ubo_',
+    [AdblockSyntax.Abp]: 'abp_',
 };
 
 /**
@@ -103,24 +104,34 @@ const getInvalidValidationResult = (error: string): ValidationResult => {
 };
 
 /**
- * Fully checks whether the given is valid for given blocker:
+ * Fully checks whether the given `modifier` valid for given blocker `syntax`:
  * is it supported by the blocker, deprecated, assignable, negatable, etc.
  *
  * @param modifiersData Parsed all modifiers data map.
- * @param blockerPrefix Prefix of the blocker, e.g. 'adg_', 'ubo_', or 'abp_'.
+ * @param syntax Adblock syntax to check the modifier for.
+ * 'Common' is not supported, it should be specific — 'AdGuard', 'uBlockOrigin', or 'AdblockPlus'.
  * @param modifier Parsed modifier AST node.
- * @param isBlocking Whether the modifier is used in blocking rule.
+ * @param isException Whether the modifier is used in exception rule.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
  * @returns Result of modifier validation.
  */
-const validateForBlocker = (
+const validateForSpecificSyntax = (
     modifiersData: ModifierDataMap,
-    blockerPrefix: string,
+    syntax: AdblockSyntax,
     modifier: Modifier,
-    isBlocking: boolean,
+    isException: boolean,
 ): ValidationResult => {
+    if (syntax === AdblockSyntax.Common) {
+        throw new Error(`Syntax should be specific, '${AdblockSyntax.Common}' is not supported`);
+    }
+
     const modifierName = modifier.modifier.value;
+
+    const blockerPrefix = BLOCKER_PREFIX[syntax];
+    if (!blockerPrefix) {
+        throw new Error(`Unknown syntax: ${syntax}`);
+    }
 
     // needed for validation of negation, assignment, etc.
     const specificBlockerData = getSpecificBlockerData(modifiersData, blockerPrefix, modifierName);
@@ -145,11 +156,11 @@ const validateForBlocker = (
         };
     }
 
-    if (specificBlockerData.block_only && !isBlocking) {
+    if (specificBlockerData.block_only && isException) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.BLOCK_ONLY}: '${modifierName}'`);
     }
 
-    if (specificBlockerData.exception_only && isBlocking) {
+    if (specificBlockerData.exception_only && !isException) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.EXCEPTION_ONLY}: '${modifierName}'`);
     }
 
@@ -235,51 +246,28 @@ export class ModifierValidator {
     };
 
     /**
-     * Checks whether the given modifier is valid for AdGuard.
+     * Checks whether the given `modifier` is valid for specified `syntax`.
      *
-     * @param modifier Already parsed modifier AST node.
-     * @param isBlocking Whether the modifier is used in blocking rule, **default to true**.
+     * For `Common` syntax it simply checks whether the modifier exists.
+     * For specific syntax the validation is more complex —
+     * deprecated, assignable, negatable and other requirements are checked.
+     *
+     * @param syntax Adblock syntax to check the modifier for.
+     * @param modifier Modifier AST node.
+     * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
      * @returns Result of modifier validation.
      */
-    public validateAdg = (modifier: Modifier, isBlocking = true): ValidationResult => {
+    public validate = (syntax: AdblockSyntax, modifier: Modifier, isException = false): ValidationResult => {
         if (!this.exists(modifier)) {
             return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
         }
-        return validateForBlocker(this.modifiersData, BLOCKER_PREFIX.ADG, modifier, isBlocking);
-    };
-
-    /**
-     * Checks whether the given modifier is valid for Ublock Origin.
-     *
-     * @param modifier Already parsed modifier AST node.
-     * @param isBlocking Whether the modifier is used in blocking rule, default to true.
-     * Needed to check whether the modifier is allowed only in blocking or exception rules.
-     *
-     * @returns Result of modifier validation.
-     */
-    public validateUbo = (modifier: Modifier, isBlocking = true): ValidationResult => {
-        if (!this.exists(modifier)) {
-            return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
+        // for 'Common' syntax we cannot check something more
+        if (syntax === AdblockSyntax.Common) {
+            return { ok: true };
         }
-        return validateForBlocker(this.modifiersData, BLOCKER_PREFIX.UBO, modifier, isBlocking);
-    };
-
-    /**
-     * Checks whether the given modifier is valid for AdBlock Plus.
-     *
-     * @param modifier Already parsed modifier AST node.
-     * @param isBlocking Whether the modifier is used in blocking rule, default to true.
-     * Needed to check whether the modifier is allowed only in blocking or exception rules.
-     *
-     * @returns Result of modifier validation.
-     */
-    public validateAbp = (modifier: Modifier, isBlocking = true): ValidationResult => {
-        if (!this.exists(modifier)) {
-            return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
-        }
-        return validateForBlocker(this.modifiersData, BLOCKER_PREFIX.ABP, modifier, isBlocking);
+        return validateForSpecificSyntax(this.modifiersData, syntax, modifier, isException);
     };
 
     /**
@@ -293,7 +281,7 @@ export class ModifierValidator {
         if (!this.exists(modifier)) {
             return null;
         }
-        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX.ADG, modifier);
+        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX[AdblockSyntax.Adg], modifier);
     };
 
     /**
@@ -307,7 +295,7 @@ export class ModifierValidator {
         if (!this.exists(modifier)) {
             return null;
         }
-        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX.UBO, modifier);
+        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX[AdblockSyntax.Ubo], modifier);
     };
 
     /**
@@ -321,6 +309,6 @@ export class ModifierValidator {
         if (!this.exists(modifier)) {
             return null;
         }
-        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX.ABP, modifier);
+        return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX[AdblockSyntax.Abp], modifier);
     };
 }

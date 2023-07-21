@@ -3,6 +3,7 @@ import { ModifierParser } from '../../src/parser/misc/modifier';
 import { ModifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { INVALID_ERROR_PREFIX } from '../../src/validator/constants';
+import { AdblockSyntax } from '../../src/utils/adblockers';
 
 const DOCS_BASE_URL = {
     ADG: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/',
@@ -169,7 +170,7 @@ describe('ModifierValidator', () => {
         });
     });
 
-    describe('validateAdg', () => {
+    describe('validate for AdGuard', () => {
         const modifierValidator = new ModifierValidator();
 
         describe('fully supported', () => {
@@ -181,7 +182,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validateAdg(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
@@ -193,7 +194,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validateAdg(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
                 expect(validationResult.ok).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
                 expect(validationResult.warn?.includes('support shall be removed in the future')).toBeTruthy();
@@ -253,7 +254,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validateAdg(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -274,8 +275,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'true' for blocking rules
-                const validationResult = modifierValidator.validateAdg(modifier, true);
+                // third argument is 'false' for blocking rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(INVALID_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -289,8 +290,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(validForBlockingModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'true' for blocking rules
-                const validationResult = modifierValidator.validateAdg(modifier, true);
+                // third argument is 'false' for blocking rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
@@ -304,8 +305,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                // second argument is 'false' for exception rules
-                const validationResult = modifierValidator.validateAdg(modifier, false);
+                // third argument is 'true' for exception rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -318,14 +319,14 @@ describe('ModifierValidator', () => {
             ];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'false' for exception rules
-                const validationResult = modifierValidator.validateAdg(modifier, false);
+                // third argument is 'true' for exception rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
     });
 
-    describe('validateUbo', () => {
+    describe('validate for UblockOrigin', () => {
         const modifierValidator = new ModifierValidator();
 
         describe('supported', () => {
@@ -337,7 +338,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validateUbo(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
@@ -395,7 +396,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validateUbo(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -410,8 +411,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'true' for blocking rules
-                const validationResult = modifierValidator.validateUbo(modifier, true);
+                // third argument is 'false' for blocking rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(INVALID_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -422,8 +423,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'true' for blocking rules
-                const validationResult = modifierValidator.validateUbo(modifier, true);
+                // third argument is 'false' for blocking rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
@@ -437,8 +438,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                // second argument is 'false' for exception rules
-                const validationResult = modifierValidator.validateUbo(modifier, false);
+                // third argument is 'true' for exception rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -449,14 +450,14 @@ describe('ModifierValidator', () => {
             ];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'false' for exception rules
-                const validationResult = modifierValidator.validateUbo(modifier, false);
+                // third argument is 'true' for exception rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
     });
 
-    describe('validateAbp', () => {
+    describe('validate for AdblockPlus', () => {
         const modifierValidator = new ModifierValidator();
 
         describe('supported', () => {
@@ -468,7 +469,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validateAbp(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
                 expect(validationResult.ok).toBeTruthy();
             });
         });
@@ -518,7 +519,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validateAbp(modifier);
+                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -533,8 +534,8 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const EXPECTED_ERROR = 'Only exception rules may contain the modifier';
                 const modifier = getModifier(rawModifier);
-                // second argument is 'true' for blocking rules
-                const validationResult = modifierValidator.validateAbp(modifier, true);
+                // third argument is 'false' for blocking rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
                 expect(validationResult.ok).toBeFalsy();
                 expect(validationResult.error?.startsWith(EXPECTED_ERROR)).toBeTruthy();
             });
@@ -545,8 +546,8 @@ describe('ModifierValidator', () => {
             ];
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                // second argument is 'true' for blocking rules
-                const validationResult = modifierValidator.validateAbp(modifier, true);
+                // third argument is 'false' for blocking rules
+                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
                 expect(validationResult.ok).toBeTruthy();
             });
         });

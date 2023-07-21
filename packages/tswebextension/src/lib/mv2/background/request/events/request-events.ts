@@ -1,11 +1,11 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { HTTPMethod } from '@adguard/tsurlfilter';
+import type { HTTPMethod } from '@adguard/tsurlfilter';
 
-import { requestContextStorage, RequestContextState, RequestContext } from '../request-context-storage';
-import { RequestEvent, RequestData } from './request-event';
+import { requestContextStorage, RequestContextState } from '../request-context-storage';
+import { RequestEvent, type RequestData } from './request-event';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
-import { MAIN_FRAME_ID, TabFrameRequestContext } from '../../tabs';
+import { MAIN_FRAME_ID, type TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
 
 const MAX_URL_LENGTH = 1024 * 16;
@@ -227,7 +227,7 @@ export class RequestEvents {
             || url;
 
         // Retrieve the rest part of the request context for record all fields.
-        const requestContext: RequestContext = {
+        const requestContext = requestContextStorage.create(requestId, {
             ...tabFrameRequestContext,
             requestFrameId,
             state: RequestContextState.BeforeRequest,
@@ -236,9 +236,7 @@ export class RequestEvents {
             referrerUrl,
             contentType,
             method: method as HTTPMethod,
-        };
-
-        requestContextStorage.set(requestId, requestContext);
+        });
 
         return { details, context: requestContext };
     }

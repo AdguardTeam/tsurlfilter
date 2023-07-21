@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+
+## [0.3.7] - 2023-07-21
+
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.1.5`.
+- Updated `@adguard/scriptlets` to `v1.9.57`.
+
+## Fixed
+- Duplicate `eventId` of filtering events.
+
+
 ## [0.3.6] - 2023-07-11
 
 ### Fixed
