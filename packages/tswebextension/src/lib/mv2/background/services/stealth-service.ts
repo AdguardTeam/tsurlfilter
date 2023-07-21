@@ -3,12 +3,11 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { findHeaderByName, removeHeader } from '../utils/headers';
 import {
     FilteringEventType,
-    FilteringLogInterface,
-    StealthHelper,
-    StealthConfig,
-    getHost,
-    isThirdPartyRequest,
-} from '../../../common';
+    type FilteringLogInterface,
+} from '../../../common/filtering-log';
+import type { StealthConfig } from '../../../common/configuration';
+import { StealthHelper } from '../../../common/stealth-helper';
+import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
 
 import type { RequestContext } from '../request';
 import type { AppContext } from '../context';
@@ -176,7 +175,7 @@ export class StealthService {
                 type: FilteringEventType.StealthAction,
                 data: {
                     tabId: context.tabId,
-                    eventId: context.requestId,
+                    eventId: context.eventId,
                     stealthActions,
                 },
             });

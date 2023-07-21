@@ -21,6 +21,7 @@ describe('Request Events', () => {
 
     const commonContextData: Partial<RequestContext> = {
         requestId: '12345',
+        eventId: '1',
         tabId: 1,
         frameId: 0,
         requestUrl: 'https://example.com/',

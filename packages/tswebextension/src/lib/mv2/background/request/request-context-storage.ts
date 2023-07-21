@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import type { WebRequest } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
 
@@ -21,6 +22,14 @@ export const enum RequestContextState {
  * Request context data.
  */
 export type RequestContext = TabFrameRequestContext & {
+    /**
+     * During redirect processing, multiple events are processed in the same request lifecycle.
+     * We need a unique identifier to separate these requests in the filtering log.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/webRequest/#life-cycle-of-requests
+     */
+    eventId: string;
+
     state: RequestContextState;
     timestamp: number; // record time in ms
     referrerUrl: string;
@@ -47,9 +56,32 @@ export type RequestContext = TabFrameRequestContext & {
 };
 
 /**
+ * Create request context DTO.
+ */
+export type CreateRequestContext = Omit<RequestContext, 'eventId'>;
+
+/**
  * Implementation of the request context storage.
  */
 export class RequestContextStorage extends Map<string, RequestContext> {
+    /**
+     * Create new request context.
+     *
+     * @param requestId Request id.
+     * @param data Request context with a omitted eventId field. It is automatically generated.
+     * @returns Request context storage instance.
+     */
+    public create(requestId: string, data: CreateRequestContext): RequestContext {
+        const requestContext: RequestContext = {
+            eventId: nanoid(),
+            ...data,
+        };
+
+        super.set(requestId, requestContext);
+
+        return requestContext;
+    }
+
     /**
      * Update request context fields. Can be done partially.
      *

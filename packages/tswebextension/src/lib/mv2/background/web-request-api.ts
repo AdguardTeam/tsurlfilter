@@ -274,6 +274,7 @@ export class WebRequestApi {
             frameId,
             requestUrl,
             referrerUrl,
+            eventId,
             requestId,
             contentType,
             timestamp,
@@ -290,7 +291,7 @@ export class WebRequestApi {
             type: FilteringEventType.SendRequest,
             data: {
                 tabId,
-                eventId: requestId,
+                eventId,
                 requestUrl,
                 requestDomain: getDomain(requestUrl) as string,
                 frameUrl: referrerUrl,
@@ -338,7 +339,7 @@ export class WebRequestApi {
         // the response in order to actually apply $replace rules to it.
         const response = RequestBlockingApi.getBlockingResponse(
             basicResult,
-            requestId,
+            eventId,
             requestUrl,
             requestType,
             tabId,
@@ -438,11 +439,15 @@ export class WebRequestApi {
         context,
         details,
     }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): WebRequestEventResponse {
+        if (!context) {
+            return undefined;
+        }
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ReceiveResponse,
             data: {
-                tabId: details.tabId,
-                eventId: details.requestId,
+                tabId: context.tabId,
+                eventId: context.eventId,
                 statusCode: details.statusCode,
             },
         });

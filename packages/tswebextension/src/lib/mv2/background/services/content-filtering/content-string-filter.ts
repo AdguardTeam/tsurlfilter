@@ -1,16 +1,14 @@
-import {
+import type {
     NetworkRule,
     ReplaceModifier,
     CosmeticRule,
 } from '@adguard/tsurlfilter';
+import { nanoid } from 'nanoid';
 
-import {
-    FilteringEventType,
-    FilteringLog,
-    getDomain,
-} from '../../../../common';
+import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
+import { getDomain } from '../../../../common/utils/url';
 
-import { RequestContext } from '../../request';
+import type { RequestContext } from '../../request';
 import { documentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
 import { HtmlRuleSelector } from './rule/html-rule-selector';
@@ -109,7 +107,6 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
                         const {
                             tabId,
-                            requestId,
                             requestUrl,
                             timestamp,
                             contentType,
@@ -119,7 +116,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                             type: FilteringEventType.ApplyCosmeticRule,
                             data: {
                                 tabId,
-                                eventId: requestId,
+                                eventId: nanoid(),
                                 element: element.innerHTML,
                                 frameUrl: requestUrl,
                                 rule,
@@ -170,14 +167,14 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             }
         }
 
-        const { tabId, requestId } = this.context;
+        const { tabId, eventId } = this.context;
 
         if (appliedRules.length > 0) {
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ReplaceRuleApply,
                 data: {
                     tabId,
-                    eventId: requestId,
+                    eventId,
                     rules: appliedRules,
                 },
             });

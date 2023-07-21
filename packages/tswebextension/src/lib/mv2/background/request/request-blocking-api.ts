@@ -67,9 +67,8 @@ export class RequestBlockingApi {
      * Processes rule applying for request and compute response for {@link WebRequestApi.onBeforeRequest} listener.
      *
      * @param rule Matched rule.
-     * @param requestId Request id.
+     * @param eventId Request event id.
      * @param requestUrl Request url.
-     * @param method Request method.
      * @param requestType Request type.
      * @param tabId Tab id.
      *
@@ -77,7 +76,7 @@ export class RequestBlockingApi {
      */
     public static getBlockingResponse(
         rule: NetworkRule | null,
-        requestId: string,
+        eventId: string,
         requestUrl: string,
         requestType: RequestType,
         tabId: number,
@@ -87,7 +86,7 @@ export class RequestBlockingApi {
         }
 
         if (rule.isAllowlist()) {
-            RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
+            RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
             return undefined;
         }
 
@@ -106,7 +105,7 @@ export class RequestBlockingApi {
                 const isNewTab = tabsApi.isNewPopupTab(tabId);
 
                 if (isNewTab) {
-                    RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
+                    RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
                     browser.tabs.remove(tabId);
                     return { cancel: true };
                 }
@@ -115,7 +114,7 @@ export class RequestBlockingApi {
             // For all other blocking rules, we return our dummy page with the
             // option to temporarily disable blocking for the specified domain.
             return documentBlockingService.getDocumentBlockingResponse(
-                requestId,
+                eventId,
                 requestUrl,
                 rule,
                 tabId,
@@ -125,31 +124,31 @@ export class RequestBlockingApi {
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
             const redirectUrl = redirectsService.createRedirectUrl(rule.getAdvancedModifierValue(), requestUrl);
             if (redirectUrl) {
-                RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
+                RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
                 return { redirectUrl };
             }
         }
 
-        RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
+        RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
         return { cancel: true };
     }
 
     /**
      * Creates {@link FilteringLog} event of rule applying for processed request.
      *
-     * @param requestId Request id.
+     * @param eventId Request event id.
      * @param requestRule Request rule.
      * @param tabId Tab id.
      */
     private static logRuleApplying(
-        requestId: string,
+        eventId: string,
         requestRule: NetworkRule,
         tabId: number,
     ): void {
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
-                eventId: requestId,
+                eventId,
                 tabId,
                 rule: requestRule,
             },
