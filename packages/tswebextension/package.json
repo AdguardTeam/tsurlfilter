@@ -83,8 +83,8 @@
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
     "@adguard/extended-css": "^2.0.52",
-    "@adguard/scriptlets": "^1.9.37",
-    "@adguard/tsurlfilter": "^2.1.2",
+    "@adguard/scriptlets": "^1.9.57",
+    "@adguard/tsurlfilter": "^2.1.4",
     "bowser": "2.11.0",
     "commander": "11.0.0",
     "fs-extra": "11.1.1",
