@@ -4,12 +4,52 @@ import { locRange } from '../../utils/location';
 import { EMPTY, SPACE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import {
-    Agent,
-    Location,
-    Value,
+    type Agent,
+    type Location,
+    type Value,
     defaultLocation,
 } from '../common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntax } from '../../utils/adblockers';
+
+const ADG_NAME_MARKERS = new Set([
+    'adguard',
+    'adg',
+]);
+
+const UBO_NAME_MARKERS = new Set([
+    'ublock',
+    'ublock origin',
+    'ubo',
+]);
+
+const ABP_NAME_MARKERS = new Set([
+    'adblock',
+    'adblock plus',
+    'adblockplus',
+    'abp',
+]);
+
+/**
+ * Returns the adblock syntax based on the adblock name
+ * parsed from the agent type comment.
+ * Needed for modifiers validation of network rules by AGLint.
+ *
+ * @param name Adblock name.
+ *
+ * @returns Adblock syntax.
+ */
+const getAdblockSyntax = (name: string): AdblockSyntax => {
+    let syntax = AdblockSyntax.Common;
+    if (ADG_NAME_MARKERS.has(name.toLowerCase())) {
+        syntax = AdblockSyntax.Adg;
+    } else if (UBO_NAME_MARKERS.has(name.toLowerCase())) {
+        syntax = AdblockSyntax.Ubo;
+    } else if (ABP_NAME_MARKERS.has(name.toLowerCase())) {
+        syntax = AdblockSyntax.Abp;
+    }
+    return syntax;
+};
 
 /**
  * `AgentParser` is responsible for parsing single adblock agent elements.
@@ -52,6 +92,8 @@ export class AgentParser {
         // Prepare variables for name and version
         let name: Value | null = null;
         let version: Value | null = null;
+        // default value for the syntax
+        let syntax: AdblockSyntax = AdblockSyntax.Common;
 
         // Get agent parts by splitting it by spaces. The last part may be a version.
         // Example: "Adblock Plus 2.0"
@@ -71,11 +113,13 @@ export class AgentParser {
                     );
                 }
 
+                const parsedNamePart = raw.substring(nameStartIndex, nameEndIndex);
+
                 // Save name
                 name = {
                     type: 'Value',
                     loc: locRange(loc, nameStartIndex, nameEndIndex),
-                    value: raw.substring(nameStartIndex, nameEndIndex),
+                    value: parsedNamePart,
                 };
 
                 // Save version
@@ -84,6 +128,9 @@ export class AgentParser {
                     loc: locRange(loc, offset, partEnd),
                     value: part,
                 };
+
+                // Save syntax
+                syntax = getAdblockSyntax(parsedNamePart);
             } else {
                 nameEndIndex = partEnd;
             }
@@ -94,11 +141,13 @@ export class AgentParser {
 
         // If we didn't find a version, the whole string is the name
         if (name === null) {
+            const parsedNamePart = raw.substring(nameStartIndex, nameEndIndex);
             name = {
                 type: 'Value',
                 loc: locRange(loc, nameStartIndex, nameEndIndex),
-                value: raw.substring(nameStartIndex, nameEndIndex),
+                value: parsedNamePart,
             };
+            syntax = getAdblockSyntax(parsedNamePart);
         }
 
         // Agent name cannot be empty
@@ -114,6 +163,7 @@ export class AgentParser {
             loc: locRange(loc, 0, raw.length),
             adblock: name,
             version,
+            syntax,
         };
     }
 

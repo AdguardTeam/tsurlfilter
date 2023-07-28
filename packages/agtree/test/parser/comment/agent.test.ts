@@ -1,4 +1,5 @@
 import { AgentCommentRuleParser } from '../../../src/parser/comment/agent-rule';
+import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('AgentCommentRuleParser', () => {
@@ -80,6 +81,7 @@ describe('AgentCommentRuleParser', () => {
                         value: 'AdBlock',
                     },
                     version: null,
+                    syntax: AdblockSyntax.Abp,
                 },
             ],
         });
@@ -132,6 +134,7 @@ describe('AgentCommentRuleParser', () => {
                         value: 'AdGuard',
                     },
                     version: null,
+                    syntax: AdblockSyntax.Adg,
                 },
             ],
         });
@@ -184,6 +187,7 @@ describe('AgentCommentRuleParser', () => {
                         value: 'uBlock',
                     },
                     version: null,
+                    syntax: AdblockSyntax.Ubo,
                 },
             ],
         });
@@ -237,6 +241,7 @@ describe('AgentCommentRuleParser', () => {
                             value: 'uBlock Origin',
                         },
                         version: null,
+                        syntax: AdblockSyntax.Ubo,
                     },
                 ],
             },
@@ -306,6 +311,7 @@ describe('AgentCommentRuleParser', () => {
                             },
                             value: '2.0',
                         },
+                        syntax: AdblockSyntax.Abp,
                     },
                 ],
             },
@@ -374,6 +380,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '1.0.0',
                     },
+                    syntax: AdblockSyntax.Ubo,
                 },
             ],
         });
@@ -441,6 +448,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '2.0',
                     },
+                    syntax: AdblockSyntax.Abp,
                 },
                 {
                     type: 'Agent',
@@ -473,6 +481,7 @@ describe('AgentCommentRuleParser', () => {
                         value: 'AdGuard',
                     },
                     version: null,
+                    syntax: AdblockSyntax.Adg,
                 },
             ],
         });
@@ -541,6 +550,7 @@ describe('AgentCommentRuleParser', () => {
                             },
                             value: '2.0',
                         },
+                        syntax: AdblockSyntax.Abp,
                     },
                     {
                         type: 'Agent',
@@ -588,6 +598,7 @@ describe('AgentCommentRuleParser', () => {
                             },
                             value: '1.0.1.10',
                         },
+                        syntax: AdblockSyntax.Adg,
                     },
                 ],
             },
@@ -658,6 +669,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '3.1',
                     },
+                    syntax: AdblockSyntax.Abp,
                 },
                 {
                     type: 'Agent',
@@ -705,6 +717,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '1.4',
                     },
+                    syntax: AdblockSyntax.Adg,
                 },
                 {
                     type: 'Agent',
@@ -752,6 +765,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '1.0.15.0',
                     },
+                    syntax: AdblockSyntax.Ubo,
                 },
             ],
         });
@@ -821,6 +835,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '3.1',
                     },
+                    syntax: AdblockSyntax.Abp,
                 },
                 {
                     type: 'Agent',
@@ -868,6 +883,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '1.4',
                     },
+                    syntax: AdblockSyntax.Adg,
                 },
                 {
                     type: 'Agent',
@@ -915,6 +931,7 @@ describe('AgentCommentRuleParser', () => {
                         },
                         value: '1.0.15.0',
                     },
+                    syntax: AdblockSyntax.Ubo,
                 },
             ],
         });
