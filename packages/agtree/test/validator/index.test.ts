@@ -1,6 +1,6 @@
 import { Modifier } from '../../src/parser/common';
 import { ModifierParser } from '../../src/parser/misc/modifier';
-import { ModifierValidator } from '../../src/validator';
+import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { INVALID_ERROR_PREFIX } from '../../src/validator/constants';
 import { AdblockSyntax } from '../../src/utils/adblockers';
@@ -33,8 +33,6 @@ const getModifier = (rawModifier: string | Modifier): Modifier => {
 describe('ModifierValidator', () => {
     describe('exists', () => {
         describe('modifier as string type', () => {
-            const modifierValidator = new ModifierValidator();
-
             const existentModifiers = [
                 'app',
                 'badfilter',
@@ -123,8 +121,6 @@ describe('ModifierValidator', () => {
         });
 
         describe('modifier as Modifier type', () => {
-            const modifierValidator = new ModifierValidator();
-
             // 'loc' properties is skipped as not required for this test
             const supportedModifiers = [
                 // app=com.test.app
@@ -171,8 +167,6 @@ describe('ModifierValidator', () => {
     });
 
     describe('validate for AdGuard', () => {
-        const modifierValidator = new ModifierValidator();
-
         describe('fully supported', () => {
             const supportedModifiers = [
                 'all',
@@ -327,8 +321,6 @@ describe('ModifierValidator', () => {
     });
 
     describe('validate for UblockOrigin', () => {
-        const modifierValidator = new ModifierValidator();
-
         describe('supported', () => {
             const supportedModifiers = [
                 'all',
@@ -458,8 +450,6 @@ describe('ModifierValidator', () => {
     });
 
     describe('validate for AdblockPlus', () => {
-        const modifierValidator = new ModifierValidator();
-
         describe('supported', () => {
             const supportedModifiers = [
                 'domain=example.com',
@@ -554,8 +544,6 @@ describe('ModifierValidator', () => {
     });
 
     describe('getAdgDocumentationLink', () => {
-        const modifierValidator = new ModifierValidator();
-
         describe('has docs', () => {
             const modifiers = [
                 'denyallow',
@@ -591,8 +579,6 @@ describe('ModifierValidator', () => {
     });
 
     describe('getUboDocumentationLink', () => {
-        const modifierValidator = new ModifierValidator();
-
         describe('has docs', () => {
             const modifiers = [
                 'cname',
@@ -628,8 +614,6 @@ describe('ModifierValidator', () => {
     });
 
     describe('getAbpDocumentationLink', () => {
-        const modifierValidator = new ModifierValidator();
-
         describe('has docs', () => {
             const modifiers = [
                 'domain=example.com',
