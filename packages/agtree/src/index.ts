@@ -72,7 +72,7 @@ export { ParameterListParser } from './parser/misc/parameter-list';
 export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
 
 // Validator
-export { ModifierValidator } from './validator';
+export { modifierValidator } from './validator';
 
 // Converter
 export { HtmlRuleConverter } from './converter/html';

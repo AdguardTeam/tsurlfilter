@@ -212,7 +212,7 @@ const getBlockerDocumentationLink = (
 /**
  * Modifier validator class.
  */
-export class ModifierValidator {
+class ModifierValidator {
     /**
      * Map of all modifiers data parsed from yaml files.
      */
@@ -312,3 +312,5 @@ export class ModifierValidator {
         return getBlockerDocumentationLink(this.modifiersData, BLOCKER_PREFIX[AdblockSyntax.Abp], modifier);
     };
 }
+
+export const modifierValidator = new ModifierValidator();

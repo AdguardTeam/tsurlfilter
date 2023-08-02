@@ -613,6 +613,11 @@ export interface Agent extends Node {
      * Adblock version (if specified).
      */
     version: Value | null;
+
+    /**
+     * Needed for network rules modifier validation.
+     */
+    syntax: AdblockSyntax;
 }
 
 /**
