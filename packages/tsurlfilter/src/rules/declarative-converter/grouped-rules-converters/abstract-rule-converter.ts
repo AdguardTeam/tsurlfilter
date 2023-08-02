@@ -127,6 +127,7 @@ import { ResourcesPathError } from '../errors/converter-options-errors';
 import { RedirectModifier } from '../../../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
+import { CookieModifier } from '../../../modifiers/cookie-modifier';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -312,6 +313,32 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Returns rule modify headers action with removing Cookie headers from response and request.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Add headers action, which describes which headers should be added.
+     */
+    private static getRemovingCookieHeadersAction(
+        rule: NetworkRule,
+    ): Pick<RuleAction, 'requestHeaders' | 'responseHeaders'> | null {
+        if (!rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+            return null;
+        }
+
+        return {
+            responseHeaders: [{
+                operation: HeaderOperation.Remove,
+                header: 'Set-Cookie',
+            }],
+            requestHeaders: [{
+                operation: HeaderOperation.Remove,
+                header: 'Cookie',
+            }],
+        };
+    }
+
+    /**
      * Returns rule modify headers action with adding CSP headers to response.
      *
      * @param rule Network rule.
@@ -387,6 +414,19 @@ export abstract class DeclarativeRuleConverter {
                 return {
                     type: RuleActionType.MODIFY_HEADERS,
                     responseHeaders: [addCspHeadersAction],
+                };
+            }
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+            const removeCookieHeaders = DeclarativeRuleConverter.getRemovingCookieHeadersAction(rule);
+            if (removeCookieHeaders) {
+                const { responseHeaders, requestHeaders } = removeCookieHeaders;
+
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    responseHeaders,
+                    requestHeaders,
                 };
             }
         }
@@ -468,8 +508,13 @@ export abstract class DeclarativeRuleConverter {
          * other types, so that it works not only for document requests, but
          * also for all other types of requests.
          */
+        const modifiersForAllContentTypes = [
+            NetworkRuleOption.RemoveHeader,
+            NetworkRuleOption.Csp,
+            NetworkRuleOption.Cookie,
+        ];
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
-        if ((rule.isOptionEnabled(NetworkRuleOption.RemoveHeader) || rule.isOptionEnabled(NetworkRuleOption.Csp))
+        if ((modifiersForAllContentTypes.some((modifier) => rule.isOptionEnabled(modifier)))
             && emptyResourceTypes && !rule.isAllowlist()) {
             condition.resourceTypes = [
                 ResourceType.MainFrame,
@@ -662,9 +707,31 @@ export abstract class DeclarativeRuleConverter {
             if (!removeHeader.isValid) {
                 return new UnsupportedModifierError(
                     // eslint-disable-next-line max-len
-                    `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${r.getText()}"`,
+                    `Network rule with $removeheader modifier contains some of the unsupported headers: "${r.getText()}"`,
                     r,
                 );
+            }
+
+            return null;
+        };
+
+        /**
+         * Checks if the $cookie values in the provided network rule
+         * are supported for conversion to MV3.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const checkCookieModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            const cookie = r.getAdvancedModifier() as CookieModifier;
+            if (!cookie.isEmpty()) {
+                // eslint-disable-next-line max-len
+                const msg = `The use of additional parameters in $cookie (apart from $cookie itself) is not supported: "${r.getText()}"`;
+
+                return new UnsupportedModifierError(msg, r);
             }
 
             return null;
@@ -693,7 +760,11 @@ export abstract class DeclarativeRuleConverter {
                 customChecks: [checkAllowRulesFn],
             },
             { option: NetworkRuleOption.Replace, name: '$replace' },
-            { option: NetworkRuleOption.Cookie, name: '$cookie' },
+            {
+                option: NetworkRuleOption.Cookie,
+                name: '$cookie',
+                customChecks: [checkAllowRulesFn, checkCookieModifierFn],
+            },
             {
                 option: NetworkRuleOption.Redirect,
                 name: '$redirect',
@@ -713,6 +784,16 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Hls, name: '$hls' },
         ];
 
+        const isDocumentAllowlist = rule.isOptionEnabled(NetworkRuleOption.Elemhide)
+            && rule.isOptionEnabled(NetworkRuleOption.Content)
+            && rule.isOptionEnabled(NetworkRuleOption.Jsinject)
+            && rule.isOptionEnabled(NetworkRuleOption.Urlblock)
+            && rule.isAllowlist();
+
+        if (isDocumentAllowlist) {
+            return true;
+        }
+
         for (let i = 0; i < unsupportedOptions.length; i += 1) {
             const {
                 option,
@@ -721,7 +802,7 @@ export abstract class DeclarativeRuleConverter {
                 skipConversion,
             } = unsupportedOptions[i];
 
-            if (!rule.isSingleOptionEnabled(option)) {
+            if (!rule.isOptionEnabled(option)) {
                 continue;
             }
 

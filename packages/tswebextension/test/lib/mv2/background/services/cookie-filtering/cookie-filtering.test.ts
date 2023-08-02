@@ -3,7 +3,7 @@ import { WebRequest } from 'webextension-polyfill';
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
 import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
-import BrowserCookieApi from '@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
+import { BrowserCookieApi } from '@lib/common/cookie-filtering/browser-cookie-api';
 import {
     RequestContext,
     RequestContextState,
@@ -17,7 +17,7 @@ import { MockFilteringLog } from '../../../../common/mocks';
 import HttpHeaders = WebRequest.HttpHeaders;
 
 jest.mock('../../../../../../src/lib/common/utils/logger');
-jest.mock('@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
+jest.mock('@lib/common/cookie-filtering/browser-cookie-api');
 
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
 BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
@@ -293,7 +293,7 @@ describe('Cookie filtering', () => {
 
         requestContextStorage.set(requestId, context);
 
-        expect(cookieFiltering.getBlockingRules(context.tabId, context.frameId)).toHaveLength(2);
+        expect(CookieFiltering.getBlockingRules(context.tabId, context.frameId)).toHaveLength(2);
 
         requestContextStorage.delete(requestId);
 

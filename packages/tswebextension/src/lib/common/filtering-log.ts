@@ -178,8 +178,8 @@ export type CookieEventData = {
 };
 
 /**
- * Dispatched by CookieFiltering manifest v2 module on cookie filtering in onBeforeSendHeaders and onHeadersReceived
- * event handlers.
+ * Dispatched by CookieFiltering module on cookie filtering in
+ * onBeforeSendHeaders and onHeadersReceived event handlers.
  */
 export type CookieEvent = {
     type: FilteringEventType.Cookie;

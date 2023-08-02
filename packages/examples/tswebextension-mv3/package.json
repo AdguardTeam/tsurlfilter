@@ -15,7 +15,7 @@
     "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r esbuild-register ./scripts/browser-test/index.ts"
   },
   "dependencies": {
-    "@adguard/tswebextension": "^0.1.2",
+    "@adguard/tswebextension": "^0.3.6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
@@ -29,6 +29,8 @@
     "@babel/preset-typescript": "^7.16.0",
     "@types/react": "^17.0.41",
     "@types/react-dom": "^17.0.14",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
     "axios": "^0.26.0",
     "babel-loader": "^8.2.3",
     "chalk": "^5.0.1",
@@ -39,6 +41,8 @@
     "esbuild": "^0.14.1",
     "esbuild-register": "^3.2.0",
     "eslint": "8.25.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint-plugin-import": "^2.28.0",
     "eslint-plugin-react": "^7.29.4",
     "fs-extra": "^10.1.0",
     "html-webpack-plugin": "^5.5.0",

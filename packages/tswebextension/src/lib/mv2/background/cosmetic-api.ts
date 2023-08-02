@@ -225,7 +225,7 @@ export class CosmeticApi {
          * Cosmetic result may not be committed to frame context during worker request processing.
          * We use engine request as a fallback for this case.
          */
-        if (!frame?.cosmeticResult) {
+        if (!frame.cosmeticResult) {
             frame.cosmeticResult = engineApi.matchCosmetic({
                 requestUrl: frame.url,
                 frameUrl: frame.url,

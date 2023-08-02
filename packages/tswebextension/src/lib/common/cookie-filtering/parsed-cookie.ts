@@ -3,7 +3,7 @@ import { type Cookies } from 'webextension-polyfill';
 /**
  * Synthetic Cookie-like object parsed from headers.
  */
-export default class ParsedCookie {
+export class ParsedCookie {
     /**
      * The request-URI to associate with the setting of the cookie.
      */
@@ -64,7 +64,7 @@ export default class ParsedCookie {
     /**
      * Priority chrome only specs.
      * Isn't affected. Let it be here just in case.
-     * {@link https://bugs.chromium.org/p/chromium/issues/detail?id=232693}.
+     * @see {@link https://bugs.chromium.org/p/chromium/issues/detail?id=232693}.
      */
     priority?: string;
 

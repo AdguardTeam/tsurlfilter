@@ -1,20 +1,11 @@
-import { nanoid } from 'nanoid';
 import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
-import { getDomain } from 'tldts';
-import {
-    ContentType,
-    defaultFilteringLog,
-    FilteringEventType,
-    FilteringLogInterface,
-    logger,
-} from '../../../../common';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
+import { logger } from '../../../../common';
+import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
-import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import CookieUtils from './utils';
+import { CookieUtils } from '../../../../common/cookie-filtering/utils';
 import { RequestContext, requestContextStorage } from '../../request';
-import { tabsApi } from '../../api';
 
 /**
  * Cookie filtering.
@@ -26,57 +17,43 @@ import { tabsApi } from '../../api';
  *  CookieFiltering.onBeforeSendHeaders:
  *  - get all cookies for request url;
  *  - store cookies (first-party);
- *  - apply rules via modifying or removing them from headers
- *    and modifying or removing them with browser.cookies api;
+ *  - apply rules via modifying or removing them with browser.cookies api;
  *
  *  CookieFiltering.onHeadersReceived:
  *  - parse set-cookie header, only to detect if the cookie in header will be set from third-party request;
  *  - save third-party flag for this cookie cookie.thirdParty=request.thirdParty;
- *  - apply rules via modifying or removing them from headers
- *    and modifying or removing them with browser.cookies api;
+ *  - apply rules via modifying or removing them with browser.cookies api;
  *
  *  CookieFiltering.onCompleted:
- *  - apply rules via content script
+ *  - apply rules via content script.
+ *
  *  In content-scripts (check /src/content-script/cookie-controller.ts):
- *  - get matching cookie rules;
- *  - apply.
+ *  - apply matched cookie rules.
  */
 export class CookieFiltering {
-    private filteringLog: FilteringLogInterface;
-
     private browserCookieApi: BrowserCookieApi = new BrowserCookieApi();
 
     /**
-     * Constructor.
-     *
-     * @param filteringLog Filtering log.
-     */
-    constructor(filteringLog: FilteringLogInterface) {
-        this.filteringLog = filteringLog;
-    }
-
-    /**
-     * Parses cookies from headers.
+     * Parses cookies from request headers and applies matched rules
+     * via browser.cookies api.
      *
      * @param context Request context.
-     *
-     * @returns True if headers were modified.
      */
-    public onBeforeSendHeaders(context: RequestContext): boolean {
+    public onBeforeSendHeaders(context: RequestContext): void {
         const { requestHeaders, requestUrl, requestId } = context;
         if (!requestHeaders || !requestUrl) {
-            return false;
+            return;
         }
 
         const cookieHeader = findHeaderByName(requestHeaders, 'Cookie');
 
         if (!cookieHeader?.value) {
-            return false;
+            return;
         }
 
         const cookies = CookieUtils.parseCookies(cookieHeader.value, requestUrl);
         if (cookies.length === 0) {
-            return false;
+            return;
         }
 
         // Saves cookies to context
@@ -84,183 +61,19 @@ export class CookieFiltering {
 
         // Removes cookies from browser with browser.cookies api, but not
         // removing them from context to correct process them in headers.
-        // IMPORTANT: This method reads cookies from context, so it should be
-        // called before method that change headers, since that method will
-        // remove or change headers in context.
         this.applyRules(context)
             .catch((e) => {
                 logger.error((e as Error).message);
             });
-
-        // Removes cookie from headers and updates context.
-        // Note: this method won't work in the extension build with manifest v3.
-        const headersModified = this.applyRulesToRequestCookieHeaders(context);
-
-        return headersModified;
     }
 
     /**
-     * Applies cookies to request headers.
+     * Parses set-cookie header from response, looks up third-party cookies
+     * and applies matched rules via browser.cookies api.
      *
      * @param context Request context.
-     * @returns True if headers were modified.
      */
-    private applyRulesToRequestCookieHeaders(context: RequestContext): boolean {
-        let headersModified = false;
-
-        const {
-            requestHeaders,
-            cookies,
-            matchingResult,
-            requestUrl,
-            thirdParty,
-            tabId,
-            requestId,
-        } = context;
-
-        if (!requestHeaders
-            || !matchingResult
-            || !requestUrl
-            || typeof thirdParty !== 'boolean'
-            || !cookies
-        ) {
-            return headersModified;
-        }
-
-        const cookieRules = matchingResult.getCookieRules();
-
-        for (let i = 0; i < cookies.length; i += 1) {
-            const cookie = cookies[i];
-
-            if (!cookie) {
-                continue;
-            }
-
-            const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, thirdParty);
-
-            if (bRule) {
-                if (!bRule.isAllowlist()) {
-                    // Remove from cookies array.
-                    cookies.splice(i, 1);
-                    // Move the loop counter back because we removed one element
-                    // from the iterated array.
-                    i -= 1;
-                    headersModified = true;
-                }
-
-                this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, thirdParty);
-            }
-
-            const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
-            if (mRules.length > 0) {
-                const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
-                if (appliedRules.length > 0) {
-                    headersModified = true;
-                }
-                appliedRules.forEach((r) => {
-                    this.recordCookieEvent(tabId, cookie, requestUrl, r, true, thirdParty);
-                });
-            }
-        }
-
-        if (headersModified) {
-            const cookieHeaderIndex = requestHeaders.findIndex((header) => header.name.toLowerCase() === 'cookie');
-            if (cookieHeaderIndex !== -1) {
-                if (cookies.length > 0) {
-                    // Update "cookie" header before send request to server.
-                    requestHeaders[cookieHeaderIndex].value = CookieUtils.serializeCookieToRequestHeader(cookies);
-                } else {
-                    // Empty cookies, delete header "Cookie".
-                    requestHeaders.splice(cookieHeaderIndex, 1);
-                }
-            }
-
-            // Update headers and cookies in context.
-            requestContextStorage.update(requestId, { requestHeaders, cookies });
-        }
-
-        return headersModified;
-    }
-
-    /**
-     * Applies cookies to response headers.
-     *
-     * @param context Request context.
-     * @returns True if headers were modified.
-     */
-    private applyRulesToResponseCookieHeaders(context: RequestContext): boolean {
-        let headersModified = false;
-
-        const {
-            responseHeaders,
-            matchingResult,
-            requestUrl,
-            thirdParty,
-            tabId,
-            requestId,
-        } = context;
-
-        if (!responseHeaders
-            || !matchingResult
-            || !requestUrl
-            || typeof thirdParty !== 'boolean'
-        ) {
-            return headersModified;
-        }
-
-        const cookieRules = matchingResult.getCookieRules();
-
-        for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
-            const header = responseHeaders[i];
-            const cookie = CookieUtils.parseSetCookieHeader(header, requestUrl);
-
-            if (!cookie) {
-                continue;
-            }
-
-            const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, thirdParty);
-
-            if (bRule) {
-                if (!bRule.isAllowlist()) {
-                    responseHeaders.splice(i, 1);
-                    headersModified = true;
-                }
-
-                this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, thirdParty);
-            }
-
-            const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
-            if (mRules.length > 0) {
-                const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
-                if (appliedRules.length > 0) {
-                    headersModified = true;
-                    responseHeaders[i] = {
-                        name: 'set-cookie',
-                        value: CookieUtils.serializeCookieToResponseHeader(cookie),
-                    };
-                    appliedRules.forEach((r) => {
-                        this.recordCookieEvent(tabId, cookie, requestUrl, r, true, thirdParty);
-                    });
-                }
-            }
-        }
-
-        if (headersModified) {
-            requestContextStorage.update(requestId, { responseHeaders });
-        }
-
-        return headersModified;
-    }
-
-    /**
-     * Parses set-cookie header and looks up third-party cookies.
-     * This callback won't work for mv3 extensions.
-     * TODO separate or rewrite to mv2 and mv3 methods.
-     *
-     * @param context Request context.
-     * @returns True if headers were modified.
-     */
-    public onHeadersReceived(context: RequestContext): boolean {
+    public onHeadersReceived(context: RequestContext): void {
         const {
             responseHeaders,
             requestUrl,
@@ -288,41 +101,10 @@ export class CookieFiltering {
 
         // Removes cookies from browser with browser.cookies api, but not
         // removing them from context to correct process them in headers.
-        // IMPORTANT: This method reads cookies from context, so it should be
-        // called before method that change headers, since that method will
-        // remove or change headers in context.
         this.applyRules(context)
             .catch((e) => {
                 logger.error((e as Error).message);
             });
-
-        // Remove cookie headers.
-        // This method won't work in the extension build with manifest v3.
-        const headersModified = this.applyRulesToResponseCookieHeaders(context);
-
-        return headersModified;
-    }
-
-    /**
-     * TODO: Return engine startup status data to content script
-     * to delay execution of cookie rules until the engine is ready.
-     *
-     * Looks up blocking rules for content-script in frame context.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @returns List of blocking rules.
-     */
-    public static getBlockingRules(tabId: number, frameId: number): NetworkRule[] {
-        const frame = tabsApi.getTabFrame(tabId, frameId);
-
-        if (!frame || !frame.matchingResult) {
-            return [];
-        }
-
-        const cookieRules = frame.matchingResult.getCookieRules();
-
-        return CookieRulesFinder.getBlockingRules(frame.url, cookieRules);
     }
 
     /**
@@ -480,7 +262,10 @@ export class CookieFiltering {
      * @param rule Applied modifying or deleting rule.
      * @param isModifyingCookieRule Is applied rule modifying or not.
      * @param requestThirdParty Whether request third party or not.
+     *
+     * TODO: Implement.
      */
+    // eslint-disable-next-line class-methods-use-this
     private recordCookieEvent(
         tabId: number,
         cookie: ParsedCookie,
@@ -488,23 +273,7 @@ export class CookieFiltering {
         rule: NetworkRule,
         isModifyingCookieRule: boolean,
         requestThirdParty: boolean,
-    ): void {
-        this.filteringLog.publishEvent({
-            type: FilteringEventType.Cookie,
-            data: {
-                eventId: nanoid(),
-                tabId,
-                cookieName: cookie.name,
-                cookieValue: cookie.value,
-                frameDomain: getDomain(requestUrl) || requestUrl,
-                rule,
-                isModifyingCookieRule,
-                requestThirdParty,
-                timestamp: Date.now(),
-                requestType: ContentType.Cookie,
-            },
-        });
-    }
+    ): void { }
 }
 
-export const cookieFiltering = new CookieFiltering(defaultFilteringLog);
+export const cookieFiltering = new CookieFiltering();

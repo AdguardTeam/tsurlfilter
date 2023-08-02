@@ -3,7 +3,7 @@ import type { WebRequest } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
 
 import type { ContentType } from '../../../common';
-import type ParsedCookie from '../services/cookie-filtering/parsed-cookie';
+import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../tabs/tabs-api';
 
 export const enum RequestContextState {
@@ -97,7 +97,14 @@ export class RequestContextStorage extends Map<string, RequestContext> {
             return requestContext;
         }
 
-        // TODO: Throws error if request context not found after RequestEvents refactoring.
+        /**
+         * Full context can be created in onBeforeRequest, partial context can
+         * be created on every requestContextStorage.update method call.
+         * TODO: Improve improve internal typings for correct checks these cases
+         * in request events handlers (AG-24428).
+         * TODO: Throws error if request context not found after RequestEvents
+         * refactoring. (AG-24428).
+         */
         super.set(requestId, data as RequestContext);
         return undefined;
     }

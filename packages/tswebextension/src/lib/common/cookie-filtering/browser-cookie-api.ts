@@ -1,8 +1,8 @@
 /* eslint-disable class-methods-use-this */
 import browser, { Cookies } from 'webextension-polyfill';
 
-import ParsedCookie from '../parsed-cookie';
-import { logger } from '../../../../../common/utils/logger';
+import { logger } from '../utils/logger';
+import { ParsedCookie } from './parsed-cookie';
 
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
@@ -10,7 +10,7 @@ import SameSiteStatus = Cookies.SameSiteStatus;
 /**
  * Cookie api implementation.
  */
-export default class BrowserCookieApi {
+export class BrowserCookieApi {
     /**
      * Removes cookie.
      *
@@ -33,6 +33,8 @@ export default class BrowserCookieApi {
      * Updates cookie.
      *
      * @param cookie Cookie for update.
+     *
+     * @returns Promise with result of operation.
      */
     async modifyCookie(cookie: ParsedCookie): Promise<boolean> {
         try {

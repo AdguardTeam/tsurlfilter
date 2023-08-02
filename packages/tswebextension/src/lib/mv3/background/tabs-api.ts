@@ -1,6 +1,8 @@
 /**
  * TabsApi works with {@link chrome.tabs} to record tabs URL's - they needed
  * for work domain-specific blocking/allowing cosmetic rules.
+ *
+ * TODO: Add persistent storage for cases of deaths service worker.
  */
 export class TabsApi {
     /**
@@ -64,7 +66,7 @@ export class TabsApi {
     /**
      * Saves the main frame URL of the provided tab.
      *
-     * @param tab {@link chrome.tabs.Tab}.
+     * @param tab Item of {@link chrome.tabs.Tab}.
      */
     private createTabContext(tab: chrome.tabs.Tab): void {
         if (tab.id && tab.url) {
@@ -76,7 +78,7 @@ export class TabsApi {
      * Updates saved the main frame URL of the provided tab.
      *
      * @param tabId Tab id.
-     * @param changeInfo {@link chrome.tabs.TabChangeInfo}.
+     * @param changeInfo Item of {@link chrome.tabs.TabChangeInfo}.
      */
     private updateTabContext(
         tabId: number,

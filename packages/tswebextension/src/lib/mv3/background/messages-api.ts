@@ -1,6 +1,10 @@
-import { RequestType } from '@adguard/tsurlfilter';
+import { type MatchingResult, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
 
-import { getAssistantCreateRulePayloadValidator, getCssPayloadValidator } from '../../common';
+import { CookieRule } from '../../common/content-script/cookie-controller';
+import {
+    getAssistantCreateRulePayloadValidator,
+    getCssPayloadValidator,
+} from '../../common';
 import { isHttpOrWsRequest } from '../../common/utils';
 import { logger } from '../utils/logger';
 
@@ -11,6 +15,7 @@ import {
     CommonMessageType,
     ExtendedMV3MessageType,
     MessageMV3,
+    getCookieRulesPayloadValidator,
     messageMV3Validator,
 } from './messages';
 import { Assistant } from './assistant';
@@ -67,28 +72,19 @@ export class MessagesApi {
         const { type } = message;
         switch (type) {
             case CommonMessageType.GetCss: {
-                logger.debug('[HANDLE MESSAGE]: call getCss');
-
-                const res = getCssPayloadValidator.safeParse(message.payload);
-                if (!res.success) {
-                    return undefined;
-                }
-
-                const { referrer, url } = res.data;
-
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
-                // When document url for iframe is about:blank then we use tab url
-                if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
-                    return this.getCss(sender.tab.url, referrer, true);
-                }
-
-                return this.getCss(url, referrer);
+                return this.getCss(sender, message.payload);
             }
             case ExtendedMV3MessageType.GetCollectedLog: {
                 return declarativeFilteringLog.getCollected();
             }
             case CommonMessageType.AssistantCreateRule: {
                 return this.handleAssistantCreateRuleMessage(
+                    sender,
+                    message.payload,
+                );
+            }
+            case CommonMessageType.GetCookieRules: {
+                return this.getCookieRules(
                     sender,
                     message.payload,
                 );
@@ -104,41 +100,42 @@ export class MessagesApi {
     /**
      * Builds css for specified url.
      *
-     * @param requestUrl Url for which build css.
-     * @param referrerUrl Referrer url of the request.
-     * @param isSubDocument Is request from iframe or not; defaults to false.
+     * @param sender Tab, which sent message.
+     * @param payload Message payload.
      *
      * @returns Cosmetic css or undefined if there are no css rules for this request.
      */
-    private getCss(requestUrl: string, referrerUrl: string, isSubDocument = false): CosmeticRules | undefined {
-        logger.debug('[GET CSS]: received call', requestUrl);
+    private getCss(
+        sender: chrome.runtime.MessageSender,
+        payload?: unknown,
+    ): CosmeticRules | undefined {
+        logger.debug('[GET CSS]: received call ', payload);
 
-        if (this.tsWebExtension.isStarted) {
-            const result = engineApi.matchRequest({
-                requestUrl,
-                sourceUrl: referrerUrl,
-                // Always RequestType.Document or RequestType.SubDocument,
-                // because in MV3 we request CSS for the already loaded page
-                // from content-script.
-                requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
-                frameRule: engineApi.matchFrame(requestUrl),
-            });
-
-            const cosmeticOption = result?.getCosmeticOption();
-
-            if (cosmeticOption === undefined) {
-                return undefined;
-            }
-
-            return engineApi.buildCosmeticCss(
-                requestUrl,
-                cosmeticOption,
-                false,
-                false,
-            );
+        if (!this.tsWebExtension.isStarted) {
+            return undefined;
         }
 
-        return undefined;
+        const res = getCssPayloadValidator.safeParse(payload);
+        if (!res.success) {
+            return undefined;
+        }
+
+        const { url, referrer } = res.data;
+
+        const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
+
+        const cosmeticOption = result?.getCosmeticOption();
+
+        if (cosmeticOption === undefined) {
+            return undefined;
+        }
+
+        return engineApi.buildCosmeticCss(
+            url,
+            cosmeticOption,
+            false,
+            false,
+        );
     }
 
     /**
@@ -173,6 +170,48 @@ export class MessagesApi {
     }
 
     /**
+     * Returns cookie rules data for content script.
+     *
+     * @param sender Tab, which sent message.
+     * @param payload Message payload.
+     *
+     * @returns Cookie rules data.
+     */
+    private getCookieRules(
+        sender: chrome.runtime.MessageSender,
+        payload?: unknown,
+    ): CookieRule[] | undefined {
+        logger.debug('[GET COOKIE RULES]: received call ', payload);
+
+        if (!this.tsWebExtension.isStarted) {
+            return undefined;
+        }
+
+        const res = getCookieRulesPayloadValidator.safeParse(payload);
+        if (!res.success) {
+            return undefined;
+        }
+
+        const { url, referrer } = res.data;
+
+        const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
+
+        if (!result) {
+            return undefined;
+        }
+
+        const cookieRules = result.getCookieRules();
+
+        return cookieRules.map((rule) => ({
+            ruleText: rule.getText(),
+            match: rule.getAdvancedModifierValue(),
+            isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
+            filterId: rule.getFilterListId(),
+            isAllowlist: rule.isAllowlist(),
+        }));
+    }
+
+    /**
      * Sends message to the specified tab.
      *
      * @param tabId The ID of the tab to send the message.
@@ -180,5 +219,37 @@ export class MessagesApi {
      */
     public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
         await chrome.tabs.sendMessage(tabId, message);
+    }
+
+    /**
+     * Calculates matching result based on provided urls.
+     *
+     * @param referrer
+     * @param url
+     * @param sender
+     */
+    private static calculateMatchingResult(
+        url: string,
+        referrer: string,
+        sender: chrome.runtime.MessageSender,
+    ): MatchingResult | null {
+        let isSubDocument = false;
+
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
+        // When document url for iframe is about:blank then we use tab url
+        if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
+            isSubDocument = true;
+        }
+
+        // TODO: Extract from cache
+        return engineApi.matchRequest({
+            requestUrl: url,
+            frameUrl: referrer,
+            // Always RequestType.Document or RequestType.SubDocument,
+            // because in MV3 we request CSS for the already loaded page
+            // from content-script.
+            requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
+            frameRule: engineApi.matchFrame(url),
+        });
     }
 }

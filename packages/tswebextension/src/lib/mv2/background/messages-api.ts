@@ -3,9 +3,10 @@ import { nanoid } from 'nanoid';
 import browser, { Runtime } from 'webextension-polyfill';
 import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
+import { CookieRule } from '../../common/content-script/cookie-controller';
 import { RequestBlockingApi } from './request';
 import { ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
-import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 import {
     getAssistantCreateRulePayloadValidator,
@@ -24,15 +25,6 @@ import {
 } from '../../common';
 import { Assistant } from './assistant';
 import { tabsApi } from './api';
-
-// TODO check if this was used somewhere else
-interface CookieRule {
-    filterId: number;
-    isThirdParty: boolean;
-    ruleText: string;
-    match: string | null;
-    isAllowlist: boolean;
-}
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 
@@ -232,7 +224,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        const cookieRules = cookieFiltering.getBlockingRules(tabId, frameId);
+        const cookieRules = CookieFiltering.getBlockingRules(tabId, frameId);
 
         return cookieRules.map((rule) => ({
             ruleText: rule.getText(),

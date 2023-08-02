@@ -11,10 +11,9 @@ interface OnRuleAppliedCallback {
     (data: OnRuleAppliedData): void;
 }
 
-// TODO check if this type is not duplicated
-interface Rule {
+export interface CookieRule {
     ruleText: string;
-    match: string;
+    match: string | null;
     isThirdParty: boolean;
     filterId: number;
     isAllowlist: boolean;
@@ -58,7 +57,7 @@ export class CookieController {
      *
      * @param rules Rules to apply.
      */
-    public apply(rules: Rule[]): void {
+    public apply(rules: CookieRule[]): void {
         this.applyRules(rules);
 
         let lastCookie = document.cookie;
@@ -125,13 +124,7 @@ export class CookieController {
      * @see {@link https://github.com/AdguardTeam/Scriptlets/blob/master/src/scriptlets/remove-cookie.js}
      */
     private applyRules(
-        rules: {
-            ruleText: string;
-            match: string;
-            isThirdParty: boolean;
-            filterId: number;
-            isAllowlist: boolean;
-        }[],
+        rules: CookieRule[],
     ): void {
         document.cookie.split(';').forEach((cookieStr) => {
             const pos = cookieStr.indexOf('=');
@@ -179,7 +172,7 @@ export class CookieController {
      * @param cookieValue Cookie value.
      */
     private applyRule(
-        rule: Rule,
+        rule: CookieRule,
         cookieName: string,
         cookieValue: string,
     ): void {

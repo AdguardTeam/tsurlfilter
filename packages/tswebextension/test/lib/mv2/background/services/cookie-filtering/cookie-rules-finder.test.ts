@@ -1,6 +1,6 @@
 import { NetworkRule } from '@adguard/tsurlfilter';
 
-import CookieRulesFinder from '@lib/mv2/background/services/cookie-filtering/cookie-rules-finder';
+import CookieRulesFinder from '@lib/common/cookie-filtering/cookie-rules-finder';
 
 describe('Cookie rules - content script rules', () => {
     it('looks up rules', () => {

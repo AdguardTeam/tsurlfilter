@@ -213,11 +213,11 @@ export class TabContext {
      * Creates context for new tab.
      *
      * @param tab Webextension API tab data.
-     * @param allowlistApi Allowlist API.
+     * @param documentApi Document API.
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo, allowlistApi: DocumentApi): TabContext {
-        const tabContext = new TabContext(tab, allowlistApi);
+    public static createNewTabContext(tab: TabInfo, documentApi: DocumentApi): TabContext {
+        const tabContext = new TabContext(tab, documentApi);
 
         // In some cases, tab is created while browser navigation processing.
         // For example: when you navigate outside the browser or create new empty tab.
@@ -226,7 +226,7 @@ export class TabContext {
         const url = tab.pendingUrl || tab.url;
 
         if (url) {
-            tabContext.mainFrameRule = allowlistApi.matchFrame(url);
+            tabContext.mainFrameRule = documentApi.matchFrame(url);
 
             tabContext.frames.set(MAIN_FRAME_ID, new Frame(url));
         }

@@ -14,7 +14,8 @@
         "webNavigation",
         "storage",
         "unlimitedStorage",
-        "scripting"
+        "scripting",
+        "cookies"
     ],
     "host_permissions": [
         "<all_urls>"

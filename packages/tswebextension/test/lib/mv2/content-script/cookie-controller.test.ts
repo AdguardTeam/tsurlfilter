@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { CookieController } from '@lib/mv2/content-script/cookie-controller';
+import { CookieController } from '@lib/common/content-script/cookie-controller';
 import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 describe('Cookie Controller Tests', () => {

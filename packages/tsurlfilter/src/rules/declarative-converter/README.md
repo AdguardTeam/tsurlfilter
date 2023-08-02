@@ -450,7 +450,49 @@ example 7
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"operation": "remove",
+					"header": "Set-Cookie"
+				}
+			],
+			"requestHeaders": [
+				{
+					"operation": "remove",
+					"header": "Cookie"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "*",
+			"initiatorDomains": [
+				"example.org",
+				"example.com"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 151
+	}
+]
 
 ```
 example 8
@@ -574,7 +616,48 @@ example 12
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"operation": "remove",
+					"header": "Set-Cookie"
+				}
+			],
+			"requestHeaders": [
+				{
+					"operation": "remove",
+					"header": "Cookie"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "*page",
+			"initiatorDomains": [
+				"targetdomain.com"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 201
+	}
+]
 
 ```
 example 13
@@ -2215,7 +2298,13 @@ example 5
 ```
 <a name="advanced_capabilities__$cookie"></a>
 ## $cookie
-<b>Status</b>: not implemented yet
+<b>Status</b>: partially supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Supported conversion to DNR (Declarative Net Request) rules with the `$cookie` modifier only when used without parameters. For instance, you can use it like `||example.com$cookie`. Rules that include parameters are applied through the browser.cookies API and content script but not via DNR.
+<br/>
+Allowlist rules are not supported
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2240,7 +2329,45 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"operation": "remove",
+					"header": "Set-Cookie"
+				}
+			],
+			"requestHeaders": [
+				{
+					"operation": "remove",
+					"header": "Cookie"
+				}
+			]
+		},
+		"condition": {
+			"urlFilter": "||example.org^",
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 3
@@ -2336,20 +2463,7 @@ example 10
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||facebook.com^",
-			"domainType": "thirdParty",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 2
-	}
-]
+[]
 
 ```
 <a name="advanced_capabilities__$redirect"></a>

@@ -13,6 +13,7 @@ import {
     CosmeticRule,
     NetworkRule,
     MatchingResult,
+    type HTTPMethod,
 } from '@adguard/tsurlfilter';
 
 import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -35,9 +36,10 @@ type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
  */
 interface MatchQuery {
     requestUrl: string;
-    sourceUrl: string;
+    frameUrl: string;
     requestType: RequestType;
     frameRule?: NetworkRule | null;
+    method?: HTTPMethod;
 }
 
 export type CosmeticRules = {
@@ -49,7 +51,7 @@ export type CosmeticRules = {
  * EngineApi - TSUrlFilter engine wrapper which controls how to work with
  * cosmetic rules.
  */
-class EngineApi {
+export class EngineApi {
     /**
      * Link to current Engine.
      */
@@ -144,7 +146,7 @@ class EngineApi {
      * @param option Mask of enabled cosmetic types.
      * @returns Cosmetic result.
      */
-    private getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
         if (!this.engine) {
             return new CosmeticResult();
         }
@@ -153,8 +155,8 @@ class EngineApi {
 
         // Checks if an allowlist rule exists at the document level,
         // then discards all cosmetic rules.
-        const frameRule = this.engine.matchFrame(url);
-        if (frameRule?.isAllowlist()) {
+        const allowlistFrameRule = this.engine.matchFrame(url);
+        if (allowlistFrameRule) {
             return new CosmeticResult();
         }
 
@@ -283,14 +285,14 @@ class EngineApi {
 
         const {
             requestUrl,
-            sourceUrl,
+            frameUrl,
             requestType,
             frameRule,
         } = matchQuery;
 
         const request = new Request(
             requestUrl,
-            sourceUrl,
+            frameUrl,
             requestType,
         );
 

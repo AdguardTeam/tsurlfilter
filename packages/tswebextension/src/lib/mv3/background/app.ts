@@ -1,13 +1,12 @@
 import { IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 
-import { AppInterface, defaultFilteringLog } from '../../common';
+import { type AppInterface, defaultFilteringLog } from '../../common';
 import { logger } from '../utils/logger';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { UpdateStaticFiltersResult } from './filters-api';
 import UserRulesApi, { ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
-import { TabsApi, tabsApi } from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog, RecordFiltered } from './declarative-filtering-log';
@@ -18,6 +17,9 @@ import {
     ConfigurationMV3Context,
     configurationMV3Validator,
 } from './configuration';
+import { RequestEvents } from './request/events/request-events';
+import { TabsApi, tabsApi } from './tabs-api';
+import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -100,6 +102,8 @@ MessagesHandlerMV3
      *
      * @param config {@link Configuration} Configuration file which contains all
      * needed information to start.
+     *
+     * @returns Promise with {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[START]: start');
@@ -107,6 +111,11 @@ MessagesHandlerMV3
         try {
             const res = await this.configure(config);
             await this.executeScriptlets();
+
+            // Start listening for request events.
+            RequestEvents.init();
+            // Start handle request events.
+            WebRequestApi.start();
 
             this.isStarted = true;
             this.startPromise = undefined;
@@ -124,7 +133,7 @@ MessagesHandlerMV3
     /**
      * Fires on WebNavigation.onCommitted event.
      *
-     * @param item {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
+     * @param item Item of {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
      * @param item.tabId The ID of the tab in which the navigation occurred.
      * @param item.url The url of the tab in which the navigation occurred.
      */
@@ -147,7 +156,9 @@ MessagesHandlerMV3
      * tab urls to work correctly with domain blocking/allowing rules, for
      * example: cosmetic rules in iframes.
      *
-     * @param config {@link Configuration}.
+     * @param config Configuration file of following type {@link Configuration}.
+     *
+     * @returns Promise with {@link ConfigurationResult}.
      */
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[START]: is started ', this.isStarted);
@@ -184,6 +195,9 @@ MessagesHandlerMV3
 
         await declarativeFilteringLog.stop();
 
+        // Stop handle request events.
+        WebRequestApi.stop();
+
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
@@ -197,7 +211,7 @@ MessagesHandlerMV3
      * declarative filtering log and restarts the engine to reload cosmetic
      * rules.
      *
-     * @param config {@link Configuration}.
+     * @param config Configuration file of following type {@link Configuration}.
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
@@ -268,6 +282,9 @@ MessagesHandlerMV3
         } else {
             await declarativeFilteringLog.stop();
         }
+
+        // Reload request events listeners.
+        await WebRequestApi.flushMemoryCache();
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 

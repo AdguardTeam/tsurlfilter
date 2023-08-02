@@ -426,7 +426,13 @@ page$domain=targetdomain.com|~example.org
 ||example.org^$all
 
 ! ## $cookie
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: partially supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Supported conversion to DNR (Declarative Net Request) rules with the `$cookie` modifier only when used without parameters. For instance, you can use it like `||example.com$cookie`. Rules that include parameters are applied through the browser.cookies API and content script but not via DNR.
+! <br/>
+! Allowlist rules are not supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
