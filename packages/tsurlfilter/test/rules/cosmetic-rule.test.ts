@@ -173,6 +173,20 @@ describe('Element hiding rules constructor', () => {
         rule = new CosmeticRule('example.com###banner', 0);
         expect(rule.pathModifier).toEqual(undefined);
 
+        rule = new CosmeticRule('[$url=example.org/category/4]###banner', 0); // ""
+        expect(rule.urlModifier?.pattern).toEqual('example.org/category/4');
+
+        rule = new CosmeticRule(String.raw`[$url=/example\.org/]###banner`, 0);
+        expect(rule.urlModifier?.pattern).toEqual('/example\\.org/');
+
+        expect(() => {
+            new CosmeticRule('[$url=/path]example.org###banner', 0);
+        }).toThrow(new SyntaxError('The $url modifier is not allowed in a domain-specific rule'));
+
+        expect(() => {
+            new CosmeticRule('[$url=/path,domain=example.org]###banner', 0);
+        }).toThrow(new SyntaxError('The $url modifier can\'t be used with other modifiers'));
+
         expect(() => {
             new CosmeticRule('[$path=page.html###banner', 0);
         }).toThrow(new SyntaxError('Can\'t parse modifiers list'));
@@ -262,6 +276,32 @@ describe('CosmeticRule match', () => {
         expect(rule.match(createRequest('https://example.org/sub/page.html'))).toEqual(true);
 
         expect(rule.match(createRequest('https://example.org/sub/another_page.html'))).toEqual(false);
+    });
+
+    it('works if it matches rule with url modifier pattern', () => {
+        let rule: CosmeticRule;
+        let url: string;
+
+        // simple match
+        rule = new CosmeticRule('[$url=||example.org^]##.textad', 0);
+        url = 'https://example.org/category/5/item.html';
+        expect(rule.match(createRequest(url))).toEqual(true);
+        url = 'https://example.com';
+        expect(rule.match(createRequest(url))).toEqual(false);
+
+        // simple match with regexp
+        rule = new CosmeticRule(String.raw`[$url=/example.(com|org|uk)/]##.textad`, 0);
+        url = 'https://example.org/category/5/item.html';
+        expect(rule.match(createRequest(url))).toEqual(true);
+        url = 'https://example.jp/category/5/item.html';
+        expect(rule.match(createRequest(url))).toEqual(false);
+
+        // match with wildcards
+        rule = new CosmeticRule('[$url=*://example.org/category/*]##body', 0);
+        url = 'https://example.org/category/5/item.html';
+        expect(rule.match(createRequest(url))).toEqual(true);
+        url = 'https://example.org/gallery/5/item.html';
+        expect(rule.match(createRequest(url))).toEqual(false);
     });
 
     it('works if it matches path modifier with \'|\' special character included in the rule', () => {

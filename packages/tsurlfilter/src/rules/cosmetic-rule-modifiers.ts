@@ -1,6 +1,7 @@
 export enum CosmeticRuleModifiers {
     Path = 'path',
     Domain = 'domain',
+    Url = 'url',
 }
 
 export const CosmeticRuleModifiersSyntax = {

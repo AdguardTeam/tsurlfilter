@@ -158,6 +158,14 @@ export class CosmeticRule implements rule.IRule {
     public pathModifier: Pattern | undefined;
 
     /**
+     * $url modifier pattern. It is only set if $url modifier is specified for this rule,
+     * but $path and $domain modifiers are not.
+     *
+     * TODO add this to test cases
+     */
+    public urlModifier: Pattern | undefined;
+
+    /**
      * Js script to execute
      */
     public script: string | undefined = undefined;
@@ -394,21 +402,26 @@ export class CosmeticRule implements rule.IRule {
             // This means that the marker is preceded by the list of domains and modifiers
             // Now it's a good time to parse them.
             const {
+                url,
                 path,
                 permittedDomains,
                 restrictedDomains,
             } = CosmeticRuleParser.parseRulePattern(pattern);
 
-            if (path || path === '') {
-                this.pathModifier = new Pattern(path);
-            }
+            if (url) {
+                this.urlModifier = new Pattern(url);
+            } else {
+                if (path || path === '') {
+                    this.pathModifier = new Pattern(path);
+                }
 
-            if (permittedDomains) {
-                this.permittedDomains = permittedDomains;
-            }
+                if (permittedDomains) {
+                    this.permittedDomains = permittedDomains;
+                }
 
-            if (restrictedDomains) {
-                this.restrictedDomains = restrictedDomains;
+                if (restrictedDomains) {
+                    this.restrictedDomains = restrictedDomains;
+                }
             }
         }
 
@@ -422,8 +435,12 @@ export class CosmeticRule implements rule.IRule {
      * @param request - request to check
      */
     match(request: Request): boolean {
-        if (!this.permittedDomains && !this.restrictedDomains && !this.pathModifier) {
+        if (!this.permittedDomains && !this.restrictedDomains && !this.pathModifier && !this.urlModifier) {
             return true;
+        }
+
+        if (this.urlModifier) {
+            return this.urlModifier.matchPattern(request, false);
         }
 
         if (this.matchesRestrictedDomains(request.hostname)) {
