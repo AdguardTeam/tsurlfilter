@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ## Added
+- New `$permissions` modifier to set Permissions-Policy response header.
 - Support conversion to DNR for `$cookie` modifier.
 
 ## [2.1.5] - 2023-07-21
