@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@adguard/scriptlets@^1.9.57":
-  version "1.9.57"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.57.tgz#186d611f4ee9315f01588c15a7d2ed11b2e8036e"
-  integrity sha512-CvQmszEnEjgrK68JOJ+cLRf3IFoN8tmF6e7yzJpEnSJvyopZH1e10R8bT8FjE+WtBeUyjrVs8jVMuGGa7RRfGg==
+"@adguard/scriptlets@^1.9.62":
+  version "1.9.62"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.62.tgz#f60b83bb928c160f59153989c9491504e510498b"
+  integrity sha512-uWSlfMnAJUmIVsChl7KrECBXDJotSfq/N94iNLtfwnJI7br9Q5Gl65iuH89rh0Fs62OwexKlj3cnrzHL4TEFyw==
   dependencies:
     "@babel/runtime" "^7.20.13"
     js-yaml "^3.13.1"

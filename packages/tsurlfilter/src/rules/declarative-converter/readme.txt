@@ -1,6 +1,7 @@
 ! # Description
 ! This file contains examples of converting filter rules to new MV3 declarative
 ! rules and describes some MV3-specific limitations of the converted rules.
+! For a full description of each modifier, see the knowledgebase https://adguard.com/kb/general/ad-filtering/create-own-filters.
 
 ! <br />
 ! <br />
@@ -8,36 +9,29 @@
 ! # MV3 specific limitations
 ! ## allowrules
 ! Allowrules currently are not supported for these modifiers:
-! 1. some specific exceptions: '$genericblock', '$jsinject', '$urlblock', '$content', '$stealth'.
+! 1. some specific exceptions: `$genericblock`, `$jsinject`, `$urlblock`, `$content`, `$stealth`.
 ! 1. `$redirect`
 ! 1. `$removeparam`
 ! 1. `$removeheader`
 ! 1. `$csp`
 !
 ! ## $document
-! During convertion process $document modificator is expanded into
-! $elemhide, $content, $urlblock, $jsinject,
-! of which:
-! - $content - not supported in the MV3;
-! - $elemhide, $jsinject - not implemented yet;
-! - $urlblock - converted not correctly (allow all requests not on the specified
-! url, but FROM specified url and also disables cosmetic rules).
-! So we still convert the $document-rules, but not 100% correctly.
+! During convertion process exception with $document modificator is expanded
+! into `$elemhide,content,urlblock,jsinject` of which:
+! - `$content` - not supported in the MV3,
+! - `$elemhide` - supported,
+! - `$jsinject` - not implemented yet,
+! - `$urlblock` - not implemented yet.
 !
-! ## $removeparam
-! Groups of $removeparam rules with the same conditions are combined into one
-! rule only within one filter.
+! So we still convert rules with `$document`, but not 100% correctly.
 !
-! ## $removeheader
-! Groups of $removeheader rules with the same conditions are combined into one
-! rule only within one filter.
-!
-! ## $csp
-! Groups of $csp rules with the same conditions are combined into one
-! rule only within one filter.
+! ## $removeparam, $removeheader, $csp
+! Rules with `$removeparam` or `$removeheader` or `$csp` which contains the same
+! conditions are combined into one rule only within one filter but not across
+! different filters. Because of that, rules from different filter can conflict.
 !
 ! ## $redirect-rule
-! Works as $redirect
+! Works as `$redirect`.
 
 ! <br />
 ! <br />
@@ -65,6 +59,13 @@ example.org##.banner
 ! <br />
 !
 ! # Basic modifiers
+
+! ## $denyallow
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+*$script,domain=a.com|b.com,denyallow=x.com|y.com
 
 ! ## $domain
 ! <b>Status</b>: partial supported
@@ -104,35 +105,6 @@ page$domain=targetdomain.com
 ! example 14
 page$domain=targetdomain.com|~example.org
 
-! ## $third-party
-! <b>Status</b>: supported
-! <br/>
-! <b>Examples:</b>
-! <br/>
-! example 1
-||domain.com^$third-party
-! example 2
-||domain.com$~third-party
-
-! ## $popup
-! <b>Status</b>: partial support
-! <br/>
-! <b>MV3 limitations:</b>
-! <br/>
-! Cannot be converted to MV3 Declarative Rule, but maybe can be implemented on
-! the content-script side
-! <br/>
-! <b>Examples:</b>
-! <br/>
-||domain.com^$popup
-
-! ## $match-case
-! <b>Status</b>: supported
-! <br/>
-! <b>Examples:</b>
-! <br/>
-*/BannerAd.gif$match-case
-
 ! ## $header
 ! <b>Status</b>: not supported
 ! <br/>
@@ -151,12 +123,92 @@ page$domain=targetdomain.com|~example.org
 ! example 4
 @@||example.com^$header=set-cookie
 
+
+! ## $important
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
+! <br/>
+! blocking rule will block all requests despite of the exception rule
+||example.org^$important
+@@||example.org^
+! example 2.
+! <br/>
+! if the exception rule also has `$important` modifier it will prevail,
+! so no requests will not be blocked
+||example.org^$important
+@@||example.org^$important
+! example 3.
+! <br/>
+! if a document-level exception rule is applied to the document,
+! the `$important` modifier will be ignored;
+! so if a request to `example.org` is sent from the `test.org` domain,
+! the blocking rule will not be applied despite it has the `$important` modifier
+||example.org^$important
+@@||test.org^$document
+
+! ## $match-case
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+*/BannerAd.gif$match-case
+
+! ## $method
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||evil.com^$method=get|head
+! example 2
+||evil.com^$method=~post|~put
+! example 3
+@@||evil.com$method=get
+! example 4
+@@||evil.com$method=~post
+
+! ## $popup
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Cannot be converted to MV3 Declarative Rule, but maybe can be implemented on
+! the content-script side
+! <br/>
+! <b>Examples:</b>
+! <br/>
+||domain.com^$popup
+
+! ## $third-party
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||domain.com^$third-party
+! example 2
+||domain.com$~third-party
+
+! ## $to
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+/ads$to=evil.com|evil.org
+! example 2
+/ads$to=~not.evil.com|evil.com
+! example 3
+/ads$to=~good.com|~good.org
+
 ! <br />
 ! <br />
 !
 ! # Content type modifiers
-! <b>Status</b>: all content type modifiers supported, except deprecated $webrtc
-! and $object-subrequest
+! <b>Status</b>: all content type modifiers supported, except deprecated $webrtc and $object-subrequest.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -230,8 +282,15 @@ page$domain=targetdomain.com|~example.org
 !
 ! # Exception rules modifiers
 
+! ## $content
+! <b>Status</b>: not supported in MV3
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$content
+
 ! ## $elemhide
-! <b>Status</b>: is supported but not converted.
+! <b>Status</b>: supported but not converted.
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -241,38 +300,12 @@ page$domain=targetdomain.com|~example.org
 ! <br/>
 @@||example.com^$elemhide
 
-! ## $content
-! <b>Status</b>: not implemented yet
-! <br/>
-! <b>MV3 limitations:</b>
-! <br/>
-! Bug: currently converted to allowAllRequests rules
-! <br/>
-! <b>Examples:</b>
-! <br/>
-@@||example.com^$content
-
 ! ## $jsinject
 ! <b>Status</b>: not implemented yet
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
 @@||example.com^$jsinject
-
-! ## $urlblock
-! <b>Status</b>: not implemented yet
-! <br/>
-! <b>MV3 limitations:</b>
-! <br/>
-! Bug: uses urlFilter instead of initiatorDomains
-! <br/>
-! Bug: incorrect priority
-! <br/>
-! Bug: disables cosmetic rules
-! <br/>
-! <b>Examples:</b>
-! <br/>
-@@||example.com^$urlblock
 
 ! ## $stealth
 ! <b>Status</b>: not implemented yet
@@ -284,8 +317,22 @@ page$domain=targetdomain.com|~example.org
 ! example 2
 @@||domain.com^$script,stealth,domain=example.com
 
+! ## $urlblock
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$urlblock
+
+! ## $genericblock
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+@@||example.com^$genericblock
+
 ! ## $generichide
-! <b>Status</b>: is supported but not converted.
+! <b>Status</b>: supported but not converted.
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -295,15 +342,8 @@ page$domain=targetdomain.com|~example.org
 ! <br/>
 @@||example.com^$generichide
 
-! ## $genericblock
-! <b>Status</b>: not implemented yet
-! <br/>
-! <b>Examples:</b>
-! <br/>
-@@||example.com^$genericblock
-
 ! ## $specifichide
-! <b>Status</b>: is supported but not converted.
+! <b>Status</b>: supported but not converted.
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -318,27 +358,12 @@ page$domain=targetdomain.com|~example.org
 !
 ! # Advanced capabilities
 
-! ## $important
+! ## $all
 ! <b>Status</b>: supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
-! example 1.
-! blocking rule will block all requests despite of the exception rule
-||example.org^$important
-@@||example.org^
-! example 2.
-! if the exception rule also has `$important` modifier it will prevail,
-! so no requests will not be blocked
-||example.org^$important
-@@||example.org^$important
-! example 3.
-! if a document-level exception rule is applied to the document,
-! the `$important` modifier will be ignored;
-! so if a request to `example.org` is sent from the `test.org` domain,
-! the blocking rule will not be applied despite it has the `$important` modifier
-||example.org^$important
-@@||test.org^$document
+||example.org^$all
 
 ! ## $badfilter
 ! <b>Status</b>: partial support
@@ -381,50 +406,6 @@ page$domain=targetdomain.com|~example.org
 /some$domain=example.com|example.org|example.io
 /some$domain=example.com|~example.org,badfilter
 
-! ## $replace
-! <b>Status</b>: not supported
-! <br/>
-! <b>Examples:</b>
-! <br/>
-! example 1
-||example.org^$replace=/(<VAST[\s\S]*?>)[\s\S]*<\/VAST>/\$1<\/VAST>/i
-! example 2
-||example.org^$replace=/X/Y/
-! example 3
-||example.org^$replace=/Z/Y/
-! example 4
-@@||example.org/page/*$replace=/Z/Y/
-
-! ## $csp
-! <b>Status</b>: supported
-! <br/>
-! Allowlist rules are not supported
-! <br/>
-! Rules with the same matching condition are combined into one, but only within
-! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules).
-! <br/>
-! <b>Examples:</b>
-! <br/>
-! example 1
-||example.org^$csp=frame-src 'none'
-! example 2
-@@||example.org/page/*$csp=frame-src 'none'
-! example 3
-@@||example.org/page/*$csp
-! example 4
-||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
-! example 5
-||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
-@@||example.org^$document
-
-! ## $all
-! <b>Status</b>: not implemented yet
-! <br/>
-! <b>Examples:</b>
-! <br/>
-||example.org^$all
-
 ! ## $cookie
 ! <b>Status</b>: partially supported
 ! <br/>
@@ -456,6 +437,46 @@ $cookie=__cfduid
 $cookie=/__utm[a-z]/
 ! example 10
 ||facebook.com^$third-party,cookie=c_user
+
+! ## $csp
+! <b>Status</b>: supported
+! <br/>
+! Allowlist rules are not supported
+! <br/>
+! Rules with the same matching condition are combined into one, but only within
+! the scope of one static filter or within the scope of all dynamic rules
+! (custom filters and user rules).
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||example.org^$csp=frame-src 'none'
+! example 2
+@@||example.org/page/*$csp=frame-src 'none'
+! example 3
+@@||example.org/page/*$csp
+! example 4
+||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
+! example 5
+||example.org^$csp=script-src 'self' 'unsafe-eval' http: https:
+@@||example.org^$document
+
+! ## $permissions
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||example.org^$permissions=sync-xhr=()
+! example 2
+@@||example.org/page/*$permissions=sync-xhr=()
+! example 3
+@@||example.org/page/*$permissions
+! example 4
+$domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()\, unsized-media=()
+! example 5
+||example.org^$permissions=sync-xhr=()
+@@||example.org^$document
 
 ! ## $redirect
 ! <b>Status</b>: partial support
@@ -503,45 +524,46 @@ $cookie=/__utm[a-z]/
 ||example.org/script.js
 ||example.org^$redirect-rule=noopjs
 
-! ## noop
+! ## $referrerpolicy
+! <b>Status</b>: not implemented yet
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1
+||example.com^$referrerpolicy=unsafe-urlblock
+! example 2
+@@||example.com^$referrerpolicy=unsafe-urlblock
+! example 3
+@@||example.com/abcd.html^$referrerpolicy
+
+! ## $removeheader
 ! <b>Status</b>: supported
 ! <br/>
-! <b>Examples:</b>
+! Allowlist rules are not supported
 ! <br/>
-||example.com$_,removeparam=/^ss\\$/,_,image
-||example.com$domain=example.org,___,~third-party
-
-! ## $empty
-! <b>Status</b>: implemented not correct, deprecated
-! <br/>
-! <b>MV3 limitations:</b>
-! <br/>
-! Converted as simple blocking rule.
+! Rules with the same matching condition are combined into one, but only within
+! the scope of one static filter or within the scope of all dynamic rules
+! (custom filters and user rules).
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
-! example 1.
-! returns an empty response to all requests to example.org and all subdomains.
-||example.org^$empty
-
-! ## $denyallow
-! <b>Status</b>: supported
-! <br/>
-! <b>Examples:</b>
-! <br/>
-*$script,domain=a.com|b.com,denyallow=x.com|y.com
-
-! ## $mp4
-! <b>Status</b>: not implemented yet, deprecated
-! <br/>
-! <b>Examples:</b>
-! <br/>
-! example 1.
-! block a video downloads from ||example.com/videos/* and changes the response to a video placeholder.
-||example.com/videos/$mp4
+! example 1
+||example.org^$removeheader=header-name
+! example 2
+||example.org^$removeheader=request:header-name
+! example 3
+@@||example.org^$removeheader
+! example 4 (with limitations)
+@@||example.org^$removeheader=header
+! example 5
+||example.org^$removeheader=refresh
+! example 6
+||example.org^$removeheader=request:x-client-data
+! example 8
+$removeheader=location,domain=example.com
 
 ! ## $removeparam
-! <b>Status</b>: partial support
+! <b>Status</b>: partial supported
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
@@ -575,37 +597,50 @@ $removeparam=/^(utm_source|utm_medium|utm_term)=/
 ! example 9
 $removeparam=/^(utm_content|utm_campaign|utm_referrer)=/
 ! example 10
+! <br/>
 ! Group of similar remove param rules will be combined into one
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1
 $xmlhttprequest,removeparam=p1case2
 
-! ## $removeheader
-! <b>Status</b>: supported
-! <br/>
-! Allowlist rules are not supported
-! <br/>
-! Rules with the same matching condition are combined into one, but only within
-! the scope of one static filter or within the scope of all dynamic rules
-! (custom filters and user rules).
+! ## $replace
+! <b>Status</b>: not supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
 ! example 1
-||example.org^$removeheader=header-name
+||example.org^$replace=/(<VAST[\s\S]*?>)[\s\S]*<\/VAST>/\$1<\/VAST>/i
 ! example 2
-||example.org^$removeheader=request:header-name
+||example.org^$replace=/X/Y/
 ! example 3
-@@||example.org^$removeheader
-! example 4 (with limitations)
-@@||example.org^$removeheader=header
-! example 5
-||example.org^$removeheader=refresh
-! example 6
-||example.org^$removeheader=request:x-client-data
-! example 8
-$removeheader=location,domain=example.com
+||example.org^$replace=/Z/Y/
+! example 4
+@@||example.org/page/*$replace=/Z/Y/
+
+! ## noop
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+||example.com$_,removeparam=/^ss\\$/,_,image
+||example.com$domain=example.org,___,~third-party
+
+! ## $empty
+! <b>Status</b>: supported
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
+||example.org^$empty
+
+! ## $mp4
+! <b>Status</b>: supported, deprecated
+! <br/>
+! <b>Examples:</b>
+! <br/>
+! example 1.
+||example.com/videos/$mp4
 
 ! # Not supported in extension
 

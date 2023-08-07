@@ -45,6 +45,18 @@ const commonConfig = {
     ],
 };
 
+const commonExternal = [
+    '@adguard/scriptlets',
+    'is-ip',
+    'punycode/',
+    'tldts',
+    'is-cidr',
+    'netmask',
+    'ip6addr',
+    'zod',
+    'commander',
+];
+
 const esmConfig = {
     input: [
         'src/index.ts',
@@ -60,6 +72,7 @@ const esmConfig = {
             sourcemap: false,
         },
     ],
+    external: commonExternal,
     ...commonConfig,
 };
 
@@ -77,6 +90,7 @@ const esmDeclarativeConverterConfig = {
             sourcemap: false,
         },
     ],
+    external: commonExternal,
     ...commonConfig,
 };
 
@@ -115,19 +129,10 @@ const cliConfig = {
         },
     ],
     external: [
-        '@adguard/scriptlets',
-        'is-ip',
-        'punycode/',
-        'tldts',
-        'is-cidr',
-        'netmask',
-        'ip6addr',
-        'zod',
-        'path',
-        'commander',
         'fs',
+        'path',
+        ...commonExternal,
     ],
-
     plugins: [
         // Allow json resolution
         json(),

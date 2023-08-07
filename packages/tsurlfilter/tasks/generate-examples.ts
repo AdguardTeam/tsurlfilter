@@ -108,7 +108,11 @@ const parseRowAndLinkFromText = (
     const hash = parentLink ? `${parentLink}__` : '';
 
     // Gen link
-    const linkName = txt.slice(levelInTable).trim().toLocaleLowerCase().replace(/\s/g, '_');
+    const linkName = txt
+        .slice(levelInTable)
+        .trim()
+        .toLocaleLowerCase()
+        .replace(/[\s,]/g, '_');
 
     const idLinkWithHash = `${hash}${linkName}`;
     const htmlLink = `<a name="${idLinkWithHash}"></a>`;
