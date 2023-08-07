@@ -682,6 +682,8 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Extension, name: '$extension' },
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
             /* Specific exceptions */
+            { option: NetworkRuleOption.Method, name: '$method' },
+            { option: NetworkRuleOption.To, name: '$to' },
             {
                 option: NetworkRuleOption.Popup,
                 name: '$popup',

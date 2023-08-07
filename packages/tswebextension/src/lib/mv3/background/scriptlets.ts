@@ -11,6 +11,7 @@ import { tabsApi } from './tabs-api';
  * @see {@link engineApi.getScriptsStringForUrl}
  */
 const getScripts = async (url: string): Promise<string> => {
+    // TODO: Extract cosmetic option from matching result (AG-24586)
     return engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
 };
 
@@ -19,6 +20,7 @@ const getScripts = async (url: string): Promise<string> => {
  * @see {@link engineApi.getScriptletsDataForUrl}
  */
 const getScriptletsDataList = async (url: string): Promise<ScriptletData[]> => {
+    // TODO: Extract cosmetic option from matching result (AG-24586)
     return engineApi.getScriptletsDataForUrl(url, CosmeticOption.CosmeticOptionAll);
 };
 
