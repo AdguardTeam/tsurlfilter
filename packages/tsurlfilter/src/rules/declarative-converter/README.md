@@ -897,19 +897,7 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||evil.com^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 76
-	}
-]
+[]
 
 ```
 example 2
@@ -921,19 +909,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||evil.com^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 2
-	}
-]
+[]
 
 ```
 example 3
@@ -945,19 +921,7 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||evil.com",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100101
-	}
-]
+[]
 
 ```
 example 4
@@ -969,19 +933,7 @@ example 4
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||evil.com",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100002
-	}
-]
+[]
 
 ```
 <a name="basic_modifiers__$popup"></a>
@@ -1064,7 +1016,7 @@ example 2
 ```
 <a name="basic_modifiers__$to"></a>
 ## $to
-<b>Status</b>: not implemented yet
+<b>Status</b>: supported
 <br/>
 <b>Examples:</b>
 <br/>
@@ -1085,7 +1037,25 @@ example 1
 		},
 		"condition": {
 			"urlFilter": "/ads",
-			"isUrlFilterCaseSensitive": false
+			"requestDomains": [
+				"evil.com",
+				"evil.org"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 2
 	}
@@ -1109,7 +1079,27 @@ example 2
 		},
 		"condition": {
 			"urlFilter": "/ads",
-			"isUrlFilterCaseSensitive": false
+			"requestDomains": [
+				"evil.com"
+			],
+			"excludedRequestDomains": [
+				"not.evil.com"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 2
 	}
@@ -1133,7 +1123,25 @@ example 3
 		},
 		"condition": {
 			"urlFilter": "/ads",
-			"isUrlFilterCaseSensitive": false
+			"excludedRequestDomains": [
+				"good.com",
+				"good.org"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 2
 	}

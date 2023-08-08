@@ -193,7 +193,7 @@ page$domain=targetdomain.com|~example.org
 ||domain.com$~third-party
 
 ! ## $to
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -407,7 +407,7 @@ page$domain=targetdomain.com|~example.org
 /some$domain=example.com|~example.org,badfilter
 
 ! ## $cookie
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: implemented in `release/v2.2` branch
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

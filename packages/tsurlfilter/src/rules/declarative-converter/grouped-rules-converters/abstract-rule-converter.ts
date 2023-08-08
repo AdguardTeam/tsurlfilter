@@ -438,10 +438,18 @@ export abstract class DeclarativeRuleConverter {
             condition.excludedInitiatorDomains = this.toASCII(excludedDomains);
         }
 
-        // set excludedRequestDomains
+        const permittedToDomains = rule.getPermittedToDomains();
+        if (permittedToDomains && permittedToDomains.length > 0) {
+            condition.requestDomains = this.toASCII(permittedToDomains);
+        }
+
+        // Can be specified $to or $denyallow, but not together.
         const denyAllowDomains = rule.getDenyAllowDomains();
+        const restrictedToDomains = rule.getRestrictedToDomains();
         if (denyAllowDomains && denyAllowDomains.length > 0) {
             condition.excludedRequestDomains = this.toASCII(denyAllowDomains);
+        } else if (restrictedToDomains && restrictedToDomains.length > 0) {
+            condition.excludedRequestDomains = this.toASCII(restrictedToDomains);
         }
 
         // set excludedResourceTypes
@@ -468,9 +476,11 @@ export abstract class DeclarativeRuleConverter {
          * other types, so that it works not only for document requests, but
          * also for all other types of requests.
          */
+        const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
+            || rule.isOptionEnabled(NetworkRuleOption.Csp)
+            || rule.isOptionEnabled(NetworkRuleOption.To);
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
-        if ((rule.isOptionEnabled(NetworkRuleOption.RemoveHeader) || rule.isOptionEnabled(NetworkRuleOption.Csp))
-            && emptyResourceTypes && !rule.isAllowlist()) {
+        if (shouldMatchAllResourcesTypes && emptyResourceTypes && !rule.isAllowlist()) {
             condition.resourceTypes = [
                 ResourceType.MainFrame,
                 ResourceType.SubFrame,
@@ -683,7 +693,6 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
             /* Specific exceptions */
             { option: NetworkRuleOption.Method, name: '$method' },
-            { option: NetworkRuleOption.To, name: '$to' },
             {
                 option: NetworkRuleOption.Popup,
                 name: '$popup',

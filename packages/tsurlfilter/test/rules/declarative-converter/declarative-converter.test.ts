@@ -510,5 +510,23 @@ describe('DeclarativeConverter', () => {
             expect(errors.length).toBe(1);
             expect(errors[0]).toStrictEqual(err);
         });
+
+        it('return error for simultaneously used $to and $denyallow modifiers', async () => {
+            const filter = createFilter(['/ads$to=good.org,denyallow=good.com']);
+            const { ruleSets: [ruleSet], errors } = await converter.convert(
+                [filter],
+            );
+
+            const { declarativeRules } = await ruleSet.serialize();
+
+            // eslint-disable-next-line max-len
+            const err = new Error('"modifier $to is not compatible with $denyallow modifier" in the rule: "/ads$to=good.org,denyallow=good.com"');
+
+            expect(declarativeRules.length).toBe(0);
+            expect(errors.length).toBe(1);
+
+            console.log('errors: ', errors);
+            expect(errors[0]).toStrictEqual(err);
+        });
     });
 });

@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { Configuration } from 'webpack';
+import { Configuration, ProvidePlugin } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
@@ -68,9 +68,12 @@ export const config: Configuration = {
     resolve: {
         extensions: ['*', '.tsx', '.ts', '.js'],
         fallback: {
-            url: false,
-            path: false,
-            fs: false,
+            assert: require.resolve('assert'),
+            buffer: require.resolve('buffer'),
+            url: require.resolve('url'),
+            util: require.resolve('util'),
+            crypto: require.resolve('crypto-browserify'),
+            stream: require.resolve('stream-browserify'),
         },
     },
     module: {
@@ -91,6 +94,12 @@ export const config: Configuration = {
     },
     plugins: [
         new CleanWebpackPlugin(),
+        new ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+        }),
+        new ProvidePlugin({
+            process: 'process/browser',
+        }),
         new HtmlWebpackPlugin({
             template: path.join(POPUP_PATH, 'index.html'),
             filename: 'pages/popup.html',

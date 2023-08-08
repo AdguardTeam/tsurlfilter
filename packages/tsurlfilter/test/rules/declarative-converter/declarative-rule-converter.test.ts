@@ -1336,4 +1336,97 @@ describe('DeclarativeRuleConverter', () => {
             expect(errors).toHaveLength(0);
         });
     });
+
+    describe('check $to', () => {
+        it('converts $to rule with two domains', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['/ads$to=evil.com|evil.org'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    requestDomains: [
+                        'evil.com',
+                        'evil.org',
+                    ],
+                    urlFilter: '/ads',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('converts $to rule with one included and one excluded domain', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['/ads$to=~not.evil.com|evil.com'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    requestDomains: ['evil.com'],
+                    excludedRequestDomains: ['not.evil.com'],
+                    urlFilter: '/ads',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('converts $to rule with two excluded domains', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['/ads$to=~good.com|~good.org'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    excludedRequestDomains: [
+                        'good.com',
+                        'good.org',
+                    ],
+                    urlFilter: '/ads',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+    });
 });
