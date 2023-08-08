@@ -51,6 +51,7 @@ import redirectRule from './modifiers/redirect-rule.yml';
 import redirect from './modifiers/redirect.yml';
 import removeheader from './modifiers/removeheader.yml';
 import removeparam from './modifiers/removeparam.yml';
+import replace from './modifiers/replace.yml';
 import script from './modifiers/script.yml';
 import specifichide from './modifiers/specifichide.yml';
 import stealth from './modifiers/stealth.yml';
@@ -110,6 +111,7 @@ export const rawModifiersData: RawModifierData = {
     redirect,
     removeheader,
     removeparam,
+    replace,
     script,
     specifichide,
     stealth,

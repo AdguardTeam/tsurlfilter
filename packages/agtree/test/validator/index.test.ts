@@ -70,6 +70,7 @@ describe('ModifierValidator', () => {
                 'redirect',
                 'removeheader',
                 'removeparam',
+                'replace',
                 'script',
                 'specifichide',
                 'stealth',
