@@ -1,11 +1,15 @@
 # Scriptlets compatibility tables
 
-Each file represents a specific scriptlet. The file name is the name of the scriptlet. For example, `abort-on-property-read` is represented by the file `abort-on-property-read.yml`.
+Each file represents a specific scriptlet. The file name is the name of the scriptlet. For example,
+`abort-on-property-read` is represented by the file `abort-on-property-read.yml`.
 
 ## File structure
 
-Each file contains an object, where the key is the [actual adblocker ID](../README.md#supported-adblockers-and-platforms) and the value is the object with the following fields:
+Each file contains an object, where the key is the
+[actual adblocker ID](../README.md#supported-adblockers-and-platforms)
+and the value is the object with the following fields:
 
+<!-- markdownlint-disable MD013 -->
 | Field | Description | Type | Default value |
 | --- | --- | --- | --- |
 | `name`\* | Name of the actual scriptlet. | `string` | |
@@ -24,5 +28,6 @@ Each file contains an object, where the key is the [actual adblocker ID](../READ
 | `parameters[].pattern` | Regular expression that matches the value of the parameter. If it's value is `null`, then the parameter value is not checked. | `string\|null` | `null` |
 | `parameters[].default` | Default value of the parameter (if any) | `string\|null` | `null` |
 | `parameters[].debug` | Describes whether the parameter is used only for debugging purposes. | `boolean` | `false` |
+<!-- markdownlint-enable MD013 -->
 
 \*: The field is required.

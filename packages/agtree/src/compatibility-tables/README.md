@@ -10,7 +10,11 @@ Currently, the following categories are supported. Each category has its own com
 - Scriptlets
 - (Extended) CSS selectors
 
-Please note that certain things, such as syntax or rule categories, cannot be handled by the compatibility table. This is simply because they rarely change, and would also require a high level of abstraction, so it is much easier to manage them at a low level, at the parser / converter level. The compatibility table mainly covers features that are well abstracted and common to several adblockers, just with different implementations. For example, network rule modifiers or CSS selectors are used by all adblockers, but with different functionality.
+Please note that certain things, such as syntax or rule categories, cannot be handled by the compatibility table.
+This is simply because they rarely change, and would also require a high level of abstraction, so it is much easier
+to manage them at a low level, at the parser / converter level. The compatibility table mainly covers features that
+are well abstracted and common to several adblockers, just with different implementations. For example, network rule
+modifiers or CSS selectors are used by all adblockers, but with different functionality.
 
 ## Supported adblockers and platforms
 
@@ -20,14 +24,19 @@ Currently we support the following adblockers:
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px"> uBlock Origin (`ubo`)
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px"> AdBlock / Adblock Plus (`abp`)
 
-However, there may also be compatibility differences within a brand due to the specificities and limitations of each platform. For example:
+However, there may also be compatibility differences within a brand due to the specificities and limitations of each
+platform. For example:
 
-- AdGuard content blockers doesn't support CSS injection, while the AdGuard browser extension does. This is because the API of a content blocker does not allow this, while a modern browser extension allows stylesheet injection.
-- AdGuard Chrome extension doesn't support HTML filtering, while the Firefox extension does. This is simply because Chrome's API does not provide this level of network-level filtering, while Firefox's does.
+- AdGuard content blockers doesn't support CSS injection, while the AdGuard browser extension does. This is because the
+  API of a content blocker does not allow this, while a modern browser extension allows stylesheet injection.
+- AdGuard Chrome extension doesn't support HTML filtering, while the Firefox extension does. This is simply because
+  Chrome's API does not provide this level of network-level filtering, while Firefox's does.
 - etc.
 
-Therefore, we need to specify the platform for each adblocker to cover all the edge cases. The following platforms are supported:
+Therefore, we need to specify the platform for each adblocker to cover all the edge cases. The following platforms are
+supported:
 
+<!-- markdownlint-disable MD013 -->
 | Platform (ID) | Brand | Category |
 | --- | --- | --- |
  `adg_os_windows` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard for Windows](https://adguard.com/adguard-windows/overview.html) | System-wide ad blocker |
@@ -48,9 +57,11 @@ Therefore, we need to specify the platform for each adblocker to cover all the e
 `abp_ext_firefox` | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px"> [Adblock Plus for Mozilla Firefox](https://eyeo.to/adblockplus/firefox_install/) | Browser extension |
 `abp_ext_opera` | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px"> [Adblock Plus for Opera](https://eyeo.to/adblockplus/opera_install/) | Browser extension |
 `abp_ext_edge` | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px"> [Adblock Plus for Microsoft Edge](https://eyeo.to/adblockplus/edge_install/) | Browser extension |
+<!-- markdownlint-enable MD013 -->
 
 For simplicity, the following shortcuts are also supported:
 
+<!-- markdownlint-disable MD013 -->
 | Shortcut (ID) | Description | Equivalent to (shortcut or platform) |
 | --- | --- | --- |
 | `any` | Any adblocker, any platform | `adg_any`, `ubo_any`, `abp_any` |
@@ -66,5 +77,7 @@ For simplicity, the following shortcuts are also supported:
 | `abp_any` | Any Adblock Plus browser extension | `abp_ext_any` |
 | `abp_ext_any` | Any Adblock Plus browser extension | `abp_ext_chromium`, `abp_ext_firefox` |
 | `abp_ext_chromium` | Adblock Plus browser extension for Chromium-based browsers\* | `abp_ext_chrome`, `abp_ext_opera`, `abp_ext_edge` |
+<!-- markdownlint-enable MD013 -->
 
-\* Chromium-based browsers include Google Chrome, Microsoft Edge, Opera, Brave, Vivaldi, etc. See more details [here](https://en.wikipedia.org/wiki/Chromium_(web_browser)).
+\* Chromium-based browsers include Google Chrome, Microsoft Edge, Opera, Brave, Vivaldi, etc. See more details
+[here](https://en.wikipedia.org/wiki/Chromium_(web_browser)).
