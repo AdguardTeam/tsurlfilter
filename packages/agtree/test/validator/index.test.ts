@@ -174,6 +174,8 @@ describe('ModifierValidator', () => {
                 'app=com.test.app',
                 '~third-party',
                 'badfilter',
+                // valid noop modifiers may be used like this:
+                '____',
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
@@ -196,7 +198,7 @@ describe('ModifierValidator', () => {
             });
         });
 
-        describe('unsupported', () => {
+        describe('invalid', () => {
             const unsupportedModifiersCases = [
                 {
                     actual: 'not-existent',
@@ -245,6 +247,10 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'third-party=true',
                     expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                },
+                {
+                    actual: '__noop__',
+                    expected: INVALID_ERROR_PREFIX.INVALID_NOOP,
                 },
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
@@ -322,12 +328,13 @@ describe('ModifierValidator', () => {
     });
 
     describe('validate for UblockOrigin', () => {
-        describe('supported', () => {
+        describe('valid', () => {
             const supportedModifiers = [
                 'all',
                 '~third-party',
                 'badfilter',
                 'popunder',
+                '____',
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
@@ -336,7 +343,7 @@ describe('ModifierValidator', () => {
             });
         });
 
-        describe('unsupported', () => {
+        describe('invalid', () => {
             const unsupportedModifiersCases = [
                 {
                     actual: 'not-existent',
@@ -385,6 +392,10 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'third-party=true',
                     expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                },
+                {
+                    actual: '__-__',
+                    expected: INVALID_ERROR_PREFIX.INVALID_NOOP,
                 },
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
@@ -451,7 +462,7 @@ describe('ModifierValidator', () => {
     });
 
     describe('validate for AdblockPlus', () => {
-        describe('supported', () => {
+        describe('valid', () => {
             const supportedModifiers = [
                 'domain=example.com',
                 'third-party',
@@ -465,7 +476,7 @@ describe('ModifierValidator', () => {
             });
         });
 
-        describe('unsupported', () => {
+        describe('invalid', () => {
             const unsupportedModifiersCases = [
                 {
                     actual: 'not-existent',
@@ -506,6 +517,10 @@ describe('ModifierValidator', () => {
                 {
                     actual: 'third-party=true',
                     expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                },
+                {
+                    actual: '___',
+                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
                 },
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {

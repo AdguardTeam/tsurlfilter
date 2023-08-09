@@ -7,4 +7,5 @@ export const INVALID_ERROR_PREFIX = {
     NOT_NEGATABLE: 'Not negatable modifier',
     VALUE_REQUIRED: 'Value is required for the modifier',
     VALUE_FORBIDDEN: 'Value is not allowed for the modifier',
+    INVALID_NOOP: 'Invalid noop modifier',
 };
