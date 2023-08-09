@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Support for `$to` modifier in the MV3 converter.
+- Support for `$method` modifier in the MV3 converter.
+
 
 ## [2.1.6] - 2023-08-04
 

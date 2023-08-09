@@ -884,7 +884,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
 ```
 <a name="basic_modifiers__$method"></a>
 ## $method
-<b>Status</b>: not implemented yet
+<b>Status</b>: supported
 <br/>
 <b>Examples:</b>
 <br/>
@@ -897,7 +897,37 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||evil.com^",
+			"requestMethods": [
+				"get",
+				"head"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 76
+	}
+]
 
 ```
 example 2
@@ -909,7 +939,37 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||evil.com^",
+			"excludedRequestMethods": [
+				"post",
+				"put"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 2
+	}
+]
 
 ```
 example 3
@@ -921,7 +981,36 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allow"
+		},
+		"condition": {
+			"urlFilter": "||evil.com",
+			"requestMethods": [
+				"get"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 100101
+	}
+]
 
 ```
 example 4
@@ -933,7 +1022,36 @@ example 4
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allow"
+		},
+		"condition": {
+			"urlFilter": "||evil.com",
+			"excludedRequestMethods": [
+				"post"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 100002
+	}
+]
 
 ```
 <a name="basic_modifiers__$popup"></a>

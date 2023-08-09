@@ -114,6 +114,9 @@ import {
     RuleActionHeaders,
     ModifyHeaderInfo,
     DECLARATIVE_RESOURCE_TYPES_MAP,
+    DECLARATIVE_REQUEST_METHOD_MAP,
+    SupportedHttpMethod,
+    RequestMethod,
 } from '../declarative-rule';
 import {
     TooComplexRegexpError,
@@ -127,6 +130,7 @@ import { ResourcesPathError } from '../errors/converter-options-errors';
 import { RedirectModifier } from '../../../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
+import { HTTPMethod } from '../../../modifiers/method-modifier';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -168,6 +172,22 @@ export abstract class DeclarativeRuleConverter {
             // Skips the first element
             .filter(([, requestType]) => (requestTypes & requestType) === requestType)
             .map(([resourceTypeKey]) => resourceTypeKey) as ResourceType[];
+    }
+
+    /**
+     * Converts list of tsurlfilter {@link HTTPMethod|methods} to declarative
+     * supported http {@link RequestMethod|methods} via excluding 'trace' method.
+     *
+     * @param methods List of {@link HTTPMethod|methods}.
+     *
+     * @returns List of {@link RequestMethod|methods}.
+     */
+    private static mapHttpMethodToDeclarativeHttpMethod(methods: HTTPMethod[]): RequestMethod[] {
+        return methods
+            // Filters unsupported `trace` method
+            .filter((m): m is SupportedHttpMethod => m !== HTTPMethod.TRACE)
+            // Map tsurlfilter http method to supported declarative http method
+            .map((m) => DECLARATIVE_REQUEST_METHOD_MAP[m]);
     }
 
     /**
@@ -428,13 +448,13 @@ export abstract class DeclarativeRuleConverter {
 
         // set initiatorDomains
         const permittedDomains = rule.getPermittedDomains();
-        if (permittedDomains && permittedDomains.length > 0) {
+        if (permittedDomains && permittedDomains.length !== 0) {
             condition.initiatorDomains = this.toASCII(permittedDomains);
         }
 
         // set excludedInitiatorDomains
         const excludedDomains = rule.getRestrictedDomains();
-        if (excludedDomains && excludedDomains.length > 0) {
+        if (excludedDomains && excludedDomains.length !== 0) {
             condition.excludedInitiatorDomains = this.toASCII(excludedDomains);
         }
 
@@ -446,9 +466,9 @@ export abstract class DeclarativeRuleConverter {
         // Can be specified $to or $denyallow, but not together.
         const denyAllowDomains = rule.getDenyAllowDomains();
         const restrictedToDomains = rule.getRestrictedToDomains();
-        if (denyAllowDomains && denyAllowDomains.length > 0) {
+        if (denyAllowDomains && denyAllowDomains.length !== 0) {
             condition.excludedRequestDomains = this.toASCII(denyAllowDomains);
-        } else if (restrictedToDomains && restrictedToDomains.length > 0) {
+        } else if (restrictedToDomains && restrictedToDomains.length !== 0) {
             condition.excludedRequestDomains = this.toASCII(restrictedToDomains);
         }
 
@@ -465,6 +485,16 @@ export abstract class DeclarativeRuleConverter {
             condition.resourceTypes = this.getResourceTypes(permittedRequestTypes);
         }
 
+        const permittedMethods = rule.getPermittedMethods();
+        if (permittedMethods && permittedMethods.length !== 0) {
+            condition.requestMethods = this.mapHttpMethodToDeclarativeHttpMethod(permittedMethods);
+        }
+
+        const restrictedMethods = rule.getRestrictedMethods();
+        if (restrictedMethods && restrictedMethods.length !== 0) {
+            condition.excludedRequestMethods = this.mapHttpMethodToDeclarativeHttpMethod(restrictedMethods);
+        }
+
         // set isUrlFilterCaseSensitive
         condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
 
@@ -478,9 +508,10 @@ export abstract class DeclarativeRuleConverter {
          */
         const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
             || rule.isOptionEnabled(NetworkRuleOption.Csp)
-            || rule.isOptionEnabled(NetworkRuleOption.To);
+            || rule.isOptionEnabled(NetworkRuleOption.To)
+            || rule.isOptionEnabled(NetworkRuleOption.Method);
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
-        if (shouldMatchAllResourcesTypes && emptyResourceTypes && !rule.isAllowlist()) {
+        if (shouldMatchAllResourcesTypes && emptyResourceTypes) {
             condition.resourceTypes = [
                 ResourceType.MainFrame,
                 ResourceType.SubFrame,
@@ -588,6 +619,7 @@ export abstract class DeclarativeRuleConverter {
      * $removeheader - if it contains a title from a prohibited list
      * (see {@link RemoveHeaderModifier.FORBIDDEN_HEADERS});
      * $jsonprune;
+     * $method - if the modifier contains 'trace' method,
      * $hls.
      *
      * @param rule - Network rule.
@@ -680,6 +712,33 @@ export abstract class DeclarativeRuleConverter {
             return null;
         };
 
+        /**
+         * Checks if the $method values in the provided network rule
+         * are supported for conversion to MV3.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const checkMethodModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            const permittedMethods = r.getPermittedMethods();
+            const restrictedMethods = r.getRestrictedMethods();
+            if (
+                permittedMethods?.some((method) => method === HTTPMethod.TRACE)
+                || restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
+            ) {
+                return new UnsupportedModifierError(
+                    // eslint-disable-next-line max-len
+                    `Network rule with $method modifier containing 'trace' method is not supported: "${r.getText()}"`,
+                    r,
+                );
+            }
+
+            return null;
+        };
+
         const unsupportedOptions = [
             /* Specific exceptions */
             { option: NetworkRuleOption.Elemhide, name: '$elemhide', skipConversion: true },
@@ -692,7 +751,6 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Extension, name: '$extension' },
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
             /* Specific exceptions */
-            { option: NetworkRuleOption.Method, name: '$method' },
             {
                 option: NetworkRuleOption.Popup,
                 name: '$popup',
@@ -719,6 +777,11 @@ export abstract class DeclarativeRuleConverter {
                 option: NetworkRuleOption.RemoveHeader,
                 name: '$removeheader',
                 customChecks: [checkAllowRulesFn, checkRemoveHeaderModifierFn],
+            },
+            {
+                option: NetworkRuleOption.Method,
+                name: '$method',
+                customChecks: [checkMethodModifierFn],
             },
             { option: NetworkRuleOption.JsonPrune, name: '$jsonprune' },
             { option: NetworkRuleOption.Hls, name: '$hls' },

@@ -157,7 +157,7 @@ page$domain=targetdomain.com|~example.org
 */BannerAd.gif$match-case
 
 ! ## $method
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
