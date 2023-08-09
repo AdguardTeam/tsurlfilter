@@ -4,6 +4,7 @@
 
 import cloneDeep from 'clone-deep';
 import { SelectorList, fromPlainObject } from '@adguard/ecss-tree';
+
 import { CosmeticRuleSeparator, CssInjectionRule } from '../../parser/common';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';

@@ -65,7 +65,6 @@ import urlblock from './modifiers/urlblock.yml';
 import webrtc from './modifiers/webrtc.yml';
 import websocket from './modifiers/websocket.yml';
 import xmlhttprequest from './modifiers/xmlhttprequest.yml';
-
 import { type RawModifierData } from './types';
 
 export const rawModifiersData: RawModifierData = {

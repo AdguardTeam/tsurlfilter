@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { ParameterList } from '../parser/common';
 import { QuoteType, setStringQuoteType } from '../utils/quotes';
 

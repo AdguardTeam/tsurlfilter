@@ -4,6 +4,7 @@
 
 import cloneDeep from 'clone-deep';
 import { redirects } from '@adguard/scriptlets';
+
 import { type ModifierList } from '../../parser/common';
 import { SEMICOLON, SPACE } from '../../utils/constants';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';

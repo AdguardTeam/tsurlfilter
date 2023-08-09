@@ -4,6 +4,7 @@
  */
 
 import { SelectorList } from '@adguard/ecss-tree';
+
 import { CssSelectorConverter } from '../../../src/converter/css';
 import { CssTree } from '../../../src/utils/csstree';
 import { CssTreeParserContext } from '../../../src/utils/csstree-constants';

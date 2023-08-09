@@ -13,6 +13,7 @@ import {
     type Value,
     type ValuePlain,
 } from '@adguard/ecss-tree';
+
 import { CssTree } from '../../src/utils/csstree';
 import { CssTreeNodeType, CssTreeParserContext } from '../../src/utils/csstree-constants';
 

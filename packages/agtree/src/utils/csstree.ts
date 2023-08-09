@@ -24,6 +24,7 @@ import {
     walk,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
+
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,

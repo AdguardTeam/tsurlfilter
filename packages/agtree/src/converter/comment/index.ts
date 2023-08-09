@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { AnyCommentRule, CommentMarker, CommentRuleType } from '../../parser/common';
 import { SPACE } from '../../utils/constants';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';

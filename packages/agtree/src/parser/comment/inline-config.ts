@@ -4,6 +4,7 @@
  */
 
 import JSON5 from 'json5';
+
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     AGLINT_COMMAND_PREFIX,

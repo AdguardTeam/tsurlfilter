@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { CosmeticRuleSeparator, ParameterList, ScriptletInjectionRule } from '../../parser/common';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdgScriptletConverter } from './scriptlets/adg';

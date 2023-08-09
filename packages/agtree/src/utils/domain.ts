@@ -3,6 +3,7 @@
  */
 
 import { parse } from 'tldts';
+
 import { ASTERISK, DOT } from './constants';
 
 const WILDCARD = ASTERISK; // *

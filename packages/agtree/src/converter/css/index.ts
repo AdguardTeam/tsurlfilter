@@ -6,6 +6,7 @@ import {
     walk,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
+
 import { CssTreeNodeType, CssTreeParserContext } from '../../utils/csstree-constants';
 import { CssTree } from '../../utils/csstree';
 import { EMPTY, EQUALS } from '../../utils/constants';

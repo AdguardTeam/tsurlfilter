@@ -18,6 +18,7 @@ import {
     toPlainObject,
     walk,
 } from '@adguard/ecss-tree';
+
 import { AdblockSyntax } from '../../../utils/adblockers';
 import { CssTree } from '../../../utils/csstree';
 import { CssTreeNodeType, CssTreeParserContext } from '../../../utils/csstree-constants';

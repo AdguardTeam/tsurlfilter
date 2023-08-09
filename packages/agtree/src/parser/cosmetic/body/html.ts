@@ -9,6 +9,7 @@ import {
     SelectorList,
     SelectorListPlain,
 } from '@adguard/ecss-tree';
+
 import { AdblockSyntax } from '../../../utils/adblockers';
 import { EMPTY, ESCAPE_CHARACTER } from '../../../utils/constants';
 import { CssTree } from '../../../utils/csstree';

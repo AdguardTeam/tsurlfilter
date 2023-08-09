@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { QuoteType, setStringQuoteType } from '../../../utils/quotes';
 import { getScriptletName, setScriptletName, setScriptletQuoteType } from '../../../ast-utils/scriptlets';
 import { ParameterList } from '../../../parser/common';

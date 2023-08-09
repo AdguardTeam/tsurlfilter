@@ -4,6 +4,7 @@
 
 import { SelectorPlain } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
+
 import {
     CosmeticRuleSeparator,
     CosmeticRuleType,

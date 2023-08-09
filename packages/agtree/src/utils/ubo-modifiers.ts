@@ -19,6 +19,7 @@ import {
     Selector,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
+
 import { ModifierList } from '../parser/common';
 import { createModifierNode } from '../ast-utils/modifiers';
 import { CssTreeNodeType } from './csstree-constants';

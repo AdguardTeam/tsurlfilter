@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { type AnyCosmeticRule, type AnyRule, CosmeticRuleType } from '../../parser/common';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { HtmlRuleConverter } from './html';

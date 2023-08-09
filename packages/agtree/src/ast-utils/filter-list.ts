@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { type AnyRule, type FilterList } from '../parser/common';
 
 /**

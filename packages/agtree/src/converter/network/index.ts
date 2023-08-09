@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { NetworkRule } from '../../parser/common';
 import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';

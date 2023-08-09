@@ -267,7 +267,7 @@ class ModifierValidator {
      * deprecated, assignable, negatable and other requirements are checked.
      *
      * @param syntax Adblock syntax to check the modifier for.
-     * @param modifier Modifier AST node.
+     * @param rawModifier Modifier AST node.
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *

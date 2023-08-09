@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { Modifier, ModifierList } from '../parser/common';
 import { isUndefined } from '../utils/common';
 

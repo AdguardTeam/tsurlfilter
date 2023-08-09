@@ -4,6 +4,7 @@
 
 import cloneDeep from 'clone-deep';
 import { type FunctionNode, fromPlainObject } from '@adguard/ecss-tree';
+
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import {
     CosmeticRuleType,

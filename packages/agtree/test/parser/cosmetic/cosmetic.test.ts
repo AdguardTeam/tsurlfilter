@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 import { SelectorList, fromPlainObject } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
+
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { CssInjectionBodyParser } from '../../../src/parser/cosmetic/body/css';
 import { ElementHidingBodyParser } from '../../../src/parser/cosmetic/body/elementhiding';

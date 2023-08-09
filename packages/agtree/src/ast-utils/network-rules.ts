@@ -3,6 +3,7 @@
  */
 
 import cloneDeep from 'clone-deep';
+
 import { isUndefined } from '../utils/common';
 import { type ModifierList, type NetworkRule, RuleCategory } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';

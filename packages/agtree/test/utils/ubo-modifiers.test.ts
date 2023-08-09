@@ -1,4 +1,5 @@
 import { fromPlainObject, Selector, SelectorList } from '@adguard/ecss-tree';
+
 import { createModifierNode } from '../../src/ast-utils/modifiers';
 import { CssTree } from '../../src/utils/csstree';
 import { CssTreeParserContext } from '../../src/utils/csstree-constants';
