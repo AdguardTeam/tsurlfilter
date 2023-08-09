@@ -15,7 +15,7 @@ import {
 } from '../../../utils/constants';
 import { locRange, shiftLoc } from '../../../utils/location';
 import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../../misc/parameter-list';
 import { ScriptletInjectionRuleBody, defaultLocation } from '../../common';
 

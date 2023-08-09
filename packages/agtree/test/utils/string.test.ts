@@ -202,19 +202,6 @@ describe('String utils', () => {
         expect(StringUtils.findLastNonWhitespaceCharacter('     a b c')).toEqual(9);
     });
 
-    test('isRegexPattern', () => {
-        expect(StringUtils.isRegexPattern('')).toBeFalsy();
-        expect(StringUtils.isRegexPattern('  ')).toBeFalsy();
-        expect(StringUtils.isRegexPattern('/')).toBeFalsy();
-        expect(StringUtils.isRegexPattern(' //')).toBeFalsy();
-        expect(StringUtils.isRegexPattern('//')).toBeFalsy();
-
-        expect(StringUtils.isRegexPattern('/a/')).toBeTruthy();
-        expect(StringUtils.isRegexPattern('/a/ ')).toBeTruthy(); // trim
-        expect(StringUtils.isRegexPattern('  /a/   ')).toBeTruthy(); // trim
-        expect(StringUtils.isRegexPattern('/^regex$/')).toBeTruthy();
-    });
-
     test('escapeCharacter', () => {
         expect(StringUtils.escapeCharacter('', 'b')).toBe('');
         expect(StringUtils.escapeCharacter('b', 'b')).toBe('\\b');
@@ -331,5 +318,43 @@ describe('String utils', () => {
         // custom offset
         expect(StringUtils.skipWSBack('a b c', 3)).toBe(2);
         expect(StringUtils.skipWSBack('     a b c', 2)).toBe(-1);
+    });
+
+    describe('escapeCharacters', () => {
+        test.each([
+            {
+                actual: '',
+                expected: '',
+                characters: new Set(['a']),
+            },
+            {
+                actual: 'b',
+                expected: 'b',
+                characters: new Set(['a']),
+            },
+            {
+                actual: 'a',
+                expected: '\\a',
+                characters: new Set(['a']),
+            },
+            {
+                actual: 'b',
+                expected: '\\b',
+                characters: new Set(['a', 'b']),
+            },
+            {
+                actual: 'aaabbbccc',
+                expected: '\\a\\a\\abbb\\c\\c\\c',
+                characters: new Set(['a', 'c']),
+            },
+            {
+                actual: '\\',
+                expected: '\\\\',
+                characters: new Set(['\\']),
+            },
+        // eslint-disable-next-line max-len
+        ])('escapeCharacters returns \'$expected\' when given \'$actual\' and \'$characters\'', ({ actual, expected, characters }) => {
+            expect(StringUtils.escapeCharacters(actual, characters)).toBe(expected);
+        });
     });
 });

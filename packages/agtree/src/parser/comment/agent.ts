@@ -9,7 +9,7 @@ import {
     type Value,
     defaultLocation,
 } from '../common';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 
 const ADG_NAME_MARKERS = new Set([

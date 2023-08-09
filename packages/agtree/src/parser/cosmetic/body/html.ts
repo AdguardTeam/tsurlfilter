@@ -16,7 +16,7 @@ import { CssTreeParserContext } from '../../../utils/csstree-constants';
 import { DOUBLE_QUOTE_MARKER } from '../../../utils/string';
 import { defaultLocation, HtmlFilteringRuleBody } from '../../common';
 import { locRange } from '../../../utils/location';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 
 /**
  * `HtmlBodyParser` is responsible for parsing the body of HTML filtering rules.

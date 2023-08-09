@@ -1,7 +1,7 @@
 import { EMPTY, MODIFIER_ASSIGN_OPERATOR, MODIFIER_EXCEPTION_MARKER } from '../../utils/constants';
 import { locRange } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { Modifier, Value, defaultLocation } from '../common';
 
 /**

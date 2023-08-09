@@ -32,7 +32,7 @@ import {
     defaultLocation,
 } from '../common';
 import { LogicalExpressionParser } from '../misc/logical-expression';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 
 /**

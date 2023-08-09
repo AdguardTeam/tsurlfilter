@@ -19,7 +19,7 @@ import {
     Value,
     defaultLocation,
 } from '../common';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 
 /**

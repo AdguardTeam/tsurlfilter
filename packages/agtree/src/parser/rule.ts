@@ -10,7 +10,7 @@ import {
     RuleCategory,
     defaultLocation,
 } from './common';
-import { AdblockSyntaxError } from './errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 
 /**
  * `RuleParser` is responsible for parsing the rules.

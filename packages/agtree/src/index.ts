@@ -53,7 +53,7 @@ export {
     type ScriptletInjectionRuleBody,
     type Value,
 } from './parser/common';
-export { AdblockSyntaxError } from './parser/errors/adblock-syntax-error';
+export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentRuleParser } from './parser/comment/agent-rule';
 export { AgentParser } from './parser/comment/agent';
 export { CommentRuleParser } from './parser/comment';
@@ -75,7 +75,9 @@ export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
 export { modifierValidator } from './validator';
 
 // Converter
-export { HtmlRuleConverter } from './converter/html';
+// TODO: In a later stage, we should consider exporting some helpers as well
+export { RuleConverter } from './converter';
+export { FilterListConverter } from './converter/filter-list';
 
 // Utils
 export {
@@ -105,8 +107,8 @@ export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expr
 export { shiftLoc, locRange } from './utils/location';
 
 // Constants
-export { METADATA_HEADERS } from './converter/metadata';
-export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/css';
+export { METADATA_HEADERS } from './converter/data/metadata';
+export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
 
 // Re-export everything from ECSSTree
 export * as ECSSTree from '@adguard/ecss-tree';

@@ -3,6 +3,8 @@
  * TODO: Implement a compatibility table for Extended CSS
  */
 
+export const LEGACY_EXT_CSS_ATTRIBUTE_PREFIX = '-ext-';
+
 /**
  * Known Extended CSS pseudo-classes. Please, keep this list sorted.
  */

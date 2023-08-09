@@ -1,22 +1,21 @@
 /**
  * @file Base class for rule converters
+ *
+ * TS doesn't support abstract static methods, so we should use
+ * a workaround and extend this class instead of implementing it
  */
 
 /* eslint-disable jsdoc/require-returns-check */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { AnyRule } from '../parser/common';
 
-/**
- * Helper function to throw not implemented error
- */
-function throwNotImplementedError(): never {
-    throw new Error('Not implemented');
-}
+import { NotImplementedError } from '../../errors/not-implemented-error';
+import { Node } from '../../parser/common';
+import { ConverterBase } from './converter-base';
 
 /**
  * Basic class for rule converters
  */
-export class RuleConverter {
+export class RuleConverterBase extends ConverterBase {
     /**
      * Convert rule to AdGuard format
      *
@@ -24,8 +23,8 @@ export class RuleConverter {
      * @returns Array of converted rules ASTs
      * @throws If the rule is invalid or incompatible
      */
-    public static convertToAdg(rule: string | AnyRule): AnyRule[] {
-        throwNotImplementedError();
+    public static convertToAdg(rule: Node): Node[] {
+        throw new NotImplementedError();
     }
 
     /**
@@ -36,8 +35,8 @@ export class RuleConverter {
      * @throws If the rule is invalid or incompatible
      * @todo Currently not implemented in the library and temporary optional
      */
-    public static convertToAbp(rule: string | AnyRule): AnyRule[] {
-        throwNotImplementedError();
+    public static convertToAbp(rule: Node): Node[] {
+        throw new NotImplementedError();
     }
 
     /**
@@ -48,7 +47,7 @@ export class RuleConverter {
      * @throws If the rule is invalid or incompatible
      * @todo Currently not implemented in the library and temporary optional
      */
-    public static convertToUbo(rule: string | AnyRule): AnyRule[] {
-        throwNotImplementedError();
+    public static convertToUbo(rule: Node): Node[] {
+        throw new NotImplementedError();
     }
 }
