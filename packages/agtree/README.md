@@ -93,7 +93,7 @@ AGTree supports all syntaxes currently in use:
 [adg-url]: https://adguard.com
 [compatibility-tables-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [converter-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/converter
-[parser-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/converter
+[parser-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/parser
 [ubo-url]: https://github.com/gorhill/uBlock
 
 ## Development & Contribution

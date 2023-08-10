@@ -8,7 +8,33 @@ adheres to [Semantic Versioning][semver].
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## [Unreleased]
+## [1.1.0] - 2023-08-10
+
+### Added
+
+- Compatibility tables for modifiers
+- Validator for modifiers
+- Basic rule converter
+- New utils (regex, quotes)
+
+### Changed
+
+- Updated dependencies
+- Improved library build
+- Improved CSSTree utils
+- Export CSSTree utils
+- Store raw data while parsing
+- General code improvements
+
+### Fixed
+
+- Package metadata
+- Type import/export
+- Modifier list parsing
+- Scriptlet parsing
+- Metadata parsing
+
+## [1.0.1] - 2023-05-24
 
 ### Added
 
