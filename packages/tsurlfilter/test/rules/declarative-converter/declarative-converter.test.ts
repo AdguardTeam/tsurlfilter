@@ -7,6 +7,7 @@ import {
 } from '../../../src/rules/declarative-converter/errors/converter-options-errors';
 import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { NetworkRule } from '../../../src/rules/network-rule';
+import { RuleActionType } from '../../../src/rules/declarative-converter/declarative-rule';
 
 const createFilter = (
     rules: string[],
@@ -528,5 +529,18 @@ describe('DeclarativeConverter', () => {
             console.log('errors: ', errors);
             expect(errors[0]).toStrictEqual(err);
         });
+    });
+
+    it('use only main_frame or sub_frame for allowAllRequests rules', async () => {
+        const rule = '@@||example.com/*/search?*&method=HEAD$xmlhttprequest,document';
+        const filter = createFilter([rule]);
+        const { ruleSets: [ruleSet] } = await converter.convert(
+            [filter],
+        );
+
+        const { declarativeRules } = await ruleSet.serialize();
+
+        expect(declarativeRules).toHaveLength(1);
+        expect(declarativeRules[0].action.type).not.toContain(RuleActionType.ALLOW_ALL_REQUESTS);
     });
 });

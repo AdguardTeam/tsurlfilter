@@ -230,6 +230,26 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Checks if network rule can be converted to {@link RuleActionType.ALLOW_ALL_REQUESTS}.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Is rule compatible with {@link RuleActionType.ALLOW_ALL_REQUESTS}.
+     */
+    private static isCompatibleWithAllowAllRequests(rule: NetworkRule): boolean {
+        const types = DeclarativeRuleConverter.getResourceTypes(rule.getPermittedRequestTypes());
+
+        const allowedRequestTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
+
+        // If found resource type which is incompatible with allowAllRequest field
+        if (types.some((type) => !allowedRequestTypes.includes(type))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Rule priority.
      *
      * @see {@link NetworkRule.getPriorityWeight}
@@ -368,7 +388,7 @@ export abstract class DeclarativeRuleConverter {
      */
     private getAction(rule: NetworkRule): RuleAction {
         if (rule.isAllowlist()) {
-            if (rule.isFilteringDisabled()) {
+            if (rule.isFilteringDisabled() && DeclarativeRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
                 return { type: RuleActionType.ALLOW_ALL_REQUESTS };
             }
 

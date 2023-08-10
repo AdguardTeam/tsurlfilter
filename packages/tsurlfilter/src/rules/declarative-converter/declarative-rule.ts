@@ -120,6 +120,10 @@ export enum RuleActionType {
     ALLOW = 'allow',
     UPGRADE_SCHEME = 'upgradeScheme',
     MODIFY_HEADERS = 'modifyHeaders',
+    /**
+     * For allowAllRequests rules {@link RuleCondition.resourceTypes} may only
+     * include the 'sub_frame' and 'main_frame' resource types.
+     */
     ALLOW_ALL_REQUESTS = 'allowAllRequests',
 }
 
