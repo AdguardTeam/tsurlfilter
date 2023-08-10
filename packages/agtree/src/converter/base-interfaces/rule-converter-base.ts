@@ -17,35 +17,33 @@ import { ConverterBase } from './converter-base';
  */
 export class RuleConverterBase extends ConverterBase {
     /**
-     * Convert rule to AdGuard format
+     * Converts an adblock filtering rule to AdGuard format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: Node): Node[] {
         throw new NotImplementedError();
     }
 
     /**
-     * Convert rule to Adblock Plus format
+     * Converts an adblock filtering rule to Adblock Plus format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
-     * @todo Currently not implemented in the library and temporary optional
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAbp(rule: Node): Node[] {
         throw new NotImplementedError();
     }
 
     /**
-     * Convert rule to uBlock Origin format
+     * Converts an adblock filtering rule to uBlock Origin format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
-     * @todo Currently not implemented in the library and temporary optional
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToUbo(rule: Node): Node[] {
         throw new NotImplementedError();

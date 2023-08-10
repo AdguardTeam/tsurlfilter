@@ -1,5 +1,5 @@
 /**
- * @file Utility functions for working with modifier ASTs
+ * @file Utility functions for working with modifier nodes
  */
 
 import cloneDeep from 'clone-deep';
@@ -8,7 +8,7 @@ import { type Modifier, type ModifierList } from '../parser/common';
 import { isUndefined } from '../utils/common';
 
 /**
- * Create a modifier node
+ * Creates a modifier node
  *
  * @param name Name of the modifier
  * @param value Value of the modifier
@@ -36,7 +36,7 @@ export function createModifierNode(name: string, value: string | undefined = und
 }
 
 /**
- * Create a modifier list node
+ * Creates a modifier list node
  *
  * @param modifiers Modifiers to put in the list (optional, defaults to an empty list)
  * @returns Modifier list node

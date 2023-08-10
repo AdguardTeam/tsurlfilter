@@ -32,15 +32,15 @@ const SPECIAL_MODIFIER_REGEX_CHARS = new Set([
 ]);
 
 /**
- * Convert cosmetic rule modifiers to ADG
+ * Helper class for converting cosmetic rule modifiers from uBO to ADG
  */
 export class AdgCosmeticRuleModifierConverter {
     /**
-     * Convert a uBO cosmetic rule modifier list to ADG
+     * Converts a uBO cosmetic rule modifier list to ADG, if possible.
      *
-     * @param modifierList Cosmetic rule modifier list to convert
-     * @returns Converted cosmetic rule modifier list
-     * @throws {RuleConversionError} If the modifier can't be converted
+     * @param modifierList Cosmetic rule modifier list node to convert
+     * @returns Converted cosmetic rule modifier list node
+     * @throws If the modifier list cannot be converted
      * @see {@link https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#cosmetic-filter-operators}
      */
     public static convertFromUbo: ModifierConverterFunction = (modifierList) => {

@@ -1,5 +1,5 @@
 /**
- * @file Utility functions for working with scriptlets ASTs
+ * @file Utility functions for working with scriptlet nodes
  */
 
 import cloneDeep from 'clone-deep';

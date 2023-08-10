@@ -1,5 +1,5 @@
 /**
- * @file Utility functions for working with network rule ASTs
+ * @file Utility functions for working with network rule nodes
  */
 
 import cloneDeep from 'clone-deep';

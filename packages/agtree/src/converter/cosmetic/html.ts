@@ -41,9 +41,9 @@ const TAG_CONTENT = 'tag-content';
 const WILDCARD = 'wildcard';
 
 /**
- * HTML rule converter
+ * HTML filtering rule converter class
  *
- * @todo Implement `convertToUbo`
+ * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules)
  */
 export class HtmlRuleConverter extends RuleConverterBase {
     /**
@@ -61,9 +61,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * example.com$$script[tag-content="value"][max-length="262144"]
      * ```
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: HtmlFilteringRule): HtmlFilteringRule[] {
         // Clone the provided AST node to avoid side effects

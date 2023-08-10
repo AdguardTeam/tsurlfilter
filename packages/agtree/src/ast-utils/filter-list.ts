@@ -1,5 +1,5 @@
 /**
- * @file Utility functions for working with filter list ASTs
+ * @file Utility functions for working with filter list nodes
  */
 
 import cloneDeep from 'clone-deep';
@@ -7,7 +7,7 @@ import cloneDeep from 'clone-deep';
 import { type AnyRule, type FilterList } from '../parser/common';
 
 /**
- * Create a filter list node
+ * Creates a filter list node
  *
  * @param rules Rules to put in the list (optional, defaults to an empty list)
  * @returns Filter list node

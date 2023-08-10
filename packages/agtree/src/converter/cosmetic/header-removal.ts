@@ -1,5 +1,5 @@
 /**
- * @file Header removal rule converter
+ * @file Converter for request header removal rules
  */
 
 import cloneDeep from 'clone-deep';
@@ -25,16 +25,17 @@ export const UBO_RESPONSEHEADER_MARKER = 'responseheader';
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
 
 /**
- * Header removal rule converter class
+ * Converter for request header removal rules
  *
- * @todo Implement `convertToUbo`
+ * @todo Implement `convertToUbo` (ABP currently doesn't support header removal rules)
  */
 export class HeaderRemovalRuleConverter extends RuleConverterBase {
     /**
      * Converts a header removal rule to AdGuard syntax, if possible.
      *
-     * @param rule Rule to convert
-     * @returns Array of converted rules ASTs
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: AnyRule): NetworkRule[] {
         // Clone the provided AST node to avoid side effects

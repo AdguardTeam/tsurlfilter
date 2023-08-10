@@ -12,17 +12,17 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { CssTree } from '../../utils/csstree';
 
 /**
- * Rule converter class
+ * CSS injection rule converter class
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
 export class CssInjectionRuleConverter extends RuleConverterBase {
     /**
-     * Convert rule to AdGuard format
+     * Converts a CSS injection rule to AdGuard format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: CssInjectionRule): CssInjectionRule[] {
         // Clone the provided AST node to avoid side effects

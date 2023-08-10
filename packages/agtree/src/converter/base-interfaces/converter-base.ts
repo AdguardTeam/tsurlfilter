@@ -15,7 +15,7 @@ import { NotImplementedError } from '../../errors/not-implemented-error';
  */
 export class ConverterBase {
     /**
-     * Convert some data to AdGuard format
+     * Converts some data to AdGuard format
      *
      * @param data Data to convert
      * @returns Converted data
@@ -26,7 +26,7 @@ export class ConverterBase {
     }
 
     /**
-     * Convert some data to Adblock Plus format
+     * Converts some data to Adblock Plus format
      *
      * @param data Data to convert
      * @returns Converted data
@@ -37,7 +37,7 @@ export class ConverterBase {
     }
 
     /**
-     * Convert some data to uBlock Origin format
+     * Converts some data to uBlock Origin format
      *
      * @param data Data to convert
      * @returns Converted data

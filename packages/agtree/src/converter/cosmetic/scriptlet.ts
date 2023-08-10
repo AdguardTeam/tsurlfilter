@@ -16,11 +16,11 @@ import { AdblockSyntax } from '../../utils/adblockers';
  */
 export class ScriptletRuleConverter extends RuleConverterBase {
     /**
-     * Convert rule to AdGuard format
+     * Converts a scriptlet injection rule to AdGuard format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: ScriptletInjectionRule): ScriptletInjectionRule[] {
         // Clone the provided AST node to avoid side effects

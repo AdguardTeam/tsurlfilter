@@ -9,17 +9,17 @@ import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier'
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 
 /**
- * Network rule converter (also known as "basic rule converter")
+ * Network rule converter class (also known as "basic rule converter")
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
 export class NetworkRuleConverter extends RuleConverterBase {
     /**
-     * Convert a network rule to AdGuard format
+     * Converts a network rule to AdGuard format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: NetworkRule): NetworkRule[] {
         // Clone the provided AST node to avoid side effects

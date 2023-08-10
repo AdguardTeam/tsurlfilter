@@ -101,18 +101,17 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
 ]);
 
 /**
- * Network rule modifier list converter
+ * Helper class for converting network rule modifier lists.
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
 export class NetworkRuleModifierListConverter extends ConverterBase {
     /**
-     * Convert a network rule modifier list to AdGuard format
+     * Converts a network rule modifier list to AdGuard format, if possible.
      *
-     * @param modifierList Network rule modifier list to convert
-     * @returns Converted modifier list, but as an array due to the
-     * design of the library
-     * @throws If the rule is invalid or incompatible
+     * @param modifierList Network rule modifier list node to convert
+     * @returns Converted modifier list node
+     * @throws If the conversion is not possible
      */
     public static convertToAdg(modifierList: ModifierList): ModifierList {
         // Clone the provided AST node to avoid side effects

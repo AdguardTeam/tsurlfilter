@@ -12,17 +12,17 @@ import { CssSelectorConverter } from '../css';
 import { AdblockSyntax } from '../../utils/adblockers';
 
 /**
- * Rule converter class
+ * Element hiding rule converter class
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
 export class ElementHidingRuleConverter extends RuleConverterBase {
     /**
-     * Converts rule to AdGuard format
+     * Converts an element hiding rule to AdGuard format, if possible.
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
     public static convertToAdg(rule: ElementHidingRule): ElementHidingRule[] {
         // Clone the provided AST node to avoid side effects

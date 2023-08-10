@@ -16,16 +16,16 @@ type Prefix = typeof ABP_SCRIPTLET_PREFIX | typeof UBO_SCRIPTLET_PREFIX;
 type ScriptletConverterFunction = ConverterFunction<ParameterList>;
 
 /**
- * Convert ABP scriptlets to ADG
+ * Helper class for converting scriptlets from ABP and uBO to ADG
  */
 export class AdgScriptletConverter {
     /**
      * Helper function to convert scriptlets to ADG. We implement the core
      * logic here to avoid code duplication.
      *
-     * @param scriptletNode Scriptlet node to convert
+     * @param scriptletNode Scriptlet parameter list node to convert
      * @param prefix Prefix to add to the scriptlet name
-     * @returns Converted scriptlet node
+     * @returns Converted scriptlet parameter list node
      */
     private static convertToAdg(scriptletNode: ParameterList, prefix: Prefix): ParameterList {
         // Remove possible quotes just to make it easier to work with the scriptlet name
@@ -49,7 +49,7 @@ export class AdgScriptletConverter {
     }
 
     /**
-     * Convert an ABP snippet node to ADG scriptlet node if possible
+     * Converts an ABP snippet node to ADG scriptlet node, if possible.
      *
      * @param scriptletNode Scriptlet node to convert
      * @returns Converted scriptlet node
@@ -61,7 +61,7 @@ export class AdgScriptletConverter {
     };
 
     /**
-     * Convert a uBO scriptlet node to ADG scriptlet node if possible
+     * Convert a uBO scriptlet node to ADG scriptlet node, if possible.
      *
      * @param scriptletNode Scriptlet node to convert
      * @returns Converted scriptlet node

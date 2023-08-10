@@ -1,5 +1,5 @@
 /**
- * @file Filter list converter
+ * @file Adblock filter list converter
  */
 
 import { RuleConverter } from '.';
@@ -8,16 +8,22 @@ import { type FilterList } from '../parser/common';
 import { ConverterBase } from './base-interfaces/converter-base';
 
 /**
- * Filter list converter class
+ * Adblock filter list converter class
+ *
+ * This class just provides an extra layer on top of the {@link RuleConverter}
+ * and can be used to convert entire filter lists.
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
+ * @todo Implement tolerant mode, which will allow to convert a filter list
+ * even if some of its rules are invalid
  */
 export class FilterListConverter extends ConverterBase {
     /**
-     * Converts a filter list to AdGuard format
+     * Converts an adblock filter list to AdGuard format, if possible.
      *
-     * @param filterListNode Filter list AST node to convert
-     * @returns Converted filter list AST node
+     * @param filterListNode Filter list node to convert
+     * @returns Converted filter list node
+     * @throws If the filter list is invalid or cannot be converted
      */
     public static convertToAdg(filterListNode: FilterList): FilterList {
         const result = createFilterListNode();
