@@ -5,8 +5,8 @@ import { CommentRuleParser } from './comment';
 import { CosmeticRuleParser } from './cosmetic';
 import { NetworkRuleParser } from './network';
 import {
-    AnyRule,
-    InvalidRule,
+    type AnyRule,
+    type InvalidRule,
     RuleCategory,
     defaultLocation,
 } from './common';

@@ -1,7 +1,7 @@
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { locRange, shiftLoc } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
-import { ModifierList, defaultLocation } from '../common';
+import { type ModifierList, defaultLocation } from '../common';
 import { ModifierParser } from './modifier';
 
 /**

@@ -1,7 +1,7 @@
 import {
-    AnyRule,
-    FilterList,
-    NewLine,
+    type AnyRule,
+    type FilterList,
+    type NewLine,
     defaultLocation,
 } from './common';
 import { RuleParser } from './rule';

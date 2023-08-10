@@ -3,9 +3,9 @@
  */
 
 import cloneDeep from 'clone-deep';
-import { SelectorList, fromPlainObject } from '@adguard/ecss-tree';
+import { type SelectorList, fromPlainObject } from '@adguard/ecss-tree';
 
-import { CosmeticRuleSeparator, ElementHidingRule } from '../../parser/common';
+import { CosmeticRuleSeparator, type ElementHidingRule } from '../../parser/common';
 import { CssTree } from '../../utils/csstree';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';

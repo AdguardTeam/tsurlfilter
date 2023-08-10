@@ -67,5 +67,18 @@ module.exports = {
         ],
         'arrow-body-style': 'off',
         'no-await-in-loop': 'off',
+        // Force proper import and export of types
+        '@typescript-eslint/consistent-type-imports': [
+            'error',
+            {
+                fixStyle: 'inline-type-imports',
+            },
+        ],
+        '@typescript-eslint/consistent-type-exports': [
+            'error',
+            {
+                fixMixedExportsWithInlineTypeSpecifier: true,
+            },
+        ],
     },
 };

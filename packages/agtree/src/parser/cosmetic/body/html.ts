@@ -4,10 +4,10 @@
 
 import {
     fromPlainObject,
-    FunctionNodePlain,
+    type FunctionNodePlain,
     generate,
-    SelectorList,
-    SelectorListPlain,
+    type SelectorList,
+    type SelectorListPlain,
 } from '@adguard/ecss-tree';
 
 import { AdblockSyntax } from '../../../utils/adblockers';
@@ -15,7 +15,7 @@ import { EMPTY, ESCAPE_CHARACTER } from '../../../utils/constants';
 import { CssTree } from '../../../utils/csstree';
 import { CssTreeParserContext } from '../../../utils/csstree-constants';
 import { DOUBLE_QUOTE_MARKER } from '../../../utils/string';
-import { defaultLocation, HtmlFilteringRuleBody } from '../../common';
+import { defaultLocation, type HtmlFilteringRuleBody } from '../../common';
 import { locRange } from '../../../utils/location';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 

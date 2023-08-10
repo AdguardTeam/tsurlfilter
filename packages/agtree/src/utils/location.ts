@@ -2,7 +2,7 @@
  * @file Utility functions for location and location range management.
  */
 
-import { Location, LocationRange } from '../parser/common';
+import { type Location, type LocationRange } from '../parser/common';
 
 /**
  * Shifts the specified location by the specified offset.

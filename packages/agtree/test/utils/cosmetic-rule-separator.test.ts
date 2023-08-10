@@ -1,6 +1,9 @@
 import { CosmeticRuleSeparator } from '../../src/parser/common';
 import { EMPTY, SPACE } from '../../src/utils/constants';
-import { CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from '../../src/utils/cosmetic-rule-separator';
+import {
+    type CosmeticRuleSeparatorFinderResult,
+    CosmeticRuleSeparatorUtils,
+} from '../../src/utils/cosmetic-rule-separator';
 
 describe('CosmeticRuleSeparator', () => {
     describe('isException', () => {

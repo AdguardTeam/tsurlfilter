@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { SelectorList, fromPlainObject } from '@adguard/ecss-tree';
+import { type SelectorList, fromPlainObject } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
 
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
@@ -8,9 +8,9 @@ import { ElementHidingBodyParser } from '../../../src/parser/cosmetic/body/eleme
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import {
-    CssInjectionRule,
-    ElementHidingRule,
-    HtmlFilteringRule,
+    type CssInjectionRule,
+    type ElementHidingRule,
+    type HtmlFilteringRule,
     defaultLocation,
 } from '../../../src/parser/common';
 import { locRange, shiftLoc } from '../../../src/utils/location';

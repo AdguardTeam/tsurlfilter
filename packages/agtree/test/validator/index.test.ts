@@ -1,4 +1,4 @@
-import { Modifier } from '../../src/parser/common';
+import { type Modifier } from '../../src/parser/common';
 import { ModifierParser } from '../../src/parser/misc/modifier';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';

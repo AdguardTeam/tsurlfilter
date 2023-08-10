@@ -2,13 +2,13 @@
  * @file HTML filtering rule converter
  */
 
-import { SelectorPlain } from '@adguard/ecss-tree';
+import { type SelectorPlain } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
 
 import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
-    HtmlFilteringRule,
+    type HtmlFilteringRule,
     RuleCategory,
 } from '../../parser/common';
 import { AdblockSyntax } from '../../utils/adblockers';

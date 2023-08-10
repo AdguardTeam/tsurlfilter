@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { AnyCosmeticRule } from '../../../src/parser/common';
+import { type AnyCosmeticRule } from '../../../src/parser/common';
 import { RuleParser } from '../../../src/parser/rule';
 import { CosmeticRuleConverter } from '../../../src/converter/cosmetic';
 

@@ -1,6 +1,6 @@
 import { CommentRuleConverter } from '../../../src/converter/comment';
 import { CommentRuleParser } from '../../../src/parser/comment';
-import { CommentRule } from '../../../src/parser/common';
+import { type CommentRule } from '../../../src/parser/common';
 
 describe('CommentRuleConverter', () => {
     describe('convertToAdg', () => {

@@ -2,9 +2,9 @@
  * @file Cosmetic rule modifier converter from uBO to ADG
  */
 
-import { ModifierList } from '../../../parser/common';
+import { type ModifierList } from '../../../parser/common';
 import { RuleConversionError } from '../../../errors/rule-conversion-error';
-import { ConverterFunction } from '../../base-interfaces/converter-function';
+import { type ConverterFunction } from '../../base-interfaces/converter-function';
 import { createModifierListNode, createModifierNode } from '../../../ast-utils/modifiers';
 import { RegExpUtils } from '../../../utils/regexp';
 import {

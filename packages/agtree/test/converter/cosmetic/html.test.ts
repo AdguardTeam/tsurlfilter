@@ -1,5 +1,5 @@
 import { HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
-import { HtmlFilteringRule } from '../../../src/parser/common';
+import { type HtmlFilteringRule } from '../../../src/parser/common';
 import { RuleParser } from '../../../src/parser/rule';
 
 describe('HtmlRuleConverter', () => {

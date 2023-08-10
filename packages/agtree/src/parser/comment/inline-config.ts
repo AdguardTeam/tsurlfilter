@@ -16,11 +16,11 @@ import {
 import {
     CommentMarker,
     CommentRuleType,
-    ConfigCommentRule,
-    Location,
-    ParameterList,
+    type ConfigCommentRule,
+    type Location,
+    type ParameterList,
     RuleCategory,
-    Value,
+    type Value,
     defaultLocation,
 } from '../common';
 import { StringUtils } from '../../utils/string';

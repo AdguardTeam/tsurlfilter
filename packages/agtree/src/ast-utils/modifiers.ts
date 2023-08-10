@@ -4,7 +4,7 @@
 
 import cloneDeep from 'clone-deep';
 
-import { Modifier, ModifierList } from '../parser/common';
+import { type Modifier, type ModifierList } from '../parser/common';
 import { isUndefined } from '../utils/common';
 
 /**

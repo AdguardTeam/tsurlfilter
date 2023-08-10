@@ -1,11 +1,11 @@
 import { StringUtils } from '../../utils/string';
 import {
-    AnyExpressionNode,
-    AnyOperator,
-    ExpressionParenthesisNode,
-    ExpressionVariableNode,
-    Location,
-    LocationRange,
+    type AnyExpressionNode,
+    type AnyOperator,
+    type ExpressionParenthesisNode,
+    type ExpressionVariableNode,
+    type Location,
+    type LocationRange,
     defaultLocation,
 } from '../common';
 import {

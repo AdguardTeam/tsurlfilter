@@ -9,10 +9,10 @@ import { COLON, EMPTY, SPACE } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
-    Location,
-    MetadataCommentRule,
+    type Location,
+    type MetadataCommentRule,
     RuleCategory,
-    Value,
+    type Value,
     defaultLocation,
 } from '../common';
 import { locRange } from '../../utils/location';

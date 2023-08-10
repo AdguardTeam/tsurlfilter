@@ -6,8 +6,8 @@ import cloneDeep from 'clone-deep';
 
 import { QuoteType, setStringQuoteType } from '../../../utils/quotes';
 import { getScriptletName, setScriptletName, setScriptletQuoteType } from '../../../ast-utils/scriptlets';
-import { ParameterList } from '../../../parser/common';
-import { ConverterFunction } from '../../base-interfaces/converter-function';
+import { type ParameterList } from '../../../parser/common';
+import { type ConverterFunction } from '../../base-interfaces/converter-function';
 
 const ABP_SCRIPTLET_PREFIX = 'abp-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';

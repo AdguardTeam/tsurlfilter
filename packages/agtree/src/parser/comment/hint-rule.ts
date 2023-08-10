@@ -9,9 +9,9 @@ import {
 import { StringUtils } from '../../utils/string';
 import {
     CommentRuleType,
-    Hint,
-    HintCommentRule,
-    Location,
+    type Hint,
+    type HintCommentRule,
+    type Location,
     RuleCategory,
     defaultLocation,
 } from '../common';

@@ -10,10 +10,10 @@ import {
     REGEX_MARKER,
 } from '../../utils/constants';
 import {
-    ModifierList,
-    NetworkRule,
+    type ModifierList,
+    type NetworkRule,
     RuleCategory,
-    Value,
+    type Value,
     defaultLocation,
 } from '../common';
 import { locRange, shiftLoc } from '../../utils/location';

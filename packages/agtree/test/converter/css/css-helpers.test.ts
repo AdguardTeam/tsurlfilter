@@ -7,7 +7,7 @@
  * We parse and serialize selectors while testing, just for convenience
  */
 
-import { SelectorList } from '@adguard/ecss-tree';
+import { type SelectorList } from '@adguard/ecss-tree';
 
 import { convertFromLegacyExtendedCss, convertToPseudoElements } from '../../../src/converter/css';
 import { CssTree } from '../../../src/utils/csstree';

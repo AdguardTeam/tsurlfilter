@@ -1,8 +1,8 @@
 import {
-    CssNode,
+    type CssNode,
     List,
-    PseudoClassSelector,
-    SelectorList,
+    type PseudoClassSelector,
+    type SelectorList,
     walk,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';

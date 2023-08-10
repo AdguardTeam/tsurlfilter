@@ -8,7 +8,7 @@
 
 import cloneDeep from 'clone-deep';
 
-import { AnyRule, RuleCategory } from '../parser/common';
+import { type AnyRule, RuleCategory } from '../parser/common';
 import { CommentRuleConverter } from './comment';
 import { CosmeticRuleConverter } from './cosmetic';
 import { NetworkRuleConverter } from './network';

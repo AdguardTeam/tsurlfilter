@@ -10,7 +10,7 @@ import {
     type SpecificPlatformModifierData,
     getModifiersData,
 } from '../compatibility-tables';
-import { Modifier } from '../parser/common';
+import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
 import { UNDERSCORE } from '../utils/constants';
 import { INVALID_ERROR_PREFIX } from './constants';

@@ -4,8 +4,8 @@
 
 import cloneDeep from 'clone-deep';
 
-import { ParameterList } from '../parser/common';
-import { QuoteType, setStringQuoteType } from '../utils/quotes';
+import { type ParameterList } from '../parser/common';
+import { type QuoteType, setStringQuoteType } from '../utils/quotes';
 
 /**
  * Get name of the scriptlet from the scriptlet node

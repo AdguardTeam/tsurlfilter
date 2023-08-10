@@ -4,7 +4,7 @@
 
 import cloneDeep from 'clone-deep';
 
-import { CosmeticRuleSeparator, ParameterList, ScriptletInjectionRule } from '../../parser/common';
+import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule } from '../../parser/common';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdgScriptletConverter } from './scriptlets/adg';
 import { AdblockSyntax } from '../../utils/adblockers';

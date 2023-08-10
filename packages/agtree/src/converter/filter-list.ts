@@ -4,7 +4,7 @@
 
 import { RuleConverter } from '.';
 import { createFilterListNode } from '../ast-utils/filter-list';
-import { FilterList } from '../parser/common';
+import { type FilterList } from '../parser/common';
 import { ConverterBase } from './base-interfaces/converter-base';
 
 /**

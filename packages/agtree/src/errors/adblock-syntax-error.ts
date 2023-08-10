@@ -2,7 +2,7 @@
  * @file Customized syntax error class for Adblock Filter Parser.
  */
 
-import { LocationRange } from '../parser/common';
+import { type LocationRange } from '../parser/common';
 
 const ERROR_NAME = 'AdblockSyntaxError';
 

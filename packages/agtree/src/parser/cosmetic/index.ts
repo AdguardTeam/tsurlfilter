@@ -14,17 +14,17 @@ import {
     SPACE,
 } from '../../utils/constants';
 import {
-    AnyCosmeticRule,
-    CosmeticRuleSeparator,
+    type AnyCosmeticRule,
+    type CosmeticRuleSeparator,
     CosmeticRuleType,
-    CssInjectionRule,
-    ElementHidingRule,
-    HtmlFilteringRule,
-    JsInjectionRule,
-    ModifierList,
+    type CssInjectionRule,
+    type ElementHidingRule,
+    type HtmlFilteringRule,
+    type JsInjectionRule,
+    type ModifierList,
     RuleCategory,
-    ScriptletInjectionRule,
-    Value,
+    type ScriptletInjectionRule,
+    type Value,
     defaultLocation,
 } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';

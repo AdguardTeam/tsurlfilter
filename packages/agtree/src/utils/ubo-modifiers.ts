@@ -7,20 +7,20 @@
  */
 
 import {
-    SelectorList,
+    type SelectorList,
     walk,
-    CssNode,
-    ListItem,
-    List,
-    SelectorListPlain,
+    type CssNode,
+    type ListItem,
+    type List,
+    type SelectorListPlain,
     fromPlainObject,
     toPlainObject,
-    SelectorPlain,
-    Selector,
+    type SelectorPlain,
+    type Selector,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
 
-import { ModifierList } from '../parser/common';
+import { type ModifierList } from '../parser/common';
 import { createModifierNode } from '../ast-utils/modifiers';
 import { CssTreeNodeType } from './csstree-constants';
 import { SPACE } from './constants';
