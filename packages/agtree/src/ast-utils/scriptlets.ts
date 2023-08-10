@@ -5,7 +5,7 @@
 import cloneDeep from 'clone-deep';
 
 import { type ParameterList } from '../parser/common';
-import { type QuoteType, setStringQuoteType } from '../utils/quotes';
+import { type QuoteType, QuoteUtils } from '../utils/quotes';
 
 /**
  * Get name of the scriptlet from the scriptlet node
@@ -56,7 +56,10 @@ export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: Q
     const scriptletNodeClone = cloneDeep(scriptletNode);
 
     for (let i = 0; i < scriptletNodeClone.children.length; i += 1) {
-        scriptletNodeClone.children[i].value = setStringQuoteType(scriptletNodeClone.children[i].value, quoteType);
+        scriptletNodeClone.children[i].value = QuoteUtils.setStringQuoteType(
+            scriptletNodeClone.children[i].value,
+            quoteType,
+        );
     }
 
     return scriptletNodeClone;

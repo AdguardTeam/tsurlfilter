@@ -4,7 +4,7 @@
 
 import cloneDeep from 'clone-deep';
 
-import { QuoteType, setStringQuoteType } from '../../../utils/quotes';
+import { QuoteType, QuoteUtils } from '../../../utils/quotes';
 import { getScriptletName, setScriptletName, setScriptletQuoteType } from '../../../ast-utils/scriptlets';
 import { type ParameterList } from '../../../parser/common';
 import { type ConverterFunction } from '../../base-interfaces/converter-function';
@@ -29,7 +29,7 @@ export class AdgScriptletConverter {
      */
     private static convertToAdg(scriptletNode: ParameterList, prefix: Prefix): ParameterList {
         // Remove possible quotes just to make it easier to work with the scriptlet name
-        const scriptletName = setStringQuoteType(
+        const scriptletName = QuoteUtils.setStringQuoteType(
             getScriptletName(scriptletNode),
             QuoteType.None,
         );

@@ -1,10 +1,4 @@
-import {
-    escapeUnescapedOccurrences,
-    unescapeSingleEscapedOccurrences,
-    getStringQuoteType,
-    QuoteType,
-    setStringQuoteType,
-} from '../../src/utils/quotes';
+import { QuoteType, QuoteUtils } from '../../src/utils/quotes';
 
 describe('Quote utils', () => {
     describe('escapeUnescapedOccurrences', () => {
@@ -35,7 +29,7 @@ describe('Quote utils', () => {
                 char: 'a',
             },
         ])('should escape \'$char\' in \'$actual\' as \'$expected\'', ({ actual, expected, char }) => {
-            expect(escapeUnescapedOccurrences(actual, char)).toBe(expected);
+            expect(QuoteUtils.escapeUnescapedOccurrences(actual, char)).toBe(expected);
         });
     });
 
@@ -72,7 +66,7 @@ describe('Quote utils', () => {
                 char: 'a',
             },
         ])('should unescape \'$char\' in \'$actual\' as \'$expected\'', ({ actual, expected, char }) => {
-            expect(unescapeSingleEscapedOccurrences(actual, char)).toBe(expected);
+            expect(QuoteUtils.unescapeSingleEscapedOccurrences(actual, char)).toBe(expected);
         });
     });
 
@@ -136,7 +130,7 @@ describe('Quote utils', () => {
                 expected: QuoteType.Double,
             },
         ])('should detect \'$actual\' quotes as \'$expected\'', ({ actual, expected }) => {
-            expect(getStringQuoteType(actual)).toBe(expected);
+            expect(QuoteUtils.getStringQuoteType(actual)).toBe(expected);
         });
     });
 
@@ -269,7 +263,64 @@ describe('Quote utils', () => {
                 quote: QuoteType.Double,
             },
         ])('should apply \'$quote\' quotes to \'$actual\' as \'$expected\'', ({ actual, expected, quote }) => {
-            expect(setStringQuoteType(actual, quote)).toBe(expected);
+            expect(QuoteUtils.setStringQuoteType(actual, quote)).toBe(expected);
+        });
+    });
+
+    describe('removeQuotes', () => {
+        test.each([
+            {
+                actual: '"test"',
+                expected: 'test',
+            },
+            {
+                actual: "'test'",
+                expected: 'test',
+            },
+            {
+                actual: '"test',
+                expected: '"test',
+            },
+            {
+                actual: "'test",
+                expected: "'test",
+            },
+            {
+                actual: 'test"',
+                expected: 'test"',
+            },
+            {
+                actual: "test'",
+                expected: "test'",
+            },
+            {
+                actual: '"test\'',
+                expected: '"test\'',
+            },
+            {
+                actual: '\'test"',
+                expected: '\'test"',
+            },
+            {
+                actual: 'test',
+                expected: 'test',
+            },
+            {
+                actual: '',
+                expected: '',
+            },
+
+            // do not remove quotes from single char strings
+            {
+                actual: '"',
+                expected: '"',
+            },
+            {
+                actual: "'",
+                expected: "'",
+            },
+        ])('removeQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.removeQuotes(actual)).toBe(expected);
         });
     });
 });

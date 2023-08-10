@@ -68,8 +68,10 @@ export { MetadataCommentRuleParser } from './parser/comment/metadata';
 export { ModifierListParser } from './parser/misc/modifier-list';
 export { ModifierParser } from './parser/misc/modifier';
 export { NetworkRuleParser } from './parser/network';
+export { NotImplementedError } from './errors/not-implemented-error';
 export { ParameterListParser } from './parser/misc/parameter-list';
 export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
+export { RuleConversionError } from './errors/rule-conversion-error';
 
 // Validator
 export { modifierValidator } from './validator';
@@ -105,6 +107,20 @@ export { CssTreeNodeType, CssTreeParserContext } from './utils/csstree-constants
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
 export { shiftLoc, locRange } from './utils/location';
+export {
+    ADBLOCK_URL_START,
+    ADBLOCK_URL_START_REGEX,
+    ADBLOCK_URL_SEPARATOR,
+    ADBLOCK_URL_SEPARATOR_REGEX,
+    ADBLOCK_WILDCARD,
+    ADBLOCK_WILDCARD_REGEX,
+    SPECIAL_REGEX_SYMBOLS,
+    RegExpUtils,
+} from './utils/regexp';
+export {
+    QuoteType,
+    QuoteUtils,
+} from './utils/quotes';
 
 // Constants
 export { METADATA_HEADERS } from './converter/data/metadata';
