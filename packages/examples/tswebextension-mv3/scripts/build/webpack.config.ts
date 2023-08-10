@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { Configuration, ProvidePlugin } from 'webpack';
+import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
@@ -67,24 +67,26 @@ export const config: Configuration = {
     },
     resolve: {
         extensions: ['*', '.tsx', '.ts', '.js'],
-        fallback: {
-            assert: require.resolve('assert'),
-            buffer: require.resolve('buffer'),
-            url: require.resolve('url'),
-            util: require.resolve('util'),
-            crypto: require.resolve('crypto-browserify'),
-            stream: require.resolve('stream-browserify'),
-        },
     },
     module: {
         rules: [
             {
                 test: /\.(js|ts)x?$/,
                 exclude: /node_modules/,
-                use: [{
-                    loader: 'babel-loader',
-                    options: { babelrc: true },
-                }],
+                use: [
+                    {
+                        loader: 'swc-loader',
+                        options: {
+                            env: {
+                                targets: {
+                                    chrome: 79,
+                                    firefox: 78,
+                                    opera: 66,
+                                },
+                            },
+                        },
+                    },
+                ],
             },
             {
                 test: /\.css$/,
@@ -94,12 +96,6 @@ export const config: Configuration = {
     },
     plugins: [
         new CleanWebpackPlugin(),
-        new ProvidePlugin({
-            Buffer: ['buffer', 'Buffer'],
-        }),
-        new ProvidePlugin({
-            process: 'process/browser',
-        }),
         new HtmlWebpackPlugin({
             template: path.join(POPUP_PATH, 'index.html'),
             filename: 'pages/popup.html',

@@ -59,7 +59,9 @@ export default {
         extensions: [".ts", ".js"],
         // Node modules polyfills
         fallback: {
-            url: require.resolve("url"),
+            // url required by @adguard/filters-downloader package, but we use browser submodule,
+            // so we can ignore url polyfill
+            url: false,
         },
     },
     optimization: {

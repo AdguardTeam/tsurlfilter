@@ -11,7 +11,7 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 2565:
+/***/ 554:
 /***/ (function(module, exports) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (global, factory) {
@@ -1357,10 +1357,10 @@ var __webpack_exports__ = {};
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
-// EXTERNAL MODULE: ../../node_modules/webextension-polyfill/dist/browser-polyfill.js
-var browser_polyfill = __webpack_require__(2565);
+// EXTERNAL MODULE: ../tswebextension/node_modules/webextension-polyfill/dist/browser-polyfill.js
+var browser_polyfill = __webpack_require__(554);
 var browser_polyfill_default = /*#__PURE__*/__webpack_require__.n(browser_polyfill);
-;// CONCATENATED MODULE: ../../node_modules/@adguard/extended-css/dist/extended-css.esm.js
+;// CONCATENATED MODULE: ../tswebextension/node_modules/@adguard/extended-css/dist/extended-css.esm.js
 /**
  * @adguard/extended-css - v2.0.52 - Fri Apr 14 2023
  * https://github.com/AdguardTeam/ExtendedCss#homepage
@@ -8412,6 +8412,7 @@ CssHitsCounter.CONTENT_ATTR_PREFIX = 'adguard';
 CssHitsCounter.COUNT_ALL_CSS_HITS_TIMEOUT_MS = 500;
 
 var RequestType = {
+    NotSet: 0,
     Document: 1,
     SubDocument: 2,
     Script: 4,
@@ -8427,24 +8428,114 @@ var RequestType = {
 };
 
 /**
+ * Css, injected to broken element for hiding.
+ */
+// eslint-disable-next-line max-len
+const HIDING_STYLE = '{ display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important; }';
+/**
+ * Creates hiding css rule for specified tag with src attribute.
+ *
+ * @param tag Element tag for css selector.
+ * @param src `src` attribute value for css selector. If value is the empty string
+ * then the selector does not represent anything.
+ * @param matching Attribute matching type. Currently support strict (=) and suffix ($=) matching.
+ * Default to strict.
+ *
+ * @returns Css rule text.
+ */
+function createHidingCssRule(tag, src, matching = "=" /* AttributeMatching.Strict */) {
+    return `${tag}[src${matching}"${src}"] ${HIDING_STYLE}\n`;
+}
+
+/**
  * Hides broken items after blocking a network request.
  */
 class ElementCollapser {
     /**
-     * Start listening for error events.
+     * Creates new element collapser.
      */
-    static start() {
-        document.addEventListener('error', ElementCollapser.shouldCollapseElement, true);
-        // We need to listen for load events to hide blocked iframes (they don't raise error event)
-        document.addEventListener('load', ElementCollapser.shouldCollapseElement, true);
+    constructor() {
+        this.shouldCollapseElement = this.shouldCollapseElement.bind(this);
     }
     /**
-     * Stop listening for error events.
+     * Starts listening for error events.
      */
-    static stop() {
-        document.removeEventListener('error', ElementCollapser.shouldCollapseElement, true);
+    start() {
+        document.addEventListener('error', this.shouldCollapseElement, true);
         // We need to listen for load events to hide blocked iframes (they don't raise error event)
-        document.removeEventListener('load', ElementCollapser.shouldCollapseElement, true);
+        document.addEventListener('load', this.shouldCollapseElement, true);
+    }
+    /**
+     * Stops listening for error events.
+     */
+    stop() {
+        document.removeEventListener('error', this.shouldCollapseElement, true);
+        // We need to listen for load events to hide blocked iframes (they don't raise error event)
+        document.removeEventListener('load', this.shouldCollapseElement, true);
+    }
+    /**
+     * Appends Css rule to {@link #styleNode} sheet.
+     *
+     * @param rule - Css rule text.
+     */
+    appendCssRule(rule) {
+        if (!this.styleNode) {
+            this.styleNode = document.createElement('style');
+            this.styleNode.setAttribute('type', 'text/css');
+            (document.head || document.documentElement).appendChild(this.styleNode);
+        }
+        if (this.styleNode.sheet) {
+            this.styleNode.sheet.insertRule(rule, this.styleNode.sheet.cssRules.length);
+        }
+    }
+    /**
+     * Checks if element should be collapsed by requirements.
+     *
+     * @param event Error or load event.
+     */
+    shouldCollapseElement(event) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const eventType = event.type;
+            const element = event.target;
+            const tagName = element.tagName.toLowerCase();
+            const expectedEventType = (tagName === 'iframe'
+                || tagName === 'frame'
+                || tagName === 'embed') ? 'load' : 'error';
+            if (eventType !== expectedEventType) {
+                return;
+            }
+            const requestType = ElementCollapser.getRequestTypeByInitiatorTagName(element.localName);
+            if (!requestType) {
+                return;
+            }
+            const elementUrl = ElementCollapser.getElementUrl(element);
+            if (!elementUrl) {
+                return;
+            }
+            if (ElementCollapser.isElementCollapsed(element)) {
+                return;
+            }
+            const payload = {
+                elementUrl,
+                documentUrl: document.URL,
+                requestType,
+            };
+            const shouldCollapse = yield sendAppMessage({
+                type: MessageType.ProcessShouldCollapse,
+                payload,
+            });
+            if (!shouldCollapse) {
+                return;
+            }
+            const srcAttribute = element.getAttribute('src');
+            if (srcAttribute) {
+                const rule = createHidingCssRule(tagName, CSS.escape(srcAttribute));
+                this.appendCssRule(rule);
+            }
+            else {
+                element.setAttribute('style', HIDING_STYLE);
+            }
+        });
     }
     /**
      * Returns request type by tag name.
@@ -8507,48 +8598,6 @@ class ElementCollapser {
         const computedStyle = window.getComputedStyle(element);
         return (computedStyle && computedStyle.display === 'none');
     }
-    /**
-     * Checks if element should be collapsed by requirements.
-     *
-     * @param event Error or load event.
-     */
-    static shouldCollapseElement(event) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const eventType = event.type;
-            const element = event.target;
-            const tagName = element.tagName.toLowerCase();
-            const expectedEventType = (tagName === 'iframe'
-                || tagName === 'frame'
-                || tagName === 'embed') ? 'load' : 'error';
-            if (eventType !== expectedEventType) {
-                return;
-            }
-            const requestType = ElementCollapser.getRequestTypeByInitiatorTagName(element.localName);
-            if (!requestType) {
-                return;
-            }
-            const elementUrl = ElementCollapser.getElementUrl(element);
-            if (!elementUrl) {
-                return;
-            }
-            if (ElementCollapser.isElementCollapsed(element)) {
-                return;
-            }
-            const payload = {
-                elementUrl,
-                documentUrl: document.URL,
-                requestType,
-            };
-            const shouldCollapse = yield sendAppMessage({
-                type: MessageType.ProcessShouldCollapse,
-                payload,
-            });
-            if (!shouldCollapse) {
-                return;
-            }
-            element.setAttribute('style', 'display: none!important; visibility: hidden!important; height: 0px!important; min-height: 0px!important;');
-        });
-    }
 }
 
 /**
@@ -8570,7 +8619,8 @@ class CosmeticController {
      * Init cosmetic processing.
      */
     init() {
-        ElementCollapser.start();
+        const elementCollapser = new ElementCollapser();
+        elementCollapser.start();
         this.process();
     }
     /**

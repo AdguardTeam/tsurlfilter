@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import FiltersDownloader, { DefinedExpressions } from "@adguard/filters-downloader/browser";
+import FiltersDownloader, { type DefinedExpressions } from "@adguard/filters-downloader/browser";
 
 import { UserAgent } from "./utils";
 import { metadataValidator, Metadata, Configuration } from "./schemas";

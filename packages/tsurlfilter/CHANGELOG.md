@@ -8,11 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## UNRELEASED
+## [2.1.7] - 2023-08-10
 
 ### Added
 - Support for `$to` modifier in the MV3 converter.
 - Support for `$method` modifier in the MV3 converter.
+
+### Changed
+- Replace the `ip6addr` and `netmask` dependencies with the platform-independent `cidr-tool'.
+- Remove Node Api polyfills from the bundle.
 
 ### Fixed
 - Bad conversion of `allowAllRequests` rules.

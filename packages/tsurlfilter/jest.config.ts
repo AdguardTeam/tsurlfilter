@@ -1,9 +1,16 @@
 import type { Config } from 'jest';
 
+const transformedModules = [
+    'cidr-tools',
+];
+
 const config: Config = {
     transform: {
-        '.ts': '@swc/jest',
+        '.+\\.(js|ts)': '@swc/jest',
     },
+    transformIgnorePatterns: [
+        `/node_modules/(?!(${transformedModules.join('|')}))/`,
+    ],
     testEnvironment: 'node',
     testRegex: '(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$',
     moduleFileExtensions: ['js', 'ts'],
