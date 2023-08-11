@@ -6,6 +6,7 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#cookie-modifier
   assignable: true
   negatable: false
+  value_optional: true
   value_format: ^([^;=\s]*?)((?:;(maxAge=\d+;?)?|(sameSite=(lax|none|strict);?)?){1,3})(?<!;)$
 
 adg_ext_any:
@@ -16,4 +17,5 @@ adg_ext_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#cookie-modifier
   assignable: true
   negatable: false
+  value_optional: true
   value_format: ^([^;=\s]*?)((?:;(maxAge=\d+;?)?|(sameSite=(lax|none|strict);?)?){1,3})(?<!;)$

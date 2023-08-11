@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
-## [1.1.0] - 2023-08-10
+## 1.1.1 - 2023-08-11
+
+### Fixed
+
+- Validation of assignable modifiers which may be used without a value
+
+## 1.1.0 - 2023-08-10
 
 ### Added
 
@@ -30,7 +36,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Scriptlet parsing
 - Metadata parsing
 
-## [1.0.1] - 2023-05-24
+## 1.0.1 - 2023-05-24
 
 ### Added
 

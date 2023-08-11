@@ -325,6 +325,34 @@ describe('ModifierValidator', () => {
                 expect(validationResult.ok).toBeTruthy();
             });
         });
+
+        describe('value validation', () => {
+            describe('optional value', () => {
+                const validModifiers = [
+                    'cookie=ABC',
+                    'cookie=/zmFQeXtI|JPIqApiY/',
+                    "csp=worker-src 'none'",
+                    'redirect=noopjs',
+                    'redirect-rule=noopjs',
+                    'removeheader=link',
+                    'removeheader=request:user-agent',
+                    'removeparam=cb',
+                    'removeparam=~red',
+                    // some assignable modifiers may not have a value
+                    'cookie',
+                    'csp',
+                    'redirect',
+                    'redirect-rule',
+                    'removeheader',
+                    'removeparam',
+                ];
+                test.each(validModifiers)('%s', (rawModifier) => {
+                    const modifier = getModifier(rawModifier);
+                    const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                    expect(validationResult.ok).toBeTruthy();
+                });
+            });
+        });
     });
 
     describe('validate for UblockOrigin', () => {

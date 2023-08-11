@@ -25,6 +25,7 @@ adg_os_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   # Enable free-spacing and case-insensitive mode for the regex
   value_format: |-
     (?xi)
@@ -117,6 +118,7 @@ adg_ext_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   # Enable free-spacing and case-insensitive mode for the regex
   value_format: |-
     (?xi)

@@ -24,10 +24,11 @@ fields:
 | `removal_message` | Message that describes why the modifier is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
 | `conflicts` | List of modifiers that are incompatible with the actual one. | `string[]\|null` | `null` (no conflicts) |
 | `inverse_conflicts` | The actual modifier is incompatible with all other modifiers, except the ones listed in `conflicts`. | `boolean` | `false` |
-| `assignable` | Describes whether the actual modifier supports value assignment. For example, `domain` is assignable, so it can be used like this: `$domain=domain.com\|~subdomain.domain.com`, where `=` is the assignment operator and `domain.com\|~subdomain.domain.com` is the value. | `boolean` | `false` |
-| `negatable` | Describes whether the actual modifier can be negated. For example, `third-party` is negatable, so it can be used like this: `~third-party`. | `boolean` | `true` |
+| `assignable` | Describes whether the actual modifier supports value assignment. For example, `$domain` is assignable, so it can be used like this: `$domain=domain.com\|~subdomain.domain.com`, where `=` is the assignment operator and `domain.com\|~subdomain.domain.com` is the value. | `boolean` | `false` |
+| `negatable` | Describes whether the actual modifier can be negated. For example, `$third-party` is negatable, so it can be used like this: `$~third-party`. | `boolean` | `true` |
 | `block_only` | The actual modifier can only be used in blocking rules, it cannot be used in exceptions. If it's value is `true`, then the modifier can be used only in blocking rules. `exception_only` and `block_only` cannot be used together (they are mutually exclusive). | `boolean` | `false` |
 | `exception_only` | The actual modifier can only be used in exceptions, it cannot be used in blocking rules. If it's value is `true`, then the modifier can be used only in exceptions. `exception_only` and `block_only` cannot be used together (they are mutually exclusive). | `boolean` | `false` |
+| `value_optional` | Describes whether the *assignable* modifier value is required. For example, `$cookie` is assignable but it can be used without a value in exception rules: `@@\|\|example.com^$cookie`. If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified. | `boolean` | `false` |
 | `value_format` | Describes the format of the value. See [Value format](#value-format) for more details. | `string\|null` | `null` |
 <!-- markdownlint-enable MD013 -->
 

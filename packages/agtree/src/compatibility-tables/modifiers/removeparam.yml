@@ -4,6 +4,7 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#removeparam-modifier
   assignable: true
   negatable: false
+  value_optional: true
   value_format: /^(?!.*([^\\](,|\$|\/))).*$/
 
 adg_ext_any:
@@ -12,6 +13,7 @@ adg_ext_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#removeparam-modifier
   assignable: true
   negatable: false
+  value_optional: true
   value_format: /^(?!.*([^\\](,|\$|\/))).*$/
 
 ubo_ext_any:

@@ -125,10 +125,11 @@ const SCHEMA_MAP = {
             conflicts: ss.defaulted(ss.array(ss.nonempty(ss.string())), []),
             inverse_conflicts: ss.defaulted(ss.boolean(), false),
             assignable: ss.defaulted(ss.boolean(), false),
-            value_format: ss.defaulted(ss.nullable(valueFormat()), null),
             negatable: ss.defaulted(ss.boolean(), true),
             block_only: ss.defaulted(ss.boolean(), false),
             exception_only: ss.defaulted(ss.boolean(), false),
+            value_optional: ss.defaulted(ss.boolean(), false),
+            value_format: ss.defaulted(ss.nullable(valueFormat()), null),
         }),
         'modifier',
         // Additional checks
