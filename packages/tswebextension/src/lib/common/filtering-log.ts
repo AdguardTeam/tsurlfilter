@@ -203,7 +203,7 @@ export type RemoveHeaderEventData = {
 };
 
 /**
- * Dispatched by HeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
+ * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
  * onHeadersReceived event handlers.
  */
 export type RemoveHeaderEvent = {

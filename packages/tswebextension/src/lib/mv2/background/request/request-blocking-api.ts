@@ -134,6 +134,29 @@ export class RequestBlockingApi {
     }
 
     /**
+     * Processes rule applying for request and compute response for {@link WebRequestApi.onHeadersReceived} listener.
+     * @param rule Matched rule.
+     * @param responseHeaders Response headers.
+     * @param requestId Request id.
+     * @param tabId Tab id.
+     *
+     * @returns Response for {@link WebRequestApi.onHeadersReceived} listener.
+     */
+    public static getResponseOnHeadersReceived(
+        rule: NetworkRule | null,
+        responseHeaders: WebRequest.HttpHeaders | undefined,
+        requestId: string,
+        tabId: number,
+    ): WebRequestBlockingResponse {
+        if (!rule || !responseHeaders) {
+            return undefined;
+        }
+
+        RequestBlockingApi.logRuleApplying(requestId, rule, tabId);
+        return rule.isAllowlist() ? undefined : { cancel: true };
+    }
+
+    /**
      * Creates {@link FilteringLog} event of rule applying for processed request.
      *
      * @param eventId Request event id.

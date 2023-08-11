@@ -177,11 +177,11 @@ import {
     type ApplyJsRulesParams,
     type ApplyCssRulesParams,
 } from './cosmetic-api';
-import { headersService } from './services/headers-service';
+import { removeHeadersService } from './services/remove-headers-service';
 import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
-import { CspService } from './services/csp-service';
+import { cspService } from './services/csp-service';
 import { permissionsPolicyService } from './services/permissions-policy-service';
 import {
     hideRequestInitiatorElement,
@@ -416,7 +416,7 @@ export class WebRequestApi {
                 requestHeadersModified = true;
             }
 
-            if (headersService.onBeforeSendHeaders(context)) {
+            if (removeHeadersService.onBeforeSendHeaders(context)) {
                 requestHeadersModified = true;
             }
         }
@@ -460,9 +460,40 @@ export class WebRequestApi {
         const {
             requestId,
             requestUrl,
+            referrerUrl,
             requestType,
             responseHeaders,
+            matchingResult,
+            requestFrameId,
+            thirdParty,
+            tabId,
         } = context;
+
+        const headerResult = matchingResult.getResponseHeadersResult(responseHeaders);
+
+        const response = RequestBlockingApi.getResponseOnHeadersReceived(
+            headerResult,
+            responseHeaders,
+            requestId,
+            tabId,
+        );
+
+        if (response?.cancel) {
+            tabsApi.incrementTabBlockedRequestCount(tabId);
+
+            const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
+
+            hideRequestInitiatorElement(
+                tabId,
+                requestFrameId,
+                requestUrl,
+                mainFrameUrl || referrerUrl,
+                requestType,
+                thirdParty,
+            );
+
+            return response;
+        }
 
         const contentTypeHeader = findHeaderByName(responseHeaders!, 'content-type')?.value;
 
@@ -473,7 +504,7 @@ export class WebRequestApi {
         let responseHeadersModified = false;
 
         if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
-            if (CspService.onHeadersReceived(context)) {
+            if (cspService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
             if (permissionsPolicyService.onHeadersReceived(context)) {
@@ -485,7 +516,7 @@ export class WebRequestApi {
             responseHeadersModified = true;
         }
 
-        if (headersService.onHeadersReceived(context)) {
+        if (removeHeadersService.onHeadersReceived(context)) {
             responseHeadersModified = true;
         }
 

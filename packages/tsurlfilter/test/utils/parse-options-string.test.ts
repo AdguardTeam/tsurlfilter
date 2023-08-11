@@ -82,6 +82,30 @@ describe('parseOptionsString', () => {
         expect(result).toEqual(expected);
     });
 
+    it('parses $header values correctly', () => {
+        let str: string;
+        let expected: [string];
+        let result: string[];
+
+        // Parses header name only
+        str = 'header=server';
+        expected = ['header=server'];
+        result = parseOptionsString(str);
+        expect(result).toEqual(expected);
+
+        // Parses plain value
+        str = 'header=etag:yes';
+        expected = ['header=etag:yes'];
+        result = parseOptionsString(str);
+        expect(result).toEqual(expected);
+
+        // Parses regexp value with unescaped comma
+        str = 'header=etag:/w{3,}/';
+        expected = ['header=etag:/w{3,}/'];
+        result = parseOptionsString(str);
+        expect(result).toEqual(expected);
+    });
+
     it('parses $hls correctly', () => {
         // Escaped comma in rule modifier value stays escaped
         const optionsPart = String.raw`hls=/#UPLYNK-SEGMENT:.*\,ad/t`;
@@ -97,15 +121,21 @@ describe('parseOptionsString', () => {
         let result = parseOptionsString(str);
         expect(result).toEqual(expected);
 
-        // Parses, while removing escape characters
+        // Parses while removing escape characters
         str = 'cookie=qwe\\,rty;maxAge=3600;sameSite=lax';
         expected = ['cookie=qwe,rty;maxAge=3600;sameSite=lax'];
         result = parseOptionsString(str, true);
         expect(result).toEqual(expected);
 
-        // Parses, while keeping escape characters
+        // Parses while keeping escape characters
         str = 'cookie=qwe\\,rty;maxAge=3600;sameSite=lax';
         expected = ['cookie=qwe\\,rty;maxAge=3600;sameSite=lax'];
+        result = parseOptionsString(str, false);
+        expect(result).toEqual(expected);
+
+        // Parses options with $header modifier
+        str = 'removeparam=param_name,header=etag:/w{3,}/,replace=/sdf/aaa/g';
+        expected = ['removeparam=param_name', 'header=etag:/w{3,}/', 'replace=/sdf/aaa/g'];
         result = parseOptionsString(str, false);
         expect(result).toEqual(expected);
     });

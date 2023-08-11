@@ -21,6 +21,7 @@ const enum SpecialModifier {
     Replace = 'replace',
     Removeparam = 'removeparam',
     Hls = 'hls',
+    Header = 'header',
 }
 
 /**
@@ -32,6 +33,7 @@ const SpecialModifiers = [
     SpecialModifier.Replace,
     SpecialModifier.Removeparam,
     SpecialModifier.Hls,
+    SpecialModifier.Header,
 ];
 
 const isSpecialModifierToken = (
@@ -41,6 +43,9 @@ const isSpecialModifierToken = (
 const enum ModifierValueType {
     Regexp = 'regexp',
     Plain = 'plain',
+    // $header value may be a regexp-like string
+    // preceded by a plain value
+    Header = 'header',
 }
 
 /**
@@ -78,11 +83,12 @@ const enum SpecialCharacter {
  * @pattern pattern to follow
  *
  * @returns ModifierValueData
+ * @throws on invalid special modifier value
  */
 type ModifierValueParser = (
     string: string,
     startIndex: number,
-    pattern: Pattern,
+    pattern?: Pattern | null,
 ) => ModifierValueData;
 
 /**
@@ -95,22 +101,18 @@ type ModifierValueData = {
     modifierEndIndex: number,
 };
 
-type ModifierPatterns = {
-    [key in SpecialModifier]: Pattern;
-};
+const defaultRegexpPattern: Pattern = [Phase.Regexp, Phase.Flags];
 
 /**
- * TODO (s.atroschenko) git rid of necessity of adding modifier names for simple regexp values (removaparam, hls):
- * use unified 'simple-regexp' pattern instead
+ * Map of custom regexp-like modifier patterns
  */
-const modifiersPatterns: ModifierPatterns = {
+const modifiersPatterns: Partial<Record<SpecialModifier, Pattern>> = {
     [SpecialModifier.Replace]: [Phase.Regexp, Phase.Replacement, Phase.Flags],
-    [SpecialModifier.Removeparam]: [Phase.Regexp, Phase.Flags],
-    [SpecialModifier.Hls]: [Phase.Regexp, Phase.Flags],
 } as const;
 
 /**
  * Extracts modifier's plain value
+ * @throws on invalid special modifier value
  */
 const parsePlainValue: ModifierValueParser = (string, startIndex) => {
     let modifierValue = '';
@@ -143,10 +145,13 @@ const parsePlainValue: ModifierValueParser = (string, startIndex) => {
 
 /**
  * Extract modifier's regexp(-like) value
- *
  * @throws on invalid special modifier value
  */
 const parseRegexpValue: ModifierValueParser = (string, startIndex, pattern) => {
+    if (!pattern) {
+        throw new Error('Pattern is required for parsing regexp modifier value.');
+    }
+
     let currentPhase: Phase | void;
     const nextPhase = (() => {
         let i = 0;
@@ -208,10 +213,110 @@ const parseRegexpValue: ModifierValueParser = (string, startIndex, pattern) => {
     };
 };
 
+/**
+ * Parses $header modifier's value, which can be one of three:
+ * - $header=header_name, plain value
+ * - $header=header_name:header_value, plain value pair
+ * - $header=header_name:/header_value, mix of plain key and regexp-like value,
+ */
+const parseHeaderValue: ModifierValueParser = (string, startIndex) => {
+    let modifierValue = '';
+    let modifierEndIndex = -1;
+
+    let inRegexp = false;
+
+    const chars: string[] = [];
+    for (let i = startIndex; i < string.length; i += 1) {
+        const c = string[i];
+
+        const isLastChar = i === (string.length - 1);
+        const isUnescapedChar = i > 0 && !(string[i - 1] === SpecialCharacter.OptionEscape);
+
+        if (c === SpecialCharacter.RegexpDelimiter && isUnescapedChar) {
+            inRegexp = !inRegexp;
+        }
+
+        const isUnescapedOptionsDelimiter = c === SpecialCharacter.OptionDelimiter && isUnescapedChar;
+
+        if (isUnescapedOptionsDelimiter || isLastChar) {
+            if (isUnescapedOptionsDelimiter && inRegexp) {
+                chars.push(c);
+                continue;
+            }
+            if (isLastChar) {
+                chars.push(c);
+            }
+            modifierValue = chars.join('');
+            modifierEndIndex = i;
+            break;
+        } else {
+            chars.push(c);
+        }
+    }
+
+    return {
+        modifierValue,
+        modifierEndIndex,
+    };
+};
+
 const modifierValueParsers = {
     [ModifierValueType.Regexp]: parseRegexpValue,
     [ModifierValueType.Plain]: parsePlainValue,
+    [ModifierValueType.Header]: parseHeaderValue,
 } as const;
+
+/**
+ * Parses special modifier value
+ *
+ * @param modifierName name of modifier to be parsed
+ * @param string options string
+ * @returns object with Modifier token value and next index to keep iterating from
+ */
+function parseSpecialModifier(modifierName: SpecialModifier, string: string) {
+    let tokenValue = `${modifierName}${SpecialCharacter.ModifierValueMarker}`;
+
+    const modifierValueStartIndex = string.indexOf(tokenValue) + tokenValue.length;
+
+    // Define modifier value type
+    let valueType = ModifierValueType.Plain;
+    if (string[modifierValueStartIndex] === SpecialCharacter.RegexpDelimiter) {
+        valueType = ModifierValueType.Regexp;
+    } else if (modifierName === SpecialModifier.Header) {
+        valueType = ModifierValueType.Header;
+    }
+
+    // Pick parser for specific type of modifier value
+    const parser = modifierValueParsers[valueType];
+
+    // Get pattern of current modifier
+    let pattern: Pattern | null = null;
+    if (valueType === ModifierValueType.Regexp) {
+        const namedPattern = modifiersPatterns[modifierName];
+        if (namedPattern) {
+            pattern = namedPattern;
+        } else {
+            pattern = defaultRegexpPattern;
+        }
+    }
+
+    const {
+        modifierValue,
+        modifierEndIndex,
+    } = parser(string, modifierValueStartIndex, pattern);
+
+    if (modifierEndIndex === -1) {
+        throw new Error(`Invalid $${modifierName} modifier value.`);
+    }
+
+    tokenValue += modifierValue;
+    const nextIndex = modifierEndIndex;
+
+    return {
+        tokenValue,
+        nextIndex,
+    };
+}
 
 /**
  * Processes raw tokens by splitting token values by delimiter
@@ -310,47 +415,6 @@ const makeWords = (
     }
     return words;
 };
-
-/**
- * Parses special modifier value
- *
- * @param modifierName name of modifier to be parsed
- * @param string options string
- * @returns object with Modifier token value and next index to keep iterating from
- */
-function parseSpecialModifier(modifierName: SpecialModifier, string: string) {
-    let tokenValue = `${modifierName}${SpecialCharacter.ModifierValueMarker}`;
-
-    const modifierValueStartIndex = string.indexOf(tokenValue) + tokenValue.length;
-
-    // Define modifier value type
-    const valueType = string[modifierValueStartIndex] === SpecialCharacter.RegexpDelimiter
-        ? ModifierValueType.Regexp
-        : ModifierValueType.Plain;
-
-    // Pick parser for specific type of modifier value
-    const parser = modifierValueParsers[valueType];
-
-    // Get pattern of current modifier
-    const pattern = modifiersPatterns[modifierName];
-
-    const {
-        modifierValue,
-        modifierEndIndex,
-    } = parser(string, modifierValueStartIndex, pattern);
-
-    if (modifierEndIndex === -1) {
-        throw new Error(`Invalid $${modifierName} modifier value.`);
-    }
-
-    tokenValue += modifierValue;
-    const nextIndex = modifierEndIndex;
-
-    return {
-        tokenValue,
-        nextIndex,
-    };
-}
 
 /**
  * Converts options string into array of Raw and Modifier tokens

@@ -224,6 +224,35 @@ describe('NetworkRule constructor', () => {
         }).toThrow(new SyntaxError('$app modifier cannot be empty'));
     });
 
+    it('throws error if $header modifier value is invalid', () => {
+        expect(() => {
+            new NetworkRule('||baddomain.com^$header', 0);
+        }).toThrow(new SyntaxError('$header modifier value cannot be empty'));
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$header=name:', 0);
+        }).toThrow(new SyntaxError('Invalid $header modifier value: "name:"'));
+    });
+
+    it('validates $header rules modifier compatibility', () => {
+        // Check compatibility with other modifiers
+        expect(() => {
+            new NetworkRule(String.raw`||baddomain.com^$header=h1,csp=frame-src 'none'`, 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$header=h1,removeheader=param', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$header=h1,removeheader=request:param', 0);
+        }).toThrow(new SyntaxError('Request headers removal of $removeheaders is not compatible with $header rules.'));
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$header=h1,hls=urlpattern', 0);
+        }).toThrow('$header rules are not compatible with some other modifiers');
+    });
+
     it('throws error if $method modifier value is invalid', () => {
         expect(() => {
             new NetworkRule('||baddomain.com^$method=get', 0);
@@ -287,7 +316,7 @@ describe('NetworkRule constructor', () => {
         }).not.toThrow();
     });
 
-    it('thorws error if $to modfiier value is invalid', () => {
+    it('thorws error if $to modifier value is invalid', () => {
         expect(() => {
             new NetworkRule('||*/ads^$to=evil.com', 0);
         }).not.toThrow();
@@ -361,6 +390,10 @@ describe('NetworkRule constructor', () => {
         expect(() => {
             new NetworkRule('||example.org^$removeheader=header-name,domain=test.com,popup', 0);
         }).toThrow(new SyntaxError('$removeheader rules are not compatible with some other modifiers'));
+
+        expect(() => {
+            new NetworkRule('||baddomain.com^$header=h1,removeheader=request:param', 0);
+        }).toThrow(new SyntaxError('Request headers removal of $removeheaders is not compatible with $header rules.'));
     });
 
     it('checks jsonprune modifier compatibility', () => {

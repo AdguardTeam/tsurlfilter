@@ -1122,3 +1122,136 @@ describe('TestNewMatchingResult - removeheader rules', () => {
         expect(found.length).toBe(1);
     });
 });
+
+describe('getResponseHeadersResult', () => {
+    it('finds $header rule with matching header value', () => {
+        const matchingRule = '||example.org/r/w64$header=Content-Length:138';
+        const nonMatchingRule = '||example.org/r/w64$header=Etag:yes';
+        const rules = [
+            new NetworkRule(matchingRule, 0),
+            new NetworkRule(nonMatchingRule, 0),
+        ];
+        const responseHeaders = [
+            {
+                name: 'Content-Length',
+                value: '138',
+            },
+        ];
+
+        const matchingResult = new MatchingResult(rules, null);
+        const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult).toBeTruthy();
+        expect(headersResult?.getText()).toBe(matchingRule);
+    });
+
+    it('returns null if no rules are found', () => {
+        const nonMatchingRule = '||example.org/r/w64$header=Etag:yes';
+        const rules = [
+            new NetworkRule(nonMatchingRule, 0),
+        ];
+        const responseHeaders = [
+            {
+                name: 'Content-Length',
+                value: '138',
+            },
+        ];
+
+        const matchingResult = new MatchingResult(rules, null);
+        const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult).toBeNull();
+    });
+
+    it('returns allowlist rule against blocking rule', () => {
+        const blockingRule = '||example.org/r/w64$header=Content-Length:138';
+        const allowlistRule = '@@||example.org$header=Content-Length:138';
+        const rules = [
+            new NetworkRule(blockingRule, 0),
+            new NetworkRule(allowlistRule, 0),
+        ];
+        const responseHeaders = [
+            {
+                name: 'Content-Length',
+                value: '138',
+            },
+        ];
+
+        const matchingResult = new MatchingResult(rules, null);
+        const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult?.isAllowlist()).toBeTruthy();
+    });
+
+    it('returns blocking rule with higher priority against allowlist rule', () => {
+        const blockingRule = '||example.org/r/w64$header=Content-Length:138,important';
+        const allowlistRule = '@@||example.org$header=Content-Length:138';
+        const rules = [
+            new NetworkRule(blockingRule, 0),
+            new NetworkRule(allowlistRule, 0),
+        ];
+        const responseHeaders = [
+            {
+                name: 'Content-Length',
+                value: '138',
+            },
+        ];
+
+        const matchingResult = new MatchingResult(rules, null);
+        const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult?.isAllowlist()).toBeFalsy();
+    });
+
+    it('returns null when basic or document allowlist rule is present', () => {
+        const headerRule = '||example.org/r/w64$header=Content-Length:138,important';
+        let allowlistRule = '@@||example.org';
+        const rules = [
+            new NetworkRule(headerRule, 0),
+            new NetworkRule(allowlistRule, 0),
+        ];
+        const responseHeaders = [
+            {
+                name: 'Content-Length',
+                value: '138',
+            },
+        ];
+
+        // Basic allowlist rule prevents header rule from being applied
+        let matchingResult = new MatchingResult(rules, null);
+        let headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult).toBeNull();
+
+        // Document allowlist rule prevents header rule from being applied
+        allowlistRule = '@@||example.org^$document';
+        rules[1] = new NetworkRule(allowlistRule, 0);
+        matchingResult = new MatchingResult(rules, null);
+        headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult).toBeNull();
+
+        // Returns null when response headers are empty
+        headersResult = matchingResult.getResponseHeadersResult([]);
+        expect(headersResult).toBeNull();
+    });
+
+    it('picks highest priority rule that has no allowlist counterpart from a set of rules', () => {
+        const rules = [
+            new NetworkRule('||example.org/r/w64$header=Content-Length:138', 0),
+            new NetworkRule('@@||example.org$header=Content-Length:138', 0),
+            new NetworkRule('||example.org$header=$header=etag:y,important', 0),
+            new NetworkRule('|@@|example.org$header=$header=etag:y', 0),
+        ];
+        const responseHeaders = [
+            {
+                // Headers match case-insensitively
+                name: 'content-length',
+                value: '138',
+            },
+            {
+                // Headers match case-insensitively
+                name: 'etag',
+                value: 'y',
+            },
+        ];
+
+        const matchingResult = new MatchingResult(rules, null);
+        const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
+        expect(headersResult?.getText()).toBe('||example.org$header=$header=etag:y,important');
+    });
+});

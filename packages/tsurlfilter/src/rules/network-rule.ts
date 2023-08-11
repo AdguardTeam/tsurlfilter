@@ -15,6 +15,7 @@ import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
 import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { HeaderModifier, type HttpHeadersItem, type HttpHeaderMatcher } from '../modifiers/header-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
 import { PermissionsModifier } from '../modifiers/permissions-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -104,14 +105,17 @@ export enum NetworkRuleOption {
     DnsType = 1 << 25,
     Ctag = 1 << 26,
 
-    // $method modifier
+    /* $method modifier */
     Method = 1 << 27,
 
-    // $to modifier
+    /* $to modifier */
     To = 1 << 28,
 
-    // $permissions modifier
+    /* $permissions modifier */
     Permissions = 1 << 29,
+
+    /* $header modifier */
+    Header = 1 << 30,
 
     // Groups (for validation)
 
@@ -143,14 +147,21 @@ export enum NetworkRuleOption {
      * $removeheader rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
      * except $document (using by default) and this list of modifiers:
      */
-    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Badfilter,
+    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Header | Badfilter,
 
     /**
      * Permissions compatible modifiers
      *
-     * $permissions is compatible with the limited list of modifiers: $doma
+     * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument
      */
     PermissionsCompatibleOptions = Permissions | Important | Badfilter,
+
+    /**
+     * Header compatible modifiers
+     *
+     * $header is compatible with the limited list of modifiers: $csp and $removeheader (on response headers).
+     */
+    HeaderCompatibleOptions = Header | Important | Csp | RemoveHeader | Badfilter,
 }
 
 /**
@@ -232,6 +243,11 @@ export class NetworkRule implements rule.IRule {
      * Rule Method modifier
      */
     private methodModifier: IValueListModifier<HTTPMethod> | null = null;
+
+    /**
+     * Rule header modifier
+     */
+    private headerModifier: HeaderModifier | null = null;
 
     /**
      * Rule To modifier
@@ -569,6 +585,16 @@ export class NetworkRule implements rule.IRule {
      */
     getAdvancedModifierValue(): string | null {
         return this.advancedModifier && this.advancedModifier.getValue();
+    }
+
+    /**
+     * Retrieves the header modifier value.
+     */
+    getHeaderModifierValue(): HttpHeaderMatcher | null {
+        if (!this.headerModifier) {
+            return null;
+        }
+        return this.headerModifier.getHeaderModifierValue();
     }
 
     /**
@@ -910,6 +936,57 @@ export class NetworkRule implements rule.IRule {
 
         const restrictedMethods = this.getRestrictedMethods();
         return !!restrictedMethods && !restrictedMethods.includes(method);
+    }
+
+    /**
+     * Checks if request's response headers matches with
+     * the rule's $header modifier value
+     *
+     * @param responseHeadersItems request's response headers
+     * @returns true, if rule must be applied to the request
+     */
+    matchResponseHeaders(responseHeadersItems: HttpHeadersItem[] | undefined): boolean {
+        if (!responseHeadersItems || responseHeadersItems.length === 0) {
+            return false;
+        }
+
+        const ruleData = this.getHeaderModifierValue();
+
+        if (!ruleData) {
+            return false;
+        }
+
+        const {
+            header: ruleHeaderName,
+            value: ruleHeaderValue,
+        } = ruleData;
+
+        return responseHeadersItems.some((responseHeadersItem) => {
+            const {
+                name: responseHeaderName,
+                value: responseHeaderValue,
+            } = responseHeadersItem;
+
+            // Header name matching is case-insensitive
+            if (ruleHeaderName.toLowerCase() !== responseHeaderName.toLowerCase()) {
+                return false;
+            }
+
+            if (ruleHeaderValue === null) {
+                return true;
+            }
+
+            // Unlike header name, header value matching is case-sensitive
+            if (typeof ruleHeaderValue === 'string') {
+                return ruleHeaderValue === responseHeaderValue;
+            }
+
+            if (responseHeaderValue && ruleHeaderValue instanceof RegExp) {
+                return ruleHeaderValue.test(responseHeaderValue);
+            }
+
+            return false;
+        });
     }
 
     /**
@@ -1265,6 +1342,11 @@ export class NetworkRule implements rule.IRule {
                 this.methodModifier = new MethodModifier(optionValue);
                 break;
             }
+            // $header modifier
+            case OPTIONS.HEADER:
+                this.setOptionEnabled(NetworkRuleOption.Header, true);
+                this.headerModifier = new HeaderModifier(optionValue);
+                break;
             // $to modifier
             case OPTIONS.TO: {
                 this.setOptionEnabled(NetworkRuleOption.To, true);
@@ -1647,13 +1729,16 @@ export class NetworkRule implements rule.IRule {
         }
 
         /**
-         * Category 2: permitted request types and methods.
+         * Category 2: permitted request types, methods, headers, $popup.
          * Specified content-types add `50 + 50 / number_of_content_types`,
          * for example: `||example.com^$image,script` will add
          * `50 + 50 / 2 = 50 + 25 = 75` to the total weight of the rule.
          * The `$popup` also belongs to this category, because it implicitly
          * adds the modifier `$document`.
          * Similarly, specific exceptions add `$document,subdocument`.
+         *
+         * Learn more about it here:
+         * https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2
          */
         if (this.permittedRequestTypes !== RequestType.NotSet) {
             const numberOfPermittedRequestTypes = getBitCount(this.permittedRequestTypes);
@@ -1666,6 +1751,11 @@ export class NetworkRule implements rule.IRule {
             // More permitted request methods mean less priority weight.
             const relativeWeight = NetworkRule.CategoryTwoWeight / this.methodModifier.permittedValues.length;
             this.priorityWeight += NetworkRule.CategoryTwoWeight + relativeWeight;
+        }
+
+        if (this.headerModifier) {
+            // $header modifier in the rule adds 50
+            this.priorityWeight += NetworkRule.CategoryTwoWeight;
         }
 
         /**
@@ -1719,10 +1809,31 @@ export class NetworkRule implements rule.IRule {
             this.validateRemoveHeaderRule();
         } else if (this.advancedModifier instanceof PermissionsModifier) {
             this.validatePermissionsRule();
+        } else if (this.headerModifier instanceof HeaderModifier) {
+            this.validateHeaderRule();
         } else if (this.toModifier !== null) {
             this.validateToRule();
         } else if (this.denyAllowDomains !== null) {
             this.validateDenyallowRule();
+        }
+    }
+
+    /**
+     * $header rules are not compatible with any other
+     * modifiers except for $important, $csp, $removeheader, $badfilter.
+     * The rules with any other modifiers are considered invalid and will be discarded.
+     */
+    private validateHeaderRule(): void {
+        if ((this.enabledOptions | NetworkRuleOption.HeaderCompatibleOptions)
+                        !== NetworkRuleOption.HeaderCompatibleOptions) {
+            throw new SyntaxError('$header rules are not compatible with some other modifiers');
+        }
+        if (this.advancedModifier && this.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+            const removeHeaderValue = this.getAdvancedModifierValue();
+            if (!removeHeaderValue || removeHeaderValue.includes('request:')) {
+                const message = '$header rules are only compatible with response headers removal of $removeheader.';
+                throw new SyntaxError(message);
+            }
         }
     }
 
@@ -1759,6 +1870,13 @@ export class NetworkRule implements rule.IRule {
         if ((this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
             !== NetworkRuleOption.RemoveHeaderCompatibleOptions) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
+        }
+        if (this.headerModifier && this.isOptionEnabled(NetworkRuleOption.Header)) {
+            const removeHeaderValue = this.getAdvancedModifierValue();
+            if (!removeHeaderValue || removeHeaderValue.includes('request:')) {
+                const message = 'Request headers removal of $removeheaders is not compatible with $header rules.';
+                throw new SyntaxError(message);
+            }
         }
     }
 
