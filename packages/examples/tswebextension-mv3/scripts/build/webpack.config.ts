@@ -67,21 +67,26 @@ export const config: Configuration = {
     },
     resolve: {
         extensions: ['*', '.tsx', '.ts', '.js'],
-        fallback: {
-            url: false,
-            path: false,
-            fs: false,
-        },
     },
     module: {
         rules: [
             {
                 test: /\.(js|ts)x?$/,
                 exclude: /node_modules/,
-                use: [{
-                    loader: 'babel-loader',
-                    options: { babelrc: true },
-                }],
+                use: [
+                    {
+                        loader: 'swc-loader',
+                        options: {
+                            env: {
+                                targets: {
+                                    chrome: 79,
+                                    firefox: 78,
+                                    opera: 66,
+                                },
+                            },
+                        },
+                    },
+                ],
             },
             {
                 test: /\.css$/,

@@ -1424,4 +1424,235 @@ describe('DeclarativeRuleConverter', () => {
             expect(errors[2]).toStrictEqual(expectedErrors[2]);
         });
     });
+
+    describe('check $to', () => {
+        it('converts $to rule with two domains', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['/ads$to=evil.com|evil.org'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    requestDomains: [
+                        'evil.com',
+                        'evil.org',
+                    ],
+                    urlFilter: '/ads',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('converts $to rule with one included and one excluded domain', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['/ads$to=~not.evil.com|evil.com'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    requestDomains: ['evil.com'],
+                    excludedRequestDomains: ['not.evil.com'],
+                    urlFilter: '/ads',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('converts $to rule with two excluded domains', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['/ads$to=~good.com|~good.org'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    excludedRequestDomains: [
+                        'good.com',
+                        'good.org',
+                    ],
+                    urlFilter: '/ads',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+    });
+
+    describe('check $method', () => {
+        it('converts rule with two permitted methods', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||evil.com$method=get|head'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 76,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    requestMethods: ['get', 'head'],
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||evil.com',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('converts rule with two restricted methods', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||evil.com$method=~post|~put'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 2,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    excludedRequestMethods: ['post', 'put'],
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||evil.com',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('allowlist rule with one permitted method', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['@@||evil.com$method=get'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 100101,
+                action: {
+                    type: 'allow',
+                },
+                condition: {
+                    requestMethods: ['get'],
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||evil.com',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('allowlist rule with two restricted methods', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['@@||evil.com$method=~post'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 100002,
+                action: {
+                    type: 'allow',
+                },
+                condition: {
+                    excludedRequestMethods: ['post'],
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||evil.com',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('returns UnsupportedModifierError for `trace` method', () => {
+            const filterId = 0;
+            const ruleText = '||evil.com$method=trace';
+            const rules = createRulesFromText(filterId, [ruleText]);
+
+            const {
+                declarativeRules,
+                errors,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules.length).toBe(0);
+            expect(errors.length).toBe(1);
+
+            const networkRule = new NetworkRule(ruleText, filterId);
+
+            const err = new UnsupportedModifierError(
+                // eslint-disable-next-line max-len
+                `Network rule with $method modifier containing 'trace' method is not supported: "${networkRule.getText()}"`,
+                networkRule,
+            );
+            expect(errors[0]).toStrictEqual(err);
+        });
+    });
 });

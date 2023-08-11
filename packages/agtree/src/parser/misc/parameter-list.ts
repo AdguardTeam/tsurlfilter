@@ -1,6 +1,6 @@
 import { StringUtils } from '../../utils/string';
 import { locRange } from '../../utils/location';
-import { Location, ParameterList, defaultLocation } from '../common';
+import { type Location, type ParameterList, defaultLocation } from '../common';
 import { COMMA, SPACE } from '../../utils/constants';
 
 export class ParameterListParser {

@@ -6,15 +6,15 @@
   "license": "GPL-3.0",
   "scripts": {
     "build": "yarn build:chrome",
-    "build:chrome": "node -r esbuild-register ./scripts/build/index.ts",
-    "build:ff": "BROWSER=firefox node -r esbuild-register ./scripts/build/index.ts",
-    "run:ff": "node -r esbuild-register ./scripts/launchFirefoxExtension.ts",
-    "test": "node -r esbuild-register ./scripts/browser-test/index.ts",
+    "build:chrome": "node -r @swc-node/register ./scripts/build/index.ts",
+    "build:ff": "BROWSER=firefox node -r @swc-node/register ./scripts/build/index.ts",
+    "run:ff": "node -r @swc-node/register ./scripts/launchFirefoxExtension.ts",
+    "test": "node -r @swc-node/register ./scripts/browser-test/index.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'",
     "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/tswebextension": "^0.1.2",
+    "@adguard/tswebextension": "^0.3.9",
     "bowser": "^2.11.0",
     "formik": "^2.2.9",
     "react": "^17.0.2",
@@ -22,22 +22,15 @@
     "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.16.0",
-    "@babel/plugin-proposal-class-properties": "^7.16.0",
-    "@babel/plugin-transform-runtime": "^7.16.4",
-    "@babel/preset-env": "^7.16.4",
-    "@babel/preset-react": "^7.16.0",
-    "@babel/preset-typescript": "^7.16.0",
+    "@swc-node/register": "^1.6.6",
+    "@swc/core": "^1.3.76",
     "@types/react": "^17.0.34",
     "@types/react-dom": "^17.0.11",
     "axios": "^0.24.0",
-    "babel-loader": "^8.2.3",
     "chalk": "4.1.2",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^10.0.0",
     "css-loader": "^6.5.1",
-    "esbuild": "^0.14.1",
-    "esbuild-register": "^3.2.0",
     "eslint": "^8.6.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-plugin-import": "^2.25.4",
@@ -45,6 +38,7 @@
     "jsdom": "^18.1.1",
     "playwright": "^1.19.0-alpha-jan-19-2022",
     "style-loader": "^3.3.1",
+    "swc-loader": "^0.2.3",
     "web-ext": "^6.6.0",
     "webpack": "^5.64.2"
   }

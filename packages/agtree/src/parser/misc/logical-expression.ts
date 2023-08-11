@@ -1,11 +1,11 @@
 import { StringUtils } from '../../utils/string';
 import {
-    AnyExpressionNode,
-    AnyOperator,
-    ExpressionParenthesisNode,
-    ExpressionVariableNode,
-    Location,
-    LocationRange,
+    type AnyExpressionNode,
+    type AnyOperator,
+    type ExpressionParenthesisNode,
+    type ExpressionVariableNode,
+    type Location,
+    type LocationRange,
     defaultLocation,
 } from '../common';
 import {
@@ -17,7 +17,7 @@ import {
     UNDERSCORE,
 } from '../../utils/constants';
 import { locRange } from '../../utils/location';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
 const OPERATOR_PRECEDENCE = {
     '!': 3,

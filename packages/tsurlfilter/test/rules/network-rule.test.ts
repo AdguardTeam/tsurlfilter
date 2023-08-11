@@ -248,6 +248,10 @@ describe('NetworkRule constructor', () => {
         }).not.toThrow();
 
         expect(() => {
+            new NetworkRule('||*/ads^$to=evil.com', 0);
+        }).not.toThrow();
+
+        expect(() => {
             new NetworkRule('||baddomain.com^$to=', 0);
         }).toThrow(new SyntaxError('$to modifier value cannot be empty'));
 
@@ -389,6 +393,18 @@ describe('NetworkRule constructor', () => {
 
         // TODO: add more specific jsonprune tests during the implementation
         // https://github.com/AdguardTeam/tsurlfilter/issues/72
+    });
+
+    it('checks to modifier compatibility', () => {
+        expect(() => {
+            new NetworkRule('/ads$to=good.org,denyallow=good.com', 0);
+        }).toThrow(new SyntaxError('modifier $to is not compatible with $denyallow modifier'));
+    });
+
+    it('checks denyallow modifier compatibility', () => {
+        expect(() => {
+            new NetworkRule('/ads$to=good.org,denyallow=good.com', 0);
+        }).toThrow(new SyntaxError('modifier $to is not compatible with $denyallow modifier'));
     });
 
     it('works when it handles wide rules with $domain properly', () => {
@@ -1236,8 +1252,8 @@ describe('NetworkRule.match', () => {
         let request: Request;
         rule = new NetworkRule('/ads$to=~evil.*|good.*,script', 0);
 
-        expect(rule.getRestrictedToValues()).toHaveLength(1);
-        expect(rule.getPermittedToValues()).toHaveLength(1);
+        expect(rule.getRestrictedToDomains()).toHaveLength(1);
+        expect(rule.getPermittedToDomains()).toHaveLength(1);
 
         // Correctly matches domain that is specified in permitted domains list
         rule = new NetworkRule('/ads^$to=evil.com', 0);

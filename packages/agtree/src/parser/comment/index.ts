@@ -1,12 +1,12 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AgentCommentRuleParser } from './agent-rule';
 import {
-    AnyCommentRule,
+    type AnyCommentRule,
     CommentMarker,
     CommentRuleType,
-    Location,
+    type Location,
     RuleCategory,
-    Value,
+    type Value,
     defaultLocation,
 } from '../common';
 import { ConfigCommentRuleParser } from './inline-config';

@@ -5,12 +5,12 @@ import { CommentRuleParser } from './comment';
 import { CosmeticRuleParser } from './cosmetic';
 import { NetworkRuleParser } from './network';
 import {
-    AnyRule,
-    InvalidRule,
+    type AnyRule,
+    type InvalidRule,
     RuleCategory,
     defaultLocation,
 } from './common';
-import { AdblockSyntaxError } from './errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 
 /**
  * `RuleParser` is responsible for parsing the rules.

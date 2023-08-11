@@ -2,7 +2,7 @@
  * @file Utility functions for logical expression AST.
  */
 
-import { AnyExpressionNode, ExpressionVariableNode } from '../parser/common';
+import { type AnyExpressionNode, type ExpressionVariableNode } from '../parser/common';
 
 /**
  * Variable table. Key is variable name, value is boolean.

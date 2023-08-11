@@ -1,17 +1,16 @@
 // eslint-disable-next-line max-classes-per-file
 import isCidr from 'is-cidr';
 import isIp from 'is-ip';
-import { Netmask } from 'netmask';
-import { CIDR, createCIDR } from 'ip6addr';
+import { contains } from 'cidr-tools';
 import { BaseValuesModifier } from '../values-modifier';
 
 /**
  * Netmasks class
  */
 class NetmasksCollection {
-    ipv4Masks: Netmask[] = [];
+    ipv4Masks: string[] = [];
 
-    ipv6Masks: CIDR[] = [];
+    ipv6Masks: string[] = [];
 
     /**
      * Returns true if any of the containing masks contains provided value
@@ -20,10 +19,10 @@ class NetmasksCollection {
      */
     contains(value: string): boolean {
         if (isIp.v4(value)) {
-            return this.ipv4Masks.some((x) => x.contains(value));
+            return this.ipv4Masks.some((x) => contains(x, value));
         }
 
-        return this.ipv6Masks.some((x) => x.contains(value));
+        return this.ipv6Masks.some((x) => contains(x, value));
     }
 }
 
@@ -131,9 +130,9 @@ export class ClientModifier extends BaseValuesModifier {
         values.forEach((x) => {
             const cidrVersion = isCidr(x);
             if (cidrVersion === 4) {
-                result.ipv4Masks.push(new Netmask(x));
+                result.ipv4Masks.push(x);
             } else if (cidrVersion === 6) {
-                result.ipv6Masks.push(createCIDR(x));
+                result.ipv6Masks.push(x);
             }
         });
 

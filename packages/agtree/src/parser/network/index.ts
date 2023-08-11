@@ -1,5 +1,5 @@
 import { AdblockSyntax } from '../../utils/adblockers';
-import { REGEX_MARKER, StringUtils } from '../../utils/string';
+import { StringUtils } from '../../utils/string';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
     EMPTY,
@@ -7,16 +7,17 @@ import {
     NETWORK_RULE_EXCEPTION_MARKER,
     NETWORK_RULE_EXCEPTION_MARKER_LEN,
     NETWORK_RULE_SEPARATOR,
+    REGEX_MARKER,
 } from '../../utils/constants';
 import {
-    ModifierList,
-    NetworkRule,
+    type ModifierList,
+    type NetworkRule,
     RuleCategory,
-    Value,
+    type Value,
     defaultLocation,
 } from '../common';
 import { locRange, shiftLoc } from '../../utils/location';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.

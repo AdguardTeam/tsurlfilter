@@ -114,6 +114,9 @@ import {
     RuleActionHeaders,
     ModifyHeaderInfo,
     DECLARATIVE_RESOURCE_TYPES_MAP,
+    DECLARATIVE_REQUEST_METHOD_MAP,
+    SupportedHttpMethod,
+    RequestMethod,
 } from '../declarative-rule';
 import {
     TooComplexRegexpError,
@@ -128,6 +131,7 @@ import { RedirectModifier } from '../../../modifiers/redirect-modifier';
 import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { CookieModifier } from '../../../modifiers/cookie-modifier';
+import { HTTPMethod } from '../../../modifiers/method-modifier';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -172,6 +176,22 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Converts list of tsurlfilter {@link HTTPMethod|methods} to declarative
+     * supported http {@link RequestMethod|methods} via excluding 'trace' method.
+     *
+     * @param methods List of {@link HTTPMethod|methods}.
+     *
+     * @returns List of {@link RequestMethod|methods}.
+     */
+    private static mapHttpMethodToDeclarativeHttpMethod(methods: HTTPMethod[]): RequestMethod[] {
+        return methods
+            // Filters unsupported `trace` method
+            .filter((m): m is SupportedHttpMethod => m !== HTTPMethod.TRACE)
+            // Map tsurlfilter http method to supported declarative http method
+            .map((m) => DECLARATIVE_REQUEST_METHOD_MAP[m]);
+    }
+
+    /**
      * Checks if the string contains only ASCII characters.
      *
      * @param str String to test.
@@ -208,6 +228,26 @@ export abstract class DeclarativeRuleConverter {
         return strings.map((s) => {
             return DeclarativeRuleConverter.prepareASCII(s);
         });
+    }
+
+    /**
+     * Checks if network rule can be converted to {@link RuleActionType.ALLOW_ALL_REQUESTS}.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Is rule compatible with {@link RuleActionType.ALLOW_ALL_REQUESTS}.
+     */
+    private static isCompatibleWithAllowAllRequests(rule: NetworkRule): boolean {
+        const types = DeclarativeRuleConverter.getResourceTypes(rule.getPermittedRequestTypes());
+
+        const allowedRequestTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
+
+        // If found resource type which is incompatible with allowAllRequest field
+        if (types.some((type) => !allowedRequestTypes.includes(type))) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -375,7 +415,7 @@ export abstract class DeclarativeRuleConverter {
      */
     private getAction(rule: NetworkRule): RuleAction {
         if (rule.isAllowlist()) {
-            if (rule.isFilteringDisabled()) {
+            if (rule.isFilteringDisabled() && DeclarativeRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
                 return { type: RuleActionType.ALLOW_ALL_REQUESTS };
             }
 
@@ -478,10 +518,19 @@ export abstract class DeclarativeRuleConverter {
             condition.excludedInitiatorDomains = this.toASCII(excludedDomains);
         }
 
-        // set excludedRequestDomains
+        const permittedToDomains = rule.getPermittedToDomains();
+        if (permittedToDomains && permittedToDomains.length > 0) {
+            condition.requestDomains = this.toASCII(permittedToDomains);
+        }
+
+        // Can be specified $to or $denyallow, but not together.
         const denyAllowDomains = rule.getDenyAllowDomains();
-        if (denyAllowDomains && denyAllowDomains.length > 0) {
+        const restrictedToDomains = rule.getRestrictedToDomains();
+
+        if (denyAllowDomains && denyAllowDomains.length !== 0) {
             condition.excludedRequestDomains = this.toASCII(denyAllowDomains);
+        } else if (restrictedToDomains && restrictedToDomains.length !== 0) {
+            condition.excludedRequestDomains = this.toASCII(restrictedToDomains);
         }
 
         // set excludedResourceTypes
@@ -497,6 +546,16 @@ export abstract class DeclarativeRuleConverter {
             condition.resourceTypes = this.getResourceTypes(permittedRequestTypes);
         }
 
+        const permittedMethods = rule.getPermittedMethods();
+        if (permittedMethods && permittedMethods.length !== 0) {
+            condition.requestMethods = this.mapHttpMethodToDeclarativeHttpMethod(permittedMethods);
+        }
+
+        const restrictedMethods = rule.getRestrictedMethods();
+        if (restrictedMethods && restrictedMethods.length !== 0) {
+            condition.excludedRequestMethods = this.mapHttpMethodToDeclarativeHttpMethod(restrictedMethods);
+        }
+
         // set isUrlFilterCaseSensitive
         condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
 
@@ -508,14 +567,15 @@ export abstract class DeclarativeRuleConverter {
          * other types, so that it works not only for document requests, but
          * also for all other types of requests.
          */
-        const modifiersForAllContentTypes = [
-            NetworkRuleOption.RemoveHeader,
-            NetworkRuleOption.Csp,
-            NetworkRuleOption.Cookie,
-        ];
+        const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
+            || rule.isOptionEnabled(NetworkRuleOption.Csp)
+            || rule.isOptionEnabled(NetworkRuleOption.Cookie)
+            || rule.isOptionEnabled(NetworkRuleOption.To)
+            || rule.isOptionEnabled(NetworkRuleOption.Method);
+
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
-        if ((modifiersForAllContentTypes.some((modifier) => rule.isOptionEnabled(modifier)))
-            && emptyResourceTypes && !rule.isAllowlist()) {
+
+        if (shouldMatchAllResourcesTypes && emptyResourceTypes) {
             condition.resourceTypes = [
                 ResourceType.MainFrame,
                 ResourceType.SubFrame,
@@ -623,6 +683,7 @@ export abstract class DeclarativeRuleConverter {
      * $removeheader - if it contains a title from a prohibited list
      * (see {@link RemoveHeaderModifier.FORBIDDEN_HEADERS});
      * $jsonprune;
+     * $method - if the modifier contains 'trace' method,
      * $hls.
      *
      * @param rule - Network rule.
@@ -737,6 +798,32 @@ export abstract class DeclarativeRuleConverter {
             return null;
         };
 
+        /**
+         * Checks if the $method values in the provided network rule
+         * are supported for conversion to MV3.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const checkMethodModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            const permittedMethods = r.getPermittedMethods();
+            const restrictedMethods = r.getRestrictedMethods();
+            if (
+                permittedMethods?.some((method) => method === HTTPMethod.TRACE)
+                || restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
+            ) {
+                return new UnsupportedModifierError(
+                    // eslint-disable-next-line max-len
+                    `Network rule with $method modifier containing 'trace' method is not supported: "${r.getText()}"`,
+                    r,
+                );
+            }
+
+            return null;
+        };
+
         const unsupportedOptions = [
             /* Specific exceptions */
             { option: NetworkRuleOption.Elemhide, name: '$elemhide', skipConversion: true },
@@ -749,8 +836,6 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Extension, name: '$extension' },
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
             /* Specific exceptions */
-            { option: NetworkRuleOption.Method, name: '$method' },
-            { option: NetworkRuleOption.To, name: '$to' },
             {
                 option: NetworkRuleOption.Popup,
                 name: '$popup',
@@ -781,6 +866,11 @@ export abstract class DeclarativeRuleConverter {
                 option: NetworkRuleOption.RemoveHeader,
                 name: '$removeheader',
                 customChecks: [checkAllowRulesFn, checkRemoveHeaderModifierFn],
+            },
+            {
+                option: NetworkRuleOption.Method,
+                name: '$method',
+                customChecks: [checkMethodModifierFn],
             },
             { option: NetworkRuleOption.JsonPrune, name: '$jsonprune' },
             { option: NetworkRuleOption.Hls, name: '$hls' },

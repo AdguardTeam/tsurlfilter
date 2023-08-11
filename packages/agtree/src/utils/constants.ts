@@ -130,6 +130,8 @@ export const NUMBER_7 = '7';
 export const NUMBER_8 = '8';
 export const NUMBER_9 = '9';
 
+export const REGEX_MARKER = '/';
+
 export const ADG_SCRIPTLET_MASK = '//scriptlet';
 export const UBO_SCRIPTLET_MASK = 'js';
 

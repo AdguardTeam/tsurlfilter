@@ -1,5 +1,5 @@
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
-import { ModifierList } from '../../../src/parser/common';
+import { type ModifierList } from '../../../src/parser/common';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('ModifierListParser', () => {

@@ -4,26 +4,30 @@ import { DomainListParser } from '../misc/domain-list';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
     ADG_SCRIPTLET_MASK,
+    CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
+    COLON,
     DOLLAR_SIGN,
     EMPTY,
+    OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
+    SPACE,
 } from '../../utils/constants';
 import {
-    AnyCosmeticRule,
-    CosmeticRuleSeparator,
+    type AnyCosmeticRule,
+    type CosmeticRuleSeparator,
     CosmeticRuleType,
-    CssInjectionRule,
-    ElementHidingRule,
-    HtmlFilteringRule,
-    JsInjectionRule,
-    ModifierList,
+    type CssInjectionRule,
+    type ElementHidingRule,
+    type HtmlFilteringRule,
+    type JsInjectionRule,
+    type ModifierList,
     RuleCategory,
-    ScriptletInjectionRule,
-    Value,
+    type ScriptletInjectionRule,
+    type Value,
     defaultLocation,
 } from '../common';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { StringUtils } from '../../utils/string';
 import { locRange, shiftLoc } from '../../utils/location';
 import { ElementHidingBodyParser } from './body/elementhiding';
@@ -31,6 +35,8 @@ import { CssInjectionBodyParser } from './body/css';
 import { ScriptletInjectionBodyParser } from './body/scriptlet';
 import { HtmlFilteringBodyParser } from './body/html';
 import { CommentRuleParser } from '../comment';
+import { extractUboModifiersFromSelectorList, hasUboModifierIndicator } from '../../utils/ubo-modifiers';
+import { CssTreeNodeType } from '../../utils/csstree-constants';
 
 /**
  * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
@@ -168,7 +174,7 @@ export class CosmeticRuleParser {
                         );
                     }
 
-                    return <CssInjectionRule>{
+                    const uboCssInjectionRuleNode: CssInjectionRule = {
                         category: RuleCategory.Cosmetic,
                         type: CosmeticRuleType.CssInjectionRule,
                         loc: locRange(loc, 0, raw.length),
@@ -185,9 +191,32 @@ export class CosmeticRuleParser {
                             raw: rawBody,
                         },
                     };
+
+                    if (hasUboModifierIndicator(rawBody)) {
+                        const extractedUboModifiers = extractUboModifiersFromSelectorList(
+                            uboCssInjectionRuleNode.body.selectorList,
+                        );
+                        if (extractedUboModifiers.modifiers.children.length > 0) {
+                            if (!uboCssInjectionRuleNode.modifiers) {
+                                uboCssInjectionRuleNode.modifiers = {
+                                    type: 'ModifierList',
+                                    children: [],
+                                };
+                            }
+
+                            uboCssInjectionRuleNode.modifiers.children.push(
+                                ...extractedUboModifiers.modifiers.children,
+                            );
+                            uboCssInjectionRuleNode.body.selectorList = extractedUboModifiers.cleaned;
+                            uboCssInjectionRuleNode.syntax = AdblockSyntax.Ubo;
+                        }
+                    }
+
+                    return uboCssInjectionRuleNode;
                 }
 
-                return <ElementHidingRule>{
+                // eslint-disable-next-line no-case-declarations
+                const elementHidingRuleNode: ElementHidingRule = {
                     category: RuleCategory.Cosmetic,
                     type: CosmeticRuleType.ElementHidingRule,
                     loc: locRange(loc, 0, raw.length),
@@ -204,6 +233,26 @@ export class CosmeticRuleParser {
                         raw: rawBody,
                     },
                 };
+
+                if (hasUboModifierIndicator(rawBody)) {
+                    const extractedUboModifiers = extractUboModifiersFromSelectorList(
+                        elementHidingRuleNode.body.selectorList,
+                    );
+                    if (extractedUboModifiers.modifiers.children.length > 0) {
+                        if (!elementHidingRuleNode.modifiers) {
+                            elementHidingRuleNode.modifiers = {
+                                type: 'ModifierList',
+                                children: [],
+                            };
+                        }
+
+                        elementHidingRuleNode.modifiers.children.push(...extractedUboModifiers.modifiers.children);
+                        elementHidingRuleNode.body.selectorList = extractedUboModifiers.cleaned;
+                        elementHidingRuleNode.syntax = AdblockSyntax.Ubo;
+                    }
+                }
+
+                return elementHidingRuleNode;
 
             // ADG CSS injection / ABP snippet injection
             case '#$#':
@@ -358,7 +407,8 @@ export class CosmeticRuleParser {
                     );
                 }
 
-                return <HtmlFilteringRule>{
+                // eslint-disable-next-line no-case-declarations
+                const uboHtmlRuleNode: HtmlFilteringRule = {
                     category: RuleCategory.Cosmetic,
                     type: CosmeticRuleType.HtmlFilteringRule,
                     loc: locRange(loc, 0, raw.length),
@@ -375,6 +425,28 @@ export class CosmeticRuleParser {
                         raw: rawBody,
                     },
                 };
+
+                if (
+                    hasUboModifierIndicator(rawBody)
+                    && uboHtmlRuleNode.body.body.type === CssTreeNodeType.SelectorList
+                ) {
+                    // eslint-disable-next-line max-len
+                    const extractedUboModifiers = extractUboModifiersFromSelectorList(uboHtmlRuleNode.body.body);
+                    if (extractedUboModifiers.modifiers.children.length > 0) {
+                        if (!uboHtmlRuleNode.modifiers) {
+                            uboHtmlRuleNode.modifiers = {
+                                type: 'ModifierList',
+                                children: [],
+                            };
+                        }
+
+                        uboHtmlRuleNode.modifiers.children.push(...extractedUboModifiers.modifiers.children);
+                        uboHtmlRuleNode.body.body = extractedUboModifiers.cleaned;
+                        uboHtmlRuleNode.syntax = AdblockSyntax.Ubo;
+                    }
+                }
+
+                return uboHtmlRuleNode;
 
             // ADG HTML filtering
             case '$$':
@@ -493,6 +565,24 @@ export class CosmeticRuleParser {
 
         // Separator
         result += ast.separator.value;
+
+        // uBO rule modifiers
+        if (ast.syntax === AdblockSyntax.Ubo && ast.modifiers) {
+            ast.modifiers.children.forEach((modifier) => {
+                result += COLON;
+                result += modifier.modifier.value;
+                if (modifier.value) {
+                    result += OPEN_PARENTHESIS;
+                    result += modifier.value.value;
+                    result += CLOSE_PARENTHESIS;
+                }
+            });
+
+            // If there are at least one modifier, add a space
+            if (ast.modifiers.children.length) {
+                result += SPACE;
+            }
+        }
 
         // Body
         result += CosmeticRuleParser.generateBody(ast);

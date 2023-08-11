@@ -1,14 +1,19 @@
 import {
-    CssNode,
-    DeclarationList,
     List,
-    MediaQuery,
-    MediaQueryList,
-    Selector,
-    SelectorList,
-    ValuePlain,
+    find,
     toPlainObject,
+    type CssNode,
+    type DeclarationList,
+    type FunctionNode,
+    type MediaQuery,
+    type MediaQueryList,
+    type PseudoClassSelector,
+    type Selector,
+    type SelectorList,
+    type Value,
+    type ValuePlain,
 } from '@adguard/ecss-tree';
+
 import { CssTree } from '../../src/utils/csstree';
 import { CssTreeNodeType, CssTreeParserContext } from '../../src/utils/csstree-constants';
 
@@ -748,5 +753,70 @@ describe('CSSTree utils', () => {
         expect(parseAndGenerate('padding: 0 1px 2px 3px; margin: 0 1px 2px 3px; background: url(http://example.com)')).toEqual(
             'padding: 0 1px 2px 3px; margin: 0 1px 2px 3px; background: url(http://example.com);',
         );
+    });
+
+    describe('generatePseudoClassValue', () => {
+        test.each([
+            {
+                actual: ':not(.a, .b)',
+                expected: '.a, .b',
+            },
+            {
+                actual: ':nth-child(2n+1)',
+                expected: '2n+1',
+            },
+            {
+                actual: ':matches-path(/path)',
+                expected: '/path',
+            },
+            {
+                actual: ':matches-path(/^\\/path/)',
+                expected: '/^\\/path/',
+            },
+            {
+                actual: ':matches-path(/\\/(sub1|sub2)\\/page\\.html/)',
+                expected: '/\\/(sub1|sub2)\\/page\\.html/',
+            },
+            {
+                actual: ':has(> [class^="a"])',
+                expected: '> [class^="a"]',
+            },
+        ])('should generate \'$expected\' from \'$actual\'', ({ actual, expected }) => {
+            // Parse the actual value as a selector, then find the first pseudo class node
+            const ast = CssTree.parse(actual, CssTreeParserContext.selector) as Selector;
+            const pseudo = find(ast, (node) => node.type === CssTreeNodeType.PseudoClassSelector);
+
+            if (!pseudo) {
+                throw new Error('Pseudo class not found');
+            }
+
+            expect(
+                CssTree.generatePseudoClassValue(pseudo as PseudoClassSelector),
+            ).toEqual(expected);
+        });
+    });
+
+    describe('generateFunctionValue', () => {
+        test.each([
+            {
+                actual: 'func(aaa)',
+                expected: 'aaa',
+            },
+            {
+                actual: 'responseheader(header-name)',
+                expected: 'header-name',
+            },
+        ])('should generate \'$expected\' from \'$actual\'', ({ actual, expected }) => {
+            const ast = CssTree.parse(actual, CssTreeParserContext.value) as Value;
+            const func = find(ast, (node) => node.type === CssTreeNodeType.Function);
+
+            if (!func) {
+                throw new Error('Function node not found');
+            }
+
+            expect(
+                CssTree.generateFunctionValue(func as FunctionNode),
+            ).toEqual(expected);
+        });
     });
 });

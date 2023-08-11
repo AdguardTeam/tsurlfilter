@@ -5,9 +5,9 @@ import {
     EMPTY,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { DomainList, DomainListSeparator, defaultLocation } from '../common';
+import { type DomainList, type DomainListSeparator, defaultLocation } from '../common';
 import { locRange } from '../../utils/location';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.

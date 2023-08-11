@@ -27,8 +27,16 @@ export const config: Configuration = {
                 exclude: /node_modules/,
                 use: [
                     {
-                        loader: "babel-loader",
-                        options: { babelrc: true },
+                        loader: "swc-loader",
+                        options: {
+                            env: {
+                                targets: {
+                                    chrome: 79,
+                                    firefox: 78,
+                                    opera: 66,
+                                },
+                            },
+                        },
                     },
                 ],
             },

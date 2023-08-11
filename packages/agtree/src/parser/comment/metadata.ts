@@ -3,16 +3,16 @@
  */
 
 import { StringUtils } from '../../utils/string';
-import { METADATA_HEADERS } from '../../converter/metadata';
+import { METADATA_HEADERS } from '../../converter/data/metadata';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { COLON, EMPTY, SPACE } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
-    Location,
-    MetadataCommentRule,
+    type Location,
+    type MetadataCommentRule,
     RuleCategory,
-    Value,
+    type Value,
     defaultLocation,
 } from '../common';
 import { locRange } from '../../utils/location';

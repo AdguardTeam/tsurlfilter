@@ -7,15 +7,15 @@ import {
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import {
-    AgentCommentRule,
-    Location,
+    type AgentCommentRule,
+    type Location,
     defaultLocation,
     CommentRuleType,
     RuleCategory,
-    Agent,
+    type Agent,
 } from '../common';
 import { AgentParser } from './agent';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 

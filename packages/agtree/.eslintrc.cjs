@@ -44,6 +44,16 @@ module.exports = {
         'jsdoc/multiline-blocks': ['error', { noSingleLineBlocks: true }],
         'import/prefer-default-export': 'off',
         'import-newlines/enforce': ['error', { items: 3, 'max-len': MAX_LINE_LENGTH }],
+        // Split external and internal imports with an empty line
+        'import/order': [
+            'error',
+            {
+                groups: [
+                    ['builtin', 'external'],
+                ],
+                'newlines-between': 'always',
+            },
+        ],
         'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
         'no-continue': 'off',
         'jsdoc/require-param-type': 'off',
@@ -57,5 +67,18 @@ module.exports = {
         ],
         'arrow-body-style': 'off',
         'no-await-in-loop': 'off',
+        // Force proper import and export of types
+        '@typescript-eslint/consistent-type-imports': [
+            'error',
+            {
+                fixStyle: 'inline-type-imports',
+            },
+        ],
+        '@typescript-eslint/consistent-type-exports': [
+            'error',
+            {
+                fixMixedExportsWithInlineTypeSpecifier: true,
+            },
+        ],
     },
 };

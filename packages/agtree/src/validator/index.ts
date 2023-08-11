@@ -2,14 +2,17 @@
  * @file Validator for modifiers.
  */
 
+import cloneDeep from 'clone-deep';
+
 import {
     type ModifierData,
     type ModifierDataMap,
     type SpecificPlatformModifierData,
     getModifiersData,
 } from '../compatibility-tables';
-import { Modifier } from '../parser/common';
+import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
+import { UNDERSCORE } from '../utils/constants';
 import { INVALID_ERROR_PREFIX } from './constants';
 
 const BLOCKER_PREFIX = {
@@ -210,6 +213,17 @@ const getBlockerDocumentationLink = (
 };
 
 /**
+ * Validates the noop modifier (i.e. only underscores).
+ *
+ * @param value Value of the modifier.
+ *
+ * @returns True if the modifier is valid, false otherwise.
+ */
+const isValidNoopModifier = (value: string): boolean => {
+    return value.split('').every((char) => char === UNDERSCORE);
+};
+
+/**
  * Modifier validator class.
  */
 class ModifierValidator {
@@ -253,13 +267,29 @@ class ModifierValidator {
      * deprecated, assignable, negatable and other requirements are checked.
      *
      * @param syntax Adblock syntax to check the modifier for.
-     * @param modifier Modifier AST node.
+     * @param rawModifier Modifier AST node.
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
      * @returns Result of modifier validation.
      */
-    public validate = (syntax: AdblockSyntax, modifier: Modifier, isException = false): ValidationResult => {
+    public validate = (syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult => {
+        const modifier = cloneDeep(rawModifier);
+
+        // special case: handle noop modifier which may be used as multiple underscores (not just one)
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#noop-modifier
+        if (modifier.modifier.value.startsWith(UNDERSCORE)) {
+            // check whether the modifier value contains something else besides underscores
+            if (!isValidNoopModifier(modifier.modifier.value)) {
+                return getInvalidValidationResult(
+                    `${INVALID_ERROR_PREFIX.INVALID_NOOP}: '${modifier.modifier.value}'`,
+                );
+            }
+            // otherwise, replace the modifier value with single underscore.
+            // it is needed to check whether the modifier is supported by specific adblocker due to the syntax
+            modifier.modifier.value = UNDERSCORE;
+        }
+
         if (!this.exists(modifier)) {
             return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
         }

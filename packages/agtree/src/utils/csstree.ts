@@ -3,25 +3,28 @@
  */
 
 import {
-    parse,
-    walk,
-    AttributeSelector,
-    SyntaxParseError,
-    CssNode,
-    Selector,
-    generate,
-    CssNodePlain,
-    toPlainObject,
-    SelectorList,
-    DeclarationList,
-    MediaQueryList,
-    MediaQuery,
-    PseudoClassSelectorPlain,
     find,
-    SelectorListPlain,
-    DeclarationListPlain,
+    generate,
+    parse,
+    toPlainObject,
+    type AttributeSelector,
+    type CssNode,
+    type CssNodePlain,
+    type DeclarationList,
+    type DeclarationListPlain,
+    type FunctionNode,
+    type MediaQuery,
+    type MediaQueryList,
+    type PseudoClassSelector,
+    type PseudoClassSelectorPlain,
+    type Selector,
+    type SelectorList,
+    type SelectorListPlain,
+    type SyntaxParseError,
+    walk,
 } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
+
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
@@ -38,11 +41,11 @@ import {
     SPACE,
 } from './constants';
 import { CssTreeNodeType, CssTreeParserContext } from './csstree-constants';
-import { AdblockSyntaxError } from '../parser/errors/adblock-syntax-error';
-import { LocationRange, defaultLocation } from '../parser/common';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { type LocationRange, defaultLocation } from '../parser/common';
 import { locRange } from './location';
 import { StringUtils } from './string';
-import { EXT_CSS_LEGACY_ATTRIBUTES, EXT_CSS_PSEUDO_CLASSES, FORBIDDEN_CSS_FUNCTIONS } from '../converter/css';
+import { EXT_CSS_LEGACY_ATTRIBUTES, EXT_CSS_PSEUDO_CLASSES, FORBIDDEN_CSS_FUNCTIONS } from '../converter/data/css';
 
 /**
  * Common CSSTree parsing options.
@@ -808,5 +811,79 @@ export class CssTree {
             matcher,
             flags,
         };
+    }
+
+    /**
+     * Helper function to rename a CSSTree pseudo-class node
+     *
+     * @param node Node to rename
+     * @param name New name
+     */
+    public static renamePseudoClass(node: PseudoClassSelector, name: string): void {
+        Object.assign(node, {
+            ...node,
+            name,
+        });
+    }
+
+    /**
+     * Helper function to generate a raw string from a pseudo-class
+     * selector's children
+     *
+     * @param node Pseudo-class selector node
+     * @returns Generated pseudo-class value
+     * @example
+     * - `:nth-child(2n+1)` -> `2n+1`
+     * - `:matches-path(/foo/bar)` -> `/foo/bar`
+     */
+    public static generatePseudoClassValue(node: PseudoClassSelector): string {
+        let result = EMPTY;
+
+        node.children?.forEach((child) => {
+            switch (child.type) {
+                case CssTreeNodeType.Selector:
+                    result += CssTree.generateSelector(child);
+                    break;
+
+                case CssTreeNodeType.SelectorList:
+                    result += CssTree.generateSelectorList(child);
+                    break;
+
+                case CssTreeNodeType.Raw:
+                    result += child.value;
+                    break;
+
+                default:
+                    // Fallback to CSSTree's default generate function
+                    result += generate(child);
+            }
+        });
+
+        return result;
+    }
+
+    /**
+     * Helper function to generate a raw string from a function selector's children
+     *
+     * @param node Function node
+     * @returns Generated function value
+     * @example `responseheader(name)` -> `name`
+     */
+    public static generateFunctionValue(node: FunctionNode): string {
+        let result = EMPTY;
+
+        node.children?.forEach((child) => {
+            switch (child.type) {
+                case CssTreeNodeType.Raw:
+                    result += child.value;
+                    break;
+
+                default:
+                    // Fallback to CSSTree's default generate function
+                    result += generate(child);
+            }
+        });
+
+        return result;
     }
 }

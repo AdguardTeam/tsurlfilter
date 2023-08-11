@@ -9,16 +9,16 @@ import {
 import { StringUtils } from '../../utils/string';
 import {
     CommentRuleType,
-    Hint,
-    HintCommentRule,
-    Location,
+    type Hint,
+    type HintCommentRule,
+    type Location,
     RuleCategory,
     defaultLocation,
 } from '../common';
 import { HintParser } from './hint';
 import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.

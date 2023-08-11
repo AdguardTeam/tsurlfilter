@@ -1,15 +1,24 @@
 /* eslint-disable max-len */
+import { type SelectorList, fromPlainObject } from '@adguard/ecss-tree';
+import cloneDeep from 'clone-deep';
+
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { CssInjectionBodyParser } from '../../../src/parser/cosmetic/body/css';
 import { ElementHidingBodyParser } from '../../../src/parser/cosmetic/body/elementhiding';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultLocation } from '../../../src/parser/common';
+import {
+    type CssInjectionRule,
+    type ElementHidingRule,
+    type HtmlFilteringRule,
+    defaultLocation,
+} from '../../../src/parser/common';
 import { locRange, shiftLoc } from '../../../src/utils/location';
 import { ScriptletInjectionBodyParser } from '../../../src/parser/cosmetic/body/scriptlet';
 import { HtmlFilteringBodyParser } from '../../../src/parser/cosmetic/body/html';
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { CssTree } from '../../../src/utils/csstree';
 
 describe('CosmeticRuleParser', () => {
     test('isCosmetic', async () => {
@@ -2106,6 +2115,86 @@ describe('CosmeticRuleParser', () => {
         );
     });
 
+    describe('parse uBO rule modifiers', () => {
+        // Element hiding
+        const elementHiding = CosmeticRuleParser.parse(
+            '##:matches-path(/path) [a="b"]',
+        ) as ElementHidingRule;
+
+        expect(elementHiding).toHaveProperty('syntax', AdblockSyntax.Ubo);
+        expect(elementHiding.modifiers).not.toBeUndefined();
+        expect(elementHiding.modifiers?.children).toHaveLength(1);
+        expect(elementHiding.modifiers?.children[0]).toMatchObject({
+            type: 'Modifier',
+            modifier: {
+                type: 'Value',
+                value: 'matches-path',
+            },
+            value: {
+                type: 'Value',
+                value: '/path',
+            },
+        });
+
+        expect(
+            CssTree.generateSelectorList(
+                fromPlainObject(cloneDeep(elementHiding.body.selectorList)) as SelectorList,
+            ),
+        ).toEqual('[a="b"]');
+
+        // CSS injection
+        const cssInjection = CosmeticRuleParser.parse(
+            '##:matches-path(/path) .foo:style(padding: 1;)',
+        ) as CssInjectionRule;
+
+        expect(cssInjection).toHaveProperty('syntax', AdblockSyntax.Ubo);
+        expect(cssInjection.modifiers).not.toBeUndefined();
+        expect(cssInjection.modifiers?.children).toHaveLength(1);
+        expect(cssInjection.modifiers?.children[0]).toMatchObject({
+            type: 'Modifier',
+            modifier: {
+                type: 'Value',
+                value: 'matches-path',
+            },
+            value: {
+                type: 'Value',
+                value: '/path',
+            },
+        });
+
+        expect(
+            CssTree.generateSelectorList(
+                fromPlainObject(cloneDeep(cssInjection.body.selectorList)) as SelectorList,
+            ),
+        ).toEqual('.foo');
+
+        // HTML filtering
+        const htmlFiltering = CosmeticRuleParser.parse(
+            '##^:matches-path(/path) script:has-text(ads)',
+        ) as HtmlFilteringRule;
+
+        expect(htmlFiltering).toHaveProperty('syntax', AdblockSyntax.Ubo);
+        expect(htmlFiltering.modifiers).not.toBeUndefined();
+        expect(htmlFiltering.modifiers?.children).toHaveLength(1);
+        expect(htmlFiltering.modifiers?.children[0]).toMatchObject({
+            type: 'Modifier',
+            modifier: {
+                type: 'Value',
+                value: 'matches-path',
+            },
+            value: {
+                type: 'Value',
+                value: '/path',
+            },
+        });
+
+        expect(
+            CssTree.generateSelectorList(
+                fromPlainObject(cloneDeep(htmlFiltering.body.body)) as SelectorList,
+            ),
+        ).toEqual('script:has-text(ads)');
+    });
+
     describe('generatePattern', () => {
         test.each([
             // no pattern at all
@@ -2391,5 +2480,40 @@ describe('CosmeticRuleParser', () => {
         expect(parseAndGenerate('[$app=com.something,anything=123]example.com,~example.net#%#const a = 2;')).toEqual(
             '[$app=com.something,anything=123]example.com,~example.net#%#const a = 2;',
         );
+    });
+
+    describe('generate uBO rule modifiers', () => {
+        test.each([
+            // Element hiding
+            {
+                actual: '##:matches-path(/path) .foo',
+                expected: '##:matches-path(/path) .foo',
+            },
+            // uBO options always generated before the selector list
+            {
+                actual: '##.foo:matches-path(/path)',
+                expected: '##:matches-path(/path) .foo',
+            },
+
+            // CSS injection
+            {
+                actual: '##:matches-path(/path) body:style(padding: 1;)',
+                expected: '##:matches-path(/path) body:style(padding: 1;)',
+            },
+
+            // HTML filtering
+            {
+                actual: '##^:matches-path(/path) script:has-text(ads)',
+                expected: '##^:matches-path(/path) script:has-text(ads)',
+            },
+        ])('should generate \'$expected\' from \'$actual\'', ({ actual, expected }) => {
+            const ast = CosmeticRuleParser.parse(actual);
+
+            if (ast) {
+                expect(CosmeticRuleParser.generate(ast)).toEqual(expected);
+            } else {
+                throw new Error(`Failed to parse '${actual}'`);
+            }
+        });
     });
 });

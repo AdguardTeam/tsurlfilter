@@ -141,9 +141,6 @@ const backgroundMv3Config = {
         'deepmerge',
         'tldts',
         'webextension-polyfill',
-        'util',
-        'assert',
-        'stream',
     ],
     plugins: [
         ...commonPlugins,

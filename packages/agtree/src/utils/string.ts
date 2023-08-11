@@ -13,6 +13,7 @@ import {
     LF,
     NUMBER_0,
     NUMBER_9,
+    REGEX_MARKER,
     SMALL_LETTER_A,
     SMALL_LETTER_Z,
     SPACE,
@@ -21,7 +22,6 @@ import {
 
 export const SINGLE_QUOTE_MARKER = "'";
 export const DOUBLE_QUOTE_MARKER = '"';
-export const REGEX_MARKER = '/';
 
 export type NewLineType = 'lf' | 'crlf' | 'cr';
 export type NewLineSplit = [string, NewLineType | null][];
@@ -437,22 +437,6 @@ export class StringUtils {
     }
 
     /**
-     * Checks whether a string is a RegExp pattern.
-     *
-     * @param pattern - Pattern to check
-     * @returns `true` if the string is a RegExp pattern, `false` otherwise
-     */
-    public static isRegexPattern(pattern: string): boolean {
-        const trimmedPattern = pattern.trim();
-        const lastIndex = trimmedPattern.length - 1;
-        if (trimmedPattern.length > 2 && trimmedPattern[0] === REGEX_MARKER) {
-            const last = StringUtils.findNextUnescapedCharacter(trimmedPattern, REGEX_MARKER, 1);
-            return last === lastIndex;
-        }
-        return false;
-    }
-
-    /**
      * Escapes a specified character in the string.
      *
      * @param pattern - Input string
@@ -627,5 +611,26 @@ export class StringUtils {
      */
     public static isString(value: unknown): value is string {
         return typeof value === 'string';
+    }
+
+    /**
+     * Escapes the given characters in the input string.
+     *
+     * @param input Input string
+     * @param characters Characters to escape (by default, no characters are escaped)
+     * @returns Escaped string
+     */
+    public static escapeCharacters(input: string, characters: Set<string> = new Set()): string {
+        let result = EMPTY;
+
+        for (let i = 0; i < input.length; i += 1) {
+            if (characters.has(input[i])) {
+                result += ESCAPE_CHARACTER;
+            }
+
+            result += input[i];
+        }
+
+        return result;
     }
 }

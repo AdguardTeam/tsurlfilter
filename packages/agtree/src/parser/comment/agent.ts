@@ -1,5 +1,6 @@
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
+
 import { locRange } from '../../utils/location';
 import { EMPTY, SPACE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
@@ -9,7 +10,7 @@ import {
     type Value,
     defaultLocation,
 } from '../common';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 
 const ADG_NAME_MARKERS = new Set([

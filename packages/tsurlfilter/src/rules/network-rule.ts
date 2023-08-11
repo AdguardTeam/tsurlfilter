@@ -476,10 +476,10 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Get list of permitted $to values.
+     * Get list of permitted $to domains.
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier
      */
-    getPermittedToValues(): string[] | null {
+    getPermittedToDomains(): string[] | null {
         if (this.toModifier) {
             return this.toModifier.permittedValues;
         }
@@ -487,10 +487,10 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Get list of restricted $to values.
+     * Get list of restricted $to domains.
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier
      */
-    getRestrictedToValues(): string[] | null {
+    getRestrictedToDomains(): string[] | null {
         if (this.toModifier) {
             return this.toModifier.restrictedValues;
         }
@@ -759,8 +759,8 @@ export class NetworkRule implements rule.IRule {
          * permitted and not be included in list of restricted domains
          * for the rule to apply
          */
-        const permittedDomains = this.getPermittedToValues();
-        const restrictedDomains = this.getRestrictedToValues();
+        const permittedDomains = this.getPermittedToDomains();
+        const restrictedDomains = this.getRestrictedToDomains();
         const isPermittedDomain = !!permittedDomains
             && DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
         const isRestrictedDomain = !!restrictedDomains
@@ -1719,6 +1719,10 @@ export class NetworkRule implements rule.IRule {
             this.validateRemoveHeaderRule();
         } else if (this.advancedModifier instanceof PermissionsModifier) {
             this.validatePermissionsRule();
+        } else if (this.toModifier !== null) {
+            this.validateToRule();
+        } else if (this.denyAllowDomains !== null) {
+            this.validateDenyallowRule();
         }
     }
 
@@ -1755,6 +1759,26 @@ export class NetworkRule implements rule.IRule {
         if ((this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
             !== NetworkRuleOption.RemoveHeaderCompatibleOptions) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
+        }
+    }
+
+    /**
+     * $to rules are not compatible $denyallow - these rules considered invalid
+     * and will be discarded.
+     */
+    private validateToRule(): void {
+        if (this.denyAllowDomains) {
+            throw new SyntaxError('modifier $to is not compatible with $denyallow modifier');
+        }
+    }
+
+    /**
+     * $denyallow rules are not compatible $to - these rules considered invalid
+     * and will be discarded.
+     */
+    private validateDenyallowRule(): void {
+        if (this.toModifier) {
+            throw new SyntaxError('modifier $to is not compatible with $denyallow modifier');
         }
     }
 

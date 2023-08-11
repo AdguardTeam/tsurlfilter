@@ -1,8 +1,8 @@
 import { EMPTY, MODIFIER_ASSIGN_OPERATOR, MODIFIER_EXCEPTION_MARKER } from '../../utils/constants';
 import { locRange } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { Modifier, Value, defaultLocation } from '../common';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type Modifier, type Value, defaultLocation } from '../common';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.

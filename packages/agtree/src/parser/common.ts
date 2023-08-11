@@ -1,11 +1,12 @@
 import {
-    DeclarationListPlain,
-    FunctionNodePlain,
-    MediaQueryListPlain,
-    SelectorListPlain,
+    type DeclarationListPlain,
+    type FunctionNodePlain,
+    type MediaQueryListPlain,
+    type SelectorListPlain,
 } from '@adguard/ecss-tree';
-import { AdblockSyntax } from '../utils/adblockers';
-import { CLASSIC_DOMAIN_SEPARATOR, MODIFIER_DOMAIN_SEPARATOR } from '../utils/constants';
+
+import { type AdblockSyntax } from '../utils/adblockers';
+import { type CLASSIC_DOMAIN_SEPARATOR, type MODIFIER_DOMAIN_SEPARATOR } from '../utils/constants';
 
 /**
  * Represents possible logical expression operators.

@@ -3,26 +3,27 @@
  */
 
 import {
-    CssNode,
-    DeclarationList,
-    DeclarationListPlain,
-    DeclarationPlain,
+    type CssNode,
+    type DeclarationList,
+    type DeclarationListPlain,
+    type DeclarationPlain,
     List,
-    MediaQueryList,
-    MediaQueryListPlain,
-    Rule,
-    Selector,
-    SelectorList,
-    SelectorListPlain,
+    type MediaQueryList,
+    type MediaQueryListPlain,
+    type Rule,
+    type Selector,
+    type SelectorList,
+    type SelectorListPlain,
     fromPlainObject,
     toPlainObject,
     walk,
 } from '@adguard/ecss-tree';
+
 import { AdblockSyntax } from '../../../utils/adblockers';
 import { CssTree } from '../../../utils/csstree';
 import { CssTreeNodeType, CssTreeParserContext } from '../../../utils/csstree-constants';
-import { CssInjectionRuleBody, defaultLocation } from '../../common';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type CssInjectionRuleBody, defaultLocation } from '../../common';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { locRange, shiftLoc } from '../../../utils/location';
 import {
     AT_SIGN,

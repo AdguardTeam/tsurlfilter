@@ -1,7 +1,10 @@
 /**
  * @file Customized syntax error class for Adblock Filter Parser.
  */
-import { LocationRange } from '../common';
+
+import { type LocationRange } from '../parser/common';
+
+const ERROR_NAME = 'AdblockSyntaxError';
 
 /**
  * Customized syntax error class for Adblock Filter Parser,
@@ -22,7 +25,7 @@ export class AdblockSyntaxError extends SyntaxError {
     constructor(message: string, loc: LocationRange) {
         super(message);
 
-        this.name = 'AdblockSyntaxError';
+        this.name = ERROR_NAME;
         this.loc = loc;
     }
 }

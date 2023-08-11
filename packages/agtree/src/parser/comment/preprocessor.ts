@@ -22,17 +22,15 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
+import type {
     AnyExpressionNode,
-    CommentRuleType,
     Location,
     PreProcessorCommentRule,
-    RuleCategory,
     Value,
-    defaultLocation,
 } from '../common';
+import { CommentRuleType, RuleCategory, defaultLocation } from '../common';
 import { LogicalExpressionParser } from '../misc/logical-expression';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 
 /**

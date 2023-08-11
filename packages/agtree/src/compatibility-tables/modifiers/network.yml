@@ -6,5 +6,6 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#network-modifier
   conflicts:
     - app
+    - important
   inverse_conflicts: true
   negatable: false

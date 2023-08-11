@@ -1,5 +1,5 @@
 # AdGuard API
-**Version: 1.2.0**
+**Version: 1.3.0**
 
 AdGuard API is filtering library, provided following features:
 
@@ -33,13 +33,13 @@ AdGuard API is filtering library, provided following features:
 The library code can be loaded either via `script` tag or as an `npm` module.
 ### Installation via `script` tag
 
-1. Copy `adguard-api.js` and `adguard-content.js` scripts from `dist` to the directory near `manifest.json`
+1. Copy `adguard-api.js`, `adguard-content.js`  and `adguard-assistant.js` scripts from `dist` to the directory near `manifest.json`
 
 2. Create `adguard` directory near `manifest.json`
 
 3. Place [web accessible resources](#required-web-accessible-resources) into `adguard` directory
 
-4. Add AdGuard's content script to the manifest:
+4. Add AdGuard's content scripts to the manifest:
 ```
     {
       "all_frames": true,
@@ -73,20 +73,26 @@ or
 yarn add @adguard/api
 ```
 
-1. Import `AdguardApi` class to background script
+2. Import `AdguardApi` class to background script
 ```
 import { AdguardApi } from "@adguard/api";
 ```
 
-1. Import `adguard-contents` in top of you content script entry
+3. Import `adguard-contents` in top of you content script entry
 
 ```
 import '@adguard/api/content-script';
 ```
 
-4. Add [web accessible resources](#required-web-accessible-resources) downloading in you build pipeline or load it manually
+4. Import `adguard-assistant` in top of you assistant script entry
 
-5. Setup manifest content-script with imported `adguard-contents` as follow
+```
+import '@adguard/api/assistant';
+```
+
+5. Add [web accessible resources](#required-web-accessible-resources) downloading in you build pipeline or load it manually
+
+6. Setup manifest content-script with imported `adguard-contents` as follow
 
 ```
     {

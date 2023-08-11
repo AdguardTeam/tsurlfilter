@@ -157,7 +157,7 @@ page$domain=targetdomain.com|~example.org
 */BannerAd.gif$match-case
 
 ! ## $method
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -193,7 +193,7 @@ page$domain=targetdomain.com|~example.org
 ||domain.com$~third-party
 
 ! ## $to
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -407,13 +407,7 @@ page$domain=targetdomain.com|~example.org
 /some$domain=example.com|~example.org,badfilter
 
 ! ## $cookie
-! <b>Status</b>: partially supported
-! <br/>
-! <b>MV3 limitations:</b>
-! <br/>
-! Supported conversion to DNR (Declarative Net Request) rules with the `$cookie` modifier only when used without parameters. For instance, you can use it like `||example.com$cookie`. Rules that include parameters are applied through the browser.cookies API and content script but not via DNR.
-! <br/>
-! Allowlist rules are not supported
+! <b>Status</b>: implemented in `release/v2.2` branch
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

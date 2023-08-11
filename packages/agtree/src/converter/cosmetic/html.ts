@@ -1,16 +1,22 @@
 /**
- * @file HTML rule converter
+ * @file HTML filtering rule converter
  */
 
-import { SelectorPlain } from '@adguard/ecss-tree';
+import { type SelectorPlain } from '@adguard/ecss-tree';
 import cloneDeep from 'clone-deep';
-import { CosmeticRuleType, HtmlFilteringRule, RuleCategory } from '../parser/common';
-import { RuleParser } from '../parser/rule';
-import { StringUtils } from '../utils/string';
-import { AdblockSyntax } from '../utils/adblockers';
-import { CssTree } from '../utils/csstree';
-import { CssTreeNodeType } from '../utils/csstree-constants';
-import { RuleConverter } from './base';
+
+import {
+    CosmeticRuleSeparator,
+    CosmeticRuleType,
+    type HtmlFilteringRule,
+    RuleCategory,
+} from '../../parser/common';
+import { AdblockSyntax } from '../../utils/adblockers';
+import { CssTree } from '../../utils/csstree';
+import { CssTreeNodeType } from '../../utils/csstree-constants';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+import { RegExpUtils } from '../../utils/regexp';
 
 /**
  * From the AdGuard docs:
@@ -35,10 +41,11 @@ const TAG_CONTENT = 'tag-content';
 const WILDCARD = 'wildcard';
 
 /**
- * HTML rule converter
+ * HTML filtering rule converter class
+ *
+ * @todo Implement `convertToUbo` (ABP currently doesn't support HTML filtering rules)
  */
-// TODO: Implement convertToUbo
-export class HtmlRuleConverter extends RuleConverter {
+export class HtmlRuleConverter extends RuleConverterBase {
     /**
      * Converts a HTML rule to AdGuard syntax, if possible. Also can be used to convert
      * AdGuard rules to AdGuard syntax to validate them.
@@ -54,41 +61,27 @@ export class HtmlRuleConverter extends RuleConverter {
      * example.com$$script[tag-content="value"][max-length="262144"]
      * ```
      *
-     * @param rule Rule to convert, can be a string or an AST
-     * @returns Array of converted rules ASTs
-     * @throws If the rule is invalid or incompatible
+     * @param rule Rule node to convert
+     * @returns Array of converted rule nodes
+     * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToAdg(rule: string | HtmlFilteringRule): HtmlFilteringRule[] {
-        // Prepare the base rule AST
-        let base: HtmlFilteringRule;
-
-        if (StringUtils.isString(rule)) {
-            // This will throw an error if the rule is invalid
-            const ast = RuleParser.parse(rule);
-
-            // Rule should be a cosmetic HTML filtering rule
-            if (ast.category !== RuleCategory.Cosmetic || ast.type !== CosmeticRuleType.HtmlFilteringRule) {
-                throw new Error('Invalid or incompatible rule');
-            }
-
-            base = ast;
-        } else {
-            base = rule;
-        }
+    public static convertToAdg(rule: HtmlFilteringRule): HtmlFilteringRule[] {
+        // Clone the provided AST node to avoid side effects
+        const ruleNode = cloneDeep(rule);
 
         // Prepare the conversion result
         const conversionResult: HtmlFilteringRule[] = [];
 
         // Iterate over selector list
-        for (const selector of base.body.body.children) {
+        for (const selector of ruleNode.body.body.children) {
             // Check selector, just in case
             if (selector.type !== CssTreeNodeType.Selector) {
-                throw new Error(`Expected selector, got '${selector.type}'`);
+                throw new RuleConversionError(`Expected selector, got '${selector.type}'`);
             }
 
             // At least one child is required, and first child may be a tag selector
             if (selector.children.length === 0) {
-                throw new Error('Invalid selector, no children are present');
+                throw new RuleConversionError('Invalid selector, no children are present');
             }
 
             // Prepare bounds
@@ -109,7 +102,7 @@ export class HtmlRuleConverter extends RuleConverter {
                     case CssTreeNodeType.TypeSelector:
                         // First child in the selector may be a tag selector
                         if (i !== 0) {
-                            throw new Error('Tag selector should be the first child, if present');
+                            throw new RuleConversionError('Tag selector should be the first child, if present');
                         }
 
                         // Simply store the tag selector
@@ -150,7 +143,9 @@ export class HtmlRuleConverter extends RuleConverter {
                             && arg.type !== CssTreeNodeType.Raw
                             && arg.type !== CssTreeNodeType.Number
                         ) {
-                            throw new Error(`Unsupported argument type '${arg.type}' for pseudo class '${node.name}'`);
+                            throw new RuleConversionError(
+                                `Unsupported argument type '${arg.type}' for pseudo class '${node.name}'`,
+                            );
                         }
 
                         // Process the pseudo class based on its name
@@ -158,10 +153,10 @@ export class HtmlRuleConverter extends RuleConverter {
                             case HAS_TEXT:
                             case CONTAINS:
                                 // Check if the argument is a RegExp
-                                if (StringUtils.isRegexPattern(arg.value)) {
+                                if (RegExpUtils.isRegexPattern(arg.value)) {
                                     // TODO: Add some support for RegExp patterns later
                                     // Need to find a way to convert some RegExp patterns to glob patterns
-                                    throw new Error('Conversion of RegExp patterns is not yet supported');
+                                    throw new RuleConversionError('Conversion of RegExp patterns is not yet supported');
                                 }
 
                                 convertedSelector.children.push(
@@ -179,13 +174,13 @@ export class HtmlRuleConverter extends RuleConverter {
                                 break;
 
                             default:
-                                throw new Error(`Unsupported pseudo class '${node.name}'`);
+                                throw new RuleConversionError(`Unsupported pseudo class '${node.name}'`);
                         }
 
                         break;
 
                     default:
-                        throw new Error(`Unsupported node type '${node.type}'`);
+                        throw new RuleConversionError(`Unsupported node type '${node.type}'`);
                 }
             }
 
@@ -218,7 +213,9 @@ export class HtmlRuleConverter extends RuleConverter {
                 // Convert the separator based on the exception status
                 separator: {
                     type: 'Value',
-                    value: base.exception ? '$@$' : '$$',
+                    value: ruleNode.exception
+                        ? CosmeticRuleSeparator.AdgHtmlFilteringException
+                        : CosmeticRuleSeparator.AdgHtmlFiltering,
                 },
 
                 // Create the body based on the converted selector
@@ -232,8 +229,8 @@ export class HtmlRuleConverter extends RuleConverter {
                         }],
                     },
                 },
-                exception: base.exception,
-                domains: base.domains,
+                exception: ruleNode.exception,
+                domains: ruleNode.domains,
             });
         }
 
