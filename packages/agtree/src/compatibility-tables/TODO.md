@@ -4,8 +4,8 @@
     - [ ] Import scriptlets/redirects from AdGuard Scriptlets library? GitHub Action for importing?
     - [ ] GitHub Action workflow that checks YML files for errors.
 - [ ] Finalize table structure, if needed. It depends on edge cases and how we'll use the tables in the API.
-- [ ] Table optimization, if needed. We need a maintainable, convenient data structure for the tables,
-  so maybe we'll need to optimize it before using it in the API.
+- [ ] Table optimization, if needed. We need a maintainable, convenient data structure for the tables, so maybe we'll
+      need to optimize it before using it in the API.
 - [ ] Create API endpoints for the tables.
 - [ ] Wiki generation (`.md` files from the tables / gh-pages).
 

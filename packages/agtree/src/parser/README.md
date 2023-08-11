@@ -32,27 +32,24 @@ import { RuleParser, FilterListParser } from '@adguard/agtree';
 
 The idea is quite simple, we provide two *main* parser classes:
 
-- `RuleParser`: parses a single adblock filtering rule, you can pass any rule to
-  it, it will automatically determine the rule type
-- `FilterListParser`: parses a complete adblock filter list, you can pass any
-  filter list to it. Technically, it is just a wrapper around `RuleParser`
+- `RuleParser`: parses a single adblock filtering rule, you can pass any rule to it, it will automatically determine the
+  rule type
+- `FilterListParser`: parses a complete adblock filter list, you can pass any filter list to it. Technically, it is just
+  a wrapper around `RuleParser`
 
 Each parser class has the following methods:
 
-- `parse`: parses a raw data (string) and returns an AST (Abstract Syntax Tree)
-  node (string &#8594; AST)
+- `parse`: parses a raw data (string) and returns an AST (Abstract Syntax Tree) node (string &#8594; AST)
 - `generate`: serializes an AST node back to a string (AST &#8594; string)
 
-We also provide some "sub-parser" classes, which are used by the main parser
-classes:
+We also provide some "sub-parser" classes, which are used by the main parser classes:
 
 - `ModifierListParser`: handles modifier lists
 - `DomainListParser`: handles domain lists
 - etc.
 
-Currently, these helper classes are not documented here, but you can find them
-in the source code. We only recommend them **only for advanced use cases and
-please keep in mind that they may change in the future**.
+Currently, these helper classes are not documented here, but you can find them in the source code. We only recommend
+them **only for advanced use cases and please keep in mind that they may change in the future**.
 
 ## Examples
 
@@ -97,8 +94,8 @@ After running this script, basically you will get the following AST:
 }
 ```
 
-This is a simplified version of the AST, it does not contain locations and raw
-data. You can check the full AST by opening the spoiler below:
+This is a simplified version of the AST, it does not contain locations and raw data. You can check the full AST by
+opening the spoiler below:
 
 <details>
 <summary>Show full AST (with locations)</summary>
@@ -194,10 +191,9 @@ data. You can check the full AST by opening the spoiler below:
 
 </details>
 
-As you can see, this AST is very detailed and contains all the information about
-the rule: syntax, category, exception, modifiers, node locations, and so on.
-Locations are especially useful for linters, since they allow you to point to
-the exact place in the rule where the error occurred.
+As you can see, this AST is very detailed and contains all the information about the rule: syntax, category, exception,
+modifiers, node locations, and so on. Locations are especially useful for linters, since they allow you to point to the
+exact place in the rule where the error occurred.
 
 ### Generating adblock rules from AST
 
@@ -213,18 +209,15 @@ This will generate the adblock rule back from the AST:
 /ads.js^$script
 ```
 
-Please keep in mind that the parser omits unnecessary whitespaces, so the
-generated rule may not match with the original rule character by character.
-Only the formatting can change, the rule itself remains the same. You can
-pass any rule to the parser, it automatically determines the type and category
-of the rule. If the rule is syntactically incorrect, the parser will throw an
-error.
+Please keep in mind that the parser omits unnecessary whitespaces, so the generated rule may not match with the original
+rule character by character. Only the formatting can change, the rule itself remains the same. You can pass any rule to
+the parser, it automatically determines the type and category of the rule. If the rule is syntactically incorrect, the
+parser will throw an error.
 
 ### Parsing and generating complete filter lists
 
-You can also parse complete filter lists using the `FilterListParser` class.
-It works the same way as the `RuleParser` class. Here is an example of parsing
-[EasyList](https://easylist.to/easylist/easylist.txt) and generating it back:
+You can also parse complete filter lists using the `FilterListParser` class. It works the same way as the `RuleParser`
+class. Here is an example of parsing [EasyList](https://easylist.to/easylist/easylist.txt) and generating it back:
 
 ```typescript
 import { FilterListParser } from "@adguard/agtree";

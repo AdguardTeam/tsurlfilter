@@ -1,14 +1,12 @@
 # Adblock rule converter
 
-This directory contains adblock rule converter that can be used to convert
-rules from one adblocker format to another. It is used by AdGuard to convert
-rules to AdGuard format, but in the future we plan to extend it to support other
+This directory contains adblock rule converter that can be used to convert rules from one adblocker format to another.
+It is used by AdGuard to convert rules to AdGuard format, but in the future we plan to extend it to support other
 formats.
 
 >
-> :warning: **This converter is still in development, currently it only supports
-> converting Adblock Plus and uBlock Origin rules to AdGuard format.**
-> Later we will plan to add support for other formats.
+> :warning: **This converter is still in development, currently it only supports converting Adblock Plus and uBlock
+> Origin rules to AdGuard format.** Later we will plan to add support for other formats.
 >
 
 Table of contents:
@@ -33,8 +31,7 @@ import { RuleConverter, FilterListConverter } from '@adguard/agtree';
 The idea is quite simple, we provide two converter classes:
 
 - `RuleConverter`: converts a single adblock filtering rule
-- `FilterListConverter`: converts a complete adblock filter list (this is just a
-  wrapper around `RuleConverter`)
+- `FilterListConverter`: converts a complete adblock filter list (this is just a wrapper around `RuleConverter`)
 
 Converter classes have the following methods:
 
@@ -42,11 +39,9 @@ Converter classes have the following methods:
 - `convertToAbp`: converts to Adblock Plus format *(not implemented yet)*
 - `convertToUbo`: converts to uBlock Origin format *(not implemented yet)*
 
-Each converter method expects an AST (Abstract Syntax Tree) node as an input
-and returns the converted AST node(s) as an output. **This means that you should
-parse the rule/filter list first**, then pass the AST node to the converter,
-which will also return AST node(s). If necessary, you can serialize the
-converted AST node(s) back to a string afterwards.
+Each converter method expects an AST (Abstract Syntax Tree) node as an input and returns the converted AST node(s) as an
+output. **This means that you should parse the rule/filter list first**, then pass the AST node to the converter, which
+will also return AST node(s). If necessary, you can serialize the converted AST node(s) back to a string afterwards.
 
 ### Rule converter signature
 
@@ -56,9 +51,8 @@ Rule converter has the following signature:
 RuleConverter.convertToAdg(rule: AnyRule): AnyRule[];
 ```
 
-The reason why the converter returns an array of nodes is that sometimes a
-single rule can be converted to multiple rules in another adblocker format. For
-example, the following Adblock Plus rule:
+The reason why the converter returns an array of nodes is that sometimes a single rule can be converted to multiple
+rules in another adblocker format. For example, the following Adblock Plus rule:
 
 ```adblock
 example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 arg10 arg11
@@ -71,8 +65,8 @@ example.com#%#//scriptlet('abp-snippet0', 'arg00', 'arg01')
 example.com#%#//scriptlet('abp-snippet1', 'arg10', 'arg11')
 ```
 
-So the general concept is that the rule converter always returns an array of
-nodes, even if the array contains only one node.
+So the general concept is that the rule converter always returns an array of nodes, even if the array contains only one
+node.
 
 ### Filter list converter signature
 
@@ -82,9 +76,8 @@ Filter list converter has the following signature:
 FilterListConverter.convertToAdg(filterList: FilterList): FilterList;
 ```
 
-Filter list converter returns a single filter list node, not an array of nodes,
-because it doesn't make sense to convert a filter list to multiple filter lists,
-simply the converted filter list may contains a few more rules than the original
+Filter list converter returns a single filter list node, not an array of nodes, because it doesn't make sense to convert
+a filter list to multiple filter lists, simply the converted filter list may contains a few more rules than the original
 one.
 
 ## Examples
@@ -152,9 +145,8 @@ console.log(FilterListParser.generate(convertedFilterList));
 
 Please note that the converter has some limitations:
 
-- **Rule converter is not a full-fledged validator**, it only checks necessary
-  conditions for conversion. It simply tries to everything possible to
-  convert, but maybe the conversion result will be invalid. You should use a
-  separate validator to check whether the rule is valid or not.
-- Rule converter doesn't support all possible cases, for example currently it
-  cannot convert multiple rules to a single rule.
+- **Rule converter is not a full-fledged validator**, it only checks necessary conditions for conversion. It simply
+  tries to everything possible to convert, but maybe the conversion result will be invalid. You should use a separate
+  validator to check whether the rule is valid or not.
+- Rule converter doesn't support all possible cases, for example currently it cannot convert multiple rules to a single
+  rule.

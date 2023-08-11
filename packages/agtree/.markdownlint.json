@@ -9,5 +9,6 @@
     "no-duplicate-header": { "siblings_only": true },
     "no-blanks-blockquote": false,
     "no-bare-urls": false,
-    "ul-style": { "style": "dash" }
+    "ul-style": { "style": "dash" },
+    "emphasis-style": { "style": "asterisk" }
 }

@@ -1,13 +1,13 @@
 # Modifiers compatibility tables
 
-Each file represents a specific modifier. The file name is the name of the modifier.
-For example, `third-party` is represented by the file `third-party.yml`.
+Each file represents a specific modifier. The file name is the name of the modifier. For example, `third-party` is
+represented by the file `third-party.yml`.
 
 ## File structure
 
-Each file contains an object,
-where the key is the [actual adblocker ID](../README.md#supported-adblockers-and-platforms)
-and the value is the object with the following fields:
+Each file contains an object, where the key is the
+[actual adblocker ID](../README.md#supported-adblockers-and-platforms) and the value is the object with the following
+fields:
 
 <!-- markdownlint-disable MD013 -->
 | Field | Description | Type | Default value [**] |
@@ -18,9 +18,9 @@ and the value is the object with the following fields:
 | `docs` | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available. | `string\|null` | `null` |
 | `version_added` | The version of the adblocker when the modifier was added. | `string\|null` | `null` |
 | `version_removed` | The version of the adblocker when the modifier was removed. | `string\|null` | `null` |
-| `deprecated` | Describes whether the modifier is deprecated; for _soon-to-be removed_ features. | `boolean` | `false` |
+| `deprecated` | Describes whether the modifier is deprecated; for *soon-to-be removed* features. | `boolean` | `false` |
 | `deprecation_message` | Message that describes why the modifier is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
-| `removed` | Describes whether the modifier is removed; for _already removed_ features. | `boolean` | `false` |
+| `removed` | Describes whether the modifier is removed; for *already removed* features. | `boolean` | `false` |
 | `removal_message` | Message that describes why the modifier is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
 | `conflicts` | List of modifiers that are incompatible with the actual one. | `string[]\|null` | `null` (no conflicts) |
 | `inverse_conflicts` | The actual modifier is incompatible with all other modifiers, except the ones listed in `conflicts`. | `boolean` | `false` |
