@@ -88,7 +88,8 @@ into `$elemhide,content,urlblock,jsinject` of which:
 - `$jsinject` - not implemented yet,
 - `$urlblock` - not implemented yet.
 
-So we still convert rules with `$document`, but not 100% correctly.
+So we still convert rules with `$document`, but only part with `$elemhide`
+will be applied.
 
 <a name="mv3_specific_limitations__$removeparam__$removeheader__$csp"></a>
 ## $removeparam, $removeheader, $csp

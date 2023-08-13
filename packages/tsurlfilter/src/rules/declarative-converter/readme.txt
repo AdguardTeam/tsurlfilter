@@ -23,7 +23,8 @@
 ! - `$jsinject` - not implemented yet,
 ! - `$urlblock` - not implemented yet.
 !
-! So we still convert rules with `$document`, but not 100% correctly.
+! So we still convert rules with `$document`, but only part with `$elemhide`
+! will be applied.
 !
 ! ## $removeparam, $removeheader, $csp
 ! Rules with `$removeparam` or `$removeheader` or `$csp` which contains the same

@@ -39,6 +39,7 @@ const prepareBlockerData = (blockerId: string, rawModifierData: ModifierData): S
             : rawData[SpecificKey.Negatable],
         [SpecificKey.BlockOnly]: rawData[SpecificKey.BlockOnly] || false,
         [SpecificKey.ExceptionOnly]: rawData[SpecificKey.ExceptionOnly] || false,
+        [SpecificKey.ValueOptional]: rawData[SpecificKey.ValueOptional] || false,
         [SpecificKey.ValueFormat]: rawData[SpecificKey.ValueFormat] || null,
     };
     return blockerData;

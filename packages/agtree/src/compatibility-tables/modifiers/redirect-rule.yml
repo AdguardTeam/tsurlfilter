@@ -33,6 +33,7 @@ adg_os_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   value_format: |-
     (?x)
       ^(
@@ -114,6 +115,7 @@ adg_ext_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   value_format: |-
     (?x)
       ^(

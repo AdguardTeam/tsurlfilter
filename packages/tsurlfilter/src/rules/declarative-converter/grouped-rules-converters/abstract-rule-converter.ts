@@ -708,8 +708,8 @@ export abstract class DeclarativeRuleConverter {
         const checkRemoveParamModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
             const removeParam = r.getAdvancedModifier() as RemoveParamModifier;
             if (!removeParam.getMV3Validity()) {
-                const msg = 'Network rule with $removeparam modifier with '
-                + `negation or regexp is not supported: "${r.getText()}"`;
+                // eslint-disable-next-line max-len
+                const msg = `Network rule with $removeparam modifier with negation or regexp is not supported: "${r.getText()}"`;
 
                 return new UnsupportedModifierError(msg, r);
             }
@@ -815,7 +815,6 @@ export abstract class DeclarativeRuleConverter {
                 || restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
             ) {
                 return new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
                     `Network rule with $method modifier containing 'trace' method is not supported: "${r.getText()}"`,
                     r,
                 );
@@ -824,15 +823,55 @@ export abstract class DeclarativeRuleConverter {
             return null;
         };
 
+        /**
+         * Checks if rule is a "document"-allowlist and contains all these
+         * `$elemhide,content,urlblock,jsinject` modifiers at the same time.
+         * If it is - we allow partially convert this rule, because `$content`
+         * is not supported in the MV3 at all and `$jsinject` and `$urlblock`
+         * are not implemented yet, but we can support at least allowlist-rule
+         * with `$elemhide` modifier (not in the DNR, but with tsurlfilter engine).
+         *
+         * TODO: Change the description when `$jsinject` and `$urlblock`
+         * are implemented.
+         *
+         * @param r Network rule.
+         * @param name Modifier's name.
+         *
+         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+         */
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const checkDocumentAllowlistFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+            if (rule.isFilteringDisabled()) {
+                return null;
+            }
+
+            return new UnsupportedModifierError(
+                `Network rule with "${name}" modifier is not supported: "${r.getText()}"`,
+                r,
+            );
+        };
+
         const unsupportedOptions = [
             /* Specific exceptions */
             { option: NetworkRuleOption.Elemhide, name: '$elemhide', skipConversion: true },
             { option: NetworkRuleOption.Generichide, name: '$generichide', skipConversion: true },
             { option: NetworkRuleOption.Specifichide, name: '$specifichide', skipConversion: true },
             { option: NetworkRuleOption.Genericblock, name: '$genericblock' },
-            { option: NetworkRuleOption.Jsinject, name: '$jsinject' },
-            { option: NetworkRuleOption.Urlblock, name: '$urlblock' },
-            { option: NetworkRuleOption.Content, name: '$content' },
+            {
+                option: NetworkRuleOption.Jsinject,
+                name: '$jsinject',
+                customChecks: [checkDocumentAllowlistFn],
+            },
+            {
+                option: NetworkRuleOption.Urlblock,
+                name: '$urlblock',
+                customChecks: [checkDocumentAllowlistFn],
+            },
+            {
+                option: NetworkRuleOption.Content,
+                name: '$content',
+                customChecks: [checkDocumentAllowlistFn],
+            },
             { option: NetworkRuleOption.Extension, name: '$extension' },
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
             /* Specific exceptions */
@@ -899,7 +938,10 @@ export abstract class DeclarativeRuleConverter {
             }
 
             if (skipConversion) {
-                return false;
+                if (rule.isSingleOptionEnabled(option)) {
+                    return false;
+                }
+                continue;
             }
 
             if (customChecks) {

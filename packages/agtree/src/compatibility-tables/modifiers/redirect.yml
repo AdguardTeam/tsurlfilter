@@ -4,6 +4,7 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
   assignable: true
   negatable: false
+  value_optional: true
   value_format: |-
     (?x)
       ^(
@@ -57,6 +58,7 @@ adg_ext_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#redirect-modifier
   assignable: true
   negatable: false
+  value_optional: true
   value_format: |-
     (?x)
       ^(
@@ -110,6 +112,7 @@ ubo_ext_any:
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
   assignable: true
   negatable: false
+  value_optional: true
   value_format: |-
     (?x)
       ^(

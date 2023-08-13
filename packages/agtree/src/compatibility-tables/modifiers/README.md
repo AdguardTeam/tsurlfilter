@@ -1,13 +1,13 @@
 # Modifiers compatibility tables
 
-Each file represents a specific modifier. The file name is the name of the modifier.
-For example, `third-party` is represented by the file `third-party.yml`.
+Each file represents a specific modifier. The file name is the name of the modifier. For example, `third-party` is
+represented by the file `third-party.yml`.
 
 ## File structure
 
-Each file contains an object,
-where the key is the [actual adblocker ID](../README.md#supported-adblockers-and-platforms)
-and the value is the object with the following fields:
+Each file contains an object, where the key is the
+[actual adblocker ID](../README.md#supported-adblockers-and-platforms) and the value is the object with the following
+fields:
 
 <!-- markdownlint-disable MD013 -->
 | Field | Description | Type | Default value [**] |
@@ -18,16 +18,17 @@ and the value is the object with the following fields:
 | `docs` | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available. | `string\|null` | `null` |
 | `version_added` | The version of the adblocker when the modifier was added. | `string\|null` | `null` |
 | `version_removed` | The version of the adblocker when the modifier was removed. | `string\|null` | `null` |
-| `deprecated` | Describes whether the modifier is deprecated; for _soon-to-be removed_ features. | `boolean` | `false` |
+| `deprecated` | Describes whether the modifier is deprecated; for *soon-to-be removed* features. | `boolean` | `false` |
 | `deprecation_message` | Message that describes why the modifier is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
-| `removed` | Describes whether the modifier is removed; for _already removed_ features. | `boolean` | `false` |
+| `removed` | Describes whether the modifier is removed; for *already removed* features. | `boolean` | `false` |
 | `removal_message` | Message that describes why the modifier is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
 | `conflicts` | List of modifiers that are incompatible with the actual one. | `string[]\|null` | `null` (no conflicts) |
 | `inverse_conflicts` | The actual modifier is incompatible with all other modifiers, except the ones listed in `conflicts`. | `boolean` | `false` |
-| `assignable` | Describes whether the actual modifier supports value assignment. For example, `domain` is assignable, so it can be used like this: `$domain=domain.com\|~subdomain.domain.com`, where `=` is the assignment operator and `domain.com\|~subdomain.domain.com` is the value. | `boolean` | `false` |
-| `negatable` | Describes whether the actual modifier can be negated. For example, `third-party` is negatable, so it can be used like this: `~third-party`. | `boolean` | `true` |
+| `assignable` | Describes whether the actual modifier supports value assignment. For example, `$domain` is assignable, so it can be used like this: `$domain=domain.com\|~subdomain.domain.com`, where `=` is the assignment operator and `domain.com\|~subdomain.domain.com` is the value. | `boolean` | `false` |
+| `negatable` | Describes whether the actual modifier can be negated. For example, `$third-party` is negatable, so it can be used like this: `$~third-party`. | `boolean` | `true` |
 | `block_only` | The actual modifier can only be used in blocking rules, it cannot be used in exceptions. If it's value is `true`, then the modifier can be used only in blocking rules. `exception_only` and `block_only` cannot be used together (they are mutually exclusive). | `boolean` | `false` |
 | `exception_only` | The actual modifier can only be used in exceptions, it cannot be used in blocking rules. If it's value is `true`, then the modifier can be used only in exceptions. `exception_only` and `block_only` cannot be used together (they are mutually exclusive). | `boolean` | `false` |
+| `value_optional` | Describes whether the *assignable* modifier value is required. For example, `$cookie` is assignable but it can be used without a value in exception rules: `@@\|\|example.com^$cookie`. If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified. | `boolean` | `false` |
 | `value_format` | Describes the format of the value. See [Value format](#value-format) for more details. | `string\|null` | `null` |
 <!-- markdownlint-enable MD013 -->
 

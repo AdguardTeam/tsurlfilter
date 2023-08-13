@@ -175,18 +175,20 @@ const validateForSpecificSyntax = (
     // e.g. 'domain'
     if (specificBlockerData.assignable) {
         /**
-         * exception_only modifier 'stealth' is assignable
-         * but it also may be used without value as well -- `$stealth` or `$stealth=dpi`
+         * Some assignable modifiers can be used without a value,
+         * e.g. '@@||example.com^$cookie'.
          */
         if (!modifier.value
-            /**
-             * TODO: consider to return `{ ok: true, warn: 'Modifier value may be specified' }` (???)
-             * after the extension will support stealth mode with value
-             * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2107
-             */
-            && !specificBlockerData.exception_only) {
+            // value should be specified if it is not optional
+            && !specificBlockerData.value_optional) {
             return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
         }
+        /**
+         * TODO: consider to return `{ ok: true, warn: 'Modifier value may be specified' }` (???)
+         * for $stealth modifier without a value
+         * but only after the extension will support value for $stealth:
+         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2107
+         */
     } else if (modifier?.value) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.VALUE_FORBIDDEN}: '${modifierName}'`);
     }

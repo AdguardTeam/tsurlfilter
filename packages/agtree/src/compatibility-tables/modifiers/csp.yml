@@ -13,6 +13,7 @@ adg_os_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   value_format: /[^,$]+/
 
 adg_ext_any:
@@ -30,6 +31,7 @@ adg_ext_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   value_format: /[^,$]+/
 
 abp_ext_any:
@@ -45,6 +47,7 @@ abp_ext_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   value_format: /[^,$]+/
 
 ubo_ext_any:
@@ -62,4 +65,5 @@ ubo_ext_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
+  value_optional: true
   value_format: /[^,$]+/
