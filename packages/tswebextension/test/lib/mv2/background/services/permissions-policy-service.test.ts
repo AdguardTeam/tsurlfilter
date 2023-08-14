@@ -1,4 +1,9 @@
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import {
+    MatchingResult,
+    NetworkRule,
+    RequestType,
+    PERMISSIONS_POLICY_HEADER_NAME,
+} from '@adguard/tsurlfilter';
 
 import { PermissionsPolicyService } from '@lib/mv2/background/services/permissions-policy-service';
 import { RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
@@ -7,7 +12,6 @@ import { ContentType, FilteringEventType } from '@lib/common';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Permissions policy service', () => {
-    const PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
     const testUrl = 'https://example.org';
     const requestId = '-1';
 

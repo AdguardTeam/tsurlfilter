@@ -20,6 +20,8 @@ export * from './modifiers/remove-header-modifier';
 export * from './modifiers/remove-param-modifier';
 export * from './modifiers/cookie-modifier';
 export * from './modifiers/replace-modifier';
+export { PERMISSIONS_POLICY_HEADER_NAME } from './modifiers/permissions-modifier';
+export { CSP_HEADER_NAME } from './modifiers/csp-modifier';
 export * from './utils/logger';
 export * from './utils/rule-validator';
 export * from './utils/url';

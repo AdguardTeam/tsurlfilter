@@ -1,5 +1,7 @@
 import { IAdvancedModifier } from './advanced-modifier';
 
+export const PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
+
 /**
  * Permissions modifier class.
  * Allows setting permission policies, effectively blocking specific page functionality.

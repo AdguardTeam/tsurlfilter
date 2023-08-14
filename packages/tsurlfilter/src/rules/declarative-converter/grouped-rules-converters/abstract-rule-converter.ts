@@ -132,6 +132,7 @@ import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier'
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { CookieModifier } from '../../../modifiers/cookie-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
+import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -383,7 +384,7 @@ export abstract class DeclarativeRuleConverter {
      *
      * @param rule Network rule.
      *
-     * @returns Add headers action, which describes which headers should be added.
+     * @returns Add headers action, which describes what headers should be added.
      */
     private static getAddingCspHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
         if (!rule.isOptionEnabled(NetworkRuleOption.Csp)) {
@@ -396,6 +397,30 @@ export abstract class DeclarativeRuleConverter {
                 operation: HeaderOperation.Append,
                 header: CSP_HEADER_NAME,
                 value: cspHeaderValue,
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns rule modify headers action with adding Permissions headers to response.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Add headers action, which describes what headers should be added.
+     */
+    private static getAddingPermissionsHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
+        if (!rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+            return null;
+        }
+
+        const permissionsHeaderValue = rule.getAdvancedModifierValue();
+        if (permissionsHeaderValue) {
+            return {
+                operation: HeaderOperation.Append,
+                header: PERMISSIONS_POLICY_HEADER_NAME,
+                value: permissionsHeaderValue,
             };
         }
 
@@ -449,11 +474,21 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-            const addCspHeadersAction = DeclarativeRuleConverter.getAddingCspHeadersAction(rule);
-            if (addCspHeadersAction) {
+            const headersAction = DeclarativeRuleConverter.getAddingCspHeadersAction(rule);
+            if (headersAction) {
                 return {
                     type: RuleActionType.MODIFY_HEADERS,
-                    responseHeaders: [addCspHeadersAction],
+                    responseHeaders: [headersAction],
+                };
+            }
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+            const headersAction = DeclarativeRuleConverter.getAddingPermissionsHeadersAction(rule);
+            if (headersAction) {
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    responseHeaders: [headersAction],
                 };
             }
         }
@@ -569,6 +604,7 @@ export abstract class DeclarativeRuleConverter {
          */
         const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
             || rule.isOptionEnabled(NetworkRuleOption.Csp)
+            || rule.isOptionEnabled(NetworkRuleOption.Permissions)
             || rule.isOptionEnabled(NetworkRuleOption.Cookie)
             || rule.isOptionEnabled(NetworkRuleOption.To)
             || rule.isOptionEnabled(NetworkRuleOption.Method);
@@ -914,16 +950,6 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.JsonPrune, name: '$jsonprune' },
             { option: NetworkRuleOption.Hls, name: '$hls' },
         ];
-
-        const isDocumentAllowlist = rule.isOptionEnabled(NetworkRuleOption.Elemhide)
-            && rule.isOptionEnabled(NetworkRuleOption.Content)
-            && rule.isOptionEnabled(NetworkRuleOption.Jsinject)
-            && rule.isOptionEnabled(NetworkRuleOption.Urlblock)
-            && rule.isAllowlist();
-
-        if (isDocumentAllowlist) {
-            return true;
-        }
 
         for (let i = 0; i < unsupportedOptions.length; i += 1) {
             const {

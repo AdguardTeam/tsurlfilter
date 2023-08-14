@@ -1,4 +1,5 @@
 import { getDomain } from 'tldts';
+import { PERMISSIONS_POLICY_HEADER_NAME } from '@adguard/tsurlfilter';
 import {
     defaultFilteringLog,
     FilteringEventType,
@@ -11,8 +12,6 @@ import { requestContextStorage, RequestContextStorage, RequestContext } from '..
  * Permissions Policy service.
  */
 export class PermissionsPolicyService {
-    private static readonly PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
-
     /**
      * Filtering log.
      */
@@ -70,7 +69,7 @@ export class PermissionsPolicyService {
 
             if (directive) {
                 permissionsPolicyHeaders.push({
-                    name: PermissionsPolicyService.PERMISSIONS_POLICY_HEADER_NAME,
+                    name: PERMISSIONS_POLICY_HEADER_NAME,
                     value: directive,
                 });
 

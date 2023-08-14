@@ -1,6 +1,6 @@
 import { getDomain } from 'tldts';
 import { nanoid } from 'nanoid';
-import { NetworkRuleOption } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, CSP_HEADER_NAME } from '@adguard/tsurlfilter';
 
 import {
     ContentType,
@@ -15,8 +15,6 @@ import {
     requestContextStorage,
 } from '../request/request-context-storage';
 import { RequestBlockingApi } from '../request/request-blocking-api';
-
-const CSP_HEADER_NAME = 'Content-Security-Policy';
 
 /**
  * Content Security Policy Headers filtering service module.

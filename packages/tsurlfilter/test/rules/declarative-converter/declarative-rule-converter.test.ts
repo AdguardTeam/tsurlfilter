@@ -1,4 +1,5 @@
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
+import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
 import {
     TooComplexRegexpError,
@@ -1653,6 +1654,75 @@ describe('DeclarativeRuleConverter', () => {
                 networkRule,
             );
             expect(errors[0]).toStrictEqual(err);
+        });
+    });
+
+    describe('check $permissions', () => {
+        it('converts $permissions rule', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                ['||example.org^$permissions=autoplay=()'],
+            );
+
+            const {
+                declarativeRules,
+            } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
+                id: 1,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: PERMISSIONS_POLICY_HEADER_NAME,
+                        operation: 'append',
+                        value: 'autoplay=()',
+                    }],
+                },
+                condition: {
+                    isUrlFilterCaseSensitive: false,
+                    urlFilter: '||example.org^',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('converts several $permissions directives', () => {
+            const filterId = 0;
+            const rules = createRulesFromText(
+                filterId,
+                [
+                    '$domain=example.org|example.com,permissions=storage-access=()\\, сamera=()',
+                ],
+            );
+
+            const { declarativeRules } = DeclarativeRulesConverter.convert(
+                [[filterId, rules]],
+            );
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: 1,
+                priority: 151,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: PERMISSIONS_POLICY_HEADER_NAME,
+                        operation: 'append',
+                        value: 'storage-access=(), сamera=()',
+                    }],
+                },
+                condition: {
+                    initiatorDomains: [
+                        'example.org',
+                        'example.com',
+                    ],
+                    resourceTypes: allResourcesTypes,
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
         });
     });
 });
