@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
+## 1.1.2 - 2023-08-14
+
+### Fixed
+
+- Compatibility tables validation of ABP syntax `$rewrite`
+- Detecting closing parenthesis in ADG/uBO scriptlets while parsing
+
 ## 1.1.1 - 2023-08-11
 
 ### Fixed
