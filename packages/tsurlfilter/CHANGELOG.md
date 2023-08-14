@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [2.1.8] - 2023-08-14
+
+### Fixed
+- Crash on converting allowlist csp rules.
+
+
 ## [2.1.7] - 2023-08-10
 
 ### Added
