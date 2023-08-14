@@ -8,6 +8,7 @@ import {
     CLOSE_PARENTHESIS,
     COMMA,
     EMPTY,
+    ESCAPE_CHARACTER,
     OPEN_PARENTHESIS,
     SEMICOLON,
     SPACE,
@@ -87,25 +88,18 @@ export class ScriptletInjectionBodyParser {
         // Save the offset of the opening parentheses
         const openingParenthesesIndex = offset;
 
-        // Find closing parentheses
-        // eslint-disable-next-line max-len
-        const closingParenthesesIndex = StringUtils.findUnescapedNonStringNonRegexChar(raw, CLOSE_PARENTHESIS, openingParenthesesIndex + 1);
+        // Skip whitespace from the end
+        const closingParenthesesIndex = StringUtils.skipWSBack(raw, raw.length - 1);
 
         // Closing parentheses should be present
-        if (closingParenthesesIndex === -1) {
+        if (
+            raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS
+            || raw[closingParenthesesIndex - 1] === ESCAPE_CHARACTER
+        ) {
             throw new AdblockSyntaxError(
                 // eslint-disable-next-line max-len
                 `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
                 locRange(loc, offset, raw.length),
-            );
-        }
-
-        // Shouldn't have any characters after the closing parentheses
-        if (StringUtils.skipWSBack(raw) !== closingParenthesesIndex) {
-            throw new AdblockSyntaxError(
-                // eslint-disable-next-line max-len
-                `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
-                locRange(loc, closingParenthesesIndex + 1, raw.length),
             );
         }
 

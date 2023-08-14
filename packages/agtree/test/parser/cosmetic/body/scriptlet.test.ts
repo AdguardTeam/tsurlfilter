@@ -750,28 +750,42 @@ describe('ScriptletInjectionBodyParser', () => {
             () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet(arg0)a'),
         ).toThrowError(
             // eslint-disable-next-line max-len
-            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
         );
 
         expect(
             () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('//scriptlet(arg0) a'),
         ).toThrowError(
             // eslint-disable-next-line max-len
-            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall(String.raw`//scriptlet(arg0\)`),
+        ).toThrowError(
+            // eslint-disable-next-line max-len
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
         );
 
         expect(
             () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js(arg0)a'),
         ).toThrowError(
             // eslint-disable-next-line max-len
-            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
         );
 
         expect(
             () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall('js(arg0) a'),
         ).toThrowError(
             // eslint-disable-next-line max-len
-            `Invalid AdGuard/uBlock scriptlet call, unexpected characters after the closing parentheses '${CLOSE_PARENTHESIS}'`,
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
+        );
+
+        expect(
+            () => ScriptletInjectionBodyParser.parseAdgAndUboScriptletCall(String.raw`js(arg0\)`),
+        ).toThrowError(
+            // eslint-disable-next-line max-len
+            `Invalid AdGuard/uBlock scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
         );
     });
 
