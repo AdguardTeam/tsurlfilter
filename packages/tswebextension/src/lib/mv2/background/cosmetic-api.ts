@@ -188,7 +188,15 @@ export class CosmeticApi {
             return undefined;
         }
 
-        return scriptText;
+        return `
+        (function () {
+            try {
+                ${scriptText}
+            } catch (ex) {
+                console.error('Error executing AG js: ' + ex);
+            }
+        })();
+        `;
     }
 
     /**

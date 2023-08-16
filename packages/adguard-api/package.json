@@ -34,7 +34,7 @@
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
     "@adguard/filters-downloader": "^1.1.15",
-    "@adguard/tswebextension": "^0.3.9",
+    "@adguard/tswebextension": "^0.3.10",
     "webextension-polyfill": "0.10.0",
     "zod": "3.21.4"
   },
