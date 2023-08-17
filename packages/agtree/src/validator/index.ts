@@ -9,6 +9,7 @@ import {
     type ModifierDataMap,
     type SpecificPlatformModifierData,
     getModifiersData,
+    SpecificKey,
 } from '../compatibility-tables';
 import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
@@ -145,42 +146,42 @@ const validateForSpecificSyntax = (
     }
 
     // e.g. 'object-subrequest'
-    if (specificBlockerData.removed) {
+    if (specificBlockerData[SpecificKey.Removed]) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.REMOVED}: '${modifierName}'`);
     }
 
-    if (specificBlockerData.deprecated) {
-        if (!specificBlockerData.deprecation_message) {
+    if (specificBlockerData[SpecificKey.Deprecated]) {
+        if (!specificBlockerData[SpecificKey.DeprecationMessage]) {
             throw new Error('Deprecation notice is required for deprecated modifier');
         }
         return {
             ok: true,
-            warn: specificBlockerData.deprecation_message,
+            warn: specificBlockerData[SpecificKey.DeprecationMessage],
         };
     }
 
-    if (specificBlockerData.block_only && isException) {
+    if (specificBlockerData[SpecificKey.BlockOnly] && isException) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.BLOCK_ONLY}: '${modifierName}'`);
     }
 
-    if (specificBlockerData.exception_only && !isException) {
+    if (specificBlockerData[SpecificKey.ExceptionOnly] && !isException) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.EXCEPTION_ONLY}: '${modifierName}'`);
     }
 
     // e.g. '~domain=example.com'
-    if (!specificBlockerData.negatable && modifier.exception) {
+    if (!specificBlockerData[SpecificKey.Negatable] && modifier.exception) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_NEGATABLE}: '${modifierName}'`);
     }
 
     // e.g. 'domain'
-    if (specificBlockerData.assignable) {
+    if (specificBlockerData[SpecificKey.Assignable]) {
         /**
          * Some assignable modifiers can be used without a value,
          * e.g. '@@||example.com^$cookie'.
          */
         if (!modifier.value
             // value should be specified if it is not optional
-            && !specificBlockerData.value_optional) {
+            && !specificBlockerData[SpecificKey.ValueOptional]) {
             return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
         }
         /**
