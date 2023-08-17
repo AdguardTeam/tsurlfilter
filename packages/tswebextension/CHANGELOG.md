@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Blocking third-party requests with `csp_report` content-type.
+- Handling discarded tabs replacement on wake up.
 
 ### Fixed
 - Do not expose JS rules in global page scope

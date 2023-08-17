@@ -27,6 +27,8 @@ export class TabsApi {
 
     public onActivate = new EventChannel<TabContext>();
 
+    public onReplace = new EventChannel<TabContext>();
+
     /**
      * Tabs API constructor.
      *
@@ -39,6 +41,7 @@ export class TabsApi {
         this.handleTabUpdate = this.handleTabUpdate.bind(this);
         this.handleTabActivate = this.handleTabActivate.bind(this);
         this.handleTabDelete = this.handleTabDelete.bind(this);
+        this.handleTabReplace = this.handleTabReplace.bind(this);
 
         this.handleFrameRequest = this.handleFrameRequest.bind(this);
         this.handleFrameCosmeticResult = this.handleFrameCosmeticResult.bind(this);
@@ -59,6 +62,7 @@ export class TabsApi {
         browser.tabs.onRemoved.addListener(this.handleTabDelete);
         browser.tabs.onUpdated.addListener(this.handleTabUpdate);
         browser.tabs.onActivated.addListener(this.handleTabActivate);
+        browser.tabs.onReplaced.addListener(this.handleTabReplace);
 
         browser.windows.onFocusChanged.addListener(this.onWindowFocusChanged);
     }
@@ -342,6 +346,25 @@ export class TabsApi {
 
         if (tabContext) {
             this.onActivate.dispatch(tabContext);
+        }
+    }
+
+    /**
+     * The browser tab may be replaced by another when the discarded tab wakes up.
+     * We handle this case on {@link browser.tabs.onReplaced} event.
+     * It fires before the tab details are updated,
+     * so we just move the existing tab context to the new key.
+     *
+     * @param addedTabId - Id of the new tab context moved to.
+     * @param removedTabId - Id of removed tab.
+     */
+    private handleTabReplace(addedTabId: number, removedTabId: number): void {
+        const tabContext = this.context.get(removedTabId);
+
+        if (tabContext) {
+            this.context.delete(removedTabId);
+            this.context.set(addedTabId, tabContext);
+            this.onReplace.dispatch(tabContext);
         }
     }
 
