@@ -64,6 +64,9 @@ export class StealthApi {
     /**
      * Gets app filtering status.
      *
+     * TODO: This method is duplicated in {@link EngineApi}. Consider moving it to {@link appContext}
+     *  itself (DRY). But appContext supposed to be deleted (v.zhelvis).
+     *
      * @returns True if filtering is enabled, otherwise returns false.
      */
     private get isFilteringEnabled(): boolean {

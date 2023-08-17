@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Blocking third-party requests with `csp_report` content-type.
+
 ### Fixed
 - Do not expose JS rules in global page scope
 
