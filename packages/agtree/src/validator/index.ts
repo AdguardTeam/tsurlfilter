@@ -13,7 +13,7 @@ import {
 } from '../compatibility-tables';
 import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
-import { UNDERSCORE } from '../utils/constants';
+import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
 import { INVALID_ERROR_PREFIX } from './constants';
 
 const BLOCKER_PREFIX = {
@@ -154,9 +154,11 @@ const validateForSpecificSyntax = (
         if (!specificBlockerData[SpecificKey.DeprecationMessage]) {
             throw new Error('Deprecation notice is required for deprecated modifier');
         }
+        // prepare the message which is multiline in the yaml file
+        const warn = specificBlockerData[SpecificKey.DeprecationMessage].replace(NEWLINE, SPACE);
         return {
             ok: true,
-            warn: specificBlockerData[SpecificKey.DeprecationMessage],
+            warn,
         };
     }
 
