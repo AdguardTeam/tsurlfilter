@@ -68,6 +68,7 @@ describe('ModifierValidator', () => {
                 'popup',
                 'redirect-rule',
                 'redirect',
+                'rewrite',
                 'removeheader',
                 'removeparam',
                 'replace',
@@ -496,6 +497,7 @@ describe('ModifierValidator', () => {
                 'third-party',
                 // 'webrtc' is fully supported by ABP, not deprecated
                 'webrtc',
+                'rewrite=abp-resource:blank-js',
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
@@ -550,6 +552,19 @@ describe('ModifierValidator', () => {
                     actual: '___',
                     expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
                 },
+                {
+                    actual: 'rewrite',
+                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                },
+                {
+                    actual: '~rewrite=abp-resource:blank-js',
+                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                },
+                // TODO: Validate value format
+                // {
+                //     actual: 'rewrite=abp-resource:protobuf',
+                //     expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                // },
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);

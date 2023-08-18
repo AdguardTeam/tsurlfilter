@@ -213,6 +213,7 @@ export class WebRequestApi {
      */
     public static start(): void {
         // browser.webRequest Events
+        RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeCspReport);
         RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeRequest);
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(WebRequestApi.onHeadersReceived);
@@ -229,6 +230,7 @@ export class WebRequestApi {
      * Removes web request event handlers.
      */
     public static stop(): void {
+        RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeCspReport);
         RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeRequest);
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
@@ -791,5 +793,82 @@ export class WebRequestApi {
                 cosmeticResult,
             })
             .catch(logger.debug);
+    }
+
+    /**
+     * Intercepts csp_report requests.
+     * Check the URL of the report.
+     * For chromium and firefox:
+     * If it's sent to a third party, block it right away.
+     * For firefox only:
+     * If it contains moz://extension with our extension ID, block it as well.
+     * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1792.
+     *
+     * @param details Request details.
+     * @param details.context Request context.
+     *
+     * @returns Web request response or void if there is nothing to do.
+     */
+    private static onBeforeCspReport(
+        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+    ): WebRequestEventResponse {
+        // If filtering is disabled - skip process request.
+        if (!engineApi.isFilteringEnabled) {
+            return undefined;
+        }
+
+        if (!context) {
+            return undefined;
+        }
+
+        const {
+            requestUrl,
+            requestType,
+            matchingResult,
+            tabId,
+            eventId,
+            timestamp,
+            thirdParty,
+            contentType,
+            method,
+        } = context;
+
+        /**
+         * Checks request type here instead of creating two event listener with
+         * different filter types via {@link RequestEvent.init} to simplify
+         * event handlers flow and create only one {@link RequestEvents.onBeforeRequest}
+         * listener and two WebRequest listeners: {@link WebRequestApi.onBeforeCspReport}
+         * and {@link WebRequestApi.onBeforeRequest}.
+         */
+        if (requestType !== RequestType.CspReport) {
+            return undefined;
+        }
+
+        // If filtering disabled for this request.
+        if (matchingResult?.getBasicResult()?.isFilteringDisabled()) {
+            return undefined;
+        }
+
+        if (thirdParty) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.CspReportBlocked,
+                data: {
+                    tabId,
+                    eventId,
+                    cspReportBlocked: true,
+                    requestUrl,
+                    requestType: contentType,
+                    timestamp,
+                    requestThirdParty: thirdParty,
+                    method,
+                },
+            });
+
+            return { cancel: true };
+        }
+
+        // Don't check for moz://extension because it was fixed in
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1588957#c10.
+        return undefined;
     }
 }

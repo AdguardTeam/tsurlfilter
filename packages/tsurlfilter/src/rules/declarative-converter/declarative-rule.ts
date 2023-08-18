@@ -36,6 +36,7 @@ export enum ResourceType {
     WebSocket = 'websocket',
     Other = 'other',
     // Temporary not using
+    // TODO: Add csp_report handler similar to AG-24613 but in declarative way.
     // CspReport = 'csp_report',
     // WebTransport = 'webtransport',
     // WebBundle = 'webbundle',

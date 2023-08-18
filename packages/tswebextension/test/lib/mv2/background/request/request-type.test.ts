@@ -60,7 +60,7 @@ describe('Request Type', () => {
             },
             csp_report: {
                 contentType: ContentType.CspReport,
-                requestType: RequestType.Other,
+                requestType: RequestType.CspReport,
             },
             xmlhttprequest: {
                 contentType: ContentType.XmlHttpRequest,

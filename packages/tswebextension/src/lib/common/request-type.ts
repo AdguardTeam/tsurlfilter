@@ -100,7 +100,7 @@ export function getRequestType(resourceType: WebRequest.ResourceType): RequestTy
         case 'csp_report':
             return {
                 contentType: ContentType.CspReport,
-                requestType: RequestType.Other,
+                requestType: RequestType.CspReport,
             };
         default:
             return {

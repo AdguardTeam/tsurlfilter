@@ -4,8 +4,9 @@
 
 export { getModifiersData } from './modifiers-data';
 
-export type {
-    ModifierData,
-    ModifierDataMap,
-    SpecificPlatformModifierData,
+export {
+    type ModifierData,
+    type ModifierDataMap,
+    type SpecificPlatformModifierData,
+    SpecificKey,
 } from './types';

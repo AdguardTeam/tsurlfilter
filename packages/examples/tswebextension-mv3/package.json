@@ -15,7 +15,7 @@
     "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r @swc-node/register ./scripts/browser-test/index.ts"
   },
   "dependencies": {
-    "@adguard/tswebextension": "^0.3.9",
+    "@adguard/tswebextension": "^0.3.10",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },

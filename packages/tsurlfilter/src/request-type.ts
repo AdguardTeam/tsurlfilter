@@ -28,8 +28,10 @@ export const RequestType = {
     WebSocket: 512, // 1 << 9
     /** (navigator.sendBeacon()) $ping */
     Ping: 1024, // 1 << 10
+    /** csp_report */
+    CspReport: 2048, // 1 << 11
     /** any other request type */
-    Other: 2048, // 1 << 11
+    Other: 4096, // 1 << 12
 } as const;
 
 // intentionally naming the variable the same as the type

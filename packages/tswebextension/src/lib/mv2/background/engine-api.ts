@@ -45,6 +45,9 @@ export class EngineApi {
     /**
      * Gets app filtering status.
      *
+     * TODO: This method is duplicated in {@link EngineApi}. Consider moving it to {@link appContext}
+     *  itself (DRY). But appContext supposed to be deleted (v.zhelvis).
+     *
      * @returns True if filtering is enabled, otherwise returns false.
      */
     public get isFilteringEnabled(): boolean {
@@ -97,9 +100,9 @@ export class EngineApi {
             lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
-        const allowlistRules = this.allowlist.getAllowlistRules();
-        if (allowlistRules) {
-            lists.push(allowlistRules);
+        const allowlistRulesList = this.allowlist.getAllowlistRules();
+        if (allowlistRulesList) {
+            lists.push(allowlistRulesList);
         }
 
         const stealthModeList = this.stealthApi.getStealthModeRuleList();

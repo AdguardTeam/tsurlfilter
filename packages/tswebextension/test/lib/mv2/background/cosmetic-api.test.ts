@@ -359,6 +359,18 @@ describe('cosmetic api', () => {
             ];
         };
 
+        const wrapScriptText = (text: string): string => {
+            return `
+            (function () {
+                try {
+                    ${text}
+                } catch (ex) {
+                    console.error('Error executing AG js: ' + ex);
+                }
+            })();
+            `;
+        };
+
         it('allow scriptlets and JS rules from user filter in all browsers', () => {
             const userFilterRules = [
                 ...getScriptRules(USER_FILTER_ID),
@@ -368,9 +380,9 @@ describe('cosmetic api', () => {
 
             const scriptText = CosmeticApi.getScriptText(userFilterRules);
 
-            const expectScriptText = userFilterRules.map((rule) => rule.getScript()).join('\n');
+            const expectScriptText = wrapScriptText(userFilterRules.map((rule) => rule.getScript()).join('\n'));
 
-            expect(scriptText).toStrictEqual(expectScriptText);
+            expect(scriptText?.replace(/\s/g, '')).toStrictEqual(expectScriptText.replace(/\s/g, ''));
         });
 
         it('allow scriptlets and JS rules from custom filter in all browsers, except FirefoxAMO', () => {
@@ -384,13 +396,13 @@ describe('cosmetic api', () => {
 
             const scriptText = CosmeticApi.getScriptText(customFilterRules);
 
-            const expectScriptText = [
+            const expectScriptText = wrapScriptText([
                 ...getScriptRules(CUSTOM_FILTER_ID),
                 ...getLocalScriptRules(CUSTOM_FILTER_ID),
                 ...getScriptletsRules(CUSTOM_FILTER_ID),
-            ].map((rule) => rule.getScript()).join('\n');
+            ].map((rule) => rule.getScript()).join('\n'));
 
-            expect(scriptText).toStrictEqual(expectScriptText);
+            expect(scriptText?.replace(/\s/g, '')).toStrictEqual(expectScriptText.replace(/\s/g, ''));
         });
 
         it('allow scriptlets and JS rules (only from pre-built JSON) from custom filter in Firefox AMO', () => {
@@ -407,12 +419,12 @@ describe('cosmetic api', () => {
 
             const firefoxScriptText = CosmeticApi.getScriptText(customFilterRules);
 
-            const expectFirefoxScriptText = [
+            const expectFirefoxScriptText = wrapScriptText([
                 ...getLocalScriptRules(CUSTOM_FILTER_ID),
                 ...getScriptletsRules(CUSTOM_FILTER_ID),
-            ].map((rule) => rule.getScript()).join('\n');
+            ].map((rule) => rule.getScript()).join('\n'));
 
-            expect(firefoxScriptText).toStrictEqual(expectFirefoxScriptText);
+            expect(firefoxScriptText?.replace(/\s/g, '')).toStrictEqual(expectFirefoxScriptText.replace(/\s/g, ''));
         });
     });
 });

@@ -11,7 +11,6 @@ export enum FilteringEventType {
     TabReload = 'tabReload',
     ApplyBasicRule = 'applyBasicRule',
     ApplyCosmeticRule = 'applyCosmeticRule',
-    // TODO: Doesn't look like it's being used.
     ApplyCspRule = 'applyCspRule',
     ApplyPermissionsRule = 'applyPermissionsRule',
     ReceiveResponse = 'receiveResponse',
@@ -23,6 +22,7 @@ export enum FilteringEventType {
     ContentFilteringFinish = 'contentFilteringFinish',
     StealthAction = 'stealthAction',
     JsInject = 'jsInject',
+    CspReportBlocked = 'cspReportBlocked',
 }
 
 /**
@@ -326,6 +326,29 @@ export type JsInjectEvent = {
 };
 
 /**
+ * {@link CspReportBlockedEvent} Event data.
+ */
+export type CspReportBlockedEventData = {
+    tabId: number;
+    eventId: string;
+    cspReportBlocked: boolean;
+    requestUrl: string,
+    requestType: ContentType,
+    timestamp: number,
+    requestThirdParty: boolean,
+    method: string,
+};
+
+/**
+ * Dispatched by manifest v2 WebRequestApi.onBeforeCspReport handler when
+ * csp_report blocked in onBeforeRequest event handler.
+ */
+export type CspReportBlockedEvent = {
+    type: FilteringEventType.CspReportBlocked
+    data: CspReportBlockedEventData;
+};
+
+/**
  * Filtering events union.
  *
  * Used for type extraction in generic {@link FilteringLog} methods and common {@link FilteringLog.onLogEvent} channel
@@ -346,7 +369,8 @@ export type FilteringLogEvent =
     | ApplyPermissionsRuleEvent
     | ApplyCosmeticRuleEvent
     | ReceiveResponseEvent
-    | JsInjectEvent;
+    | JsInjectEvent
+    | CspReportBlockedEvent;
 
 /**
  * Utility type for mapping {@link FilteringEventType} with specified {@link FilteringLogEvent}.

@@ -9,10 +9,11 @@ import {
     type ModifierDataMap,
     type SpecificPlatformModifierData,
     getModifiersData,
+    SpecificKey,
 } from '../compatibility-tables';
 import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
-import { UNDERSCORE } from '../utils/constants';
+import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
 import { INVALID_ERROR_PREFIX } from './constants';
 
 const BLOCKER_PREFIX = {
@@ -145,42 +146,44 @@ const validateForSpecificSyntax = (
     }
 
     // e.g. 'object-subrequest'
-    if (specificBlockerData.removed) {
+    if (specificBlockerData[SpecificKey.Removed]) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.REMOVED}: '${modifierName}'`);
     }
 
-    if (specificBlockerData.deprecated) {
-        if (!specificBlockerData.deprecation_message) {
+    if (specificBlockerData[SpecificKey.Deprecated]) {
+        if (!specificBlockerData[SpecificKey.DeprecationMessage]) {
             throw new Error('Deprecation notice is required for deprecated modifier');
         }
+        // prepare the message which is multiline in the yaml file
+        const warn = specificBlockerData[SpecificKey.DeprecationMessage].replace(NEWLINE, SPACE);
         return {
             ok: true,
-            warn: specificBlockerData.deprecation_message,
+            warn,
         };
     }
 
-    if (specificBlockerData.block_only && isException) {
+    if (specificBlockerData[SpecificKey.BlockOnly] && isException) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.BLOCK_ONLY}: '${modifierName}'`);
     }
 
-    if (specificBlockerData.exception_only && !isException) {
+    if (specificBlockerData[SpecificKey.ExceptionOnly] && !isException) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.EXCEPTION_ONLY}: '${modifierName}'`);
     }
 
     // e.g. '~domain=example.com'
-    if (!specificBlockerData.negatable && modifier.exception) {
+    if (!specificBlockerData[SpecificKey.Negatable] && modifier.exception) {
         return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_NEGATABLE}: '${modifierName}'`);
     }
 
     // e.g. 'domain'
-    if (specificBlockerData.assignable) {
+    if (specificBlockerData[SpecificKey.Assignable]) {
         /**
          * Some assignable modifiers can be used without a value,
          * e.g. '@@||example.com^$cookie'.
          */
         if (!modifier.value
             // value should be specified if it is not optional
-            && !specificBlockerData.value_optional) {
+            && !specificBlockerData[SpecificKey.ValueOptional]) {
             return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
         }
         /**

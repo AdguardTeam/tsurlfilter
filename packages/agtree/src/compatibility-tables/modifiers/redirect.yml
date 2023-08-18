@@ -5,6 +5,8 @@ adg_os_any:
   assignable: true
   negatable: false
   value_optional: true
+  # TODO: Add a custom validator, like `adg_redirect_resource` that based on the
+  # compatibility table from the ADG Scriptlets repo.
   value_format: |-
     (?x)
       ^(
@@ -59,6 +61,8 @@ adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
+  # TODO: Add a custom validator, like `adg_redirect_resource` that based on the
+  # compatibility table from the ADG Scriptlets repo.
   value_format: |-
     (?x)
       ^(
@@ -113,6 +117,8 @@ ubo_ext_any:
   assignable: true
   negatable: false
   value_optional: true
+  # TODO: Add a custom validator, like `ubo_redirect_resource` that based on the
+  # compatibility table from the ADG Scriptlets repo.
   value_format: |-
     (?x)
       ^(
@@ -148,3 +154,32 @@ ubo_ext_any:
         hd-main\.js
       )
       (:[0-9]+)?$
+
+abp_ext_any:
+  name: rewrite
+  description: |-
+    The `rewrite=` option allows the rewriting of URLs (or redirecting requests) to an internal
+    resource in order to deactivate it without causing an error. Indicate the internal resource
+    by name and prefix `abp-resource:` in order to be recognized. For example
+    `$rewrite=abp-resource:blank-js` sends an empty JavaScript.
+  docs: https://help.adblockplus.org/hc/en-us/articles/360062733293#rewrite
+  assignable: true
+  negatable: false
+  # TODO: Add a custom validator, like `abp_redirect_resource` that based on the
+  # compatibility table from the ADG Scriptlets repo.
+  value_format: |-
+    (?x)
+      # ABP resources always starts with the `abp-resource:` prefix
+      ^abp-resource:
+      # Possible resource names
+      (
+        blank-text|
+        blank-css|
+        blank-js|
+        blank-html|
+        blank-mp3|
+        1x1-transparent-gif|
+        2x2-transparent-png|
+        3x2-transparent-png|
+        32x32-transparent-png
+      )$
