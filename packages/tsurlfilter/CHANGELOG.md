@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## [Unreleased]
+## [2.1.9] - 2023-08-18
 
 ### Added
 - Added `CspReport` to RequestType enum.
+
 
 ## [2.1.8] - 2023-08-14
 
