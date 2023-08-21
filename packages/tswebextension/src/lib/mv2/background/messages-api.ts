@@ -23,6 +23,7 @@ import {
     getDomain,
     ContentType,
 } from '../../common';
+import { type CookieRule } from '../../common/content-script';
 import { Assistant } from './assistant';
 import { tabsApi } from './api';
 
@@ -202,14 +203,14 @@ export class MessagesApi implements MessagesApiInterface {
     private handleGetCookieRulesMessage(
         sender: Runtime.MessageSender,
         payload?: unknown,
-    ): CookieRule[] | boolean {
+    ): CookieRule[] {
         if (!payload || !sender?.tab?.id) {
-            return false;
+            return [];
         }
 
         const res = getCookieRulesPayloadValidator.safeParse(payload);
         if (!res.success) {
-            return false;
+            return [];
         }
 
         const tabId = sender.tab.id;

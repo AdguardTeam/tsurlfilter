@@ -1,7 +1,7 @@
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { MessageType, sendAppMessage } from '../../common/content-script';
-import { CookieController } from '../../common/content-script/cookie-controller';
+import { CookieController, type CookieRule } from '../../common/content-script/cookie-controller';
 import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
 
@@ -31,13 +31,14 @@ initAssistant();
  * for each frame.
  */
 (async (): Promise<void> => {
-    const response = await sendAppMessage({
+    const response: undefined | CookieRule[] = await sendAppMessage({
         type: MessageType.GetCookieRules,
         payload: {
             documentUrl: window.location.href,
         },
     });
 
+    // In some cases response can be undefined due to broken message channel.
     if (!response || response.length === 0) {
         return;
     }

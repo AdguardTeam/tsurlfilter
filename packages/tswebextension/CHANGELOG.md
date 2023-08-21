@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## Fixed
-- Applying cookie rules in content-script in MV2.
+- Applying $cookie rules on the content-script side.
 
 ## Added
 - Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.

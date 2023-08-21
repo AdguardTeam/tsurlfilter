@@ -1325,7 +1325,12 @@ describe('NetworkRule.isHigherPriority', () => {
         expect(l.isHigherPriority(r)).toBe(expected);
     }
 
-    const priorityCases = [
+    type PriorityTestCase = {
+        key: string,
+        cases: [string, string, boolean][],
+    };
+
+    const priorityCases: PriorityTestCase[] = [
         {
             key: 'basicModifiers',
             cases: [
@@ -1441,19 +1446,22 @@ describe('NetworkRule.isHigherPriority', () => {
                 .map(({ cases }) => cases)
                 .flat(1);
 
-            const cases: (string | boolean)[][] = [];
+            const cases: PriorityTestCase['cases'] = [];
             casesGroup.cases.forEach((item) => {
                 // Check case itself
                 cases.push(item);
-                // Add a comparison with all past and lower priority groups
+                // Add a comparison with all past cases from lower priority groups
                 lowerPriorityCases.forEach((lowerPriorityCase) => {
                     cases.push([item[0], lowerPriorityCase[1], true]);
                 });
             });
 
-            test.each(cases)('%s is a higher priority than %s, expected: %s', (left: string, right: string, expectedResult: boolean) => {
-                compareRulesPriority(left, right, expectedResult);
-            });
+            test.each(cases)(
+                '%s is a higher priority than %s, expected: %s',
+                (left: string, right: string, expectedResult: boolean) => {
+                    compareRulesPriority(left, right, expectedResult);
+                },
+            );
         });
     });
 });
