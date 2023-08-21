@@ -1,6 +1,6 @@
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
-import { MessageType, sendAppMessage } from '../../common/content-script';
+import { type CookieRule, MessageType, sendAppMessage } from '../../common/content-script';
 import { CookieController } from './cookie-controller';
 import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
@@ -31,45 +31,49 @@ initAssistant();
  * for each frame.
  */
 (async (): Promise<void> => {
-    const response = await sendAppMessage({
+    const response: undefined | CookieRule[] = await sendAppMessage({
         type: MessageType.GetCookieRules,
         payload: {
             documentUrl: window.location.href,
         },
     });
 
-    if (!response) {
+    // In some cases response can be undefined due to broken message channel.
+    if (!response || response.length === 0) {
         return;
     }
 
-    if (response.rulesData) {
-        try {
-            const cookieController = new CookieController(
-                ({
-                    cookieName,
-                    cookieValue,
-                    cookieDomain,
-                    cookieRuleText,
-                    thirdParty,
-                    filterId,
-                }) => {
-                    sendAppMessage({
-                        type: MessageType.SaveCookieLogEvent,
-                        payload: {
-                            cookieName,
-                            cookieValue,
-                            cookieDomain,
-                            cookieRuleText,
-                            thirdParty,
-                            filterId,
-                        },
-                    });
-                },
-            );
+    try {
+        const cookieController = new CookieController(
+            ({
+                cookieName,
+                cookieValue,
+                cookieDomain,
+                cookieRuleText,
+                thirdParty,
+                filterId,
+            }) => {
+                sendAppMessage({
+                    type: MessageType.SaveCookieLogEvent,
+                    payload: {
+                        cookieName,
+                        cookieValue,
+                        cookieDomain,
+                        cookieRuleText,
+                        thirdParty,
+                        filterId,
+                    },
+                });
+            },
+        );
 
-            cookieController.apply(response.rulesData);
-        } catch (e) {
-            // Ignore exceptions
-        }
+        cookieController.apply(response);
+    } catch (e) {
+        /**
+         * Content script injected on in every frame, but document cookie API in
+         * iframes can be blocked by website CSP policy. We ignore this cases.
+         * Content script matching defined in browser extension.
+         * TODO: move error handling to it.
+         */
     }
 })();

@@ -22,17 +22,9 @@ import {
     getDomain,
     ContentType,
 } from '../../common';
+import { type CookieRule } from '../../common/content-script';
 import { Assistant } from './assistant';
 import { tabsApi } from './api';
-
-// TODO check if this was used somewhere else
-interface CookieRule {
-    filterId: number;
-    isThirdParty: boolean;
-    ruleText: string;
-    match: string | null;
-    isAllowlist: boolean;
-}
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 
@@ -210,14 +202,14 @@ export class MessagesApi implements MessagesApiInterface {
     private handleGetCookieRulesMessage(
         sender: Runtime.MessageSender,
         payload?: unknown,
-    ): CookieRule[] | boolean {
+    ): CookieRule[] {
         if (!payload || !sender?.tab?.id) {
-            return false;
+            return [];
         }
 
         const res = getCookieRulesPayloadValidator.safeParse(payload);
         if (!res.success) {
-            return false;
+            return [];
         }
 
         const tabId = sender.tab.id;

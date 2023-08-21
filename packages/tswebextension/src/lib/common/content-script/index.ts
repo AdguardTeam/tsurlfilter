@@ -6,3 +6,11 @@
  */
 export { MessageType } from '../message-constants';
 export { sendAppMessage } from './send-app-message';
+
+export interface CookieRule {
+    filterId: number;
+    isThirdParty: boolean;
+    ruleText: string;
+    match: string | null;
+    isAllowlist: boolean;
+}
