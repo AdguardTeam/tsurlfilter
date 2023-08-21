@@ -6,7 +6,7 @@ const transformedModules = [
 
 const config: Config = {
     transform: {
-        '.+\\.(js|ts)': '@swc/jest',
+        '.+\\.(js|ts)$': '@swc/jest',
     },
     transformIgnorePatterns: [
         `/node_modules/(?!(${transformedModules.join('|')}))/`,
