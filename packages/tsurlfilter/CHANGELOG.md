@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$url` modifier support for non-basic rules.
 
 
+## [2.1.10] - 2023-08-21
+
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.70`.
+
+
 ## [2.1.9] - 2023-08-18
 
 ### Added
