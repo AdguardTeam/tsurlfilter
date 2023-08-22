@@ -324,11 +324,6 @@ export type CspReportBlockedEventData = {
     tabId: number;
     eventId: string;
     cspReportBlocked: boolean;
-    requestUrl: string,
-    requestType: ContentType,
-    timestamp: number,
-    requestThirdParty: boolean,
-    method: string,
 };
 
 /**

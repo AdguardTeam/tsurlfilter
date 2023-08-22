@@ -59,6 +59,9 @@
  * In Firefox, if the request                           │                │
  * is not blocked,                                      │                │
  * initialize content filtering.                        │                │
+ * After that, check if a request is                    │                │
+ * third-party and has type CSP_REPORT                  │                │
+ * - then block it.                                     │                │
  *                                                      │                │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
@@ -212,8 +215,12 @@ export class WebRequestApi {
      */
     public static start(): void {
         // browser.webRequest Events
-        RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeCspReport);
         RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeRequest);
+        // Note: onBeforeCspReport should be registered after onBeforeRequest
+        // because it depends on the MatchingResult calculation for the request
+        // that is performed in onBeforeRequest, and in WebRequestApi all
+        // request handlers will be called in the order of registration.
+        RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeCspReport);
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onResponseStarted.addListener(WebRequestApi.onResponseStarted);
@@ -229,8 +236,8 @@ export class WebRequestApi {
      * Removes web request event handlers.
      */
     public static stop(): void {
-        RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeCspReport);
         RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeRequest);
+        RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeCspReport);
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onResponseStarted.removeListener(WebRequestApi.onResponseStarted);
@@ -787,15 +794,11 @@ export class WebRequestApi {
         }
 
         const {
-            requestUrl,
             requestType,
             matchingResult,
             tabId,
             eventId,
-            timestamp,
             thirdParty,
-            contentType,
-            method,
         } = context;
 
         /**
@@ -821,13 +824,10 @@ export class WebRequestApi {
                     tabId,
                     eventId,
                     cspReportBlocked: true,
-                    requestUrl,
-                    requestType: contentType,
-                    timestamp,
-                    requestThirdParty: thirdParty,
-                    method,
                 },
             });
+
+            tabsApi.incrementTabBlockedRequestCount(tabId);
 
             return { cancel: true };
         }
