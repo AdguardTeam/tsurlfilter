@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import browser, { Runtime } from 'webextension-polyfill';
 import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
-import { CookieRule } from '../../common/content-script/cookie-controller';
+import type { CookieRule } from '../../common/content-script/cookie-controller';
 import { RequestBlockingApi } from './request';
 import { ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -23,7 +23,6 @@ import {
     getDomain,
     ContentType,
 } from '../../common';
-import { type CookieRule } from '../../common/content-script';
 import { Assistant } from './assistant';
 import { tabsApi } from './api';
 
