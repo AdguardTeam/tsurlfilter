@@ -9,7 +9,7 @@ adg_os_any:
     - to
   assignable: true
   negatable: false
-  value_format: pipe_separated_domains
+  value_format: pipe_separated_denyallow_domains
 
 adg_ext_any:
   name: denyallow
@@ -22,7 +22,7 @@ adg_ext_any:
     - to
   assignable: true
   negatable: false
-  value_format: pipe_separated_domains
+  value_format: pipe_separated_denyallow_domains
 
 adg_cb_ios:
   name: denyallow
@@ -35,7 +35,7 @@ adg_cb_ios:
     - to
   assignable: true
   negatable: false
-  value_format: pipe_separated_domains
+  value_format: pipe_separated_denyallow_domains
 
 adg_cb_safari:
   name: denyallow
@@ -48,7 +48,7 @@ adg_cb_safari:
     - to
   assignable: true
   negatable: false
-  value_format: pipe_separated_domains
+  value_format: pipe_separated_denyallow_domains
 
 ubo_ext_any:
   name: denyallow
@@ -61,4 +61,4 @@ ubo_ext_any:
     - to
   assignable: true
   negatable: false
-  value_format: pipe_separated_domains
+  value_format: pipe_separated_denyallow_domains

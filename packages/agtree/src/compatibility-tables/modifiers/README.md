@@ -51,10 +51,14 @@ The value format describes the format of the modifier value. It can be one of th
 - Pre-defined validator name:
     - Validating the value is done by using the pre-defined validator. The value is valid if it matches the validator.
     - Currently available validators:
-        - `domain` - validates that the value is a valid domain name.
-        - `pipe_separated_domains` - validates that the value is a valid list of domains separated by `|` character.
-        - `url` - validates that the value is a valid URL.
-        - `regexp` - validates that the value is a valid regular expression.
+        - list of domains separated by the vertical bar `|`:
+            - `pipe_separated_apps` validates value for `$app` modifier
+            - `pipe_separated_domains` validates value for `$domain` modifier
+            - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier —
+              negation and wildcard are not allowed compared to `$domain` modifier
+            - `pipe_separated_methods` validates value for `$method` modifier
+        - `url` validates that the value is a valid URL.
+        - `regexp` validates that the value is a valid regular expression.
             > :warning: **This is not the same as when you assign a regular expression to value_format!**
             >
             > - If you specify `value_format: /^[0-9]+$/`,

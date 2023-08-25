@@ -5,7 +5,16 @@ adg_os_any:
     having a specific header with (optionally) a specific value.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#header-modifier
   assignable: true
-  value_format: /^[A-z0-9-]+(:.+|)$/
+  value_format: |-
+    (?xi)
+      ^
+        # header name
+        [\w-]+
+        (
+          :
+          # header value: string or regexp
+          (\w+|\/.+\/)
+        )?
 
 adg_ext_any:
   name: header
@@ -14,7 +23,16 @@ adg_ext_any:
     having a specific header with (optionally) a specific value.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#header-modifier
   assignable: true
-  value_format: /^[A-z0-9-]+(:.+|)$/
+  value_format: |-
+    (?xi)
+      ^
+        # header name
+        [\w-]+
+        (
+          :
+          # header value: string or regexp
+          (\w+|\/.+\/)
+        )?
 
 ubo_ext_any:
   name: header
@@ -23,4 +41,13 @@ ubo_ext_any:
     having a specific header with (optionally) a specific value.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#header
   assignable: true
-  value_format: /^[A-z0-9-]+(:.+|)$/
+  value_format: |-
+    (?xi)
+      ^
+        # header name
+        [\w-]+
+        (
+          :
+          # header value: string or regexp
+          (\w+|\/.+\/)
+        )?

@@ -20,7 +20,20 @@ adg_os_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
-  value_format: /^\/.+\/.*\/$/
+  value_format: |-
+    (?xi)
+      ^
+        \/
+          # the regexp to match by
+          (.+)
+        # separator
+        \/
+          # replacement
+          (.+?)
+        \/
+          # flags
+          ([gimuy]*)?
+      $
 
 adg_ext_firefox:
   name: replace
@@ -43,4 +56,17 @@ adg_ext_firefox:
   inverse_conflicts: true
   assignable: true
   negatable: false
-  value_format: /^\/.+\/.*\/$/
+  value_format: |-
+    (?xi)
+      ^
+        \/
+          # the regexp to match by
+          (.+)
+        # separator
+        \/
+          # replacement
+          (.+?)
+        \/
+          # flags
+          ([gimuy]*)?
+      $

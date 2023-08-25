@@ -6,19 +6,7 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#method-modifier
   negatable: false
   assignable: true
-  value_format: |-
-    (?xi)
-      ^(?!\|)(?:\b(
-        get|
-        head|
-        post|
-        put|
-        delete|
-        connect|
-        options|
-        trace|
-        patch
-      )\b|(\|?|~?))+(?<!\|)$
+  value_format: pipe_separated_methods
 
 adg_ext_any:
   name: method
@@ -28,19 +16,7 @@ adg_ext_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#method-modifier
   negatable: false
   assignable: true
-  value_format: |-
-    (?xi)
-      ^(?!\|)(?:\b(
-        get|
-        head|
-        post|
-        put|
-        delete|
-        connect|
-        options|
-        trace|
-        patch
-      )\b|(\|?|~?))+(?<!\|)$
+  value_format: pipe_separated_methods
 
 ubo_ext_any:
   name: method
@@ -50,16 +26,4 @@ ubo_ext_any:
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#method
   negatable: false
   assignable: true
-  value_format: |-
-    (?xi)
-      ^(?!\|)(?:\b(
-        get|
-        head|
-        post|
-        put|
-        delete|
-        connect|
-        options|
-        trace|
-        patch
-      )\b|(\|?|~?))+(?<!\|)$
+  value_format: pipe_separated_methods

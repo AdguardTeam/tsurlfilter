@@ -7,4 +7,15 @@ adg_os_any:
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#jsonprune-modifier
   assignable: true
   negatable: false
-  value_format: /^\\\$\.(?!.*([^\\](,|\$|\/))).*$/
+  value_optional: true
+  value_format: |-
+    (?xi)
+      ^
+        # the expression always starts with a dollar sign (for root)
+        # which should be escaped
+        \\
+        \$
+        \.?
+        # TODO: improve the expression to invalidate unescaped `$` and `,`
+        .+
+      $

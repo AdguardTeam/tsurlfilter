@@ -90,6 +90,38 @@ export const SMALL_LETTER_X = 'x';
 export const SMALL_LETTER_Y = 'y';
 export const SMALL_LETTER_Z = 'z';
 
+/**
+ * Set of all small letters.
+ */
+export const SMALL_LETTERS = new Set([
+    SMALL_LETTER_A,
+    SMALL_LETTER_B,
+    SMALL_LETTER_C,
+    SMALL_LETTER_D,
+    SMALL_LETTER_E,
+    SMALL_LETTER_F,
+    SMALL_LETTER_G,
+    SMALL_LETTER_H,
+    SMALL_LETTER_I,
+    SMALL_LETTER_J,
+    SMALL_LETTER_K,
+    SMALL_LETTER_L,
+    SMALL_LETTER_M,
+    SMALL_LETTER_N,
+    SMALL_LETTER_O,
+    SMALL_LETTER_P,
+    SMALL_LETTER_Q,
+    SMALL_LETTER_R,
+    SMALL_LETTER_S,
+    SMALL_LETTER_T,
+    SMALL_LETTER_U,
+    SMALL_LETTER_V,
+    SMALL_LETTER_W,
+    SMALL_LETTER_X,
+    SMALL_LETTER_Y,
+    SMALL_LETTER_Z,
+]);
+
 // Capital letters
 export const CAPITAL_LETTER_A = 'A';
 export const CAPITAL_LETTER_B = 'B';
@@ -118,6 +150,38 @@ export const CAPITAL_LETTER_X = 'X';
 export const CAPITAL_LETTER_Y = 'Y';
 export const CAPITAL_LETTER_Z = 'Z';
 
+/**
+ * Set of all capital letters.
+ */
+export const CAPITAL_LETTERS = new Set([
+    CAPITAL_LETTER_A,
+    CAPITAL_LETTER_B,
+    CAPITAL_LETTER_C,
+    CAPITAL_LETTER_D,
+    CAPITAL_LETTER_E,
+    CAPITAL_LETTER_F,
+    CAPITAL_LETTER_G,
+    CAPITAL_LETTER_H,
+    CAPITAL_LETTER_I,
+    CAPITAL_LETTER_J,
+    CAPITAL_LETTER_K,
+    CAPITAL_LETTER_L,
+    CAPITAL_LETTER_M,
+    CAPITAL_LETTER_N,
+    CAPITAL_LETTER_O,
+    CAPITAL_LETTER_P,
+    CAPITAL_LETTER_Q,
+    CAPITAL_LETTER_R,
+    CAPITAL_LETTER_S,
+    CAPITAL_LETTER_T,
+    CAPITAL_LETTER_U,
+    CAPITAL_LETTER_V,
+    CAPITAL_LETTER_W,
+    CAPITAL_LETTER_X,
+    CAPITAL_LETTER_Y,
+    CAPITAL_LETTER_Z,
+]);
+
 // Numbers as strings
 export const NUMBER_0 = '0';
 export const NUMBER_1 = '1';
@@ -130,6 +194,22 @@ export const NUMBER_7 = '7';
 export const NUMBER_8 = '8';
 export const NUMBER_9 = '9';
 
+/**
+ * Set of all numbers as strings.
+ */
+export const NUMBERS = new Set([
+    NUMBER_0,
+    NUMBER_1,
+    NUMBER_2,
+    NUMBER_3,
+    NUMBER_4,
+    NUMBER_5,
+    NUMBER_6,
+    NUMBER_7,
+    NUMBER_8,
+    NUMBER_9,
+]);
+
 export const REGEX_MARKER = '/';
 
 export const ADG_SCRIPTLET_MASK = '//scriptlet';
@@ -137,10 +217,13 @@ export const UBO_SCRIPTLET_MASK = 'js';
 
 // Modifiers are separated by ",". For example: "script,domain=example.com"
 export const MODIFIERS_SEPARATOR = ',';
-export const MODIFIER_EXCEPTION_MARKER = '~';
 export const MODIFIER_ASSIGN_OPERATOR = '=';
+export const NEGATION_MARKER = '~';
 
-export const DOMAIN_EXCEPTION_MARKER = '~';
+/**
+ * The wildcard symbol — `*`.
+ */
+export const WILDCARD = ASTERISK;
 
 /**
  * Classic domain separator.
@@ -151,10 +234,10 @@ export const DOMAIN_EXCEPTION_MARKER = '~';
  * example.com,~example.org##.ads
  * ```
  */
-export const CLASSIC_DOMAIN_SEPARATOR = ',';
+export const COMMA_DOMAIN_LIST_SEPARATOR = ',';
 
 /**
- * Modifier domain separator.
+ * Modifier separator for $app, $denyallow, $domain, $method.
  *
  * @example
  * ```adblock
@@ -162,9 +245,7 @@ export const CLASSIC_DOMAIN_SEPARATOR = ',';
  * ads.js^$script,domains=example.com|~example.org
  * ```
  */
-export const MODIFIER_DOMAIN_SEPARATOR = '|';
-
-export const DOMAIN_LIST_TYPE = 'DomainList';
+export const PIPE_MODIFIER_SEPARATOR = '|';
 
 // CSS
 export const CSS_CLASS_MARKER = '.';
