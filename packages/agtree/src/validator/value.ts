@@ -144,7 +144,7 @@ const customNoNegatedListItemsValidator = (modifierName: string, listItems: List
         );
     }
 
-    return { ok: true };
+    return { valid: true };
 };
 
 /**
@@ -180,7 +180,7 @@ const customConsistentExceptionsValidator = (modifierName: string, listItems: Li
         );
     }
 
-    return { ok: true };
+    return { valid: true };
 };
 
 /**
@@ -217,7 +217,7 @@ const validateListItemsModifier = (
     } catch (e: unknown) {
         if (e instanceof AdblockSyntaxError) {
             return {
-                ok: false,
+                valid: false,
                 error: e.message,
             };
         }
@@ -248,7 +248,7 @@ const validateListItemsModifier = (
         return customListValidator(modifierName, theList.children);
     }
 
-    return { ok: true };
+    return { valid: true };
 };
 
 /**
@@ -371,5 +371,5 @@ export const validateValue = (modifier: Modifier, valueFormat: string): Validati
         return defaultInvalidValueResult;
     }
 
-    return { ok: true };
+    return { valid: true };
 };

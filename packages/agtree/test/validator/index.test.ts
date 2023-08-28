@@ -182,7 +182,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -194,7 +194,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
                 expect(validationResult.warn?.includes('support shall be removed in the future')).toBeTruthy();
             });
@@ -258,7 +258,7 @@ describe('ModifierValidator', () => {
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
         });
@@ -280,7 +280,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
 
@@ -295,7 +295,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -310,7 +310,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
 
@@ -325,7 +325,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -344,7 +344,7 @@ describe('ModifierValidator', () => {
                 test.each(validModifiers)('%s', (rawModifier) => {
                     const modifier = getModifier(rawModifier);
                     const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                    expect(validationResult.ok).toBeTruthy();
+                    expect(validationResult.valid).toBeTruthy();
                 });
             });
 
@@ -391,7 +391,7 @@ describe('ModifierValidator', () => {
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeTruthy();
+                        expect(validationResult.valid).toBeTruthy();
                     });
                 });
             });
@@ -406,7 +406,7 @@ describe('ModifierValidator', () => {
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeTruthy();
+                        expect(validationResult.valid).toBeTruthy();
                     });
                 });
 
@@ -448,7 +448,7 @@ describe('ModifierValidator', () => {
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeFalsy();
+                        expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
                 });
@@ -463,7 +463,7 @@ describe('ModifierValidator', () => {
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeTruthy();
+                        expect(validationResult.valid).toBeTruthy();
                     });
                 });
 
@@ -522,7 +522,7 @@ describe('ModifierValidator', () => {
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeFalsy();
+                        expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
                 });
@@ -540,7 +540,7 @@ describe('ModifierValidator', () => {
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeTruthy();
+                        expect(validationResult.valid).toBeTruthy();
                     });
                 });
 
@@ -591,7 +591,7 @@ describe('ModifierValidator', () => {
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeFalsy();
+                        expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
                 });
@@ -607,7 +607,7 @@ describe('ModifierValidator', () => {
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeTruthy();
+                        expect(validationResult.valid).toBeTruthy();
                     });
                 });
 
@@ -658,7 +658,7 @@ describe('ModifierValidator', () => {
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                        expect(validationResult.ok).toBeFalsy();
+                        expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
                 });
@@ -678,7 +678,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -740,7 +740,7 @@ describe('ModifierValidator', () => {
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
         });
@@ -756,7 +756,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
 
@@ -768,7 +768,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -783,7 +783,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
 
@@ -795,7 +795,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -810,7 +810,7 @@ describe('ModifierValidator', () => {
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
-                        expect(validationResult.ok).toBeTruthy();
+                        expect(validationResult.valid).toBeTruthy();
                     });
                 });
 
@@ -852,7 +852,7 @@ describe('ModifierValidator', () => {
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
-                        expect(validationResult.ok).toBeFalsy();
+                        expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
                 });
@@ -872,7 +872,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -939,7 +939,7 @@ describe('ModifierValidator', () => {
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
         });
@@ -955,7 +955,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(EXPECTED_ERROR)).toBeTruthy();
             });
 
@@ -967,7 +967,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
     });

@@ -4,14 +4,13 @@ import { VALIDATION_ERROR_PREFIX } from './constants';
 
 /**
  * Result of modifier validation:
- * - `{ ok: true }` for valid and _fully supported_ modifier;
- * - `{ ok: true, warn: <deprecation notice> }` for valid
+ * - `{ valid: true }` for valid and _fully supported_ modifier;
+ * - `{ valid: true, warn: <deprecation notice> }` for valid
  *   and _still supported but deprecated_ modifier;
- * - otherwise `{ ok: true, error: <invalidity reason> }`
+ * - otherwise `{ valid: true, error: <invalidity reason> }`
  */
 export type ValidationResult = {
-    // TODO: change `ok` to `valid`. note that aglint should be updated as well
-    ok: boolean,
+    valid: boolean,
     error?: string,
     warn?: string,
 };
@@ -32,11 +31,11 @@ export const isValidNoopModifier = (value: string): boolean => {
  *
  * @param error Error message.
  *
- * @returns Validation result `{ ok: false, error }`.
+ * @returns Validation result `{ valid: false, error }`.
  */
 export const getInvalidValidationResult = (error: string): ValidationResult => {
     return {
-        ok: false,
+        valid: false,
         error,
     };
 };
@@ -47,7 +46,7 @@ export const getInvalidValidationResult = (error: string): ValidationResult => {
  *
  * @param modifierName Modifier name.
  *
- * @returns Validation result `{ ok: false, error }`.
+ * @returns Validation result `{ valid: false, error }`.
  */
 export const getValueRequiredValidationResult = (modifierName: string): ValidationResult => {
     return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);

@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 - Validation of modifier values due to `value_format`
 
+## Changed
+
+- `ModifierValidator.validate()` result type `ValidationResult` — `valid` property instead of `ok`
+
+
 ## 1.1.2 - 2023-08-14
 
 ### Fixed

@@ -6,6 +6,7 @@ adg_os_any:
   negatable: false
   exception_only: true
   value_optional: true
+  # TODO: add custom validator instead of regular expression. AG-25273
   value_format: |-
     (?x)
       ^(?!\|)\b(?:(

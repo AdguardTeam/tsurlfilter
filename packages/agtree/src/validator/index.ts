@@ -69,7 +69,7 @@ const validateForSpecificSyntax = (
         // prepare the message which is multiline in the yaml file
         const warn = specificBlockerData[SpecificKey.DeprecationMessage].replace(NEWLINE, SPACE);
         return {
-            ok: true,
+            valid: true,
             warn,
         };
     }
@@ -95,7 +95,7 @@ const validateForSpecificSyntax = (
          */
         if (specificBlockerData[SpecificKey.ValueOptional]) {
             // no need to check the value if it is optional
-            return { ok: true };
+            return { valid: true };
         }
 
         if (!modifier.value) {
@@ -103,7 +103,7 @@ const validateForSpecificSyntax = (
         }
 
         /**
-         * TODO: consider to return `{ ok: true, warn: 'Modifier value may be specified' }` (???)
+         * TODO: consider to return `{ valid: true, warn: 'Modifier value may be specified' }` (???)
          * for $stealth modifier without a value
          * but only after the extension will support value for $stealth:
          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2107
@@ -121,7 +121,7 @@ const validateForSpecificSyntax = (
         return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN}: '${modifierName}'`);
     }
 
-    return { ok: true };
+    return { valid: true };
 };
 
 /**
@@ -215,7 +215,7 @@ class ModifierValidator {
         }
         // for 'Common' syntax we cannot check something more
         if (syntax === AdblockSyntax.Common) {
-            return { ok: true };
+            return { valid: true };
         }
         return validateForSpecificSyntax(this.modifiersData, syntax, modifier, isException);
     };
