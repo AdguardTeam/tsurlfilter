@@ -59,7 +59,9 @@ export { AgentParser } from './parser/comment/agent';
 export { CommentRuleParser } from './parser/comment';
 export { ConfigCommentRuleParser } from './parser/comment/inline-config';
 export { CosmeticRuleParser } from './parser/cosmetic';
+export { AppListParser } from './parser/misc/app-list';
 export { DomainListParser } from './parser/misc/domain-list';
+export { MethodListParser } from './parser/misc/method-list';
 export { FilterListParser } from './parser/filterlist';
 export { HintCommentRuleParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
@@ -85,15 +87,14 @@ export { FilterListConverter } from './converter/filter-list';
 export {
     ADG_SCRIPTLET_MASK,
     AGLINT_COMMAND_PREFIX,
-    CLASSIC_DOMAIN_SEPARATOR,
-    DOMAIN_EXCEPTION_MARKER,
+    COMMA_DOMAIN_LIST_SEPARATOR,
+    NEGATION_MARKER,
     HINT_MARKER,
     IF,
     INCLUDE,
     MODIFIERS_SEPARATOR,
     MODIFIER_ASSIGN_OPERATOR,
-    MODIFIER_DOMAIN_SEPARATOR,
-    MODIFIER_EXCEPTION_MARKER,
+    PIPE_MODIFIER_SEPARATOR,
     NETWORK_RULE_EXCEPTION_MARKER,
     NETWORK_RULE_SEPARATOR,
     PREPROCESSOR_MARKER,

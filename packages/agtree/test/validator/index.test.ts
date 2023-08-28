@@ -2,8 +2,9 @@ import { type Modifier } from '../../src/parser/common';
 import { ModifierParser } from '../../src/parser/misc/modifier';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
-import { INVALID_ERROR_PREFIX } from '../../src/validator/constants';
+import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 import { AdblockSyntax } from '../../src/utils/adblockers';
+import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-helpers';
 
 const DOCS_BASE_URL = {
     ADG: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/',
@@ -181,7 +182,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -193,7 +194,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
                 expect(validationResult.warn?.includes('support shall be removed in the future')).toBeTruthy();
             });
@@ -203,61 +204,61 @@ describe('ModifierValidator', () => {
             const unsupportedModifiersCases = [
                 {
                     actual: 'not-existent',
-                    expected: INVALID_ERROR_PREFIX.NOT_EXISTENT,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_EXISTENT,
                 },
                 {
                     actual: 'protobuf',
-                    expected: INVALID_ERROR_PREFIX.NOT_EXISTENT,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_EXISTENT,
                 },
                 {
                     actual: 'popunder',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: INVALID_ERROR_PREFIX.REMOVED,
+                    expected: VALIDATION_ERROR_PREFIX.REMOVED,
                 },
                 {
                     actual: 'webrtc',
-                    expected: INVALID_ERROR_PREFIX.REMOVED,
+                    expected: VALIDATION_ERROR_PREFIX.REMOVED,
                 },
                 {
                     actual: '~popup',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: '~domain=example.com',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: '~app',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: 'domain',
-                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
                     actual: 'denyallow',
-                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
                     actual: 'network=8.8.8.8',
-                    expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN,
                 },
                 {
                     actual: 'third-party=true',
-                    expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN,
                 },
                 {
                     actual: '__noop__',
-                    expected: INVALID_ERROR_PREFIX.INVALID_NOOP,
+                    expected: VALIDATION_ERROR_PREFIX.INVALID_NOOP,
                 },
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
         });
@@ -279,8 +280,8 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
-                expect(validationResult.ok).toBeFalsy();
-                expect(validationResult.error?.startsWith(INVALID_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
+                expect(validationResult.valid).toBeFalsy();
+                expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
 
             const validForBlockingModifiers = [
@@ -294,7 +295,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -302,14 +303,14 @@ describe('ModifierValidator', () => {
             const invalidForExceptionRuleModifiers = [
                 {
                     actual: 'all',
-                    expected: INVALID_ERROR_PREFIX.BLOCK_ONLY,
+                    expected: VALIDATION_ERROR_PREFIX.BLOCK_ONLY,
                 },
             ];
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
 
@@ -318,30 +319,23 @@ describe('ModifierValidator', () => {
                 'jsinject',
                 'stealth',
                 'stealth=dpi',
+                'stealth=dpi|user-agent',
             ];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
         describe('value validation', () => {
             describe('optional value', () => {
                 const validModifiers = [
-                    'cookie=ABC',
-                    'cookie=/zmFQeXtI|JPIqApiY/',
-                    "csp=worker-src 'none'",
-                    'redirect=noopjs',
-                    'redirect-rule=noopjs',
-                    'removeheader=link',
-                    'removeheader=request:user-agent',
-                    'removeparam=cb',
-                    'removeparam=~red',
-                    // some assignable modifiers may not have a value
                     'cookie',
                     'csp',
+                    'hls',
+                    'jsonprune',
                     'redirect',
                     'redirect-rule',
                     'removeheader',
@@ -350,7 +344,323 @@ describe('ModifierValidator', () => {
                 test.each(validModifiers)('%s', (rawModifier) => {
                     const modifier = getModifier(rawModifier);
                     const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
-                    expect(validationResult.ok).toBeTruthy();
+                    expect(validationResult.valid).toBeTruthy();
+                });
+            });
+
+            describe('required value - validate by regular expression', () => {
+                describe('regexp valid', () => {
+                    test.each([
+                        'cookie=ABC',
+                        'cookie=/zmFQeXtI|JPIqApiY/',
+                        'csp=style-src *',
+                        "csp=worker-src 'none'",
+                        "csp=script-src 'self' * 'unsafe-inline'",
+                        "csp=script-src 'self' 'unsafe-inline' http: https: blob:",
+                        "csp=script-src 'self' * 'sha256-0McqMM66/wAVZmxF6zXpjNsb1UMbTl4LXBXdhqPKxws='",
+                        'header=set-cookie',
+                        'header=set-cookie:foo',
+                        'header=set-cookie:/foo\\, bar\\$/',
+                        'hls=\\/video^?*&source=video_ads',
+                        'hls=/\\/video\\/?\\?.*\\&source=video_ads/i',
+                        'hls=/#UPLYNK-SEGMENT:.*\\,ad/t',
+                        'jsonprune=\\$..[one\\, "two three"]',
+                        'jsonprune=\\$.a[?(has ad_origin)]',
+                        "jsonprune=\\$.*.*[?(key-eq 'Some key' 'Some value')]",
+                        'jsonprune=\\$.elements[?(has "\\$.a.b.c")]',
+                        'jsonprune=\\$.elements[?(key-eq "\\$.a.b.c" "abc")]',
+                        'method=get',
+                        'method=get|head|put',
+                        'method=~post',
+                        'method=~post|~put',
+                        'permissions=autoplay=()',
+                        'permissions=storage-access=()\\,camera=()',
+                        'permissions=storage-access=()\\, camera=()',
+                        'permissions=storage-access=()\\,  camera=()',
+                        'redirect=noopjs',
+                        'redirect=noopmp4-1s',
+                        'redirect-rule=noopjs',
+                        'redirect-rule=noopmp4-1s',
+                        'removeheader=link',
+                        'removeheader=request:user-agent',
+                        'removeparam=cb',
+                        'removeparam=~red',
+                        'removeparam=/^__s=[A-Za-z0-9]{6\\,}/',
+                        'replace=/("ad":{).+"(\\}\\,"(?:log|watermark)")/\\$1\\$2/',
+                        'replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_domains', () => {
+                describe('pipe_separated_domains valid', () => {
+                    test.each([
+                        'domain=example.com',
+                        'domain=~example.com',
+                        'domain=example.com|example.org',
+                        'domain=example.com|example.org|test-example.*',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_domains invalid', () => {
+                    test.each([
+                        {
+                            actual: 'domain=|example.com|example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com|example.org|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'domain=~~example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.org|~|example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=~ example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.com|example..org',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'example..org'`,
+                        },
+                        {
+                            actual: 'domain=exam[le.org|example.com|example,org|example or',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'exam[le.org', 'example,org', 'example or'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_denyallow_domains', () => {
+                describe('pipe_separated_denyallow_domains valid', () => {
+                    test.each([
+                        'denyallow=example.com',
+                        'denyallow=example.com|example.org',
+                        'denyallow=example.com|example.org|test-example.com',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_denyallow_domains invalid', () => {
+                    test.each([
+                        {
+                            actual: 'denyallow=|example.com|example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'denyallow=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'denyallow=example.com|example.org|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'denyallow=~~example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'denyallow=example.org|~|example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'denyallow=~ example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'denyallow=example.com|example..org',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'example..org'`,
+                        },
+                        {
+                            actual: 'denyallow=exam[le.org|example.com|example,org|example or',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'exam[le.org', 'example,org', 'example or'`,
+                        },
+                        // due to $denyallow restrictions: no wildcard tld, no negation
+                        {
+                            actual: 'denyallow=example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'example.*'`,
+                        },
+                        {
+                            actual: 'denyallow=example.org|test-example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'denyallow': 'test-example.*'`,
+                        },
+                        {
+                            actual: 'denyallow=~example.com',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'denyallow': 'example.com'`,
+                        },
+                        {
+                            actual: 'denyallow=example.com|~example.org',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'denyallow': 'example.org'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_apps', () => {
+                describe('pipe_separated_apps valid', () => {
+                    test.each([
+                        'app=Example.exe',
+                        'app=Example2.exe',
+                        'app=com.test_example.app',
+                        'app=~com.test_example.app',
+                        'app=Example.exe|com.example.app',
+                        'app=Example.exe|~com.example.app|com.example.osx',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_apps invalid', () => {
+                    test.each([
+                        {
+                            actual: 'app=|Example.exe|com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'app=Example.exe||com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'app=Example.exe|com.example.app|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'app=~~Example.exe',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'app=Example.exe|~|com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'app=~ Example.exe',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'app=Example.exe|com.example..app',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'com.example..app'`,
+                        },
+                        {
+                            actual: 'app=Exam[le.exe|com.example.app|Example,exe|Example exe',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'Exam[le.exe', 'Example,exe', 'Example exe'`,
+                        },
+                        // due to $app restrictions: no wildcard tld
+                        {
+                            actual: 'app=Example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'Example.*'`,
+                        },
+                        {
+                            actual: 'app=Example.exe|com.example.*',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'app': 'com.example.*'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_methods', () => {
+                describe('pipe_separated_methods valid', () => {
+                    test.each([
+                        'method=get',
+                        'method=~head',
+                        'method=post|put',
+                        'method=get|post|put',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_methods invalid', () => {
+                    test.each([
+                        {
+                            actual: 'method=|get|post',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'method=get||post',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'method=get|post|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'method=~~get',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'method=get|~|put',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'method=~ get',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'method=get|connect|disconnect',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'method': 'disconnect'`,
+                        },
+                        {
+                            // despite the method is matched case-insensitively, the value should be lowercased
+                            actual: 'method=GET',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'method': 'GET'`,
+                        },
+                        // due to $method restrictions: no mixed negated and not negated values
+                        {
+                            actual: 'method=get|~post',
+                            expected: `${VALIDATION_ERROR_PREFIX.MIXED_NEGATIONS}: 'method': 'post'`,
+                        },
+                        {
+                            actual: 'method=~get|post|put',
+                            expected: `${VALIDATION_ERROR_PREFIX.MIXED_NEGATIONS}: 'method': 'post', 'put'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
                 });
             });
         });
@@ -368,7 +678,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -376,61 +686,61 @@ describe('ModifierValidator', () => {
             const unsupportedModifiersCases = [
                 {
                     actual: 'not-existent',
-                    expected: INVALID_ERROR_PREFIX.NOT_EXISTENT,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_EXISTENT,
                 },
                 {
                     actual: 'protobuf',
-                    expected: INVALID_ERROR_PREFIX.NOT_EXISTENT,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_EXISTENT,
                 },
                 {
                     actual: 'webrtc',
-                    expected: INVALID_ERROR_PREFIX.REMOVED,
+                    expected: VALIDATION_ERROR_PREFIX.REMOVED,
                 },
                 {
                     actual: 'genericblock',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'app=com.test.app',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'jsinject',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: '~popup',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: '~domain=example.com',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: 'domain',
-                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
                     actual: 'denyallow',
-                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
                     actual: 'third-party=true',
-                    expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN,
                 },
                 {
                     actual: '__-__',
-                    expected: INVALID_ERROR_PREFIX.INVALID_NOOP,
+                    expected: VALIDATION_ERROR_PREFIX.INVALID_NOOP,
                 },
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
         });
@@ -446,8 +756,8 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
-                expect(validationResult.ok).toBeFalsy();
-                expect(validationResult.error?.startsWith(INVALID_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
+                expect(validationResult.valid).toBeFalsy();
+                expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
 
             const validForBlockingRuleModifiers = [
@@ -458,7 +768,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -466,14 +776,14 @@ describe('ModifierValidator', () => {
             const invalidForExceptionRuleModifiers = [
                 {
                     actual: 'popunder',
-                    expected: INVALID_ERROR_PREFIX.BLOCK_ONLY,
+                    expected: VALIDATION_ERROR_PREFIX.BLOCK_ONLY,
                 },
             ];
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
 
@@ -485,7 +795,67 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
+            });
+        });
+
+        describe('value validation', () => {
+            describe('required value - validate by pipe_separated_domains', () => {
+                describe('pipe_separated_domains valid', () => {
+                    test.each([
+                        'to=example.com',
+                        'to=~example.com',
+                        'to=example.com|example.org',
+                        'to=example.com|example.org|test-example.*',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_domains invalid', () => {
+                    test.each([
+                        {
+                            actual: 'domain=|example.com|example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com|example.org|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'domain=~~example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.org|~|example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=~ example.com',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'domain=example.com|example..org',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'example..org'`,
+                        },
+                        {
+                            actual: 'domain=exam[le.org|example.com|example,org|example or',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'domain': 'exam[le.org', 'example,org', 'example or'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
             });
         });
     });
@@ -502,7 +872,7 @@ describe('ModifierValidator', () => {
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
 
@@ -510,55 +880,55 @@ describe('ModifierValidator', () => {
             const unsupportedModifiersCases = [
                 {
                     actual: 'not-existent',
-                    expected: INVALID_ERROR_PREFIX.NOT_EXISTENT,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_EXISTENT,
                 },
                 {
                     actual: 'protobuf',
-                    expected: INVALID_ERROR_PREFIX.NOT_EXISTENT,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_EXISTENT,
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'app=com.test.app',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'jsinject',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'denyallow',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: '~popup',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: '~domain=example.com',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 {
                     actual: 'domain',
-                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
                     actual: 'third-party=true',
-                    expected: INVALID_ERROR_PREFIX.VALUE_FORBIDDEN,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN,
                 },
                 {
                     actual: '___',
-                    expected: INVALID_ERROR_PREFIX.NOT_SUPPORTED,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
                 },
                 {
                     actual: 'rewrite',
-                    expected: INVALID_ERROR_PREFIX.VALUE_REQUIRED,
+                    expected: VALIDATION_ERROR_PREFIX.VALUE_REQUIRED,
                 },
                 {
                     actual: '~rewrite=abp-resource:blank-js',
-                    expected: INVALID_ERROR_PREFIX.NOT_NEGATABLE,
+                    expected: VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER,
                 },
                 // TODO: Validate value format
                 // {
@@ -569,7 +939,7 @@ describe('ModifierValidator', () => {
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
         });
@@ -585,7 +955,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
-                expect(validationResult.ok).toBeFalsy();
+                expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(EXPECTED_ERROR)).toBeTruthy();
             });
 
@@ -597,7 +967,7 @@ describe('ModifierValidator', () => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
-                expect(validationResult.ok).toBeTruthy();
+                expect(validationResult.valid).toBeTruthy();
             });
         });
     });

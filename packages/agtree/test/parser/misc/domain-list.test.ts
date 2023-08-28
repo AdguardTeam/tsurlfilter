@@ -1,58 +1,20 @@
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
-import { type DomainList, type DomainListSeparator } from '../../../src/parser/common';
+import {
+    type DomainList,
+    type DomainListSeparator,
+    ListNodeType,
+    ListItemNodeType,
+} from '../../../src/parser/common';
 import { COMMA, EMPTY } from '../../../src/utils/constants';
 
 describe('DomainListParser', () => {
-    test('parse should throw on invalid input', () => {
-        expect(() => DomainListParser.parse('~')).toThrowError('Empty domain specified');
-
-        expect(() => DomainListParser.parse('~~~')).toThrowError(
-            'Exception marker cannot be followed by another exception marker',
-        );
-
-        expect(() => DomainListParser.parse(' ~ ~ ~ ')).toThrowError(
-            'Exception marker cannot be followed by whitespace',
-        );
-
-        expect(() => DomainListParser.parse('~,~,~')).toThrowError(
-            'Exception marker cannot be followed by a separator',
-        );
-
-        expect(() => DomainListParser.parse('~  example.com')).toThrowError(
-            'Exception marker cannot be followed by whitespace',
-        );
-
-        // https://github.com/AdguardTeam/AGLint/issues/143
-        expect(() => DomainListParser.parse('example.com,')).toThrowError(
-            'Domain list cannot end with a separator',
-        );
-
-        expect(() => DomainListParser.parse('example.com  ,  ')).toThrowError(
-            'Domain list cannot end with a separator',
-        );
-
-        expect(() => DomainListParser.parse('example.com,example.net,')).toThrowError(
-            'Domain list cannot end with a separator',
-        );
-
-        expect(() => DomainListParser.parse(',')).toThrowError(
-            'Domain list cannot end with a separator',
-        );
-
-        expect(() => DomainListParser.parse('example.com,,')).toThrowError(
-            'Domain list cannot end with a separator',
-        );
-
-        expect(() => DomainListParser.parse('example.com , , ')).toThrowError(
-            'Domain list cannot end with a separator',
-        );
-    });
+    // invalid inputs are tested in `list-helpers.test.ts`
 
     test('parse should work as expected on valid input', () => {
         // Empty
         expect(DomainListParser.parse(EMPTY)).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -73,7 +35,7 @@ describe('DomainListParser', () => {
         // Single domain
         expect(DomainListParser.parse('example.com')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -89,7 +51,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 0,
@@ -112,7 +74,7 @@ describe('DomainListParser', () => {
         // Multiple domains
         expect(DomainListParser.parse('example.com,example.net')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -128,7 +90,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 0,
@@ -145,7 +107,7 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 12,
@@ -167,7 +129,7 @@ describe('DomainListParser', () => {
 
         expect(DomainListParser.parse('example.com,example.net,example.org')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -183,7 +145,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 0,
@@ -200,7 +162,7 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 12,
@@ -217,7 +179,7 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 24,
@@ -240,7 +202,7 @@ describe('DomainListParser', () => {
         // Exception - single domain
         expect(DomainListParser.parse('~example.com')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -256,7 +218,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 1,
@@ -279,7 +241,7 @@ describe('DomainListParser', () => {
         // Exception - multiple domains
         expect(DomainListParser.parse('~example.com,~example.net')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -295,7 +257,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 1,
@@ -312,7 +274,7 @@ describe('DomainListParser', () => {
                         exception: true,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 14,
@@ -334,7 +296,7 @@ describe('DomainListParser', () => {
 
         expect(DomainListParser.parse('~example.com,~example.net,~example.org')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -350,7 +312,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 1,
@@ -367,7 +329,7 @@ describe('DomainListParser', () => {
                         exception: true,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 14,
@@ -384,7 +346,7 @@ describe('DomainListParser', () => {
                         exception: true,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 27,
@@ -407,7 +369,7 @@ describe('DomainListParser', () => {
         // Mixed - multiple domains
         expect(DomainListParser.parse('~example.com,~example.net,example.eu,~example.org')).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -423,7 +385,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 1,
@@ -440,7 +402,7 @@ describe('DomainListParser', () => {
                         exception: true,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 14,
@@ -457,7 +419,7 @@ describe('DomainListParser', () => {
                         exception: true,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 26,
@@ -474,7 +436,7 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 38,
@@ -499,7 +461,7 @@ describe('DomainListParser', () => {
             DomainListParser.parse('~example.com,  example.net    ,   example.eu ,        ~example.org'),
         ).toEqual<DomainList>(
             {
-                type: 'DomainList',
+                type: ListNodeType.DomainList,
                 loc: {
                     start: {
                         offset: 0,
@@ -515,7 +477,7 @@ describe('DomainListParser', () => {
                 separator: ',',
                 children: [
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 1,
@@ -532,7 +494,7 @@ describe('DomainListParser', () => {
                         exception: true,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 15,
@@ -549,7 +511,7 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 34,
@@ -566,7 +528,7 @@ describe('DomainListParser', () => {
                         exception: false,
                     },
                     {
-                        type: 'Domain',
+                        type: ListItemNodeType.Domain,
                         loc: {
                             start: {
                                 offset: 55,
@@ -589,7 +551,7 @@ describe('DomainListParser', () => {
         expect(
             DomainListParser.parse('~example.com|  example.net    |   example.eu |        ~example.org', '|'),
         ).toEqual<DomainList>({
-            type: 'DomainList',
+            type: ListNodeType.DomainList,
             loc: {
                 start: {
                     offset: 0,
@@ -605,7 +567,7 @@ describe('DomainListParser', () => {
             separator: '|',
             children: [
                 {
-                    type: 'Domain',
+                    type: ListItemNodeType.Domain,
                     loc: {
                         start: {
                             offset: 1,
@@ -622,7 +584,7 @@ describe('DomainListParser', () => {
                     exception: true,
                 },
                 {
-                    type: 'Domain',
+                    type: ListItemNodeType.Domain,
                     loc: {
                         start: {
                             offset: 15,
@@ -639,7 +601,7 @@ describe('DomainListParser', () => {
                     exception: false,
                 },
                 {
-                    type: 'Domain',
+                    type: ListItemNodeType.Domain,
                     loc: {
                         start: {
                             offset: 34,
@@ -656,7 +618,7 @@ describe('DomainListParser', () => {
                     exception: false,
                 },
                 {
-                    type: 'Domain',
+                    type: ListItemNodeType.Domain,
                     loc: {
                         start: {
                             offset: 55,

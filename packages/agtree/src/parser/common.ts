@@ -6,7 +6,7 @@ import {
 } from '@adguard/ecss-tree';
 
 import { type AdblockSyntax } from '../utils/adblockers';
-import { type CLASSIC_DOMAIN_SEPARATOR, type MODIFIER_DOMAIN_SEPARATOR } from '../utils/constants';
+import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 
 /**
  * Represents possible logical expression operators.
@@ -116,6 +116,25 @@ export const enum RuleCategory {
      * response header filtering rules, etc.
      */
     Network = 'Network',
+}
+
+/**
+ * Represents similar types of modifiers values
+ * which may be separated by a comma `,` (only for DomainList) or a pipe `|`.
+ */
+export const enum ListNodeType {
+    AppList = 'AppList',
+    DomainList = 'DomainList',
+    MethodList = 'MethodList',
+}
+
+/**
+ * Represents child items for {@link ListNodeType}.
+ */
+export const enum ListItemNodeType {
+    App = 'App',
+    Domain = 'Domain',
+    Method = 'Method',
 }
 
 /**
@@ -603,6 +622,7 @@ export interface PreProcessorCommentRule extends CommentBase {
  * Represents an adblock agent.
  */
 export interface Agent extends Node {
+    // TODO: use enum
     type: 'Agent';
 
     /**
@@ -748,24 +768,90 @@ export interface Modifier extends Node {
 }
 
 /**
+ * Represents the separator used for various modifier values.
+ *
+ * @example
+ * `||example.com^$app=com.test1.app|TestApp.exe`
+ */
+export type PipeSeparator = typeof PIPE_MODIFIER_SEPARATOR;
+
+/**
+ * Represents the separator used for basic rules domain list.
+ *
+ * @example
+ * `example.com,example.org###banner`
+ */
+export type CommaSeparator = typeof COMMA_DOMAIN_LIST_SEPARATOR;
+
+/**
  * Represents the separator used in a domain list.
  *
  * @example
- * "," for the classic domain list, and "|" for the "domain" modifier parameter
+ * - `,` — for the classic domain list,
+ * - `|` — for the $domain modifier value
  */
-export type DomainListSeparator = typeof CLASSIC_DOMAIN_SEPARATOR | typeof MODIFIER_DOMAIN_SEPARATOR;
+export type DomainListSeparator = CommaSeparator | PipeSeparator;
 
 /**
- * Represents a list of domains
+ * Common interface for a list item of $app, $denyallow, $domain, $method
+ * which have similar syntax.
+ */
+export interface ListItem extends Node {
+    type: ListItemNodeType;
+
+    /**
+     * Value of the node.
+     */
+    value: string;
+
+    /**
+     * If the value is an negated.
+     *
+     * @example
+     * `~example.com` is negated, but `example.com` is not. `~` is the exception marker here.
+     */
+    exception: boolean;
+}
+
+/**
+ * Represents a {@link ListItem} without the `type` property.
+ * Needed for parsing similar-syntax modifier values with a common parse function.
+ */
+export type ListItemNoType = Omit<ListItem, 'type'>;
+
+/**
+ * Represents an element of the app list — $app.
+ */
+export interface App extends ListItem {
+    type: ListItemNodeType.App;
+}
+
+/**
+ * Represents an element of the domain list — $domain, $denyallow.
+ */
+export interface Domain extends ListItem {
+    type: ListItemNodeType.Domain;
+}
+
+/**
+ * Represents an element of the method list — $method.
+ */
+export interface Method extends ListItem {
+    type: ListItemNodeType.Method;
+}
+
+/**
+ * Represents a list of domains.
+ * Needed for $domain and $denyallow.
  *
  * @example
- * `example.com,~example.net`.
+ * `example.com,~example.net` or `example.com|~example.net`
  */
 export interface DomainList extends Node {
     /**
      * Type of the node. Basically, the idea is that each main AST part should have a type
      */
-    type: 'DomainList';
+    type: ListNodeType.DomainList;
 
     /**
      * Separator used in the domain list.
@@ -779,23 +865,51 @@ export interface DomainList extends Node {
 }
 
 /**
- * Represents an element of the domain list (a domain).
+ * Represents a list of apps.
+ * Needed for $app.
+ *
+ * @example
+ * `Example.exe|com.example.osx`.
  */
-export interface Domain extends Node {
-    type: 'Domain';
+export interface AppList extends Node {
+    /**
+     * Type of the node. Basically, the idea is that each main AST part should have a type
+     */
+    type: ListNodeType.AppList;
 
     /**
-     * Domain name
+     * Separator used in the app list.
      */
-    value: string;
+    separator: PipeSeparator;
 
     /**
-     * If the domain is an exception.
-     *
-     * @example
-     * `~example.com` is an exception, but `example.com` is not. `~` is the exception marker here.
+     * List of domains
      */
-    exception: boolean;
+    children: App[];
+}
+
+/**
+ * Represents a list of apps.
+ * Needed for $method.
+ *
+ * @example
+ * `get|post|put`.
+ */
+export interface MethodList extends Node {
+    /**
+     * Type of the node. Basically, the idea is that each main AST part should have a type
+     */
+    type: ListNodeType.MethodList;
+
+    /**
+     * Separator used in the app list.
+     */
+    separator: PipeSeparator;
+
+    /**
+     * List of domains
+     */
+    children: Method[];
 }
 
 /**

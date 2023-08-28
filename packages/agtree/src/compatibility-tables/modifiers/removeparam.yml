@@ -5,7 +5,17 @@ adg_os_any:
   assignable: true
   negatable: false
   value_optional: true
-  value_format: /^(?!.*([^\\](,|\$|\/))).*$/
+  value_format: |-
+    (?xi)
+      (
+        # string pattern
+        \w+
+        # or regexp pattern
+        |
+        \/.+\/
+          # flags
+          ([gimuy]+)?
+      )
 
 adg_ext_any:
   name: removeparam
@@ -14,7 +24,17 @@ adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
-  value_format: /^(?!.*([^\\](,|\$|\/))).*$/
+  value_format: |-
+    (?xi)
+      (
+        # string pattern
+        \w+
+        # or regexp pattern
+        |
+        \/.+\/
+          # flags
+          ([gimuy]+)?
+      )
 
 ubo_ext_any:
   name: removeparam
@@ -22,4 +42,14 @@ ubo_ext_any:
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#removeparam
   assignable: true
   negatable: false
-  value_format: /^(?!.*([^\\](,|\$|\/))).*$/
+  value_format: |-
+    (?xi)
+      (
+        # string pattern
+        \w+
+        # or regexp pattern
+        |
+        \/.+\/
+          # flags
+          ([gimuy]+)?
+      )

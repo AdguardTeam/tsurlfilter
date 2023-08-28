@@ -109,7 +109,9 @@ const valueFormat = () => ss.define('value_format', (value) => {
  * The values are Superstruct schemas for the files.
  */
 const SCHEMA_MAP = {
-    // https://github.com/AdguardTeam/AGLint/tree/master/src/compatibility-tables/modifiers#file-structure
+    /**
+     * Check [## File structure](../src/compatibility-tables/modifiers/README.md)
+     */
     'src/compatibility-tables/modifiers/**.yml': ss.record(platforms, ss.refine(
         ss.object({
             name: ss.nonempty(ss.string()),
@@ -138,6 +140,19 @@ const SCHEMA_MAP = {
             if (config.block_only && config.exception_only) {
                 return 'block_only and exception_only are mutually exclusive';
             }
+
+            if (config.assignable && !config.value_format) {
+                return 'value_format is required for assignable modifiers';
+            }
+
+            // `deprecated` and `deprecation_message` should be both present or both absent
+            if (config.deprecated && !config.deprecation_message) {
+                return 'deprecation_message is required for deprecated modifiers';
+            }
+            if (!config.deprecated && config.deprecation_message) {
+                return 'deprecation_message is only allowed for deprecated modifiers';
+            }
+
             return true;
         },
     )),

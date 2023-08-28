@@ -4,11 +4,23 @@
 
 import { parse } from 'tldts';
 
-import { ASTERISK, DOT } from './constants';
+import { DOT, WILDCARD } from './constants';
 
-const WILDCARD = ASTERISK; // *
-const WILDCARD_TLD = DOT + WILDCARD; // .*
-const WILDCARD_SUBDOMAIN = WILDCARD + DOT; // *.
+/**
+ * Marker for a wildcard top-level domain — `.*`.
+ *
+ * @example
+ * `example.*` — matches with any TLD, e.g. `example.org`, `example.com`, etc.
+ */
+export const WILDCARD_TLD = DOT + WILDCARD;
+
+/**
+ * Marker for a wildcard subdomain — `*.`.
+ *
+ * @example
+ * `*.example.org` — matches with any subdomain, e.g. `foo.example.org` or `bar.example.org`
+ */
+export const WILDCARD_SUBDOMAIN = WILDCARD + DOT;
 
 export class DomainUtils {
     /**

@@ -85,7 +85,7 @@
     ]
   },
   "dependencies": {
-    "@adguard/scriptlets": "^1.9.70",
+    "@adguard/scriptlets": "^1.9.72",
     "cidr-tools": "^6.4.1",
     "commander": "9.4.1",
     "is-cidr": "4.0.2",

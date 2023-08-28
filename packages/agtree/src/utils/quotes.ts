@@ -3,10 +3,12 @@
  */
 
 import {
+    COMMA,
     DOUBLE_QUOTE,
     EMPTY,
     ESCAPE_CHARACTER,
     SINGLE_QUOTE,
+    SPACE,
 } from './constants';
 
 /**
@@ -175,5 +177,28 @@ export class QuoteUtils {
         }
 
         return string;
+    }
+
+    /**
+     * Wraps given `strings` with `quote` (defaults to single quote `'`)
+     * and joins them with `separator` (defaults to comma+space `, `).
+     *
+     * @param strings Strings to quote and join.
+     * @param quoteType Quote to use.
+     * @param separator Separator to use.
+     *
+     * @returns String with joined items.
+     *
+     * @example
+     * ['abc', 'def']: strings[]  ->  "'abc', 'def'": string
+     */
+    public static quoteAndJoinStrings(
+        strings: string[],
+        quoteType = QuoteType.Single,
+        separator = `${COMMA}${SPACE}`,
+    ): string {
+        return strings
+            .map((s) => QuoteUtils.setStringQuoteType(s, quoteType))
+            .join(separator);
     }
 }

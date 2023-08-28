@@ -4,108 +4,20 @@
 
 import cloneDeep from 'clone-deep';
 
-import {
-    type ModifierData,
-    type ModifierDataMap,
-    type SpecificPlatformModifierData,
-    getModifiersData,
-    SpecificKey,
-} from '../compatibility-tables';
+import { type ModifierDataMap, getModifiersData, SpecificKey } from '../compatibility-tables';
 import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
-import { INVALID_ERROR_PREFIX } from './constants';
-
-const BLOCKER_PREFIX = {
-    [AdblockSyntax.Adg]: 'adg_',
-    [AdblockSyntax.Ubo]: 'ubo_',
-    [AdblockSyntax.Abp]: 'abp_',
-};
-
-/**
- * Result of modifier validation:
- * - `{ ok: true }` for valid and _fully supported_ modifier;
- * - `{ ok: true, warn: <deprecation notice> }` for valid
- *   and _still supported but deprecated_ modifier;
- * - otherwise `{ ok: true, error: <invalidity reason> }`
- */
-type ValidationResult = {
-    ok: boolean,
-    error?: string,
-    warn?: string,
-};
-
-/**
- * Collects names and aliases for all supported modifiers.
- * Deprecated and removed modifiers are included because they are known and existent
- * and they should be validated properly.
- *
- * @param dataMap Parsed all modifiers data.
- *
- * @returns Set of all modifier names (and their aliases).
- */
-const getAllModifierNames = (dataMap: ModifierDataMap): Set<string> => {
-    const names = new Set<string>();
-    dataMap.forEach((modifierData: ModifierData) => {
-        Object.keys(modifierData).forEach((blockerId) => {
-            const blockerData = modifierData[blockerId];
-            names.add(blockerData.name);
-            if (!blockerData.aliases) {
-                return;
-            }
-            blockerData.aliases.forEach((alias) => names.add(alias));
-        });
-    });
-    return names;
-};
-
-/**
- * Returns modifier data for given modifier name and adblocker.
- *
- * @param modifiersData Parsed all modifiers data map.
- * @param blockerPrefix Prefix of the adblocker, e.g. 'adg_', 'ubo_', or 'abp_'.
- * @param modifierName Modifier name.
- *
- * @returns Modifier data or `null` if not found.
- */
-const getSpecificBlockerData = (
-    modifiersData: ModifierDataMap,
-    blockerPrefix: string,
-    modifierName: string,
-): SpecificPlatformModifierData | null => {
-    let specificBlockerData: SpecificPlatformModifierData | null = null;
-
-    modifiersData.forEach((modifierData: ModifierData) => {
-        Object.keys(modifierData).forEach((blockerId) => {
-            const blockerData = modifierData[blockerId];
-            if (blockerData.name === modifierName
-                || (blockerData.aliases && blockerData.aliases.includes(modifierName))) {
-                // modifier is found by name or alias
-                // so its support by specific adblocker should be checked
-                if (blockerId.startsWith(blockerPrefix)) {
-                    // so maybe other data objects should be checked as well (not sure)
-                    specificBlockerData = blockerData;
-                }
-            }
-        });
-    });
-
-    return specificBlockerData;
-};
-
-/**
- * Returns invalid validation result with given error message.
- *
- * @param error Error message.
- *
- * @returns Validation result `{ ok: false, error }`.
- */
-const getInvalidValidationResult = (error: string): ValidationResult => {
-    return {
-        ok: false,
-        error,
-    };
-};
+import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
+import {
+    type ValidationResult,
+    getInvalidValidationResult,
+    getValueRequiredValidationResult,
+    isValidNoopModifier,
+    getSpecificBlockerData,
+    getAllModifierNames,
+} from './helpers';
+import { validateValue } from './value';
 
 /**
  * Fully checks whether the given `modifier` valid for given blocker `syntax`:
@@ -142,37 +54,37 @@ const validateForSpecificSyntax = (
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
-        return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_SUPPORTED}: '${modifierName}'`);
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_SUPPORTED}: '${modifierName}'`);
     }
 
     // e.g. 'object-subrequest'
     if (specificBlockerData[SpecificKey.Removed]) {
-        return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.REMOVED}: '${modifierName}'`);
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.REMOVED}: '${modifierName}'`);
     }
 
     if (specificBlockerData[SpecificKey.Deprecated]) {
         if (!specificBlockerData[SpecificKey.DeprecationMessage]) {
-            throw new Error('Deprecation notice is required for deprecated modifier');
+            throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_DEPRECATION_MESSAGE}: '${modifierName}'`);
         }
         // prepare the message which is multiline in the yaml file
         const warn = specificBlockerData[SpecificKey.DeprecationMessage].replace(NEWLINE, SPACE);
         return {
-            ok: true,
+            valid: true,
             warn,
         };
     }
 
     if (specificBlockerData[SpecificKey.BlockOnly] && isException) {
-        return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.BLOCK_ONLY}: '${modifierName}'`);
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.BLOCK_ONLY}: '${modifierName}'`);
     }
 
     if (specificBlockerData[SpecificKey.ExceptionOnly] && !isException) {
-        return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.EXCEPTION_ONLY}: '${modifierName}'`);
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY}: '${modifierName}'`);
     }
 
     // e.g. '~domain=example.com'
     if (!specificBlockerData[SpecificKey.Negatable] && modifier.exception) {
-        return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_NEGATABLE}: '${modifierName}'`);
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER}: '${modifierName}'`);
     }
 
     // e.g. 'domain'
@@ -181,22 +93,35 @@ const validateForSpecificSyntax = (
          * Some assignable modifiers can be used without a value,
          * e.g. '@@||example.com^$cookie'.
          */
-        if (!modifier.value
-            // value should be specified if it is not optional
-            && !specificBlockerData[SpecificKey.ValueOptional]) {
-            return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.VALUE_REQUIRED}: '${modifierName}'`);
+        if (specificBlockerData[SpecificKey.ValueOptional]) {
+            // no need to check the value if it is optional
+            return { valid: true };
         }
+
+        if (!modifier.value) {
+            return getValueRequiredValidationResult(modifierName);
+        }
+
         /**
-         * TODO: consider to return `{ ok: true, warn: 'Modifier value may be specified' }` (???)
+         * TODO: consider to return `{ valid: true, warn: 'Modifier value may be specified' }` (???)
          * for $stealth modifier without a value
          * but only after the extension will support value for $stealth:
          * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2107
          */
-    } else if (modifier?.value) {
-        return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.VALUE_FORBIDDEN}: '${modifierName}'`);
+
+        if (!specificBlockerData[SpecificKey.ValueFormat]) {
+            throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_VALUE_FORMAT_FOR_ASSIGNABLE}: '${modifierName}'`);
+        }
+
+        return validateValue(modifier, specificBlockerData[SpecificKey.ValueFormat]);
     }
 
-    return { ok: true };
+    if (modifier?.value) {
+        // e.g. 'third-party=true'
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_FORBIDDEN}: '${modifierName}'`);
+    }
+
+    return { valid: true };
 };
 
 /**
@@ -217,17 +142,7 @@ const getBlockerDocumentationLink = (
     return specificBlockerData?.docs || null;
 };
 
-/**
- * Validates the noop modifier (i.e. only underscores).
- *
- * @param value Value of the modifier.
- *
- * @returns True if the modifier is valid, false otherwise.
- */
-const isValidNoopModifier = (value: string): boolean => {
-    return value.split('').every((char) => char === UNDERSCORE);
-};
-
+// TODO: move to modifier.ts and use index.ts only for exporting
 /**
  * Modifier validator class.
  */
@@ -287,7 +202,7 @@ class ModifierValidator {
             // check whether the modifier value contains something else besides underscores
             if (!isValidNoopModifier(modifier.modifier.value)) {
                 return getInvalidValidationResult(
-                    `${INVALID_ERROR_PREFIX.INVALID_NOOP}: '${modifier.modifier.value}'`,
+                    `${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.modifier.value}'`,
                 );
             }
             // otherwise, replace the modifier value with single underscore.
@@ -296,11 +211,11 @@ class ModifierValidator {
         }
 
         if (!this.exists(modifier)) {
-            return getInvalidValidationResult(`${INVALID_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
+            return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
         }
         // for 'Common' syntax we cannot check something more
         if (syntax === AdblockSyntax.Common) {
-            return { ok: true };
+            return { valid: true };
         }
         return validateForSpecificSyntax(this.modifiersData, syntax, modifier, isException);
     };

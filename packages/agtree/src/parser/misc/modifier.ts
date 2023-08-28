@@ -1,4 +1,4 @@
-import { EMPTY, MODIFIER_ASSIGN_OPERATOR, MODIFIER_EXCEPTION_MARKER } from '../../utils/constants';
+import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
 import { locRange } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
@@ -32,8 +32,8 @@ export class ModifierParser {
         // Check if the modifier is an exception
         let exception = false;
 
-        if (raw[offset] === MODIFIER_EXCEPTION_MARKER) {
-            offset += MODIFIER_EXCEPTION_MARKER.length;
+        if (raw[offset] === NEGATION_MARKER) {
+            offset += NEGATION_MARKER.length;
             exception = true;
         }
 
@@ -116,7 +116,7 @@ export class ModifierParser {
         let result = EMPTY;
 
         if (modifier.exception) {
-            result += MODIFIER_EXCEPTION_MARKER;
+            result += NEGATION_MARKER;
         }
 
         result += modifier.modifier.value;

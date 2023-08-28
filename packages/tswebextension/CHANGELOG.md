@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
 
 
+## [0.3.13] - 2023-08-25
+
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.1.11`.
+- Updated `@adguard/scriptlets` to `v1.9.72`.
+
+
 ## [0.3.12] - 2023-08-23
 
 ### Fixed

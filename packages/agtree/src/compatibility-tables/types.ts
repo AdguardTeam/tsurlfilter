@@ -22,8 +22,6 @@ export const enum SpecificKey {
     Negatable = 'negatable',
     BlockOnly = 'block_only',
     ExceptionOnly = 'exception_only',
-    // TODO: consider removing this field
-    // and handle whether the value is optional by `value_format`. AG-24028
     ValueOptional = 'value_optional',
     ValueFormat = 'value_format',
     // TODO: following fields should be handled later

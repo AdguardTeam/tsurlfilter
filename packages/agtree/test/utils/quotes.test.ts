@@ -323,4 +323,23 @@ describe('Quote utils', () => {
             expect(QuoteUtils.removeQuotes(actual)).toBe(expected);
         });
     });
+
+    describe('quoteAndJoinStrings', () => {
+        test.each([
+            {
+                actual: [],
+                expected: '',
+            },
+            {
+                actual: ['a'],
+                expected: "'a'",
+            },
+            {
+                actual: ['a', 'b'],
+                expected: "'a', 'b'",
+            },
+        ])('quoteAndJoinStrings should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.quoteAndJoinStrings(actual)).toBe(expected);
+        });
+    });
 });

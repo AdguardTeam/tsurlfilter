@@ -15,4 +15,16 @@ adg_os_any:
   inverse_conflicts: true
   assignable: true
   negatable: false
-  value_format: /^(?!.*([^\\](,|\$|\/))).*$/
+  value_optional: true
+  value_format: |-
+    (?xi)
+      (
+        # string pattern
+        \w+
+        # or regexp pattern
+        |
+        # TODO: improve regexp pattern to invalidate unescaped `/`, `$`, and `,`
+        \/.+\/
+          # options
+          ([ti]*)?
+      )
