@@ -7,21 +7,29 @@ import {
     type AppList,
     type DomainList,
     type MethodList,
+    type StealthOptionList,
 } from '../parser/common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { AppListParser } from '../parser/misc/app-list';
 import { DomainListParser } from '../parser/misc/domain-list';
 import { MethodListParser } from '../parser/misc/method-list';
+import { StealthOptionListParser } from '../parser/misc/stealth-option-list';
 import { DomainUtils } from '../utils/domain';
 import { QuoteUtils } from '../utils/quotes';
 import { DOT, PIPE_MODIFIER_SEPARATOR, WILDCARD } from '../utils/constants';
 import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
 import {
     ALLOWED_METHODS,
+    ALLOWED_STEALTH_OPTIONS,
     APP_NAME_ALLOWED_CHARS,
     SOURCE_DATA_ERROR_PREFIX,
     VALIDATION_ERROR_PREFIX,
 } from './constants';
+
+/**
+ * Type of the list of items separated by pipe `|`.
+ */
+type PipeSeparatedList = AppList | DomainList | MethodList | StealthOptionList;
 
 /**
  * Pre-defined available validators for modifiers with custom `value_format`.
@@ -32,6 +40,7 @@ const enum CustomValueFormatValidatorName {
     DenyAllow = 'pipe_separated_denyallow_domains',
     Domain = 'pipe_separated_domains',
     Method = 'pipe_separated_methods',
+    StealthOption = 'pipe_separated_stealth_options',
 }
 
 /**
@@ -86,6 +95,17 @@ const isValidAppModifierValue = (value: string): boolean => {
  */
 const isValidMethodModifierValue = (value: string): boolean => {
     return ALLOWED_METHODS.has(value);
+};
+
+/**
+ * Checks whether the given `value` is valid option as $stealth modifier value.
+ *
+ * @param value Stealth option to check.
+ *
+ * @returns True if the `value` is valid stealth option, false otherwise.
+ */
+const isValidStealthModifierValue = (value: string): boolean => {
+    return ALLOWED_STEALTH_OPTIONS.has(value);
 };
 
 /**
@@ -200,7 +220,7 @@ const customConsistentExceptionsValidator = (modifierName: string, listItems: Li
  */
 const validateListItemsModifier = (
     modifier: Modifier,
-    listParser: (raw: string, separator?: PipeSeparator) => AppList | DomainList | MethodList,
+    listParser: (raw: string, separator?: PipeSeparator) => PipeSeparatedList,
     isValidListItem: (domain: string) => boolean,
     customListValidator?: (modifierName: string, list: ListItem[]) => ValidationResult,
 ): ValidationResult => {
@@ -211,7 +231,7 @@ const validateListItemsModifier = (
         return defaultInvalidValueResult;
     }
 
-    let theList: AppList | DomainList | MethodList;
+    let theList: PipeSeparatedList;
     try {
         theList = listParser(modifier.value.value, PIPE_MODIFIER_SEPARATOR);
     } catch (e: unknown) {
@@ -318,6 +338,23 @@ const validatePipeSeparatedMethods = (modifier: Modifier): ValidationResult => {
 };
 
 /**
+ * Validates 'pipe_separated_stealth_options' custom value format.
+ * Used for $stealth modifier.
+ *
+ * @param modifier Modifier AST node.
+ *
+ * @returns Validation result.
+ */
+const validatePipeSeparatedStealthOptions = (modifier: Modifier): ValidationResult => {
+    return validateListItemsModifier(
+        modifier,
+        (raw: string) => StealthOptionListParser.parse(raw),
+        isValidStealthModifierValue,
+        customNoNegatedListItemsValidator,
+    );
+};
+
+/**
  * Map of all available pre-defined validators for modifiers with custom `value_format`.
  */
 const CUSTOM_VALUE_FORMAT_MAP = {
@@ -325,6 +362,7 @@ const CUSTOM_VALUE_FORMAT_MAP = {
     [CustomValueFormatValidatorName.DenyAllow]: validatePipeSeparatedDenyAllowDomains,
     [CustomValueFormatValidatorName.Domain]: validatePipeSeparatedDomains,
     [CustomValueFormatValidatorName.Method]: validatePipeSeparatedMethods,
+    [CustomValueFormatValidatorName.StealthOption]: validatePipeSeparatedStealthOptions,
 };
 
 /**

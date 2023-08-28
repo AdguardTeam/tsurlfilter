@@ -6,28 +6,7 @@ adg_os_any:
   negatable: false
   exception_only: true
   value_optional: true
-  # TODO: add custom validator instead of regular expression. AG-25273
-  value_format: |-
-    (?x)
-      ^(?!\|)\b(?:(
-        searchqueries|
-        donottrack|
-        3p-cookie|
-        1p-cookie|
-        3p-cache|
-        3p-auth|
-        webrtc|
-        push|
-        location|
-        flash|
-        java|
-        referrer|
-        useragent|
-        ip|
-        xclientdata|
-        dpi|
-        \|?
-      )\b)+(?<!\|)$
+  value_format: pipe_separated_stealth_options
 
 adg_ext_chrome:
   name: stealth
@@ -37,18 +16,7 @@ adg_ext_chrome:
   negatable: false
   exception_only: true
   value_optional: true
-  value_format: |-
-    (?x)
-      ^(?!\|)\b(?:(
-        searchqueries|
-        donottrack|
-        3p-cookie|
-        1p-cookie|
-        webrtc|
-        referrer|
-        xclientdata
-        |\|?
-      )\b)+(?<!\|)$
+  value_format: pipe_separated_stealth_options
 
 adg_ext_firefox:
   name: stealth
@@ -58,17 +26,7 @@ adg_ext_firefox:
   negatable: false
   exception_only: true
   value_optional: true
-  value_format: |-
-    (?x)
-      ^(?!\|)\b(?:(
-        searchqueries|
-        donottrack|
-        3p-cookie|
-        1p-cookie|
-        webrtc|
-        referrer|
-        |\|?
-      )\b)+(?<!\|)$
+  value_format: pipe_separated_stealth_options
 
 adg_ext_opera:
   name: stealth
@@ -78,17 +36,7 @@ adg_ext_opera:
   negatable: false
   exception_only: true
   value_optional: true
-  value_format: |-
-    (?x)
-      ^(?!\|)\b(?:(
-        searchqueries|
-        donottrack|
-        3p-cookie|
-        1p-cookie|
-        webrtc|
-        referrer|
-        |\|?
-      )\b)+(?<!\|)$
+  value_format: pipe_separated_stealth_options
 
 adg_ext_edge:
   name: stealth
@@ -98,14 +46,4 @@ adg_ext_edge:
   negatable: false
   exception_only: true
   value_optional: true
-  value_format: |-
-    (?x)
-      ^(?!\|)\b(?:(
-        searchqueries|
-        donottrack|
-        3p-cookie|
-        1p-cookie|
-        webrtc|
-        referrer|
-        |\|?
-      )\b)+(?<!\|)$
+  value_format: pipe_separated_stealth_options

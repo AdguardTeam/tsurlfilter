@@ -226,6 +226,10 @@ describe('common parseListItems', () => {
                     actual: 'Example.exe | | ',
                     expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
                 },
+                {
+                    actual: '|dpi|ip',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
             ])('$actual', ({ actual, expected }) => {
                 expectToThrowWhileParse(actual, expected, PIPE);
             });

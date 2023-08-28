@@ -89,16 +89,15 @@ const validateForSpecificSyntax = (
 
     // e.g. 'domain'
     if (specificBlockerData[SpecificKey.Assignable]) {
-        /**
-         * Some assignable modifiers can be used without a value,
-         * e.g. '@@||example.com^$cookie'.
-         */
-        if (specificBlockerData[SpecificKey.ValueOptional]) {
-            // no need to check the value if it is optional
-            return { valid: true };
-        }
-
         if (!modifier.value) {
+            /**
+             * Some assignable modifiers can be used without a value,
+             * e.g. '@@||example.com^$cookie'.
+             */
+            if (specificBlockerData[SpecificKey.ValueOptional]) {
+                return { valid: true };
+            }
+            // for other assignable modifiers the value is required
             return getValueRequiredValidationResult(modifierName);
         }
 

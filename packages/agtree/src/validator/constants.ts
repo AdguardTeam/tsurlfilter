@@ -44,6 +44,30 @@ export const ALLOWED_METHODS = new Set([
 ]);
 
 /**
+ * Allowed stealth options for $stealth modifier.
+ *
+ * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier}
+ */
+export const ALLOWED_STEALTH_OPTIONS = new Set([
+    'searchqueries',
+    'donottrack',
+    '3p-cookie',
+    '1p-cookie',
+    '3p-cache',
+    '3p-auth',
+    'webrtc',
+    'push',
+    'location',
+    'flash',
+    'java',
+    'referrer',
+    'useragent',
+    'ip',
+    'xclientdata',
+    'dpi',
+]);
+
+/**
  * Prefixes for error messages used in modifier validation.
  */
 export const VALIDATION_ERROR_PREFIX = {

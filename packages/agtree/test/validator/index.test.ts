@@ -318,8 +318,6 @@ describe('ModifierValidator', () => {
                 'important',
                 'jsinject',
                 'stealth',
-                'stealth=dpi',
-                'stealth=dpi|user-agent',
             ];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
@@ -659,6 +657,73 @@ describe('ModifierValidator', () => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
                         expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_stealth_options', () => {
+                describe('pipe_separated_stealth_options valid', () => {
+                    test.each([
+                        'stealth',
+                        'stealth=searchqueries',
+                        'stealth=donottrack|3p-cookie|1p-cookie|3p-cache|3p-auth',
+                        'stealth=webrtc|push|location|flash|java|referrer',
+                        'stealth=useragent|ip|xclientdata|dpi',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_stealth_options invalid', () => {
+                    test.each([
+                        {
+                            actual: 'stealth=|donottrack|ip',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=ip||useragent',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=useragent|dpi|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'stealth=~~searchqueries',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=useragent|~|dpi',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=~ dpi',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=3p-auth|mp3',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'mp3'`,
+                        },
+                        // due to $stealth restrictions: values should be lowercased, no negate values
+                        {
+                            actual: 'stealth=PUSH',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'PUSH'`,
+                        },
+                        {
+                            actual: 'stealth=~ip',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'ip'`,
+                        },
+                        {
+                            actual: 'stealth=~searchqueries|dpi',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'searchqueries'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.ok).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
                 });
