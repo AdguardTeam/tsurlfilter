@@ -391,10 +391,9 @@ export const validateValue = (modifier: Modifier, valueFormat: string): Validati
     }
 
     const modifierName = modifier.modifier.value;
-    const defaultInvalidValueResult = getValueRequiredValidationResult(modifierName);
 
     if (!modifier.value?.value) {
-        return defaultInvalidValueResult;
+        return getValueRequiredValidationResult(modifierName);
     }
 
     let xRegExp;
@@ -406,7 +405,7 @@ export const validateValue = (modifier: Modifier, valueFormat: string): Validati
 
     const isValid = xRegExp.test(modifier.value?.value);
     if (!isValid) {
-        return defaultInvalidValueResult;
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
     }
 
     return { valid: true };

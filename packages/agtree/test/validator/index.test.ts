@@ -377,6 +377,7 @@ describe('ModifierValidator', () => {
                         'permissions=storage-access=()\\,  camera=()',
                         'redirect=noopjs',
                         'redirect=noopmp4-1s',
+                        'redirect=googletagmanager-gtm',
                         'redirect-rule=noopjs',
                         'redirect-rule=noopmp4-1s',
                         'removeheader=link',
@@ -386,6 +387,8 @@ describe('ModifierValidator', () => {
                         'removeparam=/^__s=[A-Za-z0-9]{6\\,}/',
                         'replace=/("ad":{).+"(\\}\\,"(?:log|watermark)")/\\$1\\$2/',
                         'replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/',
+                        'replace=/\\,this\\.createAdDisplayContainer\\(\\)\\,this\\.setUpIMA\\(\\)//',
+                        'replace=/fourthColumnWrapper//',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);

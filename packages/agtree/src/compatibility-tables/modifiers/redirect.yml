@@ -34,6 +34,7 @@ adg_os_any:
         gemius|
         google-analytics-ga|
         google-analytics|
+        googletagmanager-gtm|
         google-ima3|
         googlesyndication-adsbygoogle|
         googletagservices-gpt|
@@ -90,6 +91,7 @@ adg_ext_any:
         gemius|
         google-analytics-ga|
         google-analytics|
+        googletagmanager-gtm|
         google-ima3|
         googlesyndication-adsbygoogle|
         googletagservices-gpt|
