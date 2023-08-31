@@ -15,10 +15,17 @@ import { DomainListParser } from '../parser/misc/domain-list';
 import { MethodListParser } from '../parser/misc/method-list';
 import { StealthOptionListParser } from '../parser/misc/stealth-option-list';
 import { DomainUtils } from '../utils/domain';
-import { QuoteUtils } from '../utils/quotes';
-import { DOT, PIPE_MODIFIER_SEPARATOR, WILDCARD } from '../utils/constants';
+import { QuoteType, QuoteUtils } from '../utils/quotes';
+import {
+    DOT,
+    PIPE_MODIFIER_SEPARATOR,
+    SEMICOLON,
+    SPACE,
+    WILDCARD,
+} from '../utils/constants';
 import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
 import {
+    ALLOWED_CSP_DIRECTIVES,
     ALLOWED_METHODS,
     ALLOWED_STEALTH_OPTIONS,
     APP_NAME_ALLOWED_CHARS,
@@ -36,6 +43,7 @@ type PipeSeparatedList = AppList | DomainList | MethodList | StealthOptionList;
  */
 const enum CustomValueFormatValidatorName {
     App = 'pipe_separated_apps',
+    Csp = 'csp_value',
     // there are some differences between $domain and $denyallow
     DenyAllow = 'pipe_separated_denyallow_domains',
     Domain = 'pipe_separated_domains',
@@ -355,10 +363,87 @@ const validatePipeSeparatedStealthOptions = (modifier: Modifier): ValidationResu
 };
 
 /**
+ * Validates `csp_value` custom value format.
+ * Used for $csp modifier.
+ *
+ * @param modifier Modifier AST node.
+ *
+ * @returns Validation result.
+ */
+const validateCspValue = (modifier: Modifier): ValidationResult => {
+    const modifierName = modifier.modifier.value;
+    if (!modifier.value?.value) {
+        return getValueRequiredValidationResult(modifierName);
+    }
+
+    // $csp modifier value may contain multiple directives
+    // e.g. "csp=child-src 'none'; frame-src 'self' *; worker-src 'none'"
+    const policyDirectives = modifier.value.value
+        .split(SEMICOLON)
+        // rule with $csp modifier may end with semicolon
+        // e.g. "$csp=sandbox allow-same-origin;"
+        .filter((i) => !!i);
+
+    const invalidValueValidationResult = getInvalidValidationResult(
+        `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}': "${modifier.value.value}"`,
+    );
+
+    if (policyDirectives.length === 0) {
+        return invalidValueValidationResult;
+    }
+
+    const invalidDirectives: string[] = [];
+
+    for (let i = 0; i < policyDirectives.length; i += 1) {
+        const policyDirective = policyDirectives[i].trim();
+        if (!policyDirective) {
+            return invalidValueValidationResult;
+        }
+
+        const chunks = policyDirective.split(SPACE);
+        const [directive, ...valueChunks] = chunks;
+
+        // e.g. "csp=child-src 'none'; ; worker-src 'none'"
+        // validator it here          ↑
+        if (!directive) {
+            return invalidValueValidationResult;
+        }
+
+        if (!ALLOWED_CSP_DIRECTIVES.has(directive)) {
+            // e.g. "csp='child-src' 'none'"
+            if (ALLOWED_CSP_DIRECTIVES.has(QuoteUtils.removeQuotes(directive))) {
+                return getInvalidValidationResult(
+                    `${VALIDATION_ERROR_PREFIX.NO_CSP_DIRECTIVE_QUOTE}: '${modifierName}': ${directive}`,
+                );
+            }
+
+            invalidDirectives.push(directive);
+            continue;
+        }
+
+        if (valueChunks.length === 0) {
+            return getInvalidValidationResult(
+                `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: '${modifierName}': '${directive}'`,
+            );
+        }
+    }
+
+    if (invalidDirectives.length > 0) {
+        const directivesToStr = QuoteUtils.quoteAndJoinStrings(invalidDirectives, QuoteType.Double);
+        return getInvalidValidationResult(
+            `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: '${modifierName}': ${directivesToStr}`,
+        );
+    }
+
+    return { valid: true };
+};
+
+/**
  * Map of all available pre-defined validators for modifiers with custom `value_format`.
  */
 const CUSTOM_VALUE_FORMAT_MAP = {
     [CustomValueFormatValidatorName.App]: validatePipeSeparatedApps,
+    [CustomValueFormatValidatorName.Csp]: validateCspValue,
     [CustomValueFormatValidatorName.DenyAllow]: validatePipeSeparatedDenyAllowDomains,
     [CustomValueFormatValidatorName.Domain]: validatePipeSeparatedDomains,
     [CustomValueFormatValidatorName.Method]: validatePipeSeparatedMethods,

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
+
+## Unreleased
+
+### Changed
+
+- Validation of `$csp` modifier value
+  by custom pre-defined validator instead of regular expression
+
 ## 1.1.4 - 2023-08-30
 
 ### Fixed

@@ -14,35 +14,7 @@ adg_os_any:
   assignable: true
   negatable: false
   value_optional: true
-  # TODO: add custom validator instead of regular expression. AG-25274
-  value_format: |-
-    (?xi)
-      ^(
-        base-uri|
-        child-src|
-        connect-src|
-        default-src|
-        font-src|
-        form-action|
-        frame-ancestors|
-        frame-src|
-        img-src|
-        manifest-src|
-        media-src|
-        navigate-to|
-        object-src|
-        plugin-types|
-        prefetch-src|
-        report-to|
-        report-uri|
-        sandbox|
-        script-src|
-        style-src|
-        upgrade-insecure-requests|
-        worker-src|
-      )
-      \s+
-      \S{1,}
+  value_format: csp_value
 
 adg_ext_any:
   name: csp
@@ -60,34 +32,7 @@ adg_ext_any:
   assignable: true
   negatable: false
   value_optional: true
-  value_format: |-
-    (?xi)
-      ^(
-        base-uri|
-        child-src|
-        connect-src|
-        default-src|
-        font-src|
-        form-action|
-        frame-ancestors|
-        frame-src|
-        img-src|
-        manifest-src|
-        media-src|
-        navigate-to|
-        object-src|
-        plugin-types|
-        prefetch-src|
-        report-to|
-        report-uri|
-        sandbox|
-        script-src|
-        style-src|
-        upgrade-insecure-requests|
-        worker-src|
-      )
-      \s+
-      \S{1,}
+  value_format: csp_value
 
 abp_ext_any:
   name: csp
@@ -103,34 +48,7 @@ abp_ext_any:
   assignable: true
   negatable: false
   value_optional: true
-  value_format: |-
-    (?xi)
-      ^(
-        base-uri|
-        child-src|
-        connect-src|
-        default-src|
-        font-src|
-        form-action|
-        frame-ancestors|
-        frame-src|
-        img-src|
-        manifest-src|
-        media-src|
-        navigate-to|
-        object-src|
-        plugin-types|
-        prefetch-src|
-        report-to|
-        report-uri|
-        sandbox|
-        script-src|
-        style-src|
-        upgrade-insecure-requests|
-        worker-src|
-      )
-      \s+
-      \S{1,}
+  value_format: csp_value
 
 ubo_ext_any:
   name: csp
@@ -148,31 +66,4 @@ ubo_ext_any:
   assignable: true
   negatable: false
   value_optional: true
-  value_format: |-
-    (?xi)
-      ^(
-        base-uri|
-        child-src|
-        connect-src|
-        default-src|
-        font-src|
-        form-action|
-        frame-ancestors|
-        frame-src|
-        img-src|
-        manifest-src|
-        media-src|
-        navigate-to|
-        object-src|
-        plugin-types|
-        prefetch-src|
-        report-to|
-        report-uri|
-        sandbox|
-        script-src|
-        style-src|
-        upgrade-insecure-requests|
-        worker-src|
-      )
-      \s+
-      \S{1,}
+  value_format: csp_value

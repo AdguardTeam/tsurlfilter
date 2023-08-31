@@ -726,8 +726,73 @@ describe('ModifierValidator', () => {
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
-                        expect(validationResult.ok).toBeFalsy();
-                        expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by csp_value', () => {
+                describe('csp_value valid', () => {
+                    test.each([
+                        'csp',
+                        'csp=child-src *',
+                        'csp=sandbox allow-same-origin;',
+                        "csp=script-src 'self' '*' 'unsafe-inline' *.example.com *.example.org",
+                        "csp=script-src 'self' 'unsafe-inline' https://example.com *.example.com",
+                        "csp=default-src 'self' *.example.com fonts.example.org https://the-example.com https://the.example.com 'unsafe-inline' 'unsafe-eval' data: blob:",
+                        "csp=script-src 'self' * 'sha256-0McqMM16/wAVZmxF6zXpjNsb1UM6Tl4LXBxdhqPKxws='",
+                        // few directives
+                        "csp=child-src 'none'; frame-src 'self' *; worker-src 'none'",
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('csp_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'csp= ;',
+                            // no space in error message
+                            // because modifier value is trimmed during parsing into Modifier AST node
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'csp': ";"`,
+                        },
+                        {
+                            actual: 'csp=none',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "none"`,
+                        },
+                        {
+                            actual: 'csp=default',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "default"`,
+                        },
+                        {
+                            actual: "csp='child-src' 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_DIRECTIVE_QUOTE}: 'csp': 'child-src'`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; frame src 'self' *; workers 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "frame", "workers"`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; ; worker-src 'none'",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'csp': "child-src 'none'; ; worker-src 'none'"`,
+                        },
+                        {
+                            actual: 'csp=script-src',
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: 'csp': 'script-src'`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; frame-src; worker-src 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: 'csp': 'frame-src'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
                     });
                 });
             });

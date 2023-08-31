@@ -68,14 +68,47 @@ export const ALLOWED_STEALTH_OPTIONS = new Set([
 ]);
 
 /**
+ * Allowed CSP directives for $csp modifier.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#directives}
+ */
+export const ALLOWED_CSP_DIRECTIVES = new Set([
+    'base-uri',
+    'child-src',
+    'connect-src',
+    'default-src',
+    'font-src',
+    'form-action',
+    'frame-ancestors',
+    'frame-src',
+    'img-src',
+    'manifest-src',
+    'media-src',
+    'navigate-to',
+    'object-src',
+    'plugin-types',
+    'prefetch-src',
+    'report-to',
+    'report-uri',
+    'sandbox',
+    'script-src',
+    'style-src',
+    'upgrade-insecure-requests',
+    'worker-src',
+]);
+
+/**
  * Prefixes for error messages used in modifier validation.
  */
 export const VALIDATION_ERROR_PREFIX = {
     BLOCK_ONLY: 'Only blocking rules may contain the modifier',
     EXCEPTION_ONLY: 'Only exception rules may contain the modifier',
+    INVALID_CSP_DIRECTIVES: 'Invalid CSP directives for the modifier',
     INVALID_LIST_VALUES: 'Invalid values for the modifier',
     INVALID_NOOP: 'Invalid noop modifier',
     MIXED_NEGATIONS: 'Simultaneous usage of negated and not negated values is forbidden for the modifier',
+    NO_CSP_VALUE: 'No CSP value for the modifier and the directive',
+    NO_CSP_DIRECTIVE_QUOTE: 'CSP directives should no be quoted for the modifier',
     NOT_EXISTENT: 'Non-existent modifier',
     NOT_NEGATABLE_MODIFIER: 'Non-negatable modifier',
     NOT_NEGATABLE_VALUE: 'Values cannot be negated for the modifier',
