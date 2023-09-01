@@ -1,4 +1,5 @@
-import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
+import { NetworkRule, StringRuleList, SimpleRegex } from '@adguard/tsurlfilter';
+
 import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 import type { Configuration } from '../../common/configuration';
 
@@ -84,6 +85,7 @@ export class Allowlist {
      * @returns Allowlist rule string.
      */
     private static createAllowlistRuleString(domain: string): string {
-        return String.raw`@@///(www\.)?${domain}/$document,important`;
+        const escapedDomain = SimpleRegex.escapeRegexSpecials(domain);
+        return String.raw`@@///(www\.)?${escapedDomain}/$document,important`;
     }
 }
