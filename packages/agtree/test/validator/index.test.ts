@@ -796,6 +796,142 @@ describe('ModifierValidator', () => {
                     });
                 });
             });
+
+            describe('required value - validate by permissions_value', () => {
+                describe('permissions_value valid', () => {
+                    test.each([
+                        'permissions',
+                        'permissions=fullscreen=*',
+                        'permissions=autoplay=()',
+                        'permissions=geolocation=(self)',
+                        'permissions=geolocation=(self "https://example.com")',
+                        'permissions=geolocation=("https://example.com" "https://*.example.com")',
+                        'permissions=geolocation=("https://example.com"  "https://*.example.com")',
+                        // multiple permissions
+                        'permissions=storage-access=()\\, camera=()',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('permissions_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'permissions=wi-fi=()',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_DIRECTIVE}: 'permissions': 'wi-fi'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=self',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=none',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        // quotes are checked first
+                        {
+                            actual: "permissions=autoplay=('*')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        // so after quotes are corrected, the origin is being validated
+                        {
+                            actual: 'permissions=autoplay=("*")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=)',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=())',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': ')'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(() "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(* "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(* self)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(hello "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': 'hello'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("hello" "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': 'hello'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("hello" "world")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': 'hello', 'world'`,
+                        },
+                        {
+                            actual: 'permissions=geolocation=(https://example.com https://*.example.com)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'https://example.com'`,
+                        },
+                        {
+                            actual: "permissions=geolocation=('https://example.com' 'https://*.example.com')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'https://example.com'`,
+                        },
+                        {
+                            actual: "permissions=autoplay=()\\, geolocation=('self')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'self'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(() self))',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("()" self)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=geolocation=("https://example.com", "https://*.example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_UNESCAPED_PERMISSION_COMMA}: 'permissions': 'geolocation=("https://example.com", "https://*.example.com")'`,
+                        },
+                        {
+                            actual: 'permissions=storage-access=()\\, \\, camera=()',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        // TODO: implement later
+                        // {
+                        //     actual: 'permissions',
+                        //     expected: VALIDATION_ERROR_PREFIX.NO_VALUE_ONLY_FOR_EXCEPTION,
+                        // },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
         });
     });
 

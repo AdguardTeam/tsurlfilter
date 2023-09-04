@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Changed
 
-- Validation of `$csp` modifier value
+- Validation of `$csp` and `$permissions` modifiers value
   by custom pre-defined validator instead of regular expression
 
 ## 1.1.4 - 2023-08-30

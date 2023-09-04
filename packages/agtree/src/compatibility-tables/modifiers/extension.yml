@@ -15,3 +15,5 @@ adg_os_any:
     - badfilter
   inverse_conflicts: true
   exception_only: true
+  # TODO: 'value_optional' and 'value_format: pipe_separated_extensions' should be added
+  # because CoreLibs are going to support userscript name since v1.13
