@@ -56,12 +56,6 @@ describe('TabsCosmeticInjector', () => {
             jest.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
             jest.spyOn(Date, 'now').mockReturnValue(timestamp);
 
-            const expectedInjectionParams = {
-                tabId,
-                frameId,
-                cosmeticResult,
-            };
-
             const expectedLogParams = {
                 url,
                 tabId,
@@ -72,8 +66,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyFrameCssRules).toBeCalledWith(expectedInjectionParams);
-            expect(CosmeticApi.applyFrameJsRules).toBeCalledWith(expectedInjectionParams);
+            expect(CosmeticApi.applyFrameCssRules).toBeCalledWith(frameId, tabId);
+            expect(CosmeticApi.applyFrameJsRules).toBeCalledWith(frameId, tabId);
             expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 

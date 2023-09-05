@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/require-returns */
 import { nanoid } from 'nanoid';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { appContext } from './context';
 import { getDomain } from '../../common/utils/url';
@@ -18,7 +18,7 @@ import { logger } from '../../common/utils/logger';
 
 import type { ContentType } from '../../common/request-type';
 
-export type ApplyJsRulesParams = {
+export type ApplyCosmeticRulesParams = {
     tabId: number,
     frameId: number,
     cosmeticResult: CosmeticResult,
@@ -30,12 +30,6 @@ export type LogJsRulesParams = {
     url: string,
     contentType: ContentType,
     timestamp: number,
-};
-
-export type ApplyCssRulesParams = {
-    tabId: number,
-    frameId: number,
-    cosmeticResult: CosmeticResult,
 };
 
 export type ContentScriptCosmeticData = {
@@ -252,7 +246,7 @@ export class CosmeticApi {
      *
      * @param params Data for css rules injecting.
      */
-    public static async applyCssRules(params: ApplyCssRulesParams): Promise<void> {
+    public static async applyCssRules(params: ApplyCosmeticRulesParams): Promise<void> {
         const {
             tabId,
             frameId,
@@ -275,7 +269,7 @@ export class CosmeticApi {
      *
      * @param params Data for js rule injecting.
      */
-    public static async applyJsRules(params: ApplyJsRulesParams): Promise<void> {
+    public static async applyJsRules(params: ApplyCosmeticRulesParams): Promise<void> {
         const {
             tabId,
             frameId,
@@ -346,44 +340,62 @@ export class CosmeticApi {
     }
 
     /**
-     * Apply js to specified frame based on provided data and injection FSM state.
+     * Injects js to specified frame based on provided data and injection FSM state.
      *
-     * @param params The data required for the injection.
-     * @param tries The number of tries for the operation in case of failure.
+     * @param frameId Frame id.
+     * @param tabId Tab id.
      */
-    public static async applyFrameJsRules(
-        params: ApplyJsRulesParams,
-        tries = 0,
-    ): Promise<void> {
-        try {
-            await CosmeticApi.applyJsRules(params);
-        } catch (e) {
-            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
-                setTimeout(() => {
-                    CosmeticApi.applyFrameJsRules(params, tries + 1);
-                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
-            } else {
-                logger.debug(getErrorMessage(e));
-            }
-        }
+    public static async applyFrameJsRules(frameId: number, tabId: number): Promise<void> {
+        return CosmeticApi.applyFrameCosmeticRules(
+            frameId,
+            tabId,
+            CosmeticApi.applyJsRules,
+        );
     }
 
     /**
      * Injects css to specified frame based on provided data and injection FSM state.
      *
-     * @param params Data required for the injection.
-     * @param tries Number of tries for the operation in case of failure.
+     * @param frameId Frame id.
+     * @param tabId Tab id.
      */
-    public static async applyFrameCssRules(
-        params: ApplyCssRulesParams,
+    public static async applyFrameCssRules(frameId: number, tabId: number): Promise<void> {
+        return CosmeticApi.applyFrameCosmeticRules(
+            frameId,
+            tabId,
+            CosmeticApi.applyCssRules,
+        );
+    }
+
+    /**
+     * Injects cosmetic result to specified frame based on data provided via context.
+     *
+     * @param frameId Frame id.
+     * @param tabId Tab id.
+     * @param injector Inject function.
+     * @param tries Number of tries for the injection in case of failure.
+     */
+    private static async applyFrameCosmeticRules(
+        frameId: number,
+        tabId: number,
+        injector: (params: ApplyCosmeticRulesParams) => Promise<void>,
         tries = 0,
     ): Promise<void> {
         try {
-            await CosmeticApi.applyCssRules(params);
+            // We read a cosmetic result on execution, because the tab context can change while retrying the injection.
+            const frame = tabsApi.getTabFrame(tabId, frameId);
+
+            if (frame?.cosmeticResult) {
+                await injector({
+                    frameId,
+                    tabId,
+                    cosmeticResult: frame.cosmeticResult,
+                });
+            }
         } catch (e) {
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
-                    CosmeticApi.applyFrameCssRules(params, tries + 1);
+                    CosmeticApi.applyFrameCosmeticRules(frameId, tabId, injector, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 logger.debug(getErrorMessage(e));

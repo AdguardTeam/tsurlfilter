@@ -175,11 +175,7 @@ import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 
-import {
-    CosmeticApi,
-    type ApplyJsRulesParams,
-    type ApplyCssRulesParams,
-} from './cosmetic-api';
+import { CosmeticApi } from './cosmetic-api';
 import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -546,15 +542,7 @@ export class WebRequestApi {
             return;
         }
 
-        const { cosmeticResult } = frame;
-
-        const injectionParams: ApplyJsRulesParams = {
-            tabId,
-            frameId,
-            cosmeticResult,
-        };
-
-        CosmeticApi.applyFrameJsRules(injectionParams);
+        CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
     /**
@@ -680,22 +668,8 @@ export class WebRequestApi {
             });
         }
 
-        const { cosmeticResult } = frame;
-
-        const cssInjectionParams: ApplyCssRulesParams = {
-            tabId,
-            frameId,
-            cosmeticResult,
-        };
-
-        const jsInjectionParams: ApplyJsRulesParams = {
-            tabId,
-            frameId,
-            cosmeticResult,
-        };
-
-        CosmeticApi.applyFrameCssRules(cssInjectionParams);
-        CosmeticApi.applyFrameJsRules(jsInjectionParams);
+        CosmeticApi.applyFrameCssRules(frameId, tabId);
+        CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
     /**

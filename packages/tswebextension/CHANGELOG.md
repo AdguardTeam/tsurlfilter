@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [0.3.14] - 2023-09-05
 
 ### Fixed
-- Domains from the allowlist were not properly escaped before being passed into the regular expression rules. [2461](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2461)
+- Domains from the allowlist were not properly escaped before being passed into the regular expression rules. [#2461](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2461).
+- Cosmetic rule false positive applying when tab context changed while injection retry [#2459](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459).
+
 
 ## [0.3.13] - 2023-08-25
 
