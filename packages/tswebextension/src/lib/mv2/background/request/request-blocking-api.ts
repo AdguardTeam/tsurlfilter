@@ -125,6 +125,10 @@ export class RequestBlockingApi {
             const redirectUrl = redirectsService.createRedirectUrl(rule.getAdvancedModifierValue(), requestUrl);
             if (redirectUrl) {
                 RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
+                // redirects should be considered as blocked for the tab blocked request count
+                // which is displayed on the extension badge
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
+                tabsApi.incrementTabBlockedRequestCount(tabId);
                 return { redirectUrl };
             }
         }
