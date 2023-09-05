@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
 
-## Unreleased
+## [0.3.15] - 2023-09-05
 
 ### Fixed
 - Redirects are not included into tab's blocked requests count
