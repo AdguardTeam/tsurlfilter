@@ -3,7 +3,7 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 
 import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
-import { FrameRequestContext, TabContext } from './tab-context';
+import { FrameRequestContext, TabContext, type TabInfo } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
 
 /**
@@ -325,12 +325,15 @@ export class TabsApi {
      *
      * @param tabId Tab ID.
      * @param changeInfo Tab change info.
+     * @param tabInfo Tab info.
      */
-    private handleTabUpdate(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType): void {
+    private handleTabUpdate(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: Tabs.Tab): void {
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
         if (tabContext) {
-            tabContext.updateTabInfo(changeInfo);
+            if (TabContext.isBrowserTab(tabInfo)) {
+                tabContext.updateTabInfo(tabInfo);
+            }
             this.onUpdate.dispatch(tabContext);
         }
     }

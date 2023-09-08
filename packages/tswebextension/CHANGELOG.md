@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+
+## Unreleased
+
+### Fixed
+- Tab title is now correctly updated on url change when the document does not provide it itself
+  [#2428](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2428).
+
 ## [0.3.16] - 2023-09-05
 
 ### Fixed
 - Do not apply cosmetic rules to extension pages while fallback processing
 [#2459](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459).
-
 
 ## [0.3.15] - 2023-09-05
 

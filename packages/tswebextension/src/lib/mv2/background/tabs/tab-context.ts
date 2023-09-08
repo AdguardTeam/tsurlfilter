@@ -74,21 +74,21 @@ export class TabContext {
     /**
      * Updates tab info.
      *
-     * @param changeInfo Tab change info.
+     * @param tabInfo Tab info.
      */
-    public updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType): void {
-        this.info = Object.assign(this.info, changeInfo);
+    public updateTabInfo(tabInfo: TabInfo): void {
+        this.info = Object.assign(this.info, tabInfo);
 
         // If the tab was updated it means that it wasn't used to send requests in the background.
         this.isSyntheticTab = false;
 
         // Update main frame data when we navigate to another page with document request caching enabled.
-        if (changeInfo.url) {
+        if (tabInfo.url) {
             // Get current main frame.
             const frame = this.frames.get(MAIN_FRAME_ID);
 
             // If main frame url is the same as request url, do nothing.
-            if (frame?.url === changeInfo.url) {
+            if (frame?.url === tabInfo.url) {
                 return;
             }
 
@@ -98,13 +98,13 @@ export class TabContext {
             this.isDocumentRequestCached = true;
 
             // Update main frame data.
-            this.handleMainFrameRequest(changeInfo.url);
+            this.handleMainFrameRequest(tabInfo.url);
         }
 
         // When the cached page is reloaded, we need to manually update
         // the main frame rule for correct document-level rule processing.
-        if (!changeInfo.url
-            && changeInfo.status === 'loading'
+        if (!tabInfo.url
+            && tabInfo.status === 'loading'
             && this.isDocumentRequestCached
             && this.info.url) {
             this.handleMainFrameRequest(this.info.url);
