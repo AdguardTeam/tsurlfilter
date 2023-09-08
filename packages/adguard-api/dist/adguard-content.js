@@ -11,7 +11,7 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 554:
+/***/ 3150:
 /***/ (function(module, exports) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (global, factory) {
@@ -1357,10 +1357,10 @@ var __webpack_exports__ = {};
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
-// EXTERNAL MODULE: ../tswebextension/node_modules/webextension-polyfill/dist/browser-polyfill.js
-var browser_polyfill = __webpack_require__(554);
+// EXTERNAL MODULE: ./node_modules/webextension-polyfill/dist/browser-polyfill.js
+var browser_polyfill = __webpack_require__(3150);
 var browser_polyfill_default = /*#__PURE__*/__webpack_require__.n(browser_polyfill);
-;// CONCATENATED MODULE: ../tswebextension/node_modules/@adguard/extended-css/dist/extended-css.esm.js
+;// CONCATENATED MODULE: ./node_modules/@adguard/extended-css/dist/extended-css.esm.js
 /**
  * @adguard/extended-css - v2.0.52 - Fri Apr 14 2023
  * https://github.com/AdguardTeam/ExtendedCss#homepage
@@ -7642,7 +7642,7 @@ class ExtendedCss {
 
 
 
-;// CONCATENATED MODULE: ../tswebextension/dist/content-script.js
+;// CONCATENATED MODULE: ./node_modules/@adguard/tswebextension/dist/content-script.js
 
 
 
@@ -8424,7 +8424,8 @@ var RequestType = {
     Font: 256,
     WebSocket: 512,
     Ping: 1024,
-    Other: 2048,
+    CspReport: 2048,
+    Other: 4096,
 };
 
 /**
@@ -8801,29 +8802,33 @@ initAssistant();
             documentUrl: window.location.href,
         },
     });
-    if (!response) {
+    // In some cases response can be undefined due to broken message channel.
+    if (!response || response.length === 0) {
         return;
     }
-    if (response.rulesData) {
-        try {
-            const cookieController = new CookieController(({ cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId, }) => {
-                sendAppMessage({
-                    type: MessageType.SaveCookieLogEvent,
-                    payload: {
-                        cookieName,
-                        cookieValue,
-                        cookieDomain,
-                        cookieRuleText,
-                        thirdParty,
-                        filterId,
-                    },
-                });
+    try {
+        const cookieController = new CookieController(({ cookieName, cookieValue, cookieDomain, cookieRuleText, thirdParty, filterId, }) => {
+            sendAppMessage({
+                type: MessageType.SaveCookieLogEvent,
+                payload: {
+                    cookieName,
+                    cookieValue,
+                    cookieDomain,
+                    cookieRuleText,
+                    thirdParty,
+                    filterId,
+                },
             });
-            cookieController.apply(response.rulesData);
-        }
-        catch (e) {
-            // Ignore exceptions
-        }
+        });
+        cookieController.apply(response);
+    }
+    catch (e) {
+        /**
+         * Content script injected on in every frame, but document cookie API in
+         * iframes can be blocked by website CSP policy. We ignore this cases.
+         * Content script matching defined in browser extension.
+         * TODO: move error handling to it.
+         */
     }
 }))();
 

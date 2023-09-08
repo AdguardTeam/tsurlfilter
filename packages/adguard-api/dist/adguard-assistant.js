@@ -11,7 +11,7 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 5623:
+/***/ 3482:
 /***/ (() => {
 
 var assistant = {exports: {}};
@@ -4265,7 +4265,7 @@ var __webpack_exports__ = {};
 (() => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _adguard_tswebextension_assistant_inject__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5623);
+/* harmony import */ var _adguard_tswebextension_assistant_inject__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3482);
 /* harmony import */ var _adguard_tswebextension_assistant_inject__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_adguard_tswebextension_assistant_inject__WEBPACK_IMPORTED_MODULE_0__);
 /**
  * @file
