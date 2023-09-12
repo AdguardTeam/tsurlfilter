@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## Unreleased
+
+### Fixed
+- Filtering log clearing on `$removeparam` rule application[#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442)
+
+
 ## [2.1.11] - 2023-08-25
 
 ### Changed

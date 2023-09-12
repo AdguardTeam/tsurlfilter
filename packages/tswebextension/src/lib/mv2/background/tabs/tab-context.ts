@@ -15,7 +15,9 @@ import {
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
  */
-export type TabInfo = Tabs.Tab & { id: number };
+export type TabInfo = Tabs.Tab & {
+    id: number,
+};
 
 /**
  * Request context data related to the frame.
@@ -25,6 +27,7 @@ export type FrameRequestContext = {
     requestId: string;
     requestUrl: string;
     requestType: RequestType;
+    isRemoveparamRedirect?: boolean;
 };
 
 /**
@@ -74,21 +77,22 @@ export class TabContext {
     /**
      * Updates tab info.
      *
+     * @param changeInfo Tab change info.
      * @param tabInfo Tab info.
      */
-    public updateTabInfo(tabInfo: TabInfo): void {
-        this.info = Object.assign(this.info, tabInfo);
+    public updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: TabInfo): void {
+        this.info = tabInfo;
 
         // If the tab was updated it means that it wasn't used to send requests in the background.
         this.isSyntheticTab = false;
 
         // Update main frame data when we navigate to another page with document request caching enabled.
-        if (tabInfo.url) {
+        if (changeInfo.url) {
             // Get current main frame.
             const frame = this.frames.get(MAIN_FRAME_ID);
 
             // If main frame url is the same as request url, do nothing.
-            if (frame?.url === tabInfo.url) {
+            if (frame?.url === changeInfo.url) {
                 return;
             }
 
@@ -98,13 +102,13 @@ export class TabContext {
             this.isDocumentRequestCached = true;
 
             // Update main frame data.
-            this.handleMainFrameRequest(tabInfo.url);
+            this.handleMainFrameRequest(changeInfo.url);
         }
 
         // When the cached page is reloaded, we need to manually update
         // the main frame rule for correct document-level rule processing.
-        if (!tabInfo.url
-            && tabInfo.status === 'loading'
+        if (!changeInfo.url
+            && changeInfo.status === 'loading'
             && this.isDocumentRequestCached
             && this.info.url) {
             this.handleMainFrameRequest(this.info.url);
@@ -124,11 +128,13 @@ export class TabContext {
      * and store it in the {@link mainFrameRule} property.
      * This method is called before filtering processing in WebRequest onBeforeRequest handler.
      * MatchingResult is handled in {@link handleFrameMatchingResult}.
+     *
      * CosmeticResult is handled in {@link handleFrameCosmeticResult}.
      *
      * @param requestContext Request context data.
+     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    public handleFrameRequest(requestContext: FrameRequestContext): void {
+    public handleFrameRequest(requestContext: FrameRequestContext, isRemoveparamRedirect = false): void {
         // This method is called in the WebRequest onBeforeRequest handler.
         // It means that the request is being processed.
         this.isDocumentRequestCached = false;
@@ -141,7 +147,7 @@ export class TabContext {
         } = requestContext;
 
         if (requestType === RequestType.Document) {
-            this.handleMainFrameRequest(requestUrl, requestId);
+            this.handleMainFrameRequest(requestUrl, requestId, isRemoveparamRedirect);
         } else {
             this.frames.set(frameId, new Frame(requestUrl, requestId));
         }
@@ -187,8 +193,13 @@ export class TabContext {
      *
      * @param requestUrl Request url.
      * @param requestId Request id.
+     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    private handleMainFrameRequest(requestUrl: string, requestId?: string): void {
+    private handleMainFrameRequest(
+        requestUrl: string,
+        requestId?: string,
+        isRemoveparamRedirect = false,
+    ): void {
         // Clear frames data on tab reload.
         this.frames.clear();
 
@@ -200,13 +211,15 @@ export class TabContext {
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
 
-        // dispatch filtering log reload event
-        this.filteringLog.publishEvent({
-            type: FilteringEventType.TabReload,
-            data: {
-                tabId: this.info.id,
-            },
-        });
+        if (!isRemoveparamRedirect) {
+            // dispatch filtering log reload event
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.TabReload,
+                data: {
+                    tabId: this.info.id,
+                },
+            });
+        }
     }
 
     /**

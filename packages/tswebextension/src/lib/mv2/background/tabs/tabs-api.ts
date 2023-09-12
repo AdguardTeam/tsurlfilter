@@ -134,8 +134,9 @@ export class TabsApi {
      * Records request context to the tab context.
      *
      * @param requestContext Tab's frame's request context.
+     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
+    public handleFrameRequest(requestContext: TabFrameRequestContext, isRemoveparamRedirect = false): void {
         const { tabId } = requestContext;
 
         const tabContext = this.context.get(tabId);
@@ -144,7 +145,7 @@ export class TabsApi {
             return;
         }
 
-        tabContext.handleFrameRequest(requestContext);
+        tabContext.handleFrameRequest(requestContext, isRemoveparamRedirect);
     }
 
     /**
@@ -330,10 +331,8 @@ export class TabsApi {
     private handleTabUpdate(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: Tabs.Tab): void {
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
-        if (tabContext) {
-            if (TabContext.isBrowserTab(tabInfo)) {
-                tabContext.updateTabInfo(tabInfo);
-            }
+        if (tabContext && TabContext.isBrowserTab(tabInfo)) {
+            tabContext.updateTabInfo(changeInfo, tabInfo);
             this.onUpdate.dispatch(tabContext);
         }
     }
