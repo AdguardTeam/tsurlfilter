@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Tab title is now correctly updated on url change when the document does not provide it itself
   [#2428](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2428).
+- Filter id for StealthApi to display Stealth Mode cookie events in Filtering Log properly
+  [#2487](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2487)
 
 ## [0.3.16] - 2023-09-05
 
