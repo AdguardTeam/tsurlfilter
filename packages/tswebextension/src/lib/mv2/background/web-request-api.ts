@@ -342,13 +342,15 @@ export class WebRequestApi {
 
         // For a $replace rule, response will be undefined since we need to get
         // the response in order to actually apply $replace rules to it.
-        const response = RequestBlockingApi.getBlockingResponse(
-            basicResult,
+        const response = RequestBlockingApi.getBlockingResponse({
+            rule: basicResult,
             eventId,
             requestUrl,
+            referrerUrl,
             requestType,
+            contentType,
             tabId,
-        );
+        });
 
         if (!response) {
             /*

@@ -11,7 +11,7 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 3150:
+/***/ 554:
 /***/ (function(module, exports) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (global, factory) {
@@ -1357,10 +1357,10 @@ var __webpack_exports__ = {};
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
-// EXTERNAL MODULE: ./node_modules/webextension-polyfill/dist/browser-polyfill.js
-var browser_polyfill = __webpack_require__(3150);
+// EXTERNAL MODULE: ../tswebextension/node_modules/webextension-polyfill/dist/browser-polyfill.js
+var browser_polyfill = __webpack_require__(554);
 var browser_polyfill_default = /*#__PURE__*/__webpack_require__.n(browser_polyfill);
-;// CONCATENATED MODULE: ./node_modules/@adguard/extended-css/dist/extended-css.esm.js
+;// CONCATENATED MODULE: ../tswebextension/node_modules/@adguard/extended-css/dist/extended-css.esm.js
 /**
  * @adguard/extended-css - v2.0.52 - Fri Apr 14 2023
  * https://github.com/AdguardTeam/ExtendedCss#homepage
@@ -7642,7 +7642,7 @@ class ExtendedCss {
 
 
 
-;// CONCATENATED MODULE: ./node_modules/@adguard/tswebextension/dist/content-script.js
+;// CONCATENATED MODULE: ../tswebextension/dist/content-script.js
 
 
 
