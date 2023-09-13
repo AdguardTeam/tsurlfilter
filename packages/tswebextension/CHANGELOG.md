@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
 
+## [0.3.18] - 2023-09-13
+
+### Fixed
+- Do not block a tab loading by `$popup` modifier rule on direct url navigation
+  [#2449](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449).
+
+
 ## [0.3.17] - 2023-09-13
 
 ### Added
@@ -17,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tab title is now correctly updated on url change when the document does not provide it itself
   [#2428](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2428).
 - Filter id for StealthApi to display Stealth Mode cookie events in Filtering Log properly
-  [#2487](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2487)
+  [#2487](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2487).
 
 
 ## [0.3.16] - 2023-09-05
@@ -25,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Do not apply cosmetic rules to extension pages while fallback processing
 [#2459](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459).
+
 
 ## [0.3.15] - 2023-09-05
 

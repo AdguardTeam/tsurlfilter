@@ -116,10 +116,14 @@ export class RequestBlockingApi {
                 const isNewTab = tabsApi.isNewPopupTab(tabId);
 
                 if (isNewTab) {
+                    // the tab is considered as a popup and should be closed
                     RequestBlockingApi.logRuleApplying(data);
                     browser.tabs.remove(tabId);
                     return { cancel: true };
                 }
+                // do not block the tab loading on direct url navigation
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449
+                return undefined;
             }
 
             // For all other blocking rules, we return our dummy page with the
