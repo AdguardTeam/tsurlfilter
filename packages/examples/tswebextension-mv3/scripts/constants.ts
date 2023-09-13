@@ -1,10 +1,4 @@
-import path from 'path';
-
 import { Configuration } from '@adguard/tswebextension/mv3';
-
-export const BUILD_PATH = path.join(__dirname, '../build');
-
-export const USER_DATA_PATH = path.join(__dirname, '../tmp');
 
 // TODO: can be used as common for examples/tswebextension-mv2 as well
 export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
@@ -12,7 +6,7 @@ export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
 export const TESTCASES_DATA_PATH = '/data.json';
 
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
-    staticFiltersIds: [],
+    staticFiltersIds: [1, 2, 3, 4, 9, 14],
     customFilters: [],
     allowlist: [],
     userrules: [],

@@ -214,8 +214,9 @@ export class RequestEvents {
         };
 
         if (isDocumentRequest || requestType === RequestType.SubDocument) {
+            const isRemoveparamRedirect = requestContextStorage.has(requestId);
             // Saves the current tab url to retrieve it correctly below.
-            tabsApi.handleFrameRequest(tabFrameRequestContext);
+            tabsApi.handleFrameRequest(tabFrameRequestContext, isRemoveparamRedirect);
         }
 
         const referrerUrl = originUrl

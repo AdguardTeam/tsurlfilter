@@ -56,7 +56,12 @@ The value format describes the format of the modifier value. It can be one of th
             - `pipe_separated_domains` validates value for `$domain` modifier
             - `pipe_separated_denyallow_domains` validates value for `$denyallow` modifier —
               negation and wildcard are not allowed compared to `$domain` modifier
+            <!-- TODO: implement later -->
+            <!-- - `pipe_separated_extensions` validates value for `$extension` modifier -->
             - `pipe_separated_methods` validates value for `$method` modifier
+            - `pipe_separated_stealth_options` validates value for `$stealth` modifier
+            - `csp_value` validates value for `$csp` modifier
+            - `permissions_value` validates value for `$permissions` modifier
         - `url` validates that the value is a valid URL.
         - `regexp` validates that the value is a valid regular expression.
             > :warning: **This is not the same as when you assign a regular expression to value_format!**

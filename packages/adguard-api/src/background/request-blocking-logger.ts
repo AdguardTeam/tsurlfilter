@@ -23,7 +23,6 @@ import {
     EventChannel,
     EventChannelListener,
     FilteringEventType,
-    requestContextStorage,
 } from "@adguard/tswebextension";
 
 export type RequestBlockingEvent = {
@@ -76,28 +75,20 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      * @param event - {@link ApplyBasicRuleEvent}
      */
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
-        const { eventId, rule, tabId } = event.data;
+        const { rule, tabId, requestUrl, requestType, frameUrl } = event.data;
 
         // exclude allowlist rules
         if (rule.isAllowlist()) {
             return;
         }
 
-        const requestContext = requestContextStorage.get(eventId);
-
-        if (!requestContext) {
-            return;
-        }
-
-        const { requestUrl, contentType, referrerUrl } = requestContext;
-
         this.channel.dispatch({
             tabId,
             rule: rule.getText(),
             filterId: rule.getFilterListId(),
             requestUrl,
-            referrerUrl,
-            requestType: contentType,
+            referrerUrl: frameUrl,
+            requestType,
         });
     }
 }

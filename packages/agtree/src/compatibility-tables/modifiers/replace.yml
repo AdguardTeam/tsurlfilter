@@ -29,7 +29,7 @@ adg_os_any:
         # separator
         \/
           # replacement
-          (.+?)
+          (.+)?
         \/
           # flags
           ([gimuy]*)?
@@ -65,7 +65,7 @@ adg_ext_firefox:
         # separator
         \/
           # replacement
-          (.+?)
+          (.+)?
         \/
           # flags
           ([gimuy]*)?

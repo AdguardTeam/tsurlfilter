@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules.
 
+### Fixed
+- Filtering log clearing on `$removeparam` rule application
+[#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
+
 
 ## [2.1.11] - 2023-08-25
 

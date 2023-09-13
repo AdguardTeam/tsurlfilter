@@ -1,12 +1,24 @@
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { documentBlockingService } from '../services/document-blocking-service';
 import { redirectsService } from '../services/redirects/redirects-service';
 import { tabsApi, engineApi } from '../api';
+import { ContentType } from '../../../common/request-type';
 
-export type WebRequestBlockingResponse = WebRequest.BlockingResponse | void;
+/**
+ * Params for {@link RequestBlockingApi.getBlockingResponse}.
+ */
+type GetBlockingResponseParams = {
+    tabId: number,
+    eventId: string,
+    rule: NetworkRule | null,
+    referrerUrl: string,
+    requestUrl: string,
+    requestType: RequestType,
+    contentType: ContentType,
+};
 
 /**
  * Api for processing request filtering.
@@ -66,27 +78,26 @@ export class RequestBlockingApi {
     /**
      * Processes rule applying for request and compute response for {@link WebRequestApi.onBeforeRequest} listener.
      *
-     * @param rule Matched rule.
-     * @param eventId Request event id.
-     * @param requestUrl Request url.
-     * @param requestType Request type.
-     * @param tabId Tab id.
+     * @param data Data for request processing.
      *
      * @returns Response for {@link WebRequestApi.onBeforeRequest} listener.
      */
-    public static getBlockingResponse(
-        rule: NetworkRule | null,
-        eventId: string,
-        requestUrl: string,
-        requestType: RequestType,
-        tabId: number,
-    ): WebRequestBlockingResponse {
+    public static getBlockingResponse(data: GetBlockingResponseParams): WebRequest.BlockingResponse | void {
+        const {
+            rule,
+            requestType,
+            tabId,
+            eventId,
+            requestUrl,
+            referrerUrl,
+        } = data;
+
         if (!rule) {
             return undefined;
         }
 
         if (rule.isAllowlist()) {
-            RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
+            RequestBlockingApi.logRuleApplying(data);
             return undefined;
         }
 
@@ -105,7 +116,7 @@ export class RequestBlockingApi {
                 const isNewTab = tabsApi.isNewPopupTab(tabId);
 
                 if (isNewTab) {
-                    RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
+                    RequestBlockingApi.logRuleApplying(data);
                     browser.tabs.remove(tabId);
                     return { cancel: true };
                 }
@@ -113,23 +124,28 @@ export class RequestBlockingApi {
 
             // For all other blocking rules, we return our dummy page with the
             // option to temporarily disable blocking for the specified domain.
-            return documentBlockingService.getDocumentBlockingResponse(
+            return documentBlockingService.getDocumentBlockingResponse({
                 eventId,
                 requestUrl,
+                referrerUrl,
                 rule,
                 tabId,
-            );
+            });
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
             const redirectUrl = redirectsService.createRedirectUrl(rule.getAdvancedModifierValue(), requestUrl);
             if (redirectUrl) {
-                RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
+                RequestBlockingApi.logRuleApplying(data);
+                // redirects should be considered as blocked for the tab blocked request count
+                // which is displayed on the extension badge
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
+                tabsApi.incrementTabBlockedRequestCount(tabId);
                 return { redirectUrl };
             }
         }
 
-        RequestBlockingApi.logRuleApplying(eventId, rule, tabId);
+        RequestBlockingApi.logRuleApplying(data);
         return { cancel: true };
     }
 
@@ -159,21 +175,31 @@ export class RequestBlockingApi {
     /**
      * Creates {@link FilteringLog} event of rule applying for processed request.
      *
-     * @param eventId Request event id.
-     * @param requestRule Request rule.
-     * @param tabId Tab id.
+     * @param data Data for request processing.
      */
-    private static logRuleApplying(
-        eventId: string,
-        requestRule: NetworkRule,
-        tabId: number,
-    ): void {
+    private static logRuleApplying(data: GetBlockingResponseParams): void {
+        const {
+            tabId,
+            eventId,
+            rule,
+            referrerUrl,
+            requestUrl,
+            contentType,
+        } = data;
+
+        if (!rule) {
+            return;
+        }
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
-                eventId,
                 tabId,
-                rule: requestRule,
+                eventId,
+                requestType: contentType,
+                frameUrl: referrerUrl,
+                requestUrl,
+                rule,
             },
         });
     }

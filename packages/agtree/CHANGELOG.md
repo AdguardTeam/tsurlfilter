@@ -4,7 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
-## Unreleased
+
+## 1.1.5 - 2023-09-05
+
+### Changed
+
+- Validation of `$csp` and `$permissions` modifiers value
+  by custom pre-defined validator instead of regular expression
+
+### Added
+
+- Exports to `package.json`
+
+## 1.1.4 - 2023-08-30
+
+### Fixed
+
+- Validation of `$redirect` and `$replace` modifiers by `ModifierValidator.validate()`
+
+
+## 1.1.3 - 2023-08-28
 
 ### Added
 

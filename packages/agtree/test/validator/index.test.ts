@@ -318,8 +318,6 @@ describe('ModifierValidator', () => {
                 'important',
                 'jsinject',
                 'stealth',
-                'stealth=dpi',
-                'stealth=dpi|user-agent',
             ];
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
@@ -379,6 +377,7 @@ describe('ModifierValidator', () => {
                         'permissions=storage-access=()\\,  camera=()',
                         'redirect=noopjs',
                         'redirect=noopmp4-1s',
+                        'redirect=googletagmanager-gtm',
                         'redirect-rule=noopjs',
                         'redirect-rule=noopmp4-1s',
                         'removeheader=link',
@@ -388,6 +387,8 @@ describe('ModifierValidator', () => {
                         'removeparam=/^__s=[A-Za-z0-9]{6\\,}/',
                         'replace=/("ad":{).+"(\\}\\,"(?:log|watermark)")/\\$1\\$2/',
                         'replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/',
+                        'replace=/\\,this\\.createAdDisplayContainer\\(\\)\\,this\\.setUpIMA\\(\\)//',
+                        'replace=/fourthColumnWrapper//',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
@@ -660,6 +661,274 @@ describe('ModifierValidator', () => {
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
+                    });
+                });
+            });
+
+            describe('required value - validate by pipe_separated_stealth_options', () => {
+                describe('pipe_separated_stealth_options valid', () => {
+                    test.each([
+                        'stealth',
+                        'stealth=searchqueries',
+                        'stealth=donottrack|3p-cookie|1p-cookie|3p-cache|3p-auth',
+                        'stealth=webrtc|push|location|flash|java|referrer',
+                        'stealth=useragent|ip|xclientdata|dpi',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('pipe_separated_stealth_options invalid', () => {
+                    test.each([
+                        {
+                            actual: 'stealth=|donottrack|ip',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=ip||useragent',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=useragent|dpi|',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                        },
+                        {
+                            actual: 'stealth=~~searchqueries',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_MULTIPLE_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=useragent|~|dpi',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=~ dpi',
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_WHITESPACE_AFTER_NEGATION,
+                        },
+                        {
+                            actual: 'stealth=3p-auth|mp3',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'mp3'`,
+                        },
+                        // due to $stealth restrictions: values should be lowercased, no negate values
+                        {
+                            actual: 'stealth=PUSH',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_LIST_VALUES}: 'stealth': 'PUSH'`,
+                        },
+                        {
+                            actual: 'stealth=~ip',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'ip'`,
+                        },
+                        {
+                            actual: 'stealth=~searchqueries|dpi',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_VALUE}: 'stealth': 'searchqueries'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by csp_value', () => {
+                describe('csp_value valid', () => {
+                    test.each([
+                        'csp',
+                        'csp=child-src *',
+                        'csp=sandbox allow-same-origin;',
+                        "csp=script-src 'self' '*' 'unsafe-inline' *.example.com *.example.org",
+                        "csp=script-src 'self' 'unsafe-inline' https://example.com *.example.com",
+                        "csp=default-src 'self' *.example.com fonts.example.org https://the-example.com https://the.example.com 'unsafe-inline' 'unsafe-eval' data: blob:",
+                        "csp=script-src 'self' * 'sha256-0McqMM16/wAVZmxF6zXpjNsb1UM6Tl4LXBxdhqPKxws='",
+                        // few directives
+                        "csp=child-src 'none'; frame-src 'self' *; worker-src 'none'",
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('csp_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'csp= ;',
+                            // no space in error message
+                            // because modifier value is trimmed during parsing into Modifier AST node
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'csp': ";"`,
+                        },
+                        {
+                            actual: 'csp=none',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "none"`,
+                        },
+                        {
+                            actual: 'csp=default',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "default"`,
+                        },
+                        {
+                            actual: "csp='child-src' 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_DIRECTIVE_QUOTE}: 'csp': 'child-src'`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; frame src 'self' *; workers 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_CSP_DIRECTIVES}: 'csp': "frame", "workers"`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; ; worker-src 'none'",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'csp': "child-src 'none'; ; worker-src 'none'"`,
+                        },
+                        {
+                            actual: 'csp=script-src',
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: 'csp': 'script-src'`,
+                        },
+                        {
+                            actual: "csp=child-src 'none'; frame-src; worker-src 'none'",
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_CSP_VALUE}: 'csp': 'frame-src'`,
+                        },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by permissions_value', () => {
+                describe('permissions_value valid', () => {
+                    test.each([
+                        'permissions',
+                        'permissions=fullscreen=*',
+                        'permissions=autoplay=()',
+                        'permissions=geolocation=(self)',
+                        'permissions=geolocation=(self "https://example.com")',
+                        'permissions=geolocation=("https://example.com" "https://*.example.com")',
+                        'permissions=geolocation=("https://example.com"  "https://*.example.com")',
+                        // multiple permissions
+                        'permissions=storage-access=()\\, camera=()',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('permissions_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'permissions=wi-fi=()',
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_DIRECTIVE}: 'permissions': 'wi-fi'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=self',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=none',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        // quotes are checked first
+                        {
+                            actual: "permissions=autoplay=('*')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        // so after quotes are corrected, the origin is being validated
+                        {
+                            actual: 'permissions=autoplay=("*")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=)',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=())',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': ')'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(() "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(* "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(* self)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '*'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(hello "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': 'hello'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("hello" "https://example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': 'hello'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("hello" "world")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': 'hello', 'world'`,
+                        },
+                        {
+                            actual: 'permissions=geolocation=(https://example.com https://*.example.com)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'https://example.com'`,
+                        },
+                        {
+                            actual: "permissions=geolocation=('https://example.com' 'https://*.example.com')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'https://example.com'`,
+                        },
+                        {
+                            actual: "permissions=autoplay=()\\, geolocation=('self')",
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'geolocation': 'self'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=(() self))',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGIN_QUOTES}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=autoplay=("()" self)',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_PERMISSION_ORIGINS}: 'permissions': 'autoplay': '()'`,
+                        },
+                        {
+                            actual: 'permissions=geolocation=("https://example.com", "https://*.example.com")',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.NO_UNESCAPED_PERMISSION_COMMA}: 'permissions': 'geolocation=("https://example.com", "https://*.example.com")'`,
+                        },
+                        {
+                            actual: 'permissions=storage-access=()\\, \\, camera=()',
+                            expected: `${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: 'permissions'`,
+                        },
+                        // TODO: implement later
+                        // {
+                        //     actual: 'permissions',
+                        //     expected: VALIDATION_ERROR_PREFIX.NO_VALUE_ONLY_FOR_EXCEPTION,
+                        // },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
                     });
                 });
             });

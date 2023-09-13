@@ -26,7 +26,7 @@ export class StealthApi {
     /**
      * Stealth filter identifier.
      */
-    private static readonly STEALTH_MODE_FILTER_ID: -1;
+    private static readonly STEALTH_MODE_FILTER_ID = -1;
 
     /**
      * Stealth service.

@@ -116,7 +116,7 @@ describe('TabsApi', () => {
 
             tabsApi.handleFrameRequest(frameRequestContext);
 
-            expect(TabContext.prototype.handleFrameRequest).toBeCalledWith(frameRequestContext);
+            expect(TabContext.prototype.handleFrameRequest).toBeCalledWith(frameRequestContext, false);
         });
 
         it('should not handle frame request if tab context is not found', () => {

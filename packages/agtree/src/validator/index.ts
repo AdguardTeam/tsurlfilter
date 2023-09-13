@@ -89,16 +89,19 @@ const validateForSpecificSyntax = (
 
     // e.g. 'domain'
     if (specificBlockerData[SpecificKey.Assignable]) {
-        /**
-         * Some assignable modifiers can be used without a value,
-         * e.g. '@@||example.com^$cookie'.
-         */
-        if (specificBlockerData[SpecificKey.ValueOptional]) {
-            // no need to check the value if it is optional
-            return { valid: true };
-        }
-
         if (!modifier.value) {
+            // TODO: ditch value_optional after custom validators are implemented for value_format for all modifiers.
+            // This checking should be done in each separate custom validator,
+            // because $csp and $permissions without value can be used only in extension rules,
+            // but $cookie with no value can be used in both blocking and exception rules.
+            /**
+             * Some assignable modifiers can be used without a value,
+             * e.g. '@@||example.com^$cookie'.
+             */
+            if (specificBlockerData[SpecificKey.ValueOptional]) {
+                return { valid: true };
+            }
+            // for other assignable modifiers the value is required
             return getValueRequiredValidationResult(modifierName);
         }
 

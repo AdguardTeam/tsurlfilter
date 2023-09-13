@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "1.1.2",
+    "version": "1.1.5",
     "description": "Universal adblock filter list parser.",
     "keywords": [
         "adblock",
@@ -25,6 +25,15 @@
     "module": "dist/agtree.esm.js",
     "browser": "dist/agtree.umd.min.js",
     "types": "dist/agtree.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/agtree.esm.js",
+            "require": "./dist/agtree.cjs"
+        },
+        "./es": "./dist/agtree.esm.js",
+        "./iife": "./dist/agtree.iife.min.js",
+        "./umd": "./dist/agtree.umd.min.js"
+    },
     "files": [
         "dist"
     ],

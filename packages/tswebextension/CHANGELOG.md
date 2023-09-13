@@ -16,6 +16,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
 
 
+## [0.3.17] - 2023-09-13
+
+### Added
+- New `requestUrl`, `frameUrl` and `requestType` fields in `ApplyBasicRuleEvent`.
+
+### Fixed
+- Tab title is now correctly updated on url change when the document does not provide it itself
+  [#2428](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2428).
+- Filter id for StealthApi to display Stealth Mode cookie events in Filtering Log properly
+  [#2487](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2487)
+
+
+## [0.3.16] - 2023-09-05
+
+### Fixed
+- Do not apply cosmetic rules to extension pages while fallback processing
+[#2459](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459).
+
+## [0.3.15] - 2023-09-05
+
+### Fixed
+- Redirects are not included into tab's blocked requests count
+  [#2443](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443).
+
+
+## [0.3.14] - 2023-09-05
+
+### Fixed
+- Domains from the allowlist are not properly escaped before being passed into the regular expression rules
+  [#2461](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2461).
+- Cosmetic rule false positive applying when tab context changed while injection retry
+  [#2459](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459).
+
+
 ## [0.3.13] - 2023-08-25
 
 ### Changed

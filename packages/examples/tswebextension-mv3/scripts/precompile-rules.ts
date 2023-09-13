@@ -4,13 +4,14 @@ import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 import axios from 'axios';
 import path from 'path';
 import { ensureDir } from 'fs-extra';
+import { DEFAULT_EXTENSION_CONFIG } from './constants';
 
 const COMMON_FILTERS_DIR = './extension/filters';
 const FILTERS_DIR = `${COMMON_FILTERS_DIR}`;
 const DEST_RULE_SETS_DIR = `${COMMON_FILTERS_DIR}/declarative`;
 const RESOURCES_DIR = '/war/redirects';
 
-const ADGUARD_FILTERS_IDS = [1, 2, 3, 4, 9, 14];
+const ADGUARD_FILTERS_IDS = DEFAULT_EXTENSION_CONFIG.staticFiltersIds;
 
 const EXTENSION_FILTERS_SERVER_URL_FORMAT = 'https://filters.adtidy.org/extension/chromium';
 const FILTER_DOWNLOAD_URL_FORMAT = `${EXTENSION_FILTERS_SERVER_URL_FORMAT}/filters/%filter.txt`;
