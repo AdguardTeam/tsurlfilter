@@ -180,7 +180,7 @@ import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
-import { CspService } from './services/csp-service';
+import { cspService } from './services/csp-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -479,7 +479,7 @@ export class WebRequestApi {
         let responseHeadersModified = false;
 
         if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
-            if (CspService.onHeadersReceived(context)) {
+            if (cspService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
         }

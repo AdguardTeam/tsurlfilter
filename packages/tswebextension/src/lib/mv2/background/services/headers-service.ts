@@ -56,8 +56,8 @@ export class HeadersService {
 
         let isModified = false;
         rules.forEach((rule) => {
-            if (HeadersService.applyRule(requestHeaders, rule, true)) {
-                isModified = true;
+            isModified = HeadersService.applyRule(requestHeaders, rule, true);
+            if (isModified || rule.isAllowlist()) {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveHeader,
                     data: {

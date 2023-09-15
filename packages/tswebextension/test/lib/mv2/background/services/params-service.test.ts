@@ -83,11 +83,14 @@ describe('Params service', () => {
     it('correctly processes allowlist rule', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
-            'POST',
-            ['@@||example.org^$removeparam'],
+            'GET',
+            ['||example.org^$removeparam=param', '@@||example.org^$removeparam=param'],
         );
 
         expect(purgedUrl).toBe(null);
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.RemoveParam }),
+        );
     });
 
     it('removes only specific param', () => {

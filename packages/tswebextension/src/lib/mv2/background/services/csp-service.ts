@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 
 import { ContentType } from '../../../common/request-type';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { FilteringLogInterface } from '../../../common';
 import {
     type RequestContext,
     requestContextStorage,
@@ -15,6 +16,17 @@ const CSP_HEADER_NAME = 'Content-Security-Policy';
  * Content Security Policy Headers filtering service module.
  */
 export class CspService {
+    private filteringLog: FilteringLogInterface;
+
+    /**
+     * Constructor.
+     *
+     * @param filteringLog Filtering log.
+     */
+    constructor(filteringLog: FilteringLogInterface) {
+        this.filteringLog = filteringLog;
+    }
+
     /**
      * Applies CSP rules to response headers and returns modified headers.
      * It is applied when webRequest.onHeadersReceived event is fired.
@@ -22,7 +34,7 @@ export class CspService {
      * @param context Request context.
      * @returns True if headers were modified.
      */
-    public static onHeadersReceived(context: RequestContext): boolean {
+    public onHeadersReceived(context: RequestContext): boolean {
         const {
             matchingResult,
             responseHeaders,
@@ -42,6 +54,7 @@ export class CspService {
 
         for (let i = 0; i < cspRules.length; i += 1) {
             const rule = cspRules[i];
+
             // Don't forget: getCspRules returns all $csp rules, we must directly check that the rule is blocking.
             if (RequestBlockingApi.isRequestBlockedByRule(rule)) {
                 const cspHeaderValue = rule.getAdvancedModifierValue();
@@ -51,22 +64,22 @@ export class CspService {
                         name: CSP_HEADER_NAME,
                         value: cspHeaderValue,
                     });
-
-                    defaultFilteringLog.publishEvent({
-                        type: FilteringEventType.ApplyCspRule,
-                        data: {
-                            tabId,
-                            eventId: nanoid(),
-                            requestUrl,
-                            frameUrl: referrerUrl,
-                            frameDomain: getDomain(referrerUrl) as string,
-                            requestType: ContentType.Csp,
-                            rule,
-                            timestamp: Date.now(),
-                        },
-                    });
                 }
             }
+
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.ApplyCspRule,
+                data: {
+                    tabId,
+                    eventId: nanoid(),
+                    requestUrl,
+                    frameUrl: referrerUrl,
+                    frameDomain: getDomain(referrerUrl) as string,
+                    requestType: ContentType.Csp,
+                    rule,
+                    timestamp: Date.now(),
+                },
+            });
         }
 
         if (cspHeaders.length > 0) {
@@ -80,3 +93,5 @@ export class CspService {
         return false;
     }
 }
+
+export const cspService = new CspService(defaultFilteringLog);

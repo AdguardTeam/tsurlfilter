@@ -59,14 +59,29 @@ export class ParamsService {
 
         const purgedUrl = removeParamRules.reduce((url: string, rule: NetworkRule): string => {
             if (rule.isAllowlist()) {
+                this.filteringLog.publishEvent({
+                    type: FilteringEventType.RemoveParam,
+                    data: {
+                        removeParam: true,
+                        eventId: nanoid(),
+                        tabId: context.tabId,
+                        requestUrl: url,
+                        frameUrl: url,
+                        frameDomain: getDomain(url) as string,
+                        requestType: contentType,
+                        rule,
+                        timestamp,
+                    },
+                });
                 return url;
             }
 
             const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
 
             const modifiedUrl = modifier.removeParameters(url);
+            const hasUrlChanged = modifiedUrl !== url;
 
-            if (url !== modifiedUrl) {
+            if (hasUrlChanged) {
                 context.isRemoveparamRedirect = true;
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveParam,
