@@ -2,14 +2,12 @@ import { getDomain } from 'tldts';
 import { nanoid } from 'nanoid';
 import { NetworkRuleOption, CSP_HEADER_NAME } from '@adguard/tsurlfilter';
 
-import {
-    ContentType,
-} from '../../../common/request-type';
+import { ContentType } from '../../../common/request-type';
 import {
     defaultFilteringLog,
     FilteringEventType,
     type FilteringLogInterface,
-} from '../../../common/filtering-log';
+} from '../../../common';
 import {
     type RequestContext,
     requestContextStorage,
@@ -67,6 +65,7 @@ export class CspService {
                     continue;
                 }
             }
+
             // Don't forget: getCspRules returns all $csp rules, we must directly check that the rule is blocking.
             if (RequestBlockingApi.isRequestBlockedByRule(rule)) {
                 const cspHeaderValue = rule.getAdvancedModifierValue();
@@ -76,22 +75,22 @@ export class CspService {
                         name: CSP_HEADER_NAME,
                         value: cspHeaderValue,
                     });
-
-                    this.filteringLog.publishEvent({
-                        type: FilteringEventType.ApplyCspRule,
-                        data: {
-                            tabId,
-                            eventId: nanoid(),
-                            requestUrl,
-                            frameUrl: referrerUrl,
-                            frameDomain: getDomain(referrerUrl),
-                            requestType: ContentType.Csp,
-                            rule,
-                            timestamp: Date.now(),
-                        },
-                    });
                 }
             }
+
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.ApplyCspRule,
+                data: {
+                    tabId,
+                    eventId: nanoid(),
+                    requestUrl,
+                    frameUrl: referrerUrl,
+                    frameDomain: getDomain(referrerUrl) as string,
+                    requestType: ContentType.Csp,
+                    rule,
+                    timestamp: Date.now(),
+                },
+            });
         }
 
         if (cspHeaders.length > 0) {

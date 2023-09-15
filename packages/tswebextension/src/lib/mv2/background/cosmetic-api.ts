@@ -21,6 +21,7 @@ import type { ContentType } from '../../common/request-type';
 export type ApplyCosmeticRulesParams = {
     tabId: number,
     frameId: number,
+    url?: string,
     cosmeticResult: CosmeticResult,
 };
 
@@ -165,17 +166,34 @@ export class CosmeticApi {
      * Builds scripts from cosmetic rules.
      *
      * @param rules Cosmetic rules.
+     * @param frameUrl Frame url.
      * @returns Scripts or undefined.
      */
-    public static getScriptText(rules: CosmeticRule[]): string | undefined {
+    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string | undefined {
         if (rules.length === 0) {
             return undefined;
         }
 
         const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
 
+        let debug = false;
+        const { configuration } = appContext;
+        if (configuration) {
+            const { settings } = configuration;
+            if (settings) {
+                if (settings.collectStats) {
+                    debug = true;
+                }
+            }
+        }
+
+        const scriptParams = {
+            debug,
+            frameUrl,
+        };
+
         const scriptText = permittedRules
-            .map((rule) => rule.getScript())
+            .map((rule) => rule.getScript(scriptParams))
             .join('\n');
 
         if (!scriptText) {
@@ -274,11 +292,12 @@ export class CosmeticApi {
             tabId,
             frameId,
             cosmeticResult,
+            url,
         } = params;
 
         const scriptRules = cosmeticResult.getScriptRules();
 
-        let scriptText = CosmeticApi.getScriptText(scriptRules);
+        let scriptText = CosmeticApi.getScriptText(scriptRules, url);
         scriptText += stealthApi.getSetDomSignalScript();
 
         if (scriptText) {
@@ -389,6 +408,7 @@ export class CosmeticApi {
                 await injector({
                     frameId,
                     tabId,
+                    url: frame.url,
                     cosmeticResult: frame.cosmeticResult,
                 });
             }

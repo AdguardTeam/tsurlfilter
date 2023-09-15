@@ -55,9 +55,10 @@ export class RemoveHeadersService {
         }
 
         let isModified = false;
-        rules.forEach((rule: NetworkRule) => {
-            if (RemoveHeadersService.applyRule(requestHeaders, rule, true)) {
-                isModified = true;
+
+        rules.forEach((rule) => {
+            isModified = RemoveHeadersService.applyRule(requestHeaders, rule, true);
+            if (isModified || rule.isAllowlist()) {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveHeader,
                     data: {

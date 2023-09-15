@@ -59,4 +59,17 @@ describe('Content Security Policy service', () => {
             expect.objectContaining({ type: FilteringEventType.ApplyCspRule }),
         );
     });
+
+    it('allowlists rules', () => {
+        context.matchingResult = new MatchingResult([
+            new NetworkRule('||example.com$csp=style-src *', 0),
+            new NetworkRule('@@||example.com$csp=style-src *', 0),
+        ], null);
+        const hasModified = cspService.onHeadersReceived(context);
+
+        expect(hasModified).toBeFalsy();
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.ApplyCspRule }),
+        );
+    });
 });
