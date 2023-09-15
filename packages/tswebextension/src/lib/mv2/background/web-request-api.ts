@@ -739,6 +739,7 @@ export class WebRequestApi {
                 tabId,
                 frameId,
                 cosmeticResult,
+                url,
             })
             .catch(logger.debug);
     }

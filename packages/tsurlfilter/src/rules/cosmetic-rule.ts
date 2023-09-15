@@ -16,7 +16,7 @@ import { config } from '../configuration';
  */
 interface InitScriptParams {
     debug?: boolean,
-    request?: Request,
+    frameUrl?: string
 }
 
 /**
@@ -33,7 +33,7 @@ export type ScriptletData = {
 type ScriptData = {
     code: string | null,
     debug?: boolean,
-    domain?: string
+    frameUrl?: string
 };
 
 /**
@@ -295,10 +295,11 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Returns script ready to execute or null
      * Rebuilds scriptlet script if debug or domain params change
-     * @param options
+     * @param options script options
+     * @returns script code or null
      */
     getScript(options: InitScriptParams = {}): string | null {
-        const { debug = false, request = null } = options;
+        const { debug = false, frameUrl } = options;
         const { scriptData } = this;
 
         if (scriptData && !this.isScriptlet) {
@@ -306,8 +307,8 @@ export class CosmeticRule implements rule.IRule {
         }
 
         if (scriptData && scriptData.debug === debug) {
-            if (request) {
-                if (request.domain === scriptData.domain) {
+            if (frameUrl) {
+                if (frameUrl === scriptData.frameUrl) {
                     return scriptData.code;
                 }
             } else {
@@ -666,8 +667,7 @@ export class CosmeticRule implements rule.IRule {
      * @param options
      */
     initScript(options: InitScriptParams = {}) {
-        const { debug = false, request = null } = options;
-
+        const { debug = false, frameUrl } = options;
         const ruleContent = this.getContent();
         if (!this.isScriptlet) {
             this.scriptData = {
@@ -685,14 +685,14 @@ export class CosmeticRule implements rule.IRule {
             name: scriptletParams.name,
             ruleText: this.getText(),
             verbose: debug,
-            domainName: request?.domain,
+            domainName: frameUrl,
             version: config.version || '',
         };
 
         this.scriptData = {
             code: scriptlets.invoke(params) ?? null,
             debug,
-            domain: request?.domain,
+            frameUrl,
         };
 
         this.scriptletData = {

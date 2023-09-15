@@ -692,12 +692,12 @@ describe('Javascript rules', () => {
         const jsRule = `example.org#%#${jsRuleContent}`;
         const rule = new CosmeticRule(jsRule, 0);
         const verbose = true;
-        const domainName = 'example.com';
+        const frameUrl = 'https://example.com';
 
-        const script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        const script = rule.getScript({ debug: verbose, frameUrl })!;
         const params = parseParamsFromScript(script)!;
         expect(params.ruleText).toBe(jsRule);
-        expect(params.domainName).toBe(domainName);
+        expect(params.domainName).toBe(frameUrl);
         expect(params.verbose).toBe(verbose);
     });
 
@@ -739,29 +739,29 @@ describe('Javascript rules', () => {
         const jsRule = `example.org#%#${jsRuleContent}`;
         const rule = new CosmeticRule(jsRule, 0);
         const verbose = false;
-        let domainName = 'example.com';
+        let frameUrl = 'https://example.com';
 
         jest.spyOn(rule, 'initScript');
 
         expect(rule.initScript).toBeCalledTimes(0);
 
         // after first get script call
-        let script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        let script = rule.getScript({ debug: verbose, frameUrl })!;
         let params = parseParamsFromScript(script)!;
-        expect(params.domainName).toBe(domainName);
+        expect(params.domainName).toBe(frameUrl);
         expect(rule.initScript).toBeCalledTimes(1);
 
         // after second get script call
-        script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        script = rule.getScript({ debug: verbose, frameUrl })!;
         params = parseParamsFromScript(script)!;
-        expect(params.domainName).toBe(domainName);
+        expect(params.domainName).toBe(frameUrl);
         expect(rule.initScript).toBeCalledTimes(1);
 
         // after third get script call with other domain name
-        domainName = 'example.org';
-        script = rule.getScript({ debug: verbose, request: new Request(`https://${domainName}`, null, RequestType.Document) })!;
+        frameUrl = 'https://example.org';
+        script = rule.getScript({ debug: verbose, frameUrl })!;
         params = parseParamsFromScript(script)!;
-        expect(params.domainName).toBe(domainName);
+        expect(params.domainName).toBe(frameUrl);
         expect(rule.initScript).toBeCalledTimes(2);
     });
 
