@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
 
 
+## [0.3.19] - 2023-09-18
+
+### Fixed
+- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events
+- Cosmetic rule injection in cached subdocument 
+[#2420](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2420)
+[#2190](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190)
+[#2328](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2328)
+
+
 ## [0.3.18] - 2023-09-13
 
 ### Fixed
