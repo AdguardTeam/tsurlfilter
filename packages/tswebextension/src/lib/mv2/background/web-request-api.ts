@@ -169,7 +169,7 @@ import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { tabsApi, engineApi } from './api';
-import { MAIN_FRAME_ID } from './tabs/frame';
+import { Frame, MAIN_FRAME_ID } from './tabs/frame';
 import { findHeaderByName } from './utils/headers';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
@@ -651,10 +651,15 @@ export class WebRequestApi {
             return;
         }
 
-        const frame = tabContext.frames.get(frameId);
+        let frame = tabContext.frames.get(frameId);
 
+        /**
+         * Subdocument frame context may not be created durning worker request processing.
+         * We create new one in this case.
+         */
         if (!frame) {
-            return;
+            frame = new Frame(url);
+            tabContext.frames.set(frameId, frame);
         }
 
         /**
