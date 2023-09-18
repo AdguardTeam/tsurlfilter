@@ -20,6 +20,7 @@
     "lint": "lerna run --parallel lint"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.5",
     "lerna": "^6.6.2"
   }
 }
