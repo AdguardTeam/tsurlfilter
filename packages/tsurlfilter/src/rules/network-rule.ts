@@ -199,10 +199,6 @@ export class NetworkRule implements rule.IRule {
 
     private readonly pattern: Pattern;
 
-    private permittedDomains: string[] | null = null;
-
-    private restrictedDomains: string[] | null = null;
-
     /**
      * Domains in denyallow modifier providing exceptions for permitted domains
      * https://github.com/AdguardTeam/CoreLibs/issues/1304
@@ -233,6 +229,11 @@ export class NetworkRule implements rule.IRule {
      * Rule Advanced modifier
      */
     private advancedModifier: IAdvancedModifier | null = null;
+
+    /**
+     * Rule Domain modifier
+     */
+    private domainModifier: DomainModifier | null = null;
 
     /**
      * Rule App modifier
@@ -472,7 +473,21 @@ export class NetworkRule implements rule.IRule {
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
      */
     getPermittedDomains(): string[] | null {
-        return this.permittedDomains;
+        if (this.domainModifier) {
+            return this.domainModifier.getPermittedDomains();
+        }
+        return null;
+    }
+
+    /**
+     * Gets list of restricted domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
+     */
+    getRestrictedDomains(): string[] | null {
+        if (this.domainModifier) {
+            return this.domainModifier.getRestrictedDomains();
+        }
+        return null;
     }
 
     /**
@@ -481,14 +496,6 @@ export class NetworkRule implements rule.IRule {
      */
     getDenyAllowDomains(): string[] | null {
         return this.denyAllowDomains;
-    }
-
-    /**
-     * Gets list of restricted domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
-     */
-    getRestrictedDomains(): string[] | null {
-        return this.restrictedDomains;
     }
 
     /**
@@ -608,14 +615,6 @@ export class NetworkRule implements rule.IRule {
         );
     }
 
-    public matchesPermittedDomains(hostname: string): boolean {
-        if (this.hasPermittedDomains()
-            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * Checks if this filtering rule matches the specified request.
      * @param request - request to check.
@@ -688,30 +687,6 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * matchDomain checks if the filtering rule is allowed on this domain.
-     * @param domain - domain to check.
-     */
-    private matchDomain(domain: string): boolean {
-        if (this.hasRestrictedDomains()) {
-            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains!)) {
-                // Domain or host is restricted
-                // i.e. $domain=~example.org
-                return false;
-            }
-        }
-
-        if (this.hasPermittedDomains()) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
-                // Domain is not among permitted
-                // i.e. $domain=example.org and we're checking example.com
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Check if request matches domain modifier by request referrer (general case) or by request target
      *
      * In some cases the $domain modifier can match not only the referrer domain, but also the target domain.
@@ -727,29 +702,29 @@ export class NetworkRule implements rule.IRule {
      * @param request
      */
     matchDomainModifier(request: Request): boolean {
-        if (!this.permittedDomains && !this.restrictedDomains) {
+        if (!this.domainModifier) {
             return true;
         }
+
+        const { domainModifier } = this;
 
         const isDocumentType = request.requestType === RequestType.Document
             || request.requestType === RequestType.SubDocument;
 
-        const hasOnlyExcludedDomains = (!this.permittedDomains || this.permittedDomains.length === 0)
-            && this.restrictedDomains
-            && this.restrictedDomains.length > 0;
+        const hasOnlyExcludedDomains = !domainModifier.hasPermittedDomains()
+            && domainModifier.hasRestrictedDomains();
 
         const patternIsRegex = this.isRegexRule();
         const patternIsDomainSpecific = this.pattern.isPatternDomainSpecific();
-
         const matchesTargetByPatternCondition = !patternIsRegex && !patternIsDomainSpecific;
 
         if (isDocumentType && (hasOnlyExcludedDomains || matchesTargetByPatternCondition)) {
             // check if matches source hostname if exists or if matches target hostname
-            return (request.sourceHostname && this.matchDomain(request.sourceHostname))
-                || this.matchDomain(request.hostname);
+            return (request.sourceHostname && domainModifier.matchDomain(request.sourceHostname))
+                || domainModifier.matchDomain(request.hostname);
         }
 
-        return this.matchDomain(request.sourceHostname || '');
+        return domainModifier.matchDomain(request.sourceHostname || '');
     }
 
     /**
@@ -851,20 +826,6 @@ export class NetworkRule implements rule.IRule {
 
         const modifier = advancedModifier as DnsTypeModifier;
         return modifier.match(dnstype);
-    }
-
-    /**
-     * Checks if rule has permitted domains
-     */
-    private hasPermittedDomains(): boolean {
-        return this.permittedDomains != null && this.permittedDomains.length > 0;
-    }
-
-    /**
-     * Checks if rule has restricted domains
-     */
-    private hasRestrictedDomains(): boolean {
-        return this.restrictedDomains != null && this.restrictedDomains.length > 0;
     }
 
     /**
@@ -1038,7 +999,7 @@ export class NetworkRule implements rule.IRule {
             const isDnsCompatible = isCompatibleWith(CompatibilityTypes.Dns);
 
             if (!hasCookieModifier && !hasRemoveParamModifier && !isDnsCompatible) {
-                if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
+                if (!(this.domainModifier?.hasPermittedDomains() || this.hasPermittedApps())) {
                     // Rule matches too much and does not have any domain restriction
                     // We should not allow this kind of rules
                     // eslint-disable-next-line max-len
@@ -1140,7 +1101,7 @@ export class NetworkRule implements rule.IRule {
      * @return {boolean}
      */
     isGeneric(): boolean {
-        return !this.hasPermittedDomains();
+        return !this.domainModifier?.hasPermittedDomains();
     }
 
     /**
@@ -1176,11 +1137,11 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (!stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+        if (!stringArraysEquals(this.getRestrictedDomains(), specifiedRule.getRestrictedDomains())) {
             return false;
         }
 
-        if (!stringArraysHaveIntersection(this.permittedDomains, specifiedRule.permittedDomains)) {
+        if (!stringArraysHaveIntersection(this.getPermittedDomains(), specifiedRule.getPermittedDomains())) {
             return false;
         }
 
@@ -1191,7 +1152,7 @@ export class NetworkRule implements rule.IRule {
      * Checks if this rule can be used for hosts-level blocking
      */
     isHostLevelNetworkRule(): boolean {
-        if (this.hasPermittedDomains() || this.hasRestrictedDomains()) {
+        if (this.domainModifier?.hasPermittedDomains() || this.domainModifier?.hasRestrictedDomains()) {
             return false;
         }
 
@@ -1268,11 +1229,12 @@ export class NetworkRule implements rule.IRule {
             );
         }
 
-        if (domainModifier.permittedDomains
-            && domainModifier.permittedDomains.some((x) => x.includes(SimpleRegex.MASK_ANY_CHARACTER))) {
-            throw new SyntaxError(
-                'Invalid modifier: $denyallow domains wildcards are not supported',
-            );
+        if (domainModifier.permittedDomains) {
+            if (domainModifier.permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
+                throw new SyntaxError(
+                    'Invalid modifier: $denyallow does not support wildcards and regex domains',
+                );
+            }
         }
 
         this.denyAllowDomains = domainModifier.permittedDomains;
@@ -1327,10 +1289,7 @@ export class NetworkRule implements rule.IRule {
                 break;
             // $domain
             case OPTIONS.DOMAIN:
-                // eslint-disable-next-line no-case-declarations
-                const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
-                this.permittedDomains = domainModifier.permittedDomains;
-                this.restrictedDomains = domainModifier.restrictedDomains;
+                this.domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
                 break;
             // $denyallow
             case OPTIONS.DENYALLOW:
@@ -1710,7 +1669,8 @@ export class NetworkRule implements rule.IRule {
             this.priorityWeight += 1;
         }
 
-        if (this.restrictedDomains && this.restrictedDomains.length > 0) {
+        const { domainModifier } = this;
+        if (domainModifier?.hasRestrictedDomains()) {
             this.priorityWeight += 1;
         }
 
@@ -1768,9 +1728,9 @@ export class NetworkRule implements rule.IRule {
          * `||example.com^$app=org.example.app1|org.example.app2`
          * will add `100 + 100 / 2 = 151`.
          */
-        if (this.permittedDomains && this.permittedDomains.length > 0) {
+        if (domainModifier?.hasPermittedDomains()) {
             // More permitted domains mean less priority weight.
-            const relativeWeight = NetworkRule.CategoryThreeWeight / this.permittedDomains.length;
+            const relativeWeight = NetworkRule.CategoryThreeWeight / domainModifier.getPermittedDomains()!.length;
             this.priorityWeight += NetworkRule.CategoryThreeWeight + relativeWeight;
         }
 

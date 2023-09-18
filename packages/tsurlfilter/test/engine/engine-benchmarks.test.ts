@@ -156,6 +156,12 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
     return totalMatches;
 }
 
+const enum RuleListFilePath {
+    Easylist = './test/resources/easylist.txt',
+    AdguardBaseFilter = './test/resources/adguard_base_filter.txt',
+    AdguardDomainModifierRules = './test/resources/adguard_domain_modifier_rules.txt',
+}
+
 describe('Benchmarks', () => {
     beforeAll(() => {
         /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -177,12 +183,10 @@ describe('Benchmarks', () => {
     });
 
     it('runs network-engine', async () => {
-        const rulesFilePath = './test/resources/easylist.txt';
-
         /**
          * Expected matches for specified requests and rules
          */
-        const expectedMatchesCount = 4667;
+        const expectedMatchesCount = 6868;
 
         const baseMemory = memoryUsage();
         const requests = await parseRequests();
@@ -191,8 +195,10 @@ describe('Benchmarks', () => {
         console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
 
         const startParse = Date.now();
-        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
-        const ruleStorage = new RuleStorage([list]);
+        const ruleStorage = new RuleStorage([
+            new StringRuleList(1, await fs.promises.readFile(RuleListFilePath.Easylist, 'utf8'), true),
+            new StringRuleList(2, await fs.promises.readFile(RuleListFilePath.AdguardDomainModifierRules, 'utf8'), true),
+        ]);
 
         const engine = new NetworkEngine(ruleStorage);
         expect(engine).toBeTruthy();
@@ -211,12 +217,11 @@ describe('Benchmarks', () => {
         expect(totalMatches).toBe(expectedMatchesCount);
 
         const afterMatch = memoryUsage(baseMemory);
-        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
+        console.log(`Memory after matching: ${afterMatch.heapTotal / 1024} kB`);
+        console.log(`Memory after matching, used: ${afterMatch.heapUsed / 1024} kB`);
     });
 
     it('runs engine - async load', async () => {
-        const rulesFilePath = './test/resources/easylist.txt';
-
         /**
          * Expected matches for specified requests and rules
          */
@@ -229,8 +234,10 @@ describe('Benchmarks', () => {
         console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
 
         const startParse = Date.now();
-        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
-        const ruleStorage = new RuleStorage([list]);
+        const ruleStorage = new RuleStorage([
+            new StringRuleList(1, await fs.promises.readFile(RuleListFilePath.Easylist, 'utf8'), true),
+            new StringRuleList(2, await fs.promises.readFile(RuleListFilePath.AdguardDomainModifierRules, 'utf8'), true),
+        ]);
 
         const engine = new Engine(ruleStorage, true);
         expect(engine).toBeTruthy();
@@ -305,8 +312,6 @@ describe('Benchmarks', () => {
     });
 
     it('runs cosmetic-engine', async () => {
-        const rulesFilePath = './test/resources/adguard_base_filter.txt';
-
         /**
          * Expected matches for specified requests and rules
          */
@@ -319,8 +324,10 @@ describe('Benchmarks', () => {
         console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
 
         const startParse = Date.now();
-        const list = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), false);
-        const ruleStorage = new RuleStorage([list]);
+        const ruleStorage = new RuleStorage([
+            new StringRuleList(1, await fs.promises.readFile(RuleListFilePath.Easylist, 'utf8'), false),
+            new StringRuleList(2, await fs.promises.readFile(RuleListFilePath.AdguardDomainModifierRules, 'utf8'), false),
+        ]);
 
         const engine = new CosmeticEngine(ruleStorage);
         expect(engine).toBeTruthy();

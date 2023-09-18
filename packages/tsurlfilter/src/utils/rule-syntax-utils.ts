@@ -3,6 +3,7 @@ import { getHostname } from 'tldts';
 import { RuleFactory } from '../rules/rule-factory';
 import { NetworkRule } from '../rules/network-rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
+import { DomainModifier } from '../modifiers/domain-modifier';
 
 type RulesUnion = NetworkRule | CosmeticRule;
 
@@ -22,7 +23,11 @@ export class RuleSyntaxUtils {
         if (!rule) {
             return false;
         }
-        return rule.matchesPermittedDomains(domain);
+
+        const permittedDomains = rule.getPermittedDomains();
+
+        return !!permittedDomains
+            && DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
     }
 
     /**

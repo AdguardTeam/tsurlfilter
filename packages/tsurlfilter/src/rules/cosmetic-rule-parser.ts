@@ -10,6 +10,13 @@ export type CosmeticRuleModifiersCollection = {
     [P in CosmeticRuleModifiers]?: string;
 };
 
+type UrlPatternResult = { url: string };
+type PathDomainPatternResult = { path?: string, domainModifier?: DomainModifier };
+
+export const isUrlPatternResult = (
+    result: UrlPatternResult | PathDomainPatternResult,
+): result is UrlPatternResult => 'url' in result;
+
 /**
  * Helper class for parsing text of cosmetic rules
  * used by CosmeticRule and [Filter compiler](https://github.com/AdguardTeam/FiltersCompiler)
@@ -176,12 +183,7 @@ export class CosmeticRuleParser {
      * @returns Object with permitted/restricted domains list and/or the path modifier string value,
      * or url modifier string value
      */
-    static parseRulePattern(rulePattern: string): {
-        url?: string,
-        path?: string,
-        permittedDomains?: string[];
-        restrictedDomains?: string[];
-    } {
+    static parseRulePattern(rulePattern: string): UrlPatternResult | PathDomainPatternResult {
         const {
             domainsText,
             modifiersText,
@@ -222,27 +224,17 @@ export class CosmeticRuleParser {
             }
         }
 
-        let permittedDomains;
-        let restrictedDomains;
+        let domainModifier;
 
         // Skip wildcard domain
         if (domains && domains !== SimpleRegex.MASK_ANY_CHARACTER) {
             const separator = modifiers?.domain ? PIPE_SEPARATOR : COMMA_SEPARATOR;
-            const domainModifier = new DomainModifier(domains, separator);
-
-            if (domainModifier.permittedDomains) {
-                permittedDomains = domainModifier.permittedDomains;
-            }
-
-            if (domainModifier.restrictedDomains) {
-                restrictedDomains = domainModifier.restrictedDomains;
-            }
+            domainModifier = new DomainModifier(domains, separator);
         }
 
         return {
             path,
-            permittedDomains,
-            restrictedDomains,
+            domainModifier,
         };
     }
 }

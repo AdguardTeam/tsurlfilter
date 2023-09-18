@@ -1,5 +1,24 @@
 import { getPublicSuffix } from 'tldts';
 
+import { logger } from '../utils/logger';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
+import { SimpleRegex } from '../rules/simple-regex';
+
+/**
+ * Comma separator
+ */
+export const COMMA_SEPARATOR = ',';
+
+/**
+ * Pipe separator
+ */
+export const PIPE_SEPARATOR = '|';
+
+/**
+ * Wildcard character
+ */
+const WILDCARD_CHARACTER = '*';
+
 /**
  * This is a helper class that is used specifically to work
  * with domains restrictions.
@@ -39,16 +58,29 @@ export class DomainModifier {
             throw new SyntaxError('Modifier $domain cannot be empty');
         }
 
+        if (domainsStr.startsWith(separator)) {
+            throw new SyntaxError(`Modifier $domain cannot start with "${separator}"`);
+        }
+
         const permittedDomains: string[] = [];
         const restrictedDomains: string[] = [];
 
-        const parts = domainsStr.toLowerCase().split(separator);
+        const parts = splitByDelimiterWithEscapeCharacter(domainsStr.toLowerCase(), separator, '\\', true);
         for (let i = 0; i < parts.length; i += 1) {
             let domain = parts[i].trim();
             let restricted = false;
             if (domain.startsWith('~')) {
                 restricted = true;
                 domain = domain.substring(1);
+            }
+
+            // Regexp pattern check prevents regexp rules being rejected, as they could contain
+            // unescaped wildcards as special characters.
+            if (!SimpleRegex.isRegexPattern(domain)
+                && domain.includes(WILDCARD_CHARACTER)
+                && !domain.endsWith(WILDCARD_CHARACTER)
+            ) {
+                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${domainsStr}"`);
             }
 
             if (domain === '') {
@@ -67,11 +99,68 @@ export class DomainModifier {
     }
 
     /**
+     * Checks if the filtering rule is allowed on this domain.
+     *
+     * @param domain Domain to check.
+     *
+     * @returns True if the filtering rule is allowed on this domain.
+     */
+    public matchDomain(domain: string): boolean {
+        if (this.hasRestrictedDomains()) {
+            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains!)) {
+                // Domain or host is restricted
+                // i.e. $domain=~example.org
+                return false;
+            }
+        }
+
+        if (this.hasPermittedDomains()) {
+            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
+                // Domain is not among permitted
+                // i.e. $domain=example.org and we're checking example.com
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if rule has permitted domains
+     */
+    public hasPermittedDomains(): boolean {
+        return !!this.permittedDomains && this.permittedDomains.length > 0;
+    }
+
+    /**
+     * Checks if rule has restricted domains
+     */
+    public hasRestrictedDomains(): boolean {
+        return !!this.restrictedDomains && this.restrictedDomains.length > 0;
+    }
+
+    /**
+     * Gets list of permitted domains.
+     */
+    public getPermittedDomains(): string[] | null {
+        return this.permittedDomains;
+    }
+
+    /**
+     * Gets list of restricted domains.
+     */
+    public getRestrictedDomains(): string[] | null {
+        return this.restrictedDomains;
+    }
+
+    /**
      * isDomainOrSubdomainOfAny checks if `domain` is the same or a subdomain
      * of any of `domains`.
      *
      * @param domain - domain to check
      * @param domains - domains list to check against
+     *
+     * @returns true if `domain` is the same or a subdomain of any of `domains`
      */
     public static isDomainOrSubdomainOfAny(domain: string, domains: string[]): boolean {
         for (let i = 0; i < domains.length; i += 1) {
@@ -85,6 +174,25 @@ export class DomainModifier {
             if (domain === d || (domain.endsWith(d) && domain.endsWith(`.${d}`))) {
                 return true;
             }
+
+            if (SimpleRegex.isRegexPattern(d)) {
+                try {
+                    /**
+                     * Regular expressions are cached internally by the browser
+                     * (for instance, they're stored in the CompilationCache in V8/Chromium),
+                     * so calling the constructor here should not be a problem.
+                     *
+                     * TODO use SimpleRegex.patternFromString(d) after it is refactored to not add 'g' flag
+                     */
+                    const domainPattern = new RegExp(d.slice(1, -1));
+                    if (domainPattern.test(domain)) {
+                        return true;
+                    }
+                } catch {
+                    logger.error(`Invalid regular expression as domain pattern: ${d}`);
+                }
+                continue;
+            }
         }
 
         return false;
@@ -93,10 +201,23 @@ export class DomainModifier {
     /**
      * Checks if domain ends with wildcard
      *
-     * @param domain
+     * @param domain domain string to check
+     *
+     * @returns true if domain ends with wildcard
      */
     public static isWildcardDomain(domain: string): boolean {
         return domain.endsWith('.*');
+    }
+
+    /**
+     * Checks if domain string does not ends with wildcard and is not regex pattern
+     *
+     * @param domain domain string to check
+     *
+     * @returns true if given domain is a wildcard or regexp pattern
+     */
+    public static isWildcardOrRegexDomain(domain: string): boolean {
+        return DomainModifier.isWildcardDomain(domain) || SimpleRegex.isRegexPattern(domain);
     }
 
     /**
@@ -104,6 +225,8 @@ export class DomainModifier {
      *
      * @param wildcard
      * @param domainNameToCheck
+     *
+     * @returns true if wildcard matches domain
      */
     private static matchAsWildcard(wildcard: string, domainNameToCheck: string): boolean {
         const wildcardedDomainToCheck = DomainModifier.genTldWildcard(domainNameToCheck);
@@ -118,8 +241,9 @@ export class DomainModifier {
     /**
      * Generates from domain tld wildcard e.g. google.com -> google.* ; youtube.co.uk -> youtube.*
      *
-     * @param {string} domainName
-     * @returns {string} string is empty if tld for provided domain name doesn't exists
+     * @param domainName
+     *
+     * @returns string is empty if tld for provided domain name doesn't exists
      */
     private static genTldWildcard(domainName: string): string {
         const tld = getPublicSuffix(domainName);
@@ -132,13 +256,3 @@ export class DomainModifier {
         return '';
     }
 }
-
-/**
- * Comma separator
- */
-export const COMMA_SEPARATOR = ',';
-
-/**
- * Pipe separator
- */
-export const PIPE_SEPARATOR = '|';

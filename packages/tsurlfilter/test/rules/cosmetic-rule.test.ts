@@ -17,8 +17,7 @@ describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
         const rule = new CosmeticRule('##.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.domainModifier).toBeNull();
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('##.banner');
         expect(rule.getContent()).toEqual('.banner');
@@ -80,6 +79,7 @@ describe('Element hiding rules constructor', () => {
         checkRuleIsValid('example.org##:contains(@import)');
         checkRuleIsValid('example.org##:contains(@font-face)');
         checkRuleIsValid('example.org##:contains(@color-profile)');
+        checkRuleIsValid(String.raw`[$domain=/example\.org/|~/good/]##.banner`);
 
         checkRuleIsInvalid('example.org##img[title|={]');
         checkRuleIsInvalid('example.org##body { background: red!important; }');
@@ -110,45 +110,56 @@ describe('Element hiding rules constructor', () => {
         expect(rule.getContent()).toEqual('#banner');
         expect(rule.isAllowlist()).toBeFalsy();
 
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
 
         rule = new CosmeticRule('*###banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('#banner');
         expect(rule.isAllowlist()).toBeFalsy();
 
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
 
         rule = new CosmeticRule('*#@#.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
         expect(rule.getContent()).toEqual('.banner');
         expect(rule.isAllowlist()).toBeTruthy();
 
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
 
         rule = new CosmeticRule('*#$#.textad { visibility: hidden; }', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.Css);
         expect(rule.getContent()).toEqual('.textad { visibility: hidden; }');
 
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
 
         rule = new CosmeticRule('*#%#//scriptlet("set-constant", "test", "true")', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.Js);
         expect(rule.getContent()).toEqual('//scriptlet("set-constant", "test", "true")');
 
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
 
         rule = new CosmeticRule('#$#.textad { visibility: hidden; }', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.Css);
         expect(rule.getContent()).toEqual('.textad { visibility: hidden; }');
 
-        expect(rule.getPermittedDomains()).toBeUndefined();
-        expect(rule.getRestrictedDomains()).toBeUndefined();
+        expect(rule.getPermittedDomains()).toBeNull();
+        expect(rule.getRestrictedDomains()).toBeNull();
+    });
+
+    it('parses regexp value domains', () => {
+        const rule = new CosmeticRule(String.raw`[$domain=example.org|/evil\.(org\|com)/|~/good/]##banner`, 0);
+        expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
+        expect(rule.getContent()).toEqual('banner');
+
+        const permittedDomains = rule.getPermittedDomains()!;
+        const restrictedDomains = rule.getRestrictedDomains()!;
+        expect(permittedDomains).toEqual(['example.org', String.raw`/evil\.(org|com)/`]);
+        expect(restrictedDomains).toEqual([String.raw`/good/`]);
     });
 
     it('works if it correctly parses rule modifiers', () => {
@@ -218,6 +229,49 @@ describe('CosmeticRule match', () => {
     it('works if it matches wide rules', () => {
         const rule = new CosmeticRule('##banner', 0);
         expect(rule.match(createRequest('example.org'))).toEqual(true);
+    });
+
+    it('matches requests by regexp pattern of domain', () => {
+        let rule: CosmeticRule;
+        // Simple case
+        rule = new CosmeticRule(String.raw`[$domain=/example\.(org\|com)/]##banner`, 0);
+        expect(rule.match(createRequest('example.org'))).toEqual(true);
+        expect(rule.match(createRequest('example.com'))).toEqual(true);
+        expect(rule.match(createRequest('example.net'))).toEqual(false);
+
+        // Multiple patterns, inverted value
+        rule = new CosmeticRule(String.raw`[$domain=/example/|~/org/]##banner`, 0);
+        expect(rule.match(createRequest('example.org'))).toEqual(false);
+        expect(rule.match(createRequest('example.com'))).toEqual(true);
+        expect(rule.match(createRequest('example.net'))).toEqual(true);
+    });
+
+    it('matches by $domain modifier with mixed type values', () => {
+        let request: Request;
+        const rule = new CosmeticRule(String.raw`[$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov]##banner`, 0);
+        expect(rule.getPermittedDomains()).toHaveLength(3);
+        expect(rule.getRestrictedDomains()).toHaveLength(2);
+
+        request = createRequest('https://ads.net');
+        expect(rule.match(request)).toBeTruthy();
+        request = createRequest('https://another.org');
+        expect(rule.match(request)).toBeFalsy();
+
+        // Inverted regexp domain '~/jwt\.io/' restricts
+        // regexp domain modifier '/\.(io\|com)/' from matching the request
+        request = createRequest('https://example.com');
+        expect(rule.match(request)).toBeTruthy();
+        request = createRequest('https://jwt.io');
+        expect(rule.match(request)).toBeFalsy();
+
+        // Inverted plain domain '~evil.gov' restricts
+        // wildcard domain modifier 'evil.*' from matching the request
+        request = createRequest('https://evil.org');
+        expect(rule.match(request)).toBeTruthy();
+        request = createRequest('https://evil.com');
+        expect(rule.match(request)).toBeTruthy();
+        request = createRequest('https://evil.gov');
+        expect(rule.match(request)).toBeFalsy();
     });
 
     it('works if it matches domain restrictions properly', () => {

@@ -20,6 +20,9 @@ describe('Domains Lookup Table Tests', () => {
         expect(table.addRule(new NetworkRule('path$domain=example.*', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
+        expect(table.addRule(new NetworkRule('example.com$domain=/example/', 0), 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+
         expect(table.addRule(new NetworkRule('path$domain=example.com', 0), 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
     });

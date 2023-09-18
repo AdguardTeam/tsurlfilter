@@ -133,6 +133,7 @@ import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { CookieModifier } from '../../../modifiers/cookie-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
+import { SimpleRegex } from '../../simple-regex';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -542,7 +543,10 @@ export abstract class DeclarativeRuleConverter {
         }
 
         // set initiatorDomains
-        const permittedDomains = rule.getPermittedDomains();
+        const permittedDomains = rule.getPermittedDomains()?.filter((d) => {
+            // Wildcard and regex domains are not supported by declarative converter
+            return !d.includes(SimpleRegex.MASK_ANY_CHARACTER) && !SimpleRegex.isRegexPattern(d);
+        });
         if (permittedDomains && permittedDomains.length > 0) {
             condition.initiatorDomains = this.toASCII(permittedDomains);
         }

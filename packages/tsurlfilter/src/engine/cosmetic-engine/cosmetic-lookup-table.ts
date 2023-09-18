@@ -16,10 +16,10 @@ export class CosmeticLookupTable {
     private byHostname: Map<number, number[]>;
 
     /**
-     * Collection of domain specific rules, those could not be grouped by domain name
-     * For instance, wildcard domain rules.
+     * List of domain-specific rules that are not organized into any index structure.
+     * These rules are sequentially scanned one by one.
      */
-    public wildcardRules: CosmeticRule[];
+    public seqScanRules: CosmeticRule[];
 
     /**
      * Collection of generic rules.
@@ -47,7 +47,7 @@ export class CosmeticLookupTable {
      */
     constructor(storage: RuleStorage) {
         this.byHostname = new Map();
-        this.wildcardRules = [] as CosmeticRule[];
+        this.seqScanRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
         this.allowlist = new Map();
         this.ruleStorage = storage;
@@ -72,15 +72,13 @@ export class CosmeticLookupTable {
             return;
         }
 
-        const domains = rule.getPermittedDomains();
-        if (domains) {
-            const hasWildcardDomain = domains.some((d) => DomainModifier.isWildcardDomain(d));
-            if (hasWildcardDomain) {
-                this.wildcardRules.push(rule);
+        const permittedDomains = rule.getPermittedDomains();
+        if (permittedDomains) {
+            if (permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
+                this.seqScanRules.push(rule);
                 return;
             }
-
-            for (const domain of domains) {
+            for (const domain of permittedDomains) {
                 const tldResult = parse(domain);
                 // tldResult.domain equals to eTLD domain,
                 // e.g. sub.example.uk.org would result in example.uk.org
@@ -110,16 +108,16 @@ export class CosmeticLookupTable {
                 rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
                     const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
-                    if (rule && rule.match(request)) {
+                    if (rule && !rule.isAllowlist() && rule.match(request)) {
                         result.push(rule);
                     }
                 }
             }
         }
 
-        result.push(...this.wildcardRules.filter((r) => r.match(request)));
+        result.push(...this.seqScanRules.filter((r) => !r.isAllowlist() && r.match(request)));
 
-        return result.filter((rule) => !rule.isAllowlist());
+        return result;
     }
 
     /**

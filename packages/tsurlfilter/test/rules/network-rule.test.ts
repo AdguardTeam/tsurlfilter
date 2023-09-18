@@ -170,6 +170,17 @@ describe('NetworkRule constructor', () => {
         }).toThrowError('Rule with $all modifier can not be allowlist rule');
     });
 
+    it('construct $domain rules with regexp values', () => {
+        let rule: NetworkRule;
+        rule = new NetworkRule(String.raw`||example.org$domain=/example\.(org\|com)/|evil.com`, 0);
+        expect(rule.getPermittedDomains()).toEqual([String.raw`/example\.(org|com)/`, 'evil.com']);
+        expect(rule.getRestrictedDomains()).toEqual(null);
+
+        rule = new NetworkRule(String.raw`||example.org$domain=~/good\.evil\.(com\|org)/|/evil\.com/`, 0);
+        expect(rule.getPermittedDomains()).toEqual([String.raw`/evil\.com/`]);
+        expect(rule.getRestrictedDomains()).toEqual([String.raw`/good\.evil\.(com|org)/`]);
+    });
+
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=', 0);
@@ -624,7 +635,12 @@ describe('NetworkRule constructor', () => {
         // or have a wildcard TLD ($denyallow=x.*)
         expect(() => {
             new NetworkRule('/some$denyallow=example.*,domain=example.com', -1);
-        }).toThrow('Invalid modifier: $denyallow domains wildcards are not supported');
+        }).toThrow('Invalid modifier: $denyallow does not support wildcards and regex domains');
+
+        // or have a regex value ($denyallow=/(x\|y)/)
+        expect(() => {
+            new NetworkRule('/some$denyallow=/domainname/,domain=example.com', -1);
+        }).toThrow('Invalid modifier: $denyallow does not support wildcards and regex domains');
     });
 
     it('works if document modifier works properly', () => {
@@ -1032,6 +1048,55 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         request = new Request('https://test.ru/', 'https://adguard.ru/', RequestType.Document);
+        expect(rule.match(request)).toBeFalsy();
+    });
+
+    it('works when $domain modifier is applied properly - regexp', () => {
+        let request: Request;
+        const requestType: RequestType = RequestType.Script;
+
+        const rule = new NetworkRule(String.raw`||test.ru^$domain=/\.(io\|com)/|~/good\.(org\|com)/`, 0);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getRestrictedDomains()).toHaveLength(1);
+
+        request = new Request('https://test.ru/', 'https://example.com', requestType);
+        expect(rule.match(request)).toBeTruthy();
+        request = new Request('https://test.ru/', 'https://example.io', requestType);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://test.ru/', 'https://good.org', requestType);
+        expect(rule.match(request)).toBeFalsy();
+        request = new Request('https://test.ru/', 'https://good.com', requestType);
+        expect(rule.match(request)).toBeFalsy();
+    });
+
+    it('matches by $domain modifier with mixed type values', () => {
+        let request: Request;
+        const requestType: RequestType = RequestType.Script;
+        const rule = new NetworkRule(String.raw`||test.ru^$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov`, 0);
+        expect(rule.getPermittedDomains()).toHaveLength(3);
+        expect(rule.getRestrictedDomains()).toHaveLength(2);
+
+        request = new Request('https://test.ru/', 'https://ads.net', requestType);
+        expect(rule.match(request)).toBeTruthy();
+        request = new Request('https://test.ru/', 'https://another.org', requestType);
+        expect(rule.match(request)).toBeFalsy();
+
+        // Inverted regexp domain '~/jwt\.io/' restricts
+        // regexp domain modifier '/\.(io\|com)/' from matching the request
+        request = new Request('https://test.ru/', 'https://example.com', requestType);
+        expect(rule.match(request)).toBeTruthy();
+
+        request = new Request('https://test.ru/', 'https://jwt.io', requestType);
+        expect(rule.match(request)).toBeFalsy();
+
+        // Inverted plain domain '~evil.gov' restricts
+        // wildcard domain modifier 'evil.*' from matching the request
+        request = new Request('https://test.ru/', 'https://evil.org', requestType);
+        expect(rule.match(request)).toBeTruthy();
+        request = new Request('https://test.ru/', 'https://evil.com', requestType);
+        expect(rule.match(request)).toBeTruthy();
+        request = new Request('https://test.ru/', 'https://evil.gov', requestType);
         expect(rule.match(request)).toBeFalsy();
     });
 

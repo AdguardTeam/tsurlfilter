@@ -45,8 +45,7 @@ export class DomainsLookupTable implements ILookupTable {
             return false;
         }
 
-        const hasWildcardDomain = permittedDomains.some((d) => DomainModifier.isWildcardDomain(d));
-        if (hasWildcardDomain) {
+        if (permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
             return false;
         }
 
