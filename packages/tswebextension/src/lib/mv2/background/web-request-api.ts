@@ -19,7 +19,8 @@
  *
  * At {@link RequestEvents.onBeforeSendHeaders}, the request headers are modified or deleted
  * based on the {@link MatchingResult} stored in {@link requestContextStorage}.
- * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way.
+ * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way,
+ * and also the 'trusted-types' directive is modified for CSP headers, @see {@link TrustedTypesService}.
  *
  * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
  * on {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred} events.
@@ -80,7 +81,10 @@
  * Removes or modifies response          │                             │ ││
  * headers based on                    ┌─┤      onHeadersReceived      │ ││
  * {@link MatchingResult}.             │ │                             │ ││
- *                                     │ └─────────────────────────────┘ ││
+ * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ ││
+ * for CSP headers:                    │                                 ││
+ * @see {@link TrustedTypesService}.   │                                 ││
+ *                                     │                                 ││
  *                                     │                                 ││
  *                                     │ ┌─────────────────────────────┐ ││
  *                                     │ │                             │ ││
@@ -181,6 +185,7 @@ import { paramsService } from './services/params-service';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
 import { cspService } from './services/csp-service';
+import { TrustedTypesService } from './services/trusted-types-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -480,6 +485,9 @@ export class WebRequestApi {
 
         if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
             if (cspService.onHeadersReceived(context)) {
+                responseHeadersModified = true;
+            }
+            if (TrustedTypesService.onHeadersReceived(context)) {
                 responseHeadersModified = true;
             }
         }

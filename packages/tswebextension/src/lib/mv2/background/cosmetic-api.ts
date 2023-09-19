@@ -298,6 +298,9 @@ export class CosmeticApi {
         const scriptRules = cosmeticResult.getScriptRules();
 
         let scriptText = CosmeticApi.getScriptText(scriptRules, url);
+        // TODO: fix concatenation of undefined and string because:
+        // undefined + '<stealth script>' === 'undefined<stealth script>'
+        // AG-25896.
         scriptText += stealthApi.getSetDomSignalScript();
 
         if (scriptText) {

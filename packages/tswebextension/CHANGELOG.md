@@ -7,15 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+
+## [0.3.20] - 2023-09-19
+
+### Added
+- CSP `trusted-types` directive modifying for response headers
+  [#2068](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2068).
+
+
 ## [0.3.19] - 2023-09-18
 
 ### Fixed
-
-- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events
-- Cosmetic rule injection in cached subdocument 
-[#2420](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2420)
-[#2190](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190)
-[#2328](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2328)
+- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
+- Cosmetic rule injection in cached subdocument
+  [#2420](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2420),
+  [#2190](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190),
+  [#2328](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2328).
 
 
 ## [0.3.18] - 2023-09-13
