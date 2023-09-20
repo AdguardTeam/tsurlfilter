@@ -1,66 +1,66 @@
 # Table of contents
-- [Table of contents](#table-of-contents)
-- [Description](#description)
-- [MV3 specific limitations](#mv3-specific-limitations)
-	- [allowrules](#allowrules)
-	- [$document](#document)
-	- [$removeparam, $removeheader, $csp](#removeparam-removeheader-csp)
-	- [$redirect-rule](#redirect-rule)
-- [Basic examples](#basic-examples)
-- [Basic modifiers](#basic-modifiers)
-	- [$denyallow](#denyallow)
-	- [$domain](#domain)
-	- [$header](#header)
-	- [$important](#important)
-	- [$match-case](#match-case)
-	- [$method](#method)
-	- [$popup](#popup)
-	- [$third-party](#third-party)
-	- [$to](#to)
-- [Content type modifiers](#content-type-modifiers)
-	- [$document](#document-1)
-	- [$image](#image)
-	- [$stylesheet](#stylesheet)
-	- [$script](#script)
-	- [$object](#object)
-	- [$font](#font)
-	- [$media](#media)
-	- [$subdocument](#subdocument)
-	- [$ping](#ping)
-	- [$xmlhttprequest](#xmlhttprequest)
-	- [$websocket](#websocket)
-	- [$webrtc](#webrtc)
-	- [$other](#other)
-- [Exception rules modifiers](#exception-rules-modifiers)
-	- [$content](#content)
-	- [$elemhide](#elemhide)
-	- [$jsinject](#jsinject)
-	- [$stealth](#stealth)
-	- [$urlblock](#urlblock)
-	- [$genericblock](#genericblock)
-	- [$generichide](#generichide)
-	- [$specifichide](#specifichide)
-- [Advanced capabilities](#advanced-capabilities)
-	- [$all](#all)
-	- [$badfilter](#badfilter)
-	- [$cookie](#cookie)
-	- [$csp](#csp)
-	- [$permissions](#permissions)
-	- [$redirect](#redirect)
-	- [$redirect-rule](#redirect-rule-1)
-	- [$referrerpolicy](#referrerpolicy)
-	- [$removeheader](#removeheader)
-	- [$removeparam](#removeparam)
-	- [$replace](#replace)
-	- [noop](#noop)
-	- [$empty](#empty)
-	- [$mp4](#mp4)
-- [Not supported in extension](#not-supported-in-extension)
-	- [$hls (not supported in extension)](#hls-not-supported-in-extension)
-	- [$jsonprune (not supported in extension)](#jsonprune-not-supported-in-extension)
-	- [$network (not supported in extension)](#network-not-supported-in-extension)
-	- [$app (not supported in extension)](#app-not-supported-in-extension)
-	- [$extension (not supported in extension)](#extension-not-supported-in-extension)
+1. [Description](#description)
+1. [MV3 specific limitations](#mv3_specific_limitations)
+    1. [allowrules](#mv3_specific_limitations__allowrules)
+    1. [$document](#mv3_specific_limitations__$document)
+    1. [$removeparam, $removeheader, $csp](#mv3_specific_limitations__$removeparam__$removeheader__$csp)
+    1. [$redirect-rule](#mv3_specific_limitations__$redirect-rule)
+1. [Basic examples](#basic_examples)
+1. [Basic modifiers](#basic_modifiers)
+    1. [$denyallow](#basic_modifiers__$denyallow)
+    1. [$domain](#basic_modifiers__$domain)
+    1. [$header](#basic_modifiers__$header)
+    1. [$important](#basic_modifiers__$important)
+    1. [$match-case](#basic_modifiers__$match-case)
+    1. [$method](#basic_modifiers__$method)
+    1. [$popup](#basic_modifiers__$popup)
+    1. [$third-party](#basic_modifiers__$third-party)
+    1. [$to](#basic_modifiers__$to)
+1. [Content type modifiers](#content_type_modifiers)
+    1. [$document](#content_type_modifiers__$document)
+    1. [$image](#content_type_modifiers__$image)
+    1. [$stylesheet](#content_type_modifiers__$stylesheet)
+    1. [$script](#content_type_modifiers__$script)
+    1. [$object](#content_type_modifiers__$object)
+    1. [$font](#content_type_modifiers__$font)
+    1. [$media](#content_type_modifiers__$media)
+    1. [$subdocument](#content_type_modifiers__$subdocument)
+    1. [$ping](#content_type_modifiers__$ping)
+    1. [$xmlhttprequest](#content_type_modifiers__$xmlhttprequest)
+    1. [$websocket](#content_type_modifiers__$websocket)
+    1. [$webrtc](#content_type_modifiers__$webrtc)
+    1. [$other](#content_type_modifiers__$other)
+1. [Exception rules modifiers](#exception_rules_modifiers)
+    1. [$content](#exception_rules_modifiers__$content)
+    1. [$elemhide](#exception_rules_modifiers__$elemhide)
+    1. [$jsinject](#exception_rules_modifiers__$jsinject)
+    1. [$stealth](#exception_rules_modifiers__$stealth)
+    1. [$urlblock](#exception_rules_modifiers__$urlblock)
+    1. [$genericblock](#exception_rules_modifiers__$genericblock)
+    1. [$generichide](#exception_rules_modifiers__$generichide)
+    1. [$specifichide](#exception_rules_modifiers__$specifichide)
+1. [Advanced capabilities](#advanced_capabilities)
+    1. [$all](#advanced_capabilities__$all)
+    1. [$badfilter](#advanced_capabilities__$badfilter)
+    1. [$cookie](#advanced_capabilities__$cookie)
+    1. [$csp](#advanced_capabilities__$csp)
+    1. [$permissions](#advanced_capabilities__$permissions)
+    1. [$redirect](#advanced_capabilities__$redirect)
+    1. [$redirect-rule](#advanced_capabilities__$redirect-rule)
+    1. [$referrerpolicy](#advanced_capabilities__$referrerpolicy)
+    1. [$removeheader](#advanced_capabilities__$removeheader)
+    1. [$removeparam](#advanced_capabilities__$removeparam)
+    1. [$replace](#advanced_capabilities__$replace)
+    1. [noop](#advanced_capabilities__noop)
+    1. [$empty](#advanced_capabilities__$empty)
+    1. [$mp4](#advanced_capabilities__$mp4)
+1. [Not supported in extension](#not_supported_in_extension)
+    1. [$hls (not supported in extension)](#not_supported_in_extension__$hls_(not_supported_in_extension))
+    1. [$jsonprune (not supported in extension)](#not_supported_in_extension__$jsonprune_(not_supported_in_extension))
+    1. [$network (not supported in extension)](#not_supported_in_extension__$network_(not_supported_in_extension))
+    1. [$app (not supported in extension)](#not_supported_in_extension__$app_(not_supported_in_extension))
+    1. [$extension (not supported in extension)](#not_supported_in_extension__$extension_(not_supported_in_extension))
+<a name="description"></a>
 # Description
 This file contains examples of converting filter rules to new MV3 declarative
 rules and describes some MV3-specific limitations of the converted rules.
@@ -431,14 +431,9 @@ example 5
 		},
 		"condition": {
 			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				"/(^\\\\",
-				".+\\\\.)example\\\\.(com\\\\",
-				"org)\\\\$/"
-			],
 			"isUrlFilterCaseSensitive": false
 		},
-		"priority": 135
+		"priority": 201
 	}
 ]
 
@@ -460,18 +455,14 @@ example 6
 		},
 		"condition": {
 			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				".+\\\\.)c\\\\.(com\\\\",
-				"org)\\\\$/"
-			],
 			"excludedInitiatorDomains": [
 				"a.com",
 				"b.*",
-				"/(^\\\\"
+				"/(^\\|.+\\\\.)c\\\\.(com\\|org)\\\\$/"
 			],
 			"isUrlFilterCaseSensitive": false
 		},
-		"priority": 152
+		"priority": 2
 	}
 ]
 
@@ -1231,7 +1222,37 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "/ads",
+			"requestDomains": [
+				"evil.com",
+				"evil.org"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 2
+	}
+]
 
 ```
 example 2
@@ -1243,7 +1264,39 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "/ads",
+			"requestDomains": [
+				"evil.com"
+			],
+			"excludedRequestDomains": [
+				"not.evil.com"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 2
+	}
+]
 
 ```
 example 3
@@ -1255,7 +1308,37 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "/ads",
+			"excludedRequestDomains": [
+				"good.com",
+				"good.org"
+			],
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
+		},
+		"priority": 2
+	}
+]
 
 ```
 <br />
@@ -2088,7 +2171,7 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 			],
 			"isUrlFilterCaseSensitive": false
 		},
-		"priority": 56
+		"priority": 55
 	}
 ]
 
@@ -2255,9 +2338,6 @@ example 9
 		},
 		"condition": {
 			"urlFilter": "/some",
-			"initiatorDomains": [
-				"example.*"
-			],
 			"isUrlFilterCaseSensitive": false
 		},
 		"priority": 201
@@ -2297,13 +2377,7 @@ example 10
 ```
 <a name="advanced_capabilities__$cookie"></a>
 ## $cookie
-<b>Status</b>: partially supported
-<br/>
-<b>MV3 limitations:</b>
-<br/>
-Supported conversion to DNR (Declarative Net Request) rules with the `$cookie` modifier only when used without parameters. For instance, you can use it like `||example.com$cookie`. Rules that include parameters are applied through the browser.cookies API and content script but not via DNR.
-<br/>
-Allowlist rules are not supported
+<b>Status</b>: implemented in `release/v2.2` branch
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2670,11 +2744,32 @@ example 1
 	{
 		"id": 1,
 		"action": {
-			"type": "block"
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"operation": "append",
+					"header": "Permissions-Policy",
+					"value": "sync-xhr=()"
+				}
+			]
 		},
 		"condition": {
 			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 1
 	}
@@ -2710,7 +2805,21 @@ example 3
 		},
 		"condition": {
 			"urlFilter": "||example.org/page/*",
-			"isUrlFilterCaseSensitive": false
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 100001
 	}
@@ -2730,14 +2839,35 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 	{
 		"id": 1,
 		"action": {
-			"type": "block"
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"operation": "append",
+					"header": "Permissions-Policy",
+					"value": "oversized-images=(), sync-script=(), unsized-media=()"
+				}
+			]
 		},
 		"condition": {
 			"initiatorDomains": [
 				"example.org",
 				"example.com"
 			],
-			"isUrlFilterCaseSensitive": false
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 151
 	}
@@ -2758,11 +2888,32 @@ example 5
 	{
 		"id": 1,
 		"action": {
-			"type": "block"
+			"type": "modifyHeaders",
+			"responseHeaders": [
+				{
+					"operation": "append",
+					"header": "Permissions-Policy",
+					"value": "sync-xhr=()"
+				}
+			]
 		},
 		"condition": {
 			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 1
 	},

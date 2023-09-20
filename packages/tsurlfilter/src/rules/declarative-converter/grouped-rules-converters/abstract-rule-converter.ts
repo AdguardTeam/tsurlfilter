@@ -713,10 +713,11 @@ export abstract class DeclarativeRuleConverter {
      * $specifichide;
      *
      * Other:
+     * $header;
      * $popup;
      * $csp;
      * $replace;
-     * $cookie;
+     * $cookie - if modifier is not empty and contains any parameters;
      * $redirect - if the rule is a allowlist;
      * $removeparam - if it contains a negation, or regexp,
      * or the rule is a allowlist;
@@ -915,6 +916,7 @@ export abstract class DeclarativeRuleConverter {
             { option: NetworkRuleOption.Extension, name: '$extension' },
             { option: NetworkRuleOption.Stealth, name: '$stealth' },
             /* Specific exceptions */
+            { option: NetworkRuleOption.Header, name: '$cookie' },
             {
                 option: NetworkRuleOption.Popup,
                 name: '$popup',
