@@ -932,7 +932,7 @@ export abstract class DeclarativeRuleConverter {
 
         // Back reference, possessive and negative lookahead are not supported
         // See more: https://github.com/google/re2/wiki/Syntax
-        if (regexFilter?.match(/\\[1-9]|(?<!\\)\?|{\S+}/g)) {
+        if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
             const msg = `Invalid regex in the: "${networkRule.getText()}"`;
             return new UnsupportedRegexpError(
                 msg,

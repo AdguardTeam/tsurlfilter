@@ -65,6 +65,27 @@ describe('DeclarativeConverter', () => {
         });
     });
 
+    it('converts simple blocking regexp rule with ? quantifier', async () => {
+        const filter = createFilter(['/aaa?/']);
+        const { ruleSets: [ruleSet] } = await converter.convert(
+            [filter],
+        );
+        const { declarativeRules } = await ruleSet.serialize();
+
+        const ruleId = 1;
+
+        expect(declarativeRules).toHaveLength(1);
+        expect(declarativeRules[0]).toEqual({
+            id: ruleId,
+            action: { type: 'block' },
+            condition: {
+                regexFilter: '/aaa?/',
+                isUrlFilterCaseSensitive: false,
+            },
+            priority: 1,
+        });
+    });
+
     describe('respects badfilter rules', () => {
         it('applies $badfilter to one filter', async () => {
             const filter = createFilter([
