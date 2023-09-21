@@ -17,7 +17,6 @@ describe('Element hiding rules constructor', () => {
     it('works if it creates element hiding rules', () => {
         const rule = new CosmeticRule('##.banner', 0);
         expect(rule.getType()).toEqual(CosmeticRuleType.ElementHiding);
-        expect(rule.domainModifier).toBeNull();
         expect(rule.getFilterListId()).toEqual(0);
         expect(rule.getText()).toEqual('##.banner');
         expect(rule.getContent()).toEqual('.banner');
