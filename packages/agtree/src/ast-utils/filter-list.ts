@@ -2,9 +2,8 @@
  * @file Utility functions for working with filter list nodes
  */
 
-import cloneDeep from 'clone-deep';
-
 import { type AnyRule, type FilterList } from '../parser/common';
+import { clone } from '../utils/clone';
 
 /**
  * Creates a filter list node
@@ -20,7 +19,7 @@ export function createFilterListNode(rules: AnyRule[] = []): FilterList {
 
     // We need to clone the rules to avoid side effects
     if (rules.length > 0) {
-        result.children = cloneDeep(rules);
+        result.children = clone(rules);
     }
 
     return result;

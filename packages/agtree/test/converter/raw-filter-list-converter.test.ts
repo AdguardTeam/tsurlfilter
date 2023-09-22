@@ -1,8 +1,7 @@
-import { FilterListParser } from '../../src/parser/filterlist';
 import { NEWLINE } from '../../src/utils/constants';
-import { FilterListConverter } from '../../src/converter/filter-list';
+import { RawFilterListConverter } from '../../src/converter/raw-filter-list';
 
-describe('FilterListConverter', () => {
+describe('RawFilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {
         const filterListContent = [
             '! Title: Foo',
@@ -14,18 +13,10 @@ describe('FilterListConverter', () => {
             '||example.com^$script',
         ].join(NEWLINE);
 
-        const filterListNode = FilterListParser.parse(filterListContent);
-        const convertedFilterList = FilterListConverter.convertToAdg(filterListNode);
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
 
-        // Converted filter list should be the same as the original one
-        expect(convertedFilterList.result.children).toHaveLength(filterListNode.children.length);
-        expect(FilterListParser.generate(convertedFilterList.result)).toBe(filterListContent);
-
-        // Rule object references should be the same
-        convertedFilterList.result.children.forEach((rule, index) => {
-            // TODO: Add deep check for properties, eg domain list
-            expect(rule).toBe(filterListNode.children[index]);
-        });
+        expect(convertedFilterList.isConverted).toBe(false);
+        expect(convertedFilterList.result).toBe(filterListContent);
     });
 
     test('convertToAdg should convert filter lists to AdGuard syntax', () => {
@@ -62,24 +53,10 @@ describe('FilterListConverter', () => {
             '$$script[tag-content="ad"][max-length="262144"]',
         ].join(NEWLINE);
 
-        const filterListNode = FilterListParser.parse(filterListContent);
-        const convertedFilterList = FilterListConverter.convertToAdg(filterListNode);
+        const convertedFilterList = RawFilterListConverter.convertToAdg(filterListContent);
 
-        // Filter list node references should be different
-        expect(convertedFilterList.result).not.toBe(filterListNode);
-
-        // Serialized filter lists should be equal with the expected one
-        expect(FilterListParser.generate(convertedFilterList.result)).toBe(expectedFilterListContent);
-
-        // Rule object references should be different
-        convertedFilterList.result.children.forEach((convertedRule) => {
-            // TODO: Add deep check for properties, eg domain list
-            filterListNode.children.forEach((originalRule) => {
-                if (originalRule === convertedRule) {
-                    throw new Error('Rule object references should be different');
-                }
-            });
-        });
+        expect(convertedFilterList.isConverted).toBe(true);
+        expect(convertedFilterList.result).toBe(expectedFilterListContent);
     });
 
     test('Tolerant mode should work correctly', () => {
@@ -98,16 +75,14 @@ describe('FilterListConverter', () => {
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 
-        const filterListNode = FilterListParser.parse(filterListContent);
-
         // Without tolerant mode, the whole filter list should fail
-        expect(() => FilterListConverter.convertToAdg(filterListNode, false)).toThrow();
+        expect(() => RawFilterListConverter.convertToAdg(filterListContent, false)).toThrow();
 
         // With tolerant mode, the whole filter list should be converted
-        const tolerant = () => FilterListConverter.convertToAdg(filterListNode, true);
+        const tolerant = () => RawFilterListConverter.convertToAdg(filterListContent, true);
         expect(tolerant).not.toThrow();
 
         // The rule should be left as is
-        expect(FilterListParser.generate(tolerant().result)).toBe(expectedFilterListContent);
+        expect(tolerant().result).toBe(expectedFilterListContent);
     });
 });

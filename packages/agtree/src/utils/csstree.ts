@@ -1,5 +1,7 @@
 /**
  * @file Additional / helper functions for ECSSTree / CSSTree.
+ *
+ * @note There are no tests for some functions, but during the AGTree optimization we remove them anyway.
  */
 
 import {
@@ -22,8 +24,9 @@ import {
     type SelectorListPlain,
     type SyntaxParseError,
     walk,
+    type SelectorPlain,
+    type FunctionNodePlain,
 } from '@adguard/ecss-tree';
-import cloneDeep from 'clone-deep';
 
 import {
     CLOSE_PARENTHESIS,
@@ -46,6 +49,7 @@ import { type LocationRange, defaultLocation } from '../parser/common';
 import { locRange } from './location';
 import { StringUtils } from './string';
 import { EXT_CSS_LEGACY_ATTRIBUTES, EXT_CSS_PSEUDO_CLASSES, FORBIDDEN_CSS_FUNCTIONS } from '../converter/data/css';
+import { clone } from './clone';
 
 /**
  * Common CSSTree parsing options.
@@ -212,12 +216,12 @@ export class CssTree {
         if (StringUtils.isString(selectorList)) {
             ast = CssTree.parse(selectorList, CssTreeParserContext.selectorList);
         } else {
-            ast = cloneDeep(selectorList);
+            ast = clone(selectorList);
         }
 
         const nodes: CssNode[] = [];
 
-        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         walk(ast as any, (node) => {
             if (CssTree.isExtendedCssNode(node, pseudoClasses, attributeSelectors)) {
@@ -252,10 +256,10 @@ export class CssTree {
         if (StringUtils.isString(selectorList)) {
             ast = CssTree.parse(selectorList, CssTreeParserContext.selectorList);
         } else {
-            ast = cloneDeep(selectorList);
+            ast = selectorList;
         }
 
-        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return find(ast as any, (node) => CssTree.isExtendedCssNode(node, pseudoClasses, attributeSelectors)) !== null;
     }
@@ -301,7 +305,7 @@ export class CssTree {
         if (StringUtils.isString(declarationList)) {
             ast = CssTree.parse(declarationList, CssTreeParserContext.declarationList);
         } else {
-            ast = cloneDeep(declarationList);
+            ast = clone(declarationList);
         }
 
         const nodes: CssNode[] = [];
@@ -310,7 +314,7 @@ export class CssTree {
         // cross-fade() itself is already a forbidden function
         let inForbiddenFunction = false;
 
-        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         walk(ast as any, {
             enter: (node: CssNode) => {
@@ -353,10 +357,10 @@ export class CssTree {
         if (StringUtils.isString(declarationList)) {
             ast = CssTree.parse(declarationList, CssTreeParserContext.declarationList);
         } else {
-            ast = cloneDeep(declarationList);
+            ast = clone(declarationList);
         }
 
-        // TODO: CSSTree types should be improved, as a workaround we use `any` here
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return find(ast as any, (node) => CssTree.isForbiddenFunction(node, forbiddenFunctions)) !== null;
     }
@@ -647,6 +651,226 @@ export class CssTree {
     }
 
     /**
+     * Generates string representation of the selector list.
+     *
+     * @param ast SelectorList AST
+     * @returns String representation of the selector list
+     */
+    public static generateSelectorListPlain(ast: SelectorListPlain): string {
+        const result: string[] = [];
+
+        if (!ast.children || ast.children.length === 0) {
+            throw new Error('Selector list cannot be empty');
+        }
+
+        ast.children.forEach((selector, index, nodeList) => {
+            if (selector.type !== CssTreeNodeType.Selector) {
+                throw new Error(`Unexpected node type: ${selector.type}`);
+            }
+
+            result.push(this.generateSelectorPlain(selector));
+
+            // If there is a next node, add a comma and a space after the selector
+            if (nodeList[index + 1]) {
+                result.push(COMMA, SPACE);
+            }
+        });
+
+        return result.join(EMPTY);
+    }
+
+    /**
+     * Selector generation based on CSSTree's AST. This is necessary because CSSTree
+     * only adds spaces in some edge cases.
+     *
+     * @param ast CSS Tree AST
+     * @returns CSS selector as string
+     */
+    public static generateSelectorPlain(ast: SelectorPlain): string {
+        let result = EMPTY;
+
+        let inAttributeSelector = false;
+        let depth = 0;
+        let selectorListDepth = -1;
+        let prevNode: CssNodePlain = ast;
+
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        walk(ast as any, {
+            // TODO: Need to improve CSSTree types, until then we need to use any type here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            enter: (node: any) => {
+                depth += 1;
+
+                // Skip attribute selector / selector list children
+                if (inAttributeSelector || selectorListDepth > -1) {
+                    return;
+                }
+
+                switch (node.type) {
+                    // "Trivial" nodes
+                    case CssTreeNodeType.TypeSelector:
+                        result += node.name;
+                        break;
+
+                    case CssTreeNodeType.ClassSelector:
+                        result += DOT;
+                        result += node.name;
+                        break;
+
+                    case CssTreeNodeType.IdSelector:
+                        result += HASHMARK;
+                        result += node.name;
+                        break;
+
+                    case CssTreeNodeType.Identifier:
+                        result += node.name;
+                        break;
+
+                    case CssTreeNodeType.Raw:
+                        result += node.value;
+                        break;
+
+                    // "Advanced" nodes
+                    case CssTreeNodeType.Nth:
+                        // Default generation enough
+                        result += generate(node);
+                        break;
+
+                    // For example :not([id], [name])
+                    case CssTreeNodeType.SelectorList:
+                        // eslint-disable-next-line no-case-declarations
+                        const selectors: string[] = [];
+
+                        node.children.forEach((selector: CssNodePlain) => {
+                            if (selector.type === CssTreeNodeType.Selector) {
+                                selectors.push(CssTree.generateSelectorPlain(selector));
+                            } else if (selector.type === CssTreeNodeType.Raw) {
+                                selectors.push(selector.value);
+                            }
+                        });
+
+                        // Join selector lists
+                        result += selectors.join(COMMA + SPACE);
+
+                        // Skip nodes here
+                        selectorListDepth = depth;
+                        break;
+
+                    case CssTreeNodeType.Combinator:
+                        if (node.name === SPACE) {
+                            result += node.name;
+                            break;
+                        }
+
+                        // Prevent this case (unnecessary space): has( > .something)
+                        if (prevNode.type !== CssTreeNodeType.Selector) {
+                            result += SPACE;
+                        }
+
+                        result += node.name;
+                        result += SPACE;
+                        break;
+
+                    case CssTreeNodeType.AttributeSelector:
+                        result += OPEN_SQUARE_BRACKET;
+
+                        // Identifier name
+                        if (node.name) {
+                            result += node.name.name;
+                        }
+
+                        // Matcher operator, eg =
+                        if (node.matcher) {
+                            result += node.matcher;
+
+                            // Value can be String, Identifier or null
+                            if (node.value !== null) {
+                                // String node
+                                if (node.value.type === CssTreeNodeType.String) {
+                                    result += generate(node.value);
+                                } else if (node.value.type === CssTreeNodeType.Identifier) {
+                                    // Identifier node
+                                    result += node.value.name;
+                                }
+                            }
+                        }
+
+                        // Flags
+                        if (node.flags) {
+                            // Space before flags
+                            result += SPACE;
+                            result += node.flags;
+                        }
+
+                        result += CLOSE_SQUARE_BRACKET;
+
+                        inAttributeSelector = true;
+                        break;
+
+                    case CssTreeNodeType.PseudoElementSelector:
+                        result += COLON;
+                        result += COLON;
+                        result += node.name;
+
+                        if (node.children !== null) {
+                            result += OPEN_PARENTHESIS;
+                        }
+
+                        break;
+
+                    case CssTreeNodeType.PseudoClassSelector:
+                        result += COLON;
+                        result += node.name;
+
+                        if (node.children !== null) {
+                            result += OPEN_PARENTHESIS;
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+
+                prevNode = node;
+            },
+            leave: (node: CssNode) => {
+                depth -= 1;
+
+                if (node.type === CssTreeNodeType.SelectorList && depth + 1 === selectorListDepth) {
+                    selectorListDepth = -1;
+                }
+
+                if (selectorListDepth > -1) {
+                    return;
+                }
+
+                if (node.type === CssTreeNodeType.AttributeSelector) {
+                    inAttributeSelector = false;
+                }
+
+                if (inAttributeSelector) {
+                    return;
+                }
+
+                switch (node.type) {
+                    case CssTreeNodeType.PseudoElementSelector:
+                    case CssTreeNodeType.PseudoClassSelector:
+                        if (node.children) {
+                            result += CLOSE_PARENTHESIS;
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            },
+        });
+
+        return result.trim();
+    }
+
+    /**
      * Block generation based on CSSTree's AST. This is necessary because CSSTree only adds spaces in some edge cases.
      *
      * @param ast CSS Tree AST
@@ -885,5 +1109,32 @@ export class CssTree {
         });
 
         return result;
+    }
+
+    /**
+     * Helper function to generate a raw string from a function selector's children
+     *
+     * @param node Function node
+     * @returns Generated function value
+     * @example `responseheader(name)` -> `name`
+     */
+    public static generateFunctionPlainValue(node: FunctionNodePlain): string {
+        const result: string[] = [];
+
+        node.children?.forEach((child) => {
+            switch (child.type) {
+                case CssTreeNodeType.Raw:
+                    result.push(child.value);
+                    break;
+
+                default:
+                    // Fallback to CSSTree's default generate function
+                    // TODO: Need to improve CSSTree types, until then we need to use any type here
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    result.push(generate(child as any));
+            }
+        });
+
+        return result.join(EMPTY);
     }
 }

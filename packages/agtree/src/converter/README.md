@@ -13,6 +13,7 @@ Table of contents:
 
 - [Adblock rule converter](#adblock-rule-converter)
     - [Converter API](#converter-api)
+        - [Returned interface](#returned-interface)
         - [Rule converter signature](#rule-converter-signature)
         - [Filter list converter signature](#filter-list-converter-signature)
     - [Examples](#examples)
@@ -43,12 +44,22 @@ Each converter method expects an AST (Abstract Syntax Tree) node as an input and
 output. **This means that you should parse the rule/filter list first**, then pass the AST node to the converter, which
 will also return AST node(s). If necessary, you can serialize the converted AST node(s) back to a string afterwards.
 
+### Returned interface
+
+Each converter method returns an object of the following properties:
+
+- `result`: converted item(s)
+- `isConverted`: `true` if the item(s) were converted, `false` otherwise
+
+If the item(s) were not converted, the `result` field will contain the original item(s). For AST nodes, it means that
+the returned AST node(s) will be the same as the input AST node(s), i.e. the **reference will be the same**.
+
 ### Rule converter signature
 
 Rule converter has the following signature:
 
 ```ts
-RuleConverter.convertToAdg(rule: AnyRule): AnyRule[];
+RuleConverter.convertToAdg(rule: AnyRule): NodeConversionResult<AnyRule>;
 ```
 
 The reason why the converter returns an array of nodes is that sometimes a single rule can be converted to multiple
@@ -73,7 +84,7 @@ node.
 Filter list converter has the following signature:
 
 ```ts
-FilterListConverter.convertToAdg(filterList: FilterList): FilterList;
+FilterListConverter.convertToAdg(filterList: FilterList): ConversionResult<FilterList>;
 ```
 
 Filter list converter returns a single filter list node, not an array of nodes, because it doesn't make sense to convert
@@ -105,7 +116,7 @@ const conversionResult = RuleConverter.convertToAdg(ruleNode);
 
 // You can simply serialize the rule nodes, then print them to the console
 // this way:
-console.log(conversionResult.map(RuleParser.generate).join('\n'));
+console.log(conversionResult.result.map(RuleParser.generate).join('\n'));
 ```
 
 ### Examples of converting a filter list
@@ -130,15 +141,13 @@ example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 arg10 arg11
 // Filter list converter is a special case and returns a single filter list node,
 // not an array of nodes, because it doesn't make sense to convert a filter list
 // to multiple filter lists.
-const convertedFilterList = FilterListConverter.convertToAdg(
-    FilterListParser.parse(filterListToConvert),
-);
+const convertedFilterList = FilterListConverter.convertToAdg(FilterListParser.parse(filterListToConvert));
 
 // You can simply serialize the filter list node, then print it to the console
-console.log(FilterListParser.generate(convertedFilterList));
+console.log(FilterListParser.generate(convertedFilterList.result));
 
 // Or you can serialize the filter list node to a string and write it to a file
-// writeFileSync('converted-filter-list.txt', FilterListParser.generate(convertedFilterList));
+// writeFileSync('converted-filter-list.txt', FilterListParser.generate(convertedFilterList.result));
 ```
 
 ## Limitations

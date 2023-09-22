@@ -1,6 +1,7 @@
 import { CommentRuleConverter } from '../../../src/converter/comment';
 import { CommentRuleParser } from '../../../src/parser/comment';
 import { type CommentRule } from '../../../src/parser/common';
+import '../../matchers/check-conversion';
 
 describe('CommentRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -11,30 +12,35 @@ describe('CommentRuleConverter', () => {
                 expected: [
                     '! This is a comment',
                 ],
+                shouldConvert: false,
             },
             {
                 actual: '! Title: Foo',
                 expected: [
                     '! Title: Foo',
                 ],
+                shouldConvert: false,
             },
             {
                 actual: '[Adblock Plus 2.0]',
                 expected: [
                     '[Adblock Plus 2.0]',
                 ],
+                shouldConvert: false,
             },
             {
                 actual: '!#endif',
                 expected: [
                     '!#endif',
                 ],
+                shouldConvert: false,
             },
             {
                 actual: '!+ NOT_OPTIMIZED',
                 expected: [
                     '!+ NOT_OPTIMIZED',
                 ],
+                shouldConvert: false,
             },
 
             // Should convert comments to AdGuard syntax
@@ -46,26 +52,17 @@ describe('CommentRuleConverter', () => {
                 expected: [
                     '! #####',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: '# ubo syntax comment',
                 expected: [
                     '! # ubo syntax comment',
                 ],
+                shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected }) => {
-            const commentRuleNode = CommentRuleParser.parse(actual);
-
-            if (!commentRuleNode) {
-                throw new Error(`Failed to parse comment rule: ${actual}`);
-            }
-
-            const convertedRuleNodes = CommentRuleConverter.convertToAdg(commentRuleNode);
-
-            expect(convertedRuleNodes).toHaveLength(expected.length);
-            expect(
-                convertedRuleNodes.map(CommentRuleParser.generate),
-            ).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(CommentRuleConverter, 'convertToAdg');
         });
     });
 

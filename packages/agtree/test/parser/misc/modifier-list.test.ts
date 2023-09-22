@@ -6,59 +6,59 @@ describe('ModifierListParser', () => {
     test('parse', () => {
         // Invalid cases
         expect(() => ModifierListParser.parse(',')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse(' , ')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse(',b')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a,')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a, ')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse(' a , ')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a,,')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a,b,')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a,,b')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a , , b')).toThrowError(
-            'Modifier name can\'t be empty',
+            'Modifier name cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a=')).toThrowError(
-            'Modifier value can\'t be empty',
+            'Modifier value cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a=,b')).toThrowError(
-            'Modifier value can\'t be empty',
+            'Modifier value cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a,b=')).toThrowError(
-            'Modifier value can\'t be empty',
+            'Modifier value cannot be empty',
         );
 
         expect(() => ModifierListParser.parse('a, b = ')).toThrowError(
-            'Modifier value can\'t be empty',
+            'Modifier value cannot be empty',
         );
 
         // Empty modifiers

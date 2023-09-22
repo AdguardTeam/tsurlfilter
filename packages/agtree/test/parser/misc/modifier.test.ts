@@ -21,27 +21,27 @@ describe('ModifierParser', () => {
     describe('parse', () => {
         it('should throw an error if the modifier is invalid', () => {
             expect(() => ModifierParser.parse('')).toThrowError(
-                'Modifier name can\'t be empty',
+                'Modifier name cannot be empty',
             );
 
             expect(() => ModifierParser.parse(' ')).toThrowError(
-                'Modifier name can\'t be empty',
+                'Modifier name cannot be empty',
             );
 
             expect(() => ModifierParser.parse('a=')).toThrowError(
-                'Modifier value can\'t be empty',
+                'Modifier value cannot be empty',
             );
 
             expect(() => ModifierParser.parse(' a=')).toThrowError(
-                'Modifier value can\'t be empty',
+                'Modifier value cannot be empty',
             );
 
             expect(() => ModifierParser.parse(' a= ')).toThrowError(
-                'Modifier value can\'t be empty',
+                'Modifier value cannot be empty',
             );
 
             expect(() => ModifierParser.parse(' a = ')).toThrowError(
-                'Modifier value can\'t be empty',
+                'Modifier value cannot be empty',
             );
         });
 

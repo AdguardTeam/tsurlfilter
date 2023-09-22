@@ -2,7 +2,7 @@
  * @file Element hiding rule body parser
  */
 
-import { fromPlainObject, type SelectorList, type SelectorListPlain } from '@adguard/ecss-tree';
+import { type SelectorListPlain } from '@adguard/ecss-tree';
 
 import { CssTree } from '../../../utils/csstree';
 import { CssTreeParserContext } from '../../../utils/csstree-constants';
@@ -53,6 +53,6 @@ export class ElementHidingBodyParser {
      * @throws If the AST is invalid
      */
     public static generate(ast: ElementHidingRuleBody): string {
-        return CssTree.generateSelectorList(<SelectorList>fromPlainObject(ast.selectorList));
+        return CssTree.generateSelectorListPlain(ast.selectorList);
     }
 }

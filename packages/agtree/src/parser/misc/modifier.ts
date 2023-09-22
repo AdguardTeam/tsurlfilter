@@ -52,7 +52,7 @@ export class ModifierParser {
         // Modifier name can't be empty
         if (modifierNameStart === modifierEnd) {
             throw new AdblockSyntaxError(
-                'Modifier name can\'t be empty',
+                'Modifier name cannot be empty',
                 locRange(loc, 0, raw.length),
             );
         }
@@ -82,7 +82,7 @@ export class ModifierParser {
             // Value can't be empty
             if (assignmentIndex + 1 === modifierEnd) {
                 throw new AdblockSyntaxError(
-                    'Modifier value can\'t be empty',
+                    'Modifier value cannot be empty',
                     locRange(loc, 0, raw.length),
                 );
             }

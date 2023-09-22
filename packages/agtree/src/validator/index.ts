@@ -2,8 +2,6 @@
  * @file Validator for modifiers.
  */
 
-import cloneDeep from 'clone-deep';
-
 import { type ModifierDataMap, getModifiersData, SpecificKey } from '../compatibility-tables';
 import { type Modifier } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
@@ -18,6 +16,7 @@ import {
     getAllModifierNames,
 } from './helpers';
 import { validateValue } from './value';
+import { clone } from '../utils/clone';
 
 /**
  * Fully checks whether the given `modifier` valid for given blocker `syntax`:
@@ -197,7 +196,7 @@ class ModifierValidator {
      * @returns Result of modifier validation.
      */
     public validate = (syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult => {
-        const modifier = cloneDeep(rawModifier);
+        const modifier = clone(rawModifier);
 
         // special case: handle noop modifier which may be used as multiple underscores (not just one)
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#noop-modifier

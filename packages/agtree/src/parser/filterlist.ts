@@ -140,7 +140,9 @@ export class FilterListParser {
     public static generate(ast: FilterList, preferRaw = false): string {
         let result = EMPTY;
 
-        for (const rule of ast.children) {
+        for (let i = 0; i < ast.children.length; i += 1) {
+            const rule = ast.children[i];
+
             if (preferRaw && rule.raws?.text) {
                 result += rule.raws.text;
             } else {
@@ -158,6 +160,9 @@ export class FilterListParser {
                     result += LF;
                     break;
                 default:
+                    if (i !== ast.children.length - 1) {
+                        result += LF;
+                    }
                     break;
             }
         }

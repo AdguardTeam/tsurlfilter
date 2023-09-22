@@ -2,14 +2,16 @@
  * @file Network rule modifier list converter.
  */
 
-import cloneDeep from 'clone-deep';
 import scriptlets from '@adguard/scriptlets';
 
-import { type ModifierList } from '../../parser/common';
+import { type Modifier, type ModifierList } from '../../parser/common';
 import { SEMICOLON, SPACE } from '../../utils/constants';
-import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
+import { createModifierNode } from '../../ast-utils/modifiers';
 import { ConverterBase } from '../base-interfaces/converter-base';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
+import { MultiValueMap } from '../../utils/multi-value-map';
+import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
+import { cloneModifierListNode } from '../../ast-utils/clone';
 
 // Since scriptlets library doesn't have ESM exports, we should import
 // the whole module and then extract the required functions from it here.
@@ -116,19 +118,18 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
      * @param modifierList Network rule modifier list node to convert
-     * @returns Converted modifier list node
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
      * @throws If the conversion is not possible
      */
-    public static convertToAdg(modifierList: ModifierList): ModifierList {
-        // Clone the provided AST node to avoid side effects
-        const modifierListNode = cloneDeep(modifierList);
-        const convertedModifierList = createModifierListNode();
+    public static convertToAdg(modifierList: ModifierList): ConversionResult<ModifierList> {
+        const conversionMap = new MultiValueMap<number, Modifier>();
 
-        // We should merge $csp modifiers into one
-        const cspValues: string[] = [];
+        // Special case: $csp modifier
+        let cspCount = 0;
 
-        modifierListNode.children.forEach((modifierNode) => {
-            // Handle regular modifiers conversion and $csp modifiers collection
+        modifierList.children.forEach((modifierNode, index) => {
             const modifierConversions = ADG_CONVERSION_MAP.get(modifierNode.modifier.value);
 
             if (modifierConversions) {
@@ -145,19 +146,15 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                         ? modifierConversion.value(modifierNode.value?.value)
                         : modifierNode.value?.value;
 
-                    if (name === CSP_MODIFIER && value) {
-                        // Special case: collect $csp values
-                        cspValues.push(value);
-                    } else {
-                        // Regular case: collect the converted modifiers, if the modifier list
-                        // not already contains the same modifier
-                        const existingModifier = convertedModifierList.children.find(
-                            (m) => m.modifier.value === name && m.exception === exception && m.value?.value === value,
-                        );
+                    // Check if the name or the value is different from the original modifier
+                    // If so, add the converted modifier to the list
+                    if (name !== modifierNode.modifier.value || value !== modifierNode.value?.value) {
+                        conversionMap.add(index, createModifierNode(name, value, exception));
+                    }
 
-                        if (!existingModifier) {
-                            convertedModifierList.children.push(createModifierNode(name, value, exception));
-                        }
+                    // Special case: $csp modifier
+                    if (name === CSP_MODIFIER) {
+                        cspCount += 1;
                     }
                 }
 
@@ -191,37 +188,80 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                 // This function returns undefined if the resource name is unknown
                 const convertedRedirectResource = redirects.convertRedirectNameToAdg(redirectResource);
 
-                convertedModifierList.children.push(
-                    createModifierNode(
-                        modifierName,
-                        // If the redirect resource name is unknown, fall back to the original one
-                        // Later, the validator will throw an error if the resource name is invalid
-                        convertedRedirectResource || redirectResource,
-                        modifierNode.exception,
-                    ),
-                );
-
-                return;
-            }
-
-            // In all other cases, just copy the modifier as is, if the modifier list
-            // not already contains the same modifier
-            const existingModifier = convertedModifierList.children.find(
-                (m) => m.modifier.value === modifierNode.modifier.value
-                    && m.exception === modifierNode.exception
-                    && m.value?.value === modifierNode.value?.value,
-            );
-
-            if (!existingModifier) {
-                convertedModifierList.children.push(modifierNode);
+                // Check if the modifier name or the redirect resource name is different from the original modifier
+                // If so, add the converted modifier to the list
+                if (
+                    modifierName !== modifierNode.modifier.value
+                    || (convertedRedirectResource !== undefined && convertedRedirectResource !== redirectResource)
+                ) {
+                    conversionMap.add(
+                        index,
+                        createModifierNode(
+                            modifierName,
+                            // If the redirect resource name is unknown, fall back to the original one
+                            // Later, the validator will throw an error if the resource name is invalid
+                            convertedRedirectResource || redirectResource,
+                            modifierNode.exception,
+                        ),
+                    );
+                }
             }
         });
 
-        // Merge $csp modifiers into one, then add it to the converted modifier list
-        if (cspValues.length > 0) {
-            convertedModifierList.children.push(createModifierNode(CSP_MODIFIER, cspValues.join(CSP_SEPARATOR)));
+        // Prepare the result if there are any converted modifiers or $csp modifiers
+        if (conversionMap.size || cspCount) {
+            const modifierListClone = cloneModifierListNode(modifierList);
+
+            // Replace the original modifiers with the converted ones
+            // One modifier may be replaced with multiple modifiers, so we need to flatten the array
+            modifierListClone.children = modifierListClone.children.map((modifierNode, index) => {
+                const conversionRecord = conversionMap.get(index);
+
+                if (conversionRecord) {
+                    return conversionRecord;
+                }
+
+                return modifierNode;
+            }).flat();
+
+            // Special case: $csp modifier: merge multiple $csp modifiers into one
+            // and put it at the end of the modifier list
+            if (cspCount) {
+                const cspValues: string[] = [];
+
+                modifierListClone.children = modifierListClone.children.filter((modifierNode) => {
+                    if (modifierNode.modifier.value === CSP_MODIFIER) {
+                        if (!modifierNode.value?.value) {
+                            throw new RuleConversionError(
+                                '$csp modifier value is missing',
+                            );
+                        }
+
+                        cspValues.push(modifierNode.value?.value);
+
+                        return false;
+                    }
+
+                    return true;
+                });
+
+                modifierListClone.children.push(
+                    createModifierNode(CSP_MODIFIER, cspValues.join(CSP_SEPARATOR)),
+                );
+            }
+
+            // Before returning the result, remove duplicated modifiers
+            modifierListClone.children = modifierListClone.children.filter(
+                (modifierNode, index, self) => self.findIndex(
+                    (m) => m.modifier.value === modifierNode.modifier.value
+                        && m.exception === modifierNode.exception
+                        && m.value?.value === modifierNode.value?.value,
+                ) === index,
+            );
+
+            return createConversionResult(modifierListClone, true);
         }
 
-        return convertedModifierList;
+        return createConversionResult(modifierList, false);
     }
 }

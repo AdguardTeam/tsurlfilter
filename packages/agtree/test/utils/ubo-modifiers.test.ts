@@ -102,6 +102,7 @@ describe('Extract uBO modifiers from selector', () => {
 
             // We serialize the selector just for the convenience of testing,
             // but this requires any cast
+            // TODO: Need to improve CSSTree types, until then we need to use any type here
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = extractUboModifiersFromSelector(ast) as any;
 
@@ -222,6 +223,7 @@ describe('Extract uBO modifiers from selector', () => {
 
             // We serialize the selector just for the convenience of testing,
             // but this requires any cast
+            // TODO: Need to improve CSSTree types, until then we need to use any type here
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = extractUboModifiersFromSelectorList(ast) as any;
 

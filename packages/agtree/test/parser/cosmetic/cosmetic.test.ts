@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
 import { type SelectorList, fromPlainObject } from '@adguard/ecss-tree';
-import cloneDeep from 'clone-deep';
 
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { CssInjectionBodyParser } from '../../../src/parser/cosmetic/body/css';
@@ -19,6 +18,7 @@ import { HtmlFilteringBodyParser } from '../../../src/parser/cosmetic/body/html'
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { CssTree } from '../../../src/utils/csstree';
+import { clone } from '../../../src/utils/clone';
 
 describe('CosmeticRuleParser', () => {
     test('isCosmetic', async () => {
@@ -2138,7 +2138,7 @@ describe('CosmeticRuleParser', () => {
 
         expect(
             CssTree.generateSelectorList(
-                fromPlainObject(cloneDeep(elementHiding.body.selectorList)) as SelectorList,
+                fromPlainObject(clone(elementHiding.body.selectorList)) as SelectorList,
             ),
         ).toEqual('[a="b"]');
 
@@ -2164,7 +2164,7 @@ describe('CosmeticRuleParser', () => {
 
         expect(
             CssTree.generateSelectorList(
-                fromPlainObject(cloneDeep(cssInjection.body.selectorList)) as SelectorList,
+                fromPlainObject(clone(cssInjection.body.selectorList)) as SelectorList,
             ),
         ).toEqual('.foo');
 
@@ -2190,7 +2190,7 @@ describe('CosmeticRuleParser', () => {
 
         expect(
             CssTree.generateSelectorList(
-                fromPlainObject(cloneDeep(htmlFiltering.body.body)) as SelectorList,
+                fromPlainObject(clone(htmlFiltering.body.body)) as SelectorList,
             ),
         ).toEqual('script:has-text(ads)');
     });
