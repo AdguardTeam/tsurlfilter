@@ -1,5 +1,5 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import { getDomain } from 'tldts';
+import { getHostname } from 'tldts';
 import type { NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
@@ -128,7 +128,7 @@ export class DocumentBlockingService {
      * @returns True, if request url domain is trusted, else false.
      */
     private isTrustedDomain(url: string): boolean {
-        const domain = getDomain(url);
+        const domain = getHostname(url);
 
         if (domain) {
             return this.trustedDomains.includes(domain);
