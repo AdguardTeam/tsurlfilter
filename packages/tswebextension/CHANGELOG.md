@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Fixed
+- Incorrect logging and applying of `$removeheader` allowlist rules.
 - Proceed anyway is not working for more than two level domains [#2497](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2497).
+
 
 ## [0.3.20] - 2023-09-19
 

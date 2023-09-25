@@ -8,7 +8,7 @@ import {
     FilteringLogInterface,
     getDomain,
 } from '../../../common';
-import { removeHeader } from '../utils/headers';
+import { removeHeader, findHeaderByName } from '../utils/headers';
 import { RequestContext, requestContextStorage } from '../request';
 
 /**
@@ -49,15 +49,26 @@ export class HeadersService {
         }
 
         const rules = matchingResult.getRemoveHeaderRules();
-
         if (rules.length === 0) {
             return false;
         }
 
         let isModified = false;
-        rules.forEach((rule) => {
-            isModified = HeadersService.applyRule(requestHeaders, rule, true);
-            if (isModified || rule.isAllowlist()) {
+
+        rules.forEach((rule: NetworkRule) => {
+            let isAppliedRule = false;
+            if (rule.isAllowlist()) {
+                // Allowlist rules must be applicable by header name to be logged
+                isAppliedRule = HeadersService
+                    .isApplicableRemoveHeaderRule(requestHeaders, rule, true);
+            } else {
+                isAppliedRule = HeadersService.applyRule(requestHeaders, rule, true);
+                if (!isModified && isAppliedRule) {
+                    isModified = true;
+                }
+            }
+
+            if (isAppliedRule) {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveHeader,
                     data: {
@@ -113,8 +124,18 @@ export class HeadersService {
         let isModified = false;
 
         rules.forEach((rule) => {
-            if (HeadersService.applyRule(responseHeaders, rule, false)) {
-                isModified = true;
+            let isAppliedRule = false;
+            if (rule.isAllowlist()) {
+                // Allowlist rules must be applicable by header name to be logged
+                isAppliedRule = HeadersService
+                    .isApplicableRemoveHeaderRule(responseHeaders, rule, false);
+            } else {
+                isAppliedRule = HeadersService.applyRule(responseHeaders, rule, false);
+                if (!isModified && isAppliedRule) {
+                    isModified = true;
+                }
+            }
+            if (isAppliedRule) {
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.RemoveHeader,
                     data: {
@@ -154,17 +175,57 @@ export class HeadersService {
         rule: NetworkRule,
         isRequestHeaders: boolean,
     ): boolean {
-        const modifier = rule.getAdvancedModifier() as RemoveHeaderModifier;
-        if (!modifier) {
-            return false;
-        }
-
-        const headerName = modifier.getApplicableHeaderName(isRequestHeaders);
+        const headerName = HeadersService.getApplicableHeaderName(rule, isRequestHeaders);
         if (!headerName) {
             return false;
         }
 
         return removeHeader(headers, headerName);
+    }
+
+    /**
+     * Checks if rule is applicable to headers.
+     *
+     * @param headers   Headers.
+     * @param rule  Rule with $removeheader modifier.
+     * @param isRequestHeaders Is request headers.
+     * @returns True if rule is applicable.
+     */
+    private static isApplicableRemoveHeaderRule(
+        headers: WebRequest.HttpHeadersItemType[],
+        rule: NetworkRule,
+        isRequestHeaders: boolean,
+    ): boolean {
+        const headerName = HeadersService.getApplicableHeaderName(rule, isRequestHeaders);
+        if (!headerName) {
+            return false;
+        }
+
+        return !!findHeaderByName(headers, headerName);
+    }
+
+    /**
+     * Returns header name if rule has remove header modifier and it is applicable.
+     *
+     * @param rule Rule with $removeheader modifier.
+     * @param isRequestHeaders Is request headers.
+     * @returns Header name or null if rule is not applicable.
+     */
+    private static getApplicableHeaderName(
+        rule: NetworkRule,
+        isRequestHeaders: boolean,
+    ): string | null {
+        const modifier = rule.getAdvancedModifier() as RemoveHeaderModifier;
+        if (!modifier) {
+            return null;
+        }
+
+        const headerName = modifier.getApplicableHeaderName(isRequestHeaders);
+        if (!headerName) {
+            return null;
+        }
+
+        return headerName;
     }
 }
 
