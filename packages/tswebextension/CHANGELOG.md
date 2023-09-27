@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
 
 ## Added
+- Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
 - Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
 
 

@@ -57,7 +57,7 @@ describe('Params service', () => {
         expect(purgedUrl).toBe(null);
     });
 
-    it('removes get request params', () => {
+    it('removes GET request params', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'GET',
@@ -70,14 +70,17 @@ describe('Params service', () => {
         );
     });
 
-    it('ignores post request params', () => {
+    it('removes POST request params', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
             'POST',
             ['||example.org^$removeparam'],
         );
 
-        expect(purgedUrl).toBe(null);
+        expect(purgedUrl).toBe('https://example.org');
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.RemoveParam }),
+        );
     });
 
     it('correctly processes allowlist rule', () => {

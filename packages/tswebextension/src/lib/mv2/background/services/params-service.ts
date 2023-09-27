@@ -24,7 +24,7 @@ export class ParamsService {
         this.filteringLog = filteringLog;
     }
 
-    private static SupportedMethods = ['GET', 'OPTIONS', 'HEAD'];
+    private static SupportedMethods = ['GET', 'POST', 'OPTIONS', 'HEAD'];
 
     /**
      * Removes request params from url, stored in request context.
