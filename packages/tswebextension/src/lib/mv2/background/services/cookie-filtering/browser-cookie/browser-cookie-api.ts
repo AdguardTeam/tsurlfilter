@@ -33,6 +33,8 @@ export default class BrowserCookieApi {
      * Updates cookie.
      *
      * @param cookie Cookie for update.
+     *
+     * @returns Promise resolved with true if cookie was updated, false otherwise.
      */
     async modifyCookie(cookie: ParsedCookie): Promise<boolean> {
         try {

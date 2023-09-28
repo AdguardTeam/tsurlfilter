@@ -346,12 +346,12 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@es-joy/jsdoccomment@~0.39.4":
-  version "0.39.4"
-  resolved "https://registry.yarnpkg.com/@es-joy/jsdoccomment/-/jsdoccomment-0.39.4.tgz#6b8a62e9b3077027837728818d3c4389a898b392"
-  integrity sha512-Jvw915fjqQct445+yron7Dufix9A+m9j1fCJYlCo1FWlRvTxa3pjJelxdSTdaLWcTwRU6vbL+NYjO4YuNIS5Qg==
+"@es-joy/jsdoccomment@~0.40.1":
+  version "0.40.1"
+  resolved "https://registry.yarnpkg.com/@es-joy/jsdoccomment/-/jsdoccomment-0.40.1.tgz#13acd77fb372ed1c83b7355edd865a3b370c9ec4"
+  integrity sha512-YORCdZSusAlBrFpZ77pJjc5r1bQs5caPWtAu+WWmiSo+8XaUzseapVrfAtiRFbQWnrBxxLLEwF6f6ZG/UgCQCg==
   dependencies:
-    comment-parser "1.3.1"
+    comment-parser "1.4.0"
     esquery "^1.5.0"
     jsdoc-type-pratt-parser "~4.0.0"
 
@@ -1739,10 +1739,10 @@ commander@^10.0.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-10.0.1.tgz#881ee46b4f77d1c1dccc5823433aa39b022cbe06"
   integrity sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==
 
-comment-parser@1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/comment-parser/-/comment-parser-1.3.1.tgz#3d7ea3adaf9345594aedee6563f422348f165c1b"
-  integrity sha512-B52sN2VNghyq5ofvUsqZjmk6YkihBX5vMSChmSK9v4ShjKf3Vk5Xcmgpw4o+iIgtrnM/u5FiMpz9VKb8lpBveA==
+comment-parser@1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/comment-parser/-/comment-parser-1.4.0.tgz#0f8c560f59698193854f12884c20c0e39a26d32c"
+  integrity sha512-QLyTNiZ2KDOibvFPlZ6ZngVsZ/0gYnE6uTXi5aoDg8ed3AkJAz4sEje3Y8a29hQ1s6A99MZXe47fLAXQ1rTqaw==
 
 commondir@^1.0.1:
   version "1.0.1"
@@ -2128,19 +2128,19 @@ eslint-plugin-import@2.27.5:
     semver "^6.3.0"
     tsconfig-paths "^3.14.1"
 
-eslint-plugin-jsdoc@46.2.6:
-  version "46.2.6"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-46.2.6.tgz#f25590d371859f20691d65b5dcd4cbe370d65564"
-  integrity sha512-zIaK3zbSrKuH12bP+SPybPgcHSM6MFzh3HFeaODzmsF1N8C1l8dzJ22cW1aq4g0+nayU1VMjmNf7hg0dpShLrA==
+eslint-plugin-jsdoc@^46.8.2:
+  version "46.8.2"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-46.8.2.tgz#3e6b1c93e91e38fe01874d45da121b56393c54a5"
+  integrity sha512-5TSnD018f3tUJNne4s4gDWQflbsgOycIKEUBoCLn6XtBMgNHxQFmV8vVxUtiPxAQq8lrX85OaSG/2gnctxw9uQ==
   dependencies:
-    "@es-joy/jsdoccomment" "~0.39.4"
+    "@es-joy/jsdoccomment" "~0.40.1"
     are-docs-informative "^0.0.2"
-    comment-parser "1.3.1"
+    comment-parser "1.4.0"
     debug "^4.3.4"
     escape-string-regexp "^4.0.0"
     esquery "^1.5.0"
     is-builtin-module "^3.2.1"
-    semver "^7.5.1"
+    semver "^7.5.4"
     spdx-expression-parse "^3.0.1"
 
 eslint-scope@^5.1.1:
@@ -4402,7 +4402,7 @@ saxes@^6.0.0:
   dependencies:
     xmlchars "^2.2.0"
 
-semver@7.x, semver@^7.3.5, semver@^7.3.7, semver@^7.5.1:
+semver@7.x, semver@^7.3.5, semver@^7.3.7:
   version "7.5.2"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.5.2.tgz#5b851e66d1be07c1cdaf37dfc856f543325a2beb"
   integrity sha512-SoftuTROv/cRjCze/scjGyiDtcUyxw1rgYQSZY7XTmtR5hX+dm76iDbTH8TkLPHCQmlbQVSSbNZCPM2hb0knnQ==
@@ -4413,6 +4413,13 @@ semver@^6.0.0, semver@^6.3.0:
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.0.tgz#ee0a64c8af5e8ceea67687b133761e1becbd1d3d"
   integrity sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==
+
+semver@^7.5.4:
+  version "7.5.4"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.5.4.tgz#483986ec4ed38e1c6c48c34894a9182dbff68a6e"
+  integrity sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==
+  dependencies:
+    lru-cache "^6.0.0"
 
 shebang-command@^2.0.0:
   version "2.0.0"

@@ -98,8 +98,10 @@ MessagesHandlerMV3
      * Starts the configuration process, keeping the promise to prevent multiple
      * initialize calls, and executes scripts after configuration.
      *
-     * @param config {@link Configuration} Configuration file which contains all
+     * @param config {@link ConfigurationMV3} Configuration object which contains all
      * needed information to start.
+     *
+     * @returns Promise resolved with {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[START]: start');
@@ -124,7 +126,7 @@ MessagesHandlerMV3
     /**
      * Fires on WebNavigation.onCommitted event.
      *
-     * @param item {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
+     * @param item Web navigation delails {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
      * @param item.tabId The ID of the tab in which the navigation occurred.
      * @param item.url The url of the tab in which the navigation occurred.
      */
@@ -147,7 +149,9 @@ MessagesHandlerMV3
      * tab urls to work correctly with domain blocking/allowing rules, for
      * example: cosmetic rules in iframes.
      *
-     * @param config {@link Configuration}.
+     * @param config {@link ConfigurationMV3} Configuration object to start with.
+     *
+     * @returns Promise resolved with {@link ConfigurationResult}.
      */
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[START]: is started ', this.isStarted);
@@ -197,7 +201,7 @@ MessagesHandlerMV3
      * declarative filtering log and restarts the engine to reload cosmetic
      * rules.
      *
-     * @param config {@link Configuration}.
+     * @param config A {@link ConfigurationMV3} to apply.
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown

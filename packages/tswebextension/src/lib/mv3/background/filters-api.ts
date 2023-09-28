@@ -22,6 +22,8 @@ export default class FiltersApi {
      *
      * @param disableFiltersIds Rule sets to disable.
      * @param enableFiltersIds Rule sets to enable.
+     *
+     * @returns Promise resolved with {@link UpdateStaticFiltersResult}.
      */
     static async updateFiltering(
         disableFiltersIds: number[],
@@ -69,6 +71,8 @@ export default class FiltersApi {
      *
      * @param id Filter id.
      * @param filtersPath Path to filters directory.
+     *
+     * @returns Promise resolved file content as a list of strings.
      */
     private static async loadFilterContent(id: number, filtersPath: string): Promise<string[]> {
         const filterName = getFilterName(id);
