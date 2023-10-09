@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { WebRequest } from 'webextension-polyfill';
-import { NetworkRule, NetworkRuleOption, RemoveHeaderModifier } from '@adguard/tsurlfilter';
+import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
 
 import {
     defaultFilteringLog,
@@ -59,10 +59,10 @@ export class RemoveHeadersService {
             let isAppliedRule = false;
             if (rule.isAllowlist()) {
                 // Allowlist rules must be applicable by header name to be logged
-                isAppliedRule = HeadersService
+                isAppliedRule = RemoveHeadersService
                     .isApplicableRemoveHeaderRule(requestHeaders, rule, true);
             } else {
-                isAppliedRule = HeadersService.applyRule(requestHeaders, rule, true);
+                isAppliedRule = RemoveHeadersService.applyRule(requestHeaders, rule, true);
                 if (!isModified && isAppliedRule) {
                     isModified = true;
                 }
@@ -127,10 +127,10 @@ export class RemoveHeadersService {
             let isAppliedRule = false;
             if (rule.isAllowlist()) {
                 // Allowlist rules must be applicable by header name to be logged
-                isAppliedRule = HeadersService
+                isAppliedRule = RemoveHeadersService
                     .isApplicableRemoveHeaderRule(responseHeaders, rule, false);
             } else {
-                isAppliedRule = HeadersService.applyRule(responseHeaders, rule, false);
+                isAppliedRule = RemoveHeadersService.applyRule(responseHeaders, rule, false);
                 if (!isModified && isAppliedRule) {
                     isModified = true;
                 }
@@ -175,7 +175,7 @@ export class RemoveHeadersService {
         rule: NetworkRule,
         isRequestHeaders: boolean,
     ): boolean {
-        const headerName = HeadersService.getApplicableHeaderName(rule, isRequestHeaders);
+        const headerName = RemoveHeadersService.getApplicableHeaderName(rule, isRequestHeaders);
         if (!headerName) {
             return false;
         }
@@ -196,7 +196,7 @@ export class RemoveHeadersService {
         rule: NetworkRule,
         isRequestHeaders: boolean,
     ): boolean {
-        const headerName = HeadersService.getApplicableHeaderName(rule, isRequestHeaders);
+        const headerName = RemoveHeadersService.getApplicableHeaderName(rule, isRequestHeaders);
         if (!headerName) {
             return false;
         }
