@@ -10,6 +10,7 @@
 
 import { NotImplementedError } from '../../errors/not-implemented-error';
 import { type Node } from '../../parser/common';
+import { type NodeConversionResult } from './conversion-result';
 import { ConverterBase } from './converter-base';
 
 /**
@@ -20,10 +21,12 @@ export class RuleConverterBase extends ConverterBase {
      * Converts an adblock filtering rule to AdGuard format, if possible.
      *
      * @param rule Rule node to convert
-     * @returns Array of converted rule nodes
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToAdg(rule: Node): Node[] {
+    public static convertToAdg(rule: Node): NodeConversionResult<Node> {
         throw new NotImplementedError();
     }
 
@@ -31,10 +34,12 @@ export class RuleConverterBase extends ConverterBase {
      * Converts an adblock filtering rule to Adblock Plus format, if possible.
      *
      * @param rule Rule node to convert
-     * @returns Array of converted rule nodes
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToAbp(rule: Node): Node[] {
+    public static convertToAbp(rule: Node): NodeConversionResult<Node> {
         throw new NotImplementedError();
     }
 
@@ -42,10 +47,12 @@ export class RuleConverterBase extends ConverterBase {
      * Converts an adblock filtering rule to uBlock Origin format, if possible.
      *
      * @param rule Rule node to convert
-     * @returns Array of converted rule nodes
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToUbo(rule: Node): Node[] {
+    public static convertToUbo(rule: Node): NodeConversionResult<Node> {
         throw new NotImplementedError();
     }
 }

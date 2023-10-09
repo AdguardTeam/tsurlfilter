@@ -2,8 +2,6 @@
  * @file Utility functions for working with scriptlet nodes
  */
 
-import cloneDeep from 'clone-deep';
-
 import { type ParameterList } from '../parser/common';
 import { type QuoteType, QuoteUtils } from '../utils/quotes';
 
@@ -23,22 +21,17 @@ export function getScriptletName(scriptletNode: ParameterList): string {
 }
 
 /**
- * Set name of the scriptlet
+ * Set name of the scriptlet.
+ * Modifies input `scriptletNode` if needed.
  *
  * @param scriptletNode Scriptlet node to set name of
  * @param name Name to set
- * @returns Scriptlet node with the specified name
- * @throws If the scriptlet is empty
  */
-export function setScriptletName(scriptletNode: ParameterList, name: string): ParameterList {
-    if (scriptletNode.children.length === 0) {
-        throw new Error('Empty scriptlet');
+export function setScriptletName(scriptletNode: ParameterList, name: string): void {
+    if (scriptletNode.children.length > 0) {
+        // eslint-disable-next-line no-param-reassign
+        scriptletNode.children[0].value = name;
     }
-
-    const scriptletNodeClone = cloneDeep(scriptletNode);
-    scriptletNodeClone.children[0].value = name;
-
-    return scriptletNodeClone;
 }
 
 /**
@@ -46,21 +39,15 @@ export function setScriptletName(scriptletNode: ParameterList, name: string): Pa
  *
  * @param scriptletNode Scriptlet node to set quote type of
  * @param quoteType Preferred quote type
- * @returns Scriptlet node with the specified quote type
  */
-export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): ParameterList {
-    if (scriptletNode.children.length === 0) {
-        throw new Error('Empty scriptlet');
+export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): void {
+    if (scriptletNode.children.length > 0) {
+        for (let i = 0; i < scriptletNode.children.length; i += 1) {
+            // eslint-disable-next-line no-param-reassign
+            scriptletNode.children[i].value = QuoteUtils.setStringQuoteType(
+                scriptletNode.children[i].value,
+                quoteType,
+            );
+        }
     }
-
-    const scriptletNodeClone = cloneDeep(scriptletNode);
-
-    for (let i = 0; i < scriptletNodeClone.children.length; i += 1) {
-        scriptletNodeClone.children[i].value = QuoteUtils.setStringQuoteType(
-            scriptletNodeClone.children[i].value,
-            quoteType,
-        );
-    }
-
-    return scriptletNodeClone;
 }

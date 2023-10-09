@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [0.3.22] - 2023-10-02
+
+### Fixed
+- AdGuard v4.2.168 is not working in the Firefox after update [#2501](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2501)
+
+## [0.3.21] - 2023-09-25
+
+### Fixed
+- Incorrect logging and applying of `$removeheader` allowlist rules.
+- Proceed anyway is not working for more than two level domains [#2497](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2497).
+
 
 ## Unreleased
 

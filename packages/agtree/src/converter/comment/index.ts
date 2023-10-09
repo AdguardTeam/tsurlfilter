@@ -2,11 +2,11 @@
  * @file Comment rule converter
  */
 
-import cloneDeep from 'clone-deep';
-
 import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../parser/common';
 import { SPACE } from '../../utils/constants';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
+import { clone } from '../../utils/clone';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
 
 /**
  * Comment rule converter class
@@ -18,33 +18,35 @@ export class CommentRuleConverter extends RuleConverterBase {
      * Converts a comment rule to AdGuard format, if possible.
      *
      * @param rule Rule node to convert
-     * @returns Array of converted rule nodes
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToAdg(rule: AnyCommentRule): AnyCommentRule[] {
-        // Clone the provided AST node to avoid side effects
-        const ruleNode = cloneDeep(rule);
-
+    public static convertToAdg(rule: AnyCommentRule): NodeConversionResult<AnyCommentRule> {
         // TODO: Add support for other comment types, if needed
         // Main task is # -> ! conversion
-        switch (ruleNode.type) {
+        switch (rule.type) {
             case CommentRuleType.CommentRule:
-                // 'Comment' uBO style comments
-                if (
-                    ruleNode.type === CommentRuleType.CommentRule
-                    && ruleNode.marker.value === CommentMarker.Hashmark
-                ) {
-                    ruleNode.marker.value = CommentMarker.Regular;
+                // Check if the rule needs to be converted
+                if (rule.type === CommentRuleType.CommentRule && rule.marker.value === CommentMarker.Hashmark) {
+                    // Add a ! to the beginning of the comment
+                    // TODO: Replace with custom clone method
+                    const ruleClone = clone(rule);
 
-                    // Add the hashmark to the beginning of the comment
-                    ruleNode.text.value = `${SPACE}${CommentMarker.Hashmark}${ruleNode.text.value}`;
+                    ruleClone.marker.value = CommentMarker.Regular;
+
+                    // Add the hashmark to the beginning of the comment text
+                    ruleClone.text.value = `${SPACE}${CommentMarker.Hashmark}${ruleClone.text.value}`;
+
+                    return createNodeConversionResult([ruleClone], true);
                 }
 
-                return [ruleNode];
+                return createNodeConversionResult([rule], false);
 
             // Leave any other comment rule as is
             default:
-                return [ruleNode];
+                return createNodeConversionResult([rule], false);
         }
     }
 }

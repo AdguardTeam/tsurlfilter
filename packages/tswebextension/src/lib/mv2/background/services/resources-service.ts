@@ -85,6 +85,8 @@ export class ResourcesService implements ResourcesServiceInterface {
      * Loads war resource by path.
      *
      * @param path Resource relative path.
+     *
+     * @returns Promise resolved with resource content as a string.
      */
     public async loadResource(path: string): Promise<string> {
         const url = this.createResourceUrl(path);

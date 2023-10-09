@@ -1,50 +1,96 @@
 import {
-    type CssNode,
-    List,
-    type PseudoClassSelector,
-    type SelectorList,
     walk,
+    find,
+    type SelectorListPlain,
+    type CssNodePlain,
+    type PseudoClassSelectorPlain,
 } from '@adguard/ecss-tree';
-import cloneDeep from 'clone-deep';
 
 import { CssTreeNodeType, CssTreeParserContext } from '../../utils/csstree-constants';
 import { CssTree } from '../../utils/csstree';
 import { EMPTY, EQUALS } from '../../utils/constants';
 import { LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
 import { ConverterBase } from '../base-interfaces/converter-base';
+import { clone } from '../../utils/clone';
+import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 
-// Constants for pseudo-classes (please keep them sorted alphabetically)
-const ABP_CONTAINS = '-abp-contains';
-const ABP_HAS = '-abp-has';
-const CONTAINS = 'contains';
-const HAS = 'has';
-const HAS_TEXT = 'has-text';
-const MATCHES_CSS = 'matches-css';
-const MATCHES_CSS_AFTER = 'matches-css-after';
-const MATCHES_CSS_BEFORE = 'matches-css-before';
-const NOT = 'not';
+const enum PseudoClasses {
+    AbpContains = '-abp-contains',
+    AbpHas = '-abp-has',
+    Contains = 'contains',
+    Has = 'has',
+    HasText = 'has-text',
+    MatchesCss = 'matches-css',
+    MatchesCssAfter = 'matches-css-after',
+    MatchesCssBefore = 'matches-css-before',
+    Not = 'not',
+}
 
-// Constants for pseudo-elements (please keep them sorted alphabetically)
-const AFTER = 'after';
-const BEFORE = 'before';
+const enum PseudoElements {
+    After = 'after',
+    Before = 'before',
+}
+
+const PSEUDO_ELEMENT_NAMES = new Set<string>([
+    PseudoElements.After,
+    PseudoElements.Before,
+]);
+
+const LEGACY_MATCHES_CSS_NAMES = new Set<string>([
+    PseudoClasses.MatchesCssAfter,
+    PseudoClasses.MatchesCssBefore,
+]);
+
+const LEGACY_EXT_CSS_INDICATOR_PSEUDO_NAMES = new Set<string>([
+    PseudoClasses.Not,
+    PseudoClasses.MatchesCssBefore,
+    PseudoClasses.MatchesCssAfter,
+]);
+
+const CSS_CONVERSION_INDICATOR_PSEUDO_NAMES = new Set<string>([
+    PseudoClasses.AbpContains,
+    PseudoClasses.AbpHas,
+    PseudoClasses.HasText,
+]);
 
 /**
  * Converts some pseudo-classes to pseudo-elements. For example:
  * - `:before` → `::before`
  *
  * @param selectorList Selector list to convert
- * @returns Converted selector list
+ * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+ * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+ * If the node was not converted, the result will contain the original node with the same object reference
  */
-export function convertToPseudoElements(selectorList: SelectorList): SelectorList {
-    // Prepare conversion result
-    const selectorListClone = cloneDeep(selectorList);
+export function convertToPseudoElements(selectorList: SelectorListPlain): ConversionResult<SelectorListPlain> {
+    // Check conversion indications before doing any heavy work
+    const hasIndicator = find(
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        selectorList as any,
+        (node) => node.type === CssTreeNodeType.PseudoClassSelector && PSEUDO_ELEMENT_NAMES.has(node.name),
+    );
 
-    walk(selectorListClone, {
-        leave: (node: CssNode) => {
+    if (!hasIndicator) {
+        return createConversionResult(selectorList, false);
+    }
+
+    // Make a clone of the selector list to avoid modifying the original one,
+    // then convert & return the cloned version
+    const selectorListClone = clone(selectorList);
+
+    // TODO: Need to improve CSSTree types, until then we need to use any type here
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    walk(selectorListClone as any, {
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        leave: (node: any) => {
             if (node.type === CssTreeNodeType.PseudoClassSelector) {
-                // :after  → ::after
-                // :before → ::before
-                if (node.name === AFTER || node.name === BEFORE) {
+                // If the pseudo-class is `:before` or `:after`, then we should
+                // convert the node type to pseudo-element:
+                //  :after  → ::after
+                //  :before → ::before
+                if (PSEUDO_ELEMENT_NAMES.has(node.name)) {
                     Object.assign(node, {
                         ...node,
                         type: CssTreeNodeType.PseudoElementSelector,
@@ -54,7 +100,7 @@ export function convertToPseudoElements(selectorList: SelectorList): SelectorLis
         },
     });
 
-    return selectorListClone;
+    return createConversionResult(selectorListClone, true);
 }
 
 /**
@@ -64,49 +110,45 @@ export function convertToPseudoElements(selectorList: SelectorList): SelectorLis
  * - `:matches-css-after(...)`  → `:matches-css(after, ...)`
  *
  * @param node Node to convert
+ * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+ * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+ * If the node was not converted, the result will contain the original node with the same object reference
  * @throws If the node is invalid
  */
-export function convertLegacyMatchesCss(node: CssNode): void {
-    const nodeClone = cloneDeep(node);
-
-    if (
-        nodeClone.type === CssTreeNodeType.PseudoClassSelector
-        && [MATCHES_CSS_BEFORE, MATCHES_CSS_AFTER].includes(nodeClone.name)
-    ) {
-        if (!nodeClone.children || nodeClone.children.size < 1) {
-            throw new Error(
-                `Invalid ${nodeClone.name} pseudo-class: missing argument`,
-            );
-        }
-
-        // Remove the 'matches-css-' prefix to get the direction
-        const direction = nodeClone.name.substring(MATCHES_CSS.length + 1);
-
-        // Rename the pseudo-class
-        nodeClone.name = MATCHES_CSS;
-
-        // Add the direction to the first raw argument
-        const arg = nodeClone.children.first;
-
-        // Check argument
-        if (!arg) {
-            throw new Error(
-                `Invalid ${nodeClone.name} pseudo-class: argument shouldn't be null`,
-            );
-        }
-
-        if (arg.type !== CssTreeNodeType.Raw) {
-            throw new Error(
-                `Invalid ${nodeClone.name} pseudo-class: unexpected argument type`,
-            );
-        }
-
-        // Add the direction as the first argument
-        arg.value = `${direction},${arg.value}`;
-
-        // Replace the original node with the converted one
-        Object.assign(node, nodeClone);
+export function convertLegacyMatchesCss(node: CssNodePlain): ConversionResult<CssNodePlain> {
+    // Check conversion indications before doing any heavy work
+    if (node.type !== CssTreeNodeType.PseudoClassSelector || !LEGACY_MATCHES_CSS_NAMES.has(node.name)) {
+        return createConversionResult(node, false);
     }
+
+    const nodeClone = clone(node) as PseudoClassSelectorPlain;
+
+    if (!nodeClone.children || nodeClone.children.length < 1) {
+        throw new Error(`Invalid ${node.name} pseudo-class: missing argument`);
+    }
+
+    // Rename the pseudo-class
+    nodeClone.name = PseudoClasses.MatchesCss;
+
+    // Remove the 'matches-css-' prefix to get the direction
+    const direction = node.name.substring(PseudoClasses.MatchesCss.length + 1);
+
+    // Add the direction to the first raw argument
+    const arg = nodeClone.children[0];
+
+    // Check argument
+    if (!arg) {
+        throw new Error(`Invalid ${node.name} pseudo-class: argument shouldn't be null`);
+    }
+
+    if (arg.type !== CssTreeNodeType.Raw) {
+        throw new Error(`Invalid ${node.name} pseudo-class: unexpected argument type`);
+    }
+
+    // Add the direction as the first argument
+    arg.value = `${direction},${arg.value}`;
+
+    return createConversionResult(nodeClone, true);
 }
 
 /**
@@ -117,17 +159,48 @@ export function convertLegacyMatchesCss(node: CssNode): void {
  * - `[-ext-matches-css-before=...]` → `:matches-css(before, ...)`
  *
  * @param selectorList Selector list AST to convert
- * @returns Converted selector list
+ * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+ * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+ * If the node was not converted, the result will contain the original node with the same object reference
  */
-export function convertFromLegacyExtendedCss(selectorList: SelectorList): SelectorList {
-    // Prepare conversion result
-    const selectorListClone = cloneDeep(selectorList);
+export function convertFromLegacyExtendedCss(selectorList: SelectorListPlain): ConversionResult<SelectorListPlain> {
+    // Check conversion indications before doing any heavy work
+    const hasIndicator = find(
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        selectorList as any,
+        (node) => {
+            if (node.type === CssTreeNodeType.PseudoClassSelector) {
+                return LEGACY_EXT_CSS_INDICATOR_PSEUDO_NAMES.has(node.name);
+            }
 
-    walk(selectorListClone, {
-        leave: (node: CssNode) => {
+            if (node.type === CssTreeNodeType.AttributeSelector) {
+                return node.name.name.startsWith(LEGACY_EXT_CSS_ATTRIBUTE_PREFIX);
+            }
+
+            return false;
+        },
+    );
+
+    if (!hasIndicator) {
+        return createConversionResult(selectorList, false);
+    }
+
+    const selectorListClone = clone(selectorList);
+
+    // TODO: Need to improve CSSTree types, until then we need to use any type here
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    walk(selectorListClone as any, {
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        leave: (node: any) => {
             // :matches-css-before(arg) → :matches-css(before,arg)
             // :matches-css-after(arg)  → :matches-css(after,arg)
-            convertLegacyMatchesCss(node);
+            const convertedLegacyExtCss = convertLegacyMatchesCss(node);
+
+            if (convertedLegacyExtCss.isConverted) {
+                Object.assign(node, convertedLegacyExtCss.result);
+            }
 
             // [-ext-name=...]   → :name(...)
             // [-ext-name='...'] → :name(...)
@@ -139,18 +212,14 @@ export function convertFromLegacyExtendedCss(selectorList: SelectorList): Select
             ) {
                 // Node value should be exist
                 if (!node.value) {
-                    throw new Error(
-                        `Invalid ${node.name} attribute selector: missing value`,
-                    );
+                    throw new Error(`Invalid ${node.name} attribute selector: missing value`);
                 }
 
                 // Remove the '-ext-' prefix to get the pseudo-class name
-                const name = node.name.name.substring(
-                    LEGACY_EXT_CSS_ATTRIBUTE_PREFIX.length,
-                );
+                const name = node.name.name.substring(LEGACY_EXT_CSS_ATTRIBUTE_PREFIX.length);
 
                 // Prepare the children list for the pseudo-class node
-                const children = new List<CssNode>();
+                const children: CssNodePlain[] = [];
 
                 // TODO: Change String node to Raw node to drop the quotes.
                 // The structure of the node is the same, just the type
@@ -165,7 +234,7 @@ export function convertFromLegacyExtendedCss(selectorList: SelectorList): Select
                 // For example, if the input is [-ext-has="> .selector"], then
                 // we need to parse "> .selector" as a selector instead of string
                 // it as a raw value
-                if ([HAS, NOT].includes(name)) {
+                if ([PseudoClasses.Has, PseudoClasses.Not].includes(name)) {
                     // Get the value of the attribute selector
                     const { value } = node;
 
@@ -175,14 +244,17 @@ export function convertFromLegacyExtendedCss(selectorList: SelectorList): Select
                         children.push(value);
                     } else if (value.type === CssTreeNodeType.String) {
                         // Parse the value as a selector
-                        const parsedChildren = CssTree.parse(
+                        const parsedChildren = CssTree.parsePlain(
                             value.value,
                             CssTreeParserContext.selectorList,
-                        ) as SelectorList;
+                        ) as SelectorListPlain;
 
                         // Don't forget convert the parsed AST again, because
                         // it was a raw string before
-                        children.push(convertFromLegacyExtendedCss(parsedChildren));
+                        const convertedChildren = convertFromLegacyExtendedCss(parsedChildren);
+
+                        // Push the converted children to the list
+                        children.push(convertedChildren.result);
                     }
                 } else {
                     let value = EMPTY;
@@ -204,23 +276,21 @@ export function convertFromLegacyExtendedCss(selectorList: SelectorList): Select
 
                 // Create a pseudo-class node with the data from the attribute
                 // selector
-                const pseudoNode: PseudoClassSelector = {
+                const pseudoNode: PseudoClassSelectorPlain = {
                     type: CssTreeNodeType.PseudoClassSelector,
                     name,
                     children,
                 };
 
                 // Handle this case: [-ext-matches-css-before=...] → :matches-css(before,...)
-                convertLegacyMatchesCss(pseudoNode);
+                const convertedPseudoNode = convertLegacyMatchesCss(pseudoNode);
 
-                // Convert attribute selector to pseudo-class selector, but
-                // keep the reference to the original node
-                Object.assign(node, pseudoNode);
+                Object.assign(node, convertedPseudoNode.isConverted ? convertedPseudoNode.result : pseudoNode);
             }
         },
     });
 
-    return selectorListClone;
+    return createConversionResult(selectorListClone, true);
 }
 
 /**
@@ -233,32 +303,51 @@ export class CssSelectorConverter extends ConverterBase {
      * Converts Extended CSS elements to AdGuard-compatible ones
      *
      * @param selectorList Selector list to convert
-     * @returns Converted selector list
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
      * @throws If the rule is invalid or incompatible
      */
-    public static convertToAdg(selectorList: SelectorList): SelectorList {
+    public static convertToAdg(selectorList: SelectorListPlain): ConversionResult<SelectorListPlain> {
         // First, convert
         //  - legacy Extended CSS selectors to the modern Extended CSS syntax and
         //  - some pseudo-classes to pseudo-elements
-        const selectorListClone = convertToPseudoElements(
-            convertFromLegacyExtendedCss(
-                cloneDeep(selectorList),
-            ),
+        const legacyExtCssConverted = convertFromLegacyExtendedCss(selectorList);
+        const pseudoElementsConverted = convertToPseudoElements(legacyExtCssConverted.result);
+
+        const hasIndicator = legacyExtCssConverted.isConverted || pseudoElementsConverted.isConverted || find(
+            // TODO: Need to improve CSSTree types, until then we need to use any type here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            selectorList as any,
+            // eslint-disable-next-line max-len
+            (node) => node.type === CssTreeNodeType.PseudoClassSelector && CSS_CONVERSION_INDICATOR_PSEUDO_NAMES.has(node.name),
         );
 
+        if (!hasIndicator) {
+            return createConversionResult(selectorList, false);
+        }
+
+        const selectorListClone = legacyExtCssConverted.isConverted || pseudoElementsConverted.isConverted
+            ? pseudoElementsConverted.result
+            : clone(selectorList);
+
         // Then, convert some Extended CSS pseudo-classes to AdGuard-compatible ones
-        walk(selectorListClone, {
-            leave: (node: CssNode) => {
+        // TODO: Need to improve CSSTree types, until then we need to use any type here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        walk(selectorListClone as any, {
+            // TODO: Need to improve CSSTree types, until then we need to use any type here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            leave: (node: any) => {
                 if (node.type === CssTreeNodeType.PseudoClassSelector) {
                     // :-abp-contains(...) → :contains(...)
                     // :has-text(...)      → :contains(...)
-                    if (node.name === ABP_CONTAINS || node.name === HAS_TEXT) {
-                        CssTree.renamePseudoClass(node, CONTAINS);
+                    if (node.name === PseudoClasses.AbpContains || node.name === PseudoClasses.HasText) {
+                        CssTree.renamePseudoClass(node, PseudoClasses.Contains);
                     }
 
                     // :-abp-has(...) → :has(...)
-                    if (node.name === ABP_HAS) {
-                        CssTree.renamePseudoClass(node, HAS);
+                    if (node.name === PseudoClasses.AbpHas) {
+                        CssTree.renamePseudoClass(node, PseudoClasses.Has);
                     }
 
                     // TODO: check uBO's `:others()` and `:watch-attr()` pseudo-classes
@@ -266,6 +355,6 @@ export class CssSelectorConverter extends ConverterBase {
             },
         });
 
-        return selectorListClone;
+        return createConversionResult(selectorListClone, true);
     }
 }

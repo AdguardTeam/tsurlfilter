@@ -74,6 +74,8 @@ export class MessagesApi implements MessagesApiInterface {
      *
      * @param message Message object.
      * @param sender Tab which sent the message.
+     *
+     * @returns Promise resolved with response to the message.
      */
     // TODO remove the rule bellow, and any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

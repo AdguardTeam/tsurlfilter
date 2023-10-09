@@ -2,10 +2,9 @@
  * @file Utility functions for working with modifier nodes
  */
 
-import cloneDeep from 'clone-deep';
-
 import { type Modifier, type ModifierList } from '../parser/common';
 import { isUndefined } from '../utils/common';
+import { clone } from '../utils/clone';
 
 /**
  * Creates a modifier node
@@ -45,7 +44,7 @@ export function createModifierListNode(modifiers: Modifier[] = []): ModifierList
     const result: ModifierList = {
         type: 'ModifierList',
         // We need to clone the modifiers to avoid side effects
-        children: cloneDeep(modifiers),
+        children: modifiers.length ? clone(modifiers) : [],
     };
 
     return result;

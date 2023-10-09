@@ -6,7 +6,7 @@ import { logger } from '../utils/logger';
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs-api';
 
-// eslint-disable-next-line jsdoc/require-param
+// eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns
 /**
  * @see {@link engineApi.getScriptsStringForUrl}
  */
@@ -15,7 +15,7 @@ const getScripts = async (url: string): Promise<string> => {
     return engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
 };
 
-// eslint-disable-next-line jsdoc/require-param
+// eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns
 /**
  * @see {@link engineApi.getScriptletsDataForUrl}
  */

@@ -335,7 +335,7 @@ export class CssInjectionBodyParser {
                             if (mediaQueryList || declarationList || remove) {
                                 throw new AdblockSyntaxError(
                                     // eslint-disable-next-line max-len
-                                    'Invalid selector, regular selector elements can\'t be used after special pseudo-classes',
+                                    'Invalid selector, regular selector elements cannot be used after special pseudo-classes',
                                     {
                                         start: node.loc?.start ?? loc,
                                         end: shiftLoc(loc, raw.length),

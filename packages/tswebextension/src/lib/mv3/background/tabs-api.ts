@@ -66,7 +66,7 @@ export class TabsApi {
     /**
      * Saves the main frame URL of the provided tab.
      *
-     * @param tab Item of {@link chrome.tabs.Tab}.
+     * @param tab A {@link chrome.tabs.Tab | tab}.
      */
     private createTabContext(tab: chrome.tabs.Tab): void {
         if (tab.id && tab.url) {
@@ -78,7 +78,7 @@ export class TabsApi {
      * Updates saved the main frame URL of the provided tab.
      *
      * @param tabId Tab id.
-     * @param changeInfo Item of {@link chrome.tabs.TabChangeInfo}.
+     * @param changeInfo Tab info to change {@link chrome.tabs.TabChangeInfo}.
      */
     private updateTabContext(
         tabId: number,

@@ -64,7 +64,8 @@ export class ParsedCookie {
     /**
      * Priority chrome only specs.
      * Isn't affected. Let it be here just in case.
-     * @see {@link https://bugs.chromium.org/p/chromium/issues/detail?id=232693}.
+     *
+     * @see {@link https://bugs.chromium.org/p/chromium/issues/detail?id=232693}
      */
     priority?: string;
 

@@ -2063,19 +2063,19 @@ describe('CssInjectionBodyParser', () => {
         expect(() => CssInjectionBodyParser.parse(
             'div:matches-media((min-width: 1000px)) div',
         )).toThrowError(
-            'Invalid selector, regular selector elements can\'t be used after special pseudo-classes',
+            'Invalid selector, regular selector elements cannot be used after special pseudo-classes',
         );
 
         expect(() => CssInjectionBodyParser.parse(
             'div:remove() div',
         )).toThrowError(
-            'Invalid selector, regular selector elements can\'t be used after special pseudo-classes',
+            'Invalid selector, regular selector elements cannot be used after special pseudo-classes',
         );
 
         expect(() => CssInjectionBodyParser.parse(
             'div:style(padding: 2px) div',
         )).toThrowError(
-            'Invalid selector, regular selector elements can\'t be used after special pseudo-classes',
+            'Invalid selector, regular selector elements cannot be used after special pseudo-classes',
         );
     });
 

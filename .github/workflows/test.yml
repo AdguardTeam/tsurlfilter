@@ -42,13 +42,15 @@ jobs:
 
           # tsurlfilter
           npx lerna@6 run --scope @adguard/tsurlfilter lint
-          npx lerna@6 run --scope @adguard/tsurlfilter test:prod
           npx lerna@6 run --scope @adguard/tsurlfilter build
+          # IMPORTANT: run tests after the build because smoke tests requires a built dist dir
+          npx lerna@6 run --scope @adguard/tsurlfilter test:prod
 
           # tswebextension
           npx lerna@6 run --scope @adguard/tswebextension lint
-          npx lerna@6 run --scope @adguard/tswebextension test:prod
           npx lerna@6 run --scope @adguard/tswebextension build
+          # IMPORTANT: run tests after the build because smoke tests requires a built dist dir
+          npx lerna@6 run --scope @adguard/tswebextension test:prod
 
           # api
           npx lerna@6 run --scope @adguard/api lint

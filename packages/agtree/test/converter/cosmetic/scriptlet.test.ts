@@ -1,6 +1,7 @@
 import { RuleParser } from '../../../src/parser/rule';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/parser/common';
+import '../../matchers/check-conversion';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -11,6 +12,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     '#%#//scriptlet(\'abp-abort-current-inline-script\')',
                 ],
+                shouldConvert: true,
             },
             // exception status should be kept
             {
@@ -18,6 +20,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     '#@%#//scriptlet(\'abp-abort-current-inline-script\')',
                 ],
+                shouldConvert: true,
             },
             // don't add prefix again if it's already there
             {
@@ -25,6 +28,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     '#%#//scriptlet(\'abp-abort-current-inline-script\')',
                 ],
+                shouldConvert: true,
             },
             // single scriptlet with parameters
             {
@@ -32,6 +36,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     '#%#//scriptlet(\'abp-override-property-read\', \'testProp\', \'false\')',
                 ],
+                shouldConvert: true,
             },
             // redundant semicolon at the end of the rule
             {
@@ -39,6 +44,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     '#%#//scriptlet(\'abp-override-property-read\', \'testProp\', \'false\')',
                 ],
+                shouldConvert: true,
             },
             // multiple scriptlets (ABP supports this, but ADG and uBO doesn't)
             {
@@ -48,12 +54,10 @@ describe('Scriptlet conversion', () => {
                     '#%#//scriptlet(\'abp-abort-current-inline-script\')',
                     '#%#//scriptlet(\'abp-override-property-read\', \'testProp\', \'false\')',
                 ],
+                shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected }) => {
-            // we can assume that the rule is valid
-            const ast = RuleParser.parse(actual) as ScriptletInjectionRule;
-            const result = ScriptletRuleConverter.convertToAdg(ast);
-            expect(result.map(RuleParser.generate)).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 
@@ -64,6 +68,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     'example.org#%#//scriptlet(\'ubo-aopr\', \'foo\')',
                 ],
+                shouldConvert: true,
             },
             // exception status should be kept
             {
@@ -71,6 +76,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     'example.org#@%#//scriptlet(\'ubo-aopr\', \'foo\')',
                 ],
+                shouldConvert: true,
             },
             // don't add prefix again if it's already there
             {
@@ -78,18 +84,17 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     'example.org#%#//scriptlet(\'ubo-aopr\', \'foo\')',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.org##+js(abort-current-inline-script, $, popup)',
                 expected: [
                     'example.org#%#//scriptlet(\'ubo-abort-current-inline-script\', \'$\', \'popup\')',
                 ],
+                shouldConvert: true,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected }) => {
-            // we can assume that the rule is valid
-            const ast = RuleParser.parse(actual) as ScriptletInjectionRule;
-            const result = ScriptletRuleConverter.convertToAdg(ast);
-            expect(result.map(RuleParser.generate)).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 
@@ -101,6 +106,7 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     'example.org#%#//scriptlet(\'abort-on-property-read\', \'foo\')',
                 ],
+                shouldConvert: false,
             },
             // leave quotes as is
             {
@@ -108,18 +114,17 @@ describe('Scriptlet conversion', () => {
                 expected: [
                     'example.org#%#//scriptlet("abort-on-property-read", "foo")',
                 ],
+                shouldConvert: false,
             },
             {
                 actual: 'example.org#%#//scriptlet(\'abort-current-inline-script\', \'$\', \'popup\')',
                 expected: [
                     'example.org#%#//scriptlet(\'abort-current-inline-script\', \'$\', \'popup\')',
                 ],
+                shouldConvert: false,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected }) => {
-            // we can assume that the rule is valid
-            const ast = RuleParser.parse(actual) as ScriptletInjectionRule;
-            const result = ScriptletRuleConverter.convertToAdg(ast);
-            expect(result.map(RuleParser.generate)).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
     });
 

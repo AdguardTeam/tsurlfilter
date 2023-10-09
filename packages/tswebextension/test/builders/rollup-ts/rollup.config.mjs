@@ -7,19 +7,12 @@ const cssHitsCounterConfig = {
         dir: 'dist',
         format: 'cjs',
     },
-    plugins: [typescript(), resolve()]
-};
-
-const backgroundConfig = {
-    input: 'src/background.ts',
-    output: {
-        dir: 'dist',
-        format: 'cjs'
-    },
-    plugins: [typescript(), resolve()]
+    plugins: [
+        typescript(),
+        resolve(),
+    ],
 };
 
 export default [
-    backgroundConfig,
     cssHitsCounterConfig,
 ];

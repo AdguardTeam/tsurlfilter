@@ -3,7 +3,6 @@
  */
 
 import { type SelectorPlain } from '@adguard/ecss-tree';
-import cloneDeep from 'clone-deep';
 
 import {
     CosmeticRuleSeparator,
@@ -17,6 +16,9 @@ import { CssTreeNodeType } from '../../utils/csstree-constants';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { RegExpUtils } from '../../utils/regexp';
+import { clone } from '../../utils/clone';
+import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
+import { cloneDomainListNode } from '../../ast-utils/clone';
 
 /**
  * From the AdGuard docs:
@@ -27,18 +29,23 @@ import { RegExpUtils } from '../../utils/regexp';
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
  */
-const ADGUARD_HTML_DEFAULT_MAX_LENGTH = 8192;
-const ADGUARD_HTML_CONVERSION_MAX_LENGTH = ADGUARD_HTML_DEFAULT_MAX_LENGTH * 32;
+const ADG_HTML_DEFAULT_MAX_LENGTH = 8192;
+const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
 
 const NOT_SPECIFIED = -1;
 
-const CONTAINS = 'contains';
-const HAS_TEXT = 'has-text';
-const MAX_LENGTH = 'max-length';
-const MIN_LENGTH = 'min-length';
-const MIN_TEXT_LENGTH = 'min-text-length';
-const TAG_CONTENT = 'tag-content';
-const WILDCARD = 'wildcard';
+const enum PseudoClasses {
+    Contains = 'contains',
+    HasText = 'has-text',
+    MinTextLength = 'min-text-length',
+}
+
+const enum AttributeSelectors {
+    MaxLength = 'max-length',
+    MinLength = 'min-length',
+    TagContent = 'tag-content',
+    Wildcard = 'wildcard',
+}
 
 /**
  * HTML filtering rule converter class
@@ -62,18 +69,26 @@ export class HtmlRuleConverter extends RuleConverterBase {
      * ```
      *
      * @param rule Rule node to convert
-     * @returns Array of converted rule nodes
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToAdg(rule: HtmlFilteringRule): HtmlFilteringRule[] {
-        // Clone the provided AST node to avoid side effects
-        const ruleNode = cloneDeep(rule);
+    public static convertToAdg(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
+        // Ignore AdGuard rules
+        if (rule.syntax === AdblockSyntax.Adg) {
+            return createNodeConversionResult([rule], false);
+        }
+
+        if (rule.syntax === AdblockSyntax.Abp) {
+            throw new RuleConversionError('Invalid rule, ABP does not support HTML filtering rules');
+        }
 
         // Prepare the conversion result
         const conversionResult: HtmlFilteringRule[] = [];
 
         // Iterate over selector list
-        for (const selector of ruleNode.body.body.children) {
+        for (const selector of rule.body.body.children) {
             // Check selector, just in case
             if (selector.type !== CssTreeNodeType.Selector) {
                 throw new RuleConversionError(`Expected selector, got '${selector.type}'`);
@@ -106,28 +121,28 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         }
 
                         // Simply store the tag selector
-                        convertedSelector.children.push(cloneDeep(node));
+                        convertedSelector.children.push(clone(node));
                         break;
 
                     case CssTreeNodeType.AttributeSelector:
                         // Check if the attribute selector is a special AdGuard attribute
                         switch (node.name.name) {
-                            case MIN_LENGTH:
+                            case AttributeSelectors.MinLength:
                                 minLength = CssTree.parseAttributeSelectorValueAsNumber(node);
                                 break;
 
-                            case MAX_LENGTH:
+                            case AttributeSelectors.MaxLength:
                                 maxLength = CssTree.parseAttributeSelectorValueAsNumber(node);
                                 break;
 
-                            case TAG_CONTENT:
-                            case WILDCARD:
+                            case AttributeSelectors.TagContent:
+                            case AttributeSelectors.Wildcard:
                                 CssTree.assertAttributeSelectorHasStringValue(node);
-                                convertedSelector.children.push(cloneDeep(node));
+                                convertedSelector.children.push(clone(node));
                                 break;
 
                             default:
-                                convertedSelector.children.push(cloneDeep(node));
+                                convertedSelector.children.push(clone(node));
                         }
 
                         break;
@@ -150,8 +165,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                         // Process the pseudo class based on its name
                         switch (node.name) {
-                            case HAS_TEXT:
-                            case CONTAINS:
+                            case PseudoClasses.HasText:
+                            case PseudoClasses.Contains:
                                 // Check if the argument is a RegExp
                                 if (RegExpUtils.isRegexPattern(arg.value)) {
                                     // TODO: Add some support for RegExp patterns later
@@ -161,7 +176,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                                 convertedSelector.children.push(
                                     CssTree.createAttributeSelectorNode(
-                                        TAG_CONTENT,
+                                        AttributeSelectors.TagContent,
                                         arg.value,
                                     ),
                                 );
@@ -169,7 +184,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 break;
 
                             // https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#subjectmin-text-lengthn
-                            case MIN_TEXT_LENGTH:
+                            case PseudoClasses.MinTextLength:
                                 minLength = CssTree.parsePseudoClassArgumentAsNumber(node);
                                 break;
 
@@ -187,7 +202,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
             if (minLength !== NOT_SPECIFIED) {
                 convertedSelector.children.push(
                     CssTree.createAttributeSelectorNode(
-                        MIN_LENGTH,
+                        AttributeSelectors.MinLength,
                         String(minLength),
                     ),
                 );
@@ -195,10 +210,10 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
             convertedSelector.children.push(
                 CssTree.createAttributeSelectorNode(
-                    MAX_LENGTH,
+                    AttributeSelectors.MaxLength,
                     String(
                         maxLength === NOT_SPECIFIED
-                            ? ADGUARD_HTML_CONVERSION_MAX_LENGTH
+                            ? ADG_HTML_CONVERSION_MAX_LENGTH
                             : maxLength,
                     ),
                 ),
@@ -213,7 +228,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 // Convert the separator based on the exception status
                 separator: {
                     type: 'Value',
-                    value: ruleNode.exception
+                    value: rule.exception
                         ? CosmeticRuleSeparator.AdgHtmlFilteringException
                         : CosmeticRuleSeparator.AdgHtmlFiltering,
                 },
@@ -229,11 +244,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         }],
                     },
                 },
-                exception: ruleNode.exception,
-                domains: ruleNode.domains,
+                exception: rule.exception,
+                domains: cloneDomainListNode(rule.domains),
             });
         }
 
-        return conversionResult;
+        return createNodeConversionResult(conversionResult, true);
     }
 }

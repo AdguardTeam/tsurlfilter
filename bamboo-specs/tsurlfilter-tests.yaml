@@ -36,8 +36,13 @@ Test:
             ls -alt
 
             npx lerna@6 bootstrap --scope @adguard/tsurlfilter --include-dependencies
-            npx lerna@6 run --scope @adguard/tsurlfilter test:prod
+
+            npx lerna@6 run --scope @adguard/tsurlfilter lint
+
             npx lerna@6 run --scope @adguard/tsurlfilter build
+
+            # IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
+            npx lerna@6 run --scope @adguard/tsurlfilter test:prod
 
             # cleanup parent
             rm -rf node_modules

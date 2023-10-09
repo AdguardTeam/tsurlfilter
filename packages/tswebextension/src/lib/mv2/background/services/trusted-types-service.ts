@@ -1,5 +1,5 @@
 import { WebRequest } from 'webextension-polyfill';
-import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { CosmeticResult } from '@adguard/tsurlfilter';
 import {
     type RequestContext,
     requestContextStorage,
@@ -46,7 +46,7 @@ export class TrustedTypesService {
     /**
      * Allows for creating Trusted Types policies with a name that was already used.
      *
-     * Related:
+     * Related:.
      *
      *
      * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/trusted-types}
@@ -100,9 +100,9 @@ export class TrustedTypesService {
 
     /**
      * Modifies the value of CSP directive:
-     * 1. if there are no `value` or if `value` contains only `'none'` —
+     * 1. If there are no `value` or if `value` contains only `'none'` —
      *    returns `AGPolicy` and `'allow-duplicates'` combined;
-     * 2. otherwise — adds `AGPolicy` and `'allow-duplicates'` to the directive value.
+     * 2. Otherwise — adds `AGPolicy` and `'allow-duplicates'` to the directive value..
      *
      * @param value CSP directive value.
      *

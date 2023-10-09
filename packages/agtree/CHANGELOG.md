@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
 
+## 1.1.6 - 2023-09-22
+
+### Changed
+
+- Converter now returns an object with `result` and `isConverted` properties instead of just `result`
+- Filter list converter now accepts a second argument `tolerant` which allows to convert filter lists with invalid rules
+
+### Added
+
+- `RawRuleConverter` class for converting raw rules
+- `RawFilterListConverter` class for converting raw filter lists
+
+### Fixed
+
+- Improved converter's performance
+
 ## 1.1.5 - 2023-09-05
 
 ### Changed

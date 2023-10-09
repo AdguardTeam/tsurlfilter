@@ -7690,6 +7690,8 @@ var MessageType;
  * @param message Message to send.
  * @param message.payload Payload of the message.
  * @param message.type Message type.
+ *
+ * @returns Promise with some answer from message handler.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sendAppMessage = (message) => __awaiter(void 0, void 0, void 0, function* () {

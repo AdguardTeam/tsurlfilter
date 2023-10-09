@@ -79,10 +79,8 @@ export { RuleConversionError } from './errors/rule-conversion-error';
 // Validator
 export { modifierValidator } from './validator';
 
-// Converter
-// TODO: In a later stage, we should consider exporting some helpers as well
-export { RuleConverter } from './converter';
-export { FilterListConverter } from './converter/filter-list';
+// Export converter's entry point
+export * from './converter';
 
 // Utils
 export {

@@ -82,7 +82,7 @@
  * headers based on                    ┌─┤      onHeadersReceived      │ ││
  * {@link MatchingResult}.             │ │                             │ ││
  * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ ││
- * for CSP headers:                    │                                 ││
+ * for CSP headers:                    │                                 ││.
  * @see {@link TrustedTypesService}.   │                                 ││
  *                                     │                                 ││
  *                                     │                                 ││

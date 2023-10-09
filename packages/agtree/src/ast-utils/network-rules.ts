@@ -2,11 +2,10 @@
  * @file Utility functions for working with network rule nodes
  */
 
-import cloneDeep from 'clone-deep';
-
 import { isUndefined } from '../utils/common';
 import { type ModifierList, type NetworkRule, RuleCategory } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
+import { clone } from '../utils/clone';
 
 /**
  * Creates a network rule node
@@ -35,7 +34,7 @@ export function createNetworkRuleNode(
     };
 
     if (!isUndefined(modifiers)) {
-        result.modifiers = cloneDeep(modifiers);
+        result.modifiers = clone(modifiers);
     }
 
     return result;

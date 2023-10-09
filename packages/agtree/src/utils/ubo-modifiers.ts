@@ -18,7 +18,6 @@ import {
     type SelectorPlain,
     type Selector,
 } from '@adguard/ecss-tree';
-import cloneDeep from 'clone-deep';
 
 import { type ModifierList } from '../parser/common';
 import { createModifierNode } from '../ast-utils/modifiers';
@@ -26,6 +25,7 @@ import { CssTreeNodeType } from './csstree-constants';
 import { SPACE } from './constants';
 import { CssTree } from './csstree';
 import { isUndefined } from './common';
+import { clone } from './clone';
 
 const UBO_MODIFIERS_INDICATOR = ':matches-';
 const MATCHES_PATH_OPERATOR = 'matches-path';
@@ -85,8 +85,9 @@ export function hasUboModifierIndicator(rawSelectorList: string): boolean {
  * @returns Linked list based selector
  */
 function convertSelectorToLinkedList(selector: AnySelector): Selector {
+    // TODO: Need to improve CSSTree types, until then we need to use any type here
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return fromPlainObject(cloneDeep(selector as any)) as Selector;
+    return fromPlainObject(clone(selector as any)) as Selector;
 }
 
 /**
@@ -97,8 +98,9 @@ function convertSelectorToLinkedList(selector: AnySelector): Selector {
  * @returns Linked list based selector list
  */
 function convertSelectorListToLinkedList(selectorList: AnySelectorList): SelectorList {
+    // TODO: Need to improve CSSTree types, until then we need to use any type here
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return fromPlainObject(cloneDeep(selectorList as any)) as SelectorList;
+    return fromPlainObject(clone(selectorList as any)) as SelectorList;
 }
 
 /**

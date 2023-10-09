@@ -95,6 +95,8 @@ export default class RuleSetsLoaderApi {
      * Loads the number of declarative rules for provided rule set id.
      *
      * @param ruleSetId Rule set id.
+     *
+     * @returns Promise resolved with number of declarative rules.
      */
     private async loadRulesCounter(ruleSetId: string): Promise<number> {
         const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${RULES_COUNT_FILENAME}`);
@@ -108,6 +110,8 @@ export default class RuleSetsLoaderApi {
      * Loads the number of regexp declarative rules for provided rule set id.
      *
      * @param ruleSetId Rule set id.
+     *
+     * @returns Promise resolved with number of regexp declarative rules.
      */
     private async loadRegexpRulesCounter(ruleSetId: string): Promise<number> {
         const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${REGEXP_RULES_COUNT_FILENAME}`);

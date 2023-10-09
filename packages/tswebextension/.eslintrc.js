@@ -11,12 +11,10 @@ module.exports = {
     plugins: [
         'import',
         '@typescript-eslint',
-        'jsdoc',
     ],
     extends: [
         'airbnb-base',
         'airbnb-typescript/base',
-        'plugin:@typescript-eslint/recommended',
         'plugin:jsdoc/recommended',
     ],
     ignorePatterns: ['dist', 'coverage'],
@@ -73,6 +71,7 @@ module.exports = {
                 ],
             },
         ],
-        'jsdoc/require-description-complete-sentence': ['warn'],
+        'jsdoc/require-description-complete-sentence': ['error'],
+        'jsdoc/require-returns': ['error'],
     },
 };

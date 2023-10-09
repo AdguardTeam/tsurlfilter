@@ -3,7 +3,7 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 
 import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
-import { FrameRequestContext, TabContext, type TabInfo } from './tab-context';
+import { FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
 
 /**
@@ -64,7 +64,11 @@ export class TabsApi {
         browser.tabs.onActivated.addListener(this.handleTabActivate);
         browser.tabs.onReplaced.addListener(this.handleTabReplace);
 
-        browser.windows.onFocusChanged.addListener(this.onWindowFocusChanged);
+        // Firefox for android doesn't support windows API
+        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/windows#browser_compatibility
+        if (browser.windows) {
+            browser.windows.onFocusChanged.addListener(this.onWindowFocusChanged);
+        }
     }
 
     /**
@@ -76,7 +80,10 @@ export class TabsApi {
         browser.tabs.onUpdated.removeListener(this.handleTabUpdate);
         browser.tabs.onActivated.removeListener(this.handleTabActivate);
 
-        browser.windows.onFocusChanged.removeListener(this.onWindowFocusChanged);
+        // Firefox for android doesn't support windows API
+        if (browser.windows) {
+            browser.windows.onFocusChanged.removeListener(this.onWindowFocusChanged);
+        }
 
         this.context.clear();
     }

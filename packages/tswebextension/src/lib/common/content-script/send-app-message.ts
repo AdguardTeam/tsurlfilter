@@ -10,7 +10,7 @@ import { MessageType, MESSAGE_HANDLER_NAME } from '../message-constants';
  * @param message.payload Payload of the message.
  * @param message.type Message type.
  *
- * @returns Promise with some answer from message handler.
+ * @returns Promise resolved with response from the background page.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const sendAppMessage = async (message: { type: MessageType, payload?: unknown }): Promise<any> => {

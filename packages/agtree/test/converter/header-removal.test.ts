@@ -1,11 +1,21 @@
 import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal';
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
 import { RuleParser } from '../../src/parser/rule';
+import '../matchers/check-conversion';
 
 describe('HeaderRemovalRuleConverter', () => {
     describe('uBO to ADG', () => {
         // Valid rules
         test.each([
+            // Leave non-header removal rules as is
+            {
+                actual: '##+js(foo)',
+                expected: [
+                    '##+js(foo)',
+                ],
+                shouldConvert: false,
+            },
+
             // No domain
             {
                 actual: '##^responseheader(header-name)',
@@ -33,21 +43,12 @@ describe('HeaderRemovalRuleConverter', () => {
                     '@@||example.com^$removeheader=header-name',
                 ],
             },
-        ])("should convert '$actual' to '$expected'", ({ actual, expected }) => {
-            expect(
-                HeaderRemovalRuleConverter.convertToAdg(
-                    RuleParser.parse(actual),
-                ).map(RuleParser.generate),
-            ).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(HeaderRemovalRuleConverter, 'convertToAdg');
         });
 
         // Invalid rules
         test.each([
-            // Invalid rule type
-            {
-                actual: '##+js(foo)',
-                expected: 'Not a response header rule',
-            },
             // TODO: Add support for multiple domains
             // Currently, we don't support multiple domains
             {

@@ -1,6 +1,7 @@
 import { HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { type HtmlFilteringRule } from '../../../src/parser/common';
 import { RuleParser } from '../../../src/parser/rule';
+import '../../matchers/check-conversion';
 
 describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -40,9 +41,7 @@ describe('HtmlRuleConverter', () => {
             },
         ])('should throw \'$expected\' for \'$actual\'', ({ actual, expected }) => {
             expect(() => {
-                HtmlRuleConverter.convertToAdg(
-                    RuleParser.parse(actual) as HtmlFilteringRule,
-                );
+                HtmlRuleConverter.convertToAdg(RuleParser.parse(actual) as HtmlFilteringRule);
             }).toThrowError(expected);
         });
 
@@ -56,48 +55,56 @@ describe('HtmlRuleConverter', () => {
                 expected: [
                     'example.com,~example.net$$div[max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^div[attr]',
                 expected: [
                     'example.com,~example.net$$div[attr][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^div[attr="val"]',
                 expected: [
                     'example.com,~example.net$$div[attr="val"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^div[attr-1][attr-2="val"]',
                 expected: [
                     'example.com,~example.net$$div[attr-1][attr-2="val"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^div[attr-1][attr-2="val"][attr-3]',
                 expected: [
                     'example.com,~example.net$$div[attr-1][attr-2="val"][attr-3][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^script:has-text(12313)',
                 expected: [
                     'example.com,~example.net$$script[tag-content="12313"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^script:has-text(console.log("doubles"))',
                 expected: [
                     'example.com,~example.net$$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^script[data-test]:has-text(12313)',
                 expected: [
                     'example.com,~example.net$$script[data-test][tag-content="12313"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net##^script[data-test="1"][data-test2="2"]:has-text(12313)',
@@ -105,12 +112,14 @@ describe('HtmlRuleConverter', () => {
                     // eslint-disable-next-line max-len
                     'example.com,~example.net$$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: "example.com,~example.net##^script:has-text(d.createElement('script'))",
                 expected: [
                     'example.com,~example.net$$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: "example.com,~example.net##^script:has-text(d.createElement('script')):min-text-length(1234)",
@@ -118,6 +127,7 @@ describe('HtmlRuleConverter', () => {
                     // eslint-disable-next-line max-len
                     'example.com,~example.net$$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
 
             // UBO → ADG, exception rules
@@ -126,48 +136,56 @@ describe('HtmlRuleConverter', () => {
                 expected: [
                     'example.com,~example.net$@$div[max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^div[attr]',
                 expected: [
                     'example.com,~example.net$@$div[attr][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^div[attr="val"]',
                 expected: [
                     'example.com,~example.net$@$div[attr="val"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^div[attr-1][attr-2="val"]',
                 expected: [
                     'example.com,~example.net$@$div[attr-1][attr-2="val"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^div[attr-1][attr-2="val"][attr-3]',
                 expected: [
                     'example.com,~example.net$@$div[attr-1][attr-2="val"][attr-3][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^script:has-text(12313)',
                 expected: [
                     'example.com,~example.net$@$script[tag-content="12313"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^script:has-text(console.log("doubles"))',
                 expected: [
                     'example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^script[data-test]:has-text(12313)',
                 expected: [
                     'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: 'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
@@ -175,12 +193,14 @@ describe('HtmlRuleConverter', () => {
                     // eslint-disable-next-line max-len
                     'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
                 expected: [
                     'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
             {
                 actual: "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
@@ -188,6 +208,7 @@ describe('HtmlRuleConverter', () => {
                     // eslint-disable-next-line max-len
                     'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
 
             // UBO → ADG, exception rules, with multiple selectors
@@ -198,6 +219,7 @@ describe('HtmlRuleConverter', () => {
                     'example.com,~example.net$@$div[attr-1][attr-2="value-2"][max-length="262144"]',
                     'example.com,~example.net$@$script[max-length="262144"]',
                 ],
+                shouldConvert: true,
             },
 
             // ADG → ADG
@@ -206,6 +228,7 @@ describe('HtmlRuleConverter', () => {
                 expected: [
                     'example.com,~example.net$@$div[max-length="262144"]',
                 ],
+                shouldConvert: false,
             },
             {
                 // eslint-disable-next-line max-len
@@ -213,6 +236,7 @@ describe('HtmlRuleConverter', () => {
                 expected: [
                     'example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]',
                 ],
+                shouldConvert: false,
             },
             {
                 // eslint-disable-next-line max-len
@@ -221,17 +245,10 @@ describe('HtmlRuleConverter', () => {
                     // eslint-disable-next-line max-len
                     'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
                 ],
+                shouldConvert: false,
             },
-        ])('should convert \'$actual\' to \'$expected\'', ({ actual, expected }) => {
-            const conversionResult = HtmlRuleConverter.convertToAdg(
-                RuleParser.parse(actual) as HtmlFilteringRule,
-            );
-
-            // We should get as many rules as we expect
-            expect(conversionResult).toHaveLength(expected.length);
-
-            // We should get the expected rules
-            expect(conversionResult.map(RuleParser.generate)).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(HtmlRuleConverter, 'convertToAdg');
         });
     });
 

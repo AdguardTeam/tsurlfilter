@@ -34,7 +34,7 @@ export class BrowserCookieApi {
      *
      * @param cookie Cookie for update.
      *
-     * @returns Promise with result of operation.
+     * @returns Promise resolved with true if cookie was updated, false otherwise.
      */
     async modifyCookie(cookie: ParsedCookie): Promise<boolean> {
         try {

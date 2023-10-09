@@ -1,6 +1,7 @@
 import { NetworkRuleConverter } from '../../../src/converter/network';
 import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
 import { NetworkRuleParser } from '../../../src/parser/network';
+import '../../matchers/check-conversion';
 
 describe('NetworkRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -9,16 +10,19 @@ describe('NetworkRuleConverter', () => {
             {
                 actual: 'example.com',
                 expected: ['example.com'],
+                shouldConvert: false,
             },
             {
                 actual: '||example.com/image.png',
                 expected: ['||example.com/image.png'],
+                shouldConvert: false,
             },
 
             // Leave unknown modifiers as is
             {
                 actual: 'example.com$aaa',
                 expected: ['example.com$aaa'],
+                shouldConvert: false,
             },
             {
                 actual: 'example.com$aaa,1p,bbb',
@@ -197,6 +201,7 @@ describe('NetworkRuleConverter', () => {
                 expected: [
                     '||example.com/resource$redirect=this-redirect-name-does-not-exist',
                 ],
+                shouldConvert: false,
             },
 
             // Convert modifier but leave redirect name unchanged because it is unknown
@@ -214,12 +219,14 @@ describe('NetworkRuleConverter', () => {
                 expected: [
                     '||example.com/resource$redirect=1x1-transparent.gif',
                 ],
+                shouldConvert: false,
             },
             {
                 actual: '||example.com/resource$image,redirect=1x1-transparent.gif',
                 expected: [
                     '||example.com/resource$image,redirect=1x1-transparent.gif',
                 ],
+                shouldConvert: false,
             },
 
             // Should handle $redirect-rule
@@ -228,6 +235,7 @@ describe('NetworkRuleConverter', () => {
                 expected: [
                     '||example.com/resource$redirect-rule=1x1-transparent.gif',
                 ],
+                shouldConvert: false,
             },
 
             // Should convert uBO redirect names to ADG redirect names
@@ -256,6 +264,7 @@ describe('NetworkRuleConverter', () => {
                 expected: [
                     '||example.com/resource$script,redirect=outbrain-widget.js',
                 ],
+                shouldConvert: false,
             },
 
             // Should convert ABP -> ADG
@@ -279,12 +288,8 @@ describe('NetworkRuleConverter', () => {
                     '||example.com/resource$script,redirect=noopjs',
                 ],
             },
-        ])("should convert '$actual' to '$expected'", ({ actual, expected }) => {
-            expect(
-                NetworkRuleConverter.convertToAdg(
-                    NetworkRuleParser.parse(actual),
-                ).map(NetworkRuleParser.generate),
-            ).toEqual(expected);
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToAdg');
         });
 
         // Invalid rules
@@ -318,9 +323,7 @@ describe('NetworkRuleConverter', () => {
             },
         ])("should throw '$expected' for '$actual'", ({ actual, expected }) => {
             expect(() => {
-                NetworkRuleConverter.convertToAdg(
-                    NetworkRuleParser.parse(actual),
-                );
+                NetworkRuleConverter.convertToAdg(NetworkRuleParser.parse(actual));
             }).toThrow(new RuleConversionError(expected));
         });
     });

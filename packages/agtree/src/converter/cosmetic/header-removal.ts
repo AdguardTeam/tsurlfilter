@@ -2,16 +2,8 @@
  * @file Converter for request header removal rules
  */
 
-import cloneDeep from 'clone-deep';
-import { type FunctionNode, fromPlainObject } from '@adguard/ecss-tree';
-
 import { RuleConversionError } from '../../errors/rule-conversion-error';
-import {
-    CosmeticRuleType,
-    RuleCategory,
-    type AnyRule,
-    type NetworkRule,
-} from '../../parser/common';
+import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../parser/common';
 import { CssTreeNodeType } from '../../utils/csstree-constants';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
@@ -20,6 +12,7 @@ import { EMPTY } from '../../utils/constants';
 import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 
 export const UBO_RESPONSEHEADER_MARKER = 'responseheader';
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
@@ -34,36 +27,44 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
      * Converts a header removal rule to AdGuard syntax, if possible.
      *
      * @param rule Rule node to convert
-     * @returns Array of converted rule nodes
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
+     * @example
+     * If the input rule is:
+     * ```adblock
+     * example.com##^responseheader(header-name)
+     * ```
+     * The output will be:
+     * ```adblock
+     * ||example.com^$removeheader=header-name
+     * ```
      */
-    public static convertToAdg(rule: AnyRule): NetworkRule[] {
-        // Clone the provided AST node to avoid side effects
-        const ruleNode = cloneDeep(rule);
-
+    public static convertToAdg(rule: AnyRule): NodeConversionResult<AnyRule> {
         // TODO: Add support for ABP syntax once it starts supporting header removal rules
-        // Check the input rule
+        // Leave the rule as is if it's not a header removal rule
         if (
-            ruleNode.category !== RuleCategory.Cosmetic
-            || ruleNode.type !== CosmeticRuleType.HtmlFilteringRule
-            || ruleNode.body.body.type !== CssTreeNodeType.Function
-            || ruleNode.body.body.name !== UBO_RESPONSEHEADER_MARKER
+            rule.category !== RuleCategory.Cosmetic
+            || rule.type !== CosmeticRuleType.HtmlFilteringRule
+            || rule.body.body.type !== CssTreeNodeType.Function
+            || rule.body.body.name !== UBO_RESPONSEHEADER_MARKER
         ) {
-            throw new RuleConversionError('Not a response header rule');
+            return createNodeConversionResult([rule], false);
         }
 
         // Prepare network rule pattern
-        let pattern = EMPTY;
+        const pattern: string[] = [];
 
-        if (ruleNode.domains.children.length === 1) {
+        if (rule.domains.children.length === 1) {
             // If the rule has only one domain, we can use a simple network rule pattern:
             // ||single-domain-from-the-rule^
-            pattern = [
+            pattern.push(
                 ADBLOCK_URL_START,
-                ruleNode.domains.children[0].value,
+                rule.domains.children[0].value,
                 ADBLOCK_URL_SEPARATOR,
-            ].join(EMPTY);
-        } else if (ruleNode.domains.children.length > 1) {
+            );
+        } else if (rule.domains.children.length > 1) {
             // TODO: Add support for multiple domains, for example:
             // example.com,example.org,example.net##^responseheader(header-name)
             // We should consider allowing $domain with $removeheader modifier,
@@ -78,21 +79,22 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
         modifiers.children.push(
             createModifierNode(
                 ADG_REMOVEHEADER_MODIFIER,
-                CssTree.generateFunctionValue(
-                    fromPlainObject(ruleNode.body.body) as FunctionNode,
-                ),
+                CssTree.generateFunctionPlainValue(rule.body.body),
             ),
         );
 
         // Construct the network rule
-        return [
-            createNetworkRuleNode(
-                pattern,
-                modifiers,
-                // Copy the exception flag
-                ruleNode.exception,
-                AdblockSyntax.Adg,
-            ),
-        ];
+        return createNodeConversionResult(
+            [
+                createNetworkRuleNode(
+                    pattern.join(EMPTY),
+                    modifiers,
+                    // Copy the exception flag
+                    rule.exception,
+                    AdblockSyntax.Adg,
+                ),
+            ],
+            true,
+        );
     }
 }
