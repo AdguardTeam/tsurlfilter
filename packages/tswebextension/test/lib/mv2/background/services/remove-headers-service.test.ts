@@ -1,6 +1,11 @@
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import {
+    MatchingResult,
+    NetworkRule,
+    RequestType,
+    HTTPMethod,
+} from '@adguard/tsurlfilter';
 import { RemoveHeadersService } from '@lib/mv2/background/services/remove-headers-service';
-import { RequestContext } from '@lib/mv2/background/request';
+import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
 import { FilteringEventType, ContentType } from '@lib/common';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
@@ -19,6 +24,10 @@ describe('Headers service', () => {
     };
 
     const getContextTemplate = (): RequestContext => ({
+        requestId: 'request_1',
+        eventId: 'event_1',
+        state: RequestContextState.BeforeRequest,
+        method: HTTPMethod.GET,
         requestUrl: 'https://example.org',
         referrerUrl: 'https://example.org',
         requestType: RequestType.Document,
@@ -31,18 +40,16 @@ describe('Headers service', () => {
         matchingResult: new MatchingResult([], null),
         requestHeaders: [requestHeader],
         responseHeaders: [responseHeader],
-    } as RequestContext);
+    });
 
     let context: RequestContext;
 
-    let context = getContext();
-
     const runOnBeforeSendHeaders = (): boolean => {
-        return headersService.onBeforeSendHeaders(context);
+        return removeHeadersService.onBeforeSendHeaders(context);
     };
 
     const runOnHeadersReceived = (): boolean => {
-        return headersService.onHeadersReceived(context);
+        return removeHeadersService.onHeadersReceived(context);
     };
 
     beforeEach(() => {
