@@ -12,10 +12,10 @@
   resolved "https://registry.yarnpkg.com/@adguard/extended-css/-/extended-css-2.0.52.tgz#f5e7c3df1796deb96404a1b6441e7a4c729f09ac"
   integrity sha512-T77MnFD/+A3q93MNEq13qPUXPQRBeOUO9LRyqslcaz7jD5qMcikX1nx436u3PXdZXZpa6R0nnwXQ7wwScDmVgw==
 
-"@adguard/filters-downloader@^1.1.15":
-  version "1.1.15"
-  resolved "https://registry.yarnpkg.com/@adguard/filters-downloader/-/filters-downloader-1.1.15.tgz#1c7aff400566e99c39ebf809d83f60f8fb337304"
-  integrity sha512-1WoBi/CgHd1XJ+GLy7MFfHIqFfaOEqxR+n8P7/eGO98EvSoTSklwSnrY3CmhPLQMlwJtIpAtYdZSJQ1anfGM2Q==
+"@adguard/filters-downloader@^1.1.20":
+  version "1.1.20"
+  resolved "https://registry.yarnpkg.com/@adguard/filters-downloader/-/filters-downloader-1.1.20.tgz#f54b3a0b96e41bf73ffd910eb6d9547c821cd0b0"
+  integrity sha512-8ChY076/YOemqU/IqF5nZwH0vM486czE1gzbgAmnCMfAFQRizyRUeWR/d0LK2y7yKKuo4QikKamFY/VOLR/3hg==
   dependencies:
     axios "^0.21.1"
 
@@ -27,10 +27,10 @@
     "@babel/runtime" "^7.20.13"
     js-yaml "^3.13.1"
 
-"@adguard/tsurlfilter@^2.1.11":
-  version "2.1.11"
-  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-2.1.11.tgz#9d034f556deaf4bf2bf2beed6564eb0472438f44"
-  integrity sha512-OUlwlPttBIzpjVwriMwEMdy18UnLviwMxpyJOpAKThX5NHNoIAwpT/x5PSy4z5rIln+vz+xpb5tCXD5FcQXqkg==
+"@adguard/tsurlfilter@^2.1.12":
+  version "2.1.12"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-2.1.12.tgz#d4152a35656d67e3ddcd52779ee706bb2ddc0d48"
+  integrity sha512-MnrXzDU4KuYVhbauj4L8rPdJUpyfQkR1mZabNiSQVdLbIqWZrfLMeTIQcE3IQ918YuE/iOAvUoZRGiAK3f2OCg==
   dependencies:
     "@adguard/scriptlets" "^1.9.72"
     cidr-tools "^6.4.1"
@@ -42,15 +42,15 @@
     tldts "5.6.45"
     zod "3.19.1"
 
-"@adguard/tswebextension@^0.3.10":
-  version "0.3.16"
-  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.3.16.tgz#b29c5f55c009ebbb9811e6e6b6d68162979cbf16"
-  integrity sha512-moz/6EsIgnDs1sNAeL2Q5JGuuPMg7HCKhlvaPN9PPMReeUJcDdosz5C2HAA+l+rw4bcPWRllliueq8WuNcpbfg==
+"@adguard/tswebextension@^0.3.21":
+  version "0.3.22"
+  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.3.22.tgz#33bdbc477519a3058046637589b5e52474293ccb"
+  integrity sha512-fp0HbO5vkR5P2kvPBsX1oI4IDXV5gvh72474UXxRElPtKAdq/SIOLLqvsWEuW9mwwjYgnQAwFTfJJl8b9dlzXQ==
   dependencies:
     "@adguard/assistant" "^4.3.70"
     "@adguard/extended-css" "^2.0.52"
     "@adguard/scriptlets" "^1.9.72"
-    "@adguard/tsurlfilter" "^2.1.11"
+    "@adguard/tsurlfilter" "^2.1.12"
     bowser "2.11.0"
     commander "11.0.0"
     fs-extra "11.1.1"
