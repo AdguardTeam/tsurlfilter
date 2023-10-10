@@ -267,12 +267,14 @@ export class CookieFiltering {
      */
     // eslint-disable-next-line class-methods-use-this
     private recordCookieEvent(
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         tabId: number,
         cookie: ParsedCookie,
         requestUrl: string,
         rule: NetworkRule,
         isModifyingCookieRule: boolean,
         requestThirdParty: boolean,
+        /* eslint-enable @typescript-eslint/no-unused-vars */
     ): void { }
 }
 

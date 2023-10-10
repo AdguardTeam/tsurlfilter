@@ -43,6 +43,7 @@ export const runCookieController = async (): Promise<void> => {
 
         cookieController.apply(response);
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.error(e);
         /**
          * Content script injected on in every frame, but document cookie API in

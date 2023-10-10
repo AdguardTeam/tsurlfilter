@@ -224,9 +224,14 @@ export class MessagesApi {
     /**
      * Calculates matching result based on provided urls.
      *
-     * @param referrer
-     * @param url
-     * @param sender
+     * @param url Current URL of document.
+     * @param referrer The URL of the location that referred the user
+     * to the current page.
+     * @param sender An object containing information about the script context
+     * that sent a message or request.
+     *
+     * @returns Null or matched result from engine if request has been matched
+     * by some rule.
      */
     private static calculateMatchingResult(
         url: string,
