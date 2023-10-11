@@ -88,35 +88,3 @@ export const buildScriptText = (scriptText: string): string => {
                 waitParent();\
             })()`;
 };
-
-// TODO: TSUrlFilterContentScript has been removed from tsurlfilter bundle
-/**
- * Builds script to be injected into the page and applying extended css rules.
- *
- * @param extendedCssRules Array of extended css rules.
- * @returns Script to inject.
- */
-export const buildExtendedCssScriptText = (extendedCssRules: string[]): string => {
-    // extended css rules is array
-    // so it should be injected into built script string as stringified array
-    const injectedExtCssRules = JSON.stringify(extendedCssRules);
-    return `(function() {
-                // Init css hits counter
-                const cssHitsCounter = new CssHitsCounter((stats) => {
-                    console.debug('Css stats ready');
-                    console.debug(stats);
-
-                    chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
-                });
-
-                // Apply extended css rules
-                const cssRules = ${injectedExtCssRules};
-                const extendedCss = new ExtendedCss({
-                    cssRules,
-                    beforeStyleApplied: (el) => {
-                        return cssHitsCounter.countAffectedByExtendedCss(el);
-                    }
-                });
-                extendedCss.apply();
-            })()`;
-};

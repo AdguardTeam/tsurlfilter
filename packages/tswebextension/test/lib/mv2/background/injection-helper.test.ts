@@ -1,4 +1,4 @@
-import { buildExtendedCssScriptText, buildScriptText } from '@lib/mv2/background/injection-helper';
+import { buildScriptText } from '@lib/mv2/background/injection-helper';
 
 const timestamp = Date.now();
 
@@ -52,32 +52,5 @@ describe('Injection Helper', () => {
         const expected = expectedScriptTemplate('alert(\\"hello\\");\\n\\\\u2028\\u2029');
 
         expect(trim(buildScriptText(scriptText))).toBe(trim(expected));
-    });
-
-    it('build extended css script text', () => {
-        const extendedCss = ['h1:contains(Example){display:none!important;}'];
-
-        /* eslint-disable no-useless-escape */
-        const expected = `(function() {
-            // Init css hits counter
-            const cssHitsCounter = new CssHitsCounter((stats) => {
-                console.debug('Css stats ready');
-                console.debug(stats);
-
-                chrome.runtime.sendMessage({type: "saveCssHitStats", stats: JSON.stringify(stats)});
-            });
-
-            // Apply extended css rules
-            const cssRules = [\"h1:contains(Example){display:none!important;}\"];
-            const extendedCss = new ExtendedCss({
-                cssRules,
-                beforeStyleApplied: (el) => {
-                    return cssHitsCounter.countAffectedByExtendedCss(el);
-                }
-            });
-            extendedCss.apply();
-        })()`;
-        /* eslint-enable no-useless-escape */
-        expect(trim(buildExtendedCssScriptText(extendedCss))).toBe(trim(expected));
     });
 });
