@@ -62,6 +62,11 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
     ruleSets: IRuleSet[] = [];
 
     /**
+     * Is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
+     */
+    private isListening = false;
+
+    /**
      * Returns converted declarative json rule, original text rule,
      * filter name and id.
      *
@@ -80,7 +85,7 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
         }
 
         const sourceRules = await ruleSet.getRulesById(ruleId);
-        const { declarativeRules } = await ruleSet.serialize();
+        const declarativeRules = await ruleSet.getDeclarativeRules();
         const declarativeRule = declarativeRules.find((r) => r.id === ruleId);
         const declarativeRuleJson = declarativeRule && JSON.stringify(declarativeRule);
 
@@ -134,9 +139,11 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
     public start = (): void => {
         // onRuleMatchedDebug can be null if the extension is running
         // as a packed version
-        if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
+        if (chrome.declarativeNetRequest.onRuleMatchedDebug && !this.isListening) {
             const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
             onRuleMatchedDebug.addListener(this.addNewRecord);
+
+            this.isListening = true;
         }
     };
 
@@ -151,6 +158,8 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
         if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
             const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
             onRuleMatchedDebug.removeListener(this.addNewRecord);
+
+            this.isListening = false;
         }
     };
 

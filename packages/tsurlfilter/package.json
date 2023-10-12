@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tsurlfilter",
-  "version": "2.1.12",
+  "version": "2.2.0",
   "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
   "main": "dist/es/index.js",
   "module": "dist/es/index.js",
@@ -78,7 +78,7 @@
     "precommit": "lint-staged",
     "prepublishOnly": "yarn build",
     "increment": "yarn version --patch --no-git-tag-version",
-    "examples": "ts-node tasks/generate-examples"
+    "examples": "node -r esbuild-register tasks/generate-examples"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
@@ -101,8 +101,8 @@
     "@rollup/plugin-json": "4.1.0",
     "@rollup/plugin-node-resolve": "13.3.0",
     "@rollup/plugin-typescript": "8.3.4",
-    "@swc/core": "^1.3.75",
-    "@swc/jest": "^0.2.29",
+    "@swc/core": "1.3.75",
+    "@swc/jest": "0.2.29",
     "@types/ip6addr": "0.2.3",
     "@types/jest": "29.5.3",
     "@types/netmask": "1.0.30",
@@ -112,6 +112,8 @@
     "@typescript-eslint/eslint-plugin": "5.33.0",
     "@typescript-eslint/parser": "5.33.0",
     "coveralls": "3.1.1",
+    "esbuild": "^0.19.3",
+    "esbuild-register": "^3.5.0",
     "eslint": "8.21.0",
     "eslint-config-airbnb-typescript": "17.0.0",
     "eslint-plugin-import": "2.26.0",

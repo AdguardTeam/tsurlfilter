@@ -1,4 +1,4 @@
-import { IndexedRule } from '../../rule';
+import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { ConvertedRules } from '../converted-result';
 
 import { DeclarativeRuleConverter } from './abstract-rule-converter';
@@ -21,7 +21,7 @@ export class BadFilterRulesConverter extends DeclarativeRuleConverter {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         filterId: number,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        rules: IndexedRule[],
+        rules: IndexedNetworkRuleWithHash[],
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         offsetId: number,
     ): ConvertedRules {

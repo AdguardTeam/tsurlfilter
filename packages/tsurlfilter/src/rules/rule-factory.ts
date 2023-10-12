@@ -4,6 +4,7 @@ import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
 import { logger } from '../utils/logger';
+import { getErrorMessage } from '../common/error';
 
 /**
  * Rule builder class
@@ -65,7 +66,7 @@ export class RuleFactory {
                 return new NetworkRule(line, filterListId);
             }
         } catch (e) {
-            const msg = `"${(e as Error).message}" in the rule: "${line}"`;
+            const msg = `"${getErrorMessage(e)}" in the rule: "${line}"`;
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {

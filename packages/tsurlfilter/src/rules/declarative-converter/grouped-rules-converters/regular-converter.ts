@@ -1,4 +1,4 @@
-import { IndexedRule } from '../../rule';
+import type { IndexedNetworkRuleWithHash } from '..';
 import { ConvertedRules } from '../converted-result';
 
 import { DeclarativeRuleConverter } from './abstract-rule-converter';
@@ -14,14 +14,14 @@ export class RegularRulesConverter extends DeclarativeRuleConverter {
      * Converts ungrouped, basic indexed rules into declarative rules.
      *
      * @param filterId Filter id.
-     * @param rules List of indexed rules.
+     * @param rules List of indexed network rules with hash.
      * @param offsetId Offset for the IDs of the converted rules.
      *
      * @returns Converted rules.
      */
     public convert(
         filterId: number,
-        rules: IndexedRule[],
+        rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
     ): ConvertedRules {
         return this.convertRules(filterId, rules, offsetId);

@@ -91,14 +91,12 @@ describe('Creating request', () => {
     });
 
     it('handles empty hostname', () => {
-        expect(() => new Request('', 'example.com', RequestType.Other)).not.toThrow();
+        let f = () => new Request('', 'example.com', RequestType.Other);
+        expect(f).not.toThrow();
 
-        try {
-            // @ts-ignore
-            new Request(undefined, 'example.com', RequestType.Other);
-        } catch (e) {
-            expect(e).toBeInstanceOf(TypeError);
-            expect(e.message).toMatch(/Invalid request url:/);
-        }
+        // @ts-ignore
+        f = () => new Request(undefined, 'example.com', RequestType.Other);
+        expect(f).toThrow(TypeError);
+        expect(f).toThrow(/Invalid request url:/);
     });
 });

@@ -18,6 +18,7 @@ import {
 import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { getHost } from '../../common/utils';
+import { getErrorMessage } from '../../common/error';
 import { logger } from '../utils/logger';
 
 import { ConfigurationMV3 } from './configuration';
@@ -84,7 +85,16 @@ class EngineApi {
             lists.push(new StringRuleList(filter.getId(), convertedContent));
         });
 
-        await Promise.all(tasks);
+        try {
+            await Promise.all(tasks);
+        } catch (e) {
+            const filterListIds = filters.map((f) => f.getId());
+
+            // eslint-disable-next-line max-len
+            logger.error(`Cannot create StringRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
+
+            // Do not return value here because we can try to convert at least user rules.
+        }
 
         // Wrap user rules to StringRuleList
         if (userrules.length > 0) {

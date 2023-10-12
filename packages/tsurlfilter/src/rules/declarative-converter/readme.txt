@@ -7,6 +7,93 @@
 ! <br />
 !
 ! # MV3 specific limitations
+! ## $badfilter
+! In current implementation rules with `$badfilter` works across all filters.
+! From these three filters:
+! ```adblock
+! !filter 1
+! ||example.org^
+! ```
+! ```adblock
+! !filter 2
+! ||example.com^
+! ||example.com^$badfilter
+! ||example.org^$badfilter
+! ||persistent.com^
+! ```
+! ```adblock
+! !filter3
+! ||example.org^$badfilter
+! ```
+!
+! Output result will contain only one rule:
+! ```json
+! {
+!   id: ruleId,
+!   action: { type: 'block' },
+!   condition: {
+!       urlFilter: '||persistent.com^',
+!       isUrlFilterCaseSensitive: false,
+!   },
+!   priority: 1,
+! }
+! ```
+!
+! <b> Please note </b> that in the current approach, the application of
+! `$badfilter` rules affects the filtering process, but we do not currently
+! display this in the declarative filtering log, as declarative rules are canceled.
+!
+! ### Problem 1
+! But current algorithm not covers rules with `$domain` instersections, for example,
+! for these two rules:
+! ```adblock
+! /some$domain=example.com|example.org
+! /some$domain=example.com,badfilter
+! ```
+! rule with `$badfilter` will fully negated first rule and output array of
+! declarative rules will be empty.
+!
+! ### Problem 2
+! Also, sometimes, several raw rules combined into one declarative rules, for example:
+! ```adblock
+! ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
+! ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
+! ```adblock
+! vvvvvvv
+! ```json
+! {
+!     "id": 1,
+!     "action": {
+!         "type": "redirect",
+!         "redirect": { "transform": {"queryTransform": {"removeParams": [ "p1case1", "p2case1", ] } } }
+!     },
+!     "condition": {
+!         "urlFilter": "||testcases.adguard.com",
+!         "resourceTypes": [
+!             "xmlhttprequest"
+!         ],
+!         "isUrlFilterCaseSensitive": false
+!     },
+!     "priority": 101
+! }
+! ```
+! If we add rule `||testcases.adguard.com$xmlhttprequest,removeparam=p2case1,badfilter`
+! it will cancel not only one raw rule and regerate declarative, but cancel full
+! (combined from two raw rules) declarative rule:
+! ```adblock
+! !filter 1
+! ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
+! ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
+! ```
+! ```adblock
+! !filter 2
+! ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1,badfilter
+! ```
+! vvvvvvv
+! ```json
+! { }
+! ```
+!
 ! ## allowrules
 ! Allowrules currently are not supported for these modifiers:
 ! 1. some specific exceptions: `$genericblock`, `$jsinject`, `$urlblock`, `$content`, `$stealth`.
@@ -371,8 +458,8 @@ page$domain=targetdomain.com|~example.org
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! Works only within the scope of one static filter or within the scope of all
-! dynamic rules (custom filters and user rules).
+! In current implementation it works across all filters, but it not covers
+! rules with $domain instersections.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

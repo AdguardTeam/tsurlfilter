@@ -1,18 +1,12 @@
 import {
-    DeclarativeRule,
     IFilter,
     IRuleSet,
     RuleSet,
-    IRuleSetContentProvider,
-    ISourceMap,
-    SourceMap,
-    FILTER_LIST_IDS_FILENAME_JSON,
-    REGEXP_RULES_COUNT_FILENAME,
-    RULES_COUNT_FILENAME,
-    SOURCE_MAP_FILENAME_JSON,
-    DeclarativeRuleValidator,
+    METADATA_FILENAME,
+    LAZY_METADATA_FILENAME,
+    IndexedNetworkRuleWithHash,
+    RulesHashMap,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { z as zod } from 'zod';
 
 /**
  * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
@@ -34,94 +28,6 @@ export default class RuleSetsLoaderApi {
     }
 
     /**
-     * Loads source map for provided rule set id.
-     *
-     * @param ruleSetId Rule set id.
-     *
-     * @returns An {@link ISourceMap} that contains the relationships between
-     * the converted rules and the source rules (with filter identifiers).
-     */
-    private async loadSourceMap(ruleSetId: string): Promise<ISourceMap> {
-        const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${SOURCE_MAP_FILENAME_JSON}`);
-        const file = await fetch(url);
-        const fileText = await file.text();
-        const sources = SourceMap.deserializeSources(fileText);
-
-        return new SourceMap(sources);
-    }
-
-    /**
-     * Filters the provided list of source filters and leaves only those filters
-     * that match the provided rule set identifier.
-     *
-     * @param ruleSetId Rule set id.
-     * @param filterList List of source {@link IFilter|filters}.
-     *
-     * @throws Error when the IDs of the loaded filters associated with
-     * the rule set are not numbers.
-     *
-     * @returns Filtered list of source {@link IFilter|filters} associated with
-     * this set of rules.
-     */
-    private async adjustFilterList(ruleSetId: string, filterList: IFilter[]): Promise<IFilter[]> {
-        const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${FILTER_LIST_IDS_FILENAME_JSON}`);
-        const file = await fetch(url);
-        const json = await file.json();
-        const filterIds = zod.number().array().parse(json);
-
-        return filterList.filter((filter) => filterIds.includes(filter.getId()));
-    }
-
-    /**
-     * Loads declarative rules for provided rule set id.
-     *
-     * @param ruleSetId Rule set id.
-     *
-     * @throws Error if the loaded rules are not {@link DeclarativeRule}.
-     *
-     * @returns List with {@link DeclarativeRule} belonging to a specified
-     * rule set.
-     */
-    private async loadDeclarativeRules(ruleSetId: string): Promise<DeclarativeRule[]> {
-        const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`);
-        const file = await fetch(url);
-        const json = await file.json();
-        const rules = DeclarativeRuleValidator.array().parse(json);
-
-        return rules;
-    }
-
-    /**
-     * Loads the number of declarative rules for provided rule set id.
-     *
-     * @param ruleSetId Rule set id.
-     *
-     * @returns Promise resolved with number of declarative rules.
-     */
-    private async loadRulesCounter(ruleSetId: string): Promise<number> {
-        const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${RULES_COUNT_FILENAME}`);
-        const file = await fetch(url);
-        const fileText = await file.text();
-
-        return Number.parseInt(fileText, 10);
-    }
-
-    /**
-     * Loads the number of regexp declarative rules for provided rule set id.
-     *
-     * @param ruleSetId Rule set id.
-     *
-     * @returns Promise resolved with number of regexp declarative rules.
-     */
-    private async loadRegexpRulesCounter(ruleSetId: string): Promise<number> {
-        const url = chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${REGEXP_RULES_COUNT_FILENAME}`);
-        const file = await fetch(url);
-        const fileText = await file.text();
-
-        return Number.parseInt(fileText, 10);
-    }
-
-    /**
      * Creates a new {@link IRuleSet} from the provided ID and list of
      * {@link IFilter|filters} with lazy loading of this rule set contents.
      *
@@ -134,15 +40,53 @@ export default class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
-        const ruleSetContent: IRuleSetContentProvider = {
-            getSourceMap: () => this.loadSourceMap(ruleSetId),
-            getFilterList: () => this.adjustFilterList(ruleSetId, filterList),
-            getDeclarativeRules: () => this.loadDeclarativeRules(ruleSetId),
+        const loadFileText = async (url: string): Promise<string> => {
+            const file = await fetch(url);
+
+            return file.text();
         };
 
-        const rulesCount = await this.loadRulesCounter(ruleSetId);
-        const regexpRulesCount = await this.loadRegexpRulesCounter(ruleSetId);
+        const rawData = await loadFileText(
+            chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${METADATA_FILENAME}`),
+        );
+        const loadLazyData = (): Promise<string> => loadFileText(
+            chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${LAZY_METADATA_FILENAME}`),
+        );
+        const loadDeclarativeRules = (): Promise<string> => loadFileText(
+            chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`),
+        );
 
-        return new RuleSet(ruleSetId, rulesCount, regexpRulesCount, ruleSetContent);
+        const {
+            data: {
+                regexpRulesCount,
+                rulesCount,
+                ruleSetHashMapRaw,
+                badFilterRulesRaw,
+            },
+            ruleSetContentProvider,
+        } = await RuleSet.deserialize(
+            ruleSetId,
+            rawData,
+            loadLazyData,
+            loadDeclarativeRules,
+            filterList,
+        );
+
+        const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
+        const ruleSetHashMap = new RulesHashMap(sources);
+        // We don't need filter id and line index because this
+        // indexedRulesWithHash will be used only for matching $badfilter rules.
+        const badFilterRules = badFilterRulesRaw
+            .map((rawString) => IndexedNetworkRuleWithHash.createFromRawString(0, 0, rawString))
+            .flat();
+
+        return new RuleSet(
+            ruleSetId,
+            rulesCount,
+            regexpRulesCount,
+            ruleSetContentProvider,
+            badFilterRules,
+            ruleSetHashMap,
+        );
     }
 }

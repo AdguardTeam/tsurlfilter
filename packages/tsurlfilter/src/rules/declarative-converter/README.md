@@ -1,6 +1,9 @@
 # Table of contents
 1. [Description](#description)
 1. [MV3 specific limitations](#mv3_specific_limitations)
+    1. [$badfilter](#mv3_specific_limitations__$badfilter)
+        1. [Problem 1](#mv3_specific_limitations__$badfilter__problem_1)
+        1. [Problem 2](#mv3_specific_limitations__$badfilter__problem_2)
     1. [allowrules](#mv3_specific_limitations__allowrules)
     1. [$document](#mv3_specific_limitations__$document)
     1. [$removeparam, $removeheader, $csp](#mv3_specific_limitations__$removeparam__$removeheader__$csp)
@@ -70,6 +73,96 @@ For a full description of each modifier, see the knowledgebase https://adguard.c
 
 <a name="mv3_specific_limitations"></a>
 # MV3 specific limitations
+<a name="mv3_specific_limitations__$badfilter"></a>
+## $badfilter
+In current implementation rules with `$badfilter` works across all filters.
+From these three filters:
+```adblock
+!filter 1
+||example.org^
+```
+```adblock
+!filter 2
+||example.com^
+||example.com^$badfilter
+||example.org^$badfilter
+||persistent.com^
+```
+```adblock
+!filter3
+||example.org^$badfilter
+```
+
+Output result will contain only one rule:
+```json
+{
+  id: ruleId,
+  action: { type: 'block' },
+  condition: {
+      urlFilter: '||persistent.com^',
+      isUrlFilterCaseSensitive: false,
+  },
+  priority: 1,
+}
+```
+
+<b> Please note </b> that in the current approach, the application of
+`$badfilter` rules affects the filtering process, but we do not currently
+display this in the declarative filtering log, as declarative rules are canceled.
+
+<a name="mv3_specific_limitations__$badfilter__problem_1"></a>
+### Problem 1
+But current algorithm not covers rules with `$domain` instersections, for example,
+for these two rules:
+```adblock
+/some$domain=example.com|example.org
+/some$domain=example.com,badfilter
+```
+rule with `$badfilter` will fully negated first rule and output array of
+declarative rules will be empty.
+
+<a name="mv3_specific_limitations__$badfilter__problem_2"></a>
+### Problem 2
+Also, sometimes, several raw rules combined into one declarative rules, for example:
+```adblock
+||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
+||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
+```adblock
+vvvvvvv
+```json
+{
+    "id": 1,
+    "action": {
+        "type": "redirect",
+        "redirect": { "transform": {"queryTransform": {"removeParams": [ "p1case1", "p2case1", ] } } }
+    },
+    "condition": {
+        "urlFilter": "||testcases.adguard.com",
+        "resourceTypes": [
+            "xmlhttprequest"
+        ],
+        "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+}
+```
+If we add rule `||testcases.adguard.com$xmlhttprequest,removeparam=p2case1,badfilter`
+it will cancel not only one raw rule and regerate declarative, but cancel full
+(combined from two raw rules) declarative rule:
+```adblock
+!filter 1
+||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
+||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
+```
+```adblock
+!filter 2
+||testcases.adguard.com$xmlhttprequest,removeparam=p1case1,badfilter
+```
+vvvvvvv
+```json
+{ }
+```
+
 <a name="mv3_specific_limitations__allowrules"></a>
 ## allowrules
 Allowrules currently are not supported for these modifiers:
@@ -2097,7 +2190,7 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 			],
 			"isUrlFilterCaseSensitive": false
 		},
-		"priority": 56
+		"priority": 55
 	}
 ]
 
@@ -2108,8 +2201,8 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 <br/>
 <b>MV3 limitations:</b>
 <br/>
-Works only within the scope of one static filter or within the scope of all
-dynamic rules (custom filters and user rules).
+In current implementation it works across all filters, but it not covers
+rules with $domain instersections.
 <br/>
 <b>Examples:</b>
 <br/>
