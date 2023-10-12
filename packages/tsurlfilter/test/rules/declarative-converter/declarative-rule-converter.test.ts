@@ -1326,9 +1326,9 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     describe('check $cookie', () => {
-        it('converts $cookie rules without params', () => {
+        it('converts $cookie rules without params', async () => {
             const filterId = 0;
-            const rules = createRulesFromText(
+            const filter = await createFilter(
                 filterId,
                 ['||example.com$cookie'],
             );
@@ -1336,7 +1336,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
             } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
+                [filter],
             );
             expect(declarativeRules.length).toBe(1);
             expect(declarativeRules[0]).toEqual({
@@ -1361,14 +1361,14 @@ describe('DeclarativeRuleConverter', () => {
             });
         });
 
-        it('decline conversion $cookie rules with parameters', () => {
+        it('decline conversion $cookie rules with parameters', async () => {
             const filterId = 0;
             const rulesText = [
                 '||example.com$cookie=lang',
                 '||example.com$cookie=user;maxAge=3600',
                 '||example.com$cookie=utm;maxAge=3600;sameSite=lax',
             ];
-            const rules = createRulesFromText(
+            const filter = await createFilter(
                 filterId,
                 rulesText,
             );
@@ -1377,7 +1377,7 @@ describe('DeclarativeRuleConverter', () => {
                 declarativeRules,
                 errors,
             } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
+                [filter],
             );
             expect(errors.length).toBe(3);
 
@@ -1645,9 +1645,9 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     describe('check $permissions', () => {
-        it('converts $permissions rule', () => {
+        it('converts $permissions rule', async () => {
             const filterId = 0;
-            const rules = createRulesFromText(
+            const filter = await createFilter(
                 filterId,
                 ['||example.org^$permissions=autoplay=()'],
             );
@@ -1655,7 +1655,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
             } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
+                [filter],
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
@@ -1677,9 +1677,9 @@ describe('DeclarativeRuleConverter', () => {
             });
         });
 
-        it('converts several $permissions directives', () => {
+        it('converts several $permissions directives', async () => {
             const filterId = 0;
-            const rules = createRulesFromText(
+            const filter = await createFilter(
                 filterId,
                 [
                     '$domain=example.org|example.com,permissions=storage-access=()\\, сamera=()',
@@ -1687,7 +1687,7 @@ describe('DeclarativeRuleConverter', () => {
             );
 
             const { declarativeRules } = DeclarativeRulesConverter.convert(
-                [[filterId, rules]],
+                [filter],
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
