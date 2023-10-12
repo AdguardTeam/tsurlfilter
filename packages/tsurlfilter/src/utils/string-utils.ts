@@ -145,32 +145,25 @@ export function hasUnquotedSubstring(str: string, substr: string): boolean {
 /**
  * djb2 hash algorithm
  *
- * @param str string to get hash
- * @param begin index from
- * @param end index to
- * @return {number} hash
- */
-export function fastHashBetween(str: string, begin: number, end: number): number {
-    let hash = 5381;
-    for (let idx = begin; idx < end; idx += 1) {
-        hash = 33 * hash + str.charCodeAt(idx);
-    }
-
-    return hash;
-}
-/**
- * djb2 hash algorithm
+ * NOTE: This version uses some bit operands to exclude overflow MAX_SAFE_INTEGER
+ * (and moreover, exclude overflow 2^32).
+ *
+ * @see {@link https://gist.github.com/eplawless/52813b1d8ad9af510d85?permalink_comment_id=3367765#gistcomment-3367765}
  *
  * @param str string to get hash
  * @return {number} hash
  */
 export function fastHash(str: string): number {
-    if (str === '') {
+    if (str.length === 0) {
         return 0;
     }
 
-    const len = str.length;
-    return fastHashBetween(str, 0, len);
+    let hash = 5381;
+
+    for (let i = 0; i < str.length; i += 1) {
+        hash = hash * 33 ^ str.charCodeAt(i);
+    }
+    return hash >>> 0;
 }
 
 /**

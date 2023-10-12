@@ -1,38 +1,115 @@
+/* eslint-disable jsdoc/require-description-complete-sentence  */
 /**
- * @file Describes the conversion process from {@link IndexedRule} to
- * declarative rules {@link DeclarativeRule} via applying $badfilter-rules
+ * @file Describes the conversion process from {@link IndexedNetworkRuleWithHash}
+ * to declarative rules {@link DeclarativeRule} via applying $badfilter-rules
  * {@link DeclarativeRulesConverter#applyBadFilter} and checks for specified
  * limitations {@link DeclarativeRulesConverter#checkLimitations}.
+ *
+ *                                                                           Conversion
+ *
+ *
+ *
+ *
+ *       Two entry points        │                FilterConverter             │             RulesConverter
+ *                               │                                            │
+ *                               │       Perform the conversion at the        │      Perform the conversion at the
+ *                               │       filter level.                        │      rules level.
+ *                               │                                            │
+ *  Converting static rules      │       Validate passed number of rules      │
+ *  during extension assembly.   │       and path to web accessible resources.│
+ * ┌─────────────────────────┐   │      ┌────────────────────────────────┐    │
+ * │                         ├─┬─┼─────►│                                │    │
+ * │  convertStaticRuleSet() │ │ │      │      checkConverterOptions()   │    │
+ * │                         │ │ │  ┌───┤                                │    │
+ * └─────────────────────────┘ │ │  │   └────────────────────────────────┘    │
+ *                             │ │  │                                         │
+ *  On-the-fly conversion      │ │  │    Filter only network rules and create │
+ *  for dynamic rules.         │ │  │    indexed rule with hash.              │
+ * ┌─────────────────────────┐ │ │  │    In this method, when converting      │
+ * │                         │ │ │  │    dynamic rules, the rules canceled by │
+ * │ convertDynamicRuleSets()├─┘ │  │    $badfilter rules from static filters │
+ * │                         │   │  │    are filtered out - such rules are    │
+ * └─────────────────────────┘   │  │    discarded during filter scanning.    │
+ *                               │  │   ┌────────────────────────────────┐    │
+ *                               │  └──►│                                │    │
+ *                               │      │ NetworkRulesScanner.scanRules()│    │
+ *                               │  ┌───┤                                │    │
+ *                               │  │   └────────────────────────────────┘    │  Filter rules affected by $badfilter
+ *                               │  │                                         │  within one filter, then group the rules
+ *                               │  │                                         │  based on modifiers, requiring specific
+ *                               │  │    Convert our network rule to DNR.     │  conversion processes such as
+ *                               │  │   ┌────────────────────────────────┐    │  post-processing for similar rules.
+ *                               │  └──►│                                │    │   ┌────────────────────────────────┐
+ *                               │      │           convert()            ├────┼───┤                                │
+ *                               │      │                                │    │   │        applyBadFilter()        │
+ *                               │      └────────────────────────────────┘    │ ┌─┤                                │
+ *                               │                                            │ │ └────────────────────────────────┘
+ *                               │                                            │ │
+ *                               │                                            │ │ Each group of rules within a single
+ *                               │                                            │ │ filter has its converter that performs
+ *                               │                                            │ │ the conversion, then combines the
+ *                               │                                            │ │ results and returns them.
+ *                               │                                            │ │
+ *                               │                                            │ │ For details, please go to the
+ *                               │                                            │ │ abstract-rule-converter.ts schema.
+ *                               │                                            │ │ ┌────────────────────────────────┐
+ *                               │                                            │ └►│                                │
+ *                               │                                            │   │          convertRules()        │
+ *                               │                                            │ ┌─┤                                │
+ *                               │                                            │ │ └────────────────────────────────┘
+ *                               │                                            │ │
+ *                               │                                            │ │ The declarative rules are checked to
+ *                               │                                            │ │ ensure they meet the specified
+ *                               │                                            │ │ constraints, and if necessary,
+ *                               │                                            │ │ some rules are removed.
+ *                               │                                            │ │ ┌────────────────────────────────┐
+ *                               │                                            │ └►│                                │
+ *                               │                                            │   │         checkLimitations()     │
+ *                               │   ┌────────────────────────────────────────┼───┤                                │
+ *                               │   │                                        │   └────────────────────────────────┘
+ *                               │   │   Wrap conversion result into RuleSet. │
+ *                               │   │  ┌────────────────────────────────┐    │
+ *                               │   └─►│                                │    │
+ *                               │      │    collectConvertedResult()    │    │
+ *                               │  ┌───┤                                │    │
+ *                               │  │   └────────────────────────────────┘    │
+ *                               │  │                                         │
+ *                               │  │    This method is only called during the│
+ *                               │  │    conversion of dynamic rules.         │
+ *                               │  │    Applies rules with $badfilter        │
+ *                               │  │    modifier from dynamic rulesets to    │
+ *                               │  │    all rules from static rulesets and   │
+ *                               │  │    returns list of ids of declarative   │
+ *                               │  │    rules to disable them.               │
+ *                               │  │   ┌──────────────────────────────────┐  │
+ *                               │  └──►│                                  │  │
+ *                               │      │ collectDeclarativeRulesToCancel()│  │
+ *                               │      │                                  │  │
+ *                               │      └──────────────────────────────────┘  │
+ *                               │                                            │
  */
+/* eslint-enable jsdoc/require-description-complete-sentence */
 
-import { NetworkRule } from '../network-rule';
-import { IndexedRule } from '../rule';
-
-import { DeclarativeRule } from './declarative-rule';
+import type { DeclarativeRule } from './declarative-rule';
 import { ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
 import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-header-converter';
 import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
 import { Source } from './source-map';
+import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { LimitationError, TooManyRulesError, TooManyRegexpRulesError } from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';
 import { DeclarativeRulesGrouper, GroupedRules, RulesGroup } from './rules-grouper';
 import { DeclarativeConverterOptions } from './declarative-converter-options';
 import { ConversionError, InvalidDeclarativeRuleError } from './errors/conversion-errors';
+import { ScannedFilter } from './network-rules-scanner';
 
-export type FilterIdsWithRules = [number, IndexedRule[]];
-export type FiltersIdsWithRules = FilterIdsWithRules[];
-export type ScannedFilters = {
-    errors: Error[],
-    filters: FiltersIdsWithRules,
-};
-
-type FiltersIdsWithRulesGroups = [number, GroupedRules][];
+type FiltersIdsWithGroupedRules = [number, GroupedRules][];
 
 /**
- * Describes how to convert {@link IndexedRule|indexed rules} into list of
- * {@link DeclarativeRule|declarative rules}.
+ * Describes how to convert {@link IndexedNetworkRuleWithHash|indexed network rules}
+ * into list of {@link DeclarativeRule|declarative rules}.
  */
 export class DeclarativeRulesConverter {
     /**
@@ -69,7 +146,7 @@ export class DeclarativeRulesConverter {
      * transformed declarative rule and the source rule.
      */
     public static convert(
-        filtersWithRules: FiltersIdsWithRules,
+        filtersWithRules: ScannedFilter[],
         options?: DeclarativeConverterOptions,
     ): ConvertedRules {
         const filters = this.applyBadFilter(filtersWithRules);
@@ -332,26 +409,25 @@ export class DeclarativeRulesConverter {
      *
      * @returns List with filters ids and grouped indexed rules.
      */
-    private static applyBadFilter(filtersWithRules: FiltersIdsWithRules): FiltersIdsWithRulesGroups {
-        let allBadFilterRules: IndexedRule[] = [];
+    private static applyBadFilter(filtersWithRules: ScannedFilter[]): FiltersIdsWithGroupedRules {
+        let allBadFilterRules: IndexedNetworkRuleWithHash[] = [];
 
         // Group rules
         const filterIdsWithGroupedRules = filtersWithRules
-            .map(([filterId, indexedRules]) => {
-                const rulesToProcess = DeclarativeRulesGrouper.splitRulesByGroups(indexedRules);
+            .map(({ id, rules }) => {
+                const rulesToProcess = DeclarativeRulesGrouper.splitRulesByGroups(rules);
                 allBadFilterRules = allBadFilterRules.concat(rulesToProcess[RulesGroup.BadFilter]);
-                const tuple: [number, GroupedRules] = [filterId, rulesToProcess];
+                const tuple: [number, GroupedRules] = [id, rulesToProcess];
 
                 return tuple;
             });
 
         // Define filter function
-        const filterByBadFilterFn = (ruleToTest: IndexedRule): boolean => {
-            const networkRuleToTest = ruleToTest.rule as NetworkRule;
+        const filterByBadFilterFn = (ruleToTest: IndexedNetworkRuleWithHash): boolean => {
+            const networkRuleToTest = ruleToTest.rule;
 
             for (const { rule } of allBadFilterRules) {
-                const badFilterRule = rule as NetworkRule;
-                if (badFilterRule.negatesBadfilter(networkRuleToTest)) {
+                if (rule.negatesBadfilter(networkRuleToTest)) {
                     return false;
                 }
             }

@@ -106,11 +106,25 @@ describe('replaceAll', () => {
 describe('fastHash', () => {
     it('works if it can fastHash', () => {
         expect(stringUtils.fastHash('')).toEqual(0);
-        expect(stringUtils.fastHash('test')).toEqual(6385723493);
     });
 
-    it('works if it can fastHashBetween', () => {
-        expect(stringUtils.fastHashBetween('', 0, 0)).toEqual(5381);
-        expect(stringUtils.fastHashBetween('test', 1, 2)).toEqual(177674);
+    it('creates unique hashes', () => {
+        const hashOne = stringUtils.fastHash('example.com');
+        const hashTwo = stringUtils.fastHash('example.net');
+
+        expect(hashOne).not.toBe(hashTwo);
+    });
+
+    it('prevent overflow for too long strings', () => {
+        const hashOne = stringUtils.fastHash('verylongstringverylongstringverylongstring');
+        const hashTwo = stringUtils.fastHash('anotherverylongstringverylongstringverylongstring');
+
+        expect(hashOne).toBeLessThan(2 ** 32);
+        expect(hashTwo).toBeLessThan(2 ** 32);
+
+        expect(hashOne).toBeLessThan(Number.MAX_SAFE_INTEGER);
+        expect(hashTwo).toBeLessThan(Number.MAX_SAFE_INTEGER);
+
+        expect(hashOne).not.toBe(hashTwo);
     });
 });

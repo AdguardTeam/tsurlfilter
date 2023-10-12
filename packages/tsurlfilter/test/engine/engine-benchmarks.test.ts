@@ -178,6 +178,14 @@ describe('Benchmarks', () => {
         /* eslint-disable @typescript-eslint/no-unused-vars */
     });
 
+    beforeEach(() => {
+        console.log(`Benchmark: "${expect.getState().currentTestName}"`);
+    });
+
+    afterEach(() => {
+        console.log('\n');
+    });
+
     afterAll(() => {
         setLogger(console);
     });

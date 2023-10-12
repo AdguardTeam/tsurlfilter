@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { DeclarativeRule, DeclarativeFilterConverter, Filter } from '../src/rules/declarative-converter';
+import { type DeclarativeRule, DeclarativeFilterConverter, Filter } from '../src/rules/declarative-converter';
 
 const readmeTxtPath = './src/rules/declarative-converter/readme.txt';
 const readmeMdPath = './src/rules/declarative-converter/README.md';
@@ -61,16 +61,17 @@ const convertTxtToRules = async (
 ): Promise<DeclarativeRule[]> => {
     const filter = new Filter(
         0,
-        { getContent: () => Promise.resolve(rules) },
+        { getContent: async () => rules },
     );
 
     try {
-        const { ruleSets: [ruleSet] } = await filterConverter.convertToSingle(
+        const { ruleSet } = await filterConverter.convertDynamicRuleSets(
             [filter],
+            [],
             { resourcesPath: '/path/to/resources' },
         );
 
-        const { declarativeRules } = await ruleSet.serialize();
+        const declarativeRules = await ruleSet.getDeclarativeRules();
 
         return declarativeRules;
     } catch (e) {

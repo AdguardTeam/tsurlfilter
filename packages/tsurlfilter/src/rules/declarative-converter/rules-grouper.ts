@@ -1,5 +1,6 @@
-import { NetworkRule, NetworkRuleOption } from '../network-rule';
-import { IndexedRule } from '../rule';
+import { NetworkRuleOption } from '../network-rule';
+
+import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 
 export enum RulesGroup {
     Regular = 0,
@@ -9,7 +10,7 @@ export enum RulesGroup {
     BadFilter = 4,
 }
 
-export type GroupedRules = { [key in RulesGroup]: IndexedRule[] };
+export type GroupedRules = { [key in RulesGroup]: IndexedNetworkRuleWithHash[] };
 
 /**
  * Contains logic on how to divide the rules into certain groups.
@@ -20,12 +21,12 @@ export class DeclarativeRulesGrouper {
     /**
      * Returns group of the indexed rule.
      *
-     * @param indexedRule Indexed rule.
+     * @param indexedNetworkRuleWithHash Indexed network rule with hash.
      *
      * @returns Group of the indexed rule.
      */
-    private static getRuleGroup(indexedRule: IndexedRule): RulesGroup {
-        const rule = indexedRule.rule as NetworkRule;
+    private static getRuleGroup(indexedNetworkRuleWithHash: IndexedNetworkRuleWithHash): RulesGroup {
+        const { rule } = indexedNetworkRuleWithHash;
 
         if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
             return RulesGroup.RemoveParam;
@@ -53,7 +54,7 @@ export class DeclarativeRulesGrouper {
      *
      * @returns Index with grouped, indexed rules.
      */
-    public static splitRulesByGroups(rules: IndexedRule[]): GroupedRules {
+    public static splitRulesByGroups(rules: IndexedNetworkRuleWithHash[]): GroupedRules {
         const rulesToProcess: GroupedRules = {
             [RulesGroup.RemoveParam]: [],
             [RulesGroup.RemoveHeader]: [],
@@ -63,9 +64,9 @@ export class DeclarativeRulesGrouper {
         };
 
         // Categorizing rule groups
-        rules.forEach((indexedRule) => {
-            const group = DeclarativeRulesGrouper.getRuleGroup(indexedRule);
-            rulesToProcess[group].push(indexedRule);
+        rules.forEach((indexedNetworkRuleWithHash) => {
+            const group = DeclarativeRulesGrouper.getRuleGroup(indexedNetworkRuleWithHash);
+            rulesToProcess[group].push(indexedNetworkRuleWithHash);
         });
 
         return rulesToProcess;

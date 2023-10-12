@@ -23,7 +23,7 @@ export default class FiltersApi {
      * @param disableFiltersIds Rule sets to disable.
      * @param enableFiltersIds Rule sets to enable.
      *
-     * @returns Promise resolved with {@link UpdateStaticFiltersResult}.
+     * @returns Promise resolved with result of updating {@link UpdateStaticFiltersResult}.
      */
     static async updateFiltering(
         disableFiltersIds: number[],

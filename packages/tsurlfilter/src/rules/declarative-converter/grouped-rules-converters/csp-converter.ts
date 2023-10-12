@@ -1,4 +1,4 @@
-import { IndexedRule } from '../../rule';
+import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { DeclarativeRule } from '../declarative-rule';
 import { ConvertedRules } from '../converted-result';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
@@ -21,7 +21,7 @@ export class CspRulesConverter extends DeclarativeRuleConverter {
      */
     public convert(
         filterId: number,
-        rules: IndexedRule[],
+        rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
     ): ConvertedRules {
         const createRuleTemplate = (rule: DeclarativeRule): string => {

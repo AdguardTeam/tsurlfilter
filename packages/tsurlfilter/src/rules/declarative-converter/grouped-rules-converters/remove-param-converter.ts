@@ -1,4 +1,4 @@
-import { IndexedRule } from '../../rule';
+import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { DeclarativeRule } from '../declarative-rule';
 import { ConvertedRules } from '../converted-result';
 
@@ -13,14 +13,14 @@ export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
      * for each rule looks for similar rules and groups them into a new rule.
      *
      * @param filterId Filter id.
-     * @param rules List of indexed rules.
+     * @param rules List of indexed network rules with hash.
      * @param offsetId Offset for the IDs of the converted rules.
      *
      * @returns Converted rules.
      */
     public convert(
         filterId: number,
-        rules: IndexedRule[],
+        rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
     ): ConvertedRules {
         const createRuleTemplate = (rule: DeclarativeRule): string => {
