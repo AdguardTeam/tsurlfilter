@@ -1,17 +1,25 @@
 # TSUrlFilter Changelog
 
 All notable changes to this project will be documented in this file.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
+
+
+## [2.2.1] - 2023-10-13
+
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.83`.
+
 
 ## [2.2.0] - 2023-10-12
 
 ### Added
 - Support for $badfilter rules to Declarative Converter.
+
 
 ## [2.1.12] - 2023-09-25
 
