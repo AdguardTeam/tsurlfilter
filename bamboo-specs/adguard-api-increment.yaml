@@ -5,7 +5,7 @@ plan:
   key: ADGUARDAPIINCREMENT
   name: Adguard API  - increment
 variables:
-  dockerContainer: adguard/node-ssh:16.17--1
+  dockerContainer: adguard/node-ssh:18.13--1
 
 stages:
   - Increment:
