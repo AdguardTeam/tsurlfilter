@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## [2.2.2] - 2023-10-17
+
+### Fixed
+- Added all resource types for $removeparam [#49](https://github.com/AdguardTeam/AdGuardMV3/issues/49)
+
+
 ## [2.2.1] - 2023-10-13
 
 ### Changed
@@ -24,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.1.12] - 2023-09-25
 
 ### Fixed
-- Scriptlets not being logged when filtering log is open [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481)
+- Scriptlets not being logged when filtering log is open [#2481](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481)
 - Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442)
 
 

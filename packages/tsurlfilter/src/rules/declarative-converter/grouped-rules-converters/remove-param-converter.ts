@@ -25,10 +25,12 @@ export class RemoveParamRulesConverter extends DeclarativeRuleConverter {
     ): ConvertedRules {
         const createRuleTemplate = (rule: DeclarativeRule): string => {
             // Deep copy without relation to source rule
-            const template = JSON.parse(JSON.stringify(rule));
+            // Note: Partial type is used because we need to delete some fields,
+            // but we cannot mark them as optional in the parent type.
+            const template: Partial<DeclarativeRule> = JSON.parse(JSON.stringify(rule));
 
             delete template.id;
-            delete template.action.redirect?.transform?.queryTransform?.removeParams;
+            delete template.action?.redirect?.transform?.queryTransform?.removeParams;
 
             return JSON.stringify(template);
         };

@@ -3506,7 +3506,21 @@ skip rules with a negation, or regexp or the rule is a allowlist
 		},
 		"condition": {
 			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 1
 	}
@@ -3550,7 +3564,21 @@ $removeparam=utm_source
 			}
 		},
 		"condition": {
-			"isUrlFilterCaseSensitive": false
+			"isUrlFilterCaseSensitive": false,
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame",
+				"stylesheet",
+				"script",
+				"image",
+				"font",
+				"object",
+				"xmlhttprequest",
+				"ping",
+				"media",
+				"websocket",
+				"other"
+			]
 		},
 		"priority": 1
 	}

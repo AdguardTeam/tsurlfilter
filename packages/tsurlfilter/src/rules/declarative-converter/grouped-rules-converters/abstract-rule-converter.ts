@@ -529,6 +529,7 @@ export abstract class DeclarativeRuleConverter {
          * also for all other types of requests.
          */
         const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
+            || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
             || rule.isOptionEnabled(NetworkRuleOption.Csp)
             || rule.isOptionEnabled(NetworkRuleOption.To)
             || rule.isOptionEnabled(NetworkRuleOption.Method);
