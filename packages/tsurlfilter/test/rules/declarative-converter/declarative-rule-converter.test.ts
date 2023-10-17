@@ -686,11 +686,25 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'media',
+                        'websocket',
+                        'other',
+                    ],
                 },
             });
         });
 
-        it('converts empty $removeparam rule', async () => {
+        it('converts $removeparam rule without parameters', async () => {
             const filterId = 0;
             const filter = await createFilter(
                 filterId,
@@ -715,6 +729,20 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
+                    resourceTypes: [
+                        'main_frame',
+                        'sub_frame',
+                        'stylesheet',
+                        'script',
+                        'image',
+                        'font',
+                        'object',
+                        'xmlhttprequest',
+                        'ping',
+                        'media',
+                        'websocket',
+                        'other',
+                    ],
                 },
             });
         });
