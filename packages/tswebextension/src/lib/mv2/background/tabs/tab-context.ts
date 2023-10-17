@@ -86,33 +86,51 @@ export class TabContext {
         // If the tab was updated it means that it wasn't used to send requests in the background.
         this.isSyntheticTab = false;
 
-        // Update main frame data when we navigate to another page with document request caching enabled.
-        if (changeInfo.url) {
-            // Get current main frame.
-            const frame = this.frames.get(MAIN_FRAME_ID);
-
-            // If main frame url is the same as request url, do nothing.
-            if (frame?.url === changeInfo.url) {
-                return;
-            }
-
-            // If the main frame doesn't exist or its URL is different from the request URL,
-            // it means that the document request hasn't been processed by the WebRequestApi yet.
-            // In this case, we mark the tab as using the cache and update its context using the tabsApi.
-            this.isDocumentRequestCached = true;
-
-            // Update main frame data.
-            this.handleMainFrameRequest(changeInfo.url);
-        }
-
-        // When the cached page is reloaded, we need to manually update
-        // the main frame rule for correct document-level rule processing.
+        /**
+         * When the cached page is reloaded, we need to manually update
+         * the main frame rule for correct document-level rule processing.
+         *
+         * Prop `isDocumentRequestCached` is being set at {@link updateMainFrameData} method,
+         * which is fired on main frame update before first {@link browser.tabs.onUpdated} event.
+         */
         if (!changeInfo.url
             && changeInfo.status === 'loading'
             && this.isDocumentRequestCached
             && this.info.url) {
             this.handleMainFrameRequest(this.info.url);
         }
+    }
+
+    /**
+     * Updates main frame data.
+     *
+     * Note: this method will be called on tab reload before the first {@link browser.tabs.onUpdated} event
+     * and {@link handleTabUpdate} and {@link updateTabInfo} calls.
+     *
+     * @param tabId Tab ID.
+     * @param url Url.
+     */
+    public updateMainFrameData(tabId: number, url: string): void {
+        this.info.url = url;
+        this.info.id = tabId;
+
+        // Get current main frame.
+        const frame = this.frames.get(MAIN_FRAME_ID);
+
+        // If main frame url is the same as request url, do nothing.
+        if (frame?.url === url) {
+            return;
+        }
+
+        /**
+         * If the main frame doesn't exist or its URL is different from the request URL,
+         * we mark the tab as using the cache and update its context using the tabsApi,
+         * as it means that the document request hasn't been processed by the WebRequestApi yet.
+         */
+        this.isDocumentRequestCached = true;
+
+        // Update main frame data.
+        this.handleMainFrameRequest(url);
     }
 
     /**

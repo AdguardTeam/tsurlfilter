@@ -128,8 +128,8 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- *                                       │                             │
- *                                       │       onBeforeNavigate      │
+ * Update main frame data with           │                             │
+ * {@link updateMainFrameData}           │       onBeforeNavigate      │
  *                                       │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
@@ -232,6 +232,7 @@ export class WebRequestApi {
 
         // browser.webNavigation Events
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
+        browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
         browser.webNavigation.onDOMContentLoaded.addListener(WebRequestApi.onDomContentLoaded);
     }
 
@@ -725,6 +726,19 @@ export class WebRequestApi {
 
         CosmeticApi.applyFrameCssRules(frameId, tabId);
         CosmeticApi.applyFrameJsRules(frameId, tabId);
+    }
+
+    /**
+     * On before navigate web navigation event handler.
+     *
+     * @param details Event details.
+     */
+    private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
+        const { frameId, tabId, url } = details;
+
+        if (frameId === MAIN_FRAME_ID) {
+            tabsApi.handleTabNavigation(tabId, url);
+        }
     }
 
     /**
