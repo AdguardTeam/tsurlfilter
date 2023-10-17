@@ -19,10 +19,10 @@ import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { getHost } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
+import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../utils/logger';
 
 import { ConfigurationMV3 } from './configuration';
-import { CosmeticApi } from './cosmetic-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -212,10 +212,10 @@ class EngineApi {
         ];
 
         const styles = !ignoreTraditionalCss
-            ? CosmeticApi.buildStyleSheet(elemhideCss, injectCss, true)
+            ? CosmeticApiCommon.buildStyleSheets(elemhideCss, injectCss, true)
             : [];
         const extStyles = !ignoreExtCss
-            ? CosmeticApi.buildStyleSheet(elemhideExtCss, injectExtCss, false)
+            ? CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false)
             : [];
 
         logger.debug('[BUILD COSMETIC CSS]: builded');

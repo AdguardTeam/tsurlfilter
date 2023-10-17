@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [0.4.2] - 2023-10-17
+
+### Fixed
+- Removed grouping rules with `\r\n` for extended css rules which cause its
+  error in MV3.
+
 
 ## [0.4.1] - 2023-10-13
 
