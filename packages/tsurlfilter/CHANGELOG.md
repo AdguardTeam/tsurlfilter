@@ -19,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$url` modifier support for non-basic rules.
 
 ### Fixed
-- Scriptlets not being logged when filtering log is open [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481)
+- Scriptlets not being logged when filtering log is open [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481).
 - Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
+- Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 
 
 ## [2.2.2] - 2023-10-17
