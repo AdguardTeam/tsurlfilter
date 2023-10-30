@@ -1,0 +1,78 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: CSSTOKENIZERTEST
+  name: CSS Tokenizer - tests
+variables:
+  dockerContainer: adguard/node-ssh:18.13--1
+
+stages:
+  - Test:
+      manual: 'false'
+      final: 'false'
+      jobs:
+        - Test
+
+Test:
+  key: TEST
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Bootstrap the package
+            npx lerna@6 bootstrap --scope @adguard/css-tokenizer --include-dependencies
+
+            # Check TypeScript types with TSC
+            npx lerna@6 run --scope @adguard/css-tokenizer check-types
+
+            # ESLint & Markdownlint
+            npx lerna@6 run --scope @adguard/css-tokenizer lint
+
+            # Run tests with Jest
+            npx lerna@6 run --scope @adguard/css-tokenizer test
+
+            # cleanup parent
+            rm -rf node_modules
+
+            # cleanup child packages
+            npx lerna@6 clean -y
+  final-tasks:
+    - clean
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
+  link-to-jira: 'true'
+
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default

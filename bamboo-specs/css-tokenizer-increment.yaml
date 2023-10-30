@@ -1,0 +1,65 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: CSSTOKENIZERINCR
+  name: CSS Tokenizer - increment
+variables:
+  dockerContainer: adguard/node-ssh:18.13--1
+
+stages:
+  - Increment:
+      manual: 'true'
+      final: 'false'
+      jobs:
+        - Increment
+
+Increment:
+  key: INCRCSSTOKENIZER
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            branch="${bamboo.planRepository.branchName}"
+
+            # Throw error if current branch is not "master",
+            # because we do not deploy changes from other branches
+            if [ $branch != "master" ]
+            then
+              echo "increment is not supported on branch ${branch}"
+              exit 1;
+            fi
+
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            npx lerna@6 run --scope @adguard/css-tokenizer increment
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic increment build number'
+          selectedRepository: defaultRepository
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: 'true'
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default

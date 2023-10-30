@@ -24,13 +24,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "yarn clean && yarn build-types && yarn rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && yarn clean-types",
+    "build": "yarn clean && yarn build-types && yarn build-txt && yarn rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && yarn clean-types",
+    "build-txt": "yarn ts-node scripts/build-txt.ts",
     "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
     "benchmark": "yarn build && node -r esbuild-register benchmark/index.ts",
     "check-types": "tsc --noEmit",
     "clean": "rimraf dist",
     "clean-types": "rimraf dist/types",
     "coverage": "jest --coverage",
+    "increment": "yarn version --patch --no-git-tag-version",
     "lint": "yarn lint:ts && yarn lint:md",
     "lint:md": "markdownlint .",
     "lint:ts": "eslint . --cache --ext .ts",

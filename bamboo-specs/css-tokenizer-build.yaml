@@ -1,0 +1,93 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: CSSTOKENIZERBUILD
+  name: CSS Tokenizer - build
+variables:
+  dockerContainer: adguard/node-ssh:18.13--1
+
+stages:
+  - Build:
+      manual: 'false'
+      final: 'false'
+      jobs:
+        - Build
+
+Build:
+  key: BUILD
+  other:
+    clean-working-dir: true
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Bootstrap the package with Lerna
+            npx lerna@6 bootstrap --scope @adguard/css-tokenizer --include-dependencies
+
+            # Build CSS Tokenizer with Rollup
+            npx lerna@6 run --scope @adguard/css-tokenizer build
+
+            # Pack the CSS Tokenizer package into a tarball
+            cd packages/css-tokenizer/
+            yarn pack --filename css-tokenizer.tgz
+            cd ../../
+
+            # Cleanup parent
+            rm -rf node_modules
+
+            # Cleanup child packages
+            npx lerna@6 clean -y
+    - inject-variables:
+        file: ./packages/css-tokenizer/dist/build.txt
+        scope: RESULT
+        namespace: inject
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.tagging
+        configuration:
+          selectedRepository: defaultRepository
+          tagName: css-tokenizer-v${bamboo.inject.version}
+  # Store the CSS Tokenizer package tarball as an artifact
+  artifacts:
+    - name: css-tokenizer.tgz
+      location: packages/css-tokenizer/
+      pattern: css-tokenizer.tgz
+      shared: true
+      required: true
+  requirements:
+    - adg-docker: 'true'
+
+triggers: []
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: 'true'
+
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+labels: []
+
+other:
+  concurrent-build-plugin: system-default
