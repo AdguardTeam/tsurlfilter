@@ -54,3 +54,18 @@
 
 ---
 !include 'agtree-permissions.yaml'
+
+---
+!include 'css-tokenizer-test.yaml'
+
+---
+!include 'css-tokenizer-increment.yaml'
+
+---
+!include 'css-tokenizer-build.yaml'
+
+---
+!include 'css-tokenizer-deploy.yaml'
+
+---
+!include 'css-tokenizer-permissions.yaml'
