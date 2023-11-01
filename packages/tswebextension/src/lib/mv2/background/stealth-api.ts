@@ -1,5 +1,5 @@
 import browser from 'webextension-polyfill';
-import { StringRuleList } from '@adguard/tsurlfilter';
+import { StringRuleList, STEALTH_MODE_FILTER_ID } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
@@ -24,14 +24,9 @@ export class StealthApi {
     };
 
     /**
-     * Stealth filter identifier.
-     */
-    private static readonly STEALTH_MODE_FILTER_ID = -1;
-
-    /**
      * Stealth service.
      */
-    private readonly engine: StealthService;
+    private readonly stealthService: StealthService;
 
     /**
      * Filtering log.
@@ -82,7 +77,7 @@ export class StealthApi {
     constructor(appContextInstance: AppContext, filteringLog: FilteringLogInterface) {
         this.appContext = appContextInstance;
         this.filteringLog = filteringLog;
-        this.engine = new StealthService(this.appContext, this.filteringLog);
+        this.stealthService = new StealthService(this.appContext, this.filteringLog);
     }
 
     /**
@@ -111,13 +106,13 @@ export class StealthApi {
      * @returns String rule list or null.
      */
     public getStealthModeRuleList(): StringRuleList | null {
-        if (!this.engine || !this.isStealthModeEnabled) {
+        if (!this.stealthService || !this.isStealthModeEnabled) {
             return null;
         }
 
-        const rulesTexts = this.engine.getCookieRulesTexts().join('\n');
+        const rulesTexts = this.stealthService.getCookieRulesTexts().join('\n');
 
-        return new StringRuleList(StealthApi.STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
+        return new StringRuleList(STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
     }
 
     /**
@@ -132,34 +127,13 @@ export class StealthApi {
             return false;
         }
 
-        if (!this.canApplyStealthActionsToContext(context)) {
-            return false;
-        }
-
-        const stealthActions = this.engine.processRequestHeaders(context);
-
-        return stealthActions !== StealthActions.None;
-    }
-
-    /**
-     * Checks if stealth actions can be applied to request context.
-     *
-     * @param context Request context.
-     * @returns True if stealth actions can be applied to request context.
-     */
-    private canApplyStealthActionsToContext(context: RequestContext): boolean {
         if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
             return false;
         }
 
-        const { matchingResult } = context;
-        if (matchingResult) {
-            if (matchingResult.documentRule || matchingResult.stealthRule) {
-                return false;
-            }
-        }
+        const stealthActions = this.stealthService.processRequestHeaders(context);
 
-        return true;
+        return stealthActions !== StealthActions.None;
     }
 
     /**
@@ -168,7 +142,7 @@ export class StealthApi {
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        return this.engine.getSetDomSignalScript();
+        return this.stealthService.getSetDomSignalScript();
     }
 
     /**

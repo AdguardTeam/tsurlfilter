@@ -30,4 +30,5 @@ export { CosmeticRuleMarker } from './rules/cosmetic-rule-marker';
 export { CosmeticRuleParser } from './rules/cosmetic-rule-parser';
 export { RuleSyntaxUtils } from './utils/rule-syntax-utils';
 export { HTTPMethod } from './modifiers/method-modifier';
+export { StealthOptionName, STEALTH_MODE_FILTER_ID } from './modifiers/stealth-modifier';
 export { NETWORK_RULE_OPTIONS, OPTIONS_DELIMITER } from './rules/network-rule-options';

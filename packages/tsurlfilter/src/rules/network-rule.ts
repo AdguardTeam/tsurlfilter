@@ -10,6 +10,7 @@ import { IValueListModifier } from '../modifiers/value-list-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
+import { StealthModifier } from '../modifiers/stealth-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
@@ -254,6 +255,11 @@ export class NetworkRule implements rule.IRule {
      * Rule To modifier
      */
     private toModifier: IValueListModifier<string> | null = null;
+
+    /**
+     * Rule Stealth modifier
+     */
+    private stealthModifier: StealthModifier | null = null;
 
     /**
      * Rule priority, which is needed when the engine has to choose between
@@ -585,6 +591,13 @@ export class NetworkRule implements rule.IRule {
      */
     getAdvancedModifier(): IAdvancedModifier | null {
         return this.advancedModifier;
+    }
+
+    /**
+     * Stealth modifier
+     */
+    getStealthModifier(): StealthModifier | null {
+        return this.stealthModifier;
     }
 
     /**
@@ -1374,9 +1387,10 @@ export class NetworkRule implements rule.IRule {
             case NOT_MARK + OPTIONS.DOC:
                 this.setRequestType(RequestType.Document, false);
                 break;
-            // $stealh
+            // $stealth
             case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
+                this.stealthModifier = new StealthModifier(optionValue);
                 break;
             // $popup
             case OPTIONS.POPUP:

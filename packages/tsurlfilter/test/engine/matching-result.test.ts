@@ -1,4 +1,9 @@
-import { MatchingResult, NetworkRule, CosmeticOption } from '../../src';
+import {
+    MatchingResult,
+    NetworkRule,
+    CosmeticOption,
+    StealthOptionName,
+} from '../../src';
 
 describe('TestNewMatchingResult', () => {
     it('works if basic rule is found', () => {
@@ -677,17 +682,43 @@ describe('TestNewMatchingResult - cookie rules', () => {
 describe('TestNewMatchingResult - stealth modifier', () => {
     it('works if stealth rule is found', () => {
         const ruleText = '@@||example.org^$stealth';
-        const rules = [
-            new NetworkRule(ruleText, 0),
-        ];
+        const rule = new NetworkRule(ruleText, 0);
+        const rules = [rule];
 
         const result = new MatchingResult(rules, null);
-
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
         expect(result.documentRule).toBeNull();
-        expect(result.stealthRule).not.toBeNull();
-        expect(result.stealthRule!.getText()).toBe(ruleText);
+        expect(result.stealthRules).not.toBeNull();
+
+        const stealthRule = result.getStealthRule();
+        expect(stealthRule).toBe(rule);
+        expect(stealthRule.getText()).toBe(ruleText);
+    });
+
+    it('manages stealth rules with single and multiple options', () => {
+        const singleOptionRule = new NetworkRule(
+            `@@||example.org^$stealth=${StealthOptionName.XClientData}`,
+            0,
+        );
+        const multipleOptionsRule = new NetworkRule(
+            `@@||example.org^$stealth=${StealthOptionName.HideReferrer}|${StealthOptionName.DoNotTrack}`,
+            0,
+        );
+        const rules = [
+            singleOptionRule,
+            multipleOptionsRule,
+        ];
+
+        const result = new MatchingResult(rules, null);
+        expect(result).toBeTruthy();
+        expect(result.basicRule).toBeNull();
+        expect(result.documentRule).toBeNull();
+        expect(result.stealthRules).not.toBeNull();
+
+        expect(result.getStealthRule(StealthOptionName.XClientData)).toBe(singleOptionRule);
+        expect(result.getStealthRule(StealthOptionName.HideReferrer)).toBe(multipleOptionsRule);
+        expect(result.getStealthRule(StealthOptionName.DoNotTrack)).toBe(multipleOptionsRule);
     });
 
     it('works if stealth rule is found with an other rule', () => {
@@ -704,8 +735,9 @@ describe('TestNewMatchingResult - stealth modifier', () => {
         expect(result.basicRule).not.toBeNull();
         expect(result.basicRule!.getText()).toBe(ruleText);
         expect(result.documentRule).toBeNull();
-        expect(result.stealthRule).not.toBeNull();
-        expect(result.stealthRule!.getText()).toBe(stealthRuleText);
+        expect(result.stealthRules).not.toBeNull();
+        const rule = result.stealthRules![0];
+        expect(rule.getText()).toBe(stealthRuleText);
     });
 });
 

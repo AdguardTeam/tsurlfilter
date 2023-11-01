@@ -632,6 +632,12 @@ type: `StealthActionEvent`
 
 Dispatched on stealth action.
 
+#### stealthAllowlistAction
+
+type: `StealthAllowlistActionEvent`
+
+Dispatched on preventing stealth action with `$stealth` rule.
+
 #### JsInject
 
 type: `JsInjectEvent`

@@ -21,6 +21,7 @@ export enum FilteringEventType {
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
     StealthAction = 'stealthAction',
+    StealthAllowlistAction = 'stealthAllowlistAction',
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked',
 }
@@ -306,6 +307,27 @@ export type StealthActionEvent = {
 };
 
 /**
+ * {@link StealthAllowlistActionEvent} Event data.
+ */
+export type StealthAllowlistActionEventData = {
+    tabId: number;
+    eventId: string;
+    rules: NetworkRule[];
+    requestUrl: string,
+    frameUrl: string,
+    requestType: ContentType,
+    timestamp: number,
+};
+
+/**
+ * Dispatched by manifest v2 StealthApi on allowlist stealth rule matching in onBeforeSendHeaders event handler.
+ */
+export type StealthAllowlistActionEvent = {
+    type: FilteringEventType.StealthAllowlistAction
+    data: StealthAllowlistActionEventData;
+};
+
+/**
  * {@link JsInjectEvent} Event data.
  */
 export type JsInjectEventData = {
@@ -360,6 +382,7 @@ export type FilteringLogEvent =
     | ContentFilteringStartEvent
     | ContentFilteringFinishEvent
     | StealthActionEvent
+    | StealthAllowlistActionEvent
     | SendRequestEvent
     | TabReloadEvent
     | ApplyBasicRuleEvent

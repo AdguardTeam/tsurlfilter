@@ -1,4 +1,6 @@
 import { DomainModifier } from '../../src/modifiers/domain-modifier';
+import { setLogger } from '../../src';
+import { LoggerMock } from '../mocks';
 
 describe('Domain modifier', () => {
     describe('constructor and valid domains string', () => {
@@ -209,6 +211,20 @@ describe('Domain modifier', () => {
             expect(isDomainOrSubdomainOfAny('example.eu.uk', ['example.*'])).toBeFalsy();
             expect(isDomainOrSubdomainOfAny('example.org', ['sub.example.*', 'test.com'])).toBeFalsy();
             expect(isDomainOrSubdomainOfAny('', ['example.*', 'test.com'])).toBeFalsy();
+        });
+
+        it('logs debug message on invalid regexp pattern', () => {
+            const loggerMock = new LoggerMock();
+            setLogger(loggerMock);
+
+            const msg = 'Invalid regular expression as domain pattern: "/example[org/"';
+
+            isDomainOrSubdomainOfAny('example.org', ['/example[org/']);
+
+            expect(loggerMock.error).toHaveBeenCalledTimes(1);
+            expect(loggerMock.error).toHaveBeenCalledWith(msg);
+
+            setLogger(console);
         });
     });
 

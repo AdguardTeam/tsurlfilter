@@ -189,7 +189,7 @@ export class DomainModifier {
                         return true;
                     }
                 } catch {
-                    logger.error(`Invalid regular expression as domain pattern: ${d}`);
+                    logger.error(`Invalid regular expression as domain pattern: "${d}"`);
                 }
                 continue;
             }

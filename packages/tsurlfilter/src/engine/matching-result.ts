@@ -1,8 +1,10 @@
 import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
+import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
 import { CosmeticOption } from './cosmetic-option';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { HttpHeadersItem } from '../modifiers/header-modifier';
+import { logger } from '../utils/logger';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
@@ -77,11 +79,13 @@ export class MatchingResult {
     public readonly headerRules: NetworkRule[] | null;
 
     /**
-     * StealthRule - this is a allowlist rule that negates stealth mode features
-     * Note that the stealth rule can be be received from both rules and sourceRules
+     * Stealth rules - a set of allowlist rules with $stealth modifier,
+     * that negates stealth mode features.
+     *
+     * Note that the stealth rule can be received from both rules and sourceRules
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
      */
-    public stealthRule: NetworkRule | null;
+    public readonly stealthRules: NetworkRule[] | null;
 
     /**
      * Creates an instance of the MatchingResult struct and fills it with the rules.
@@ -99,7 +103,7 @@ export class MatchingResult {
         this.removeParamRules = null;
         this.removeHeaderRules = null;
         this.redirectRules = null;
-        this.stealthRule = null;
+        this.stealthRules = null;
         this.permissionsRules = null;
         this.headerRules = null;
 
@@ -127,66 +131,41 @@ export class MatchingResult {
         // Iterate through the list of rules and fill the MatchingResult
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
-                if (!this.cookieRules) {
-                    this.cookieRules = [];
-                }
-                this.cookieRules.push(rule);
+                (this.cookieRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
-                if (!this.replaceRules) {
-                    this.replaceRules = [];
-                }
-                this.replaceRules.push(rule);
+                (this.replaceRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
-                if (!this.removeParamRules) {
-                    this.removeParamRules = [];
-                }
-                this.removeParamRules.push(rule);
+                (this.removeParamRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
-                if (!this.removeHeaderRules) {
-                    this.removeHeaderRules = [];
-                }
-                this.removeHeaderRules.push(rule);
+                (this.removeHeaderRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-                if (!this.redirectRules) {
-                    this.redirectRules = [];
-                }
-                this.redirectRules.push(rule);
+                (this.redirectRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-                if (!this.cspRules) {
-                    this.cspRules = [];
-                }
-                this.cspRules.push(rule);
+                (this.cspRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Stealth)) {
-                this.stealthRule = rule;
+                (this.stealthRules ??= []).push(rule);
                 continue;
             }
 
             if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
-                if (!this.permissionsRules) {
-                    this.permissionsRules = [];
-                }
-                this.permissionsRules.push(rule);
+                (this.permissionsRules ??= []).push(rule);
                 continue;
             }
 
             if (rule.isOptionEnabled(NetworkRuleOption.Header)) {
-                if (!this.headerRules) {
-                    this.headerRules = [];
-                }
-
-                this.headerRules.push(rule);
+                (this.headerRules ??= []).push(rule);
                 continue;
             }
 
@@ -256,6 +235,33 @@ export class MatchingResult {
         }
 
         return basic;
+    }
+
+    /**
+     * Returns a single stealth rule, that is corresponding to the given option.
+     * If no option is given, returns a rule that disables stealth completely if any.
+     *
+     * @param stealthOption stealth option name
+     * @returns stealth rule or null
+     */
+    getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
+        if (!this.stealthRules) {
+            return null;
+        }
+
+        return this.stealthRules.find((r: NetworkRule) => {
+            const stealthModifier = r.getStealthModifier();
+            if (!stealthModifier) {
+                logger.debug(`Stealth rule without stealth modifier: ${r}`);
+                return false;
+            }
+            if (stealthOption) {
+                return stealthModifier.hasStealthOption(stealthOption);
+            }
+
+            // $stealth rules without values are globally disabling stealth mode
+            return !stealthModifier.hasValues();
+        }) ?? null;
     }
 
     /**
@@ -566,7 +572,22 @@ export class MatchingResult {
             }
         );
 
-        const filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
+        let filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
+
+        // Cookie rule may also be disabled by a stealth rule with corresponding `1p-cookie` or `3p-cookie` value
+        // If corresponding $stealth rule is found, such cookie rule does not get into resulting array
+        filtered = filtered.filter((cookieRule) => {
+            if (cookieRule.getFilterListId() !== STEALTH_MODE_FILTER_ID) {
+                return true;
+            }
+
+            if (cookieRule.isOptionEnabled(NetworkRuleOption.ThirdParty)) {
+                return !this.getStealthRule(StealthOptionName.ThirdPartyCookies);
+            }
+
+            return !this.getStealthRule(StealthOptionName.FirstPartyCookies);
+        });
+
         return filtered.concat([...this.cookieRules.filter((r) => r.isAllowlist())]);
     }
 

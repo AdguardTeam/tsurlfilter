@@ -1,5 +1,11 @@
 import { WebRequest } from 'webextension-polyfill';
-import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import { nanoid } from 'nanoid';
+import {
+    NetworkRule,
+    MatchingResult,
+    RequestType,
+    StealthOptionName,
+} from '@adguard/tsurlfilter';
 
 import { ContentType } from '@lib/common';
 import { RequestContext, RequestContextState } from '@lib/mv2';
@@ -85,8 +91,9 @@ describe('Stealth service', () => {
     });
 
     describe('Stealth service - headers', () => {
-        const getContextWithHeaders = (headers: WebRequest.HttpHeaders): RequestContext => {
+        const getContextWithHeaders = (headers: WebRequest.HttpHeaders, rules?: NetworkRule[]): RequestContext => {
             return {
+                eventId: nanoid(),
                 state: RequestContextState.BeforeSendHeaders,
                 requestId: '1',
                 requestUrl: 'https://example.org',
@@ -99,7 +106,7 @@ describe('Stealth service', () => {
                 requestFrameId: 0,
                 timestamp: Date.now(),
                 thirdParty: false,
-                matchingResult: new MatchingResult([], null),
+                matchingResult: new MatchingResult(rules || [], null),
                 cookies: undefined,
                 contentTypeHeader: undefined,
                 method: 'GET',
@@ -173,6 +180,71 @@ describe('Stealth service', () => {
             expect(context.requestHeaders![0].value).toBe('1');
             expect(context.requestHeaders![1].name).toBe('Sec-GPC');
             expect(context.requestHeaders![1].value).toBe('1');
+        });
+
+        describe('disabling stealth options with rules', () => {
+            it('disables all options with $stealth rule', () => {
+                appContext.configuration.settings.stealth.hideReferrer = true;
+                appContext.configuration.settings.stealth.blockChromeClientData = true;
+                appContext.configuration.settings.stealth.sendDoNotTrack = true;
+
+                const service = new StealthService(appContext, filteringLog);
+                const referrerHeader = {
+                    name: 'Referer',
+                    value: 'http://other.org',
+                };
+                const xClientDataHeader = {
+                    name: 'X-Client-Data',
+                    value: 'some data',
+                };
+
+                const searchQueryHeader = {
+                    name: 'Referer',
+                    value: 'http://www.google.com',
+                };
+
+                let context = getContextWithHeaders([referrerHeader, xClientDataHeader, searchQueryHeader]);
+                const stealthActions = service.processRequestHeaders(context);
+                expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
+                expect(stealthActions & StealthActions.HideReferrer).toBeTruthy();
+                expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
+
+                context = getContextWithHeaders([referrerHeader], [
+                    new NetworkRule('@@||example.org$stealth', 0),
+                ]);
+                expect(service.processRequestHeaders(context)).toBe(StealthActions.None);
+            });
+
+            it('disables specific options', () => {
+                appContext.configuration.settings.stealth.hideReferrer = true;
+                appContext.configuration.settings.stealth.blockChromeClientData = true;
+                appContext.configuration.settings.stealth.sendDoNotTrack = true;
+
+                const rule = `@@||example.org$stealth=${StealthOptionName.HideReferrer}`;
+                const service = new StealthService(appContext, filteringLog);
+                const referrerHeader = {
+                    name: 'Referer',
+                    value: 'http://other.org',
+                };
+                const xClientDataHeader = {
+                    name: 'X-Client-Data',
+                    value: 'some data',
+                };
+
+                const searchQueryHeader = {
+                    name: 'Referer',
+                    value: 'http://www.google.com',
+                };
+
+                const context = getContextWithHeaders(
+                    [referrerHeader, xClientDataHeader, searchQueryHeader],
+                    [new NetworkRule(rule, 0)],
+                );
+                const stealthActions = service.processRequestHeaders(context);
+                expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
+                expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
+                expect(stealthActions & StealthActions.HideReferrer).toBeFalsy();
+            });
         });
 
         it('checks global GPC value in the navigator', () => {

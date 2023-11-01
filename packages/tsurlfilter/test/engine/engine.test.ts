@@ -24,7 +24,7 @@ describe('Engine Tests', () => {
         expect(result.replaceRules).toBeNull();
         expect(result.cspRules).toBeNull();
         expect(result.cookieRules).toBeNull();
-        expect(result.stealthRule).toBeNull();
+        expect(result.stealthRules).toBeNull();
 
         request = new Request('https://example.org', 'https://example.org', RequestType.Document);
         result = engine.matchRequest(request);
@@ -34,7 +34,7 @@ describe('Engine Tests', () => {
         expect(result.replaceRules).toBeNull();
         expect(result.cspRules).toBeNull();
         expect(result.cookieRules).toBeNull();
-        expect(result.stealthRule).toBeNull();
+        expect(result.stealthRules).toBeNull();
     });
 
     it('works if frame matches rule', () => {
@@ -127,7 +127,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         expect(result.cookieRules && result.cookieRules[0].getText()).toBe(cookieRule);
         expect(result.removeParamRules && result.removeParamRules.length).toBe(1);
         expect(result.removeParamRules && result.removeParamRules[0].getText()).toBe(removeParamRule);
-        expect(result.stealthRule).toBeNull();
+        expect(result.stealthRules).toBeNull();
     });
 
     it('it excludes allowlist rules, even if there are two badfilter rules', () => {

@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Added
 - Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
 - Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
+- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100](https://github.com/AdguardTeam/tsurlfilter/issues/100).
 
 
 ## [0.3.20] - 2023-09-19

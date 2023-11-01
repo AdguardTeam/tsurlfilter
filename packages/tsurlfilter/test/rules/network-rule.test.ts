@@ -5,7 +5,10 @@ import {
     Request,
     RequestType,
     HTTPMethod,
+    StealthOptionName,
+    setLogger,
 } from '../../src';
+import { LoggerMock } from '../mocks';
 
 describe('NetworkRule.parseRuleText', () => {
     it('works when it parses the basic rules properly', () => {
@@ -115,6 +118,65 @@ describe('NetworkRule.parseRuleText', () => {
 });
 
 describe('NetworkRule constructor', () => {
+    describe('creation of rule with $stealth modifier', () => {
+        it('creates $stealth rule without options', () => {
+            const rule = new NetworkRule('@@||example.org^$stealth', -1);
+            expect(rule).toBeTruthy();
+            const stealthModifier = rule.getStealthModifier();
+            expect(stealthModifier?.hasValues()).toBeFalsy();
+        });
+
+        it('creates $stealth rule with valid options', () => {
+            const rule = new NetworkRule('@@||example.org^$stealth=donottrack|xclientdata', -1);
+            expect(rule).toBeTruthy();
+
+            const stealthModifier = rule.getStealthModifier();
+            expect(stealthModifier?.hasValues()).toBeTruthy();
+            expect(stealthModifier?.hasStealthOption(StealthOptionName.DoNotTrack)).toBeTruthy();
+            expect(stealthModifier?.hasStealthOption(StealthOptionName.XClientData)).toBeTruthy();
+        });
+
+        it('logs debug message on $stealth rule with duplicate options', () => {
+            const loggerMock = new LoggerMock();
+            setLogger(loggerMock);
+
+            const msg = 'Duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"';
+            new NetworkRule('@@||example.org^$stealth=donottrack|donottrack', 0);
+
+            expect(loggerMock.debug).toHaveBeenCalledTimes(1);
+            expect(loggerMock.debug).toHaveBeenCalledWith(msg);
+
+            setLogger(console);
+        });
+
+        it('logs debug message on $stealth modifier with no supported values', () => {
+            const loggerMock = new LoggerMock();
+            setLogger(loggerMock);
+
+            const msg = '$stealth modifier does not contain any options supported by browser extension: "webrtc|location"';
+            new NetworkRule('@@||example.org^$stealth=webrtc|location', 0);
+
+            expect(loggerMock.debug).toHaveBeenCalledTimes(1);
+            expect(loggerMock.debug).toHaveBeenCalledWith(msg);
+
+            setLogger(console);
+        });
+
+        it('throws error on $stealth rule with inverted options', () => {
+            expect(() => {
+                new NetworkRule('@@||example.org^$stealth=~referrer|xclientdata', 0);
+            }).toThrowError('Inverted $stealth modifier values are not allowed:');
+        });
+
+        it('does not throw error on $stealth modifier with partially supported values', () => {
+            const rule = new NetworkRule('@@||example.org^$stealth=referrer|webrtc|location', 0);
+            const stealthModifier = rule.getStealthModifier();
+            expect(stealthModifier?.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
+            expect(stealthModifier?.hasStealthOption('webrtc' as StealthOptionName)).toBeFalsy();
+            expect(stealthModifier?.hasStealthOption('location' as StealthOptionName)).toBeFalsy();
+        });
+    });
+
     it('works when it creates simple rules properly', () => {
         const rule = new NetworkRule('||example.org^', 0);
         expect(rule.getFilterListId()).toEqual(0);

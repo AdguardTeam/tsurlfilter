@@ -1,4 +1,6 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+import { StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
+import { WebRequest } from 'webextension-polyfill';
 
 import { findHeaderByName, getHost, isThirdPartyRequest } from '../../../common/utils';
 import { removeHeader } from '../utils/headers';
@@ -126,62 +128,173 @@ export class StealthService {
     public processRequestHeaders(context: RequestContext): StealthActions {
         let stealthActions = StealthActions.None;
 
-        const { requestUrl, requestType, requestHeaders } = context;
-
-        if (!requestHeaders) {
+        if (!this.config) {
             return stealthActions;
         }
 
+        const {
+            requestUrl,
+            requestHeaders,
+            matchingResult,
+            requestType,
+            tabId,
+            eventId,
+            referrerUrl,
+            contentType,
+            timestamp,
+        } = context;
+
+        if (!requestHeaders || matchingResult?.documentRule) {
+            return stealthActions;
+        }
+
+        /**
+         * Regarding stealth rule modifier, stealth options can be disabled on two occasions:
+         * - stealth modifier does not have specific values, thus disabling stealth entirely
+         * - stealth modifier has specific options to disable.
+         */
+        const stealthDisablingRule = matchingResult?.getStealthRule();
+        if (stealthDisablingRule) {
+            // $stealth rule without options is not being published to the filtering log
+            // to conform with desktop application behavior
+            return stealthActions;
+        }
+
+        // Collect applied allowlist rules in a set to only publish
+        // one filtering event per applied allowlist rule
+        const appliedAllowlistRules = new Set<NetworkRule>();
+
         // Remove referrer for third-party requests
         if (this.config?.hideReferrer) {
-            const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
-            if (refHeader
-                && refHeader.value
-                && isThirdPartyRequest(requestUrl, refHeader.value)) {
-                refHeader.value = StealthService.createMockRefHeaderUrl(requestUrl);
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideReferrer);
+            if (disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (StealthService.removeReferrer(requestHeaders, requestUrl)) {
                 stealthActions |= StealthActions.HideReferrer;
             }
         }
 
         // Hide referrer in case of search engine is referrer
         const isMainFrame = requestType === RequestType.Document;
-        if (this.config?.hideSearchQueries && isMainFrame) {
-            const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
-            if (refHeader
-                && refHeader.value
-                && StealthService.isSearchEngine(refHeader.value)
-                && isThirdPartyRequest(requestUrl, refHeader.value)) {
-                refHeader.value = StealthService.createMockRefHeaderUrl(requestUrl);
+        if (isMainFrame && this.config?.hideSearchQueries) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideSearchQueries);
+            if (disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (StealthService.hideSearchQueries(requestHeaders, requestUrl)) {
                 stealthActions |= StealthActions.HideSearchQueries;
             }
         }
 
         // Remove X-Client-Data header
         if (this.config?.blockChromeClientData) {
-            if (removeHeader(requestHeaders, StealthService.HEADERS.X_CLIENT_DATA)) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.XClientData);
+            if (disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (StealthService.removeXClientData(requestHeaders)) {
                 stealthActions |= StealthActions.BlockChromeClientData;
             }
         }
 
         // Adding Do-Not-Track (DNT) header
         if (this.config?.sendDoNotTrack) {
-            requestHeaders.push(StealthService.HEADER_VALUES.DO_NOT_TRACK);
-            requestHeaders.push(StealthService.HEADER_VALUES.GLOBAL_PRIVACY_CONTROL);
-            stealthActions |= StealthActions.SendDoNotTrack;
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.DoNotTrack);
+            if (disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (StealthService.sendDoNotTrack(requestHeaders)) {
+                stealthActions |= StealthActions.SendDoNotTrack;
+            }
+        }
+
+        if (appliedAllowlistRules.size > 0) {
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.StealthAllowlistAction,
+                data: {
+                    tabId,
+                    eventId,
+                    rules: Array.from(appliedAllowlistRules),
+                    requestUrl,
+                    frameUrl: referrerUrl,
+                    requestType: contentType,
+                    timestamp,
+                },
+            });
         }
 
         if (stealthActions > 0) {
             this.filteringLog.publishEvent({
                 type: FilteringEventType.StealthAction,
                 data: {
-                    tabId: context.tabId,
-                    eventId: context.eventId,
+                    tabId,
+                    eventId,
                     stealthActions,
                 },
             });
         }
 
         return stealthActions;
+    }
+
+    /**
+     * Removes referrer from request headers.
+     *
+     * @param requestHeaders Request headers.
+     * @param requestUrl Request URL.
+     * @returns True if referrer was removed.
+     */
+    private static removeReferrer(requestHeaders: WebRequest.HttpHeaders, requestUrl: string): boolean {
+        const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
+        if (
+            refHeader
+            && refHeader.value
+            && isThirdPartyRequest(requestUrl, refHeader.value)
+        ) {
+            refHeader.value = StealthService.createMockRefHeaderUrl(requestUrl);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Hides search queries from referrer.
+     *
+     * @param requestHeaders Request headers.
+     * @param requestUrl Request URL.
+     * @returns True if search queries were hidden.
+     */
+    private static hideSearchQueries(requestHeaders: WebRequest.HttpHeaders, requestUrl: string): boolean {
+        const refHeader = findHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER);
+        if (
+            refHeader
+            && refHeader.value
+            && StealthService.isSearchEngine(refHeader.value)
+            && isThirdPartyRequest(requestUrl, refHeader.value)
+        ) {
+            refHeader.value = StealthService.createMockRefHeaderUrl(requestUrl);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Removes X-Client-Data header.
+     *
+     * @param requestHeaders Request headers.
+     * @returns True if X-Client-Data header was removed.
+     */
+    private static removeXClientData(requestHeaders: WebRequest.HttpHeaders): boolean {
+        return removeHeader(requestHeaders, StealthService.HEADERS.X_CLIENT_DATA);
+    }
+
+    /**
+     * Adds Do-Not-Track (DNT) and Global Privacy Control (GPC) headers.
+     *
+     * @param requestHeaders Request headers.
+     * @returns True if DNT and GPC headers were added.
+     */
+    private static sendDoNotTrack(requestHeaders: WebRequest.HttpHeaders): boolean {
+        requestHeaders.push(StealthService.HEADER_VALUES.DO_NOT_TRACK);
+        requestHeaders.push(StealthService.HEADER_VALUES.GLOBAL_PRIVACY_CONTROL);
+        return true;
     }
 
     /**
