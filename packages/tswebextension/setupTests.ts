@@ -1,5 +1,7 @@
 import browser from 'sinon-chrome';
 
+browser.runtime.getManifest.returns({ version: '2', manifest_version: 2 });
+
 jest.mock('webextension-polyfill', () => ({
     ...browser,
     webRequest: {

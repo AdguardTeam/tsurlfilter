@@ -4,6 +4,11 @@ import { localScriptRulesService } from '@lib/mv2/background/services/local-scri
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 import { USER_FILTER_ID } from '@lib/common/constants';
 import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
+import { MockAppContext } from './mocks/mock-context';
+
+jest.mock('@lib/mv2/background/context', () => ({
+    appContext: jest.fn(() => new MockAppContext()),
+}));
 
 /**
  * Creates cosmetic result for elemhide rules.

@@ -115,6 +115,7 @@ const backgroundMv2Config = {
         'deepmerge',
         'nanoid',
         'lru_map',
+        'lodash-es',
     ],
     plugins: [
         ...commonPlugins,

@@ -17,6 +17,7 @@ export type TabFrameRequestContext = FrameRequestContext & {
  * Tabs API. Wrapper around browser.tabs API.
  */
 export class TabsApi {
+    // TODO: Use a persistent map when the extended serialization is implemented. (AG-27098)
     public context = new Map<number, TabContext>();
 
     public onCreate = new EventChannel<TabContext>();

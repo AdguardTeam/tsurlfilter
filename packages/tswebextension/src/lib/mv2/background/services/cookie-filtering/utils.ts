@@ -1,7 +1,7 @@
 import { WebRequest } from 'webextension-polyfill';
 import ParsedCookie from './parsed-cookie';
 import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
-import { logger } from '../..';
+import { logger } from '../../../../common/utils/logger';
 
 /**
  * Cookie Utils.
