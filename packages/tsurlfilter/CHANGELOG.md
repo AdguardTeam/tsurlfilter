@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## [2.2.3] - 2023-11-03
+
+### Added
+
+- Support of `$referrerpolicy` modifier for compiler validation
+
+
 ## [2.2.2] - 2023-10-17
 
 ### Fixed
