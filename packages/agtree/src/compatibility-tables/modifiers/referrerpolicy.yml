@@ -1,0 +1,12 @@
+adg_os_any:
+  name: referrerpolicy
+  description: This modifier allows overriding of a page's referrer policy.
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#referrerpolicy-modifier
+  conflicts:
+    - document
+    - subdocument
+  inverse_conflicts: true
+  assignable: true
+  negatable: false
+  value_optional: true
+  value_format: referrerpolicy_value

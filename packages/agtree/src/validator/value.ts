@@ -37,6 +37,7 @@ import {
     APP_NAME_ALLOWED_CHARS,
     EMPTY_PERMISSIONS_ALLOWLIST,
     PERMISSIONS_TOKEN_SELF,
+    REFERRER_POLICY_DIRECTIVES,
     SOURCE_DATA_ERROR_PREFIX,
     VALIDATION_ERROR_PREFIX,
 } from './constants';
@@ -57,6 +58,7 @@ const enum CustomValueFormatValidatorName {
     Domain = 'pipe_separated_domains',
     Method = 'pipe_separated_methods',
     Permissions = 'permissions_value',
+    ReferrerPolicy = 'referrerpolicy_value',
     StealthOption = 'pipe_separated_stealth_options',
 }
 
@@ -636,6 +638,30 @@ const validatePermissions = (modifier: Modifier): ValidationResult => {
 };
 
 /**
+ * Validates `referrerpolicy_value` custom value format.
+ * Used for $referrerpolicy modifier.
+ *
+ * @param modifier Modifier AST node.
+ *
+ * @returns Validation result.
+ */
+const validateReferrerPolicy = (modifier: Modifier): ValidationResult => {
+    if (!modifier.value?.value) {
+        return getValueRequiredValidationResult(modifier.modifier.value);
+    }
+
+    const modifierName = modifier.modifier.value;
+    const modifierValue = modifier.value.value;
+
+    if (!REFERRER_POLICY_DIRECTIVES.has(modifierValue)) {
+        // eslint-disable-next-line max-len
+        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: '${modifierName}': '${modifierValue}'`);
+    }
+
+    return { valid: true };
+};
+
+/**
  * Map of all available pre-defined validators for modifiers with custom `value_format`.
  */
 const CUSTOM_VALUE_FORMAT_MAP = {
@@ -645,6 +671,7 @@ const CUSTOM_VALUE_FORMAT_MAP = {
     [CustomValueFormatValidatorName.Domain]: validatePipeSeparatedDomains,
     [CustomValueFormatValidatorName.Method]: validatePipeSeparatedMethods,
     [CustomValueFormatValidatorName.Permissions]: validatePermissions,
+    [CustomValueFormatValidatorName.ReferrerPolicy]: validateReferrerPolicy,
     [CustomValueFormatValidatorName.StealthOption]: validatePipeSeparatedStealthOptions,
 };
 

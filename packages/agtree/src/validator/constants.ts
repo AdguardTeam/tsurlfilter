@@ -100,7 +100,7 @@ export const ALLOWED_CSP_DIRECTIVES = new Set([
 ]);
 
 /**
- * Allowed stealth options for $permissions modifier.
+ * Allowed directives for $permissions modifier.
  *
  * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#permissions-modifier}
  */
@@ -154,6 +154,22 @@ export const PERMISSIONS_TOKEN_SELF = 'self';
 export const EMPTY_PERMISSIONS_ALLOWLIST = `${OPEN_PARENTHESIS}${CLOSE_PARENTHESIS}`;
 
 /**
+ * Allowed directives for $referrerpolicy modifier.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy}
+ */
+export const REFERRER_POLICY_DIRECTIVES = new Set([
+    'no-referrer',
+    'no-referrer-when-downgrade',
+    'origin',
+    'origin-when-cross-origin',
+    'same-origin',
+    'strict-origin',
+    'strict-origin-when-cross-origin',
+    'unsafe-url',
+]);
+
+/**
  * Prefixes for error messages used in modifier validation.
  */
 export const VALIDATION_ERROR_PREFIX = {
@@ -165,6 +181,7 @@ export const VALIDATION_ERROR_PREFIX = {
     INVALID_PERMISSION_DIRECTIVE: 'Invalid Permissions-Policy directive for the modifier',
     INVALID_PERMISSION_ORIGINS: 'Origins in the value is invalid for the modifier and the directive',
     INVALID_PERMISSION_ORIGIN_QUOTES: 'Double quotes should be used for origins in the value of the modifier',
+    INVALID_REFERRER_POLICY_DIRECTIVE: 'Invalid Referrer-Policy directive for the modifier',
     MIXED_NEGATIONS: 'Simultaneous usage of negated and not negated values is forbidden for the modifier',
     NO_CSP_VALUE: 'No CSP value for the modifier and the directive',
     NO_CSP_DIRECTIVE_QUOTE: 'CSP directives should no be quoted for the modifier',

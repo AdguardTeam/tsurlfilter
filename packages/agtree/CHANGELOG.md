@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
 
+## 1.1.7 - 2023-11-07
+
+### Added
+
+- Support of `referrerpolicy` modifier [#98](https://github.com/AdguardTeam/tsurlfilter/issues/98)
+
+
 ## 1.1.6 - 2023-09-22
 
 ### Changed
