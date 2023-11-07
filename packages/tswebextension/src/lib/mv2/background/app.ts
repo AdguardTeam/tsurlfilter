@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this */
+import { sessionStorage } from './session-storage';
 import { appContext } from './context';
 import { WebRequestApi } from './web-request-api';
 import {
@@ -117,6 +118,8 @@ MessageHandlerMV2
      * @throws Error if configuration is not valid.
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
+        await sessionStorage.init();
+
         configurationMV2Validator.parse(configuration);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);

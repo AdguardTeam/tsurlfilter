@@ -9,3 +9,4 @@ export * from './content-script/send-app-message';
 export * from './request-type';
 export * from './error';
 export * from './constants';
+export * from './storage';

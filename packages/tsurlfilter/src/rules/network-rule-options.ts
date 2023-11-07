@@ -39,6 +39,7 @@ export const NETWORK_RULE_OPTIONS = {
     REMOVEHEADER: 'removeheader',
     JSONPRUNE: 'jsonprune',
     HLS: 'hls',
+    REFERRERPOLICY: 'referrerpolicy',
     APP: 'app',
     NETWORK: 'network',
     EXTENSION: 'extension',

@@ -4,6 +4,9 @@ const config: Config = {
     transform: {
         '.+\\.(js|ts)': '@swc/jest',
     },
+    transformIgnorePatterns: [
+        'node_modules/(?!(lodash-es)/)',
+    ],
     testEnvironment: 'jsdom',
     testRegex: '(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$',
     moduleFileExtensions: [

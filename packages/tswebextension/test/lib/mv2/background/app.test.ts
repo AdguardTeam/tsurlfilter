@@ -7,8 +7,12 @@ import { messagesApi } from '@lib/mv2/background/messages-api';
 import type { ConfigurationMV2 } from '@lib/mv2/background/configuration';
 import type { Message } from '@lib/common/message';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
+import { MockAppContext } from './mocks/mock-context';
 
-jest.mock('@lib/mv2/background/context');
+jest.mock('@lib/mv2/background/session-storage');
+jest.mock('@lib/mv2/background/context', () => ({
+    appContext: jest.fn(() => new MockAppContext()),
+}));
 jest.mock('@lib/mv2/background/web-request-api');
 jest.mock('@lib/mv2/background/engine-api');
 jest.mock('@lib/mv2/background/tabs/tabs-api');

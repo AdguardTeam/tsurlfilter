@@ -381,6 +381,12 @@ describe('Options', () => {
         // converted rule should be the same as original
         checkConversionResult(rule, rule);
     });
+
+    it('converts referrerpolicy option properly', () => {
+        const rule = '||example.com^$referrerpolicy=origin';
+        // converted rule should be the same as original
+        checkConversionResult(rule, rule);
+    });
 });
 
 describe('Scriptlets', () => {

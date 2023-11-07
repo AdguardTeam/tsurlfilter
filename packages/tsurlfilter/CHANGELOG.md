@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 
 
+## [2.2.3] - 2023-11-03
+
+### Added
+
+- Support of `$referrerpolicy` modifier for compiler validation
+
+
 ## [2.2.2] - 2023-10-17
 
 ### Fixed

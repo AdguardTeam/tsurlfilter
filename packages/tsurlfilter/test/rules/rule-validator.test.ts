@@ -85,6 +85,13 @@ describe('RuleValidator', () => {
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
+    it('validates referrerpolicy modifier', () => {
+        // $referrerpolicy is not supported by the extension
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
+        const ruleText = '||example.com^$referrerpolicy=origin';
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
+    });
+
     it('invalidates rules $webrtc modifier', () => {
         const ruleText = '$webrtc,domain=browserleaks.com';
         expect(RuleValidator.validate(ruleText).valid).toBeFalsy();

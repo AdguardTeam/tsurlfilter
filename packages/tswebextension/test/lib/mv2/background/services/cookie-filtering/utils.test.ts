@@ -3,6 +3,8 @@ import { ParsedCookie } from '@lib/common/cookie-filtering/parsed-cookie';
 
 const TEST_URL = 'https://test.com/url';
 
+jest.mock('@lib/common/utils/logger');
+
 describe('Cookie utils - Set-Cookie headers parsing', () => {
     it('checks parse simple', () => {
         let cookies: ParsedCookie[] = CookieUtils.parseSetCookieHeaders([], TEST_URL);

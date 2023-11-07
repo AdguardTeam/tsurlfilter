@@ -1552,6 +1552,17 @@ export class NetworkRule implements rule.IRule {
                 // TODO: should be properly implemented later
                 // https://github.com/AdguardTeam/tsurlfilter/issues/72
                 break;
+            // $referrerpolicy
+            // simple validation of referrerpolicy rules for compiler
+            // https://github.com/AdguardTeam/FiltersCompiler/issues/191
+            case OPTIONS.REFERRERPOLICY:
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
+                    throw new SyntaxError('Extension does not support $referrerpolicy modifier');
+                }
+                // do nothing as $referrerpolicy is supported by CoreLibs-based apps only.
+                // it is needed for proper rule conversion performed by FiltersCompiler
+                // so rules with $referrerpolicy modifier is not marked as invalid
+                break;
             // Dns modifiers
             // $client
             case OPTIONS.CLIENT:
