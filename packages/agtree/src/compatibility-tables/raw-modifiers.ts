@@ -49,6 +49,7 @@ import popunder from './modifiers/popunder.yml';
 import popup from './modifiers/popup.yml';
 import redirectRule from './modifiers/redirect-rule.yml';
 import redirect from './modifiers/redirect.yml';
+import referrerpolicy from './modifiers/referrerpolicy.yml';
 import removeheader from './modifiers/removeheader.yml';
 import removeparam from './modifiers/removeparam.yml';
 import replace from './modifiers/replace.yml';
@@ -108,6 +109,7 @@ export const rawModifiersData: RawModifierData = {
     popup,
     redirectRule,
     redirect,
+    referrerpolicy,
     removeheader,
     removeparam,
     replace,

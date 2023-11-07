@@ -69,6 +69,7 @@ describe('ModifierValidator', () => {
                 'popup',
                 'redirect-rule',
                 'redirect',
+                'referrerpolicy',
                 'rewrite',
                 'removeheader',
                 'removeparam',
@@ -150,7 +151,7 @@ describe('ModifierValidator', () => {
                 },
             ];
             test.each(supportedModifiers)('%s', (modifierName) => {
-                expect(modifierValidator.exists(modifierName)).toBeTruthy();
+                expect(modifierValidator.exists(modifierName as Modifier)).toBeTruthy();
             });
 
             const unsupportedModifiers = [
@@ -164,7 +165,7 @@ describe('ModifierValidator', () => {
                 },
             ];
             test.each(unsupportedModifiers)('$modifier.value', (modifierName) => {
-                expect(modifierValidator.exists(modifierName)).toBeFalsy();
+                expect(modifierValidator.exists(modifierName as Modifier)).toBeFalsy();
             });
         });
     });
@@ -367,14 +368,6 @@ describe('ModifierValidator', () => {
                         "jsonprune=\\$.*.*[?(key-eq 'Some key' 'Some value')]",
                         'jsonprune=\\$.elements[?(has "\\$.a.b.c")]',
                         'jsonprune=\\$.elements[?(key-eq "\\$.a.b.c" "abc")]',
-                        'method=get',
-                        'method=get|head|put',
-                        'method=~post',
-                        'method=~post|~put',
-                        'permissions=autoplay=()',
-                        'permissions=storage-access=()\\,camera=()',
-                        'permissions=storage-access=()\\, camera=()',
-                        'permissions=storage-access=()\\,  camera=()',
                         'redirect=noopjs',
                         'redirect=noopmp4-1s',
                         'redirect=googletagmanager-gtm',
@@ -924,6 +917,57 @@ describe('ModifierValidator', () => {
                         //     actual: 'permissions',
                         //     expected: VALIDATION_ERROR_PREFIX.NO_VALUE_ONLY_FOR_EXCEPTION,
                         // },
+                    ])('$actual', ({ actual, expected }) => {
+                        const modifier = getModifier(actual);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toEqual(expected);
+                    });
+                });
+            });
+
+            describe('required value - validate by referrerpolicy_value', () => {
+                describe('referrerpolicy_value valid', () => {
+                    test.each([
+                        'referrerpolicy=no-referrer',
+                        'referrerpolicy=no-referrer-when-downgrade',
+                        'referrerpolicy=origin',
+                        'referrerpolicy=origin-when-cross-origin',
+                        'referrerpolicy=same-origin',
+                        'referrerpolicy=strict-origin',
+                        'referrerpolicy=strict-origin-when-cross-origin',
+                        'referrerpolicy=unsafe-url',
+                        // value may be empty in unblocking rules
+                        'referrerpolicy',
+                    ])('%s', (rawModifier) => {
+                        const modifier = getModifier(rawModifier);
+                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        expect(validationResult.valid).toBeTruthy();
+                    });
+                });
+
+                describe('referrerpolicy_value invalid', () => {
+                    test.each([
+                        {
+                            actual: 'referrerpolicy=autoplay=self',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: 'referrerpolicy': 'autoplay=self'`,
+                        },
+                        {
+                            actual: 'referrerpolicy=no-origin',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: 'referrerpolicy': 'no-origin'`,
+                        },
+                        {
+                            // non-latin "o" in "origin"
+                            actual: 'referrerpolicy=оrigin',
+                            // eslint-disable-next-line max-len
+                            expected: `${VALIDATION_ERROR_PREFIX.INVALID_REFERRER_POLICY_DIRECTIVE}: 'referrerpolicy': 'оrigin'`,
+                        },
+                        {
+                            actual: '~referrerpolicy=same-origin',
+                            expected: `${VALIDATION_ERROR_PREFIX.NOT_NEGATABLE_MODIFIER}: 'referrerpolicy'`,
+                        },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
