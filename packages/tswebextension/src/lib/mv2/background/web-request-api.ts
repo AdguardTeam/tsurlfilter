@@ -548,7 +548,13 @@ export class WebRequestApi {
          * that tab navigation steel is being processed and js injection may be causing the error.
          * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
          */
-        if (requestType === RequestType.Document && frame.url !== tabContext.info.url) {
+        if (requestType === RequestType.Document
+            /**
+             * Check if url exists because it might be empty for new tabs.
+             * In this case we may inject on response started
+             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
+             */
+            && tabContext.info.url && tabContext.info.url !== frame.url) {
             return;
         }
 

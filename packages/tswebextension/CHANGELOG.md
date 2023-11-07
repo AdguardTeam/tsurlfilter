@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Ads displayed on the first visit on 'pikabu.ru' [#2571](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571)
+
 ### Added
 - Added new `ExtensionStorage`, `PersistentValueContainer`, `createExtensionStorageDecorator` interfaces and for  restoring data in event-driven background scripts [#2286](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2286).
 
