@@ -1526,6 +1526,7 @@ export class NetworkRule implements rule.IRule {
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
+            // $permissions
             case OPTIONS.PERMISSIONS:
                 this.setOptionEnabled(NetworkRuleOption.Permissions, true);
                 this.advancedModifier = new PermissionsModifier(optionValue, this.isAllowlist());

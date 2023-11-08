@@ -25,11 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 
 
+## [2.2.4] - 2023-11-08
+
+### Added
+
+- Support of `$permissions` modifier for compiler validation
+  [#66](https://github.com/AdguardTeam/tsurlfilter/issues/66)
+
+
 ## [2.2.3] - 2023-11-03
 
 ### Added
 
 - Support of `$referrerpolicy` modifier for compiler validation
+  [#191](https://github.com/AdguardTeam/FiltersCompiler/issues/191)
 
 
 ## [2.2.2] - 2023-10-17

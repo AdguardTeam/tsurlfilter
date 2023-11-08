@@ -370,6 +370,12 @@ describe('Options', () => {
         checkConversionResult(rule, rule);
     });
 
+    it('converts permissions option properly', () => {
+        const rule = '||example.org^$permissions=geolocation=()';
+        // converted rule should be the same as original
+        checkConversionResult(rule, rule);
+    });
+
     it('converts hls option properly', () => {
         const rule = String.raw`||example.org^$hls=/#UPLYNK-SEGMENT:.*\,ad/t`;
         // converted rule should be the same as original

@@ -85,6 +85,14 @@ describe('RuleValidator', () => {
         expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
     });
 
+    it('validates permissions modifier', () => {
+        // TODO: remove following comment and setConfiguration() after the implementation
+        // $permissions is not implemented for extension yet
+        setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
+        const ruleText = '||example.org^$permissions=geolocation=()';
+        expect(RuleValidator.validate(ruleText).valid).toBeTruthy();
+    });
+
     it('validates referrerpolicy modifier', () => {
         // $referrerpolicy is not supported by the extension
         setConfiguration({ compatibility: CompatibilityTypes.CoreLibs });
