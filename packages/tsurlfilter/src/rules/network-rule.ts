@@ -73,41 +73,44 @@ export enum NetworkRuleOption {
     // Other modifiers
 
     /** $popup modifier */
-    Popup = 1 << 14,
+    Popup = 1 << 12,
     /** $csp modifier */
-    Csp = 1 << 15,
+    Csp = 1 << 13,
     /** $replace modifier */
-    Replace = 1 << 16,
+    Replace = 1 << 14,
     /** $cookie modifier */
-    Cookie = 1 << 17,
+    Cookie = 1 << 15,
     /** $redirect modifier */
-    Redirect = 1 << 18,
+    Redirect = 1 << 16,
     /** $badfilter modifier */
-    Badfilter = 1 << 19,
+    Badfilter = 1 << 17,
     /** $removeparam modifier */
-    RemoveParam = 1 << 20,
+    RemoveParam = 1 << 18,
     /** $removeheader modifier */
-    RemoveHeader = 1 << 21,
+    RemoveHeader = 1 << 19,
     /** $jsonprune modifier */
-    JsonPrune = 1 << 22,
+    JsonPrune = 1 << 20,
     /** $hls modifier */
-    Hls = 1 << 23,
+    Hls = 1 << 21,
 
     // Compatibility dependent
     /** $network modifier */
-    Network = 1 << 24,
+    Network = 1 << 22,
 
     /** dns modifiers */
-    Client = 1 << 25,
-    DnsRewrite = 1 << 26,
-    DnsType = 1 << 27,
-    Ctag = 1 << 28,
+    Client = 1 << 23,
+    DnsRewrite = 1 << 24,
+    DnsType = 1 << 25,
+    Ctag = 1 << 26,
 
-    // $method modifier
-    Method = 1 << 30,
+    /* $method modifier */
+    Method = 1 << 27,
 
-    // $to modifier
-    To = 1 << 31,
+    /* $to modifier */
+    To = 1 << 28,
+
+    /* $permissions modifier */
+    Permissions = 1 << 29,
 
     // Groups (for validation)
 
@@ -1459,6 +1462,15 @@ export class NetworkRule implements rule.IRule {
             case OPTIONS.REMOVEHEADER:
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
+                break;
+            // $permissions
+            case OPTIONS.PERMISSIONS:
+                // simple validation of permissions rules for compiler.
+                // should be fully supported in tsurlfilter v2.3 and the browser extension v4.4. AG-17467
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
+                    throw new SyntaxError('Extension does not support $permissions modifier yet');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Permissions, true);
                 break;
             // $jsonprune
             // simple validation of jsonprune rules for compiler
