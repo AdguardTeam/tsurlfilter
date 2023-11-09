@@ -10,7 +10,7 @@ import {
     requestContextStorage,
 } from '@lib/mv2/background/request/request-context-storage';
 import { FilteringEventType, ContentType } from '@lib/common';
-import { tabsApi } from '@lib/mv2/background/api';
+import { engineApi, tabsApi } from '@lib/mv2/background/api';
 
 import { MockFilteringLog } from '../../../../common/mocks';
 
@@ -18,6 +18,7 @@ import HttpHeaders = WebRequest.HttpHeaders;
 
 jest.mock('../../../../../../src/lib/common/utils/logger');
 jest.mock('@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
+jest.mock('@lib/mv2/background/engine-api');
 
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
 BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
@@ -279,21 +280,11 @@ describe('Cookie filtering', () => {
 
         await tabsApi.start();
 
-        browser.tabs.onCreated.dispatch({ id: 0 });
+        browser.tabs.onCreated.dispatch({ id: 0, url: 'https://example.org' });
 
-        tabsApi.handleFrameRequest(context);
+        jest.spyOn(engineApi, 'matchRequest').mockImplementationOnce(() => new MatchingResult(rules, null));
 
-        context.matchingResult = new MatchingResult(rules, null);
-
-        tabsApi.handleFrameMatchingResult(
-            context.tabId,
-            context.frameId,
-            context.matchingResult,
-        );
-
-        requestContextStorage.set(requestId, context);
-
-        expect(cookieFiltering.getBlockingRules(context.tabId, context.frameId)).toHaveLength(2);
+        expect(cookieFiltering.getBlockingRules(context.referrerUrl, context.tabId, context.frameId)).toHaveLength(2);
 
         requestContextStorage.delete(requestId);
 

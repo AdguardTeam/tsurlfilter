@@ -119,6 +119,7 @@ MessageHandlerMV2
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
         await sessionStorage.init();
+        appContext.isStorageInitialized = true;
 
         configurationMV2Validator.parse(configuration);
 

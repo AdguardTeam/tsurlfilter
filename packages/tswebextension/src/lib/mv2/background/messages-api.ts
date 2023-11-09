@@ -185,12 +185,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        // TODO check rules for parent/grandparent frames
-        if (!tabsApi.getTabFrame(tabId, frameId)) {
-            frameId = 0;
-        }
-
-        return CosmeticApi.getContentScriptData(tabId, frameId);
+        return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
     }
 
     /**
@@ -221,12 +216,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        // TODO check rules for parent/grandparent frames
-        if (!tabsApi.getTabFrame(tabId, frameId)) {
-            frameId = 0;
-        }
-
-        const cookieRules = cookieFiltering.getBlockingRules(tabId, frameId);
+        const cookieRules = cookieFiltering.getBlockingRules(res.data.documentUrl, tabId, frameId);
 
         return cookieRules.map((rule) => ({
             ruleText: rule.getText(),

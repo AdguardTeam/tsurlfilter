@@ -1,13 +1,7 @@
 import { CookieRule } from '../../common/content-script';
+import type { GetSaveCookieLogEventPayloadValidator } from '../../common/message';
 
-interface OnRuleAppliedData {
-    cookieName: string,
-    cookieValue: string,
-    cookieDomain: string,
-    cookieRuleText: string,
-    thirdParty: boolean,
-    filterId: number,
-}
+type OnRuleAppliedData = GetSaveCookieLogEventPayloadValidator;
 
 interface OnRuleAppliedCallback {
     (data: OnRuleAppliedData): void;
@@ -184,7 +178,7 @@ export class CookieController {
             cookieName,
             cookieValue,
             cookieDomain: document.location.hostname,
-            cookieRuleText: rule.ruleText,
+            ruleText: rule.ruleText,
             thirdParty: rule.isThirdParty,
             filterId: rule.filterId,
         });

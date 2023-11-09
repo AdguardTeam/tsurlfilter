@@ -45,12 +45,15 @@ export class EngineApi {
     /**
      * Gets app filtering status.
      *
-     * TODO: This method is duplicated in {@link EngineApi}. Consider moving it to {@link appContext}
-     *  itself (DRY). But appContext supposed to be deleted (v.zhelvis).
-     *
      * @returns True if filtering is enabled, otherwise returns false.
      */
     public get isFilteringEnabled(): boolean {
+        // Check this flag before access storage values, because engine methods
+        // can by triggered before initialization by content script requests.
+        if (!this.appContext.isStorageInitialized) {
+            return false;
+        }
+
         return Boolean(this.appContext.configuration?.settings.filteringEnabled);
     }
 
