@@ -264,20 +264,8 @@ describe('NetworkRule constructor', () => {
 
     it('works when it handles too wide rules properly', () => {
         expect(() => {
-            new NetworkRule('*$third-party', 0);
-        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
-
-        expect(() => {
-            new NetworkRule('||*$script', 0);
-        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
-
-        expect(() => {
-            new NetworkRule('$third-party', 0);
-        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
-
-        expect(() => {
-            new NetworkRule('ad$third-party', 0);
-        }).toThrow(new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific'));
+            new NetworkRule('||*', 0);
+        }).toThrow(new SyntaxError('The rule must be of length 4 or more: "||*"'));
     });
 
     it('doesnt consider rules with app modifier too wide', () => {

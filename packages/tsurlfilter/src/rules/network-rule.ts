@@ -389,6 +389,13 @@ export class NetworkRule implements rule.IRule {
     public static readonly OPTIONS = NETWORK_RULE_OPTIONS;
 
     /**
+     * Minimum required length of the rule.
+     *
+     * https://github.com/AdguardTeam/tsurlfilter/issues/110
+     */
+    private static readonly MIN_RULE_LENGTH = 4;
+
+    /**
      * Returns the original text of the rule from which it was parsed.
      *
      * @returns Original text of the rule.
@@ -999,26 +1006,8 @@ export class NetworkRule implements rule.IRule {
             this.loadOptions(ruleParts.options);
         }
 
-        if (
-            pattern === SimpleRegex.MASK_START_URL
-            || pattern === SimpleRegex.MASK_ANY_CHARACTER
-            || pattern === ''
-            || pattern.length < SimpleRegex.MIN_GENERIC_RULE_LENGTH
-        ) {
-            // Except cookie, removeparam rules and dns compatible rules, they have their own atmosphere
-            const hasCookieModifier = this.advancedModifier instanceof CookieModifier;
-            const hasRemoveParamModifier = this.advancedModifier instanceof RemoveParamModifier;
-            // https://github.com/AdguardTeam/tsurlfilter/issues/56
-            const isDnsCompatible = isCompatibleWith(CompatibilityTypes.Dns);
-
-            if (!hasCookieModifier && !hasRemoveParamModifier && !isDnsCompatible) {
-                if (!(this.domainModifier?.hasPermittedDomains() || this.hasPermittedApps())) {
-                    // Rule matches too much and does not have any domain restriction
-                    // We should not allow this kind of rules
-                    // eslint-disable-next-line max-len
-                    throw new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific');
-                }
-            }
+        if (ruleText.length < NetworkRule.MIN_RULE_LENGTH) {
+            throw new SyntaxError(`The rule must be of length ${NetworkRule.MIN_RULE_LENGTH} or more: "${ruleText}"`);
         }
 
         this.calculatePriorityWeight();

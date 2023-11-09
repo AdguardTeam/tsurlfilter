@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules.
 
+### Changed
+- How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#100](https://github.com/AdguardTeam/tsurlfilter/issues/110).
+
+
 ### Fixed
 - Scriptlets not being logged when filtering log is open [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481).
 - Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
