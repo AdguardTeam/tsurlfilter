@@ -10,6 +10,13 @@ import { sessionDecorator, SessionStorageKey } from './session-storage';
  */
 export class AppContext {
     /**
+     * Is storage initialized.
+     * This flag is used to prevent access to persistent storage data on
+     * request from content script, before app is started.
+     */
+    public isStorageInitialized = false;
+
+    /**
      * Is app started.
      */
     @sessionDecorator(SessionStorageKey.IsAppStarted)

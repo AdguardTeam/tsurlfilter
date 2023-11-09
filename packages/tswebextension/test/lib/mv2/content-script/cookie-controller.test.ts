@@ -125,7 +125,7 @@ describe('Cookie Controller Tests', () => {
         expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
             cookieName: 'pick',
             cookieValue: 'test',
-            cookieRuleText: '@@||example.org^$cookie=pick',
+            ruleText: '@@||example.org^$cookie=pick',
         }));
 
         document.cookie = 'other=test';
@@ -133,7 +133,7 @@ describe('Cookie Controller Tests', () => {
         expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
             cookieName: 'other',
             cookieValue: 'test',
-            cookieRuleText: '$cookie=/pick|other/,domain=example.org',
+            ruleText: '$cookie=/pick|other/,domain=example.org',
         }));
     });
 
@@ -156,7 +156,7 @@ describe('Cookie Controller Tests', () => {
         controller.apply(rulesData);
 
         expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
-            cookieRuleText: '||example.org^$cookie,important',
+            ruleText: '||example.org^$cookie,important',
         }));
     });
 

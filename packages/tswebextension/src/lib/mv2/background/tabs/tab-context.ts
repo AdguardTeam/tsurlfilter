@@ -36,6 +36,10 @@ export type FrameRequestContext = {
 export class TabContext {
     /**
      * Frames context.
+     * NOTE: this is temporary storage for frames data.
+     * Each frame context is deleted after navigation is complete.
+     * Storage is cleared on tab reload.
+     * Do not use it as a data source out of request or navigation processing.
      */
     public frames = new Map<number, Frame>();
 

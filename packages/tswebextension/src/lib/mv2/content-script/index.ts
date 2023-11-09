@@ -44,28 +44,12 @@ initAssistant();
     }
 
     try {
-        const cookieController = new CookieController(
-            ({
-                cookieName,
-                cookieValue,
-                cookieDomain,
-                cookieRuleText,
-                thirdParty,
-                filterId,
-            }) => {
-                sendAppMessage({
-                    type: MessageType.SaveCookieLogEvent,
-                    payload: {
-                        cookieName,
-                        cookieValue,
-                        cookieDomain,
-                        cookieRuleText,
-                        thirdParty,
-                        filterId,
-                    },
-                });
-            },
-        );
+        const cookieController = new CookieController((data) => {
+            sendAppMessage({
+                type: MessageType.SaveCookieLogEvent,
+                payload: data,
+            });
+        });
 
         cookieController.apply(response);
     } catch (e) {

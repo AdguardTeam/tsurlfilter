@@ -6,7 +6,7 @@ import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilt
 import type { CookieRule } from '../../common/content-script/cookie-controller';
 import { RequestBlockingApi } from './request';
 import { ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
-import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 import {
     getAssistantCreateRulePayloadValidator,
@@ -185,12 +185,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        // TODO check rules for parent/grandparent frames
-        if (!tabsApi.getTabFrame(tabId, frameId)) {
-            frameId = 0;
-        }
-
-        return CosmeticApi.getContentScriptData(tabId, frameId);
+        return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
     }
 
     /**
@@ -221,12 +216,7 @@ export class MessagesApi implements MessagesApiInterface {
             frameId = 0;
         }
 
-        // TODO check rules for parent/grandparent frames
-        if (!tabsApi.getTabFrame(tabId, frameId)) {
-            frameId = 0;
-        }
-
-        const cookieRules = CookieFiltering.getBlockingRules(tabId, frameId);
+        const cookieRules = cookieFiltering.getBlockingRules(res.data.documentUrl, tabId, frameId);
 
         return cookieRules.map((rule) => ({
             ruleText: rule.getText(),

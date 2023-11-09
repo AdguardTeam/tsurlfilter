@@ -14,7 +14,8 @@ import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import CookieUtils from './utils';
 import { RequestContext, requestContextStorage } from '../../request';
-import { tabsApi } from '../../api';
+import { engineApi, tabsApi } from '../../api';
+import { createFrameMatchQuery } from '../../utils/create-frame-match-query';
 
 /**
  * Cookie filtering.
@@ -307,22 +308,32 @@ export class CookieFiltering {
      * TODO: Return engine startup status data to content script
      * to delay execution of cookie rules until the engine is ready.
      *
-     * Looks up blocking rules for content-script in frame context.
+     * Looks up blocking rules for content-script.
      *
+     * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @returns List of blocking rules.
      */
-    public static getBlockingRules(tabId: number, frameId: number): NetworkRule[] {
-        const frame = tabsApi.getTabFrame(tabId, frameId);
+    // eslint-disable-next-line class-methods-use-this
+    public getBlockingRules(frameUrl: string, tabId: number, frameId: number): NetworkRule[] {
+        const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!frame || !frame.matchingResult) {
+        if (!tabContext?.info.url) {
             return [];
         }
 
-        const cookieRules = frame.matchingResult.getCookieRules();
+        const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
-        return CookieRulesFinder.getBlockingRules(frame.url, cookieRules);
+        const matchingResult = engineApi.matchRequest(matchQuery);
+
+        if (!matchingResult) {
+            return [];
+        }
+
+        const cookieRules = matchingResult.getCookieRules();
+
+        return CookieRulesFinder.getBlockingRules(matchQuery.requestUrl, cookieRules);
     }
 
     /**

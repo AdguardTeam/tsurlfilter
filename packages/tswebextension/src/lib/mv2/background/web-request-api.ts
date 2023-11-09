@@ -41,9 +41,8 @@
  *
  * For frames without a source, we inject cosmetics on the {@link browser.webNavigation.onDOMContentLoaded} event.
  *
- * If a rule is successfully injected into one of the events being processed,
- * a flag is set in the {@link TabContext} context to block re-injection.
- *
+ * The frame data will be removed from the specified {@link TabContext} on {@link browser.webNavigation.onCompleted} or
+ * {@link browser.webNavigation.onErrorOccurred } events.
  *
  *  Web Request API Event Handling:
  *
@@ -146,8 +145,8 @@
  * {@link CosmeticRule}.                 └──────────────┬──────────────┘ │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
- *                                       │                             │ │
- *                                     ┌─┤         onCompleted         │ │
+ * Remove the frame data                 │                             │ │
+ * from {@link TabContext}.            ┌─┤         onCompleted         │ │
  *                                     │ │                             │ │
  *                                     │ └─────────────────────────────┘ │
  *                                     │                                 │
@@ -164,8 +163,8 @@
  *                                       └─────────────────────────────┘.
  *
  *                                       ┌─────────────────────────────┐
- *                                       │                             │
- *                                       │       onErrorOccurred       │
+ * Remove the frame data                 │                             │
+ * from {@link TabContext}.              │       onErrorOccurred       │
  *                                       │                             │
  *                                       └─────────────────────────────┘.
  */
@@ -197,7 +196,8 @@ import {
 } from './request';
 import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
-import { isFirefox } from './utils';
+import { isFirefox } from './utils/browser-detector';
+import { isLocalFrame } from './utils/is-local-frame';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -234,6 +234,8 @@ export class WebRequestApi {
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
         browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
         browser.webNavigation.onDOMContentLoaded.addListener(WebRequestApi.onDomContentLoaded);
+        browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
+        browser.webNavigation.onErrorOccurred.addListener(WebRequestApi.deleteFrameContext);
     }
 
     /**
@@ -250,6 +252,8 @@ export class WebRequestApi {
 
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
         browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
+        browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
+        browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
     }
 
     /**
@@ -667,26 +671,6 @@ export class WebRequestApi {
     }
 
     /**
-     * Checks if iframe has same source as main frame or if src is about:blank, javascript:, etc.
-     * We don't include frames with 'src=data:' because Chrome and Firefox
-     * do not allow data to be injected into frames with this type of src,
-     * this bug is reported here https://bugs.chromium.org/p/chromium/issues/detail?id=55084.
-     *
-     * @param frameUrl Frame url.
-     * @param frameId Unique id of frame in the tab.
-     * @param mainFrameUrl Url of tab where iframe exists.
-     * @returns True if frame without src, else returns false.
-     */
-    private static isLocalFrame(frameUrl: string, frameId: number, mainFrameUrl: string): boolean {
-        return frameId !== MAIN_FRAME_ID
-            && (frameUrl === mainFrameUrl
-                || frameUrl === 'about:blank'
-                || frameUrl === 'about:srcdoc'
-                // eslint-disable-next-line no-script-url
-                || frameUrl.indexOf('javascript:') > -1);
-    }
-
-    /**
      * Injects cosmetic rules to specified frame based on data from frame and response context.
      *
      * If cosmetic result does not exist or it has been already applied, ignore injection.
@@ -789,15 +773,20 @@ export class WebRequestApi {
             url,
         } = details;
 
-        const mainFrame = tabsApi.getTabMainFrame(tabId);
+        const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!mainFrame
-            || !mainFrame.cosmeticResult
-            || !WebRequestApi.isLocalFrame(url, frameId, mainFrame.url)) {
+        const mainFrameUrl = tabContext?.info.url;
+
+        if (!mainFrameUrl || !isLocalFrame(url, frameId, mainFrameUrl)) {
             return;
         }
 
-        const { cosmeticResult } = mainFrame;
+        const cosmeticResult = engineApi.matchCosmetic({
+            requestUrl: mainFrameUrl,
+            frameUrl: mainFrameUrl,
+            requestType: RequestType.Document,
+            frameRule: tabContext.mainFrameRule,
+        });
 
         CosmeticApi
             .applyCssRules({
@@ -885,5 +874,23 @@ export class WebRequestApi {
         // Don't check for moz://extension because it was fixed in
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1588957#c10.
         return undefined;
+    }
+
+    /**
+     * Delete frame data from tab context when navigation is finished.
+     * @param details Navigation event details.
+     */
+    private static deleteFrameContext(
+        details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnErrorOccurredDetailsType,
+    ): void {
+        const { tabId, frameId } = details;
+
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.frames.delete(frameId);
     }
 }

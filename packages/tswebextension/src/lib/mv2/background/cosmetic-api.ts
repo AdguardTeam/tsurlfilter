@@ -1,6 +1,5 @@
 /* eslint-disable jsdoc/require-returns */
 import { nanoid } from 'nanoid';
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 
 import { appContext } from './context';
@@ -11,8 +10,8 @@ import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
-import { MAIN_FRAME_ID } from './tabs/frame';
 import { engineApi, tabsApi } from './api';
+import { createFrameMatchQuery } from './utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
@@ -210,47 +209,47 @@ export class CosmeticApi extends CosmeticApiCommon {
     /**
      * Returns content script data for applying cosmetic.
      *
+     * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
      * @returns Content script data for applying cosmetic.
      */
-    public static getContentScriptData(tabId: number, frameId: number): ContentScriptCosmeticData {
+    public static getContentScriptData(
+        frameUrl: string,
+        tabId: number,
+        frameId: number,
+    ): ContentScriptCosmeticData {
+        const { isStorageInitialized } = appContext;
+
+        const data: ContentScriptCosmeticData = {
+            isAppStarted: false,
+            areHitsStatsCollected: false,
+            extCssRules: null,
+        };
+
+        // if storage is not initialized, then app is not ready yet.
+        if (!isStorageInitialized) {
+            return data;
+        }
+
         const { isAppStarted, configuration } = appContext;
 
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
-        const data: ContentScriptCosmeticData = {
-            isAppStarted,
-            areHitsStatsCollected,
-            extCssRules: null,
-        };
+        data.isAppStarted = isAppStarted;
+        data.areHitsStatsCollected = areHitsStatsCollected;
 
         const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!tabContext) {
+        if (!tabContext?.info.url) {
             return data;
         }
 
-        const frame = tabContext.frames.get(frameId);
+        const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
-        if (!frame) {
-            return data;
-        }
+        const cosmeticResult = engineApi.matchCosmetic(matchQuery);
 
-        /**
-         * Cosmetic result may not be committed to frame context during worker request processing.
-         * We use engine request as a fallback for this case.
-         */
-        if (!frame.cosmeticResult) {
-            frame.cosmeticResult = engineApi.matchCosmetic({
-                requestUrl: frame.url,
-                frameUrl: frame.url,
-                requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
-                frameRule: tabContext.mainFrameRule,
-            });
-        }
-
-        data.extCssRules = CosmeticApi.getExtCssRules(frame.cosmeticResult, areHitsStatsCollected);
+        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
 
         return data;
     }
