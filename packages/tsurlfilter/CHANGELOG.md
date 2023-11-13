@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
 
+## [2.2.5] - 2023-11-13
+
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.91`.
+
+
 ## [2.2.4] - 2023-11-08
 
 ### Added

@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new `ExtensionStorage`, `PersistentValueContainer`, `createExtensionStorageDecorator` interfaces and for  restoring data in event-driven background scripts [#2286](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2286).
 
 
+## [0.4.4] - 2023-10-13
+
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.2.4`.
+- Updated `@adguard/scriptlets` to `v1.9.91`.
+
+
 ## [0.4.2] - 2023-10-17
 
 ### Fixed
