@@ -1,4 +1,4 @@
-import { StringRuleList, NetworkRule } from '@adguard/tsurlfilter';
+import { StringRuleList } from '@adguard/tsurlfilter';
 import { Allowlist } from '@lib/mv2/background/allowlist';
 import { ALLOWLIST_FILTER_ID } from '@lib/common/constants';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
@@ -79,17 +79,60 @@ describe('Allowlist Api', () => {
     });
 
     describe('static createAllowlistRule method', () => {
-        it('should return allowlist rule, when domain is specified', () => {
-            expect(Allowlist.createAllowlistRule('example.com')).toStrictEqual(
-                new NetworkRule(
-                    String.raw`@@///(www\.)?example\.com/$document,important`,
-                    ALLOWLIST_FILTER_ID,
-                ),
-            );
-        });
-
         it('should return null, when domain is empty', () => {
             expect(Allowlist.createAllowlistRule('')).toBeNull();
+        });
+
+        describe('should return network rule for valid allowlist domain', () => {
+            const testCases = [
+                {
+                    domain: 'example.com',
+                    expected: String.raw`@@///(www\.)?example\.com/$document,important`,
+                },
+                {
+                    domain: 'sub.example.com',
+                    expected: String.raw`@@///(www\.)?sub\.example\.com/$document,important`,
+                },
+                {
+                    domain: 'example.*',
+                    expected: String.raw`@@///(www\.)?example\..*/$document,important`,
+                },
+                {
+                    domain: 'example.*.com',
+                    expected: String.raw`@@///(www\.)?example\..*\.com/$document,important`,
+                },
+                {
+                    domain: '*.example.com',
+                    expected: String.raw`@@||example.com$document,important`,
+                },
+                {
+                    domain: '*.sub.example.*',
+                    expected: String.raw`@@||sub.example.*$document,important`,
+                },
+                {
+                    domain: '*example.com',
+                    expected: String.raw`@@///(www\.)?.*example\.com/$document,important`,
+                },
+                {
+                    domain: 'example*.com',
+                    expected: String.raw`@@///(www\.)?example.*\.com/$document,important`,
+                },
+                {
+                    domain: 'exam*ple.com',
+                    expected: String.raw`@@///(www\.)?exam.*ple\.com/$document,important`,
+                },
+                {
+                    domain: '*.example*.com',
+                    expected: String.raw`@@||example*.com$document,important`,
+                },
+            ];
+
+            it.each(testCases)('should return $expected rule for $domain', ({ domain, expected }) => {
+                const rule = Allowlist.createAllowlistRule(domain)!;
+
+                expect(rule.getText()).toBe(expected);
+                expect(rule.getFilterListId()).toBe(ALLOWLIST_FILTER_ID);
+            });
         });
     });
 });
