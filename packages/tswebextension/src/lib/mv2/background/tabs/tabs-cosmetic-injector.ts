@@ -1,7 +1,7 @@
 import browser, { Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { isHttpOrWsRequest } from '../../../common/utils/url';
+import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
 import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
@@ -58,14 +58,21 @@ export class TabsCosmeticInjector {
             return;
         }
 
+        const { url } = tab;
+
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
+        if (!isHttpRequest(url)) {
+            return;
+        }
+
         const tabContext = new TabContext(tab, this.documentApi);
 
         const tabId = tab.id;
 
         this.tabsApi.context.set(tabId, tabContext);
 
-        if (tab.url) {
-            tabContext.mainFrameRule = this.documentApi.matchFrame(tab.url);
+        if (url) {
+            tabContext.mainFrameRule = this.documentApi.matchFrame(url);
         }
 
         const frames = await browser.webNavigation.getAllFrames({ tabId });
@@ -74,20 +81,20 @@ export class TabsCosmeticInjector {
             return;
         }
 
-        frames.forEach(({ frameId, url }) => {
-            const frame = new Frame(url);
+        frames.forEach(({ frameId, url: frameUrl }) => {
+            const frame = new Frame(frameUrl);
 
             tabContext.frames.set(frameId, frame);
 
-            if (!isHttpOrWsRequest(url)) {
+            if (!isHttpOrWsRequest(frameUrl)) {
                 return;
             }
 
             const isDocumentFrame = frameId === MAIN_FRAME_ID;
 
             frame.matchingResult = this.engineApi.matchRequest({
-                requestUrl: url,
-                frameUrl: url,
+                requestUrl: frameUrl,
+                frameUrl,
                 requestType: isDocumentFrame ? RequestType.Document : RequestType.SubDocument,
                 frameRule: tabContext.mainFrameRule,
             });
@@ -98,7 +105,7 @@ export class TabsCosmeticInjector {
 
             const cosmeticOption = frame.matchingResult.getCosmeticOption();
 
-            frame.cosmeticResult = this.engineApi.getCosmeticResult(url, cosmeticOption);
+            frame.cosmeticResult = this.engineApi.getCosmeticResult(frameUrl, cosmeticOption);
 
             const { cosmeticResult } = frame;
 
@@ -107,7 +114,7 @@ export class TabsCosmeticInjector {
             CosmeticApi.applyFrameJsRules(frameId, tabId);
 
             CosmeticApi.logScriptRules({
-                url,
+                url: frameUrl,
                 tabId,
                 cosmeticResult,
                 timestamp: Date.now(),

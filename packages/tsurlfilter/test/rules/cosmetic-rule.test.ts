@@ -227,22 +227,22 @@ describe('CosmeticRule match', () => {
 
     it('works if it matches wide rules', () => {
         const rule = new CosmeticRule('##banner', 0);
-        expect(rule.match(createRequest('example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(true);
     });
 
     it('matches requests by regexp pattern of domain', () => {
         let rule: CosmeticRule;
         // Simple case
         rule = new CosmeticRule(String.raw`[$domain=/example\.(org\|com)/]##banner`, 0);
-        expect(rule.match(createRequest('example.org'))).toEqual(true);
-        expect(rule.match(createRequest('example.com'))).toEqual(true);
-        expect(rule.match(createRequest('example.net'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.net'))).toEqual(false);
 
         // Multiple patterns, inverted value
         rule = new CosmeticRule(String.raw`[$domain=/example/|~/org/]##banner`, 0);
-        expect(rule.match(createRequest('example.org'))).toEqual(false);
-        expect(rule.match(createRequest('example.com'))).toEqual(true);
-        expect(rule.match(createRequest('example.net'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.com'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.net'))).toEqual(true);
     });
 
     it('matches by $domain modifier with mixed type values', () => {
@@ -275,40 +275,40 @@ describe('CosmeticRule match', () => {
 
     it('works if it matches domain restrictions properly', () => {
         const rule = new CosmeticRule('example.org,~sub.example.org##banner', 0);
-        expect(rule.match(createRequest('example.org'))).toEqual(true);
-        expect(rule.match(createRequest('test.example.org'))).toEqual(true);
-        expect(rule.match(createRequest('testexample.org'))).toEqual(false);
-        expect(rule.match(createRequest('sub.example.org'))).toEqual(false);
-        expect(rule.match(createRequest('sub.sub.example.org'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://test.example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://testexample.org'))).toEqual(false);
+        expect(rule.match(createRequest('https://sub.example.org'))).toEqual(false);
+        expect(rule.match(createRequest('https://sub.sub.example.org'))).toEqual(false);
     });
 
     it('works if it matches wildcard domain restrictions properly', () => {
         const rule = new CosmeticRule('example.*##body', 0);
-        expect(rule.match(createRequest('example.org'))).toEqual(true);
-        expect(rule.match(createRequest('example.de'))).toEqual(true);
-        expect(rule.match(createRequest('example.co.uk'))).toEqual(true);
-        expect(rule.match(createRequest('sub.example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.de'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.co.uk'))).toEqual(true);
+        expect(rule.match(createRequest('https://sub.example.org'))).toEqual(true);
 
-        expect(rule.match(createRequest('testexample.org'))).toEqual(false);
+        expect(rule.match(createRequest('https://testexample.org'))).toEqual(false);
         // non-existent tld
-        expect(rule.match(createRequest('example.eu.uk'))).toEqual(false);
+        expect(rule.match(createRequest('https://example.eu.uk'))).toEqual(false);
     });
 
     it('works if it matches wildcard domain restrictions properly - complicated', () => {
         const rule = new CosmeticRule('~yandex.*,google.*,youtube.*###ad-iframe', 0);
-        expect(rule.match(createRequest('google.com'))).toEqual(true);
-        expect(rule.match(createRequest('youtube.ru'))).toEqual(true);
-        expect(rule.match(createRequest('youtube.co.id'))).toEqual(true);
+        expect(rule.match(createRequest('https://google.com'))).toEqual(true);
+        expect(rule.match(createRequest('https://youtube.ru'))).toEqual(true);
+        expect(rule.match(createRequest('https://youtube.co.id'))).toEqual(true);
 
-        expect(rule.match(createRequest('yandex.com'))).toEqual(false);
-        expect(rule.match(createRequest('www.yandex.ru'))).toEqual(false);
-        expect(rule.match(createRequest('www.adguard.com'))).toEqual(false);
+        expect(rule.match(createRequest('https://yandex.com'))).toEqual(false);
+        expect(rule.match(createRequest('https://www.yandex.ru'))).toEqual(false);
+        expect(rule.match(createRequest('https://www.adguard.com'))).toEqual(false);
     });
 
     it('works if it matches wildcard rule', () => {
         const rule = new CosmeticRule('*##banner', 0);
-        expect(rule.match(createRequest('example.org'))).toEqual(true);
-        expect(rule.match(createRequest('test.com'))).toEqual(true);
+        expect(rule.match(createRequest('https://example.org'))).toEqual(true);
+        expect(rule.match(createRequest('https://test.com'))).toEqual(true);
     });
 
     it('works if it matches rule with path modifier pattern', () => {

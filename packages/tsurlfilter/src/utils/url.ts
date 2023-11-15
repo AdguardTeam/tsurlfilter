@@ -119,3 +119,13 @@ export const getRelativeUrl = (url: string): string | null => {
     const i = url.indexOf('/', url.indexOf('://') + 3);
     return i !== -1 ? url.substr(i) : null;
 };
+
+/**
+ * Checks if url is http or websocket.
+ *
+ * @param url Request url.
+ * @returns True if url starts with http{s?} or ws.
+ */
+export function isHttpOrWsRequest(url: string): boolean {
+    return !!url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
+}

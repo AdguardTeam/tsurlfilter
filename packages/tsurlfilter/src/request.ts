@@ -1,6 +1,7 @@
 import { parse } from 'tldts';
 import type { IResult } from 'tldts-core';
 
+import { isHttpOrWsRequest } from './utils/url';
 import { RequestType } from './request-type';
 import { HTTPMethod } from './modifiers/method-modifier';
 
@@ -130,7 +131,7 @@ export class Request {
      * @throws
      */
     constructor(url: string, sourceUrl: string | null, requestType: RequestType, method?: HTTPMethod) {
-        if (typeof url !== 'string') {
+        if (typeof url !== 'string' || !isHttpOrWsRequest(url)) {
             throw new TypeError(`Invalid request url: ${url}`);
         }
 

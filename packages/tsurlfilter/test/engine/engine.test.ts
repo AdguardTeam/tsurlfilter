@@ -431,14 +431,14 @@ describe('TestEngineCosmeticResult - elemhide', () => {
     const engine = new Engine(new RuleStorage([list]));
 
     it('works if returns correct cosmetic elemhide result', () => {
-        let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.elementHiding.generic.length).toEqual(2);
         expect(result.elementHiding.specific.length).toEqual(0);
         expect(result.elementHiding.genericExtCss.length).toBe(1);
         expect(result.elementHiding.specificExtCss.length).toBe(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        result = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.elementHiding.generic.length).toEqual(1);
         expect(result.elementHiding.specific.length).toEqual(1);
@@ -446,7 +446,7 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         expect(result.elementHiding.specificExtCss.length).toBe(1);
 
         result = engine.getCosmeticResult(
-            createRequest('example.org'),
+            createRequest('https://example.org'),
             CosmeticOption.CosmeticOptionGenericCSS & CosmeticOption.CosmeticOptionSpecificCSS,
         );
 
@@ -456,7 +456,7 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         expect(result.elementHiding.specificExtCss.length).toBe(0);
 
         result = engine.getCosmeticResult(
-            createRequest('example.org'),
+            createRequest('https://example.org'),
             CosmeticOption.CosmeticOptionGenericCSS
             | CosmeticOption.CosmeticOptionSpecificCSS,
         );
@@ -487,14 +487,14 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
     const engine = new Engine(new RuleStorage([list]));
 
     it('works if returns correct cosmetic css result', () => {
-        let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.CSS.generic.length).toEqual(1);
         expect(result.CSS.specific.length).toEqual(0);
         expect(result.CSS.genericExtCss.length).toBe(1);
         expect(result.CSS.specificExtCss.length).toBe(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        result = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.CSS.generic.length).toEqual(1);
         expect(result.CSS.specific.length).toEqual(1);
@@ -502,7 +502,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         expect(result.CSS.specificExtCss.length).toBe(1);
 
         result = engine.getCosmeticResult(
-            createRequest('example.org'),
+            createRequest('https://example.org'),
             CosmeticOption.CosmeticOptionSpecificCSS & CosmeticOption.CosmeticOptionGenericCSS,
         );
 
@@ -512,7 +512,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         expect(result.CSS.specificExtCss.length).toBe(0);
 
         result = engine.getCosmeticResult(
-            createRequest('example.org'),
+            createRequest('https://example.org'),
             CosmeticOption.CosmeticOptionGenericCSS | CosmeticOption.CosmeticOptionSpecificCSS,
         );
 
@@ -537,17 +537,17 @@ describe('TestEngineCosmeticResult - js', () => {
         const list = new StringRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
-        let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.generic.length).toEqual(1);
         expect(result.JS.specific.length).toEqual(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        result = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.generic.length).toEqual(1);
         expect(result.JS.specific.length).toEqual(1);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionJS);
+        result = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionJS);
 
         expect(result.JS.generic.length).toEqual(1);
         expect(result.JS.specific.length).toEqual(1);
@@ -557,17 +557,17 @@ describe('TestEngineCosmeticResult - js', () => {
         const list = new StringRuleList(1, rules.join('\n'), false, true);
         const engine = new Engine(new RuleStorage([list]));
 
-        let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+        let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.generic.length).toEqual(0);
         expect(result.JS.specific.length).toEqual(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        result = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
 
         expect(result.JS.generic.length).toEqual(0);
         expect(result.JS.specific.length).toEqual(0);
 
-        result = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionJS);
+        result = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionJS);
 
         expect(result.JS.generic.length).toEqual(0);
         expect(result.JS.specific.length).toEqual(0);
@@ -654,11 +654,11 @@ describe('Match subdomains', () => {
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
-        let res = engine.getCosmeticResult(createRequest('www.example.org'), CosmeticOption.CosmeticOptionAll);
+        let res = engine.getCosmeticResult(createRequest('https://www.example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res).toBeDefined();
         expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRule);
 
-        res = engine.getCosmeticResult(createRequest('sub.example.org'), CosmeticOption.CosmeticOptionAll);
+        res = engine.getCosmeticResult(createRequest('https://sub.example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res).toBeDefined();
         expect(res.elementHiding.specific).toHaveLength(2);
         expect(res.elementHiding.specific.map((rule) => rule.getText()).includes(specificHidingRule))
@@ -677,14 +677,14 @@ describe('Match subdomains', () => {
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
-        let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
+        let res = engine.getCosmeticResult(createRequest('https://i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
 
-        res = engine.getCosmeticResult(createRequest('mail.i.ua'), CosmeticOption.CosmeticOptionAll);
+        res = engine.getCosmeticResult(createRequest('https://mail.i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
 
         // both rules match
-        res = engine.getCosmeticResult(createRequest('www.i.ua'), CosmeticOption.CosmeticOptionAll);
+        res = engine.getCosmeticResult(createRequest('https://www.i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(2);
     });
 
@@ -727,10 +727,10 @@ describe('Match subdomains', () => {
         const list = new StringRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
-        let res = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+        let res = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
 
-        res = engine.getCosmeticResult(createRequest('www.example.org'), CosmeticOption.CosmeticOptionAll);
+        res = engine.getCosmeticResult(createRequest('https://www.example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
     });
 });
@@ -754,7 +754,7 @@ describe('$specifichide modifier', () => {
         const engine = new Engine(new RuleStorage([list]));
         const request = new Request('http://example.org', '', RequestType.Document);
         const result = engine.matchRequest(request);
-        const cosmeticResult = engine.getCosmeticResult(createRequest('example.org'), result.getCosmeticOption());
+        const cosmeticResult = engine.getCosmeticResult(createRequest('https://example.org'), result.getCosmeticOption());
         expect(cosmeticResult).toBeTruthy();
         expect(cosmeticResult.elementHiding.specific).toHaveLength(0);
         expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
