@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 
 
+## [2.2.6] - 2023-11-15
+
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.96`.
+
+
 ## [2.2.5] - 2023-11-13
 
 ### Changed

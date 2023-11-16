@@ -53,6 +53,13 @@ MessageHandlerMV2
      * @returns True if app started, else false.
      */
     public get isStarted(): boolean {
+        // TODO: Remove this check after moving call of storage initialization in extension code.
+        // Check this flag before access storage values, because engine methods
+        // can be triggered before initialization by extension `onCheckRequestFilterReady` method.
+        if (!appContext.isStorageInitialized) {
+            return false;
+        }
+
         return appContext.isAppStarted;
     }
 

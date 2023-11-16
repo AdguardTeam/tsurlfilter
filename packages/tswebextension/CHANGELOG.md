@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [0.4.6] - 2023-11-16
+
+### Added
+- Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
+
+
+## [0.4.5] - 2023-11-15
+
+### Added
+- Allowlist wildcard support [#2020](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2020).
+
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.2.6`.
+- Updated `@adguard/scriptlets` to `v1.9.96`.
+
 
 ## [Unreleased]
 
@@ -29,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory leaks associated with storing refs to old filter lists in context of frames.
 
 ### Added
-- Added new `ExtensionStorage`, `PersistentValueContainer`, `createExtensionStorageDecorator` interfaces and for  restoring data in event-driven background scripts [#2286](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2286).
+- Added new `ExtensionStorage`, `PersistentValueContainer`, `createExtensionStorageDecorator` interfaces and for restoring data in event-driven background scripts [#2286](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2286).
 
 
 ## [0.4.2] - 2023-10-17

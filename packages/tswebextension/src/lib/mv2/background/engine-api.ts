@@ -48,6 +48,7 @@ export class EngineApi {
      * @returns True if filtering is enabled, otherwise returns false.
      */
     public get isFilteringEnabled(): boolean {
+        // TODO: Remove this check after moving call of storage initialization in extension code.
         // Check this flag before access storage values, because engine methods
         // can by triggered before initialization by content script requests.
         if (!this.appContext.isStorageInitialized) {

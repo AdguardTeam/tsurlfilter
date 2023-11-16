@@ -1,4 +1,4 @@
-import { NetworkRule, StringRuleList, SimpleRegex } from '@adguard/tsurlfilter';
+import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
 
 import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 import type { Configuration } from '../../common/configuration';
@@ -82,10 +82,33 @@ export class Allowlist {
      * Creates rule string based on specified domain.
      *
      * @param domain Allowlisted domain.
+     *
      * @returns Allowlist rule string.
      */
     private static createAllowlistRuleString(domain: string): string {
-        const escapedDomain = SimpleRegex.escapeRegexSpecials(domain);
-        return String.raw`@@///(www\.)?${escapedDomain}/$document,important`;
+        // Special case for wildcard tld + n domain.
+        if (domain.startsWith('*.')) {
+            return String.raw`@@||${domain.slice(2)}$document,important`;
+        }
+
+        // In other cases we use regexp to match domain and it`s 'www' subdomain strictly.
+        let regexp = '';
+
+        // transform allowlist domain special characters
+        for (let i = 0; i < domain.length; i += 1) {
+            const char = domain[i];
+
+            // transform wildcard to regexp equivalent
+            if (char === '*') {
+                regexp += '.*';
+            // escape domain separator
+            } else if (char === '.') {
+                regexp += String.raw`\.`;
+            } else {
+                regexp += char;
+            }
+        }
+
+        return String.raw`@@///(www\.)?${regexp}/$document,important`;
     }
 }

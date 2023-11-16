@@ -56,6 +56,7 @@ AGTree is a universal tool for working with adblock filter lists. It contains th
 
 - [Adblock rule converter][converter-url]
 - [Adblock rule parser][parser-url]
+- [Adblock rule validator][validator-url]
 - [Compatibility tables][compatibility-tables-url]
 
 AGTree supports all syntaxes currently in use:
@@ -121,6 +122,7 @@ resources, please let us know.
 [mdn-css-selectors]: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors
 [new-issue-url]: https://github.com/AdguardTeam/tsurlfilter/issues/new
 [parser-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/parser
+[validator-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/validator
 [ubo-filters]: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax
 [ubo-procedural]: https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters
 [ubo-scriptlets]: https://github.com/gorhill/uBlock/wiki/Resources-Library#available-general-purpose-scriptlets
