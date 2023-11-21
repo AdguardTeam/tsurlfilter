@@ -313,13 +313,13 @@ export class MessagesApi implements MessagesApiInterface {
 
         const tabId = sender.tab.id;
 
-        const frame = tabsApi.getTabMainFrame(tabId);
+        const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!frame?.url) {
+        if (!tabContext?.info.url) {
             return false;
         }
 
-        const { url } = frame;
+        const { url } = tabContext.info;
 
         let published = false;
 

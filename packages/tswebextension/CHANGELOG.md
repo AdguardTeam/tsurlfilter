@@ -8,10 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [0.4.7] - 2023-11-21
+
+### Fixed
+- Fix cosmetic apply logging.
+
+
 ## [0.4.6] - 2023-11-16
 
 ### Added
 - Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
+
+### Fixed
+- Fix 'storage not initialized' error on extension install.
 
 
 ## [0.4.5] - 2023-11-15
