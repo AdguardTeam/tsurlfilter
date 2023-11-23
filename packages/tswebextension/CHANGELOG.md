@@ -14,10 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of internal urls (e.g `view-source:...`) [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 
 
+## [0.4.7] - 2023-11-21
+
+### Fixed
+- Fix cosmetic apply logging.
+
+
 ## [0.4.6] - 2023-11-16
 
 ### Added
 - Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
+
+### Fixed
+- Fix 'storage not initialized' error on extension install.
 
 
 ## [0.4.5] - 2023-11-15
