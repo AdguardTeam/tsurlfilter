@@ -143,9 +143,8 @@ export class TabsApi {
      * Records request context to the tab context.
      *
      * @param requestContext Tab's frame's request context.
-     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    public handleFrameRequest(requestContext: TabFrameRequestContext, isRemoveparamRedirect = false): void {
+    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
         const { tabId } = requestContext;
 
         const tabContext = this.context.get(tabId);
@@ -154,7 +153,7 @@ export class TabsApi {
             return;
         }
 
-        tabContext.handleFrameRequest(requestContext, isRemoveparamRedirect);
+        tabContext.handleFrameRequest(requestContext);
     }
 
     /**

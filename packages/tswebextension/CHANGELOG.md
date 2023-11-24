@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Filtering log to not reload on History API navigation [#2598](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598).
+
 ### Fixed
 - Handling of internal urls (e.g `view-source:...`) [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 

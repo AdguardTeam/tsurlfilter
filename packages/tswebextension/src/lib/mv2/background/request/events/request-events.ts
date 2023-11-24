@@ -4,7 +4,13 @@ import type { HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
-import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
+import {
+    isThirdPartyRequest,
+    getRequestType,
+    isHttpRequest,
+    defaultFilteringLog,
+    FilteringEventType,
+} from '../../../../common';
 import { MAIN_FRAME_ID, type TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
 
@@ -214,9 +220,17 @@ export class RequestEvents {
         };
 
         if (isDocumentRequest || requestType === RequestType.SubDocument) {
-            const isRemoveparamRedirect = requestContextStorage.has(requestId);
             // Saves the current tab url to retrieve it correctly below.
-            tabsApi.handleFrameRequest(tabFrameRequestContext, isRemoveparamRedirect);
+            tabsApi.handleFrameRequest(tabFrameRequestContext);
+        }
+
+        // Do not reload filtering log on requests that are being redirected by $removeparam
+        if (isDocumentRequest && !requestContextStorage.has(requestId)) {
+            // dispatch filtering log reload event
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.TabReload,
+                data: { tabId },
+            });
         }
 
         const referrerUrl = originUrl

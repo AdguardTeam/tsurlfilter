@@ -5,11 +5,7 @@ import type { Tabs } from 'webextension-polyfill';
 
 import { Frame, MAIN_FRAME_ID } from './frame';
 import type { DocumentApi } from '../document-api';
-import {
-    type FilteringLog,
-    defaultFilteringLog,
-    FilteringEventType,
-} from '../../../common/filtering-log';
+import { type FilteringLog, defaultFilteringLog } from '../../../common/filtering-log';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
@@ -154,9 +150,8 @@ export class TabContext {
      * CosmeticResult is handled in {@link handleFrameCosmeticResult}.
      *
      * @param requestContext Request context data.
-     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    public handleFrameRequest(requestContext: FrameRequestContext, isRemoveparamRedirect = false): void {
+    public handleFrameRequest(requestContext: FrameRequestContext): void {
         // This method is called in the WebRequest onBeforeRequest handler.
         // It means that the request is being processed.
         this.isDocumentRequestCached = false;
@@ -169,7 +164,7 @@ export class TabContext {
         } = requestContext;
 
         if (requestType === RequestType.Document) {
-            this.handleMainFrameRequest(requestUrl, requestId, isRemoveparamRedirect);
+            this.handleMainFrameRequest(requestUrl, requestId);
         } else {
             this.frames.set(frameId, new Frame(requestUrl, requestId));
         }
@@ -215,13 +210,8 @@ export class TabContext {
      *
      * @param requestUrl Request url.
      * @param requestId Request id.
-     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    private handleMainFrameRequest(
-        requestUrl: string,
-        requestId?: string,
-        isRemoveparamRedirect = false,
-    ): void {
+    private handleMainFrameRequest(requestUrl: string, requestId?: string): void {
         // Clear frames data on tab reload.
         this.frames.clear();
 
@@ -232,16 +222,6 @@ export class TabContext {
         this.mainFrameRule = this.documentApi.matchFrame(requestUrl);
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
-
-        if (!isRemoveparamRedirect) {
-            // dispatch filtering log reload event
-            this.filteringLog.publishEvent({
-                type: FilteringEventType.TabReload,
-                data: {
-                    tabId: this.info.id,
-                },
-            });
-        }
     }
 
     /**
