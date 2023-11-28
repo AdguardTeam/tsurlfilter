@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Updated `@adguard/extended-css` to `v2.0.56`.
 - Filtering log to not reload on History API navigation [#2598](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598).
 
 ### Fixed

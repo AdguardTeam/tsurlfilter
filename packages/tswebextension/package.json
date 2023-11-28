@@ -82,7 +82,7 @@
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
-    "@adguard/extended-css": "^2.0.52",
+    "@adguard/extended-css": "^2.0.56",
     "@adguard/scriptlets": "^1.9.96",
     "@adguard/tsurlfilter": "^2.2.6",
     "bowser": "2.11.0",
