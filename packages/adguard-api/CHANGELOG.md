@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2023-11-29
+
+## Added
+
+- New `adguardApi.getHandlerMessage` method that returns the API message handler.
 
 ### Changed
 
+- [BREAKING CHANGE] The API message listener is no longer initialized on API startup. Now you can use the `adguardApi.getHandlerMessage` method to get it and manually route messages to both the API and your application. See example in the [documentation](README.md#adguardapigetmessagehandler).
 - [BREAKING CHANGE] Drop support for UMD modules. Now only ESM is provided.
+
 
 ### Removed
 

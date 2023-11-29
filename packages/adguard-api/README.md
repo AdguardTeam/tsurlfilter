@@ -18,6 +18,7 @@ AdGuard API is filtering library, provided following features:
   - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
   - [Methods](#methods)
+    - [`adguardApi.getMessageHandler`](#adguardapigetmessagehandler)
     - [`adguardApi.start`](#adguardapistart)
     - [`adguardApi.stop`](#adguardapistop)
     - [`adguardApi.configure`](#adguardapiconfigure)
@@ -138,6 +139,40 @@ const adguardApi = AdguardApi.create();
 ```
 
 ## Methods
+
+### `adguardApi.getMessageHandler`
+
+Gets message handler for API content script messages.
+
+Api message handler name is a constant that can be exported as `MESSAGE_HANDLER_NAME` from `@adguard/api`.
+
+**Syntax:**
+```typescript
+public getMessageHandler(): MessageHandlerMV2
+```
+
+**Example:**
+
+```typescript
+// get tswebextension message handler
+const handleApiMessage = adguardApi.getMessageHandler();
+
+const handleAppMessage = async (message: Message) => {
+  // handle your app messages here
+};
+
+// route message depending on handler name
+browser.runtime.onMessage.addListener(async (message, sender) => { 
+  if (message?.handlerName === MESSAGE_HANDLER_NAME) {
+    return Promise.resolve(handleApiMessage(message, sender));
+  }
+  return handleAppMessage(message);
+});    
+```
+
+**Returns:**
+
+Message handler that will listen to internal messages, for example: message for get computed css for content-script.
 
 ### `adguardApi.start`
 

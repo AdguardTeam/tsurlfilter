@@ -14,3 +14,4 @@ export * from './request';
 export * from '../../common';
 export * from './configuration';
 export { StealthActions } from './services/stealth-service';
+export type { MessageHandlerMV2 } from './messages-api';

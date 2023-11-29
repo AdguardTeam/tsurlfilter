@@ -16,6 +16,8 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
+export { MESSAGE_HANDLER_NAME } from "@adguard/tswebextension";
+
 // API entry point
 
 // API Configuration type
