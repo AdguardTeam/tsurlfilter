@@ -1,5 +1,5 @@
 # AdGuard API
-**Version: 1.3.0**
+**Version: 2.0.0**
 
 AdGuard API is filtering library, provided following features:
 
@@ -12,13 +12,13 @@ AdGuard API is filtering library, provided following features:
 ## Table of content
 - [AdGuard API](#adguard-api)
   - [Table of content](#table-of-content)
-    - [Installation via `script` tag](#installation-via-script-tag)
-    - [Module installation](#module-installation)
+    - [Installation](#installation)
     - [Required web accessible resources](#required-web-accessible-resources)
   - [Configuration](#configuration)
   - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
   - [Methods](#methods)
+    - [`adguardApi.getMessageHandler`](#adguardapigetmessagehandler)
     - [`adguardApi.start`](#adguardapistart)
     - [`adguardApi.stop`](#adguardapistop)
     - [`adguardApi.configure`](#adguardapiconfigure)
@@ -30,39 +30,7 @@ AdGuard API is filtering library, provided following features:
   - [Usage](#usage)
   - [Minimum supported browser versions](#minimum-supported-browser-versions)
 
-The library code can be loaded either via `script` tag or as an `npm` module.
-### Installation via `script` tag
-
-1. Copy `adguard-api.js`, `adguard-content.js`  and `adguard-assistant.js` scripts from `dist` to the directory near `manifest.json`
-
-2. Create `adguard` directory near `manifest.json`
-
-3. Place [web accessible resources](#required-web-accessible-resources) into `adguard` directory
-
-4. Add AdGuard's content scripts to the manifest:
-```
-    {
-      "all_frames": true,
-      "js": ["adguard-content.js"],
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "match_about_blank": true,
-      "run_at": "document_start"
-    }
-```
-
-5. Add AdGuard's script to the background page:
-```
-  <script type="text/javascript" src="adguard-api.js"></script>
-```
-
-AdGuard API is exposed through a `AdguardApi` class.
-
-### Module installation
-
-The preferred installation method for applications built using bundlers, such as webpack or rollup
+### Installation
 
 1. Install `@adguard/api` module via `npm` or `yarn`
 ```
@@ -73,12 +41,12 @@ or
 yarn add @adguard/api
 ```
 
-2. Import `AdguardApi` class to background script
+1. Import `AdguardApi` class to background script
 ```
 import { AdguardApi } from "@adguard/api";
 ```
 
-3. Import `adguard-contents` in top of you content script entry
+1. Import `adguard-contents` in top of you content script entry
 
 ```
 import '@adguard/api/content-script';
@@ -122,6 +90,7 @@ type Configuration = {
     rules?: string[],
     filtersMetadataUrl: string,
     filterRulesUrl: string,
+    documentBlockingPageUrl?: string,
 };
 ```
 
@@ -138,6 +107,8 @@ type Configuration = {
 - `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing filters metadata. Once started, AdGuard will periodically check filters updates by downloading this file. Example: `https://filters.adtidy.org/extension/chromium/filters.json`.
 
 - `filterRulesUrl` (mandatory) - URL mask used for fetching filters rules. `{filter_id}` parameter will be replaced with an actual filter identifier. Example: `https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt` (English filter (filter id = 2) will be loaded from: `https://filters.adtidy.org/extension/chromium/2.txt`)
+  
+- `documentBlockingPageUrl` (optional) - Path to the document blocking page. If not specified, the default browser page will be shown.
 
 **Example:**
 ```typescript
@@ -171,6 +142,40 @@ const adguardApi = AdguardApi.create();
 ```
 
 ## Methods
+
+### `adguardApi.getMessageHandler`
+
+Gets message handler for API content script messages.
+
+Api message handler name is a constant that can be exported as `MESSAGE_HANDLER_NAME` from `@adguard/api`.
+
+**Syntax:**
+```typescript
+public getMessageHandler(): MessageHandlerMV2
+```
+
+**Example:**
+
+```typescript
+// get tswebextension message handler
+const handleApiMessage = adguardApi.getMessageHandler();
+
+const handleAppMessage = async (message: Message) => {
+  // handle your app messages here
+};
+
+// route message depending on handler name
+browser.runtime.onMessage.addListener(async (message, sender) => { 
+  if (message?.handlerName === MESSAGE_HANDLER_NAME) {
+    return Promise.resolve(handleApiMessage(message, sender));
+  }
+  return handleAppMessage(message);
+});    
+```
+
+**Returns:**
+
+Message handler that will listen to internal messages, for example: message for get computed css for content-script.
 
 ### `adguardApi.start`
 

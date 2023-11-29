@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
-import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
+import browser from "webextension-polyfill";
+import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME } from "@adguard/api";
 
 (async (): Promise<void> => {
     // create new AdguardApi instance
@@ -46,19 +47,30 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
         logTotalCount();
     });
 
-    chrome.runtime.onMessage.addListener(async (message) => {
+    // get tswebextension message handler
+    const handleApiMessage = adguardApi.getMessageHandler();
+
+    // define custom message handler
+    const handleAppMessage = async (message: any) => {
         switch (message.type) {
             case "OPEN_ASSISTANT": {
-                chrome.tabs.query({ active: true }, async (res) => {
-                    if (res[0]?.id) {
-                        await adguardApi.openAssistant(res[0].id);
-                    }
-                });
+                const active = await browser.tabs.query({ active: true });
+                if (active[0]?.id) {
+                    await adguardApi.openAssistant(active[0].id);
+                }
                 break;
             }
             default:
             // do nothing
         }
+    };
+
+    browser.runtime.onMessage.addListener(async (message, sender) => {
+        // route message depending on handler name
+        if (message?.handlerName === MESSAGE_HANDLER_NAME) {
+            return Promise.resolve(handleApiMessage(message, sender));
+        }
+        return handleAppMessage(message);
     });
 
     // Disable Adguard in 1 minute

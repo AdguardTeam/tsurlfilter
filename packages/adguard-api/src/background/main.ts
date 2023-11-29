@@ -16,13 +16,11 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import browser, { Runtime } from "webextension-polyfill";
 import {
     TsWebExtension,
-    ConfigurationMV2 as TsWebExtensionConfiguration,
-    EventChannel,
-    MESSAGE_HANDLER_NAME,
-    Message,
+    type ConfigurationMV2 as TsWebExtensionConfiguration,
+    type EventChannel,
+    type MessageHandlerMV2,
 } from "@adguard/tswebextension";
 
 import { Network } from "./network";
@@ -32,8 +30,6 @@ import { Configuration, configurationValidator } from "./schemas";
 import { DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
 import { RequestBlockingLogger } from "./request-blocking-logger";
 import { Logger } from "./logger";
-
-import { ASSISTANT_OUTPUT } from "../../constants";
 
 /**
  * By the rules of Firefox AMO we cannot use remote scripts (and our JS rules can be counted as such).
@@ -91,8 +87,17 @@ export class AdguardApi {
      */
     public onRequestBlocked = new RequestBlockingLogger();
 
+    /**
+     * Returns a message handler that will listen to internal messages,
+     * for example: message for get computed css for content-script.
+     * @returns Messages handler.
+     */
+    public getMessageHandler: () => MessageHandlerMV2;
+
     constructor() {
         this.tswebextension = new TsWebExtension(WEB_ACCESSIBLE_RESOURCES_PATH);
+
+        this.getMessageHandler = this.tswebextension.getMessageHandler;
 
         // TODO: load only in ff
         this.tswebextension.setLocalScriptRules(localScriptRules);
@@ -111,7 +116,6 @@ export class AdguardApi {
 
         this.localeDetectService = new LocaleDetectService(this.filtersApi);
 
-        this.handleMessage = this.handleMessage.bind(this);
         this.openAssistant = this.openAssistant.bind(this);
         this.handleDetectFilters = this.handleDetectFilters.bind(this);
         this.handleUpdateFilters = this.handleUpdateFilters.bind(this);
@@ -127,8 +131,6 @@ export class AdguardApi {
         this.configuration = configurationValidator.parse(configuration);
 
         this.network.configure(this.configuration);
-
-        browser.runtime.onMessage.addListener(this.handleMessage);
 
         await this.filtersApi.init();
         this.filtersUpdateService.start();
@@ -151,8 +153,6 @@ export class AdguardApi {
         await this.tswebextension.stop();
         this.filtersUpdateService.stop();
         this.localeDetectService.stop();
-
-        browser.runtime.onMessage.removeListener(this.handleMessage);
     }
 
     /**
@@ -231,9 +231,9 @@ export class AdguardApi {
             allowlist,
             trustedDomains: [],
             userrules,
-            verbose: false,
             settings: {
-                assistantUrl: `${ASSISTANT_OUTPUT}.js`,
+                documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
+                assistantUrl: "adguard-assistant.js",
                 filteringEnabled: true,
                 stealthModeEnabled: true,
                 collectStats: false,
@@ -252,22 +252,6 @@ export class AdguardApi {
                 },
             },
         };
-    }
-
-    /**
-     * Handles messages from {@link TsWebExtension} content-script
-     *
-     * @param message - {@link TsWebExtension} extension {@link Message}
-     * @param sender - extension {@link Runtime.MessageSender}
-     * @returns TsWebExtension message handler response
-     */
-    // eslint-disable-next-line consistent-return
-    private async handleMessage(message: Message, sender: Runtime.MessageSender): Promise<unknown> {
-        if (message?.handlerName === MESSAGE_HANDLER_NAME) {
-            const handler = this.tswebextension.getMessageHandler();
-
-            return handler(message, sender);
-        }
     }
 
     /**
