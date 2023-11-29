@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Added
 
 - New `adguardApi.getHandlerMessage` method that returns the API message handler.
+- New `documentBlockingPageUrl` configuration option that allows you to specify a URL to the document blocking page. See [documentation](README.md#configuration) for details.
 
 ### Changed
 

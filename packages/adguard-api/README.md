@@ -90,6 +90,7 @@ type Configuration = {
     rules?: string[],
     filtersMetadataUrl: string,
     filterRulesUrl: string,
+    documentBlockingPageUrl?: string,
 };
 ```
 
@@ -106,6 +107,8 @@ type Configuration = {
 - `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing filters metadata. Once started, AdGuard will periodically check filters updates by downloading this file. Example: `https://filters.adtidy.org/extension/chromium/filters.json`.
 
 - `filterRulesUrl` (mandatory) - URL mask used for fetching filters rules. `{filter_id}` parameter will be replaced with an actual filter identifier. Example: `https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt` (English filter (filter id = 2) will be loaded from: `https://filters.adtidy.org/extension/chromium/2.txt`)
+  
+- `documentBlockingPageUrl` (optional) - Path to the document blocking page. If not specified, the default browser page will be shown.
 
 **Example:**
 ```typescript

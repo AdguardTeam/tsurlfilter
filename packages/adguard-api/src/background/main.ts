@@ -90,7 +90,7 @@ export class AdguardApi {
     /**
      * Returns a message handler that will listen to internal messages,
      * for example: message for get computed css for content-script.
-     * @returns — Messages handler.
+     * @returns Messages handler.
      */
     public getMessageHandler: () => MessageHandlerMV2;
 
@@ -231,8 +231,8 @@ export class AdguardApi {
             allowlist,
             trustedDomains: [],
             userrules,
-            verbose: false,
             settings: {
+                documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 assistantUrl: "adguard-assistant.js",
                 filteringEnabled: true,
                 stealthModeEnabled: true,
