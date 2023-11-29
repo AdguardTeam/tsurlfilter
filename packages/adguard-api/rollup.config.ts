@@ -30,7 +30,7 @@ const plugins = [
 
 const backgroundConfig = {
     cache,
-    input: ["src//background/index.ts"],
+    input: ["src/background/index.ts"],
     output: [
         {
             file: `${OUTPUT_PATH}/adguard-api.js`,
