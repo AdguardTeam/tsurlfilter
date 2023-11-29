@@ -39,7 +39,7 @@ export type FilterVersionData = zod.infer<typeof filterVersionDataValidator>;
  */
 export const filterVersionStorageDataValidator = zod.record(
     SchemaPreprocessor.numberValidator,
-    filterVersionDataValidator
+    filterVersionDataValidator,
 );
 
 export type FilterVersionStorageData = zod.infer<typeof filterVersionStorageDataValidator>;

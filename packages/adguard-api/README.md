@@ -1,5 +1,5 @@
 # AdGuard API
-**Version: 1.3.0**
+**Version: 2.0.0**
 
 AdGuard API is filtering library, provided following features:
 
@@ -12,8 +12,7 @@ AdGuard API is filtering library, provided following features:
 ## Table of content
 - [AdGuard API](#adguard-api)
   - [Table of content](#table-of-content)
-    - [Installation via `script` tag](#installation-via-script-tag)
-    - [Module installation](#module-installation)
+    - [Installation](#installation)
     - [Required web accessible resources](#required-web-accessible-resources)
   - [Configuration](#configuration)
   - [Static methods](#static-methods)
@@ -30,39 +29,7 @@ AdGuard API is filtering library, provided following features:
   - [Usage](#usage)
   - [Minimum supported browser versions](#minimum-supported-browser-versions)
 
-The library code can be loaded either via `script` tag or as an `npm` module.
-### Installation via `script` tag
-
-1. Copy `adguard-api.js`, `adguard-content.js`  and `adguard-assistant.js` scripts from `dist` to the directory near `manifest.json`
-
-2. Create `adguard` directory near `manifest.json`
-
-3. Place [web accessible resources](#required-web-accessible-resources) into `adguard` directory
-
-4. Add AdGuard's content scripts to the manifest:
-```
-    {
-      "all_frames": true,
-      "js": ["adguard-content.js"],
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "match_about_blank": true,
-      "run_at": "document_start"
-    }
-```
-
-5. Add AdGuard's script to the background page:
-```
-  <script type="text/javascript" src="adguard-api.js"></script>
-```
-
-AdGuard API is exposed through a `AdguardApi` class.
-
-### Module installation
-
-The preferred installation method for applications built using bundlers, such as webpack or rollup
+### Installation
 
 1. Install `@adguard/api` module via `npm` or `yarn`
 ```
@@ -73,12 +40,12 @@ or
 yarn add @adguard/api
 ```
 
-2. Import `AdguardApi` class to background script
+1. Import `AdguardApi` class to background script
 ```
 import { AdguardApi } from "@adguard/api";
 ```
 
-3. Import `adguard-contents` in top of you content script entry
+1. Import `adguard-contents` in top of you content script entry
 
 ```
 import '@adguard/api/content-script';

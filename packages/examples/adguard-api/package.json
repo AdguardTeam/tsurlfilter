@@ -10,10 +10,10 @@
     "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/api": "^1.3.3"
+    "@adguard/api": "^2.0.0"
   },
   "devDependencies": {
-    "@adguard/tswebextension": "^0.3.10",
+    "@adguard/tswebextension": "^0.4.7",
     "@swc-node/register": "^1.6.6",
     "@swc/core": "^1.3.75",
     "@typescript-eslint/eslint-plugin": "^5.41.0",

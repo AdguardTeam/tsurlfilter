@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update `@adguard/filters-downloader` to `v1.1.20`
+- [BREAKING CHANGE] Drop support for UMD modules. Now only ESM is provided.
+
+### Removed
+
+- [BREAKING CHANGE] Pre-build js bundles
 
 
 ## [1.3.4] - 2023-09-27

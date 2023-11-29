@@ -7,7 +7,7 @@
         "src/**/*.ts",
         "tasks/**/*.ts",
         "constants.ts",
-        "webpack.config.ts"
+        "rollup.config.ts",
     ],
     "ts-node": {
         "swc": true,
