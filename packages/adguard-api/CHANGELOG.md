@@ -16,11 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [BREAKING CHANGE] The API message listener is no longer initialized on API startup. Now you can use the `adguardApi.getHandlerMessage` method to get it and manually route messages to both the API and your application. See example in the [documentation](README.md#adguardapigetmessagehandler).
 - [BREAKING CHANGE] Drop support for UMD modules. Now only ESM is provided.
+- Update `@adguard/tswebextension` to `v0.4.8`.
+- Update `@adguard/filters-downloader` to `v1.1.23`.
 
 
 ### Removed
 
-- [BREAKING CHANGE] Pre-build js bundles
+- [BREAKING CHANGE] Pre-build js bundles.
+
+### Fixed
+
+- Fix missing type declarations.
 
 
 ## [1.3.4] - 2023-09-27
