@@ -30,6 +30,7 @@ export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     settings: {
         assistantUrl: `${BuildOutput.AssistantInject}.js`,
         collectStats: true,
+        debugScriptlets: false,
         allowlistInverted: false,
         allowlistEnabled: false,
         stealthModeEnabled: true,

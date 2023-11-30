@@ -162,11 +162,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @param rules Cosmetic rules.
      * @param frameUrl Frame url.
-     * @returns Scripts or undefined.
+     * @returns Script text or empty string if no script rules are passed.
      */
-    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string | undefined {
+    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
         if (rules.length === 0) {
-            return undefined;
+            return '';
         }
 
         const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
@@ -176,9 +176,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (configuration) {
             const { settings } = configuration;
             if (settings) {
-                if (settings.collectStats) {
-                    debug = true;
-                }
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+                debug = settings.debugScriptlets;
             }
         }
 
@@ -192,7 +191,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             .join('\n');
 
         if (!scriptText) {
-            return undefined;
+            return '';
         }
 
         return `
@@ -293,9 +292,6 @@ export class CosmeticApi extends CosmeticApiCommon {
         const scriptRules = cosmeticResult.getScriptRules();
 
         let scriptText = CosmeticApi.getScriptText(scriptRules, url);
-        // TODO: fix concatenation of undefined and string because:
-        // undefined + '<stealth script>' === 'undefined<stealth script>'
-        // AG-25896.
         scriptText += stealthApi.getSetDomSignalScript();
 
         if (scriptText) {

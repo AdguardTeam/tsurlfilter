@@ -72,6 +72,12 @@ export const configurationValidator = zod.object({
      * English filter (filter id = 2) will be loaded from: `https://filters.adtidy.org/extension/chromium/2.txt`.
      */
     filterRulesUrl: zod.string(),
+
+    /**
+     * Redirect url for $document rules. Optional.
+     * If not specified, default browser page will be shown.
+     */
+    documentBlockingPageUrl: zod.string().optional(),
 });
 
 export type Configuration = zod.infer<typeof configurationValidator>;

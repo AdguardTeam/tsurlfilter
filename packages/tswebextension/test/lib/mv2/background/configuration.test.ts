@@ -15,6 +15,7 @@ describe('configuration validator', () => {
             filteringEnabled: true,
             stealthModeEnabled: true,
             collectStats: true,
+            debugScriptlets: false,
             allowlistInverted: false,
             allowlistEnabled: false,
             documentBlockingPageUrl: 'https://example.org',

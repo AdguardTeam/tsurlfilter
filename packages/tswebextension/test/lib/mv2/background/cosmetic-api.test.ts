@@ -390,6 +390,14 @@ describe('cosmetic api', () => {
             expect(scriptText?.replace(/\s/g, '')).toStrictEqual(expectScriptText.replace(/\s/g, ''));
         });
 
+        it('no rules -- empty string', () => {
+            const testRules: CosmeticRule[] = [];
+
+            const scriptText = CosmeticApi.getScriptText(testRules);
+
+            expect(scriptText).toStrictEqual('');
+        });
+
         it('allow scriptlets and JS rules from custom filter in all browsers, except FirefoxAMO', () => {
             const CUSTOM_FILTER_ID = 1001;
 

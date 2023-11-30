@@ -114,6 +114,11 @@ export const settingsConfigValidator = zod.object({
     collectStats: zod.boolean(),
 
     /**
+     * Enables verbose scriptlets logging if true.
+     */
+    debugScriptlets: zod.boolean().default(false),
+
+    /**
      * Enables stealth mode if true.
      */
     stealthModeEnabled: zod.boolean(),

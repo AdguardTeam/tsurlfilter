@@ -10,12 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- API `settings.debugScriptlets` property and `setDebugScriptlets()` method for its setting
+  [#2584](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584).
+
 ### Changed
 - Updated `@adguard/extended-css` to `v2.0.56`.
 - Filtering log to not reload on History API navigation [#2598](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598).
 
 ### Fixed
 - Handling of internal urls (e.g `view-source:...`) [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
+
+
+## [0.4.8] - 2023-11-29
+
+### Changed
+- `MessageHandlerMV2` type is exported now.
 
 
 ## [0.4.7] - 2023-11-21

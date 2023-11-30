@@ -24,11 +24,12 @@ Table of content:
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules](#userrules)
-      - [verbose](#verbose)
+      - [verbose (deprecated)](#verbose)
       - [settings](#settings)
         - [allowlistInverted](#allowlistinverted)
         - [allowlistEnabled](#allowlistenabled)
         - [collectStats](#collectstats)
+        - [debugScriptlets](#debugscriptlets)
         - [stealthModeEnabled](#stealthmodeenabled)
         - [filteringEnabled](#filteringenabled)
         - [documentBlockingPageUrl](#documentblockingpageurl)
@@ -58,6 +59,7 @@ Table of content:
         - [getMessageHandler()](#getmessagehandler)
         - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
         - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+        - [setDebugScriptlets() (MV2 only)](#setdebugscriptlets-mv2-only)
         - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
         - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
         - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
@@ -155,7 +157,7 @@ Commands:
 
 ## API
 
-The main idea of the library is to provide a common interface for different browsers and manifest versions. 
+The main idea of the library is to provide a common interface for different browsers and manifest versions.
 via [Configuration](#configuration) object.
 
 [TsWebExtension](#tswebextension-1) class provides a set of methods for filtering content from the extension's background context.
@@ -226,7 +228,7 @@ Path to the filter list file.
 
 type: `string`
 
-Path to directory with converted rule sets. 
+Path to directory with converted rule sets.
 
 #### filteringLogEnabled (MV3 only)
 
@@ -252,7 +254,7 @@ type: `string[]`
 
 List of rules added by user.
 
-#### verbose (deprecated)
+#### <a name="verbose"></a> verbose (deprecated)
 
 type: `boolean | undefined`
 
@@ -287,6 +289,12 @@ Flag specifying [allowlist](#allowlist) enable state. We don't use allowlist arr
 type: `boolean`
 
 Enables css hits counter if true.
+
+##### debugScriptlets
+
+Optional, type: `boolean`
+
+Defaults to false. Enables scriptlets logging in console if true.
 
 ##### stealthModeEnabled
 
@@ -464,6 +472,15 @@ Updates [collectStats](#collectstats) configuration value without re-initializat
 
 Throws error if [configuration](#configuration) is not set.
 
+##### setDebugScriptlets() (MV2 only)
+
+type: `(isDebugScriptlets: boolean) => void`
+
+Updates [debugScriptlets](#debugscriptlets) configuration value
+without re-initialization of engine.
+
+Throws error if [configuration](#configuration) is not set.
+
 ##### setStealthModeEnabled() (MV2 only)
 
 type: `(value: isStealthModeEnabled) => Promise<void>`
@@ -566,7 +583,7 @@ type: `TabReloadEvent`
 
 Dispatched on tab reload.
 
-#### applyBasicRule 
+#### applyBasicRule
 
 type: `ApplyBasicRuleEvent`
 
@@ -576,7 +593,7 @@ Dispatched on request block or allowlist rule matching.
 
 type: `ApplyCosmeticRuleEvent`
 
-Dispatched on elemhide, css or html rule applying. 
+Dispatched on elemhide, css or html rule applying.
 
 #### applyCspRule
 
@@ -655,7 +672,7 @@ Event channel for [filtering log events](#filtering-log-api-mv2-only).
 ### methods
 #### addEventListener()
 
-type: 
+type:
 ```
 <T extends FilteringEventType>(type: T, listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>) => void
 ```
