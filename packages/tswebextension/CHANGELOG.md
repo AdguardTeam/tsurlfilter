@@ -8,11 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [Unreleased]
+
+### Added
+- API `settings.debugScriptlets` property and `setDebugScriptlets()` method for its setting
+  [#2584](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584).
+
+
 ## [0.4.8] - 2023-11-29
 
 ### Changed
-
-- `MessageHandlerMV2` type is exported now. 
+- `MessageHandlerMV2` type is exported now.
 
 
 ## [0.4.7] - 2023-11-21

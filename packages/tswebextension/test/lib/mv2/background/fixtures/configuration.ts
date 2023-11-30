@@ -13,6 +13,7 @@ export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
         filteringEnabled: true,
         stealthModeEnabled: true,
         collectStats: true,
+        debugScriptlets: false,
         allowlistInverted: false,
         allowlistEnabled: false,
         documentBlockingPageUrl: 'https://example.org',

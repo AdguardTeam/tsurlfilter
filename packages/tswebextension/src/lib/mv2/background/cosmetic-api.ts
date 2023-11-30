@@ -176,9 +176,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (configuration) {
             const { settings } = configuration;
             if (settings) {
-                if (settings.collectStats) {
-                    debug = true;
-                }
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+                debug = settings.debugScriptlets;
             }
         }
 

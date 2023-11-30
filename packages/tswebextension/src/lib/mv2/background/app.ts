@@ -259,6 +259,16 @@ MessageHandlerMV2
     }
 
     /**
+     * Updates `debugScriptlets` configuration value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isDebugScriptlets `debugScriptlets` config value.
+     */
+    public setDebugScriptlets(isDebugScriptlets: boolean): void {
+        this.configuration.settings.debugScriptlets = isDebugScriptlets;
+    }
+
+    /**
      * Updates `stealthModeEnabled` configuration value without re-initialization of engine.
      * Also updates webRTC privacy.network settings on demand.
      *

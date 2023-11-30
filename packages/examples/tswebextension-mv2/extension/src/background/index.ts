@@ -29,6 +29,7 @@ const defaultConfig: ConfigurationMV2 = {
         filteringEnabled: true,
         stealthModeEnabled: true,
         collectStats: true,
+        debugScriptlets: false,
         allowlistInverted: false,
         allowlistEnabled: false,
         documentBlockingPageUrl: browser.runtime.getURL('pages/document-blocking.html'),
