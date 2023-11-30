@@ -8,11 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [Unreleased]
+## [0.4.9] - 2023-11-30
 
 ### Added
 - API `settings.debugScriptlets` property and `setDebugScriptlets()` method for its setting
   [#2584](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584).
+
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.2.7`.
+- Updated `@adguard/scriptlets` to `v1.9.101`.
 
 
 ## [0.4.8] - 2023-11-29
