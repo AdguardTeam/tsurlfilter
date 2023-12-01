@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$permissions` modifier.
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules.
+- Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
 
 ### Changed
 - How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#100](https://github.com/AdguardTeam/tsurlfilter/issues/110).

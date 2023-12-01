@@ -10,6 +10,8 @@ Table of content:
   - [CLI](#cli)
   - [API](#api)
     - [configuration](#configuration)
+      - [TSWEBEXTENSION_VERSION](#tswebextension-version)
+      - [EXTENDED_CSS_VERSION](#extended_css_version)
       - [filters (MV2 only)](#filters-mv2-only)
         - [filterId](#filterid)
         - [content](#content)
@@ -169,6 +171,18 @@ MV2 submodule also provides a set of methods for [filtering log management](#fil
 type: `Configuration`
 
 Configuration object.
+
+#### TSWEBEXTENSION_VERSION
+
+type: `string`
+
+Version of the library.
+
+#### EXTENDED_CSS_VERSION
+
+type: `string`
+
+Version of the extended css module, used in current library version.
 
 #### filters (MV2 only)
 

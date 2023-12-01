@@ -1,5 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
+import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import commonjs from '@rollup/plugin-commonjs';
 import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
@@ -10,6 +11,9 @@ const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUT
 const cache = false;
 
 const commonPlugins = [
+    // Allow json resolution
+    json(),
+
     typescript({
         tsconfig: 'tsconfig.build.json',
     }),
