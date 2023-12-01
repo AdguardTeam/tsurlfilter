@@ -17,7 +17,7 @@
  */
 
 import {
-    TsWebExtension,
+    type TsWebExtension,
     type ConfigurationMV2 as TsWebExtensionConfiguration,
     type EventChannel,
     type MessageHandlerMV2,
@@ -240,6 +240,7 @@ export class AdguardApi {
                 documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 assistantUrl: "adguard-assistant.js",
                 filteringEnabled: this.configuration.filteringEnabled,
+                debugScriptlets: false,
                 stealthModeEnabled: true,
                 collectStats: false,
                 allowlistInverted,
