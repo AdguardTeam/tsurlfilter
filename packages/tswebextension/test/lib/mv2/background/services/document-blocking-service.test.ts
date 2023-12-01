@@ -1,13 +1,15 @@
 import { DocumentBlockingService } from '@lib/mv2/background/services/document-blocking-service';
 import { NetworkRule } from '@adguard/tsurlfilter';
-import { ConfigurationMV2 } from '@lib/mv2';
+import { ConfigurationMV2, tabsApi } from '@lib/mv2';
 import { getConfigurationMv2Fixture } from '../fixtures/configuration';
+
+jest.mock('@lib/mv2/background/api');
 
 describe('DocumentBlockingService', () => {
     let documentBlockingService: DocumentBlockingService;
 
     beforeEach(() => {
-        documentBlockingService = new DocumentBlockingService();
+        documentBlockingService = new DocumentBlockingService(tabsApi);
     });
 
     afterEach(() => {

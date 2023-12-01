@@ -2,9 +2,12 @@ import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { documentBlockingService } from '../services/document-blocking-service';
-import { redirectsService } from '../services/redirects/redirects-service';
-import { tabsApi, engineApi } from '../api';
+import {
+    tabsApi,
+    engineApi,
+    redirectsService,
+    documentBlockingService,
+} from '../api';
 import { ContentType } from '../../../common/request-type';
 
 /**

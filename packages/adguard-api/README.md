@@ -1,5 +1,5 @@
 # AdGuard API
-**Version: 2.0.0**
+**Version: 2.1.0**
 
 AdGuard API is filtering library, provided following features:
 
@@ -22,6 +22,7 @@ AdGuard API is filtering library, provided following features:
     - [`adguardApi.start`](#adguardapistart)
     - [`adguardApi.stop`](#adguardapistop)
     - [`adguardApi.configure`](#adguardapiconfigure)
+    - [`adguardApi.setFilteringEnabled`](#adguardapisetfilteringenabled)
     - [`adguardApi.openAssistant`](#adguardapiopenassistant)
     - [`adguardApi.closeAssistant`](#adguardapicloseassistant)
     - [`adguardApi.getRulesCount`](#adguardapigetrulescount)
@@ -85,6 +86,7 @@ Adguard API requires [web accessible resources](https://developer.chrome.com/doc
 ```typescript
 type Configuration = {
     filters: number[],
+    filteringEnabled: boolean,
     allowlist?: string[],
     blocklist?: string[],
     rules?: string[],
@@ -97,6 +99,8 @@ type Configuration = {
 **Properties:**
 
 - `filters` (mandatory) - An array of filters identifiers. You can look for possible filters identifiers in the [filters metadata file](https://filters.adtidy.org/extension/chromium/filters.json).
+
+- `filteringEnabled` (mandatory) - Enable/disable filtering engine.
 
 - `allowlist` (optional) - An array of domains, for which AdGuard won't work.
 
@@ -133,12 +137,12 @@ Creates new `AdguardApi` instance.
 
 **Syntax:**
 ```typescript
-public static create(): AdguardApi
+public static async create(): Promise<AdguardApi>
 ```
 
 **Example:**
 ```typescript
-const adguardApi = AdguardApi.create();
+const adguardApi = await AdguardApi.create();
 ```
 
 ## Methods
@@ -239,7 +243,29 @@ const updatedConfiguration = await adguardApi.configure(configuration);
 
 **Returns:**
 
-Promise, resolved with applied [API Configuration](#api-configuration) when api config is updated
+Promise, resolved with applied [API Configuration](#api-configuration) when api config is updated.
+
+### `adguardApi.setFilteringEnabled`
+
+Enables or disables filtering without engine re-initialization.
+
+**Syntax:**
+```typescript
+public async setFilteringEnabled(value: boolean): Promise<void>
+```
+
+**Example:**
+```typescript
+await adguardApi.setFilteringEnabled(false);
+```
+
+**Parameters:**
+
+- `value` - boolean value, which indicates filtering engine state.
+
+**Returns:**
+
+Promise, resolved when filtering engine state is updated.
 
 ### `adguardApi.openAssistant`
 

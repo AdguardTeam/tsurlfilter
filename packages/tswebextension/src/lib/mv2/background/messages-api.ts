@@ -12,19 +12,18 @@ import {
     getCookieRulesPayloadValidator,
     getExtendedCssPayloadValidator,
     getSaveCookieLogEventPayloadValidator,
-    Message,
     MessageType,
     messageValidator,
     processShouldCollapsePayloadValidator,
-    FilteringLog,
-    defaultFilteringLog,
     FilteringEventType,
     getDomain,
     ContentType,
+    type FilteringLog,
+    type Message,
 } from '../../common';
-import { type CookieRule } from '../../common/content-script';
 import { Assistant } from './assistant';
-import { tabsApi } from './api';
+import type { CookieRule } from '../../common/content-script';
+import type { TabsApi } from './tabs';
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 
@@ -41,8 +40,6 @@ export interface MessagesApiInterface {
  * Messages API implementation. It is used to communicate with content scripts.
  */
 export class MessagesApi implements MessagesApiInterface {
-    filteringLog: FilteringLog;
-
     // TODO: use IoC container?
     /**
      * Assistant event listener.
@@ -52,10 +49,13 @@ export class MessagesApi implements MessagesApiInterface {
     /**
      * Messages API constructor.
      *
+     * @param tabsApi Tabs API.
      * @param filteringLog Filtering log.
      */
-    constructor(filteringLog: FilteringLog) {
-        this.filteringLog = filteringLog;
+    constructor(
+        private readonly tabsApi: TabsApi,
+        private readonly filteringLog: FilteringLog,
+    ) {
         this.handleMessage = this.handleMessage.bind(this);
     }
 
@@ -313,7 +313,7 @@ export class MessagesApi implements MessagesApiInterface {
 
         const tabId = sender.tab.id;
 
-        const tabContext = tabsApi.getTabContext(tabId);
+        const tabContext = this.tabsApi.getTabContext(tabId);
 
         if (!tabContext?.info.url) {
             return false;
@@ -346,5 +346,3 @@ export class MessagesApi implements MessagesApiInterface {
         return published;
     }
 }
-
-export const messagesApi = new MessagesApi(defaultFilteringLog);

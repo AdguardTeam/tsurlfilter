@@ -5,9 +5,9 @@ import type { NetworkRule } from '@adguard/tsurlfilter';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
 import { isChromium } from '../utils/browser-detector';
-import { tabsApi } from '../api';
 import type { ConfigurationMV2 } from '../configuration';
 import { ContentType } from '..';
+import type { TabsApi } from '../tabs/tabs-api';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.
@@ -43,6 +43,14 @@ export class DocumentBlockingService {
 
     // list of domain names of sites, which should be excluded from document blocking
     private trustedDomains: string[] = [];
+
+    /**
+     * Creates instance of {@link DocumentBlockingService}.
+     * @param tabsApi Wrapper around browser.tabs API.
+     */
+    constructor(
+        private readonly tabsApi: TabsApi,
+    ) {}
 
     /**
      * Configures service instance {@link documentBlockingPageUrl}.
@@ -102,7 +110,7 @@ export class DocumentBlockingService {
         );
 
         // Chrome doesn't allow to show extension pages in incognito mode
-        if (isChromium && tabsApi.isIncognitoTab(tabId)) {
+        if (isChromium && this.tabsApi.isIncognitoTab(tabId)) {
             // Closing tab before opening a new one may lead to browser crash (Chromium)
             browser.tabs.create({ url: blockingUrl })
                 .then(() => {
@@ -115,7 +123,7 @@ export class DocumentBlockingService {
             // Browser doesn't allow redirects to extension pages which are not listed in web
             // accessible resources. We set blocking page url via browser.tabs
             // api for bypassing this limitation.
-            DocumentBlockingService.reloadTabWithBlockingPage(tabId, blockingUrl);
+            this.reloadTabWithBlockingPage(tabId, blockingUrl);
         }
 
         return { cancel: true };
@@ -143,8 +151,8 @@ export class DocumentBlockingService {
      * @param tabId Tab id.
      * @param url Blocking page url.
      */
-    private static reloadTabWithBlockingPage(tabId: number, url: string): void {
-        const tabContext = tabsApi.getTabContext(tabId);
+    private reloadTabWithBlockingPage(tabId: number, url: string): void {
+        const tabContext = this.tabsApi.getTabContext(tabId);
 
         if (!tabContext) {
             return;
@@ -174,5 +182,3 @@ export class DocumentBlockingService {
         return url.toString();
     }
 }
-
-export const documentBlockingService = new DocumentBlockingService();

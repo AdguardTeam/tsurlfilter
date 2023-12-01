@@ -15,7 +15,7 @@ export type SessionStorageSchema = {
 /**
  * API for storing data described by {@link SessionStorageSchema} in the {@link browser.storage.session}.
  */
-export class SessionStorage extends ExtensionStorage<SessionStorageSchema> {
+export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
     static readonly #DOMAIN = 'tswebextension';
 
     static readonly #DEFAULT_DATA: SessionStorageSchema = {
@@ -27,15 +27,15 @@ export class SessionStorage extends ExtensionStorage<SessionStorageSchema> {
      * Creates {@link SessionStorage} instance.
      */
     constructor() {
-        super(SessionStorage.#DOMAIN, browser.storage.session);
+        super(ExtSessionStorage.#DOMAIN, browser.storage.session);
     }
 
     /** @inheritdoc */
     override init(): Promise<void> {
-        return super.init(SessionStorage.#DEFAULT_DATA);
+        return super.init(ExtSessionStorage.#DEFAULT_DATA);
     }
 }
 
-export const sessionStorage = new SessionStorage();
+export const extSessionStorage = new ExtSessionStorage();
 
-export const sessionDecorator = createExtensionStorageDecorator(sessionStorage);
+export const sessionDecorator = createExtensionStorageDecorator(extSessionStorage);

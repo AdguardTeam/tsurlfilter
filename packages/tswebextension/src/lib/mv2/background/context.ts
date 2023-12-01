@@ -1,5 +1,5 @@
 import type { ConfigurationMV2Context } from './configuration';
-import { sessionDecorator, SessionStorageKey } from './session-storage';
+import { sessionDecorator, SessionStorageKey } from './ext-session-storage';
 
 /**
  * Top level app context storage.

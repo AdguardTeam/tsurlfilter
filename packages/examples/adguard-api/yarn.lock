@@ -2,16 +2,16 @@
 # yarn lockfile v1
 
 
-"@adguard/api@^2.0.0":
-  version "1.3.4"
-  resolved "https://registry.yarnpkg.com/@adguard/api/-/api-1.3.4.tgz#81a8e6124069a79d94c002ad672286c2473d62e0"
-  integrity sha512-jwOkOkjodQvEfZSWWxC3EY2XwRi6hORYoqfz6chJB8qcemXWIA+qxeruGtS2Kj/GW6zBkPTzr8TOQO4JC5+uug==
+"@adguard/api@^2.1.0":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@adguard/api/-/api-2.0.1.tgz#e5a6d94e4067ea4f68078b909a9bad9fa67b7bb7"
+  integrity sha512-nmc+XT9qpiDcNUA2HsabblwltXH4+H9/yUO5wRVabwzwNpU+djDBlaz+oAEJa+3I1rNw0DIYbfyb9JVFWcddnw==
   dependencies:
     "@adguard/assistant" "^4.3.70"
-    "@adguard/filters-downloader" "^1.1.15"
-    "@adguard/tswebextension" "^0.3.21"
+    "@adguard/filters-downloader" "^1.1.23"
+    "@adguard/tswebextension" "^0.4.8"
     webextension-polyfill "0.10.0"
-    zod "3.21.4"
+    zod "3.22.4"
 
 "@adguard/assistant@^4.3.70":
   version "4.3.70"
@@ -23,27 +23,27 @@
   resolved "https://registry.yarnpkg.com/@adguard/extended-css/-/extended-css-2.0.52.tgz#f5e7c3df1796deb96404a1b6441e7a4c729f09ac"
   integrity sha512-T77MnFD/+A3q93MNEq13qPUXPQRBeOUO9LRyqslcaz7jD5qMcikX1nx436u3PXdZXZpa6R0nnwXQ7wwScDmVgw==
 
-"@adguard/filters-downloader@^1.1.15":
+"@adguard/filters-downloader@^1.1.23":
   version "1.1.23"
   resolved "https://registry.yarnpkg.com/@adguard/filters-downloader/-/filters-downloader-1.1.23.tgz#3b701527c67881a87a27fea658a3b24422f8b794"
   integrity sha512-BPzcwtkjRZWb+m2XK1d/lD1qg0kYFBCuSf07y8Utv6ZMU82RcwRG3B1kLLLe+y2mOcz1VgW3tNN77dDzxgjP9A==
   dependencies:
     axios "^0.21.1"
 
-"@adguard/scriptlets@^1.9.72", "@adguard/scriptlets@^1.9.96":
-  version "1.9.96"
-  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.96.tgz#641e6a5d11072649c52ac0738b82de13ce4f26f8"
-  integrity sha512-pX9qKN14i9kO9aiIOx00tmnM8BuTpSyvACycVmD5GLQbzWOs1m16SiiYXwYrdIXLVwF4S4ddeS6bx67O9jbwOA==
+"@adguard/scriptlets@^1.9.101":
+  version "1.9.101"
+  resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.101.tgz#f18ba3b16b673790e92a6ec66977590cc619ae05"
+  integrity sha512-mqqQ57v/BRVVEYXXmWUPI2S6Fgxj1lj5pC1rA7Sde3QiLyS9CqL29yu9EydXY2QJw9eN9Xw/NsdoXaOEfSd9bA==
   dependencies:
     "@babel/runtime" "^7.20.13"
     js-yaml "^3.13.1"
 
-"@adguard/tsurlfilter@^2.1.12", "@adguard/tsurlfilter@^2.2.6":
-  version "2.2.6"
-  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-2.2.6.tgz#4d6af36aa724cae5a69bc98beb76feedf57eb87c"
-  integrity sha512-D7lO95aG1ndudDSZq3dGgcrzfOWBY8sQwGD7PkAn3i0y2paWRYtIXyyVO7V6anraYjs9bQt2RDcqNwU8coFKMg==
+"@adguard/tsurlfilter@^2.2.7":
+  version "2.2.7"
+  resolved "https://registry.yarnpkg.com/@adguard/tsurlfilter/-/tsurlfilter-2.2.7.tgz#283e42fc0e13b84234a606f76ae9eab8ccbbe230"
+  integrity sha512-DgNx6yG2fkcvAMSz6CuB1dQfUiB7mrJytA3fQWYkm335V7m89RMdsORwjL/TA2cBYtNDgV3DDDvwJsy/B+/kAQ==
   dependencies:
-    "@adguard/scriptlets" "^1.9.96"
+    "@adguard/scriptlets" "^1.9.101"
     cidr-tools "^6.4.1"
     commander "9.4.1"
     is-cidr "4.0.2"
@@ -53,35 +53,15 @@
     tldts "5.6.45"
     zod "3.19.1"
 
-"@adguard/tswebextension@^0.3.21":
-  version "0.3.22"
-  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.3.22.tgz#33bdbc477519a3058046637589b5e52474293ccb"
-  integrity sha512-fp0HbO5vkR5P2kvPBsX1oI4IDXV5gvh72474UXxRElPtKAdq/SIOLLqvsWEuW9mwwjYgnQAwFTfJJl8b9dlzXQ==
+"@adguard/tswebextension@^0.4.8", "@adguard/tswebextension@^1.0.0":
+  version "0.4.9"
+  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.4.9.tgz#4b64600bc5bda167059085a3e82b92def5ba470e"
+  integrity sha512-1b0opWR8VsNvK4HH1PHm1l3D1bAYbF5EqpPP4YtETsXp2E9VYqQ1qvey+BLTkhhUKxtvMDkWHN/Knyiw6xZjdw==
   dependencies:
     "@adguard/assistant" "^4.3.70"
     "@adguard/extended-css" "^2.0.52"
-    "@adguard/scriptlets" "^1.9.72"
-    "@adguard/tsurlfilter" "^2.1.12"
-    bowser "2.11.0"
-    commander "11.0.0"
-    fs-extra "11.1.1"
-    lru_map "0.4.1"
-    nanoid "4.0.2"
-    text-encoding "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2"
-    tldts "^6.0.8"
-    tslib "2.5.3"
-    webextension-polyfill "0.10.0"
-    zod "3.21.4"
-
-"@adguard/tswebextension@^0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@adguard/tswebextension/-/tswebextension-0.4.7.tgz#92aa5d266fcaae2f3edf115da2f773119eb78979"
-  integrity sha512-YE68SPI79a+llLYNoWWRt3L1lB8YgcoEHLWl0XN1fbUe61T9aPUT5eNL3P0OePmqiHDz7ARajnbvoO0NZqO61A==
-  dependencies:
-    "@adguard/assistant" "^4.3.70"
-    "@adguard/extended-css" "^2.0.52"
-    "@adguard/scriptlets" "^1.9.96"
-    "@adguard/tsurlfilter" "^2.2.6"
+    "@adguard/scriptlets" "^1.9.101"
+    "@adguard/tsurlfilter" "^2.2.7"
     bowser "2.11.0"
     commander "11.0.0"
     fs-extra "11.1.1"
@@ -2879,3 +2859,8 @@ zod@3.21.4:
   version "3.21.4"
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.21.4.tgz#10882231d992519f0a10b5dd58a38c9dabbb64db"
   integrity sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==
+
+zod@3.22.4:
+  version "3.22.4"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.22.4.tgz#f31c3a9386f61b1f228af56faa9255e845cf3fff"
+  integrity sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==

@@ -10,11 +10,11 @@
     "tswebextension": "tswebextension"
   },
   "dependencies": {
-    "@adguard/api": "^2.0.0",
+    "@adguard/api": "^2.1.0",
     "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@adguard/tswebextension": "^0.4.7",
+    "@adguard/tswebextension": "^1.0.0",
     "@swc-node/register": "^1.6.6",
     "@swc/core": "^1.3.75",
     "@types/webextension-polyfill": "^0.10.7",

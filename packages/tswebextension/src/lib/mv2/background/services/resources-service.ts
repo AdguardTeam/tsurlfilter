@@ -131,7 +131,3 @@ export class ResourcesService implements ResourcesServiceInterface {
         return undefined;
     }
 }
-
-export const resourcesService = new ResourcesService(() => {
-    return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
-});
