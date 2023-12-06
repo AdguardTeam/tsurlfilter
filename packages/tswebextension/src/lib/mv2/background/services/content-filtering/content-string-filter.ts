@@ -12,6 +12,7 @@ import type { RequestContext } from '../../request';
 import { documentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
 import { HtmlRuleSelector } from './rule/html-rule-selector';
+import { EntityHandler } from './entity-handler';
 
 export interface ContentStringFilterInterface {
     /**
@@ -139,7 +140,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
         const doctype = doc.doctype ? `${new XMLSerializer().serializeToString(doc.doctype)}\r\n` : '';
 
         if (deleted.length > 0) {
-            return doctype + doc.documentElement.outerHTML;
+            return doctype + EntityHandler.revertEntities(doc.documentElement.outerHTML);
         }
 
         return content;
