@@ -82,7 +82,7 @@
   },
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
-    "@adguard/extended-css": "^2.0.52",
+    "@adguard/extended-css": "^2.0.56",
     "@adguard/scriptlets": "^1.9.101",
     "@adguard/tsurlfilter": "^2.2.7",
     "bowser": "2.11.0",
@@ -99,6 +99,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "25.0.2",
+    "@rollup/plugin-json": "4.1.0",
     "@rollup/plugin-node-resolve": "15.1.0",
     "@rollup/plugin-swc": "^0.1.1",
     "@rollup/plugin-typescript": "^11.1.1",

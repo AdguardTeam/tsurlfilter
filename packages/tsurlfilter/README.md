@@ -5,41 +5,43 @@
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
 - [TSUrlFilter](#tsurlfilter)
-  - [ Idea](#-idea)
-  - [ Usage](#-usage)
-    - [ API description](#-api-description)
-      - [ Public classes](#-public-classes)
-      - [ Engine](#-engine)
-        - [**Constructor**](#constructor)
-        - [**matchRequest**](#matchrequest)
-        - [**matchFrame**](#matchframe)
-        - [Starting engine](#starting-engine)
-        - [Matching requests](#matching-requests)
-        - [Retrieving cosmetic data](#retrieving-cosmetic-data)
-      - [ MatchingResult](#-matchingresult)
-        - [**getBasicResult**](#getbasicresult)
-        - [**getCosmeticOption**](#getcosmeticoption)
-        - [**Other rules**](#other-rules)
-      - [ CosmeticResult](#-cosmeticresult)
-        - [Applying cosmetic result - css](#applying-cosmetic-result---css)
-        - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
-      - [ DnsEngine](#-dnsengine)
-        - [**Constructor**](#constructor-1)
-        - [**match**](#match)
-        - [Matching hostname](#matching-hostname)
-      - [ RuleConverter](#-ruleconverter)
-        - [**convertRules**](#convertrules)
-      - [ RuleValidator](#-rulevalidator)
-        - [Public methods](#public-methods)
-      - [ RuleSyntaxUtils](#-rulesyntaxutils)
-        - [Public methods](#public-methods-1)
-      - [ DeclarativeConverter](#-declarativeconverter)
-        - [Public methods](#public-methods-2)
-        - [Problems](#problems)
+  - [Idea](#idea)
+  - [Usage](#usage)
+    - [API description](#api-description)
+      - [Public properties](#public-properties)
+        - [TSURLFILTER_VERSION](#tsurlfilter-version)
+      - [Public classes](#public-classes)
+        - [Engine](#engine)
+            - [**Constructor**](#constructor)
+            - [**matchRequest**](#matchrequest)
+            - [**matchFrame**](#matchframe)
+            - [Starting engine](#starting-engine)
+            - [Matching requests](#matching-requests)
+            - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+        - [MatchingResult](#matchingresult)
+            - [**getBasicResult**](#getbasicresult)
+            - [**getCosmeticOption**](#getcosmeticoption)
+            - [**Other rules**](#other-rules)
+        - [CosmeticResult](#cosmeticresult)
+            - [Applying cosmetic result - css](#applying-cosmetic-result---css)
+            - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+        - [DnsEngine](#dnsengine)
+            - [**Constructor**](#constructor-1)
+            - [**match**](#match)
+            - [Matching hostname](#matching-hostname)
+        - [RuleConverter](#ruleconverter)
+            - [**convertRules**](#convertrules)
+        - [RuleValidator](#rulevalidator)
+            - [Public methods](#public-methods)
+        - [RuleSyntaxUtils](#rulesyntaxutils)
+            - [Public methods](#public-methods-1)
+        - [DeclarativeConverter](#declarativeconverter)
+            - [Public methods](#public-methods-2)
+            - [Problems](#problems)
   - [Development](#development)
-    - [ NPM scripts](#-npm-scripts)
-    - [ Excluding peerDependencies](#-excluding-peerdependencies)
-    - [ Git Hooks](#-git-hooks)
+    - [NPM scripts](#npm-scripts)
+    - [Excluding peerDependencies](#excluding-peerdependencies)
+    - [Git Hooks](#git-hooks)
 
 ## <a id="idea"></a> Idea
 The idea is to have a single library that we can reuse for the following tasks:
@@ -57,6 +59,14 @@ npm install @adguard/tsurlfilter
 ```
 
 ### <a id="api-description"></a> API description
+
+#### <a id="public-properties"></a> Public properties
+
+#### <a id="tsurlfilter-version"></a> TSURLFILTER_VERSION
+
+type: `string`
+
+Version of the library.
 
 #### <a id="public-classes"></a> Public classes
 
