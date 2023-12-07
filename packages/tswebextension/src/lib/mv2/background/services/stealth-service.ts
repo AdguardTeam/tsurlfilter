@@ -198,6 +198,19 @@ export class StealthService {
     }
 
     /**
+     * Returns hide document referrer script if hideReferrer enabled, otherwise empty string.
+     *
+     * @returns Hide referrer script.
+     */
+    public getHideDocumentReferrerScript(): string {
+        if (this.config?.hideReferrer) {
+            return `;(function ${StealthHelper.hideDocumentReferrer.toString()})();`;
+        }
+
+        return '';
+    }
+
+    /**
      * Generates rule removing cookies.
      *
      * @param maxAgeMinutes Cookie maxAge in minutes.

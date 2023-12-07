@@ -29,4 +29,22 @@ export class StealthHelper {
             // Ignore
         }
     }
+
+    /**
+     * Hides document referrer.
+     */
+    public static hideDocumentReferrer(): void {
+        const origDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'referrer');
+        if (!origDescriptor || !origDescriptor.get || !origDescriptor.configurable) {
+            return;
+        }
+
+        const returnEmptyReferrerFunc = (): string => '';
+        // Protect getter from native code check
+        returnEmptyReferrerFunc.toString = origDescriptor.get.toString.bind(origDescriptor.get);
+
+        Object.defineProperty(Document.prototype, 'referrer', {
+            get: returnEmptyReferrerFunc,
+        });
+    }
 }

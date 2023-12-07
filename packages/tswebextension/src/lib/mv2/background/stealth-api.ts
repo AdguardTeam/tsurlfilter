@@ -172,6 +172,15 @@ export class StealthApi {
     }
 
     /**
+     * Returns hide document referrer script if hideDocumentReferrer enabled, otherwise empty string.
+     *
+     * @returns Hide referrer script.
+     */
+    public getHideDocumentReferrerScript(): string {
+        return this.engine.getHideDocumentReferrerScript();
+    }
+
+    /**
      * Updates browser privacy.network settings depending on blocking WebRTC or not.
      */
     private async handleBlockWebRTC(): Promise<void> {
