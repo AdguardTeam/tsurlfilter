@@ -10,16 +10,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
-
 ### Changed
-- Updated `@adguard/extended-css` to `v2.0.56`.
 - Filtering log to not reload on History API navigation [#2598](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598).
 
 ### Fixed
 - Handling of internal urls (e.g `view-source:...`) [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 
+## [1.0.2] - 2023-12-07
+
+### Added
+- Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
+
+### Changed
+- Updated `@adguard/extended-css` to `v2.0.56`.
+- Updated `@adguard/tsurlfilter` to `v2.2.8`.
+
+### Fixed
+- Remove referrer from the document.referrer [#1844](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1844)
+
+## [1.0.1] - 2023-12-06
+
+### Fixed
+- HTML ($$) rules break encoding on some websites [#2249](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2249)
+
+## [1.0.0] - 2023-12-01
+
+### Added 
+- New `TsWebExtension.initStorage` method to initialize persistent values for background script.
+- New `createTsWebExtension` function to create `TsWebExtension` instance.
+
+### Changed
+- [BREAKING CHANGE] In preparation for using event-driven background scripts, we started using a session store to persist application context on restart. Since extension session store CRUD operations are asynchronous, we added protection against reading the context before initialization to avoid unexpected behavior. Some code that depends on this restored data may be called before the `start` method to prepare the `configuration`, so we split the initialization process into two parts: the new `initStorage` method, which is called as soon as possible and allows access to the actual context before directly starting the filtration, and the `start` method, which initializes the filtration.
+- [BREAKING CHANGE] `TsWebExtension` constructor now accepts submodules as arguments. To get the `TsWebExtension` instance with `webAccessibleResources` param, use the new `createTsWebExtension` method.
 
 ## [0.4.9] - 2023-11-30
 

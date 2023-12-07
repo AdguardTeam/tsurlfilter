@@ -17,10 +17,11 @@
  */
 
 import {
-    TsWebExtension,
+    type TsWebExtension,
     type ConfigurationMV2 as TsWebExtensionConfiguration,
     type EventChannel,
     type MessageHandlerMV2,
+    createTsWebExtension,
 } from "@adguard/tswebextension";
 
 import { Network } from "./network";
@@ -55,9 +56,6 @@ export const WEB_ACCESSIBLE_RESOURCES_PATH = "adguard";
  * - logging request processing via filtering events api, provided by {@link TsWebExtension}
  */
 export class AdguardApi {
-    // Engine instance
-    private tswebextension: TsWebExtension;
-
     // Network requests API
     private network: Network;
 
@@ -87,18 +85,7 @@ export class AdguardApi {
      */
     public onRequestBlocked = new RequestBlockingLogger();
 
-    /**
-     * Returns a message handler that will listen to internal messages,
-     * for example: message for get computed css for content-script.
-     * @returns Messages handler.
-     */
-    public getMessageHandler: () => MessageHandlerMV2;
-
-    constructor() {
-        this.tswebextension = new TsWebExtension(WEB_ACCESSIBLE_RESOURCES_PATH);
-
-        this.getMessageHandler = this.tswebextension.getMessageHandler;
-
+    constructor(private readonly tswebextension: TsWebExtension) {
         // TODO: load only in ff
         this.tswebextension.setLocalScriptRules(localScriptRules);
 
@@ -119,6 +106,15 @@ export class AdguardApi {
         this.openAssistant = this.openAssistant.bind(this);
         this.handleDetectFilters = this.handleDetectFilters.bind(this);
         this.handleUpdateFilters = this.handleUpdateFilters.bind(this);
+    }
+
+    /**
+     * Returns a message handler that will listen to internal messages,
+     * for example, message for get computed css for content-script.
+     * @returns Message handler.
+     */
+    public getMessageHandler(): MessageHandlerMV2 {
+        return this.tswebextension.getMessageHandler();
     }
 
     /**
@@ -171,6 +167,15 @@ export class AdguardApi {
         await this.tswebextension.configure(tsWebExtensionConfiguration);
 
         return configuration;
+    }
+
+    /**
+     * Updates `filteringEnabled` configuration value without re-initialization of engine.
+     * @param value `filteringEnabled` config value.
+     * @returns Promise, resolved when value is updated.
+     */
+    public async setFilteringEnabled(value: boolean): Promise<void> {
+        return this.tswebextension.setFilteringEnabled(value);
     }
 
     /**
@@ -234,7 +239,8 @@ export class AdguardApi {
             settings: {
                 documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 assistantUrl: "adguard-assistant.js",
-                filteringEnabled: true,
+                filteringEnabled: this.configuration.filteringEnabled,
+                debugScriptlets: false,
                 stealthModeEnabled: true,
                 collectStats: false,
                 allowlistInverted,
@@ -295,7 +301,9 @@ export class AdguardApi {
      *
      * @returns AdguardApi instance
      */
-    public static create(): AdguardApi {
-        return new AdguardApi();
+    public static async create(): Promise<AdguardApi> {
+        const tswebextension = createTsWebExtension(WEB_ACCESSIBLE_RESOURCES_PATH);
+        await tswebextension.initStorage();
+        return new AdguardApi(tswebextension);
     }
 }

@@ -32,6 +32,11 @@ export const configurationValidator = zod.object({
     filters: zod.number().array(),
 
     /**
+     * Enables filtering if true.
+     */
+    filteringEnabled: zod.boolean(),
+
+    /**
      * An array of domains, for which AdGuard won't work.
      */
     allowlist: zod.string().array().optional(),

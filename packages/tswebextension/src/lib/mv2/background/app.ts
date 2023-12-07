@@ -1,22 +1,5 @@
 /* eslint-disable class-methods-use-this */
-import { sessionStorage } from './session-storage';
-import { appContext } from './context';
 import { WebRequestApi } from './web-request-api';
-import {
-    tabsApi,
-    engineApi,
-    documentApi,
-} from './api';
-import { resourcesService } from './services/resources-service';
-import { redirectsService } from './services/redirects/redirects-service';
-import { documentBlockingService } from './services/document-blocking-service';
-
-import { messagesApi, type MessageHandlerMV2 } from './messages-api';
-import {
-    type AppInterface,
-    defaultFilteringLog,
-} from '../../common';
-
 import {
     ConfigurationMV2,
     ConfigurationMV2Context,
@@ -25,8 +8,21 @@ import {
 import { Assistant } from './assistant';
 import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
-import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
-import { stealthApi } from './stealth-api';
+import type { AppContext } from './context';
+import type { StealthApi } from './stealth-api';
+import type { TabsApi } from './tabs';
+import type { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
+import type { EngineApi } from './engine-api';
+import type { RedirectsService } from './services/redirects/redirects-service';
+import type { DocumentBlockingService } from './services/document-blocking-service';
+import type { MessagesApi, MessageHandlerMV2 } from './messages-api';
+import type { ExtSessionStorage } from './ext-session-storage';
+import type {
+    AppInterface,
+    EventChannel,
+    FilteringLog,
+    FilteringLogEvent,
+} from '../../common';
 
 /**
  * App implementation for MV2.
@@ -40,7 +36,7 @@ MessageHandlerMV2
     /**
      * Fires on filtering log event.
      */
-    public onFilteringLogEvent = defaultFilteringLog.onLogEvent;
+    public onFilteringLogEvent: EventChannel<FilteringLogEvent>;
 
     /**
      * Fires when a rule has been created from the helper.
@@ -56,11 +52,11 @@ MessageHandlerMV2
         // TODO: Remove this check after moving call of storage initialization in extension code.
         // Check this flag before access storage values, because engine methods
         // can be triggered before initialization by extension `onCheckRequestFilterReady` method.
-        if (!appContext.isStorageInitialized) {
+        if (!this.appContext.isStorageInitialized) {
             return false;
         }
 
-        return appContext.isAppStarted;
+        return this.appContext.isAppStarted;
     }
 
     /**
@@ -69,7 +65,7 @@ MessageHandlerMV2
      * @param value Status value.
      */
     public set isStarted(value: boolean) {
-        appContext.isAppStarted = value;
+        this.appContext.isAppStarted = value;
     }
 
     /**
@@ -79,11 +75,11 @@ MessageHandlerMV2
      * @returns True if app started, else false.
      */
     public get configuration(): ConfigurationMV2Context {
-        if (!appContext.configuration) {
+        if (!this.appContext.configuration) {
             throw new Error('Configuration not set!');
         }
 
-        return appContext.configuration;
+        return this.appContext.configuration;
     }
 
     /**
@@ -92,26 +88,47 @@ MessageHandlerMV2
      * @param value Status value.
      */
     public set configuration(value: ConfigurationMV2Context) {
-        appContext.configuration = value;
+        this.appContext.configuration = value;
     }
 
     /**
-     * Tabs cosmetic injector.
-     * Used to inject cosmetic rules into opened tabs on extension start.
+     * Creates new instance of {@link TsWebExtension}.
+     *
+     * @param appContext Top level app context storage.
+     * @param tabsApi Wrapper around browser.tabs API.
+     * @param engineApi TSUrlFilter Engine wrapper.
+     * @param stealthApi Stealth api implementation.
+     * @param messagesApi Wrapper around browser.runtime API.
+     * @param tabCosmeticInjector Used to inject cosmetic rules into opened tabs on extension start.
+     * @param redirectsService Service for working with redirects.
+     * @param documentBlockingService Service encapsulate processing of $document modifier rules.
+     * @param filteringLog Filtering log API.
+     * @param extSessionStorage API for storing data described by SessionStorageSchema in the browser.storage.session.
      */
-    private readonly tabCosmeticInjector = new TabsCosmeticInjector(
-        engineApi,
-        documentApi,
-        tabsApi,
-    );
+    constructor(
+        private readonly appContext: AppContext,
+        private readonly tabsApi: TabsApi,
+        private readonly engineApi: EngineApi,
+        private readonly stealthApi: StealthApi,
+        private readonly messagesApi: MessagesApi,
+        private readonly tabCosmeticInjector: TabsCosmeticInjector,
+        private readonly redirectsService: RedirectsService,
+        private readonly documentBlockingService: DocumentBlockingService,
+        private readonly filteringLog: FilteringLog,
+        private readonly extSessionStorage: ExtSessionStorage,
+    ) {
+        this.onFilteringLogEvent = this.filteringLog.onLogEvent;
+        this.getMessageHandler = this.getMessageHandler.bind(this);
+    }
 
     /**
-     * Constructor.
-     *
-     * @param webAccessibleResourcesPath Path to web accessible resources for {@link resourcesService}.
+     * Initialize app persistent data.
+     * This method called as soon as possible and allows access
+     * to the actual context before the app is started.
      */
-    constructor(webAccessibleResourcesPath: string) {
-        resourcesService.init(webAccessibleResourcesPath);
+    public async initStorage(): Promise<void> {
+        await this.extSessionStorage.init();
+        this.appContext.isStorageInitialized = true;
     }
 
     /**
@@ -125,24 +142,21 @@ MessageHandlerMV2
      * @throws Error if configuration is not valid.
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
-        await sessionStorage.init();
-        appContext.isStorageInitialized = true;
-
         configurationMV2Validator.parse(configuration);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
         RequestEvents.init();
-        await redirectsService.start();
-        documentBlockingService.configure(configuration);
-        await engineApi.startEngine(configuration);
+        await this.redirectsService.start();
+        this.documentBlockingService.configure(configuration);
+        await this.engineApi.startEngine(configuration);
         await this.tabCosmeticInjector.processOpenTabs();
-        await tabsApi.start();
+        await this.tabsApi.start();
         WebRequestApi.start();
         Assistant.assistantUrl = configuration.settings.assistantUrl;
 
         await WebRequestApi.flushMemoryCache();
-        await stealthApi.updateWebRtcPrivacyPermissions();
+        await this.stealthApi.updateWebRtcPrivacyPermissions();
 
         this.isStarted = true;
     }
@@ -152,7 +166,7 @@ MessageHandlerMV2
      */
     public async stop(): Promise<void> {
         WebRequestApi.stop();
-        tabsApi.stop();
+        this.tabsApi.stop();
         this.isStarted = false;
     }
 
@@ -177,12 +191,12 @@ MessageHandlerMV2
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
-        documentBlockingService.configure(configuration);
-        await engineApi.startEngine(configuration);
-        await tabsApi.updateCurrentTabsMainFrameRules();
+        this.documentBlockingService.configure(configuration);
+        await this.engineApi.startEngine(configuration);
+        await this.tabsApi.updateCurrentTabsMainFrameRules();
 
         await WebRequestApi.flushMemoryCache();
-        await stealthApi.updateWebRtcPrivacyPermissions();
+        await this.stealthApi.updateWebRtcPrivacyPermissions();
     }
 
     /**
@@ -209,7 +223,7 @@ MessageHandlerMV2
      * @returns Rules count.
      */
     public getRulesCount(): number {
-        return engineApi.getRulesCount();
+        return this.engineApi.getRulesCount();
     }
 
     /**
@@ -219,7 +233,7 @@ MessageHandlerMV2
      * @returns Messages handler.
      */
     public getMessageHandler(): MessageHandlerMV2 {
-        return messagesApi.handleMessage;
+        return this.messagesApi.handleMessage;
     }
 
     /**
@@ -245,7 +259,7 @@ MessageHandlerMV2
         this.configuration.settings.filteringEnabled = isFilteringEnabled;
 
         await WebRequestApi.flushMemoryCache();
-        await stealthApi.updateWebRtcPrivacyPermissions();
+        await this.stealthApi.updateWebRtcPrivacyPermissions();
     }
 
     /**
@@ -278,7 +292,7 @@ MessageHandlerMV2
     public async setStealthModeEnabled(isStealthModeEnabled: boolean): Promise<void> {
         this.configuration.settings.stealthModeEnabled = isStealthModeEnabled;
 
-        await stealthApi.updateWebRtcPrivacyPermissions();
+        await this.stealthApi.updateWebRtcPrivacyPermissions();
     }
 
     /**
@@ -371,7 +385,7 @@ MessageHandlerMV2
     public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
         this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
 
-        await stealthApi.updateWebRtcPrivacyPermissions();
+        await this.stealthApi.updateWebRtcPrivacyPermissions();
     }
 
     /**

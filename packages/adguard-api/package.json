@@ -1,6 +1,6 @@
 {
   "name": "@adguard/api",
-  "version": "2.0.1",
+  "version": "2.1.1",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/adguard-api.js",
   "files": ["dist/**/*"],
@@ -30,12 +30,12 @@
     "check-types": "tsc --project tsconfig.build.json --noemit",
     "increment": "yarn version --patch --no-git-tag-version"
   },
-  "author": "Adguard",
+  "author": "AdGuard",
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
     "@adguard/filters-downloader": "^1.1.23",
-    "@adguard/tswebextension": "^0.4.8",
+    "@adguard/tswebextension": "^1.0.0",
     "webextension-polyfill": "0.10.0",
     "zod": "3.22.4"
   },

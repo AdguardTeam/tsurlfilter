@@ -2,14 +2,17 @@ import type { Runtime } from 'webextension-polyfill';
 
 import { Assistant } from '@lib/mv2/background/assistant';
 import { TsWebExtension } from '@lib/mv2/background/app';
-import { engineApi } from '@lib/mv2/background/api';
-import { messagesApi } from '@lib/mv2/background/messages-api';
+import {
+    createTsWebExtension,
+    engineApi,
+    messagesApi,
+} from '@lib/mv2/background/api';
 import type { ConfigurationMV2 } from '@lib/mv2/background/configuration';
 import type { Message } from '@lib/common/message';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { MockAppContext } from './mocks/mock-context';
 
-jest.mock('@lib/mv2/background/session-storage');
+jest.mock('@lib/mv2/background/ext-session-storage');
 jest.mock('@lib/mv2/background/context', () => ({
     appContext: jest.fn(() => new MockAppContext()),
 }));
@@ -19,7 +22,11 @@ jest.mock('@lib/mv2/background/tabs/tabs-api');
 jest.mock('@lib/mv2/background/stealth-api');
 jest.mock('@lib/mv2/background/services/resources-service');
 jest.mock('@lib/mv2/background/services/redirects/redirects-service');
-jest.mock('@lib/mv2/background/messages-api');
+jest.mock('@lib/mv2/background/messages-api', () => ({
+    MessagesApi: class {
+        handleMessage = jest.fn();
+    },
+}));
 jest.mock('@lib/mv2/background/configuration');
 jest.mock('@lib/mv2/background/assistant');
 jest.mock('@lib/mv2/background/services/local-script-rules-service');
@@ -31,8 +38,8 @@ describe('TsWebExtension', () => {
 
     let config: ConfigurationMV2;
 
-    beforeEach(() => {
-        instance = new TsWebExtension('test');
+    beforeEach(async () => {
+        instance = createTsWebExtension('test');
         config = getConfigurationMv2Fixture();
     });
 
@@ -50,6 +57,7 @@ describe('TsWebExtension', () => {
         });
 
         it('should be started correctly', async () => {
+            await instance.initStorage();
             await instance.start(config);
 
             expect(instance.isStarted).toBe(true);
@@ -97,13 +105,13 @@ describe('TsWebExtension', () => {
     });
 
     it('should return message handler from messages api', async () => {
-        const expectedResponce = Date.now();
+        const expectedResponse = Date.now();
 
-        jest.spyOn(messagesApi, 'handleMessage').mockReturnValue(Promise.resolve(expectedResponce));
+        jest.spyOn(messagesApi, 'handleMessage').mockReturnValue(Promise.resolve(expectedResponse));
 
         const handler = instance.getMessageHandler();
 
-        expect(await handler({} as Message, {} as Runtime.MessageSender)).toBe(expectedResponce);
+        expect(await handler({} as Message, {} as Runtime.MessageSender)).toBe(expectedResponse);
     });
 
     describe('configuration option setters', () => {

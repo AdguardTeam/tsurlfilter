@@ -4,10 +4,11 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
 
 (async (): Promise<void> => {
     // create new AdguardApi instance
-    const adguardApi = AdguardApi.create();
+    const adguardApi = await AdguardApi.create();
 
     const configuration: Configuration = {
         filters: [2],
+        filteringEnabled: true,
         allowlist: ["www.example.com"],
         rules: ["example.org##h1"],
         filterRulesUrl: "https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt",

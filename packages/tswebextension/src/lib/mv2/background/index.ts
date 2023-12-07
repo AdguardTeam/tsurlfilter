@@ -8,7 +8,7 @@ export {
 
 export * from './api';
 export * from './app';
-export * from './session-storage';
+export * from './ext-session-storage';
 export * from './tabs';
 export * from './request';
 export * from '../../common';

@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 import { EventChannel, MessageType } from '../../common';
-import { messagesApi } from './messages-api';
+import { messagesApi } from './api';
 
 /**
  * Event channel wrapper for sending messages to assistant.

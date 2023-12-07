@@ -26,7 +26,8 @@ Table of content:
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules](#userrules)
-      - [verbose (deprecated)](#verbose)
+      - [ verbose (deprecated)](#-verbose-deprecated)
+      - [logLevel](#loglevel)
       - [settings](#settings)
         - [allowlistInverted](#allowlistinverted)
         - [allowlistEnabled](#allowlistenabled)
@@ -52,6 +53,7 @@ Table of content:
         - [onFilteringLogEvent](#onfilteringlogevent)
         - [isStarted](#isstarted)
       - [Methods](#methods)
+        - [initStorage()](#initstorage)
         - [start()](#start)
         - [configure()](#configure)
         - [stop()](#stop)
@@ -423,6 +425,12 @@ type: `boolean`
 Is app started.
 
 #### Methods
+
+##### initStorage()
+
+type: `() => Promise<void>`
+
+Initialize app persistent data. This method called as soon as possible and allows access to the actual context before the app is started.
 
 ##### start()
 

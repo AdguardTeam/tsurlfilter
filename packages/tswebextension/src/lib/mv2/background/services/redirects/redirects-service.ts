@@ -1,34 +1,70 @@
 import { redirects } from '@adguard/scriptlets';
 import type { Redirects } from '@adguard/scriptlets';
+import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
-import { resourcesService } from '../resources-service';
 import { logger } from '../../../../common';
-
-export interface RedirectsServiceInterface {
-    start: () => Promise<void>;
-
-    createRedirectUrl: (title: string, requestUrl: string) => string | null;
-}
 
 /**
  * Service for working with redirects.
  */
-export class RedirectsService implements RedirectsServiceInterface {
+export class RedirectsService {
     redirects: Redirects | null = null;
+
+    /**
+     * Creates {@link RedirectsService} instance.
+     * @param resourcesService Prevent web pages to identify extension through its web accessible resources.
+     */
+    constructor(
+        private readonly resourcesService: ResourcesService,
+    ) {}
 
     /**
      * Starts redirects service.
      */
     public async start(): Promise<void> {
         try {
-            const rawYaml = await resourcesService.loadResource('redirects.yml');
+            const rawYaml = await this.resourcesService.loadResource('redirects.yml');
 
             this.redirects = new redirects.Redirects(rawYaml);
         } catch (e) {
             throw new Error((e as Error).message);
         }
+    }
+
+    /**
+     * Returns redirect url for the specified title.
+     *
+     * @param title Redirect title or null.
+     * @param requestUrl Request url.
+     * @returns Redirect url or null if redirect is not found.
+     */
+    public createRedirectUrl(title: string | null, requestUrl: string): string | null {
+        if (!title) {
+            return null;
+        }
+
+        if (!this.redirects) {
+            return null;
+        }
+
+        const redirectSource = this.redirects.getRedirect(title);
+
+        if (!redirectSource) {
+            logger.debug(`There is no redirect source with title: "${title}"`);
+            return null;
+        }
+
+        const shouldRedirect = this.shouldCreateRedirectUrl(title, requestUrl);
+        if (!shouldRedirect) {
+            return null;
+        }
+
+        // For blocking redirects we generate additional search params.
+        const params = this.blockingUrlParams(title, requestUrl);
+
+        return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
     }
 
     /**
@@ -92,40 +128,4 @@ export class RedirectsService implements RedirectsServiceInterface {
         }
         return params;
     }
-
-    /**
-     * Returns redirect url for the specified title.
-     *
-     * @param title Redirect title or null.
-     * @param requestUrl Request url.
-     * @returns Redirect url or null if redirect is not found.
-     */
-    public createRedirectUrl(title: string | null, requestUrl: string): string | null {
-        if (!title) {
-            return null;
-        }
-
-        if (!this.redirects) {
-            return null;
-        }
-
-        const redirectSource = this.redirects.getRedirect(title);
-
-        if (!redirectSource) {
-            logger.debug(`There is no redirect source with title: "${title}"`);
-            return null;
-        }
-
-        const shouldRedirect = this.shouldCreateRedirectUrl(title, requestUrl);
-        if (!shouldRedirect) {
-            return null;
-        }
-
-        // For blocking redirects we generate additional search params.
-        const params = this.blockingUrlParams(title, requestUrl);
-
-        return resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
-    }
 }
-
-export const redirectsService = new RedirectsService();

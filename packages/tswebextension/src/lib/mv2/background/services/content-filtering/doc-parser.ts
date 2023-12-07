@@ -1,3 +1,5 @@
+import { EntityHandler } from './entity-handler';
+
 /**
  * Document parser wrapper.
  */
@@ -38,7 +40,7 @@ export class DocumentParser {
      * @returns Document or null if parse error occurred.
      */
     parse(html: string): Document | null {
-        const doc = this.parser.parseFromString(html, 'text/html');
+        const doc = this.parser.parseFromString(EntityHandler.escapeEntities(html), 'text/html');
         if (this.isParseError(doc)) {
             return null;
         }

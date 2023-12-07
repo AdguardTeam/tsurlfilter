@@ -2,10 +2,7 @@ import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import { RequestBlockingApi } from '@lib/mv2/background/request/request-blocking-api';
 import { engineApi } from '@lib/mv2/background/api';
 
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/tabs/tabs-api');
-jest.mock('@lib/mv2/background/services/redirects/redirects-service');
-jest.mock('@lib/mv2/background/services/document-blocking-service');
+jest.mock('@lib/mv2/background/api');
 
 describe('Request Blocking Api', () => {
     const mockMatchingResult = (ruleText?: string): void => {
