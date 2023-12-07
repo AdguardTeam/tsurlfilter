@@ -13,7 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
 
-## Fixed
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.2.8`.
+
+### Fixed
 - Remove referrer from the document.referrer [#1844](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1844)
 
 ## [1.0.1] - 2023-12-06

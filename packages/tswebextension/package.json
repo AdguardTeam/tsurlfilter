@@ -84,7 +84,7 @@
     "@adguard/assistant": "^4.3.70",
     "@adguard/extended-css": "^2.0.56",
     "@adguard/scriptlets": "^1.9.101",
-    "@adguard/tsurlfilter": "^2.2.7",
+    "@adguard/tsurlfilter": "^2.2.8",
     "bowser": "2.11.0",
     "commander": "11.0.0",
     "fs-extra": "11.1.1",
