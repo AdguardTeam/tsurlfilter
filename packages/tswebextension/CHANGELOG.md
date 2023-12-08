@@ -8,7 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [1.0.2] - 2023-12-06
+## [1.0.3] - 2023-12-08
+
+### Fixed
+- Incorrect path for `typings` in `package.json`.
+
+## [1.0.2] - 2023-12-07
 
 ### Added
 - Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
