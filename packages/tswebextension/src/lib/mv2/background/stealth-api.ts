@@ -142,13 +142,22 @@ export class StealthApi {
     }
 
     /**
+     * Checks if both stealth mode and filtering are enabled.
+     *
+     * @returns True if stealth mode and filtering are enabled.
+     */
+    private isStealthAllowed():boolean {
+        return this.isStealthModeEnabled && this.isFilteringEnabled;
+    }
+
+    /**
      * Checks if stealth actions can be applied to request context.
      *
      * @param context Request context.
      * @returns True if stealth actions can be applied to request context.
      */
     private canApplyStealthActionsToContext(context: RequestContext): boolean {
-        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
+        if (!this.isStealthAllowed()) {
             return false;
         }
 
@@ -168,7 +177,7 @@ export class StealthApi {
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        return this.engine.getSetDomSignalScript();
+        return this.isStealthAllowed() ? this.engine.getSetDomSignalScript() : '';
     }
 
     /**
@@ -177,7 +186,7 @@ export class StealthApi {
      * @returns Hide referrer script.
      */
     public getHideDocumentReferrerScript(): string {
-        return this.engine.getHideDocumentReferrerScript();
+        return this.isStealthAllowed() ? this.engine.getHideDocumentReferrerScript() : '';
     }
 
     /**
