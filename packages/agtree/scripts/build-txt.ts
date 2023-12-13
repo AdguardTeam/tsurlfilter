@@ -1,44 +1,43 @@
 /**
  * @file Output the version number to a build.txt file
  */
-import fs from 'fs';
+
+import fs from 'fs-extra';
 import path from 'path';
 import * as url from 'url';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
-const UPPER_LEVEL = '../';
-
+const PROJECT_ROOT_RELATIVE_PATH = '../';
 const DIST_FOLDER_NAME = 'dist';
 const OUTPUT_FILE_NAME = 'build.txt';
 const PKG_FILE_NAME = 'package.json';
 
 // Computed constants
-const distFolderLocation = path.join(__dirname, UPPER_LEVEL, DIST_FOLDER_NAME);
-const pkgFileLocation = path.join(__dirname, UPPER_LEVEL, PKG_FILE_NAME);
+const distFolderPath = path.join(__dirname, PROJECT_ROOT_RELATIVE_PATH, DIST_FOLDER_NAME);
+const pkgFilePath = path.join(__dirname, PROJECT_ROOT_RELATIVE_PATH, PKG_FILE_NAME);
+const outputFilePath = path.join(distFolderPath, OUTPUT_FILE_NAME);
 
-// Read package.json
-const pkg = JSON.parse(fs.readFileSync(pkgFileLocation, 'utf-8'));
+const rawPkg = fs.readFileSync(pkgFilePath, 'utf-8');
+const pkg = JSON.parse(rawPkg);
 
 if (!pkg.version) {
     throw new Error('Missing required field "version" in package.json');
 }
 
+/**
+ * Main function
+ */
 const main = (): void => {
-    const content = `version=${pkg.version}`;
-
     // Create the dist folder if it doesn't exist
-    if (!fs.existsSync(distFolderLocation)) {
-        fs.mkdirSync(distFolderLocation);
-    }
+    fs.ensureDirSync(distFolderPath);
 
     // Write the output file
-    const file = path.resolve(distFolderLocation, OUTPUT_FILE_NAME);
-    fs.writeFileSync(file, content);
+    const content = `version=${pkg.version}`;
+    fs.writeFileSync(outputFilePath, content);
 
-    // eslint-disable-next-line no-console
-    console.log(`Wrote ${content} to ${file} was successful`);
+    console.log(`Wrote '${content}' to '${outputFilePath}' was successful`);
 };
 
 main();
