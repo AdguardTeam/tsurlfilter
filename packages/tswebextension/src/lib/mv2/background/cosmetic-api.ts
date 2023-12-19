@@ -292,8 +292,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         const scriptRules = cosmeticResult.getScriptRules();
 
         let scriptText = CosmeticApi.getScriptText(scriptRules, url);
-        scriptText += stealthApi.getSetDomSignalScript();
-        scriptText += stealthApi.getHideDocumentReferrerScript();
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        if (tabContext) {
+            const frame = tabContext.frames.get(frameId);
+            scriptText += stealthApi.getStealthScript(tabContext.mainFrameRule, frame?.matchingResult);
+        }
 
         if (scriptText) {
             /**

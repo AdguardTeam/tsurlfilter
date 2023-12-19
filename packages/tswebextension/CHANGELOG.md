@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.6] - 2023-12-19
+
+### Changed
+- Stealth options that are applied to the document can now be disabled by the $stealth rule. [#2648](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2648).
+
 ## [1.0.5] - 2023-12-08
 
 ### Fixed

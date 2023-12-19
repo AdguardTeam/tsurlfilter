@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 import { StringRuleList } from '@adguard/tsurlfilter';
+import type { NetworkRule, MatchingResult } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
@@ -172,12 +173,46 @@ export class StealthApi {
     }
 
     /**
+     * Returns stealth script to apply to the frame.
+     *
+     * TODO this should be expanded for v2.3 to accommodate for $stealth values feature,
+     * i.e checking specific stealth options (dnt and referrer)
+     * https://github.com/AdguardTeam/tsurlfilter/issues/100.
+     *
+     * @param mainFrameRule Main frame rule to use if no matching result provided.
+     * @param matchingResult Matching result.
+     * @returns Stealth script.
+     */
+    public getStealthScript(mainFrameRule: NetworkRule | null, matchingResult?: MatchingResult | null): string {
+        if (!this.isStealthAllowed()) {
+            return '';
+        }
+
+        let stealthScript = '';
+
+        let documentRule: NetworkRule | null = null;
+        // Matching result may be missing in case of dynamically created frames without url
+        if (matchingResult) {
+            documentRule = matchingResult.documentRule || matchingResult.stealthRule;
+        } else {
+            documentRule = mainFrameRule;
+        }
+
+        if (!documentRule) {
+            stealthScript += this.getSetDomSignalScript();
+            stealthScript += this.getHideDocumentReferrerScript();
+        }
+
+        return stealthScript;
+    }
+
+    /**
      * Returns set dom signal script if sendDoNotTrack enabled, otherwise empty string.
      *
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        return this.isStealthAllowed() ? this.engine.getSetDomSignalScript() : '';
+        return this.engine.getSetDomSignalScript();
     }
 
     /**
@@ -186,7 +221,7 @@ export class StealthApi {
      * @returns Hide referrer script.
      */
     public getHideDocumentReferrerScript(): string {
-        return this.isStealthAllowed() ? this.engine.getHideDocumentReferrerScript() : '';
+        return this.engine.getHideDocumentReferrerScript();
     }
 
     /**
