@@ -147,7 +147,7 @@ export class RequestBlockingApi {
                 // redirects should be considered as blocked for the tab blocked request count
                 // which is displayed on the extension badge
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
-                tabsApi.incrementTabBlockedRequestCount(tabId);
+                tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
                 return { redirectUrl };
             }
         }

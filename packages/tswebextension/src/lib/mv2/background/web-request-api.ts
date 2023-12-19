@@ -378,7 +378,7 @@ export class WebRequestApi {
         }
 
         if (response?.cancel) {
-            tabsApi.incrementTabBlockedRequestCount(tabId);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
 
             const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
 
@@ -501,7 +501,7 @@ export class WebRequestApi {
         });
 
         if (response?.cancel) {
-            tabsApi.incrementTabBlockedRequestCount(tabId);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
 
             const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
 
@@ -837,6 +837,7 @@ export class WebRequestApi {
             matchingResult,
             tabId,
             eventId,
+            referrerUrl,
             thirdParty,
         } = context;
 
@@ -866,7 +867,7 @@ export class WebRequestApi {
                 },
             });
 
-            tabsApi.incrementTabBlockedRequestCount(tabId);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
 
             return { cancel: true };
         }

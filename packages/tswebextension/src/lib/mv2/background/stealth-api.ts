@@ -151,7 +151,7 @@ export class StealthApi {
      * @returns Hide referrer script.
      */
     public getHideDocumentReferrerScript(): string {
-        return this.engine.getHideDocumentReferrerScript();
+        return this.stealthService.getHideDocumentReferrerScript();
     }
 
     /**

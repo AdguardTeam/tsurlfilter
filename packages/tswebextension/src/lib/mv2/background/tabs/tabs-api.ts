@@ -5,7 +5,7 @@ import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
 import { FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
-import { isHttpRequest } from '../../../common';
+import { isHttpRequest, isHttpOrWsRequest, getDomain } from '../../../common';
 
 /**
  * Request context data related to the tab's frame.
@@ -230,11 +230,23 @@ export class TabsApi {
      * Increments tab context blocked request count.
      *
      * @param tabId Tab ID.
+     * @param referrerUrl Request initiator url.
      */
-    public incrementTabBlockedRequestCount(tabId: number): void {
+    public incrementTabBlockedRequestCount(tabId: number, referrerUrl: string): void {
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
+            return;
+        }
+
+        const tabUrl = tabContext.info?.url;
+        /**
+         * Only increment count for requests that are initiated from the same domain as the tab.
+         *
+         * This prevents count 'leaks' when moving between main frames due to async nature of
+         * {@link browser.webRequest.onBeforeRequest} and {@link browser.tabs.onUpdated} events.
+         */
+        if (!tabUrl || !referrerUrl || getDomain(tabUrl) !== getDomain(referrerUrl)) {
             return;
         }
 
@@ -306,7 +318,8 @@ export class TabsApi {
      * @returns Created tab context, or null if tab is not browser tab.
      */
     private handleTabCreate(tab: Tabs.Tab): TabContext | null {
-        if (!TabContext.isBrowserTab(tab)) {
+        const url = tab.pendingUrl || tab.url;
+        if (!TabContext.isBrowserTab(tab) || !url || !isHttpOrWsRequest(url)) {
             return null;
         }
 
@@ -344,6 +357,7 @@ export class TabsApi {
         if (!tabContext) {
             return;
         }
+
         tabContext.updateMainFrameData(tabId, url);
     }
 

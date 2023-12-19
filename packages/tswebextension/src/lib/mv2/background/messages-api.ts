@@ -23,7 +23,6 @@ import {
     type Message,
 } from '../../common';
 import { Assistant } from './assistant';
-import type { CookieRule } from '../../common/content-script';
 import type { TabsApi } from './tabs';
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;

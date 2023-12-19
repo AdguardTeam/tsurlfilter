@@ -215,18 +215,39 @@ describe('TabsApi', () => {
     describe('incrementTabBlockedRequestCount method', () => {
         it('should increment tab context blocked request count', () => {
             const tabId = 1;
+            const url = 'https://example.org';
 
-            const tabContext = createTestTabContext();
+            const tabContext = {
+                info: { url },
+                incrementBlockedRequestCount: jest.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
+            tabsApi.incrementTabBlockedRequestCount(tabId, url);
 
-            tabsApi.incrementTabBlockedRequestCount(tabId);
+            expect(tabContextIncrement).toBeCalled();
+        });
 
-            expect(TabContext.prototype.incrementBlockedRequestCount).toBeCalled();
+        it('should not increment tab context blocked request count if origin and referer domains are different', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ref.com';
+
+            const tabContext = {
+                info: { url: originUrl },
+                incrementBlockedRequestCount: jest.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+
+            expect(tabContextIncrement).not.toBeCalled();
         });
 
         it('should not increment tab context blocked request count if tab context is not found', () => {
-            tabsApi.incrementTabBlockedRequestCount(1);
+            tabsApi.incrementTabBlockedRequestCount(1, '');
 
             expect(TabContext.prototype.incrementBlockedRequestCount).not.toBeCalled();
         });
