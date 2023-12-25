@@ -8,11 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [Unreleased]
+
+### Fixed
+- Cosmetic rules with wildcard do not work on some domains [#2650](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650)
+
 ## [2.2.8] - 2023-12-07
 
 ### Added
 - Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
-
 
 ## [2.2.7] - 2023-11-30
 

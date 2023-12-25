@@ -533,6 +533,25 @@ describe('TestEngineCosmeticResult - js', () => {
         genericJsRule,
     ];
 
+    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650
+    it('matches wildcard cosmetic rules with private domains (com.ru)', () => {
+        const hidingRule = 'flightradar24.*##body';
+        const jsRule = 'flightradar24.*#%#alert(1);';
+        const list = new StringRuleList(
+            1,
+            [hidingRule, jsRule].join('\n'),
+            false,
+            false,
+        );
+        const engine = new Engine(new RuleStorage([list]));
+        const result = engine.getCosmeticResult(
+            createRequest('https://flightradar24.com.ru/faq/'),
+            CosmeticOption.CosmeticOptionAll,
+        );
+        expect(result.JS.specific[0].getText()).toBe(jsRule);
+        expect(result.elementHiding.specific[0].getText()).toBe(hidingRule);
+    });
+
     it('works if returns correct cosmetic js result', () => {
         const list = new StringRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
