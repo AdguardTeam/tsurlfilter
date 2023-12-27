@@ -17,6 +17,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of internal urls (e.g `view-source:...`) [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 - Blocked ads count leaking between websites [#2080](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080).
 
+## [1.0.8] - 2023-12-27
+
+### Changed
+- `webNavigation.onCommitted` event handler to take into account Opera event firing bug.
+- Updated `@adguard/tsurlfilter` to `v2.2.9`.
+- Updated `@adguard/scriptlets` to `v1.9.105`.
+
+## [1.0.6] - 2023-12-19
+
+### Changed
+- Stealth options that are applied to the document can now be disabled by the $stealth rule. [#2648](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2648).
+
+## [1.0.5] - 2023-12-08
+
+### Fixed
+- `Do Not Track` and `Hide Referrer from third parties` ignoring global Stealth mode toggle.
+
+## [1.0.4] - 2023-12-08
+
+### Fixed
+- Session storage error in old browsers [#2636](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2636).
+
+## [1.0.3] - 2023-12-08
+
+### Fixed
+- Incorrect path for `typings` in `package.json`.
+
 ## [1.0.2] - 2023-12-07
 
 ### Added
@@ -36,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2023-12-01
 
-### Added 
+### Added
 - New `TsWebExtension.initStorage` method to initialize persistent values for background script.
 - New `createTsWebExtension` function to create `TsWebExtension` instance.
 

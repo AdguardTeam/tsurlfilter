@@ -306,7 +306,6 @@ export class StealthService {
         if (this.config?.sendDoNotTrack) {
             return `;(function ${StealthHelper.setDomSignal.toString()})();`;
         }
-
         return '';
     }
 
@@ -319,7 +318,6 @@ export class StealthService {
         if (this.config?.hideReferrer) {
             return `;(function ${StealthHelper.hideDocumentReferrer.toString()})();`;
         }
-
         return '';
     }
 

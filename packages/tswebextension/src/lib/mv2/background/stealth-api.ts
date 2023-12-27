@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 import { StringRuleList, STEALTH_MODE_FILTER_ID } from '@adguard/tsurlfilter';
+import { StealthOptionName, type NetworkRule, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
@@ -134,6 +135,46 @@ export class StealthApi {
         const stealthActions = this.stealthService.processRequestHeaders(context);
 
         return stealthActions !== StealthActions.None;
+    }
+
+    /**
+     * Returns stealth script to apply to the frame.
+     *
+     * TODO this should be expanded for v2.3 to accommodate for $stealth values feature,
+     * i.e checking specific stealth options (dnt and referrer)
+     * https://github.com/AdguardTeam/tsurlfilter/issues/100.
+     *
+     * @param mainFrameRule Main frame rule to use if no matching result provided.
+     * @param matchingResult Matching result.
+     * @returns Stealth script.
+     */
+    public getStealthScript(mainFrameRule: NetworkRule | null, matchingResult?: MatchingResult | null): string {
+        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
+            return '';
+        }
+
+        let documentRule: NetworkRule | null = null;
+        // Matching result may be missing in case of dynamically created frames without url
+        if (matchingResult) {
+            documentRule = matchingResult.documentRule || matchingResult.getStealthRule();
+        } else {
+            documentRule = mainFrameRule;
+        }
+
+        if (documentRule) {
+            return '';
+        }
+
+        let stealthScript = '';
+        if (!matchingResult?.getStealthRule(StealthOptionName.DoNotTrack)) {
+            stealthScript += this.getSetDomSignalScript();
+        }
+
+        if (!matchingResult?.getStealthRule(StealthOptionName.HideReferrer)) {
+            stealthScript += this.getHideDocumentReferrerScript();
+        }
+
+        return stealthScript;
     }
 
     /**

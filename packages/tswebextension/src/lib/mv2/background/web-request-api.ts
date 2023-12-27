@@ -177,6 +177,7 @@ import { findHeaderByName } from '../../common/utils/find-header-by-name';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { FRAME_DELETION_TIMEOUT } from '../../common/constants';
 
 import { removeHeadersService } from './services/remove-headers-service';
 import { CosmeticApi } from './cosmetic-api';
@@ -196,7 +197,7 @@ import {
 } from './request';
 import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
-import { isFirefox } from './utils/browser-detector';
+import { isFirefox, isOpera } from './utils/browser-detector';
 import { isLocalFrame } from './utils/is-local-frame';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -746,6 +747,33 @@ export class WebRequestApi {
             url,
         } = details;
 
+        /**
+         * There is Opera bug that prevents firing WebRequest events for document and subdocument requests.
+         * We now handle this by checking if matching result exists for main frame and if not - we create it.
+         *
+         * TODO remove this when Opera bug is fixed.
+         */
+        if (isOpera && frameId === MAIN_FRAME_ID) {
+            const tabContext = tabsApi.getTabContext(tabId);
+            if (!tabContext) {
+                return;
+            }
+
+            const frame = tabContext.frames.get(frameId);
+            if (!frame || frame.matchingResult) {
+                return;
+            }
+
+            const matchingResult = engineApi.matchRequest({
+                requestUrl: url,
+                frameUrl: url,
+                requestType: RequestType.Document,
+                frameRule: tabContext.mainFrameRule,
+            });
+
+            frame.matchingResult = matchingResult;
+        }
+
         WebRequestApi.injectCosmetic({
             frameId,
             tabId,
@@ -885,13 +913,23 @@ export class WebRequestApi {
         details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnErrorOccurredDetailsType,
     ): void {
         const { tabId, frameId } = details;
-
         const tabContext = tabsApi.getTabContext(tabId);
 
         if (!tabContext) {
             return;
         }
 
-        tabContext.frames.delete(frameId);
+        /**
+         * On creation of an empty iframe with subsequent url assignment,
+         * WebNavigation.onCompleted of the frame could fire before WebRequest.onCommitted,
+         * removing the frame context with it's matching and cosmetic results before it could be applied.
+         *
+         * TODO add the ability to prolong request and tab/frame contexts lives if it was not yet consumed
+         * at webRequest or webNavigation events, i.e
+         *   - keep requestContext, if webRequest.onCommitted has not been fired,
+         *   - keep tab context if webNavigation.omCompleted has not been fired,
+         * etc.
+         */
+        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT);
     }
 }

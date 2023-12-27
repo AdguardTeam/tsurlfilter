@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill';
 import { ExtensionStorage, createExtensionStorageDecorator } from '../../common/storage';
 import type { ConfigurationMV2Context } from './configuration';
+import { MemoryStorage } from './memory-storage';
 
 export const enum SessionStorageKey {
     IsAppStarted = 'isAppStarted',
@@ -27,7 +28,8 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
      * Creates {@link SessionStorage} instance.
      */
     constructor() {
-        super(ExtSessionStorage.#DOMAIN, browser.storage.session);
+        // Use memory storage as a fallback for old browsers.
+        super(ExtSessionStorage.#DOMAIN, browser.storage.session ?? new MemoryStorage());
     }
 
     /** @inheritdoc */

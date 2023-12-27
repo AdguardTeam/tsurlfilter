@@ -1,4 +1,3 @@
-/* eslint-disable no-console, import/no-extraneous-dependencies */
 /**
  * @file Very simple script to validate the compatibility tables.
  */

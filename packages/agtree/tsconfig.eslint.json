@@ -5,6 +5,7 @@
       "jest.config.ts",
       "rollup.config.ts",
       "scripts/**/*.ts",
+      "scripts/.eslintrc.cjs",
       "src/**/*.ts",
       "test/**/*.ts",
     ]

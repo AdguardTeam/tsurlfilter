@@ -28,11 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 
+
+## [2.2.9] - 2023-12-27
+
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.105`.
+
+### Fixed
+- Cosmetic rules with wildcard do not work on some domains [#2650](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650)
+
 ## [2.2.8] - 2023-12-07
 
 ### Added
 - Library version number to the exports [#2237](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237).
-
 
 ## [2.2.7] - 2023-11-30
 

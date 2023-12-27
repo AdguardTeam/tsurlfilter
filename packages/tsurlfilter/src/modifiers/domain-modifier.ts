@@ -246,7 +246,9 @@ export class DomainModifier {
      * @returns string is empty if tld for provided domain name doesn't exists
      */
     private static genTldWildcard(domainName: string): string {
-        const tld = getPublicSuffix(domainName);
+        // To match eTld like "com.ru" we use allowPrivateDomains wildcard
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650
+        const tld = getPublicSuffix(domainName, { allowPrivateDomains: true });
         if (tld) {
             // lastIndexOf() is needed not to match the domain, e.g. 'www.chrono24.ch'.
             // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2312.
