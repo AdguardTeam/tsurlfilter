@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `webNavigation.onCommitted` event handler to take into account Opera event firing bug.
+- Updated `@adguard/tsurlfilter` to `v2.2.9`.
+- Updated `@adguard/scriptlets` to `v1.9.105`.
 
 ## [1.0.6] - 2023-12-19
 
@@ -52,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2023-12-01
 
-### Added 
+### Added
 - New `TsWebExtension.initStorage` method to initialize persistent values for background script.
 - New `createTsWebExtension` function to create `TsWebExtension` instance.
 

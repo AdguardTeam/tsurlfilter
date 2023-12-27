@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## [Unreleased]
+## [2.2.9] - 2023-12-27
+
+### Changed
+- Updated `@adguard/scriptlets` to `v1.9.105`.
 
 ### Fixed
 - Cosmetic rules with wildcard do not work on some domains [#2650](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650)
