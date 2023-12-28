@@ -5,8 +5,7 @@ import type { Tabs } from 'webextension-polyfill';
 
 import { Frame, MAIN_FRAME_ID } from './frame';
 import type { DocumentApi } from '../document-api';
-import { type FilteringLog, defaultFilteringLog } from '../../../common/filtering-log';
-
+import { type FilteringLog, defaultFilteringLog, isHttpOrWsRequest } from '../../../common';
 /**
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
@@ -240,7 +239,7 @@ export class TabContext {
         // If server returns redirect, new main frame url will be processed in WebRequestApi.
         const url = tab.pendingUrl || tab.url;
 
-        if (url) {
+        if (url && isHttpOrWsRequest(url)) {
             tabContext.mainFrameRule = documentApi.matchFrame(url);
 
             tabContext.frames.set(MAIN_FRAME_ID, new Frame(url));

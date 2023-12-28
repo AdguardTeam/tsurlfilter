@@ -5,7 +5,7 @@ import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
 import { FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
-import { isHttpRequest, isHttpOrWsRequest, getDomain } from '../../../common';
+import { isHttpRequest, getDomain } from '../../../common';
 
 /**
  * Request context data related to the tab's frame.
@@ -318,8 +318,7 @@ export class TabsApi {
      * @returns Created tab context, or null if tab is not browser tab.
      */
     private handleTabCreate(tab: Tabs.Tab): TabContext | null {
-        const url = tab.pendingUrl || tab.url;
-        if (!TabContext.isBrowserTab(tab) || !url || !isHttpOrWsRequest(url)) {
+        if (!TabContext.isBrowserTab(tab)) {
             return null;
         }
 
