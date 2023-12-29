@@ -50,7 +50,7 @@ export function cloneModifierListNode(node: ModifierList): ModifierList {
             const res: Modifier = {
                 type: modifier.type,
                 exception: modifier.exception,
-                modifier: { ...modifier.modifier },
+                name: { ...modifier.name },
             };
 
             if (modifier.value) {

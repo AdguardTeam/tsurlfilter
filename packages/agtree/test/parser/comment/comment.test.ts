@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
+        // TODO: Refactor to test.each
         // Empty
         expect(CommentRuleParser.isCommentRule(EMPTY)).toBeFalsy();
         expect(CommentRuleParser.isCommentRule(SPACE)).toBeFalsy();
@@ -49,6 +50,7 @@ describe('CommentRuleParser', () => {
     });
 
     test('parse', () => {
+        // TODO: Refactor to test.each
         // Empty / not comment
         expect(CommentRuleParser.parse(EMPTY)).toBeNull();
         expect(CommentRuleParser.parse(SPACE)).toBeNull();
@@ -1698,6 +1700,33 @@ describe('CommentRuleParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '! This is just a comment',
+                expected: {
+                    category: 'Comment',
+                    type: 'CommentRule',
+                    syntax: 'Common',
+                    raws: {
+                        text: '! This is just a comment',
+                    },
+                    marker: {
+                        type: 'Value',
+                        value: '!',
+                    },
+                    text: {
+                        type: 'Value',
+                        value: ' This is just a comment',
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(CommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = CommentRuleParser.parse(raw);
@@ -1709,6 +1738,7 @@ describe('CommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('[Adblock Plus 2.0]')).toEqual('[Adblock Plus 2.0]');
 
         expect(parseAndGenerate('[Adblock Plus 2.0; AdGuard]')).toEqual('[Adblock Plus 2.0; AdGuard]');

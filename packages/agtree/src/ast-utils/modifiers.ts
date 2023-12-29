@@ -18,7 +18,7 @@ export function createModifierNode(name: string, value: string | undefined = und
     const result: Modifier = {
         type: 'Modifier',
         exception,
-        modifier: {
+        name: {
             type: 'Value',
             value: name,
         },

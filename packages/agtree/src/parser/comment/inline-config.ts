@@ -17,15 +17,14 @@ import {
     CommentMarker,
     CommentRuleType,
     type ConfigCommentRule,
-    type Location,
     type ParameterList,
     RuleCategory,
     type Value,
-    defaultLocation,
 } from '../common';
 import { StringUtils } from '../../utils/string';
 import { locRange, shiftLoc } from '../../utils/location';
 import { ParameterListParser } from '../misc/parameter-list';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -66,11 +65,13 @@ export class ConfigCommentRuleParser {
      * Parses a raw rule as an inline configuration comment.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns
      * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment)
      */
-    public static parse(raw: string, loc: Location = defaultLocation): ConfigCommentRule | null {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): ConfigCommentRule | null {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
+
         if (!ConfigCommentRuleParser.isConfigComment(raw)) {
             return null;
         }
@@ -83,9 +84,12 @@ export class ConfigCommentRuleParser {
         // Get comment marker
         const marker: Value<CommentMarker> = {
             type: 'Value',
-            loc: locRange(loc, offset, offset + 1),
             value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
         };
+
+        if (isLocIncluded) {
+            marker.loc = locRange(baseLoc, offset, offset + 1);
+        }
 
         // Skip marker
         offset += 1;
@@ -101,9 +105,12 @@ export class ConfigCommentRuleParser {
 
         const command: Value = {
             type: 'Value',
-            loc: locRange(loc, commandStart, offset),
             value: raw.substring(commandStart, offset),
         };
+
+        if (isLocIncluded) {
+            command.loc = locRange(baseLoc, commandStart, offset);
+        }
 
         // Skip whitespace after command
         offset = StringUtils.skipWS(raw, offset);
@@ -118,9 +125,12 @@ export class ConfigCommentRuleParser {
         if (commentStart !== -1) {
             comment = {
                 type: 'Value',
-                loc: locRange(loc, commentStart, commentEnd),
                 value: raw.substring(commentStart, commentEnd),
             };
+
+            if (isLocIncluded) {
+                comment.loc = locRange(baseLoc, commentStart, commentEnd);
+            }
         }
 
         // Get parameter
@@ -135,7 +145,6 @@ export class ConfigCommentRuleParser {
         if (command.value === AGLINT_COMMAND_PREFIX) {
             params = {
                 type: 'Value',
-                loc: locRange(loc, paramsStart, paramsEnd),
                 // It is necessary to use JSON5.parse instead of JSON.parse
                 // because JSON5 allows unquoted keys.
                 // But don't forget to add { } to the beginning and end of the string,
@@ -144,6 +153,10 @@ export class ConfigCommentRuleParser {
                 value: JSON5.parse(`{${raw.substring(paramsStart, paramsEnd)}}`),
             };
 
+            if (isLocIncluded) {
+                params.loc = locRange(baseLoc, paramsStart, paramsEnd);
+            }
+
             // Throw error for empty config
             if (Object.keys(params.value).length === 0) {
                 throw new Error('Empty AGLint config');
@@ -151,14 +164,16 @@ export class ConfigCommentRuleParser {
         } else if (paramsStart < paramsEnd) {
             params = ParameterListParser.parse(
                 raw.substring(paramsStart, paramsEnd),
-                COMMA,
-                shiftLoc(loc, paramsStart),
+                {
+                    isLocIncluded,
+                    separator: COMMA,
+                    baseLoc: shiftLoc(baseLoc, paramsStart),
+                },
             );
         }
 
-        return {
+        const result: ConfigCommentRule = {
             type: CommentRuleType.ConfigCommentRule,
-            loc: locRange(loc, 0, raw.length),
             raws: {
                 text: raw,
             },
@@ -169,6 +184,12 @@ export class ConfigCommentRuleParser {
             params,
             comment,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

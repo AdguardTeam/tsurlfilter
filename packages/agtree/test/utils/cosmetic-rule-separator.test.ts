@@ -23,10 +23,6 @@ describe('CosmeticRuleSeparator', () => {
             [CosmeticRuleSeparator.ElementHidingException, true],
             [CosmeticRuleSeparator.ExtendedElementHiding, false],
             [CosmeticRuleSeparator.ExtendedElementHidingException, true],
-            [CosmeticRuleSeparator.UboHtmlFiltering, false],
-            [CosmeticRuleSeparator.UboHtmlFilteringException, true],
-            [CosmeticRuleSeparator.UboScriptletInjection, false],
-            [CosmeticRuleSeparator.UboScriptletInjectionException, true],
         ])('%s should be %s', (separator, expected) => {
             expect(CosmeticRuleSeparatorUtils.isException(separator)).toBe(expected);
         });
@@ -49,10 +45,6 @@ describe('CosmeticRuleSeparator', () => {
             [CosmeticRuleSeparator.ElementHidingException, false],
             [CosmeticRuleSeparator.ExtendedElementHiding, true],
             [CosmeticRuleSeparator.ExtendedElementHidingException, true],
-            [CosmeticRuleSeparator.UboHtmlFiltering, false],
-            [CosmeticRuleSeparator.UboHtmlFilteringException, false],
-            [CosmeticRuleSeparator.UboScriptletInjection, false],
-            [CosmeticRuleSeparator.UboScriptletInjectionException, false],
         ])('%s should be %s', (separator, expected) => {
             expect(CosmeticRuleSeparatorUtils.isExtendedCssMarker(separator)).toBe(expected);
         });
@@ -151,48 +143,6 @@ describe('CosmeticRuleSeparator', () => {
                 separator: '#@$?#',
                 start: 23,
                 end: 28,
-            },
-        );
-
-        // uBO scriptlet
-        expect(
-            CosmeticRuleSeparatorUtils.find('example.com,example.org##+js(scriptlet, param0, param1)'),
-        ).toMatchObject(
-            <CosmeticRuleSeparatorFinderResult>{
-                separator: '##+',
-                start: 23,
-                end: 26,
-            },
-        );
-
-        expect(
-            CosmeticRuleSeparatorUtils.find('example.com,example.org#@#+js(scriptlet, param0, param1)'),
-        ).toMatchObject(
-            <CosmeticRuleSeparatorFinderResult>{
-                separator: '#@#+',
-                start: 23,
-                end: 27,
-            },
-        );
-
-        // uBO HTML
-        expect(
-            CosmeticRuleSeparatorUtils.find('example.com,example.org##^script:has-text(advert)'),
-        ).toMatchObject(
-            <CosmeticRuleSeparatorFinderResult>{
-                separator: '##^',
-                start: 23,
-                end: 26,
-            },
-        );
-
-        expect(
-            CosmeticRuleSeparatorUtils.find('example.com,example.org#@#^script:has-text(advert)'),
-        ).toMatchObject(
-            <CosmeticRuleSeparatorFinderResult>{
-                separator: '#@#^',
-                start: 23,
-                end: 27,
             },
         );
 

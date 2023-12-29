@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('HintCommentRuleParser', () => {
     test('isHintRule', () => {
+        // TODO: Refactor to test.each
         expect(HintCommentRuleParser.isHintRule(EMPTY)).toBeFalsy();
         expect(HintCommentRuleParser.isHintRule(SPACE)).toBeFalsy();
         expect(HintCommentRuleParser.isHintRule('! comment')).toBeFalsy();
@@ -16,6 +17,7 @@ describe('HintCommentRuleParser', () => {
     });
 
     test('parse', () => {
+        // TODO: Refactor to test.each
         // Without parameters
         expect(HintCommentRuleParser.parse('!+NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
@@ -1624,6 +1626,63 @@ describe('HintCommentRuleParser', () => {
         );
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)',
+                expected: {
+                    type: 'HintCommentRule',
+                    category: 'Comment',
+                    syntax: 'AdGuard',
+                    raws: {
+                        text: '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)',
+                    },
+                    children: [
+                        {
+                            type: 'Hint',
+                            name: {
+                                type: 'Value',
+                                value: 'HINT_NAME1',
+                            },
+                            params: {
+                                type: 'ParameterList',
+                                children: [
+                                    {
+                                        type: 'Parameter',
+                                        value: 'param0',
+                                    },
+                                    {
+                                        type: 'Parameter',
+                                        value: 'param1',
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            type: 'Hint',
+                            name: {
+                                type: 'Value',
+                                value: 'HINT_NAME2',
+                            },
+                            params: {
+                                type: 'ParameterList',
+                                children: [
+                                    {
+                                        type: 'Parameter',
+                                        value: 'param0',
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(HintCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = HintCommentRuleParser.parse(raw);
@@ -1635,6 +1694,7 @@ describe('HintCommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+ NOT_OPTIMIZED()')).toEqual('!+ NOT_OPTIMIZED');

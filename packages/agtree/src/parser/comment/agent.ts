@@ -4,14 +4,10 @@ import coerce from 'semver/functions/coerce';
 import { locRange } from '../../utils/location';
 import { EMPTY, SPACE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
-    type Agent,
-    type Location,
-    type Value,
-    defaultLocation,
-} from '../common';
+import { type Agent, type Value } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { getParserOptions, type ParserOptions } from '../options';
 
 const ADG_NAME_MARKERS = new Set([
     'adguard',
@@ -79,11 +75,12 @@ export class AgentParser {
      * Parses a raw rule as an adblock agent comment.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Agent rule AST
      * @throws {AdblockSyntaxError} If the raw rule cannot be parsed as an adblock agent
      */
-    public static parse(raw: string, loc: Location = defaultLocation): Agent {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): Agent {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
         let offset = 0;
 
         // Save name start position
@@ -110,7 +107,7 @@ export class AgentParser {
                 if (version !== null) {
                     throw new AdblockSyntaxError(
                         'Duplicated versions are not allowed',
-                        locRange(loc, offset, partEnd),
+                        locRange(baseLoc, offset, partEnd),
                     );
                 }
 
@@ -119,16 +116,22 @@ export class AgentParser {
                 // Save name
                 name = {
                     type: 'Value',
-                    loc: locRange(loc, nameStartIndex, nameEndIndex),
                     value: parsedNamePart,
                 };
+
+                if (isLocIncluded) {
+                    name.loc = locRange(baseLoc, nameStartIndex, nameEndIndex);
+                }
 
                 // Save version
                 version = {
                     type: 'Value',
-                    loc: locRange(loc, offset, partEnd),
                     value: part,
                 };
+
+                if (isLocIncluded) {
+                    version.loc = locRange(baseLoc, offset, partEnd);
+                }
 
                 // Save syntax
                 syntax = getAdblockSyntax(parsedNamePart);
@@ -145,9 +148,13 @@ export class AgentParser {
             const parsedNamePart = raw.substring(nameStartIndex, nameEndIndex);
             name = {
                 type: 'Value',
-                loc: locRange(loc, nameStartIndex, nameEndIndex),
                 value: parsedNamePart,
             };
+
+            if (isLocIncluded) {
+                name.loc = locRange(baseLoc, nameStartIndex, nameEndIndex);
+            }
+
             syntax = getAdblockSyntax(parsedNamePart);
         }
 
@@ -155,17 +162,22 @@ export class AgentParser {
         if (name.value.length === 0) {
             throw new AdblockSyntaxError(
                 'Agent name cannot be empty',
-                locRange(loc, 0, raw.length),
+                locRange(baseLoc, 0, raw.length),
             );
         }
 
-        return {
+        const result: Agent = {
             type: 'Agent',
-            loc: locRange(loc, 0, raw.length),
             adblock: name,
             version,
             syntax,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

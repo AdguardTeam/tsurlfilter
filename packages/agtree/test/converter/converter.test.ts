@@ -79,7 +79,7 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##^body > script:has-text(test)',
-                    expected: "Unsupported node type 'Combinator'",
+                    expected: "Unexpected token '<delim-token>' with value '>'",
                 },
                 {
                     actual: 'example.com##^script:some-another-rule(test)',
@@ -140,7 +140,7 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.com#@#:not(:matches-path(/page))h1:style(background-color: blue !important)',
                     // eslint-disable-next-line max-len
-                    expected: [String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important; }`],
+                    expected: [String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important }`],
                 },
                 {
                     // eslint-disable-next-line max-len
@@ -179,11 +179,11 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##h1:style(background-color: blue !important)',
-                    expected: ['example.com#$#h1 { background-color: blue !important; }'],
+                    expected: ['example.com#$#h1 { background-color: blue !important }'],
                 },
                 {
                     actual: 'example.com#@#h1:style(background-color: blue !important)',
-                    expected: ['example.com#@$#h1 { background-color: blue !important; }'],
+                    expected: ['example.com#@$#h1 { background-color: blue !important }'],
                 },
                 {
                     actual: 'example.org##p:has-text(/[\\w\\W]{30,}/):style(background: #ff0033 !important;)',
@@ -605,7 +605,7 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##^body > script:has-text(test)',
-                    expected: 'Unsupported node type \'Combinator\'',
+                    expected: "Unexpected token '<delim-token>' with value '>'",
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(

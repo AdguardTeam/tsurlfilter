@@ -14,10 +14,10 @@ import {
     type NetworkRule,
     RuleCategory,
     type Value,
-    defaultLocation,
 } from '../common';
 import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.
@@ -33,10 +33,11 @@ export class NetworkRuleParser {
      * Parses a network rule (also known as basic rule).
      *
      * @param raw Raw rule
-     * @param loc Location of the rule
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Network rule AST
      */
-    public static parse(raw: string, loc = defaultLocation): NetworkRule {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): NetworkRule {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
         let offset = 0;
 
         // Skip leading whitespace
@@ -66,9 +67,12 @@ export class NetworkRuleParser {
         // Extract the pattern
         const pattern: Value = {
             type: 'Value',
-            loc: locRange(loc, patternStart, patternEnd),
             value: raw.substring(patternStart, patternEnd),
         };
+
+        if (isLocIncluded) {
+            pattern.loc = locRange(baseLoc, patternStart, patternEnd);
+        }
 
         // Parse modifiers (if any)
         let modifiers: ModifierList | undefined;
@@ -80,7 +84,10 @@ export class NetworkRuleParser {
         if (separatorIndex !== -1) {
             modifiers = ModifierListParser.parse(
                 raw.substring(modifiersStart, modifiersEnd),
-                shiftLoc(loc, modifiersStart),
+                {
+                    ...options,
+                    baseLoc: shiftLoc(baseLoc, modifiersStart),
+                },
             );
         }
 
@@ -88,13 +95,12 @@ export class NetworkRuleParser {
         if (pattern.value.length === 0 && (modifiers === undefined || modifiers.children.length === 0)) {
             throw new AdblockSyntaxError(
                 'Network rule must have a pattern or modifiers',
-                locRange(loc, 0, raw.length),
+                locRange(baseLoc, 0, raw.length),
             );
         }
 
-        return {
+        const result: NetworkRule = {
             type: 'NetworkRule',
-            loc: locRange(loc, 0, raw.length),
             raws: {
                 text: raw,
             },
@@ -104,6 +110,12 @@ export class NetworkRuleParser {
             pattern,
             modifiers,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

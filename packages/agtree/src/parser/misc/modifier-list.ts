@@ -1,7 +1,8 @@
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { locRange, shiftLoc } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
-import { type ModifierList, defaultLocation } from '../common';
+import { type ModifierList } from '../common';
+import { getParserOptions, type ParserOptions } from '../options';
 import { ModifierParser } from './modifier';
 
 /**
@@ -20,15 +21,20 @@ export class ModifierListParser {
      *  or it will be parsed in the first modifier.
      *
      * @param raw Raw modifier list
-     * @param loc Location of the modifier list
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Parsed modifiers interface
      */
-    public static parse(raw: string, loc = defaultLocation): ModifierList {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): ModifierList {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
+
         const result: ModifierList = {
             type: 'ModifierList',
-            loc: locRange(loc, 0, raw.length),
             children: [],
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
 
         let offset = StringUtils.skipWS(raw);
 
@@ -51,7 +57,10 @@ export class ModifierListParser {
             // Parse the modifier
             const modifier = ModifierParser.parse(
                 raw.substring(modifierStart, modifierEnd),
-                shiftLoc(loc, modifierStart),
+                {
+                    isLocIncluded,
+                    baseLoc: shiftLoc(baseLoc, modifierStart),
+                },
             );
 
             result.children.push(modifier);
@@ -66,7 +75,10 @@ export class ModifierListParser {
 
             result.children.push(ModifierParser.parse(
                 raw.substring(modifierStart, raw.length),
-                shiftLoc(loc, modifierStart),
+                {
+                    isLocIncluded,
+                    baseLoc: shiftLoc(baseLoc, modifierStart),
+                },
             ));
         }
 

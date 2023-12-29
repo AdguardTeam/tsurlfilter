@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
+        // TODO: Refactor to test.each
         // Invalid
         expect(PreProcessorCommentRuleParser.isPreProcessorRule(EMPTY)).toBeFalsy();
         expect(PreProcessorCommentRuleParser.isPreProcessorRule(SPACE)).toBeFalsy();
@@ -13,6 +14,7 @@ describe('PreProcessorParser', () => {
     });
 
     test('parse', () => {
+        // TODO: Refactor to test.each
         // Valid pre-processors
         expect(PreProcessorCommentRuleParser.parse('!#endif')).toMatchObject({
             type: 'PreProcessorCommentRule',
@@ -426,6 +428,38 @@ describe('PreProcessorParser', () => {
         );
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '!#safari_cb_affinity(content_blockers)',
+                expected: {
+                    type: 'PreProcessorCommentRule',
+                    raws: {
+                        text: '!#safari_cb_affinity(content_blockers)',
+                    },
+                    category: 'Comment',
+                    syntax: 'AdGuard',
+                    name: {
+                        type: 'Value',
+                        value: 'safari_cb_affinity',
+                    },
+                    params: {
+                        type: 'ParameterList',
+                        children: [
+                            {
+                                type: 'Parameter',
+                                value: 'content_blockers',
+                            },
+                        ],
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(PreProcessorCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = PreProcessorCommentRuleParser.parse(raw);
@@ -437,6 +471,7 @@ describe('PreProcessorParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('!#endif')).toEqual('!#endif');
 
         expect(parseAndGenerate('!#include ../sections/ads.txt')).toEqual('!#include ../sections/ads.txt');

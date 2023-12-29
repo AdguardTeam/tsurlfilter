@@ -22,16 +22,12 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import type {
-    AnyExpressionNode,
-    Location,
-    PreProcessorCommentRule,
-    Value,
-} from '../common';
-import { CommentRuleType, RuleCategory, defaultLocation } from '../common';
+import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../common';
+import { CommentRuleType, RuleCategory } from '../common';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.
@@ -67,15 +63,17 @@ export class PreProcessorCommentRuleParser {
      * Parses a raw rule as a pre-processor comment.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns
      * Pre-processor comment AST or null (if the raw rule cannot be parsed as a pre-processor comment)
      */
-    public static parse(raw: string, loc: Location = defaultLocation): PreProcessorCommentRule | null {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): PreProcessorCommentRule | null {
         // Ignore non-pre-processor rules
         if (!PreProcessorCommentRuleParser.isPreProcessorRule(raw)) {
             return null;
         }
+
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
 
         let offset = 0;
 
@@ -110,9 +108,12 @@ export class PreProcessorCommentRuleParser {
         // Create name node
         const name: Value = {
             type: 'Value',
-            loc: locRange(loc, nameStart, nameEnd),
             value: raw.substring(nameStart, nameEnd),
         };
+
+        if (isLocIncluded) {
+            name.loc = locRange(baseLoc, nameStart, nameEnd);
+        }
 
         // Ignore whitespace characters after the directive name (if any)
         // Note: this may incorrect according to the spec, but we do it for tolerance
@@ -124,7 +125,7 @@ export class PreProcessorCommentRuleParser {
             if (offset > nameEnd) {
                 throw new AdblockSyntaxError(
                     `Unexpected whitespace after "${SAFARI_CB_AFFINITY}" directive name`,
-                    locRange(loc, nameEnd, offset),
+                    locRange(baseLoc, nameEnd, offset),
                 );
             }
 
@@ -136,7 +137,7 @@ export class PreProcessorCommentRuleParser {
                 if (raw[offset] !== OPEN_PARENTHESIS) {
                     throw new AdblockSyntaxError(
                         `Unexpected character '${raw[offset]}' after '${SAFARI_CB_AFFINITY}' directive name`,
-                        locRange(loc, offset, offset + 1),
+                        locRange(baseLoc, offset, offset + 1),
                     );
                 }
 
@@ -155,7 +156,7 @@ export class PreProcessorCommentRuleParser {
                 if (closingParenthesesIndex === -1 || raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS) {
                     throw new AdblockSyntaxError(
                         `Missing closing parenthesis for '${SAFARI_CB_AFFINITY}' directive`,
-                        locRange(loc, offset, raw.length),
+                        locRange(baseLoc, offset, raw.length),
                     );
                 }
 
@@ -163,9 +164,8 @@ export class PreProcessorCommentRuleParser {
                 const parameterListEnd = closingParenthesesIndex;
 
                 // Parse parameters between the opening and closing parentheses
-                return {
+                const result: PreProcessorCommentRule = {
                     type: CommentRuleType.PreProcessorCommentRule,
-                    loc: locRange(loc, 0, raw.length),
                     raws: {
                         text: raw,
                     },
@@ -175,10 +175,19 @@ export class PreProcessorCommentRuleParser {
                     // comma separated list of parameters
                     params: ParameterListParser.parse(
                         raw.substring(parameterListStart, parameterListEnd),
-                        COMMA,
-                        shiftLoc(loc, parameterListStart),
+                        {
+                            isLocIncluded,
+                            separator: COMMA,
+                            baseLoc: shiftLoc(baseLoc, parameterListStart),
+                        },
                     ),
                 };
+
+                if (isLocIncluded) {
+                    result.loc = locRange(baseLoc, 0, raw.length);
+                }
+
+                return result;
             }
         }
 
@@ -191,13 +200,12 @@ export class PreProcessorCommentRuleParser {
             if (name.value === IF || name.value === INCLUDE) {
                 throw new AdblockSyntaxError(
                     `Directive "${name.value}" requires parameters`,
-                    locRange(loc, 0, raw.length),
+                    locRange(baseLoc, 0, raw.length),
                 );
             }
 
-            return {
+            const result: PreProcessorCommentRule = {
                 type: CommentRuleType.PreProcessorCommentRule,
-                loc: locRange(loc, 0, raw.length),
                 raws: {
                     text: raw,
                 },
@@ -205,6 +213,12 @@ export class PreProcessorCommentRuleParser {
                 syntax: AdblockSyntax.Common,
                 name,
             };
+
+            if (isLocIncluded) {
+                result.loc = locRange(baseLoc, 0, raw.length);
+            }
+
+            return result;
         }
 
         // Get start and end offsets of the directive parameters
@@ -218,20 +232,25 @@ export class PreProcessorCommentRuleParser {
         // separately.
         if (name.value === IF) {
             params = LogicalExpressionParser.parse(
-                raw.substring(paramsStart, paramsEnd),
-                shiftLoc(loc, paramsStart),
+                raw.slice(paramsStart, paramsEnd),
+                {
+                    isLocIncluded,
+                    baseLoc: shiftLoc(baseLoc, paramsStart),
+                },
             );
         } else {
             params = {
                 type: 'Value',
-                loc: locRange(loc, paramsStart, paramsEnd),
                 value: raw.substring(paramsStart, paramsEnd),
             };
+
+            if (isLocIncluded) {
+                params.loc = locRange(baseLoc, paramsStart, paramsEnd);
+            }
         }
 
-        return {
+        const result: PreProcessorCommentRule = {
             type: CommentRuleType.PreProcessorCommentRule,
-            loc: locRange(loc, 0, raw.length),
             raws: {
                 text: raw,
             },
@@ -240,6 +259,12 @@ export class PreProcessorCommentRuleParser {
             name,
             params,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

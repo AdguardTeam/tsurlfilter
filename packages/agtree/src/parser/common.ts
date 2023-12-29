@@ -1,10 +1,3 @@
-import {
-    type DeclarationListPlain,
-    type FunctionNodePlain,
-    type MediaQueryListPlain,
-    type SelectorListPlain,
-} from '@adguard/ecss-tree';
-
 import { type AdblockSyntax } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 
@@ -56,15 +49,6 @@ export type AnyCosmeticRule =
     | ScriptletInjectionRule
     | HtmlFilteringRule
     | JsInjectionRule;
-
-/**
- * Default location for AST nodes.
- */
-export const defaultLocation: Location = {
-    offset: 0,
-    line: 1,
-    column: 1,
-};
 
 /**
  * Represents the different comment markers that can be used in an adblock rule.
@@ -235,26 +219,6 @@ export const enum CosmeticRuleSeparator {
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
      */
     AdgHtmlFilteringException = '$@$',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
-     */
-    UboScriptletInjection = '##+',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
-     */
-    UboScriptletInjectionException = '#@#+',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
-     */
-    UboHtmlFiltering = '##^',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
-     */
-    UboHtmlFilteringException = '#@#^',
 }
 
 /**
@@ -278,21 +242,6 @@ export interface Node {
 }
 
 /**
- * Represents a location range in the source code.
- */
-export interface LocationRange {
-    /**
-     * The start location of the node.
-     */
-    start: Location;
-
-    /**
-     * The end location of the node.
-     */
-    end: Location;
-}
-
-/**
  * Represents a location in the source code.
  */
 export interface Location {
@@ -313,6 +262,30 @@ export interface Location {
 }
 
 /**
+ * Represents a location range in the source code.
+ */
+export interface LocationRange {
+    /**
+     * The start location of the node.
+     */
+    start: Location;
+
+    /**
+     * The end location of the node.
+     */
+    end: Location;
+}
+
+/**
+ * Default location for AST nodes.
+ */
+export const defaultLocation: Location = {
+    offset: 0,
+    line: 1,
+    column: 1,
+};
+
+/**
  * Represents a basic value node in the AST.
  */
 export interface Value<T = string> extends Node {
@@ -322,6 +295,18 @@ export interface Value<T = string> extends Node {
      * Value of the node.
      */
     value: T;
+}
+
+/**
+ * Represents a raw value node.
+ */
+export interface Raw extends Node {
+    type: 'Raw';
+
+    /**
+     * Value of the node.
+     */
+    value: string;
 }
 
 /**
@@ -752,11 +737,10 @@ export interface ModifierList extends Node {
  * `domain` and the value property will be `example.com`.
  */
 export interface Modifier extends Node {
-    // TODO: change 'modifier' to 'name'
     /**
      * Modifier name
      */
-    modifier: Value;
+    name: Value;
 
     /**
      * Is this modifier an exception? For example, `~third-party` is an exception
@@ -952,19 +936,40 @@ export interface CssInjectionRuleBody extends Node {
     type: 'CssInjectionRuleBody';
 
     /**
-     * Media query list (if any)
+     * Media query, if any.
+     *
+     * @example
+     *
+     * ```text
+     * @media (max-width: 768px) { ... }
+     *         ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * ```
      */
-    mediaQueryList?: MediaQueryListPlain;
+    mediaQueryList?: Value;
 
     /**
-     * Selector list
+     * CSS selector list.
+     *
+     * @example
+     * section:has(> .ad) { display: none; }
+     * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * section:has(> .ad), article > p[advert] { display: none; }
+     * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      */
-    selectorList: SelectorListPlain;
+    selectorList: Value;
 
     /**
-     * Declaration block / remove flag
+     * Declaration list.
+     *
+     * @example
+     * section:has(> .ad) { display: none; }
+     *                      ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * section:has(> .ad), article > p[advert] { display: none; }
+     *                                           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * div[ad] { padding-top: 10px; padding-bottom: 10px; }
+     *           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      */
-    declarationList?: DeclarationListPlain;
+    declarationList?: Value;
 
     /**
      * Remove flag
@@ -982,7 +987,7 @@ export interface ElementHidingRuleBody extends Node {
     /**
      * Element hiding rule selector(s).
      */
-    selectorList: SelectorListPlain;
+    selectorList: Value;
 }
 
 /**
@@ -1006,7 +1011,7 @@ export interface HtmlFilteringRuleBody extends Node {
     /**
      * HTML rule selector(s).
      */
-    body: SelectorListPlain | FunctionNodePlain;
+    body: Value;
 }
 
 /**
@@ -1161,7 +1166,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: CosmeticRuleType.HtmlFilteringRule;
-    body: HtmlFilteringRuleBody;
+    body: Value;
 }
 
 /**

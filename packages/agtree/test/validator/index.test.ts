@@ -130,7 +130,7 @@ describe('ModifierValidator', () => {
                 // app=com.test.app
                 {
                     type: 'Modifier',
-                    modifier: {
+                    name: {
                         type: 'Value',
                         value: 'app',
                     },
@@ -143,7 +143,7 @@ describe('ModifierValidator', () => {
                 // ~third-party
                 {
                     type: 'Modifier',
-                    modifier: {
+                    name: {
                         type: 'Value',
                         value: 'third-party',
                     },
@@ -157,7 +157,7 @@ describe('ModifierValidator', () => {
             const unsupportedModifiers = [
                 {
                     type: 'Modifier',
-                    modifier: {
+                    name: {
                         type: 'Value',
                         value: 'protobuf',
                     },

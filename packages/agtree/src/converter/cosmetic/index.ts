@@ -17,8 +17,7 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg';
 import { CssInjectionRuleConverter } from './css';
 import { ElementHidingRuleConverter } from './element-hiding';
-import { HeaderRemovalRuleConverter, UBO_RESPONSEHEADER_MARKER } from './header-removal';
-import { CssTreeNodeType } from '../../utils/csstree-constants';
+import { HeaderRemovalRuleConverter } from './header-removal';
 import {
     type NodeConversionResult,
     createNodeConversionResult,
@@ -59,14 +58,14 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
             case CosmeticRuleType.HtmlFilteringRule:
                 // Handle special case: uBO response header filtering rule
-                if (
-                    rule.body.body.type === CssTreeNodeType.Function
-                    && rule.body.body.name === UBO_RESPONSEHEADER_MARKER
-                ) {
-                    subconverterResult = HeaderRemovalRuleConverter.convertToAdg(rule);
-                } else {
-                    subconverterResult = HtmlRuleConverter.convertToAdg(rule);
+                // TODO: Optimize double CSS tokenization here
+                subconverterResult = HeaderRemovalRuleConverter.convertToAdg(rule);
+
+                if (subconverterResult.isConverted) {
+                    break;
                 }
+
+                subconverterResult = HtmlRuleConverter.convertToAdg(rule);
                 break;
 
             // Note: Currently, only ADG supports JS injection rules, so we don't need to convert them

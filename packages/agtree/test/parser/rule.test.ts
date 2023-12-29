@@ -1,9 +1,19 @@
-import { CommentRuleType, CosmeticRuleType, RuleCategory } from '../../src/parser/common';
+import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
+import {
+    type AnyRule,
+    CommentRuleType,
+    CosmeticRuleType,
+    RuleCategory,
+    defaultLocation,
+} from '../../src/parser/common';
+import { type ParserOptions } from '../../src/parser/options';
 import { RuleParser } from '../../src/parser/rule';
 import { AdblockSyntax } from '../../src/utils/adblockers';
+import { locRange } from '../../src/utils/location';
 
 describe('RuleParser', () => {
     test('parse', () => {
+        // TODO: Refactor to test.each
         // ! It is enough just to look at the basics, each unit is tested in detail elsewhere
 
         // Empty lines
@@ -806,6 +816,94 @@ describe('RuleParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        test.each<{ options: Partial<ParserOptions>; actual: string; expected: AnyRule | AdblockSyntaxError }>([
+            {
+                options: {
+                    // do not include location in the nodes
+                    isLocIncluded: false,
+                },
+                actual: '||example.com^$script',
+                expected: {
+                    type: 'NetworkRule',
+                    raws: {
+                        text: '||example.com^$script',
+                    },
+                    category: RuleCategory.Network,
+                    syntax: AdblockSyntax.Common,
+                    exception: false,
+                    pattern: {
+                        type: 'Value',
+                        value: '||example.com^',
+                    },
+                    modifiers: {
+                        type: 'ModifierList',
+                        children: [
+                            {
+                                type: 'Modifier',
+                                name: {
+                                    type: 'Value',
+                                    value: 'script',
+                                },
+                                exception: false,
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                options: {
+                    // do not throw on invalid rules - instead, return an InvalidRule node
+                    tolerant: true,
+                },
+                // missing closing parenthesis - the rule is invalid
+                actual: '##+js(scriptlet',
+                expected: {
+                    type: 'InvalidRule',
+                    raws: {
+                        text: '##+js(scriptlet',
+                    },
+                    category: RuleCategory.Invalid,
+                    syntax: AdblockSyntax.Common,
+                    raw: '##+js(scriptlet',
+                    error: {
+                        name: 'AdblockSyntaxError',
+                        message: "Invalid uBO scriptlet call, no closing parentheses ')' found",
+                        loc: locRange(defaultLocation, 5, 15),
+                    },
+                    loc: locRange(defaultLocation, 0, 15),
+                },
+            },
+            {
+                options: {
+                    // throw on invalid rules
+                    tolerant: false,
+                },
+                // missing closing parenthesis - the rule is invalid
+                actual: '##+js(scriptlet',
+                expected: new AdblockSyntaxError(
+                    "Invalid uBO scriptlet call, no closing parentheses ')' found",
+                    locRange(defaultLocation, 5, 15),
+                ),
+            },
+        ])('parser options should work for $actual', ({ options, actual, expected }) => {
+            const fn = jest.fn(() => RuleParser.parse(actual, options));
+
+            if (expected instanceof Error) {
+                // parse should throw
+                expect(fn).toThrow();
+
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('loc', expected.loc);
+            } else {
+                expect(fn()).toEqual(expected);
+            }
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = RuleParser.parse(raw);
@@ -817,6 +915,7 @@ describe('RuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         // Empty lines
         expect(parseAndGenerate('')).toEqual('');
         expect(parseAndGenerate(' ')).toEqual('');
@@ -910,7 +1009,7 @@ describe('RuleParser', () => {
         );
         expect(
             parseAndGenerate(
-                '#$?#@media (min-height: 1024px) and (max-height:1920px) { body:has(.ads) { padding: 0; } }',
+                '#$?#@media (min-height: 1024px) and (max-height: 1920px) { body:has(.ads) { padding: 0; } }',
             ),
         ).toEqual('#$?#@media (min-height: 1024px) and (max-height: 1920px) { body:has(.ads) { padding: 0; } }');
         expect(

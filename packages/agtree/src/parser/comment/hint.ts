@@ -13,14 +13,10 @@ import {
     UNDERSCORE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
-    type Hint,
-    type Location,
-    type Value,
-    defaultLocation,
-} from '../common';
+import { type Hint, type Value } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.
@@ -39,11 +35,12 @@ export class HintParser {
      * Parses a raw rule as a hint.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Hint rule AST or null
      * @throws If the syntax is invalid
      */
-    public static parse(raw: string, loc: Location = defaultLocation): Hint {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): Hint {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
         let offset = 0;
 
         // Skip whitespace characters before the hint
@@ -66,8 +63,10 @@ export class HintParser {
 
             // Hint name should only contain letters, digits, and underscores
             if (!StringUtils.isAlphaNumeric(char) && char !== UNDERSCORE) {
-                // eslint-disable-next-line max-len
-                throw new AdblockSyntaxError(`Invalid character "${char}" in hint name: "${char}"`, locRange(loc, nameStartIndex, offset));
+                throw new AdblockSyntaxError(
+                    `Invalid character "${char}" in hint name: "${char}"`,
+                    locRange(baseLoc, nameStartIndex, offset),
+                );
             }
         }
 
@@ -79,7 +78,7 @@ export class HintParser {
 
         // Hint name cannot be empty
         if (name === EMPTY) {
-            throw new AdblockSyntaxError('Empty hint name', locRange(loc, 0, nameEndIndex));
+            throw new AdblockSyntaxError('Empty hint name', locRange(baseLoc, 0, nameEndIndex));
         }
 
         // Now we have two case:
@@ -94,24 +93,32 @@ export class HintParser {
             throw new AdblockSyntaxError(
                 // eslint-disable-next-line max-len
                 'Unexpected whitespace(s) between hint name and opening parenthesis',
-                locRange(loc, nameEndIndex, offset),
+                locRange(baseLoc, nameEndIndex, offset),
             );
         }
 
         // Create the hint name node (we can reuse it in the 'HINT_NAME' case, if needed)
         const nameNode: Value = {
             type: 'Value',
-            loc: locRange(loc, nameStartIndex, nameEndIndex),
             value: name,
         };
 
+        if (isLocIncluded) {
+            nameNode.loc = locRange(baseLoc, nameStartIndex, nameEndIndex);
+        }
+
         // Just return the hint name if we have 'HINT_NAME' case (no params)
         if (raw[offset] !== OPEN_PARENTHESIS) {
-            return {
+            const result: Hint = {
                 type: 'Hint',
-                loc: locRange(loc, 0, offset),
                 name: nameNode,
             };
+
+            if (isLocIncluded) {
+                result.loc = locRange(baseLoc, 0, offset);
+            }
+
+            return result;
         }
 
         // Skip the opening parenthesis
@@ -124,7 +131,7 @@ export class HintParser {
         if (closeParenthesisIndex === -1) {
             throw new AdblockSyntaxError(
                 `Missing closing parenthesis for hint "${name}"`,
-                locRange(loc, nameStartIndex, raw.length),
+                locRange(baseLoc, nameStartIndex, raw.length),
             );
         }
 
@@ -135,8 +142,11 @@ export class HintParser {
         // Parse the params
         const params = ParameterListParser.parse(
             raw.substring(paramsStartIndex, paramsEndIndex),
-            COMMA,
-            shiftLoc(loc, paramsStartIndex),
+            {
+                isLocIncluded,
+                separator: COMMA,
+                baseLoc: shiftLoc(baseLoc, paramsStartIndex),
+            },
         );
 
         offset = closeParenthesisIndex + 1;
@@ -149,17 +159,22 @@ export class HintParser {
             throw new AdblockSyntaxError(
                 // eslint-disable-next-line max-len
                 `Unexpected input after closing parenthesis for hint "${name}": "${raw.substring(closeParenthesisIndex + 1, offset + 1)}"`,
-                locRange(loc, closeParenthesisIndex + 1, offset + 1),
+                locRange(baseLoc, closeParenthesisIndex + 1, offset + 1),
             );
         }
 
         // Return the HINT_NAME(PARAMS) case AST
-        return {
+        const result: Hint = {
             type: 'Hint',
-            loc: locRange(loc, 0, offset),
             name: nameNode,
             params,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, offset);
+        }
+
+        return result;
     }
 
     /**

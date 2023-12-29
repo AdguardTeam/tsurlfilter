@@ -2,7 +2,8 @@ import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/co
 import { locRange } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type Modifier, type Value, defaultLocation } from '../common';
+import { type Modifier, type Value } from '../common';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.
@@ -15,12 +16,13 @@ export class ModifierParser {
      * Parses a modifier.
      *
      * @param raw Raw modifier string
-     * @param loc Location of the modifier
+     * @param options Parser options. See {@link ParserOptions}.
      *
      * @returns Parsed modifier
      * @throws An error if modifier name or value is empty.
      */
-    public static parse(raw: string, loc = defaultLocation): Modifier {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): Modifier {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
         let offset = 0;
 
         // Skip leading whitespace
@@ -53,7 +55,7 @@ export class ModifierParser {
         if (modifierNameStart === modifierEnd) {
             throw new AdblockSyntaxError(
                 'Modifier name cannot be empty',
-                locRange(loc, 0, raw.length),
+                locRange(baseLoc, 0, raw.length),
             );
         }
 
@@ -65,9 +67,12 @@ export class ModifierParser {
         if (assignmentIndex === -1) {
             modifier = {
                 type: 'Value',
-                loc: locRange(loc, modifierNameStart, modifierEnd),
                 value: raw.slice(modifierNameStart, modifierEnd),
             };
+
+            if (isLocIncluded) {
+                modifier.loc = locRange(baseLoc, modifierNameStart, modifierEnd);
+            }
         } else {
             // If there is an assignment operator, first we need to find the
             // end of the modifier name, then we can parse the value
@@ -75,15 +80,18 @@ export class ModifierParser {
 
             modifier = {
                 type: 'Value',
-                loc: locRange(loc, modifierNameStart, modifierNameEnd),
                 value: raw.slice(modifierNameStart, modifierNameEnd),
             };
+
+            if (isLocIncluded) {
+                modifier.loc = locRange(baseLoc, modifierNameStart, modifierNameEnd);
+            }
 
             // Value can't be empty
             if (assignmentIndex + 1 === modifierEnd) {
                 throw new AdblockSyntaxError(
                     'Modifier value cannot be empty',
-                    locRange(loc, 0, raw.length),
+                    locRange(baseLoc, 0, raw.length),
                 );
             }
 
@@ -92,18 +100,26 @@ export class ModifierParser {
 
             value = {
                 type: 'Value',
-                loc: locRange(loc, valueStart, modifierEnd),
                 value: raw.slice(valueStart, modifierEnd),
             };
+
+            if (isLocIncluded) {
+                value.loc = locRange(baseLoc, valueStart, modifierEnd);
+            }
         }
 
-        return {
+        const result: Modifier = {
             type: 'Modifier',
-            loc: locRange(loc, modifierStart, modifierEnd),
-            modifier,
+            name: modifier,
             value,
             exception,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, modifierStart, modifierEnd);
+        }
+
+        return result;
     }
 
     /**
@@ -119,7 +135,7 @@ export class ModifierParser {
             result += NEGATION_MARKER;
         }
 
-        result += modifier.modifier.value;
+        result += modifier.name.value;
 
         if (modifier.value !== undefined) {
             result += MODIFIER_ASSIGN_OPERATOR;

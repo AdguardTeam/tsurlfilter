@@ -7,5 +7,7 @@
     - [ ] Explain AST structure
 - [ ] Add parser options
     - [ ] Add `tokenize` method to each (sub-)parser
-    - [ ] Toggleable location properties
+    - [x] Toggleable location properties
     - [ ] Adjustable parsing details
+- [ ] Memory benchmark, especially for the location properties (compare old and new parser)
+- [x] Performance benchmark, especially for zod validation

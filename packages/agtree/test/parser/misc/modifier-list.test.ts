@@ -4,6 +4,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
+        // TODO: Refactor to test.each
         // Invalid cases
         expect(() => ModifierListParser.parse(',')).toThrowError(
             'Modifier name cannot be empty',
@@ -129,7 +130,7 @@ describe('ModifierListParser', () => {
                                 column: 10,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -180,7 +181,7 @@ describe('ModifierListParser', () => {
                             column: 11,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -230,7 +231,7 @@ describe('ModifierListParser', () => {
                             column: 10,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -262,7 +263,7 @@ describe('ModifierListParser', () => {
                             column: 20,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -312,7 +313,7 @@ describe('ModifierListParser', () => {
                             column: 10,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -344,7 +345,7 @@ describe('ModifierListParser', () => {
                             column: 21,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -394,7 +395,7 @@ describe('ModifierListParser', () => {
                             column: 11,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -426,7 +427,7 @@ describe('ModifierListParser', () => {
                             column: 21,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -476,7 +477,7 @@ describe('ModifierListParser', () => {
                             column: 11,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -508,7 +509,7 @@ describe('ModifierListParser', () => {
                             column: 22,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -558,7 +559,7 @@ describe('ModifierListParser', () => {
                             column: 10,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -590,7 +591,7 @@ describe('ModifierListParser', () => {
                             column: 21,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -640,7 +641,7 @@ describe('ModifierListParser', () => {
                             column: 10,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -672,7 +673,7 @@ describe('ModifierListParser', () => {
                             column: 22,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -722,7 +723,7 @@ describe('ModifierListParser', () => {
                             column: 17,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -788,7 +789,7 @@ describe('ModifierListParser', () => {
                             column: 18,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -854,7 +855,7 @@ describe('ModifierListParser', () => {
                             column: 19,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -920,7 +921,7 @@ describe('ModifierListParser', () => {
                             column: 20,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -986,7 +987,7 @@ describe('ModifierListParser', () => {
                             column: 27,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1052,7 +1053,7 @@ describe('ModifierListParser', () => {
                             column: 10,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1084,7 +1085,7 @@ describe('ModifierListParser', () => {
                             column: 27,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1150,7 +1151,7 @@ describe('ModifierListParser', () => {
                             column: 17,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1198,7 +1199,7 @@ describe('ModifierListParser', () => {
                             column: 34,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1265,7 +1266,7 @@ describe('ModifierListParser', () => {
                             column: 18,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1313,7 +1314,7 @@ describe('ModifierListParser', () => {
                             column: 35,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1379,7 +1380,7 @@ describe('ModifierListParser', () => {
                             column: 18,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1427,7 +1428,7 @@ describe('ModifierListParser', () => {
                             column: 36,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1497,7 +1498,7 @@ describe('ModifierListParser', () => {
                             column: 33,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1545,7 +1546,7 @@ describe('ModifierListParser', () => {
                             column: 88,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -1583,6 +1584,37 @@ describe('ModifierListParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        test.each<{ actual: string; expected: ModifierList }>([
+            {
+                actual: 'modifier1, ~modifier2',
+                expected: {
+                    type: 'ModifierList',
+                    children: [
+                        {
+                            type: 'Modifier',
+                            name: {
+                                type: 'Value',
+                                value: 'modifier1',
+                            },
+                            exception: false,
+                        },
+                        {
+                            type: 'Modifier',
+                            name: {
+                                type: 'Value',
+                                value: 'modifier2',
+                            },
+                            exception: true,
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(ModifierListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = ModifierListParser.parse(raw);
@@ -1594,6 +1626,7 @@ describe('ModifierListParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('modifier1')).toEqual('modifier1');
         expect(parseAndGenerate('~modifier1')).toEqual('~modifier1');
         expect(parseAndGenerate('modifier1=value1')).toEqual('modifier1=value1');

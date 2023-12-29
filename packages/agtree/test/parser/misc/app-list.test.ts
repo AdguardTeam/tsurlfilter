@@ -537,4 +537,25 @@ describe('AppListParser', () => {
             expect(AppListParser.parse(actual)).toEqual(expected);
         });
     });
+
+    describe('parser options should work as expected', () => {
+        test.each([
+            {
+                actual: 'Example.exe',
+                expected: {
+                    type: ListNodeType.AppList,
+                    separator: '|',
+                    children: [
+                        {
+                            type: ListItemNodeType.App,
+                            value: 'Example.exe',
+                            exception: false,
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(AppListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
 });

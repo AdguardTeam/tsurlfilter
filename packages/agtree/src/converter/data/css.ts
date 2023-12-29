@@ -3,7 +3,26 @@
  * TODO: Implement a compatibility table for Extended CSS
  */
 
+/**
+ * Legacy Extended CSS attribute prefix.
+ *
+ * @example
+ * ```css
+ * [-ext-<name>=...]
+ * ```
+ */
 export const LEGACY_EXT_CSS_ATTRIBUTE_PREFIX = '-ext-';
+
+/**
+ * ABP Extended CSS prefix.
+ *
+ * @example
+ * ```css
+ * [-abp-<name>=...]
+ * -abp-<name>(...)
+ * ```
+ */
+export const ABP_EXT_CSS_PREFIX = '-abp';
 
 /**
  * Known Extended CSS pseudo-classes. Please, keep this list sorted.

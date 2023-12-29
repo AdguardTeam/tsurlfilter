@@ -128,7 +128,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: 'example.com#@#:not(:matches-path(/page))h1:style(background-color: blue !important)',
                 expected: [
-                    String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important; }`,
+                    String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important }`,
                 ],
                 shouldConvert: true,
             },

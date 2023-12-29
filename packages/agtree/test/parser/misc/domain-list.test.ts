@@ -549,7 +549,9 @@ describe('DomainListParser', () => {
         );
 
         expect(
-            DomainListParser.parse('~example.com|  example.net    |   example.eu |        ~example.org', '|'),
+            DomainListParser.parse('~example.com|  example.net    |   example.eu |        ~example.org', {
+                separator: '|',
+            }),
         ).toEqual<DomainList>({
             type: ListNodeType.DomainList,
             loc: {
@@ -638,9 +640,30 @@ describe('DomainListParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        test.each([
+            {
+                actual: 'example.com',
+                expected: {
+                    type: ListNodeType.DomainList,
+                    separator: ',',
+                    children: [
+                        {
+                            type: ListItemNodeType.Domain,
+                            value: 'example.com',
+                            exception: false,
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(DomainListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string, separator: DomainListSeparator = COMMA) => {
-            const ast = DomainListParser.parse(raw, separator);
+            const ast = DomainListParser.parse(raw, { separator });
 
             if (ast) {
                 return DomainListParser.generate(ast);

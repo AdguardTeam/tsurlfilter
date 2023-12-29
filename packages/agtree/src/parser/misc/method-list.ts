@@ -1,14 +1,14 @@
-import { PIPE_MODIFIER_SEPARATOR } from '../../utils/constants';
+import { PIPE } from '../../utils/constants';
 import { locRange } from '../../utils/location';
 import {
     type Method,
     type MethodList,
-    defaultLocation,
     ListNodeType,
     ListItemNodeType,
 } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { parseListItems } from './list-helpers';
+import { type ListParserOptions, parseListItems } from './list-helpers';
+import { getParserOptions } from '../options';
 
 /**
  * `MethodListParser` is responsible for parsing a method list.
@@ -21,29 +21,37 @@ export class MethodListParser {
      * e.g. `get|post|put`.
      *
      * @param raw Raw method list
-     * @param loc Location of the method list in the rule. If not set, the default location is used.
+     * @param options List parser options. See {@link ListParserOptions}.
      *
      * @returns Method list AST.
      * @throws An {@link AdblockSyntaxError} if the method list is syntactically invalid.
+     * @throws An {@link Error} if the options are invalid.
      */
-    public static parse(
-        raw: string,
-        loc = defaultLocation,
-    ): MethodList {
-        const separator = PIPE_MODIFIER_SEPARATOR;
+    public static parse(raw: string, options: Partial<ListParserOptions> = {}): MethodList {
+        const separator = options.separator ?? PIPE;
 
-        const rawItems = parseListItems(raw, separator, loc);
+        if (separator !== PIPE) {
+            throw new Error(`Invalid separator: ${separator}`);
+        }
+
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
+        const rawItems = parseListItems(raw, { separator, baseLoc, isLocIncluded });
         const children: Method[] = rawItems.map((rawListItem) => ({
             ...rawListItem,
             type: ListItemNodeType.Method,
         }));
 
-        return {
+        const result: MethodList = {
             type: ListNodeType.MethodList,
-            loc: locRange(loc, 0, raw.length),
             separator,
             children,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     // TODO: implement generate method if needed

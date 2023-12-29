@@ -1,15 +1,19 @@
-import { COMMA_DOMAIN_LIST_SEPARATOR, NEGATION_MARKER, EMPTY } from '../../utils/constants';
+import {
+    COMMA,
+    NEGATION_MARKER,
+    EMPTY,
+    PIPE,
+} from '../../utils/constants';
 import { locRange } from '../../utils/location';
 import {
     type Domain,
     type DomainList,
-    type DomainListSeparator,
-    defaultLocation,
     ListNodeType,
     ListItemNodeType,
 } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { parseListItems } from './list-helpers';
+import { type ListParserOptions, parseListItems } from './list-helpers';
+import { getParserOptions } from '../options';
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.
@@ -25,29 +29,38 @@ export class DomainListParser {
      * Parses a domain list, eg. `example.com,example.org,~example.org`
      *
      * @param raw Raw domain list.
-     * @param separator Separator character.
-     * @param loc Location of the domain list in the rule. If not set, the default location is used.
+     * @param options Domain list parser options. See {@link ListParserOptions}.
      *
      * @returns Domain list AST.
      * @throws An {@link AdblockSyntaxError} if the domain list is syntactically invalid.
+     * @throws An {@link Error} if the options are invalid.
      */
-    public static parse(
-        raw: string,
-        separator: DomainListSeparator = COMMA_DOMAIN_LIST_SEPARATOR,
-        loc = defaultLocation,
-    ): DomainList {
-        const rawItems = parseListItems(raw, separator, loc);
+    public static parse(raw: string, options: Partial<ListParserOptions> = {}): DomainList {
+        const separator = options.separator ?? COMMA;
+
+        if (separator !== COMMA && separator !== PIPE) {
+            throw new Error(`Invalid separator: ${separator}`);
+        }
+
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
+
+        const rawItems = parseListItems(raw, { separator, baseLoc, isLocIncluded });
         const children: Domain[] = rawItems.map((rawListItem) => ({
             ...rawListItem,
             type: ListItemNodeType.Domain,
         }));
 
-        return {
+        const result: DomainList = {
             type: ListNodeType.DomainList,
-            loc: locRange(loc, 0, raw.length),
             separator,
             children,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

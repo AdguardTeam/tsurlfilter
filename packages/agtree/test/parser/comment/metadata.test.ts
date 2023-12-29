@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
+        // TODO: Refactor to test.each
         expect(MetadataCommentRuleParser.parse(EMPTY)).toBeNull();
         expect(MetadataCommentRuleParser.parse(SPACE)).toBeNull();
 
@@ -365,6 +366,37 @@ describe('MetadataCommentRuleParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '! Title: FilterList Title',
+                expected: {
+                    type: 'MetadataCommentRule',
+                    category: 'Comment',
+                    syntax: 'Common',
+                    raws: {
+                        text: '! Title: FilterList Title',
+                    },
+                    marker: {
+                        type: 'Value',
+                        value: '!',
+                    },
+                    header: {
+                        type: 'Value',
+                        value: 'Title',
+                    },
+                    value: {
+                        type: 'Value',
+                        value: 'FilterList Title',
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(MetadataCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = MetadataCommentRuleParser.parse(raw);
@@ -376,6 +408,7 @@ describe('MetadataCommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('! Title: Filter')).toEqual('! Title: Filter');
         expect(parseAndGenerate('!   Title: Filter   ')).toEqual('! Title: Filter');
         expect(parseAndGenerate('# Title: Filter')).toEqual('# Title: Filter');

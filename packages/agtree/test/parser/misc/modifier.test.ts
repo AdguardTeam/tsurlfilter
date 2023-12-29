@@ -1,3 +1,4 @@
+import { type Modifier } from '../../../src/parser/common';
 import { ModifierParser } from '../../../src/parser/misc/modifier';
 
 /**
@@ -20,6 +21,7 @@ const generate = (raw: string) => {
 describe('ModifierParser', () => {
     describe('parse', () => {
         it('should throw an error if the modifier is invalid', () => {
+            // TODO: Refactor to test.each
             expect(() => ModifierParser.parse('')).toThrowError(
                 'Modifier name cannot be empty',
             );
@@ -58,7 +60,7 @@ describe('ModifierParser', () => {
                             offset: 1,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -85,7 +87,7 @@ describe('ModifierParser', () => {
                             offset: 2,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -112,7 +114,7 @@ describe('ModifierParser', () => {
                             offset: 3,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -151,7 +153,7 @@ describe('ModifierParser', () => {
                             offset: 4,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -190,7 +192,7 @@ describe('ModifierParser', () => {
                             offset: 6,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -229,7 +231,7 @@ describe('ModifierParser', () => {
                             offset: 4,
                         },
                     },
-                    modifier: {
+                    name: {
                         type: 'Value',
                         loc: {
                             start: {
@@ -259,8 +261,31 @@ describe('ModifierParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        test.each<{ actual: string; expected: Modifier }>([
+            {
+                actual: '~a=b',
+                expected: {
+                    type: 'Modifier',
+                    name: {
+                        type: 'Value',
+                        value: 'a',
+                    },
+                    value: {
+                        type: 'Value',
+                        value: 'b',
+                    },
+                    exception: true,
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(ModifierParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     describe('generate', () => {
         it('should generate back the modifier', () => {
+            // TODO: Refactor to test.each
             expect(generate('a')).toEqual('a');
             expect(generate('~a')).toEqual('~a');
             expect(generate('a=b')).toEqual('a=b');

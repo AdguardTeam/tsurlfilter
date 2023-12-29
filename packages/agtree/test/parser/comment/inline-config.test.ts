@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('ConfigCommentRuleParser', () => {
     test('isConfigComment', () => {
+        // TODO: Refactor to test.each
         // Empty
         expect(ConfigCommentRuleParser.isConfigComment(EMPTY)).toBeFalsy();
         expect(ConfigCommentRuleParser.isConfigComment(SPACE)).toBeFalsy();
@@ -80,6 +81,7 @@ describe('ConfigCommentRuleParser', () => {
     });
 
     test('parse', () => {
+        // TODO: Refactor to test.each
         // !
         expect(ConfigCommentRuleParser.parse('! aglint-disable')).toMatchObject({
             type: 'ConfigCommentRule',
@@ -1037,6 +1039,7 @@ describe('ConfigCommentRuleParser', () => {
             },
         });
 
+        // TODO: Refactor to test.each
         // Invalid cases
         expect(() => ConfigCommentRuleParser.parse('! aglint')).toThrowError('Empty AGLint config');
         expect(() => ConfigCommentRuleParser.parse('! aglint rule1')).toThrowError();
@@ -1047,6 +1050,55 @@ describe('ConfigCommentRuleParser', () => {
         expect(() => ConfigCommentRuleParser.parse('# aglint rule1')).toThrowError();
         expect(() => ConfigCommentRuleParser.parse('# aglint rule1: ["error", "double"')).toThrowError();
         expect(() => ConfigCommentRuleParser.parse('# aglint rule1: () => 1')).toThrowError();
+    });
+
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                // eslint-disable-next-line max-len
+                actual: '! aglint rule1: "off", rule2: [1, 2], rule3: ["error", { "max": 100 }] -- this is a comment -- this doesn\'t matter',
+                expected: {
+                    type: 'ConfigCommentRule',
+                    category: 'Comment',
+                    syntax: 'Common',
+                    raws: {
+                        // eslint-disable-next-line max-len
+                        text: '! aglint rule1: "off", rule2: [1, 2], rule3: ["error", { "max": 100 }] -- this is a comment -- this doesn\'t matter',
+                    },
+                    marker: {
+                        type: 'Value',
+                        value: '!',
+                    },
+                    command: {
+                        type: 'Value',
+                        value: 'aglint',
+                    },
+                    params: {
+                        type: 'Value',
+                        value: {
+                            rule1: 'off',
+                            rule2: [
+                                1,
+                                2,
+                            ],
+                            rule3: [
+                                'error',
+                                {
+                                    max: 100,
+                                },
+                            ],
+                        },
+                    },
+                    comment: {
+                        type: 'Value',
+                        value: "-- this is a comment -- this doesn't matter",
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(ConfigCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
     });
 
     test('generate', () => {
@@ -1060,6 +1112,7 @@ describe('ConfigCommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('! aglint rule1: ["error", "double"]')).toEqual('! aglint "rule1":["error","double"]');
         expect(parseAndGenerate('! aglint rule1: ["error", "double"] -- comment')).toEqual(
             '! aglint "rule1":["error","double"] -- comment',

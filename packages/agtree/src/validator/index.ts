@@ -41,7 +41,7 @@ const validateForSpecificSyntax = (
         throw new Error(`Syntax should be specific, '${AdblockSyntax.Common}' is not supported`);
     }
 
-    const modifierName = modifier.modifier.value;
+    const modifierName = modifier.name.value;
 
     const blockerPrefix = BLOCKER_PREFIX[syntax];
     if (!blockerPrefix) {
@@ -140,7 +140,7 @@ const getBlockerDocumentationLink = (
     blockerPrefix: string,
     modifier: Modifier,
 ): string | null => {
-    const specificBlockerData = getSpecificBlockerData(modifiersData, blockerPrefix, modifier.modifier.value);
+    const specificBlockerData = getSpecificBlockerData(modifiersData, blockerPrefix, modifier.name.value);
     return specificBlockerData?.docs || null;
 };
 
@@ -178,7 +178,7 @@ class ModifierValidator {
      * @returns True if modifier exists, false otherwise.
      */
     public exists = (modifier: Modifier): boolean => {
-        return this.allModifierNames.has(modifier.modifier.value);
+        return this.allModifierNames.has(modifier.name.value);
     };
 
     /**
@@ -200,20 +200,20 @@ class ModifierValidator {
 
         // special case: handle noop modifier which may be used as multiple underscores (not just one)
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#noop-modifier
-        if (modifier.modifier.value.startsWith(UNDERSCORE)) {
+        if (modifier.name.value.startsWith(UNDERSCORE)) {
             // check whether the modifier value contains something else besides underscores
-            if (!isValidNoopModifier(modifier.modifier.value)) {
+            if (!isValidNoopModifier(modifier.name.value)) {
                 return getInvalidValidationResult(
-                    `${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.modifier.value}'`,
+                    `${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.name.value}'`,
                 );
             }
             // otherwise, replace the modifier value with single underscore.
             // it is needed to check whether the modifier is supported by specific adblocker due to the syntax
-            modifier.modifier.value = UNDERSCORE;
+            modifier.name.value = UNDERSCORE;
         }
 
         if (!this.exists(modifier)) {
-            return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.modifier.value}'`);
+            return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.name.value}'`);
         }
         // for 'Common' syntax we cannot check something more
         if (syntax === AdblockSyntax.Common) {

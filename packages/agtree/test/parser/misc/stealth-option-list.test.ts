@@ -289,4 +289,35 @@ describe('StealthOptionListParser', () => {
             expect(StealthOptionListParser.parse(actual)).toEqual(expected);
         });
     });
+
+    describe('parser options should work as expected', () => {
+        test.each([
+            {
+                actual: 'dpi|push|ip',
+                expected: {
+                    type: ListNodeType.StealthOptionList,
+                    separator: '|',
+                    children: [
+                        {
+                            type: ListItemNodeType.StealthOption,
+                            value: 'dpi',
+                            exception: false,
+                        },
+                        {
+                            type: ListItemNodeType.StealthOption,
+                            value: 'push',
+                            exception: false,
+                        },
+                        {
+                            type: ListItemNodeType.StealthOption,
+                            value: 'ip',
+                            exception: false,
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(StealthOptionListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
 });

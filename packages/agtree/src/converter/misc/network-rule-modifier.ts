@@ -130,11 +130,11 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
         let cspCount = 0;
 
         modifierList.children.forEach((modifierNode, index) => {
-            const modifierConversions = ADG_CONVERSION_MAP.get(modifierNode.modifier.value);
+            const modifierConversions = ADG_CONVERSION_MAP.get(modifierNode.name.value);
 
             if (modifierConversions) {
                 for (const modifierConversion of modifierConversions) {
-                    const name = modifierConversion.name(modifierNode.modifier.value);
+                    const name = modifierConversion.name(modifierNode.name.value);
 
                     const exception = modifierConversion.exception
                         // If the exception value is undefined in the original modifier, it
@@ -148,7 +148,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
 
                     // Check if the name or the value is different from the original modifier
                     // If so, add the converted modifier to the list
-                    if (name !== modifierNode.modifier.value || value !== modifierNode.value?.value) {
+                    if (name !== modifierNode.name.value || value !== modifierNode.value?.value) {
                         conversionMap.add(index, createModifierNode(name, value, exception));
                     }
 
@@ -162,11 +162,11 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
             }
 
             // Handle special case: resource redirection modifiers
-            if (REDIRECT_MODIFIERS.has(modifierNode.modifier.value)) {
+            if (REDIRECT_MODIFIERS.has(modifierNode.name.value)) {
                 // Redirect modifiers can't be negated
                 if (modifierNode.exception === true) {
                     throw new RuleConversionError(
-                        `Modifier '${modifierNode.modifier.value}' cannot be negated`,
+                        `Modifier '${modifierNode.name.value}' cannot be negated`,
                     );
                 }
 
@@ -175,14 +175,14 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
 
                 if (!redirectResource) {
                     throw new RuleConversionError(
-                        `No redirect resource specified for '${modifierNode.modifier.value}' modifier`,
+                        `No redirect resource specified for '${modifierNode.name.value}' modifier`,
                     );
                 }
 
                 // Leave $redirect and $redirect-rule modifiers as is, but convert $rewrite to $redirect
-                const modifierName = modifierNode.modifier.value === ABP_REWRITE_MODIFIER
+                const modifierName = modifierNode.name.value === ABP_REWRITE_MODIFIER
                     ? REDIRECT_MODIFIER
-                    : modifierNode.modifier.value;
+                    : modifierNode.name.value;
 
                 // Try to convert the redirect resource name to ADG format
                 // This function returns undefined if the resource name is unknown
@@ -191,7 +191,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                 // Check if the modifier name or the redirect resource name is different from the original modifier
                 // If so, add the converted modifier to the list
                 if (
-                    modifierName !== modifierNode.modifier.value
+                    modifierName !== modifierNode.name.value
                     || (convertedRedirectResource !== undefined && convertedRedirectResource !== redirectResource)
                 ) {
                     conversionMap.add(
@@ -230,7 +230,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                 const cspValues: string[] = [];
 
                 modifierListClone.children = modifierListClone.children.filter((modifierNode) => {
-                    if (modifierNode.modifier.value === CSP_MODIFIER) {
+                    if (modifierNode.name.value === CSP_MODIFIER) {
                         if (!modifierNode.value?.value) {
                             throw new RuleConversionError(
                                 '$csp modifier value is missing',
@@ -253,7 +253,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
             // Before returning the result, remove duplicated modifiers
             modifierListClone.children = modifierListClone.children.filter(
                 (modifierNode, index, self) => self.findIndex(
-                    (m) => m.modifier.value === modifierNode.modifier.value
+                    (m) => m.name.value === modifierNode.name.value
                         && m.exception === modifierNode.exception
                         && m.value?.value === modifierNode.value?.value,
                 ) === index,

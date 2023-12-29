@@ -35,8 +35,11 @@ Test:
 
             ls -alt
 
-            # Bootstrap the package
+            # Bootstrap the packages
             npx lerna@6 bootstrap --scope @adguard/agtree --include-dependencies
+
+            # Build CSS Tokenizer because it is used in AGTree tests
+            npx lerna@6 run --scope @adguard/css-tokenizer build
 
             # Check TypeScript types with TSC
             npx lerna@6 run --scope @adguard/agtree check-types

@@ -4,6 +4,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 
 describe('AgentCommentRuleParser', () => {
     test('isAgent', () => {
+        // TODO: Refactor to test.each
         // Invalid
         expect(AgentCommentRuleParser.isAgentRule(EMPTY)).toBeFalsy();
         expect(AgentCommentRuleParser.isAgentRule(SPACE)).toBeFalsy();
@@ -953,6 +954,48 @@ describe('AgentCommentRuleParser', () => {
         );
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '[Adblock Plus 2.0; AdGuard]',
+                expected: {
+                    type: 'AgentCommentRule',
+                    syntax: 'Common',
+                    category: 'Comment',
+                    raws: {
+                        text: '[Adblock Plus 2.0; AdGuard]',
+                    },
+                    children: [
+                        {
+                            type: 'Agent',
+                            adblock: {
+                                type: 'Value',
+                                value: 'Adblock Plus',
+                            },
+                            version: {
+                                type: 'Value',
+                                value: '2.0',
+                            },
+                            syntax: AdblockSyntax.Abp,
+                        },
+                        {
+                            type: 'Agent',
+                            adblock: {
+                                type: 'Value',
+                                value: 'AdGuard',
+                            },
+                            version: null,
+                            syntax: AdblockSyntax.Adg,
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(AgentCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = AgentCommentRuleParser.parse(raw);
@@ -964,6 +1007,7 @@ describe('AgentCommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('[AdGuard]')).toEqual('[AdGuard]');
         expect(parseAndGenerate('[ AdGuard ]')).toEqual('[AdGuard]');
         expect(parseAndGenerate('[Adblock Plus 2.0]')).toEqual('[Adblock Plus 2.0]');

@@ -4,6 +4,7 @@ import { type NetworkRule, RuleCategory } from '../../../src/parser/common';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
+        // TODO: Refactor to test.each
         expect(NetworkRuleParser.parse('||example.com')).toMatchObject<NetworkRule>({
             type: 'NetworkRule',
             loc: {
@@ -136,7 +137,7 @@ describe('NetworkRuleParser', () => {
                                 column: 19,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -168,7 +169,7 @@ describe('NetworkRuleParser', () => {
                                 column: 25,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -338,7 +339,7 @@ describe('NetworkRuleParser', () => {
                                 column: 15,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -370,7 +371,7 @@ describe('NetworkRuleParser', () => {
                                 column: 21,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -471,7 +472,7 @@ describe('NetworkRuleParser', () => {
                                 column: 15,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -503,7 +504,7 @@ describe('NetworkRuleParser', () => {
                                 column: 21,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -551,7 +552,7 @@ describe('NetworkRuleParser', () => {
                                 column: 31,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -652,7 +653,7 @@ describe('NetworkRuleParser', () => {
                                 column: 15,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -684,7 +685,7 @@ describe('NetworkRuleParser', () => {
                                 column: 21,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -732,7 +733,7 @@ describe('NetworkRuleParser', () => {
                                 column: 32,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -869,7 +870,7 @@ describe('NetworkRuleParser', () => {
                                 column: 27,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -953,7 +954,7 @@ describe('NetworkRuleParser', () => {
                                 column: 36,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1054,7 +1055,7 @@ describe('NetworkRuleParser', () => {
                                 column: 13,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1155,7 +1156,7 @@ describe('NetworkRuleParser', () => {
                                 column: 14,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1255,7 +1256,7 @@ describe('NetworkRuleParser', () => {
                                 column: 18,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1356,7 +1357,7 @@ describe('NetworkRuleParser', () => {
                                 column: 24,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1456,7 +1457,7 @@ describe('NetworkRuleParser', () => {
                                 column: 15,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1488,7 +1489,7 @@ describe('NetworkRuleParser', () => {
                                 column: 28,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1589,7 +1590,7 @@ describe('NetworkRuleParser', () => {
                                 column: 25,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1621,7 +1622,7 @@ describe('NetworkRuleParser', () => {
                                 column: 38,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1724,7 +1725,7 @@ describe('NetworkRuleParser', () => {
                                 column: 28,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1756,7 +1757,7 @@ describe('NetworkRuleParser', () => {
                                 column: 34,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1804,7 +1805,7 @@ describe('NetworkRuleParser', () => {
                                 column: 45,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1852,7 +1853,7 @@ describe('NetworkRuleParser', () => {
                                 column: 58,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -1900,7 +1901,7 @@ describe('NetworkRuleParser', () => {
                                 column: 69,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -2002,7 +2003,7 @@ describe('NetworkRuleParser', () => {
                                 column: 73,
                             },
                         },
-                        modifier: {
+                        name: {
                             type: 'Value',
                             loc: {
                                 start: {
@@ -2105,7 +2106,7 @@ describe('NetworkRuleParser', () => {
                                     column: 50,
                                 },
                             },
-                            modifier: {
+                            name: {
                                 type: 'Value',
                                 loc: {
                                     start: {
@@ -2150,6 +2151,55 @@ describe('NetworkRuleParser', () => {
         );
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '@@||example.com$m1,m2=v2',
+                expected: {
+                    type: 'NetworkRule',
+                    category: RuleCategory.Network,
+                    syntax: AdblockSyntax.Common,
+                    raws: {
+                        text: '@@||example.com$m1,m2=v2',
+                    },
+                    exception: true,
+                    pattern: {
+                        type: 'Value',
+                        value: '||example.com',
+                    },
+                    modifiers: {
+                        type: 'ModifierList',
+                        children: [
+                            {
+                                type: 'Modifier',
+                                name: {
+                                    type: 'Value',
+                                    value: 'm1',
+                                },
+                                exception: false,
+                            },
+                            {
+                                type: 'Modifier',
+                                name: {
+                                    type: 'Value',
+                                    value: 'm2',
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: 'v2',
+                                },
+                                exception: false,
+                            },
+                        ],
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(NetworkRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = NetworkRuleParser.parse(raw);
@@ -2161,6 +2211,7 @@ describe('NetworkRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('-ad-350-')).toEqual('-ad-350-');
         expect(parseAndGenerate('||example.com')).toEqual('||example.com');
         expect(parseAndGenerate('@@||example.com')).toEqual('@@||example.com');

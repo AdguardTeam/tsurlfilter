@@ -564,4 +564,35 @@ describe('MethodListParser', () => {
             expect(MethodListParser.parse(actual)).toEqual(expected);
         });
     });
+
+    describe('parser options should work as expected', () => {
+        test.each([
+            {
+                actual: 'get|post|put',
+                expected: {
+                    type: ListNodeType.MethodList,
+                    separator: '|',
+                    children: [
+                        {
+                            type: ListItemNodeType.Method,
+                            value: 'get',
+                            exception: false,
+                        },
+                        {
+                            type: ListItemNodeType.Method,
+                            value: 'post',
+                            exception: false,
+                        },
+                        {
+                            type: ListItemNodeType.Method,
+                            value: 'put',
+                            exception: false,
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(MethodListParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
 });

@@ -3,7 +3,6 @@ import XRegExp from 'xregexp';
 import {
     type Modifier,
     type ListItem,
-    type PipeSeparator,
     type AppList,
     type DomainList,
     type MethodList,
@@ -41,6 +40,14 @@ import {
     SOURCE_DATA_ERROR_PREFIX,
     VALIDATION_ERROR_PREFIX,
 } from './constants';
+
+/**
+ * Represents the possible list parsers.
+ */
+type ListParser = typeof AppListParser.parse
+    | typeof DomainListParser.parse
+    | typeof MethodListParser.parse
+    | typeof StealthOptionListParser.parse;
 
 /**
  * Type of the list of items separated by pipe `|`.
@@ -267,11 +274,11 @@ const customConsistentExceptionsValidator = (modifierName: string, listItems: Li
  */
 const validateListItemsModifier = (
     modifier: Modifier,
-    listParser: (raw: string, separator?: PipeSeparator) => PipeSeparatedList,
+    listParser: ListParser,
     isValidListItem: (listItem: string) => boolean,
     customListValidator?: (modifierName: string, list: ListItem[]) => ValidationResult,
 ): ValidationResult => {
-    const modifierName = modifier.modifier.value;
+    const modifierName = modifier.name.value;
     const defaultInvalidValueResult = getValueRequiredValidationResult(modifierName);
 
     if (!modifier.value?.value) {
@@ -280,7 +287,7 @@ const validateListItemsModifier = (
 
     let theList: PipeSeparatedList;
     try {
-        theList = listParser(modifier.value.value, PIPE_MODIFIER_SEPARATOR);
+        theList = listParser(modifier.value.value, { separator: PIPE_MODIFIER_SEPARATOR });
     } catch (e: unknown) {
         if (e instanceof AdblockSyntaxError) {
             return {
@@ -410,7 +417,7 @@ const validatePipeSeparatedStealthOptions = (modifier: Modifier): ValidationResu
  * @returns Validation result.
  */
 const validateCspValue = (modifier: Modifier): ValidationResult => {
-    const modifierName = modifier.modifier.value;
+    const modifierName = modifier.name.value;
     if (!modifier.value?.value) {
         return getValueRequiredValidationResult(modifierName);
     }
@@ -616,10 +623,10 @@ const validateSinglePermission = (
  */
 const validatePermissions = (modifier: Modifier): ValidationResult => {
     if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifier.modifier.value);
+        return getValueRequiredValidationResult(modifier.name.value);
     }
 
-    const modifierName = modifier.modifier.value;
+    const modifierName = modifier.name.value;
     const modifierValue = modifier.value.value;
 
     // multiple permissions may be separated by escaped commas
@@ -647,10 +654,10 @@ const validatePermissions = (modifier: Modifier): ValidationResult => {
  */
 const validateReferrerPolicy = (modifier: Modifier): ValidationResult => {
     if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifier.modifier.value);
+        return getValueRequiredValidationResult(modifier.name.value);
     }
 
-    const modifierName = modifier.modifier.value;
+    const modifierName = modifier.name.value;
     const modifierValue = modifier.value.value;
 
     if (!REFERRER_POLICY_DIRECTIVES.has(modifierValue)) {
@@ -700,7 +707,7 @@ export const validateValue = (modifier: Modifier, valueFormat: string): Validati
         return validator(modifier);
     }
 
-    const modifierName = modifier.modifier.value;
+    const modifierName = modifier.name.value;
 
     if (!modifier.value?.value) {
         return getValueRequiredValidationResult(modifierName);

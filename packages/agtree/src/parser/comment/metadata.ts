@@ -9,13 +9,12 @@ import { COLON, EMPTY, SPACE } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
-    type Location,
     type MetadataCommentRule,
     RuleCategory,
     type Value,
-    defaultLocation,
 } from '../common';
 import { locRange } from '../../utils/location';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
@@ -35,14 +34,16 @@ export class MetadataCommentRuleParser {
      * Parses a raw rule as a metadata comment.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Metadata comment AST or null (if the raw rule cannot be parsed as a metadata comment)
      */
-    public static parse(raw: string, loc: Location = defaultLocation): MetadataCommentRule | null {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): MetadataCommentRule | null {
         // Fast check to avoid unnecessary work
         if (raw.indexOf(COLON) === -1) {
             return null;
         }
+
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
 
         let offset = 0;
 
@@ -57,9 +58,12 @@ export class MetadataCommentRuleParser {
         // Consume the comment marker
         const marker: Value<CommentMarker> = {
             type: 'Value',
-            loc: locRange(loc, offset, offset + 1),
             value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
         };
+
+        if (isLocIncluded) {
+            marker.loc = locRange(baseLoc, offset, offset + 1);
+        }
 
         offset += 1;
 
@@ -81,9 +85,12 @@ export class MetadataCommentRuleParser {
                 // Save header
                 const header: Value = {
                     type: 'Value',
-                    loc: locRange(loc, headerStart, offset),
                     value: raw.slice(headerStart, offset),
                 };
+
+                if (isLocIncluded) {
+                    header.loc = locRange(baseLoc, headerStart, offset);
+                }
 
                 // Skip spaces after the header
                 offset = StringUtils.skipWS(raw, offset);
@@ -112,13 +119,15 @@ export class MetadataCommentRuleParser {
                 // Save the value
                 const value: Value = {
                     type: 'Value',
-                    loc: locRange(loc, valueStart, valueEnd),
                     value: raw.substring(valueStart, valueEnd),
                 };
 
-                return {
+                if (isLocIncluded) {
+                    value.loc = locRange(baseLoc, valueStart, valueEnd);
+                }
+
+                const result: MetadataCommentRule = {
                     type: CommentRuleType.MetadataCommentRule,
-                    loc: locRange(loc, 0, raw.length),
                     raws: {
                         text: raw,
                     },
@@ -128,6 +137,12 @@ export class MetadataCommentRuleParser {
                     header,
                     value,
                 };
+
+                if (isLocIncluded) {
+                    result.loc = locRange(baseLoc, 0, raw.length);
+                }
+
+                return result;
             }
         }
 

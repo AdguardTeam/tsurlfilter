@@ -8,8 +8,6 @@ import {
 import { StringUtils } from '../../utils/string';
 import {
     type AgentCommentRule,
-    type Location,
-    defaultLocation,
     CommentRuleType,
     RuleCategory,
     type Agent,
@@ -18,6 +16,7 @@ import { AgentParser } from './agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `AgentParser` is responsible for parsing an Adblock agent rules.
@@ -63,15 +62,16 @@ export class AgentCommentRuleParser {
      * Parses a raw rule as an adblock agent comment.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Agent rule AST or null (if the raw rule cannot be parsed as an adblock agent comment)
      */
-    public static parse(raw: string, loc: Location = defaultLocation): AgentCommentRule | null {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): AgentCommentRule | null {
         // Ignore non-agent rules
         if (!AgentCommentRuleParser.isAgentRule(raw)) {
             return null;
         }
 
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
         let offset = 0;
 
         // Skip whitespace characters before the rule
@@ -101,7 +101,10 @@ export class AgentCommentRuleParser {
                 raw.substring(offset, separatorIndex),
             ) + offset + 1;
 
-            const agent = AgentParser.parse(raw.substring(offset, agentEndIndex), shiftLoc(loc, offset));
+            const agent = AgentParser.parse(raw.substring(offset, agentEndIndex), {
+                isLocIncluded,
+                baseLoc: shiftLoc(baseLoc, offset),
+            });
 
             // Collect the agent
             agents.push(agent);
@@ -113,13 +116,12 @@ export class AgentCommentRuleParser {
         if (agents.length === 0) {
             throw new AdblockSyntaxError(
                 'Empty agent list',
-                locRange(loc, 0, raw.length),
+                locRange(baseLoc, 0, raw.length),
             );
         }
 
-        return {
+        const result: AgentCommentRule = {
             type: CommentRuleType.AgentCommentRule,
-            loc: locRange(loc, 0, raw.length),
             raws: {
                 text: raw,
             },
@@ -127,6 +129,12 @@ export class AgentCommentRuleParser {
             category: RuleCategory.Comment,
             children: agents,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

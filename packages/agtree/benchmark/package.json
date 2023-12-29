@@ -1,0 +1,23 @@
+{
+  "name": "benchmark",
+  "version": "1.0.0",
+  "private": "true",
+  "description": "This benchmark serves as a tool for evaluating the performance of adblock rule parsers, converters",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "dependencies": {
+    "agtree-v1": "npm:@adguard/agtree@^1.1.7",
+    "benchmark": "^2.1.4",
+    "date-fns": "^2.30.0",
+    "markdown-table": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "os-name": "^6.0.0",
+    "tsurlfilter-v1": "npm:@adguard/tsurlfilter@^1.0.80",
+    "tsurlfilter-v2": "npm:@adguard/tsurlfilter@^2.2.7"
+  },
+  "devDependencies": {
+    "@types/benchmark": "^2.1.5",
+    "tsx": "^4.6.2"
+  }
+}

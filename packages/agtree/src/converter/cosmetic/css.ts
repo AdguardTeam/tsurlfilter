@@ -6,9 +6,9 @@ import { CosmeticRuleSeparator, type CssInjectionRule } from '../../parser/commo
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { CssTree } from '../../utils/csstree';
 import { clone } from '../../utils/clone';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
+import { CssTokenStream } from '../../parser/css/css-token-stream';
 
 /**
  * CSS injection rule converter class
@@ -28,9 +28,10 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
     public static convertToAdg(rule: CssInjectionRule): NodeConversionResult<CssInjectionRule> {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
+        const stream = new CssTokenStream(rule.body.selectorList.value);
 
         // Change the separator if the rule contains ExtendedCSS selectors
-        if (CssTree.hasAnySelectorExtendedCssNode(rule.body.selectorList) || rule.body.remove) {
+        if (stream.hasAnySelectorExtendedCssNode() || rule.body.remove) {
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgExtendedCssInjectionException
                 : CosmeticRuleSeparator.AdgExtendedCssInjection;
@@ -40,7 +41,7 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
                 : CosmeticRuleSeparator.AdgCssInjection;
         }
 
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
 
         // Check if the rule needs to be converted
         if (
@@ -53,7 +54,7 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
 
             ruleClone.syntax = AdblockSyntax.Adg;
             ruleClone.separator.value = convertedSeparator;
-            ruleClone.body.selectorList = convertedSelectorList.result;
+            ruleClone.body.selectorList.value = convertedSelectorList.result;
 
             return createNodeConversionResult([ruleClone], true);
         }

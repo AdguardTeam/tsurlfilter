@@ -1,24 +1,31 @@
 import { StringUtils } from '../../utils/string';
 import { locRange } from '../../utils/location';
-import { type Location, type ParameterList, defaultLocation } from '../common';
+import { type ParameterList, type Parameter } from '../common';
 import { COMMA, SPACE } from '../../utils/constants';
+import { type ListParserOptions } from './list-helpers';
+import { getParserOptions } from '../options';
 
 export class ParameterListParser {
     /**
      * Parses a raw parameter list.
      *
      * @param raw Raw parameter list
-     * @param separator Separator character (default: comma)
-     * @param loc Base location
+     * @param options List parser options. See {@link ListParserOptions}.
      * @returns Parameter list AST
      */
-    public static parse(raw: string, separator = COMMA, loc: Location = defaultLocation): ParameterList {
+    public static parse(raw: string, options: Partial<ListParserOptions> = {}): ParameterList {
+        const separator = options.separator ?? COMMA;
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
+
         // Prepare the parameter list node
         const params: ParameterList = {
             type: 'ParameterList',
-            loc: locRange(loc, 0, raw.length),
             children: [],
         };
+
+        if (isLocIncluded) {
+            params.loc = locRange(baseLoc, 0, raw.length);
+        }
 
         let offset = 0;
 
@@ -43,11 +50,16 @@ export class ParameterListParser {
                 : StringUtils.skipWSBack(raw);
 
             // Add parameter to the list
-            params.children.push({
+            const param: Parameter = {
                 type: 'Parameter',
-                loc: locRange(loc, paramStart, paramEnd + 1),
                 value: raw.substring(paramStart, paramEnd + 1),
-            });
+            };
+
+            if (isLocIncluded) {
+                param.loc = locRange(baseLoc, paramStart, paramEnd + 1);
+            }
+
+            params.children.push(param);
 
             // Set offset to the next separator position + 1
             offset = nextSeparator !== -1 ? nextSeparator + 1 : raw.length;

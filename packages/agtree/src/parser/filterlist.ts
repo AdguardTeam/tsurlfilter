@@ -1,8 +1,8 @@
 import {
+    defaultLocation,
     type AnyRule,
     type FilterList,
     type NewLine,
-    defaultLocation,
 } from './common';
 import { RuleParser } from './rule';
 import {
@@ -12,6 +12,8 @@ import {
     LF,
 } from '../utils/constants';
 import { StringUtils } from '../utils/string';
+import { getParserOptions, type ParserOptions } from './options';
+import { addLoc, locRange } from '../utils/location';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
@@ -22,10 +24,7 @@ export class FilterListParser {
      * Parses a whole adblock filter list (list of rules).
      *
      * @param raw Filter list source code (including new lines)
-     * @param tolerant If `true`, then the parser will not throw if the rule is syntactically invalid,
-     * instead it will return an `InvalidRule` object with the error attached to it. Default is `true`.
-     * It is useful for parsing filter lists with invalid rules, because most of the rules are valid,
-     * and some invalid rules can't break the whole filter list parsing.
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns AST of the source code (list of rules)
      * @example
      * ```js
@@ -40,7 +39,9 @@ export class FilterListParser {
      * ```
      * @throws If one of the rules is syntactically invalid (if `tolerant` is `false`)
      */
-    public static parse(raw: string, tolerant = true): FilterList {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): FilterList {
+        const { baseLoc, isLocIncluded, tolerant } = getParserOptions(options);
+
         // Actual position in the source code
         let offset = 0;
 
@@ -56,11 +57,17 @@ export class FilterListParser {
                 // Rule text
                 const text = raw.substring(lineStartOffset, offset);
 
-                // Parse the rule
-                const rule = RuleParser.parse(text, tolerant, {
+                const relativeLoc = {
                     offset: lineStartOffset,
                     line: rules.length + 1,
                     column: 1,
+                };
+
+                // Parse the rule
+                const rule = RuleParser.parse(text, {
+                    tolerant,
+                    isLocIncluded,
+                    baseLoc: addLoc(relativeLoc, baseLoc),
                 });
 
                 // Get newline type (possible values: 'crlf', 'lf', 'cr' or undefined if no newline found)
@@ -100,33 +107,32 @@ export class FilterListParser {
             }
         }
 
+        const relativeLoc = {
+            offset: lineStartOffset,
+            line: rules.length + 1,
+            column: 1,
+        };
+
         // Parse the last rule (it doesn't end with a new line)
         rules.push(
-            RuleParser.parse(raw.substring(lineStartOffset, offset), tolerant, {
-                offset: lineStartOffset,
-                line: rules.length + 1,
-                column: 1,
+            RuleParser.parse(raw.slice(lineStartOffset, offset), {
+                tolerant,
+                isLocIncluded,
+                baseLoc: addLoc(relativeLoc, baseLoc),
             }),
         );
 
         // Return the list of rules (FilterList node)
-        return {
+        const result: FilterList = {
             type: 'FilterList',
-            loc: {
-                // Start location is always the default, since we don't provide
-                // "loc" parameter for FilterListParser.parse as it doesn't have
-                // any parent
-                start: defaultLocation,
-
-                // Calculate end location
-                end: {
-                    offset: raw.length,
-                    line: rules.length,
-                    column: raw.length + 1,
-                },
-            },
             children: rules,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(defaultLocation, 0, raw.length);
+        }
+
+        return result;
     }
 
     /**

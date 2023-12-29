@@ -1,12 +1,11 @@
+/* eslint-disable max-classes-per-file */
 import { StringUtils } from '../../utils/string';
 import {
+    type Location,
     type AnyExpressionNode,
     type AnyOperator,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
-    type Location,
-    type LocationRange,
-    defaultLocation,
 } from '../common';
 import {
     AMPERSAND,
@@ -16,22 +15,65 @@ import {
     PIPE,
     UNDERSCORE,
 } from '../../utils/constants';
-import { locRange } from '../../utils/location';
+import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { getParserOptions, type ParserOptions } from '../options';
 
+/**
+ * Possible operators in the logical expression.
+ */
+export const enum OperatorValue {
+    Not = '!',
+    And = '&&',
+    Or = '||',
+}
+
+/**
+ * Possible token types in the logical expression.
+ */
+const enum TokenType {
+    Variable,
+    Operator,
+    Parenthesis,
+}
+
+/**
+ * Possible node types in the logical expression.
+ */
+export const enum NodeType {
+    Variable = 'Variable',
+    Operator = 'Operator',
+    Parenthesis = 'Parenthesis',
+}
+
+/**
+ * Precedence of the operators, larger number means higher precedence.
+ */
 const OPERATOR_PRECEDENCE = {
-    '!': 3,
-    '&&': 2,
-    '||': 1,
+    [OperatorValue.Not]: 3,
+    [OperatorValue.And]: 2,
+    [OperatorValue.Or]: 1,
 };
 
 /**
  * Represents a token in the expression.
  */
+// TODO: Create a separate TokenStream class
 interface Token {
-    type: 'Variable' | 'Operator' | 'Parenthesis';
-    loc: LocationRange;
-    value: string;
+    /**
+     * Token type.
+     */
+    type: number;
+
+    /**
+     * Start offset in the source code.
+     */
+    start: number;
+
+    /**
+     * End offset in the source code.
+     */
+    end: number;
 }
 
 /**
@@ -44,16 +86,18 @@ interface Token {
  * ```
  * this parser will parse the expression `(adguard_ext_android_cb || adguard_ext_safari)`.
  */
+// TODO: Refactor this class
 export class LogicalExpressionParser {
     /**
      * Split the expression into tokens.
      *
      * @param raw Source code of the expression
-     * @param loc Location of the expression
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Token list
      * @throws {AdblockSyntaxError} If the expression is invalid
      */
-    private static tokenize(raw: string, loc: Location = defaultLocation): Token[] {
+    private static tokenize(raw: string, options: Partial<ParserOptions> = {}): Token[] {
+        const { baseLoc } = getParserOptions(options);
         const tokens: Token[] = [];
         let offset = 0;
 
@@ -64,9 +108,6 @@ export class LogicalExpressionParser {
                 // Ignore whitespace
                 offset += 1;
             } else if (StringUtils.isLetter(char)) {
-                // Consume variable name
-                let name = char;
-
                 // Save the start offset of the variable name
                 const nameStart = offset;
 
@@ -77,22 +118,21 @@ export class LogicalExpressionParser {
                     && (StringUtils.isAlphaNumeric(raw[offset + 1]) || raw[offset + 1] === UNDERSCORE)
                 ) {
                     offset += 1;
-                    name += raw[offset];
                 }
 
                 tokens.push({
-                    type: 'Variable',
-                    value: name,
-                    loc: locRange(loc, nameStart, offset + 1),
+                    type: TokenType.Variable,
+                    start: nameStart,
+                    end: offset + 1,
                 });
 
                 offset += 1;
             } else if (char === OPEN_PARENTHESIS || char === CLOSE_PARENTHESIS) {
                 // Parenthesis
                 tokens.push({
-                    type: 'Parenthesis',
-                    value: char,
-                    loc: locRange(loc, offset, offset + 1),
+                    type: TokenType.Parenthesis,
+                    start: offset,
+                    end: offset + 1,
                 });
 
                 offset += 1;
@@ -100,30 +140,30 @@ export class LogicalExpressionParser {
                 // Parse operator
                 if (offset + 1 < raw.length && raw[offset + 1] === char) {
                     tokens.push({
-                        type: 'Operator',
-                        value: char + char,
-                        loc: locRange(loc, offset, offset + 2),
+                        type: TokenType.Operator,
+                        start: offset,
+                        end: offset + 2,
                     });
 
                     offset += 2;
                 } else {
                     throw new AdblockSyntaxError(
                         `Unexpected character "${char}"`,
-                        locRange(loc, offset, offset + 1),
+                        locRange(baseLoc, offset, offset + 1),
                     );
                 }
             } else if (char === EXCLAMATION_MARK) {
                 tokens.push({
-                    type: 'Operator',
-                    value: char,
-                    loc: locRange(loc, offset, offset + 1),
+                    type: TokenType.Operator,
+                    start: offset,
+                    end: offset + 1,
                 });
 
                 offset += 1;
             } else {
                 throw new AdblockSyntaxError(
                     `Unexpected character "${char}"`,
-                    locRange(loc, offset, offset + 1),
+                    locRange(baseLoc, offset, offset + 1),
                 );
             }
         }
@@ -135,13 +175,15 @@ export class LogicalExpressionParser {
      * Parses a logical expression.
      *
      * @param raw Source code of the expression
-     * @param loc Location of the expression
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Parsed expression
      * @throws {AdblockSyntaxError} If the expression is invalid
      */
-    public static parse(raw: string, loc: Location = defaultLocation): AnyExpressionNode {
+    // TODO: Create a separate TokenStream class
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyExpressionNode {
         // Tokenize the source (produces an array of tokens)
-        const tokens = LogicalExpressionParser.tokenize(raw, loc);
+        const tokens = LogicalExpressionParser.tokenize(raw, options);
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
 
         // Current token index
         let tokenIndex = 0;
@@ -152,13 +194,13 @@ export class LogicalExpressionParser {
          * @param type Expected token type
          * @returns The consumed token
          */
-        function consume(type: Token['type']): Token {
+        function consume(type: TokenType): Token {
             const token = tokens[tokenIndex];
 
             if (!token) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but reached end of input`,
-                    locRange(loc, 0, raw.length),
+                    locRange(baseLoc, 0, raw.length),
                 );
             }
 
@@ -168,11 +210,7 @@ export class LogicalExpressionParser {
             if (token.type !== type) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but got "${token.type}"`,
-                    // Token location is always shifted, no need locRange
-                    {
-                        start: token.loc.start,
-                        end: token.loc.end,
-                    },
+                    locRange(baseLoc, token.start, token.end),
                 );
             }
 
@@ -187,14 +225,18 @@ export class LogicalExpressionParser {
          * @returns Variable node
          */
         function parseVariable(): ExpressionVariableNode {
-            const token = consume('Variable');
+            const token = consume(TokenType.Variable);
 
-            return {
-                type: 'Variable',
-                // Token location is always shifted, no need locRange
-                loc: token.loc,
-                name: token.value,
+            const result: ExpressionVariableNode = {
+                type: NodeType.Variable,
+                name: raw.slice(token.start, token.end),
             };
+
+            if (isLocIncluded) {
+                result.loc = locRange(baseLoc, token.start, token.end);
+            }
+
+            return result;
         }
 
         /**
@@ -211,12 +253,12 @@ export class LogicalExpressionParser {
             while (tokens[tokenIndex]) {
                 operatorToken = tokens[tokenIndex];
 
-                if (!operatorToken || operatorToken.type !== 'Operator') {
+                if (!operatorToken || operatorToken.type !== TokenType.Operator) {
                     break;
                 }
 
                 // It is safe to cast here, because we already checked the type
-                const operator = operatorToken.value as AnyOperator;
+                const operator = raw.slice(operatorToken.start, operatorToken.end) as AnyOperator;
                 const precedence = OPERATOR_PRECEDENCE[operator];
 
                 if (precedence < minPrecedence) {
@@ -228,17 +270,38 @@ export class LogicalExpressionParser {
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 const right = parseExpression(precedence + 1);
 
-                node = {
-                    type: 'Operator',
-                    // Token location is always shifted, no need locRange
-                    loc: {
-                        start: node.loc?.start ?? operatorToken.loc.start,
-                        end: right.loc?.end ?? operatorToken.loc.end,
-                    },
+                const newNode: AnyExpressionNode = {
+                    type: NodeType.Operator,
                     operator,
                     left: node,
                     right,
                 };
+
+                if (isLocIncluded) {
+                    let start: Location;
+                    let end: Location;
+
+                    if (node.loc) {
+                        // no need to shift the node location, because it's already shifted
+                        start = node.loc.start;
+                    } else {
+                        start = shiftLoc(baseLoc, operatorToken.start);
+                    }
+
+                    if (right.loc) {
+                        // no need to shift the node location, because it's already shifted
+                        end = right.loc.end;
+                    } else {
+                        end = shiftLoc(baseLoc, operatorToken.end);
+                    }
+
+                    newNode.loc = {
+                        start,
+                        end,
+                    };
+                }
+
+                node = newNode;
             }
 
             return node;
@@ -250,16 +313,21 @@ export class LogicalExpressionParser {
          * @returns Parenthesized expression node
          */
         function parseParenthesizedExpression(): ExpressionParenthesisNode {
-            consume('Parenthesis');
+            consume(TokenType.Parenthesis);
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             const expression = parseExpression();
-            consume('Parenthesis');
+            consume(TokenType.Parenthesis);
 
-            return {
-                type: 'Parenthesis',
-                loc: expression.loc,
+            const result: ExpressionParenthesisNode = {
+                type: NodeType.Parenthesis,
                 expression,
             };
+
+            if (isLocIncluded) {
+                result.loc = expression.loc;
+            }
+
+            return result;
         }
 
         /**
@@ -272,31 +340,38 @@ export class LogicalExpressionParser {
             let node: AnyExpressionNode;
 
             const token = tokens[tokenIndex];
+            const value = raw.slice(token.start, token.end);
 
-            if (token.type === 'Variable') {
+            if (token.type === TokenType.Variable) {
                 node = parseVariable();
-            } else if (token.type === 'Operator' && token.value === '!') {
+            } else if (token.type === TokenType.Operator && value === OperatorValue.Not) {
                 tokenIndex += 1;
 
-                const expression = parseExpression(OPERATOR_PRECEDENCE['!']);
+                const expression = parseExpression(OPERATOR_PRECEDENCE[OperatorValue.Not]);
 
                 node = {
-                    type: 'Operator',
-                    // Token location is always shifted, no need locRange
-                    loc: { start: token.loc.start, end: expression.loc?.end ?? token.loc.end },
-                    operator: '!',
+                    type: NodeType.Operator,
+                    operator: OperatorValue.Not,
                     left: expression,
                 };
-            } else if (token.type === 'Parenthesis' && token.value === OPEN_PARENTHESIS) {
+
+                if (isLocIncluded) {
+                    if (expression.loc) {
+                        node.loc = {
+                            start: shiftLoc(baseLoc, token.start),
+                            // no need to shift the node location, because it's already shifted
+                            end: expression.loc.end,
+                        };
+                    } else {
+                        node.loc = locRange(baseLoc, token.start, token.end);
+                    }
+                }
+            } else if (token.type === TokenType.Parenthesis && value === OPEN_PARENTHESIS) {
                 node = parseParenthesizedExpression();
             } else {
                 throw new AdblockSyntaxError(
-                    `Unexpected token "${token.value}"`,
-                    // Token location is always shifted, no need locRange
-                    {
-                        start: token.loc.start,
-                        end: token.loc.end,
-                    },
+                    `Unexpected token "${value}"`,
+                    locRange(baseLoc, token.start, token.end),
                 );
             }
 
@@ -307,12 +382,8 @@ export class LogicalExpressionParser {
 
         if (tokenIndex !== tokens.length) {
             throw new AdblockSyntaxError(
-                `Unexpected token "${tokens[tokenIndex].value}"`,
-                // Token location is always shifted, no need locRange
-                {
-                    start: tokens[tokenIndex].loc.start,
-                    end: tokens[tokenIndex].loc.end,
-                },
+                `Unexpected token "${tokens[tokenIndex].type}"`,
+                locRange(baseLoc, tokens[tokenIndex].start, tokens[tokenIndex].end),
             );
         }
 
@@ -322,27 +393,30 @@ export class LogicalExpressionParser {
     /**
      * Generates a string representation of the logical expression (serialization).
      *
-     * @param ast Expression node
+     * @param node Expression node
      * @returns String representation of the logical expression
      */
-    public static generate(ast: AnyExpressionNode): string {
-        if (ast.type === 'Variable') {
-            return ast.name;
-        } if (ast.type === 'Operator') {
-            const left = LogicalExpressionParser.generate(ast.left);
-            const right = ast.right ? LogicalExpressionParser.generate(ast.right) : undefined;
-            const { operator } = ast;
+    public static generate(node: AnyExpressionNode): string {
+        if (node.type === NodeType.Variable) {
+            return node.name;
+        } if (node.type === NodeType.Operator) {
+            const left = LogicalExpressionParser.generate(node.left);
+            const right = node.right ? LogicalExpressionParser.generate(node.right) : undefined;
+            const { operator } = node;
 
-            if (operator === '!') {
+            // Special case for NOT operator
+            if (operator === OperatorValue.Not) {
                 return `${operator}${left}`;
             }
 
-            const leftString = operator === '||' ? `${left}` : left;
-            const rightString = operator === '||' ? `${right}` : right;
+            // Right operand is required for AND and OR operators
+            if (!right) {
+                throw new Error('Expected right operand');
+            }
 
-            return `${leftString} ${operator} ${rightString}`;
-        } if (ast.type === 'Parenthesis') {
-            const expressionString = LogicalExpressionParser.generate(ast.expression);
+            return `${left} ${operator} ${right}`;
+        } if (node.type === NodeType.Parenthesis) {
+            const expressionString = LogicalExpressionParser.generate(node.expression);
 
             return `(${expressionString})`;
         }

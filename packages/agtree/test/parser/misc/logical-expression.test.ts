@@ -1,6 +1,8 @@
+import { type AnyExpressionNode } from '../../../src/parser/common';
 import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression';
 
 describe('LogicalExpressionParser', () => {
+    // TODO: Refactor to test.each
     test('parse', () => {
         // Wrong operator usage
         expect(() => LogicalExpressionParser.parse('||')).toThrow();
@@ -639,6 +641,24 @@ describe('LogicalExpressionParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        test.each<{ actual: string; expected: AnyExpressionNode }>([
+            {
+                actual: '!a',
+                expected: {
+                    type: 'Operator',
+                    operator: '!',
+                    left: {
+                        type: 'Variable',
+                        name: 'a',
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(LogicalExpressionParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (source: string) => {
             const ast = LogicalExpressionParser.parse(source);
@@ -650,6 +670,7 @@ describe('LogicalExpressionParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('a')).toEqual('a');
         expect(parseAndGenerate('!a')).toEqual('!a');
         expect(parseAndGenerate('!!a')).toEqual('!!a');

@@ -8,9 +8,10 @@ import {
     type AnyRule,
     type InvalidRule,
     RuleCategory,
-    defaultLocation,
+    type EmptyRule,
 } from './common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
+import { getParserOptions, type ParserOptions } from './options';
 
 /**
  * `RuleParser` is responsible for parsing the rules.
@@ -44,10 +45,8 @@ export class RuleParser {
      * mark the rule with the `AdGuard` syntax in this case.
      *
      * @param raw Raw adblock rule
-     * @param tolerant If `true`, then the parser will not throw if the rule is syntactically invalid, instead it will
-     * return an `InvalidRule` object with the error attached to it. Default is `false`.
-     * @param loc Base location of the rule
-     * @returns Adblock rule AST
+     * @param options Parser options. See {@link ParserOptions}.
+     * @returns Adblock rule node
      * @throws If the input matches a pattern but syntactically invalid
      * @example
      * Take a look at the following example:
@@ -77,19 +76,27 @@ export class RuleParser {
      * const ast7 = RuleParser.parse("!#if (adguard)");
      * ```
      */
-    public static parse(raw: string, tolerant = false, loc = defaultLocation): AnyRule {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyRule {
+        const parsedOptions = getParserOptions(options);
+        const { baseLoc, isLocIncluded, tolerant } = parsedOptions;
+
         try {
             // Empty lines / rules (handle it just for convenience)
             if (raw.trim().length === 0) {
-                return {
+                const result: EmptyRule = {
                     type: 'EmptyRule',
-                    loc: locRange(loc, 0, raw.length),
                     raws: {
                         text: raw,
                     },
                     category: RuleCategory.Empty,
                     syntax: AdblockSyntax.Common,
                 };
+
+                if (isLocIncluded) {
+                    result.loc = locRange(baseLoc, 0, raw.length);
+                }
+
+                return result;
             }
 
             // Try to parse the rule with all sub-parsers. If a rule doesn't match
@@ -98,9 +105,9 @@ export class RuleParser {
             // doesn't start with comment marker. But if the rule matches the
             // pattern of a parser, then it will return the AST of the rule, or
             // throw an error if the rule is syntactically invalid.
-            return CommentRuleParser.parse(raw, loc)
-                || CosmeticRuleParser.parse(raw, loc)
-                || NetworkRuleParser.parse(raw, loc);
+            return CommentRuleParser.parse(raw, parsedOptions)
+                || CosmeticRuleParser.parse(raw, parsedOptions)
+                || NetworkRuleParser.parse(raw, parsedOptions);
         } catch (error: unknown) {
             // If tolerant mode is disabled or the error is not known, then simply
             // re-throw the error
@@ -111,7 +118,6 @@ export class RuleParser {
             // Otherwise, return an invalid rule (tolerant mode)
             const result: InvalidRule = {
                 type: 'InvalidRule',
-                loc: locRange(loc, 0, raw.length),
                 raws: {
                     text: raw,
                 },
@@ -128,6 +134,10 @@ export class RuleParser {
             // location of the error to the result
             if (error instanceof AdblockSyntaxError) {
                 result.error.loc = error.loc;
+            }
+
+            if (isLocIncluded) {
+                result.loc = locRange(baseLoc, 0, raw.length);
             }
 
             return result;

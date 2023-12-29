@@ -33,7 +33,7 @@ export class RawFilterListConverter extends ConverterBase {
      */
     public static convertToAdg(rawFilterList: string, tolerant = true): ConversionResult<string> {
         const conversionResult = FilterListConverter.convertToAdg(
-            FilterListParser.parse(rawFilterList, tolerant),
+            FilterListParser.parse(rawFilterList, { tolerant }),
             tolerant,
         );
 

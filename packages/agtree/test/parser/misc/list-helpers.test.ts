@@ -14,7 +14,7 @@ const expectToThrowWhileParse = (
     expected: string,
     separator: CommaSeparator | PipeSeparator = PIPE,
 ): void => {
-    expect(() => parseListItems(actual, separator)).toThrowError(expected);
+    expect(() => parseListItems(actual, { separator })).toThrowError(expected);
 };
 
 describe('common parseListItems', () => {
@@ -132,7 +132,7 @@ describe('common parseListItems', () => {
                 ],
             },
         ])('$actual', ({ actual, expected }) => {
-            expect(parseListItems(actual, PIPE)).toEqual(expected);
+            expect(parseListItems(actual, { separator: PIPE })).toEqual(expected);
         });
     });
 
@@ -233,6 +233,22 @@ describe('common parseListItems', () => {
             ])('$actual', ({ actual, expected }) => {
                 expectToThrowWhileParse(actual, expected, PIPE);
             });
+        });
+    });
+
+    describe('parser options should work as expected', () => {
+        test.each([
+            {
+                actual: 'example.com',
+                expected: [
+                    {
+                        value: 'example.com',
+                        exception: false,
+                    },
+                ],
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(parseListItems(actual, { separator: PIPE, isLocIncluded: false })).toEqual(expected);
         });
     });
 });

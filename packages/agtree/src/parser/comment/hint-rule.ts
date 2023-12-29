@@ -11,14 +11,13 @@ import {
     CommentRuleType,
     type Hint,
     type HintCommentRule,
-    type Location,
     RuleCategory,
-    defaultLocation,
 } from '../common';
 import { HintParser } from './hint';
 import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { getParserOptions, type ParserOptions } from '../options';
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.
@@ -46,12 +45,14 @@ export class HintCommentRuleParser {
      * Parses a raw rule as a hint comment.
      *
      * @param raw Raw rule
-     * @param loc Base location
+     * @param options Parser options. See {@link ParserOptions}.
      * @returns Hint AST or null (if the raw rule cannot be parsed as a hint comment)
      * @throws If the input matches the HINT pattern but syntactically invalid
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints-1}
      */
-    public static parse(raw: string, loc: Location = defaultLocation): HintCommentRule | null {
+    public static parse(raw: string, options: Partial<ParserOptions> = {}): HintCommentRule | null {
+        const { baseLoc, isLocIncluded } = getParserOptions(options);
+
         // Ignore non-hint rules
         if (!HintCommentRuleParser.isHintRule(raw)) {
             return null;
@@ -92,7 +93,7 @@ export class HintCommentRuleParser {
                     if (balance > 1) {
                         throw new AdblockSyntaxError(
                             'Invalid hint: nested parentheses are not allowed',
-                            locRange(loc, hintStartIndex, hintEndIndex),
+                            locRange(baseLoc, hintStartIndex, hintEndIndex),
                         );
                     }
                 } else if (raw[hintEndIndex] === CLOSE_PARENTHESIS && raw[hintEndIndex - 1] !== BACKSLASH) {
@@ -112,7 +113,10 @@ export class HintCommentRuleParser {
             // Parse the hint
             const hint = HintParser.parse(
                 raw.substring(hintStartIndex, hintEndIndex),
-                shiftLoc(loc, hintStartIndex),
+                {
+                    isLocIncluded,
+                    baseLoc: shiftLoc(baseLoc, hintStartIndex),
+                },
             );
 
             hints.push(hint);
@@ -122,13 +126,12 @@ export class HintCommentRuleParser {
         if (hints.length === 0) {
             throw new AdblockSyntaxError(
                 'Empty hint rule',
-                locRange(loc, 0, offset),
+                locRange(baseLoc, 0, offset),
             );
         }
 
-        return {
+        const result: HintCommentRule = {
             type: CommentRuleType.HintCommentRule,
-            loc: locRange(loc, 0, offset),
             raws: {
                 text: raw,
             },
@@ -136,6 +139,12 @@ export class HintCommentRuleParser {
             syntax: AdblockSyntax.Adg,
             children: hints,
         };
+
+        if (isLocIncluded) {
+            result.loc = locRange(baseLoc, 0, offset);
+        }
+
+        return result;
     }
 
     /**

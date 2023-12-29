@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
 
+## Unreleased
+
+### Added
+
+- Integrated `@adguard/css-tokenizer` package.
+- Adjustable syntax parsing. This makes possible to disable parsing of uBO and ABP syntaxes, which can be useful when
+  parsing known-syntax filters.
+- Performance benchmarking.
+
+### Changed
+
+- Reworked CSS parsing. Now it is based on `@adguard/css-tokenizer` package, and only necessary parts of CSS are parsed.
+- Consistent signature for all parser classes: `ParserClass.parse(source, options)`.
+- Location parsing now optional. It can be disabled by passing `isLocIncluded: false` option to the parsers. This
+  reduces memory consumption and improves performance if location is not needed.
+- Modifier node's `modifier` property renamed to `name`.
+- `ScriptletInjectionBodyParser` divided into `AdgScriptletInjectionBodyParser`, `UboScriptletInjectionBodyParser`
+  and `AbpSnippetInjectionBodyParser`.
+
+### Fixed
+
+- HTML rule converter now correctly handles the new `:contains()` syntax.
+- Location handling for `FilterListParser`.
+
+### Removed
+
+- `##^`/`#@#^` and `##+`/`#@#+` from the cosmetic rule separator finder. Instead, `##`/`#@#` is used, and the `^`/`+` is
+  checked in the body parser.
+
 ## 1.1.7 - 2023-11-07
 
 ### Added
