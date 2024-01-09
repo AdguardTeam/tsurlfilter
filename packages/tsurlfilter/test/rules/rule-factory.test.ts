@@ -36,6 +36,17 @@ describe('RuleFactory Builder Test', () => {
         expect(rule!).toBeInstanceOf(HostRule);
     });
 
+    it('should ignore adblock agent rules properly', () => {
+        const rules = [
+            '[Adblock Plus 2.0]',
+            '[Adblock Plus 3.1; AdGuard]',
+        ];
+
+        rules.forEach((rule) => {
+            expect(RuleFactory.createRule(rule, 1)).toBeFalsy();
+        });
+    });
+
     it('check host and network rules recognition', () => {
         let rule;
 

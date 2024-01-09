@@ -1,3 +1,5 @@
+import { CommentRuleParser } from '@adguard/agtree';
+
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
@@ -36,7 +38,7 @@ export class RuleFactory {
         ignoreHost = true,
         silent = true,
     ): IRule | null {
-        if (!text || RuleFactory.isComment(text)) {
+        if (!text || CommentRuleParser.isCommentRule(text)) {
             return null;
         }
 
@@ -113,19 +115,6 @@ export class RuleFactory {
      * @param text
      */
     public static isComment(text: string): boolean {
-        if (text.charAt(0) === '!') {
-            return true;
-        }
-
-        if (text.charAt(0) === '#') {
-            if (text.length === 1) {
-                return true;
-            }
-
-            // Now we should check that this is not a cosmetic rule
-            return !RuleFactory.isCosmetic(text);
-        }
-
-        return false;
+        return CommentRuleParser.isCommentRule(text);
     }
 }
