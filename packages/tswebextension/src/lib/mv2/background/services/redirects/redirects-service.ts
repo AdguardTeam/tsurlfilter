@@ -1,16 +1,23 @@
 import { redirects } from '@adguard/scriptlets';
-import type { Redirects } from '@adguard/scriptlets';
+import type { Redirect, Redirects } from '@adguard/scriptlets';
 import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
 import { logger } from '../../../../common';
 
+const CONTENT_TYPE_SEPARATOR = ';';
+const BASE_64 = 'base64';
+
+type CachedEncodedRedirect = Pick<Redirect, 'contentType' | 'content'>;
+
 /**
  * Service for working with redirects.
  */
 export class RedirectsService {
     redirects: Redirects | null = null;
+
+    encodingCache: Map<string, CachedEncodedRedirect> = new Map();
 
     /**
      * Creates {@link RedirectsService} instance.
@@ -19,6 +26,35 @@ export class RedirectsService {
     constructor(
         private readonly resourcesService: ResourcesService,
     ) {}
+
+    /**
+     * Checks whether content type is base64 encoded.
+     *
+     * @param contentType Content type.
+     * @returns True if content type is base64 encoded.
+     */
+    private static isBase64EncodedContentType = (contentType: string): boolean => {
+        const typeParts = contentType.split(CONTENT_TYPE_SEPARATOR);
+        return typeParts[typeParts.length - 1]?.trim() === BASE_64;
+    };
+
+    /**
+     * Helper method to generate data URL.
+     *
+     * @param contentType Content type of the data.
+     * @param content Content of the data.
+     * @returns Data URL.
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs
+     */
+    private static createDataUrl(contentType: string, content: string): string {
+        let type = contentType;
+
+        if (RedirectsService.isBase64EncodedContentType(contentType)) {
+            type += CONTENT_TYPE_SEPARATOR + BASE_64;
+        }
+
+        return `data:${type},${content}`;
+    }
 
     /**
      * Starts redirects service.
@@ -69,11 +105,25 @@ export class RedirectsService {
 
         // FIXME check on the final response / url / data / blob
 
-        // FIXME also differentiate between already encoded resources and the ones that are not
+        // If the resource 'contentType' ends with ';base64' then its 'content' is already encoded
+        // In this case we can return data url immediately
+        if (RedirectsService.isBase64EncodedContentType(redirectSource.contentType)) {
+            return RedirectsService.createDataUrl(redirectSource.contentType, redirectSource.content);
+        }
 
-        // for non-blocking redirect we return data-url
-        const dataUrl = `data:${redirectSource.contentType}; base64, ${redirectSource.content}`;
-        return dataUrl;
+        // But if content is not encoded yet, we need to encode it and save to cache
+        let encodedRedirect = this.encodingCache.get(redirectSource.title);
+        if (encodedRedirect) {
+            return RedirectsService.createDataUrl(encodedRedirect.contentType, encodedRedirect.content);
+        }
+
+        encodedRedirect = {
+            contentType: redirectSource.contentType,
+            content: btoa(redirectSource.content),
+        };
+
+        this.encodingCache.set(redirectSource.content, encodedRedirect);
+        return RedirectsService.createDataUrl(encodedRedirect.contentType, encodedRedirect.content);
     }
 
     /**
