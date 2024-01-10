@@ -61,19 +61,10 @@ export class RedirectsService {
             return null;
         }
 
-        // if (isBlocking) { FIXME
-        //     // For blocking redirects we generate additional search params.
-        //     const params = this.blockingUrlParams(title, requestUrl);
-        //     return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
-        // }
+        // For blocking redirects we generate additional search params.
+        const params = this.blockingUrlParams(title, requestUrl);
 
-        // FIXME check on the final response / url / data / blob
-
-        // FIXME also differentiate between already encoded resources and the ones that are not
-
-        // for non-blocking redirect we return data-url
-        const dataUrl = `data:${redirectSource.contentType}; base64, ${redirectSource.content}`;
-        return dataUrl;
+        return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
     }
 
     /**
