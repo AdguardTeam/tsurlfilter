@@ -136,6 +136,7 @@ import { HTTPMethod } from '../../../modifiers/method-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
 import { SimpleRegex } from '../../simple-regex';
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
+import { OPTIONS_DELIMITER } from '../../network-rule-options';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -787,9 +788,16 @@ export abstract class DeclarativeRuleConverter {
          * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
          */
         const checkOnlyOneModifier = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            // TODO: Remove small hack with "reparsing" rule to extract only options part.
-            const { options } = NetworkRule.parseRuleText(r.getText());
-            if (options === name.replace('$', '')) {
+            let nameToCheck = name;
+
+            // Remove leading dollar sign, if any
+            if (nameToCheck.startsWith(OPTIONS_DELIMITER)) {
+                nameToCheck = nameToCheck.slice(OPTIONS_DELIMITER.length);
+            }
+
+            // Get all used modifier names from the network rule
+            const optionNames = r.getUsedOptionNames();
+            if (optionNames.size === 1 && optionNames.has(nameToCheck)) {
                 const msg = `Network rule with only one enabled modifier ${name} is not supported: "${rule.getText()}"`;
                 return new UnsupportedModifierError(msg, r);
             }

@@ -1726,7 +1726,8 @@ describe('DeclarativeRuleConverter', () => {
                     responseHeaders: [{
                         header: PERMISSIONS_POLICY_HEADER_NAME,
                         operation: 'append',
-                        value: 'storage-access=(), сamera=()',
+                        // TODO: Add special tokenization for AGTree to handle unescaped commas in some modifier values
+                        value: 'storage-access=()\\, сamera=()',
                     }],
                 },
                 condition: {
