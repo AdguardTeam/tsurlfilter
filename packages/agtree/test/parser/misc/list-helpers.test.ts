@@ -160,6 +160,41 @@ describe('common parseListItems', () => {
             });
         });
 
+        describe('empty items', () => {
+            test.each([
+                {
+                    actual: 'a,,b',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
+                // 1 extra space
+                {
+                    actual: 'a, ,b',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
+                // 2 extra spaces
+                {
+                    actual: 'a,  ,b',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
+                // extra spaces before and after separator
+                {
+                    actual: 'a ,, b',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
+                // extra spaces before and after separator and 1 extra space
+                {
+                    actual: 'a , , b',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
+                {
+                    actual: 'a  ,  ,  b',
+                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                },
+            ])('$actual', ({ actual, expected }) => {
+                expectToThrowWhileParse(actual, expected, COMMA_DOMAIN_LIST_SEPARATOR);
+            });
+        });
+
         describe('value with separator', () => {
             // comma-separated
             test.each([
@@ -182,7 +217,7 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: ',',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                 },
                 {
                     actual: 'example.com,,',
@@ -216,7 +251,7 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: '|',
-                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_END,
+                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                 },
                 {
                     actual: 'head|get|',
@@ -228,7 +263,7 @@ describe('common parseListItems', () => {
                 },
                 {
                     actual: '|dpi|ip',
-                    expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                    expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                 },
             ])('$actual', ({ actual, expected }) => {
                 expectToThrowWhileParse(actual, expected, PIPE);

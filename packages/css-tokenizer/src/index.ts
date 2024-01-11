@@ -18,5 +18,8 @@ export { tokenize } from './css-tokenizer';
 // Extended CSS Tokenizer
 export { tokenizeExtended } from './extended-css-tokenizer';
 
+// Identifier decoder
+export { decodeIdent } from './utils/ident-decoder';
+
 // Version of the library
 export { version } from './version';

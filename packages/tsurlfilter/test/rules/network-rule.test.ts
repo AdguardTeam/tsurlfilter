@@ -246,13 +246,13 @@ describe('NetworkRule constructor', () => {
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=', 0);
-        }).toThrow(new Error('Modifier $domain cannot be empty'));
+        }).toThrow(new Error('At least one domain must be specified'));
     });
 
     it('works when it handles empty domain inside a $domain modifier', () => {
         expect(() => {
             new NetworkRule('||example.org^$domain=example.com|', 0);
-        }).toThrow('Empty domain specified in');
+        }).toThrow('Value list cannot end with a separator');
     });
 
     it('throws error if host rule is provided', () => {

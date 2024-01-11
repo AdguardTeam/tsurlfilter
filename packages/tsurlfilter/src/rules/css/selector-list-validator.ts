@@ -2,7 +2,7 @@
  * @file Selector list validator.
  */
 
-import { tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
+import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 import {
     EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX,
     SUPPORTED_CSS_PSEUDO_CLASSES,
@@ -11,7 +11,6 @@ import {
 } from './known-elements';
 import { getErrorMessage } from '../../common/error';
 import { CssValidationResult } from './css-validation-result';
-import { decodeCSSIdentifier } from './decoders';
 
 /**
  * Does a basic validation of a selector list.
@@ -30,11 +29,16 @@ export const validateSelectorList = (selectorList: string): CssValidationResult 
     };
 
     try {
+        let prevIsDoubleColon = false;
         let prevToken: TokenType | undefined;
         let prevNonWhitespaceToken: TokenType | undefined;
 
         tokenizeExtended(selectorList, (token, start, end) => {
-            if ((token === TokenType.Function || token === TokenType.Ident) && prevToken === TokenType.Colon) {
+            if (
+                (token === TokenType.Function || token === TokenType.Ident)
+                && prevToken === TokenType.Colon
+                && !prevIsDoubleColon
+            ) {
                 // whitespace is NOT allowed between the ':' and the pseudo-class name, like ': active('
                 const name = selectorList.slice(
                     start,
@@ -43,7 +47,7 @@ export const validateSelectorList = (selectorList: string): CssValidationResult 
                 );
 
                 // function name may contain escaped characters, like '\75' instead of 'u', so we need to decode it
-                const decodedName = decodeCSSIdentifier(name);
+                const decodedName = decodeIdent(name);
 
                 if (SUPPORTED_EXT_CSS_PSEUDO_CLASSES.has(decodedName)) {
                     result.isExtendedCss = true;
@@ -61,9 +65,17 @@ export const validateSelectorList = (selectorList: string): CssValidationResult 
                         throw new Error(`Unsupported Extended CSS attribute selector: '${attributeName}'`);
                     }
                 }
+            } else if (token === TokenType.OpenCurlyBracket || token === TokenType.CloseCurlyBracket) {
+                throw new Error('Curly brackets are not allowed in selector lists');
+            } else if (token === TokenType.Comment) {
+                throw new Error('Comments are not allowed in selector lists');
             }
 
             // memorize tokens, we need them later
+            if (token === TokenType.Colon) {
+                prevIsDoubleColon = prevToken === TokenType.Colon;
+            }
+
             prevToken = token;
 
             if (token !== TokenType.Whitespace) {

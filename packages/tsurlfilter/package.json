@@ -87,7 +87,7 @@
   },
   "dependencies": {
     "@adguard/agtree": "^2.0.0",
-    "@adguard/css-tokenizer": "^0.0.1",
+    "@adguard/css-tokenizer": "^0.0.2",
     "@adguard/scriptlets": "^1.9.105",
     "cidr-tools": "^6.4.1",
     "commander": "9.4.1",

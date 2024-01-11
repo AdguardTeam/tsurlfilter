@@ -7,6 +7,8 @@ import { type TokenizerContext } from '../../common/context';
 import { isHexDigit } from '../definitions';
 import { ErrorMessage } from '../../common/enums/error-messages';
 
+export const MAX_HEX_DIGITS = 6;
+
 /**
  * § 4.3.7. Consume an escaped code point
  *
@@ -27,10 +29,13 @@ export const consumeEscapedCodePoint: TokenizerContextFunction = (context: Token
         // as a hexadecimal number.
         let consumedHexDigits = 0;
 
-        while (isHexDigit(context.code) && consumedHexDigits < 5) {
+        while (isHexDigit(context.code) && consumedHexDigits <= MAX_HEX_DIGITS) {
             context.consumeCodePoint();
             consumedHexDigits += 1;
         }
+
+        // If the next input code point is whitespace, consume it as well.
+        context.consumeSingleWhitespace();
 
         // If this number is zero, or is for a surrogate, or is greater than the maximum allowed code point,
         // return U+FFFD REPLACEMENT CHARACTER (�).

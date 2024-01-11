@@ -45,7 +45,7 @@ describe('Start Engine Benchmark', () => {
 
             const engine = new Engine(ruleStorage, false);
             expect(engine).toBeTruthy();
-            expect(engine.getRulesCount()).toEqual(91694);
+            expect(engine.getRulesCount()).toEqual(91688);
         }
 
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);

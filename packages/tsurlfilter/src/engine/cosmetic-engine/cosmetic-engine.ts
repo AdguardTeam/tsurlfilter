@@ -1,6 +1,8 @@
+import { CosmeticRuleType } from '@adguard/agtree';
+
 import { RuleStorage } from '../../filterlist/rule-storage';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
-import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
 import { CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
@@ -80,19 +82,23 @@ export class CosmeticEngine {
      */
     public addRule(rule: CosmeticRule, storageIdx: number): void {
         switch (rule.getType()) {
-            case CosmeticRuleType.ElementHiding: {
+            case CosmeticRuleType.ElementHidingRule: {
                 this.elementHidingLookupTable.addRule(rule, storageIdx);
                 break;
             }
-            case CosmeticRuleType.Css: {
+            case CosmeticRuleType.CssInjectionRule: {
                 this.cssLookupTable.addRule(rule, storageIdx);
                 break;
             }
-            case CosmeticRuleType.Js: {
+            case CosmeticRuleType.ScriptletInjectionRule: {
                 this.jsLookupTable.addRule(rule, storageIdx);
                 break;
             }
-            case CosmeticRuleType.Html: {
+            case CosmeticRuleType.JsInjectionRule: {
+                this.jsLookupTable.addRule(rule, storageIdx);
+                break;
+            }
+            case CosmeticRuleType.HtmlFilteringRule: {
                 this.htmlLookupTable.addRule(rule, storageIdx);
                 break;
             }

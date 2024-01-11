@@ -1,12 +1,17 @@
 import scriptlets from '@adguard/scriptlets';
 
 import { logger } from '../utils/logger';
-import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { SimpleRegex } from './simple-regex';
 import { OPTIONS_DELIMITER } from './network-rule-options';
 import { parseOptionsString } from '../utils/parse-options-string';
 import { RuleFactory } from './rule-factory';
+import { SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS, SUPPORTED_EXT_CSS_PSEUDO_CLASSES } from './css/known-elements';
+
+const EXT_CSS_PSEUDO_INDICATORS = [
+    ...Array.from(SUPPORTED_EXT_CSS_PSEUDO_CLASSES, (x) => `:${x}(`),
+    ...Array.from(SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS, (x) => `[${x}=`),
+];
 
 /**
  * Rule converter class

@@ -1,3 +1,5 @@
+import { SPACE } from '../common/constants';
+
 /**
  * Splits the string by the delimiter, ignoring escaped delimiters
  * and without tokenizing.
@@ -247,4 +249,35 @@ export function stringArraysHaveIntersection(left: string[] | null, right: strin
     }
 
     return false;
+}
+
+/**
+ * Checks if string contains spaces
+ *
+ * @param str String to check
+ * @returns `true` if string contains spaces, `false` otherwise
+ */
+export function hasSpaces(str: string): boolean {
+    return str.includes(SPACE);
+}
+
+/**
+ * Check if the given value is a string
+ *
+ * @param value Value to check
+ * @returns `true` if value is a string, `false` otherwise
+ */
+export function isString(value: unknown): value is string {
+    return typeof value === 'string';
+}
+
+/**
+ * Unescapes the specified character in the string
+ *
+ * @param str String to escape
+ * @param char Character to escape
+ * @returns The string with the specified character unescaped
+ */
+export function unescapeChar(str: string, char: string): string {
+    return str.replace(`\\${char}`, char);
 }

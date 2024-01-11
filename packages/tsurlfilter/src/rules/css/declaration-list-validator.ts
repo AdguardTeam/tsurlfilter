@@ -2,11 +2,10 @@
  * @file Declaration list validator.
  */
 
-import { tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
+import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 import { FORBIDDEN_CSS_FUNCTIONS } from './known-elements';
 import { getErrorMessage } from '../../common/error';
 import { CssValidationResult } from './css-validation-result';
-import { decodeCSSIdentifier } from './decoders';
 
 const REMOVE_PROPERTY = 'remove';
 const REMOVE_LENGTH = REMOVE_PROPERTY.length;
@@ -19,7 +18,7 @@ const REMOVE_LENGTH = REMOVE_PROPERTY.length;
  */
 const checkFunctionName = (functionName: string): void => {
     // function name may contain escaped characters, like '\75' instead of 'u', so we need to decode it
-    const decodedFunctionName = decodeCSSIdentifier(functionName);
+    const decodedFunctionName = decodeIdent(functionName);
 
     if (FORBIDDEN_CSS_FUNCTIONS.has(decodedFunctionName)) {
         throw new Error(`Using '${decodedFunctionName}()' is not allowed`);
@@ -46,6 +45,7 @@ export const validateDeclarationList = (declarationList: string): CssValidationR
             switch (token) {
                 // Special case: according to CSS specs, sometimes url() is handled as a separate token type
                 case TokenType.Url:
+                case TokenType.BadUrl:
                     throw new Error("Using 'url()' is not allowed");
                 case TokenType.Function:
                     // we need -1 to exclude closing bracket, because function tokens look like 'func('
@@ -56,11 +56,13 @@ export const validateDeclarationList = (declarationList: string): CssValidationR
                     if (end - start === REMOVE_LENGTH) {
                         // TODO: Improve this check, and check the whole `remove: true` sequence.
                         // Please note that the `remove : true` case also valid.
-                        if (decodeCSSIdentifier(declarationList.slice(start, end)) === REMOVE_PROPERTY) {
+                        if (decodeIdent(declarationList.slice(start, end)) === REMOVE_PROPERTY) {
                             result.isExtendedCss = true;
                         }
                     }
                     break;
+                case TokenType.Comment:
+                    throw new Error('Comments are not allowed in declaration lists');
                 default:
                     break;
             }

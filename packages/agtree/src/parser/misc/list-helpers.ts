@@ -27,6 +27,7 @@ export const LIST_PARSE_ERROR_PREFIX = {
     EMPTY_ITEM: 'Empty value specified in the list',
     NO_MULTIPLE_NEGATION: 'Exception marker cannot be followed by another exception marker',
     NO_SEPARATOR_AFTER_NEGATION: 'Exception marker cannot be followed by a separator',
+    NO_SEPARATOR_AT_THE_BEGINNING: 'Value list cannot start with a separator',
     NO_SEPARATOR_AT_THE_END: 'Value list cannot end with a separator',
     NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
 };
@@ -52,6 +53,20 @@ export const parseListItems = (raw: string, options: Partial<ListParserOptions> 
     const { baseLoc, isLocIncluded } = getParserOptions(options);
     const rawListItems: ListItemNoType[] = [];
 
+    let offset = 0;
+
+    // Skip whitespace before the list
+    offset = StringUtils.skipWS(raw, offset);
+
+    // If the first character is a separator, then the list is invalid
+    // and no need to continue parsing
+    if (raw[offset] === separator) {
+        throw new AdblockSyntaxError(
+            LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
+            locRange(baseLoc, offset, raw.length),
+        );
+    }
+
     // If the last character is a separator, then the list item is invalid
     // and no need to continue parsing
     const realEndIndex = StringUtils.skipWSBack(raw);
@@ -62,11 +77,6 @@ export const parseListItems = (raw: string, options: Partial<ListParserOptions> 
             locRange(baseLoc, realEndIndex, realEndIndex + 1),
         );
     }
-
-    let offset = 0;
-
-    // Skip whitespace before the list
-    offset = StringUtils.skipWS(raw, offset);
 
     // Split list items by unescaped separators
     while (offset < raw.length) {
@@ -116,7 +126,9 @@ export const parseListItems = (raw: string, options: Partial<ListParserOptions> 
         }
 
         // List item can't be empty
-        if (itemStart === itemEnd) {
+        // Note we use '<=' instead of '===' because we have bidirectional trim
+        // This is needed to handle cases like 'example.com, ,example.org'
+        if (itemEnd <= itemStart) {
             throw new AdblockSyntaxError(
                 LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                 locRange(baseLoc, itemStart, raw.length),

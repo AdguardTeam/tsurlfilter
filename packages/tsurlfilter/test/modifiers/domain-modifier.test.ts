@@ -131,17 +131,20 @@ describe('Domain modifier', () => {
 
     describe('constructor and invalid domains', () => {
         const COMMA_SEPARATOR = ',';
-        const EMPTY_DOMAIN_ERROR = 'Empty domain specified in';
-        const STARTS_WITH_SEPARATOR_ERROR = `Modifier $domain cannot start with "${COMMA_SEPARATOR}"`;
+        const NO_DOMAINS_ERROR = 'At least one domain must be specified';
+        const EMPTY_DOMAIN_ERROR = 'Empty value specified in the list';
+        const STARTS_WITH_SEPARATOR_ERROR = 'Value list cannot start with a separator';
+        const ENDS_WITH_SEPARATOR_ERROR = 'Value list cannot end with a separator';
         const HAS_INVALID_WILDCARD = 'Wildcards are only supported for top-level domains:';
+        const SPACE_AFTER_EXCEPTION_ERROR = 'Exception marker cannot be followed by whitespace';
         const invalidCases = [
             {
                 actual: '',
-                error: 'Modifier $domain cannot be empty',
+                error: NO_DOMAINS_ERROR,
             },
             {
                 actual: ' ',
-                error: EMPTY_DOMAIN_ERROR,
+                error: NO_DOMAINS_ERROR,
             },
             {
                 actual: '~',
@@ -149,15 +152,19 @@ describe('Domain modifier', () => {
             },
             {
                 actual: '~  ,',
-                error: EMPTY_DOMAIN_ERROR,
+                error: ENDS_WITH_SEPARATOR_ERROR,
+            },
+            {
+                actual: '~ example.com',
+                error: SPACE_AFTER_EXCEPTION_ERROR,
             },
             {
                 actual: 'example.com,',
-                error: EMPTY_DOMAIN_ERROR,
+                error: ENDS_WITH_SEPARATOR_ERROR,
             },
             {
                 actual: 'example.com, ',
-                error: EMPTY_DOMAIN_ERROR,
+                error: ENDS_WITH_SEPARATOR_ERROR,
             },
             {
                 actual: 'example.com,,example.org',

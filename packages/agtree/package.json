@@ -103,7 +103,7 @@
         "yaml-jest-transform": "^2.0.2"
     },
     "dependencies": {
-        "@adguard/css-tokenizer": "^0.0.1",
+        "@adguard/css-tokenizer": "^0.0.2",
         "@adguard/ecss-tree": "^1.0.8",
         "@adguard/scriptlets": "^1.9.61",
         "clone-deep": "^4.0.1",
