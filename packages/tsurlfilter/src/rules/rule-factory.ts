@@ -1,4 +1,9 @@
-import { CommentRuleParser } from '@adguard/agtree';
+import {
+    AnyRule,
+    CommentRuleParser,
+    RuleCategory,
+    RuleParser,
+} from '@adguard/agtree';
 
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
@@ -13,12 +18,34 @@ import { getErrorMessage } from '../common/error';
  */
 export class RuleFactory {
     /**
+     * Helper method to get the rule node.
+     *
+     * @param input Rule, can be either a string or a {@link NetworkRuleNode}.
+     * @returns Rule node.
+     */
+    public static getRuleNode(input: string | AnyRule): AnyRule {
+        let node: AnyRule;
+        if (typeof input === 'string') {
+            node = RuleParser.parse(input.trim(), {
+                isLocIncluded: false,
+                parseAbpSpecificRules: false,
+                parseUboSpecificRules: false,
+                // FIXME: ignore comments here
+            });
+        } else {
+            node = input;
+        }
+
+        return node;
+    }
+
+    /**
      * Creates rule of suitable class from text string
      * It returns null if the line is empty or if it is a comment
      *
      * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
      *
-     * @param text rule string
+     * @param input rule text or {@link AnyRule}
      * @param filterListId list id
      * @param ignoreNetwork do not create network rules
      * @param ignoreCosmetic do not create cosmetic rules
@@ -31,44 +58,50 @@ export class RuleFactory {
      * @return IRule object or null
      */
     public static createRule(
-        text: string,
+        input: AnyRule | string,
         filterListId: number,
         ignoreNetwork = false,
         ignoreCosmetic = false,
         ignoreHost = true,
         silent = true,
     ): IRule | null {
-        if (!text || CommentRuleParser.isCommentRule(text)) {
+        const node = RuleFactory.getRuleNode(input);
+
+        if (
+            node.category === RuleCategory.Comment // FIXME
+            || node.category === RuleCategory.Empty
+            || node.category === RuleCategory.Invalid
+        ) {
             return null;
         }
 
-        if (RuleFactory.isShort(text)) {
-            logger.info(`The rule is too short: ${text}`);
-        }
-
-        const line = text.trim();
+        // FIXME:
+        // if (RuleFactory.isShort(text)) {
+        //     logger.info(`The rule is too short: ${text}`);
+        // }
 
         try {
-            if (RuleFactory.isCosmetic(line)) {
+            if (node.category === RuleCategory.Cosmetic) {
                 if (ignoreCosmetic) {
                     return null;
                 }
 
-                return new CosmeticRule(line, filterListId);
+                return new CosmeticRule(node, filterListId);
             }
 
-            if (!ignoreHost) {
-                const hostRule = RuleFactory.createHostRule(line, filterListId);
-                if (hostRule) {
-                    return hostRule;
-                }
-            }
+            // FIXME
+            // if (!ignoreHost) {
+            //     const hostRule = RuleFactory.createHostRule(line, filterListId);
+            //     if (hostRule) {
+            //         return hostRule;
+            //     }
+            // }
 
             if (!ignoreNetwork) {
-                return new NetworkRule(line, filterListId);
+                return new NetworkRule(node, filterListId);
             }
         } catch (e) {
-            const msg = `"${getErrorMessage(e)}" in the rule: "${line}"`;
+            const msg = `"${getErrorMessage(e)}" in the rule: "${node}"`; // FIXME
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {

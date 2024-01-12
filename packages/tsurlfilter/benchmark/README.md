@@ -1,12 +1,12 @@
 # Adblock Filter List Parser Benchmark
 
-This benchmark serves as a tool for evaluating the performance of Adblock Filter List parsers.
+This benchmark serves as a tool for evaluating the performance of rule creation by various TSUrlFilter versions.
 
 The benchmark results can be found in [`benchmark/RESULTS.md`][results].
 
 ## Usage
 
-Build AGTree in the parent directory:
+Build TSUrlFilter in the parent directory:
 
 ```sh
 yarn build

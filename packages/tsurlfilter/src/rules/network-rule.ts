@@ -1,5 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
-import { ModifierList, NetworkRuleParser } from '@adguard/agtree';
+import { ModifierList, NetworkRuleParser, NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
@@ -994,17 +994,35 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Helper method to get the rule node.
+     *
+     * @param input Rule, can be either a string or a {@link NetworkRuleNode}.
+     * @returns Rule node.
+     */
+    public static getNetworkRuleNode(input: string | NetworkRuleNode): NetworkRuleNode {
+        let node: NetworkRuleNode;
+        if (typeof input === 'string') {
+            node = NetworkRuleParser.parse(input.trim(), { isLocIncluded: false });
+        } else {
+            node = input;
+        }
+
+        return node;
+    }
+
+    /**
      * Creates an instance of the {@link NetworkRule}.
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param ruleText - original rule text.
+     * @param input - rule text or {@link NetworkRuleNode}.
      * @param filterListId - ID of the filter list this rule belongs to.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
-        const node = NetworkRuleParser.parse(ruleText.trim(), { isLocIncluded: false });
+    constructor(input: NetworkRuleNode | string, filterListId: number) {
+        const node = NetworkRule.getNetworkRuleNode(input);
+
         // Raw rule text definitely present here
         this.ruleText = node.raws!.text!;
 
@@ -1021,7 +1039,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (this.ruleText.length < NetworkRule.MIN_RULE_LENGTH) {
-            throw new SyntaxError(`The rule must be of length ${NetworkRule.MIN_RULE_LENGTH} or more: "${ruleText}"`);
+            throw new SyntaxError(`The rule must be of length ${NetworkRule.MIN_RULE_LENGTH} or more: "${input}"`);
         }
 
         this.calculatePriorityWeight();

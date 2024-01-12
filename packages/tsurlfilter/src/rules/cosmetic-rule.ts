@@ -316,6 +316,34 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
+     * Helper method to get the rule node.
+     *
+     * @param input Rule, can be either a string or a {@link AnyCosmeticRule}.
+     * @returns Rule node.
+     * @throws Error if the rule is not a valid cosmetic rule.
+     */
+    public static getCosmeticRuleNode(input: string | AnyCosmeticRule): AnyCosmeticRule {
+        let node: AnyCosmeticRule;
+        if (typeof input === 'string') {
+            const parsedNode = CosmeticRuleParser.parse(input.trim(), {
+                isLocIncluded: false,
+                parseAbpSpecificRules: false,
+                parseUboSpecificRules: false,
+            });
+
+            if (!parsedNode) {
+                throw new SyntaxError('Not a cosmetic rule');
+            }
+
+            node = parsedNode;
+        } else {
+            node = input;
+        }
+
+        return node;
+    }
+
+    /**
      * Helper method to get the rule's raws. If the rule has its own raws, then
      * they are returned without any computation. Otherwise, the raws are generated
      * from the rule node, because we need the whole rule text & body text.
@@ -611,39 +639,41 @@ export class CosmeticRule implements rule.IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param ruleText - original rule text.
+     * @param input - rule text or {@link AnyCosmeticRule}.
      * @param filterListId - ID of the filter list this rule belongs to.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(input: AnyCosmeticRule | string, filterListId: number) {
         // Parse the rule and get the raws
-        const { ruleNode, ruleRaws } = CosmeticRule.getRuleNodeAndRaws(ruleText.trim());
+        // const { ruleNode, ruleRaws } = CosmeticRule.getRuleNodeAndRaws(ruleText.trim());
+        const node = CosmeticRule.getCosmeticRuleNode(input);
+        const ruleRaws = CosmeticRule.getRuleRaws(node);
 
         this.filterListId = filterListId;
 
         this.ruleText = ruleRaws.ruleText;
         this.content = ruleRaws.bodyText;
 
-        this.allowlist = CosmeticRuleSeparatorUtils.isException(ruleNode.separator.value as CosmeticRuleSeparator);
-        this.type = ruleNode.type;
-        this.isScriptlet = ruleNode.type === CosmeticRuleType.ScriptletInjectionRule;
+        this.allowlist = CosmeticRuleSeparatorUtils.isException(node.separator.value as CosmeticRuleSeparator);
+        this.type = node.type;
+        this.isScriptlet = node.type === CosmeticRuleType.ScriptletInjectionRule;
 
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
-        if (ruleNode.type === CosmeticRuleType.ScriptletInjectionRule) {
+        if (node.type === CosmeticRuleType.ScriptletInjectionRule) {
             // Perform some quick checks just in case
-            if (ruleNode.body.children.length !== 1 || ruleNode.body.children[0].children.length < 1) {
+            if (node.body.children.length !== 1 || node.body.children[0].children.length < 1) {
                 throw new SyntaxError('Scriptlet rule should have at least one parameter');
             }
 
             // Transform complex node into a simple array of strings
-            this.scriptletParams = ruleNode.body.children[0].children.map(
+            this.scriptletParams = node.body.children[0].children.map(
                 ({ value }) => QuoteUtils.removeQuotes(value),
             );
         }
 
-        const validationResult = CosmeticRule.validate(ruleNode);
+        const validationResult = CosmeticRule.validate(node);
 
         // We should throw an error if the validation failed for any reason
         if (!validationResult.isValid) {
@@ -652,13 +682,13 @@ export class CosmeticRule implements rule.IRule {
 
         // Check if the rule is ExtendedCss
         const isExtendedCssSeparator = CosmeticRuleSeparatorUtils.isExtendedCssMarker(
-            ruleNode.separator.value as CosmeticRuleSeparator,
+            node.separator.value as CosmeticRuleSeparator,
         );
 
         this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
 
         // Process cosmetic rule modifiers
-        const { domainModifier, pathModifier, urlModifier } = CosmeticRule.processModifiers(ruleNode);
+        const { domainModifier, pathModifier, urlModifier } = CosmeticRule.processModifiers(node);
 
         if (domainModifier) {
             this.domainModifier = domainModifier;
@@ -673,7 +703,7 @@ export class CosmeticRule implements rule.IRule {
         }
 
         // Process domain list, if at least one domain is specified
-        const { domains: domainListNode } = ruleNode;
+        const { domains: domainListNode } = node;
 
         if (CosmeticRule.isAnyDomainSpecified(domainListNode)) {
             this.domainModifier = new DomainModifier(domainListNode, COMMA_DOMAIN_LIST_SEPARATOR);
