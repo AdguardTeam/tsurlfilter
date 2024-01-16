@@ -174,6 +174,10 @@ export class Engine {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 
+    finalize(): void {
+        this.networkEngine.finalize();
+    }
+
     /**
      * Adds rules to engines
      *

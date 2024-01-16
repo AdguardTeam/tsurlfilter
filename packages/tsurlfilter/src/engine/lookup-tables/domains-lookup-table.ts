@@ -4,6 +4,7 @@ import { Request } from '../../request';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../../rules/network-rule';
+import { BinaryMap } from '../../utils/binary-map';
 
 /**
  * Domain lookup table. Key is the domain name hash.
@@ -17,7 +18,7 @@ export class DomainsLookupTable implements ILookupTable {
     /**
      * Domain lookup table. Key is the domain name hash.
      */
-    private readonly domainsLookupTable = new Map<number, number[]>();
+    private domainsLookupTable = new Map<number, number[]>();
 
     /**
      * Storage for the network filtering rules
@@ -103,5 +104,10 @@ export class DomainsLookupTable implements ILookupTable {
         }
 
         return result;
+    }
+
+    finalize(): void {
+        // TODO: fix typing
+        this.domainsLookupTable = new BinaryMap(this.domainsLookupTable) as unknown as Map<number, number[]>;
     }
 }

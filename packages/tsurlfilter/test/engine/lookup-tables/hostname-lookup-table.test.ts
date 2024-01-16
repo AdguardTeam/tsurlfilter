@@ -39,6 +39,7 @@ describe('Hostname Lookup Table Tests', () => {
         const table = new HostnameLookupTable(ruleStorage);
 
         fillLookupTable(table, ruleStorage);
+        table.finalize();
         expect(table.getRulesCount()).toBe(2);
 
         expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);

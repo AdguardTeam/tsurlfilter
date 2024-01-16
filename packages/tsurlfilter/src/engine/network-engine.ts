@@ -26,7 +26,7 @@ export class NetworkEngine {
     /**
      * Domain lookup table. Key is the domain name hash.
      */
-    private readonly domainsLookupTable: ILookupTable;
+    private readonly domainsLookupTable: DomainsLookupTable;
 
     /**
      * Lookup table that relies on the rule shortcuts to speed up the search.
@@ -36,7 +36,7 @@ export class NetworkEngine {
     /**
      * Lookup table for rules like '||hostname^' or '||hostname/path'
      */
-    private readonly hostnameLookupTable: ILookupTable;
+    private readonly hostnameLookupTable: HostnameLookupTable;
 
     /**
      * Rules for which we could not find a shortcut and could not place it to the shortcuts lookup table.
@@ -123,5 +123,10 @@ export class NetworkEngine {
         }
 
         this.rulesCount += 1;
+    }
+
+    public finalize(): void {
+        this.domainsLookupTable.finalize();
+        this.hostnameLookupTable.finalize();
     }
 }

@@ -4,6 +4,7 @@ import { Request } from '../../request';
 import { NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
+import { BinaryMap } from '../../utils/binary-map';
 
 /**
  * Hostname lookup table.
@@ -18,7 +19,7 @@ export class HostnameLookupTable implements ILookupTable {
     /**
      * Domain lookup table. Key is the domain name hash.
      */
-    private readonly hostnameLookupTable = new Map<number, number[]>();
+    private hostnameLookupTable = new Map<number, number[]>();
 
     /**
      * Storage for the network filtering rules
@@ -121,5 +122,10 @@ export class HostnameLookupTable implements ILookupTable {
         }
 
         return true;
+    }
+
+    finalize(): void {
+        // TODO: fix typing
+        this.hostnameLookupTable = new BinaryMap(this.hostnameLookupTable) as unknown as Map<number, number[]>;
     }
 }

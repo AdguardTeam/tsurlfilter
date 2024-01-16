@@ -203,6 +203,11 @@ describe('Benchmarks', () => {
         const ruleStorage = new RuleStorage([list]);
 
         const engine = new NetworkEngine(ruleStorage);
+
+        const startSerialization = Date.now();
+        engine.finalize();
+        console.log(`Elapsed on serialization: ${Date.now() - startSerialization}`);
+
         expect(engine).toBeTruthy();
 
         console.log(`Loaded rules: ${engine.rulesCount}`);
