@@ -13,7 +13,6 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Adjustable syntax parsing. This makes possible to disable parsing of uBO and ABP syntaxes, which can be useful when
   parsing known-syntax filters.
 - Performance benchmarking.
-- Protected Audience API directives to `$permissions` modifier validator
 
 ### Changed
 
