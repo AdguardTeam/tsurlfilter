@@ -377,6 +377,12 @@ describe('NetworkRule constructor', () => {
         }).not.toThrow();
     });
 
+    it('allows and converts pipe separator in $permissions modifier values', () => {
+        const rule = new NetworkRule('||example.org$permissions=permissions=oversized-images=()|clipboard-read=(self)', 0);
+        const expectedValue = 'permissions=oversized-images=(),clipboard-read=(self)';
+        expect(rule.getAdvancedModifierValue()).toBe(expectedValue);
+    });
+
     it('thorws error if $to modifier value is invalid', () => {
         expect(() => {
             new NetworkRule('||*/ads^$to=evil.com', 0);
