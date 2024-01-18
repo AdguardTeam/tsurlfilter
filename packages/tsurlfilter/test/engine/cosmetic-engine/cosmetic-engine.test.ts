@@ -331,6 +331,27 @@ describe('Test cosmetic engine - JS rules', () => {
         expect(result.JS.specific.length).toBe(0);
         expect(result.JS.generic.length).toBe(0);
     });
+
+    describe('scriptlets exceptions', () => {
+        // FIXME add test for allowlist scriptlet with name,
+        //  which should disable only corresponding scriptlets
+        it('generic #@%#//scriptlet() disables all scriptlet rules', () => {
+            const allowlistScriptletRule = '#@%#//scriptlet()';
+            const specificScriptletRule = "example.org#%#//scriptlet('set-cookie', 'adcook2', '2')";
+            const genericScriptletRule = "#%#//scriptlet('set-local-storage-item', 'aditem1', '1')";
+            const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+                allowlistScriptletRule,
+                specificScriptletRule,
+                genericScriptletRule,
+            ]));
+
+            const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+
+            // FIXME consider to print in log that scriptlet rules were disabled
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+    });
 });
 
 describe('Test cosmetic engine - HTML filtering rules', () => {
