@@ -802,6 +802,7 @@ describe('ModifierValidator', () => {
                         'permissions=geolocation=("https://example.com"  "https://*.example.com")',
                         // multiple permissions
                         'permissions=storage-access=()\\, camera=()',
+                        'permissions=join-ad-interest-group=()\\, run-ad-auction=()\\, browsing-topics=()',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
