@@ -19,12 +19,14 @@ export class HostnameLookupTable implements ILookupTable {
     /**
      * Domain lookup table. Key is the domain name hash.
      */
-    private hostnameLookupTable = new Map<number, number[]>();
+    private hostnameLookupTable = new Map<number, number>();
 
     /**
      * Storage for the network filtering rules
      */
     private readonly ruleStorage: RuleStorage;
+
+    private ruleIndexesArray: number[][] = [];
 
     /**
      * Creates a new instance
@@ -64,12 +66,17 @@ export class HostnameLookupTable implements ILookupTable {
         }
 
         const hash = fastHash(hostname);
-        let rulesIndexes = this.hostnameLookupTable.get(hash);
-        if (!rulesIndexes) {
-            rulesIndexes = new Array<number>();
-            this.hostnameLookupTable.set(hash, rulesIndexes);
+
+        // Add the rule to the lookup table
+        const ruleIndexesArrayIndex = this.hostnameLookupTable.get(hash);
+
+        if (ruleIndexesArrayIndex === undefined) {
+            this.ruleIndexesArray.push([storageIdx]);
+            this.hostnameLookupTable.set(hash, this.ruleIndexesArray.length - 1);
+        } else {
+            this.ruleIndexesArray[ruleIndexesArrayIndex].push(storageIdx);
         }
-        rulesIndexes.push(storageIdx);
+
         this.rulesCount += 1;
         return true;
     }
@@ -90,8 +97,9 @@ export class HostnameLookupTable implements ILookupTable {
         const domains = request.subdomains;
         for (let i = 0; i < domains.length; i += 1) {
             const hash = fastHash(domains[i]);
-            const rulesIndexes = this.hostnameLookupTable.get(hash);
-            if (rulesIndexes) {
+            const rulesIndexesArrayIndex = this.hostnameLookupTable.get(hash);
+            if (rulesIndexesArrayIndex !== undefined) {
+                const rulesIndexes = this.ruleIndexesArray[rulesIndexesArrayIndex];
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
                     const rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
                     if (rule && rule.match(request)) {
@@ -126,6 +134,6 @@ export class HostnameLookupTable implements ILookupTable {
 
     finalize(): void {
         // TODO: fix typing
-        this.hostnameLookupTable = new BinaryMap(this.hostnameLookupTable) as unknown as Map<number, number[]>;
+        this.hostnameLookupTable = new BinaryMap(this.hostnameLookupTable) as unknown as Map<number, number>;
     }
 }

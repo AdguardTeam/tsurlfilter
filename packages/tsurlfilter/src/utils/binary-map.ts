@@ -13,9 +13,7 @@ export class BinaryMap {
     public keys: Uint32Array;
 
     // Map values
-    // TODO: Will be replaced with dynamic byte buffer in future
-    // TODO: store indexes to separate array in fixed size Uint32Array;
-    public values: number[][] = [];
+    public values: Uint32Array;
 
     // Buckets that store entries positions for each hash
     // TODO: Will be replaced with dynamic byte buffer in future
@@ -24,10 +22,11 @@ export class BinaryMap {
     // Store mapping between hashes and positions of buckets.
     public lookupIndex: Uint32Array;
 
-    constructor(map: Map<number, number[]>) {
+    constructor(map: Map<number, number>) {
         this.size = map.size;
         this.lookupIndex = new Uint32Array(this.size).fill(BinaryMap.EMPTY_POSITION);
         this.keys = new Uint32Array(this.size);
+        this.values = new Uint32Array(this.size);
 
         /**
          * Temporary structure to map hashes with matched values
@@ -64,7 +63,7 @@ export class BinaryMap {
         });
     }
 
-    public get(input: number): number[] | undefined {
+    public get(input: number): number | undefined {
         // Get the bucket position
         const hash = input % this.size;
         const bucketPosition = this.lookupIndex[hash];
