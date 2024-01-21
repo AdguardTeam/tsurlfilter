@@ -15,12 +15,11 @@ export class BinaryMap {
     // Map values
     public values: Uint32Array;
 
-    // Buckets that store entries positions for each hash
-    // TODO: Will be replaced with dynamic byte buffer in future
-    public buckets: number[][] = [];
-
     // Store mapping between hashes and positions of buckets.
     public lookupIndex: Uint32Array;
+
+    // Buckets that store values positions for each hash
+    public buckets: Uint32Array;
 
     constructor(map: Map<number, number>) {
         this.size = map.size;
@@ -30,9 +29,9 @@ export class BinaryMap {
 
         /**
          * Temporary structure to map hashes with matched values
-         * Will be replaced with {@link lookupIndex} and dynamic array of bucket values
+         * Will be replaced with {@link lookupIndex} and {@link buckets}
          */
-        const buckets: Map<number, number[]> = new Map();
+        const bucketsMap: Map<number, number[]> = new Map();
 
         let cursor = 0;
 
@@ -43,24 +42,35 @@ export class BinaryMap {
             const hash = key % this.size;
 
             // Add the key hash to the buckets
-            if (!buckets.has(hash)) {
-                buckets.set(hash, []);
+            if (!bucketsMap.has(hash)) {
+                bucketsMap.set(hash, []);
             }
 
             // Map key position with hash
-            buckets.get(hash)!.push(cursor);
+            bucketsMap.get(hash)!.push(cursor);
             cursor += 1;
         });
 
         // Reserve space for 'undefined' value
         cursor = 1;
 
-        buckets.forEach((value, key) => {
-            this.buckets[cursor] = value;
-            // Map bucket position with hash
-            this.lookupIndex[key] = cursor;
+        const buckets: number[] = [];
+
+        bucketsMap.forEach((value, key) => {
+            const position = cursor;
+            buckets[cursor] = value.length;
             cursor += 1;
+
+            value.forEach((element) => {
+                buckets[cursor] = element;
+                cursor += 1;
+            });
+
+            // Map bucket position with hash
+            this.lookupIndex[key] = position;
         });
+
+        this.buckets = new Uint32Array(buckets);
     }
 
     public get(input: number): number | undefined {
@@ -74,15 +84,20 @@ export class BinaryMap {
         }
 
         // Get the bucket
-        const bucket = this.buckets[bucketPosition];
+        const bucketLength = this.buckets[bucketPosition];
 
-        for (let i = 0; i < bucket.length; i += 1) {
-            const keyPosition = bucket[i];
+        let cursor = bucketPosition + 1;
+        const endOfBucket = cursor + bucketLength;
+
+        while (cursor < endOfBucket) {
+            const keyPosition = this.buckets[cursor];
             const key = this.keys[keyPosition];
 
             if (key === input) {
                 return this.values[keyPosition];
             }
+
+            cursor += 1;
         }
 
         return undefined;
