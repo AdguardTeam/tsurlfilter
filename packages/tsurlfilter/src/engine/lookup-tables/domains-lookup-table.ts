@@ -5,6 +5,7 @@ import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../../rules/network-rule';
 import { BinaryMap } from '../../utils/binary-map';
+import { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * Domain lookup table. Key is the domain name hash.
@@ -25,6 +26,8 @@ export class DomainsLookupTable implements ILookupTable {
      */
     private readonly ruleStorage: RuleStorage;
 
+    private readonly byteBuffer: ByteBuffer;
+
     private ruleIndexesArray: number[][] = [];
 
     /**
@@ -33,8 +36,9 @@ export class DomainsLookupTable implements ILookupTable {
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
-    constructor(storage: RuleStorage) {
+    constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
+        this.byteBuffer = buffer;
     }
 
     /**
@@ -111,8 +115,12 @@ export class DomainsLookupTable implements ILookupTable {
         return result;
     }
 
-    finalize(): void {
+    finalize(offset: number): void {
         // TODO: fix typing
-        this.domainsLookupTable = new BinaryMap(this.domainsLookupTable) as unknown as Map<number, number>;
+        this.domainsLookupTable = new BinaryMap(
+            this.domainsLookupTable,
+            this.byteBuffer,
+            offset,
+        ) as unknown as Map<number, number>;
     }
 }

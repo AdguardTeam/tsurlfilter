@@ -8,6 +8,7 @@ import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
+import { ByteBuffer } from '../utils/byte-buffer';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules
@@ -43,6 +44,8 @@ export class NetworkEngine {
      */
     private readonly seqScanLookupTable: ILookupTable;
 
+    private readonly byteBuffer = new ByteBuffer();
+
     /**
      * Builds an instance of the network engine
      *
@@ -52,8 +55,8 @@ export class NetworkEngine {
     constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
-        this.domainsLookupTable = new DomainsLookupTable(storage);
-        this.hostnameLookupTable = new HostnameLookupTable(storage);
+        this.domainsLookupTable = new DomainsLookupTable(storage, this.byteBuffer);
+        this.hostnameLookupTable = new HostnameLookupTable(storage, this.byteBuffer);
         this.shortcutsLookupTable = new TrieLookupTable(storage);
         this.seqScanLookupTable = new SeqScanLookupTable();
 
@@ -126,7 +129,7 @@ export class NetworkEngine {
     }
 
     public finalize(): void {
-        this.domainsLookupTable.finalize();
-        this.hostnameLookupTable.finalize();
+        this.domainsLookupTable.finalize(this.byteBuffer.length);
+        this.hostnameLookupTable.finalize(this.byteBuffer.length);
     }
 }

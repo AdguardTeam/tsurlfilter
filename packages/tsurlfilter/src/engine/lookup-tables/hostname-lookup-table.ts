@@ -5,6 +5,7 @@ import { NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { BinaryMap } from '../../utils/binary-map';
+import { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * Hostname lookup table.
@@ -26,6 +27,8 @@ export class HostnameLookupTable implements ILookupTable {
      */
     private readonly ruleStorage: RuleStorage;
 
+    private readonly byteBuffer: ByteBuffer;
+
     private ruleIndexesArray: number[][] = [];
 
     /**
@@ -34,8 +37,9 @@ export class HostnameLookupTable implements ILookupTable {
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
-    constructor(storage: RuleStorage) {
+    constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
+        this.byteBuffer = buffer;
     }
 
     /**
@@ -132,8 +136,12 @@ export class HostnameLookupTable implements ILookupTable {
         return true;
     }
 
-    finalize(): void {
+    finalize(offset: number) {
         // TODO: fix typing
-        this.hostnameLookupTable = new BinaryMap(this.hostnameLookupTable) as unknown as Map<number, number>;
+        this.hostnameLookupTable = new BinaryMap(
+            this.hostnameLookupTable,
+            this.byteBuffer,
+            offset,
+        ) as unknown as Map<number, number>;
     }
 }

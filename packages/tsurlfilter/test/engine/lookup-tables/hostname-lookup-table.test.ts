@@ -2,11 +2,12 @@ import { NetworkRule, RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { HostnameLookupTable } from '../../../src/engine/lookup-tables/hostname-lookup-table';
+import { ByteBuffer } from '../../../src/utils/byte-buffer';
 
 describe('Hostname Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const ruleStorage = createRuleStorage([]);
-        const table = new HostnameLookupTable(ruleStorage);
+        const table = new HostnameLookupTable(ruleStorage, new ByteBuffer());
 
         expect(table.addRule(new NetworkRule('path', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
@@ -36,10 +37,10 @@ describe('Hostname Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new HostnameLookupTable(ruleStorage);
+        const table = new HostnameLookupTable(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
-        table.finalize();
+        table.finalize(0);
         expect(table.getRulesCount()).toBe(2);
 
         expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
