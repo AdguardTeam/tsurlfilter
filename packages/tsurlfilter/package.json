@@ -63,7 +63,8 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#readme",
   "scripts": {
-    "lint": "eslint 'src/**/*.ts' 'cli/**/*.ts' 'test/**/*.ts'",
+    "lint": "eslint 'src/**/*.ts' 'cli/**/*.ts' 'test/**/*.ts' && yarn lint:tsc",
+    "lint:tsc": "tsc --noEmit -p test/tsconfig.tests.json",
     "prebuild": "rimraf dist && yarn build:types",
     "build": "rollup -c rollup.config.ts",
     "postbuild": "node tasks/build-txt",

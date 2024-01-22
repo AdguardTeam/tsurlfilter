@@ -1,3 +1,4 @@
+import { HTTPMethod } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { ContentType } from '@lib/common';
 import {
@@ -10,6 +11,7 @@ describe('Request Context Storage', () => {
     const requestId = '12345';
 
     const data: RequestContext = {
+        eventId: '1',
         state: RequestContextState.BeforeRequest,
         requestId: '1',
         tabId: 1,
@@ -19,7 +21,7 @@ describe('Request Context Storage', () => {
         referrerUrl: 'https://example.org',
         requestFrameId: 0,
         requestType: RequestType.Document,
-        method: 'GET',
+        method: HTTPMethod.GET,
         contentType: ContentType.Document,
         thirdParty: false,
     };
