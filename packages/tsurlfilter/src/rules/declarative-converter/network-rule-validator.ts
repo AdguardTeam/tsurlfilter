@@ -5,24 +5,46 @@ import { NetworkRule, NetworkRuleOption } from '../network-rule';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
 
+/**
+ * Validator for each {@link NetworkRuleOption}.
+ * By default, rule is supported, when all keys other than `name` are not set.
+ */
 type NetworkOptionValidator = {
+    /**
+     * Just for correct errors.
+     */
     name: string,
-    // supported without conversion
+    /**
+     * If rule supported without conversion to declarative syntax.
+     */
     skipConversion?: true,
-    // partially supported
+    /**
+     * If rule partially supported with some additional checks.
+     */
     customChecks?: ((r: NetworkRule, name: string) => UnsupportedModifierError | null)[],
-    // not supported
+    /**
+     * If rule is not supported at all.
+     */
     notSupported?: true,
-    // supported
-    // supported?: boolean,
 };
 
+/**
+ * All options from {@link NetworkRuleOption}.
+ */
 type NetworkRuleOptions = keyof typeof NetworkRuleOption;
 
-// TODO: Add docs
 type ExcludeEnumKey<Key> = Key extends 'NotSet' ? never : Key;
+/**
+ * All options from {@link NetworkRuleOption} except
+ * {@link NetworkRuleOption.NotSet} because it just syntax sugar.
+ */
 type FilteredNetworkRuleOptions = ExcludeEnumKey<NetworkRuleOptions>;
 
+/**
+ * For each {@link NetworkRuleOption} we should have a validator, because
+ * there are no public getters of rule's option, so we need to iterate over
+ * all existing network option and check each of them.
+ */
 type NetworkRuleValidators = {
     [K in FilteredNetworkRuleOptions]: NetworkOptionValidator;
 };
@@ -168,12 +190,19 @@ export class NetworkRuleDeclarativeValidator {
 
     /* eslint-disable max-len */
     private static optionsValidators: NetworkRuleValidators = {
-        // SUPPORTED WITHOUT CONVERSION
+        // Supported
+        ThirdParty: { name: '$third-party' },
+        MatchCase: { name: '$match-case' },
+        Important: { name: '$important' },
+        To: { name: '$to' },
+        Badfilter: { name: '$badfilter' },
+
+        // Supported without conversion.
         Elemhide: { name: '$elemhide', skipConversion: true },
         Generichide: { name: '$generichide', skipConversion: true },
         Specifichide: { name: '$specifichide', skipConversion: true },
 
-        // PARTIALLY SUPPORTED
+        // Partially supported.
         Jsinject: { name: '$jsinject', customChecks: [this.checkDocumentAllowlistFn] },
         Urlblock: { name: '$urlblock', customChecks: [this.checkDocumentAllowlistFn] },
         Content: { name: '$content', customChecks: [this.checkDocumentAllowlistFn] },
@@ -184,29 +213,22 @@ export class NetworkRuleDeclarativeValidator {
         RemoveHeader: { name: '$removeheader', customChecks: [this.checkAllowRulesFn, this.checkRemoveHeaderModifierFn] },
         Method: { name: '$method', customChecks: [this.checkMethodModifierFn] },
 
-        // SUPPORTED
-        ThirdParty: { name: '$third-party' },
-        MatchCase: { name: '$match-case' },
-        Important: { name: '$important' },
-        To: { name: '$to' },
-        Badfilter: { name: '$badfilter' },
-
-        // NOT-SUPPORTED
-        // Not supported yet
+        // Not supported.
+        // Not supported yet.
         Cookie: { name: '$cookie', notSupported: true },
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },
         Permissions: { name: '$permissions', notSupported: true },
-        // Will not be supported
+        // Will not be supported.
         Replace: { name: '$replace', notSupported: true },
         JsonPrune: { name: '$jsonprune', notSupported: true },
         Hls: { name: '$hls', notSupported: true },
-        // Dns modifiers
+        // DNS modifiers.
         Client: { name: '$client', notSupported: true },
         DnsRewrite: { name: '$dnsrewrite', notSupported: true },
         DnsType: { name: '$dnstype', notSupported: true },
         Ctag: { name: '$ctag', notSupported: true },
-        // Desktop modified only
+        // Desktop modifiers only.
         Network: { name: '$network', notSupported: true },
         Extension: { name: '$extension', notSupported: true },
     };
@@ -242,7 +264,8 @@ export class NetworkRuleDeclarativeValidator {
      * (see {@link RemoveHeaderModifier.FORBIDDEN_HEADERS});
      * $jsonprune;
      * $method - if the modifier contains 'trace' method,
-     * $hls.
+     * $hls;
+     * $permissions.
      *
      * @param rule - Network rule.
      *
@@ -257,6 +280,8 @@ export class NetworkRuleDeclarativeValidator {
         // not a real valuable option.
         const options = Object.keys(NetworkRuleOption).filter((key) => key !== 'NotSet');
 
+        // Because we don't have public getter of rule's options, we need
+        // to iterate over all existing network options and check each of them.
         for (const option of options) {
             const networkOption = NetworkRuleOption[option as FilteredNetworkRuleOptions];
 
