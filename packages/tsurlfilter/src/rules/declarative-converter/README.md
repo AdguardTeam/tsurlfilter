@@ -1491,22 +1491,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	}
-]
+[]
 
 ```
 example 3
@@ -2399,7 +2384,7 @@ example 10
 ```
 <a name="advanced_capabilities__$cookie"></a>
 ## $cookie
-<b>Status</b>: implemented in `release/v2.3` branch
+<b>Status</b>: implemented in `release/v2.2` branch
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2724,19 +2709,7 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
+[]
 
 ```
 example 2
@@ -2748,19 +2721,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org/page/*",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 example 3
@@ -2772,19 +2733,7 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org/page/*",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 example 4
@@ -2796,22 +2745,7 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"initiatorDomains": [
-				"example.org",
-				"example.com"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 151
-	}
-]
+[]
 
 ```
 example 5
@@ -2825,17 +2759,6 @@ example 5
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	},
 	{
 		"id": 2,
 		"action": {
@@ -3244,19 +3167,7 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
-]
+[]
 
 ```
 example 2
@@ -3268,19 +3179,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 example 3
@@ -3292,19 +3191,7 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.com/abcd.html^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 <a name="advanced_capabilities__$removeheader"></a>
