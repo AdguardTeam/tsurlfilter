@@ -1582,4 +1582,30 @@ describe('DeclarativeRuleConverter', () => {
             expect(errors[0]).toStrictEqual(err);
         });
     });
+
+    describe('check unsupported options', () => {
+        it('returns UnsupportedModifierError for "permissions" option', async () => {
+            const filterId = 0;
+            const ruleText = '||example.org^$permissions=sync-xhr=()';
+            const filter = await createFilter(filterId, [ruleText]);
+
+            const {
+                declarativeRules,
+                errors,
+            } = DeclarativeRulesConverter.convert(
+                [filter],
+            );
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+
+            const networkRule = new NetworkRule(ruleText, filterId);
+
+            const err = new UnsupportedModifierError(
+                // eslint-disable-next-line max-len
+                `Unsupported option "$permissions" in the rule: "${networkRule.getText()}"`,
+                networkRule,
+            );
+            expect(errors[0]).toStrictEqual(err);
+        });
+    });
 });

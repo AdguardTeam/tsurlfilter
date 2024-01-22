@@ -81,6 +81,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         // declarative rules, that's why we ignore cosmetic and host rules.
         let networkRule: IRule | null;
         try {
+            // FIXME: Check why $permission not throwing an error.
             networkRule = RuleFactory.createRule(
                 ruleConvertedToAGSyntax,
                 filterId,
