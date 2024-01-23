@@ -39,7 +39,7 @@ describe('Domains Lookup Table Tests', () => {
         const table = new DomainsLookupTable(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
-        table.finalize(0);
+        table.finalize();
         expect(table.getRulesCount()).toBe(2);
 
         expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
@@ -70,7 +70,7 @@ describe('Domains Lookup Table Tests', () => {
         const table = new DomainsLookupTable(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
-        table.finalize(0);
+        table.finalize();
         expect(table.getRulesCount()).toBe(1);
 
         expect(

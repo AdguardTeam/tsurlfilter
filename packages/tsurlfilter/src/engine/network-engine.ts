@@ -129,7 +129,7 @@ export class NetworkEngine {
     }
 
     public finalize(): void {
-        this.domainsLookupTable.finalize(this.byteBuffer.length);
-        this.hostnameLookupTable.finalize(this.byteBuffer.length);
+        this.domainsLookupTable.finalize();
+        this.hostnameLookupTable.finalize();
     }
 }

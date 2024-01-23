@@ -89,7 +89,7 @@ export class RuleStorageScanner {
      * @param listId
      * @param ruleIdx
      */
-    private static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): number {
+    public static ruleListIdxToStorageIdx(listId: number, ruleIdx: number): number {
         return listId / LIST_ID_MAX_VALUE + ruleIdx;
     }
 
@@ -101,7 +101,7 @@ export class RuleStorageScanner {
      * @param storageIdx
      * @return [listId, ruleIdx]
      */
-    public static storageIdxToRuleListIdx(storageIdx: number): [number, number] {
+    public static storageIdxToRuleListIdx(storageIdx: number): [listId: number, ruleIdx: number] {
         const listId = Math.round((storageIdx % 1) * LIST_ID_MAX_VALUE);
         const ruleIdx = Math.trunc(storageIdx);
 

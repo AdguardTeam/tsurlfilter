@@ -21,13 +21,13 @@ export class BinaryMap {
         let cursor = this.offset;
 
         // set size
-        this.buffer.setUint32(cursor, size);
+        this.buffer.addUint32(cursor, size);
         cursor += 4;
 
         const endOfLookup = size * 4 + cursor;
 
         while (cursor < endOfLookup) {
-            this.buffer.setUint32(cursor, BinaryMap.EMPTY_POSITION);
+            this.buffer.addUint32(cursor, BinaryMap.EMPTY_POSITION);
             cursor += 4;
         }
 
@@ -36,9 +36,9 @@ export class BinaryMap {
 
         map.forEach((value, key) => {
             const keyPosition = cursor;
-            this.buffer.setUint32(cursor, key);
+            this.buffer.addUint32(cursor, key);
             cursor += 4;
-            this.buffer.setUint32(cursor, value);
+            this.buffer.addUint32(cursor, value);
             cursor += 4;
             // key is a djb2 hash of the string
             const hash = key % size;
@@ -54,11 +54,11 @@ export class BinaryMap {
 
         bucketsMap.forEach((value, key) => {
             const bucketPosition = cursor;
-            this.buffer.setUint32(cursor, value.length);
+            this.buffer.addUint32(cursor, value.length);
             cursor += 4;
 
             value.forEach((element) => {
-                this.buffer.setUint32(cursor, element);
+                this.buffer.addUint32(cursor, element);
                 cursor += 4;
             });
 
