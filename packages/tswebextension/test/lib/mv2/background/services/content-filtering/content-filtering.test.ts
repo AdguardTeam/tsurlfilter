@@ -7,6 +7,7 @@ import {
     RequestType,
     CosmeticResult,
     CosmeticRule,
+    HTTPMethod,
 } from '@adguard/tsurlfilter';
 import { ContentType } from '@lib/common';
 import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
@@ -15,6 +16,7 @@ import { ContentStream } from '@lib/mv2/background/services/content-filtering/co
 
 describe('Content filtering', () => {
     const requestContext: RequestContext = {
+        eventId: '1',
         state: RequestContextState.BeforeRequest,
         requestId: '1',
         requestUrl: 'https://example.org',
@@ -24,7 +26,7 @@ describe('Content filtering', () => {
         requestFrameId: 0,
         timestamp: 1643639355148,
         requestType: RequestType.Document,
-        method: 'GET',
+        method: HTTPMethod.GET,
         contentType: ContentType.Document,
         thirdParty: false,
     };
@@ -83,7 +85,7 @@ describe('Content filtering', () => {
         ContentFiltering.onBeforeRequest({
             ...requestContext,
             matchingResult: new MatchingResult([new NetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
-            method: 'PUT',
+            method: HTTPMethod.PUT,
         });
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);

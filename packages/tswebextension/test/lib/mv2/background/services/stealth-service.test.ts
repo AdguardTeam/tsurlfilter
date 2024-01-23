@@ -1,5 +1,5 @@
 import { WebRequest } from 'webextension-polyfill';
-import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { ContentType } from '@lib/common';
 import { RequestContext, RequestContextState } from '@lib/mv2';
@@ -87,6 +87,7 @@ describe('Stealth service', () => {
     describe('Stealth service - headers', () => {
         const getContextWithHeaders = (headers: WebRequest.HttpHeaders): RequestContext => {
             return {
+                eventId: '1',
                 state: RequestContextState.BeforeSendHeaders,
                 requestId: '1',
                 requestUrl: 'https://example.org',
@@ -102,7 +103,7 @@ describe('Stealth service', () => {
                 matchingResult: new MatchingResult([], null),
                 cookies: undefined,
                 contentTypeHeader: undefined,
-                method: 'GET',
+                method: HTTPMethod.GET,
                 requestHeaders: headers,
             };
         };
