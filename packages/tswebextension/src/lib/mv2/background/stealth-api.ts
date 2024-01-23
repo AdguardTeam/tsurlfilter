@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
-import { StringRuleList, STEALTH_MODE_FILTER_ID } from '@adguard/tsurlfilter';
-import { StealthOptionName, type NetworkRule, type MatchingResult } from '@adguard/tsurlfilter';
+import { StringRuleList, STEALTH_MODE_FILTER_ID, StealthOptionName } from '@adguard/tsurlfilter';
+import type { NetworkRule, MatchingResult } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
 import { RequestContext } from './request';
@@ -135,6 +135,15 @@ export class StealthApi {
         const stealthActions = this.stealthService.processRequestHeaders(context);
 
         return stealthActions !== StealthActions.None;
+    }
+
+    /**
+     * Checks if both stealth mode and filtering are enabled.
+     *
+     * @returns True if stealth mode and filtering are enabled.
+     */
+    private isStealthAllowed():boolean {
+        return this.isStealthModeEnabled && this.isFilteringEnabled;
     }
 
     /**
