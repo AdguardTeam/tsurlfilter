@@ -1601,7 +1601,6 @@ describe('DeclarativeRuleConverter', () => {
             const networkRule = new NetworkRule(ruleText, filterId);
 
             const err = new UnsupportedModifierError(
-                // eslint-disable-next-line max-len
                 `Unsupported option "$permissions" in the rule: "${networkRule.getText()}"`,
                 networkRule,
             );

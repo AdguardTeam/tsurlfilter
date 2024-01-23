@@ -33,7 +33,11 @@ type NetworkOptionValidator = {
  */
 type NetworkRuleOptions = keyof typeof NetworkRuleOption;
 
+/**
+ * Enum keys except {@link NetworkRuleOption.NotSet} because it just syntax sugar.
+ */
 type ExcludeEnumKey<Key> = Key extends 'NotSet' ? never : Key;
+
 /**
  * All options from {@link NetworkRuleOption} except
  * {@link NetworkRuleOption.NotSet} because it just syntax sugar.
@@ -66,10 +70,10 @@ export class NetworkRuleDeclarativeValidator {
     private static checkRemoveParamModifierFn(r: NetworkRule, name: string): UnsupportedModifierError | null {
         const removeParam = r.getAdvancedModifier() as RemoveParamModifier;
         if (!removeParam.getMV3Validity()) {
-            // eslint-disable-next-line max-len
-            const msg = `Network rule with $removeparam modifier with negation or regexp is not supported: "${r.getText()}"`;
-
-            return new UnsupportedModifierError(msg, r);
+            return new UnsupportedModifierError(
+                `Network rule with $removeparam modifier with negation or regexp is not supported: "${r.getText()}"`,
+                r,
+            );
         }
 
         return null;
@@ -85,8 +89,10 @@ export class NetworkRuleDeclarativeValidator {
      */
     private static checkAllowRulesFn(r: NetworkRule, name: string): UnsupportedModifierError | null {
         if (r.isAllowlist()) {
-            const msg = `Network allowlist rule with ${name} modifier is not supported: "${r.getText()}"`;
-            return new UnsupportedModifierError(msg, r);
+            return new UnsupportedModifierError(
+                `Network allowlist rule with ${name} modifier is not supported: "${r.getText()}"`,
+                r,
+            );
         }
 
         return null;
@@ -104,8 +110,10 @@ export class NetworkRuleDeclarativeValidator {
         // TODO: Remove small hack with "reparsing" rule to extract only options part.
         const { options } = NetworkRule.parseRuleText(r.getText());
         if (options === name.replace('$', '')) {
-            const msg = `Network rule with only one enabled modifier ${name} is not supported: "${r.getText()}"`;
-            return new UnsupportedModifierError(msg, r);
+            return new UnsupportedModifierError(
+                `Network rule with only one enabled modifier ${name} is not supported: "${r.getText()}"`,
+                r,
+            );
         }
 
         return null;
@@ -312,8 +320,10 @@ export class NetworkRuleDeclarativeValidator {
             } = validator;
 
             if (notSupported) {
-                const msg = `Unsupported option "${name}" in the rule: "${rule.getText()}"`;
-                throw new UnsupportedModifierError(msg, rule);
+                throw new UnsupportedModifierError(
+                    `Unsupported option "${name}" in the rule: "${rule.getText()}"`,
+                    rule,
+                );
             }
 
             if (skipConversion) {
