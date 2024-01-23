@@ -45,10 +45,10 @@ Test:
 
             npx lerna@6 bootstrap --scope @adguard/tswebextension --scope @adguard/tsurlfilter --include-dependencies
 
-            npx lerna@6 run --scope @adguard/tswebextension lint
-
             # build tsurlfilter first, because it is used in tswebextension tests
             npx lerna@6 run --scope @adguard/tsurlfilter build
+
+            npx lerna@6 run --verbose --scope @adguard/tswebextension lint
 
             npx lerna@6 run --scope @adguard/tswebextension build
 
