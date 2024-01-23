@@ -3,6 +3,7 @@ import {
     NetworkRule,
     RequestType,
     PERMISSIONS_POLICY_HEADER_NAME,
+    HTTPMethod,
 } from '@adguard/tsurlfilter';
 
 import { PermissionsPolicyService } from '@lib/mv2/background/services/permissions-policy-service';
@@ -41,11 +42,12 @@ describe('Permissions policy service', () => {
         rulesText: string[],
     ): RequestContext => {
         requestContextStorage.set(requestId, {
+            eventId: '1',
             state: RequestContextState.BeforeRequest,
             requestId,
             requestUrl: url,
             referrerUrl: url,
-            method: 'GET',
+            method: HTTPMethod.GET,
             requestType: RequestType.Document,
             tabId: 0,
             frameId: 0,

@@ -1,15 +1,13 @@
-import { AppContext } from '@lib/mv2/background/context';
+import type { ConfigurationMV2Context } from '@lib/mv2/background/configuration';
+import type { AppContext } from '@lib/mv2/background/context';
 
 /**
- * Returns mock for {@link AppContext}.
- *
- * @returns Mock for {@link AppContext}.
+ * Mock for {@link AppContext}.
  */
-export const getMockAppContext = (): AppContext => {
-    const appContext = new AppContext();
+export class MockAppContext implements AppContext {
+    isAppStarted: boolean = false;
 
-    appContext.isAppStarted = false;
-    appContext.configuration = undefined;
+    isStorageInitialized: boolean = false;
 
-    return appContext;
-};
+    configuration: ConfigurationMV2Context | undefined = undefined;
+}

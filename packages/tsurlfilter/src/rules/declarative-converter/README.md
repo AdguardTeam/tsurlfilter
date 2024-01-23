@@ -3418,7 +3418,19 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||example.com^",
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 2
@@ -3430,7 +3442,19 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allow"
+		},
+		"condition": {
+			"urlFilter": "||example.com^",
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 100001
+	}
+]
 
 ```
 example 3
@@ -3442,7 +3466,19 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allow"
+		},
+		"condition": {
+			"urlFilter": "||example.com/abcd.html^",
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 100001
+	}
+]
 
 ```
 <a name="advanced_capabilities__$removeheader"></a>

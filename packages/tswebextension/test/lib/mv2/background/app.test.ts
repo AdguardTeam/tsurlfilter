@@ -10,11 +10,11 @@ import {
 import type { ConfigurationMV2 } from '@lib/mv2/background/configuration';
 import type { Message } from '@lib/common/message';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { getMockAppContext } from './mocks/mock-context';
+import { MockAppContext } from './mocks/mock-context';
 
 jest.mock('@lib/mv2/background/ext-session-storage');
 jest.mock('@lib/mv2/background/context', () => ({
-    appContext: jest.fn(() => getMockAppContext()),
+    appContext: jest.fn(() => new MockAppContext()),
 }));
 jest.mock('@lib/mv2/background/web-request-api');
 jest.mock('@lib/mv2/background/engine-api');
