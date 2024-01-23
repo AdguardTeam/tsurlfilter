@@ -188,7 +188,6 @@ export class NetworkRuleDeclarativeValidator {
         );
     };
 
-    /* eslint-disable max-len */
     private static optionsValidators: NetworkRuleValidators = {
         // Supported
         ThirdParty: { name: '$third-party' },
@@ -203,15 +202,27 @@ export class NetworkRuleDeclarativeValidator {
         Specifichide: { name: '$specifichide', skipConversion: true },
 
         // Partially supported.
-        Jsinject: { name: '$jsinject', customChecks: [this.checkDocumentAllowlistFn] },
-        Urlblock: { name: '$urlblock', customChecks: [this.checkDocumentAllowlistFn] },
-        Content: { name: '$content', customChecks: [this.checkDocumentAllowlistFn] },
-        Popup: { name: '$popup', customChecks: [this.checkOnlyOneModifier] },
-        Csp: { name: '$csp', customChecks: [this.checkAllowRulesFn] },
-        Redirect: { name: '$redirect', customChecks: [this.checkAllowRulesFn] },
-        RemoveParam: { name: '$removeparam', customChecks: [this.checkAllowRulesFn, this.checkRemoveParamModifierFn] },
-        RemoveHeader: { name: '$removeheader', customChecks: [this.checkAllowRulesFn, this.checkRemoveHeaderModifierFn] },
-        Method: { name: '$method', customChecks: [this.checkMethodModifierFn] },
+        Jsinject: { name: '$jsinject', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
+        Urlblock: { name: '$urlblock', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
+        Content: { name: '$content', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
+        Popup: { name: '$popup', customChecks: [NetworkRuleDeclarativeValidator.checkOnlyOneModifier] },
+        Csp: { name: '$csp', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
+        Redirect: { name: '$redirect', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
+        RemoveParam: {
+            name: '$removeparam',
+            customChecks: [
+                NetworkRuleDeclarativeValidator.checkAllowRulesFn,
+                NetworkRuleDeclarativeValidator.checkRemoveParamModifierFn,
+            ],
+        },
+        RemoveHeader: {
+            name: '$removeheader',
+            customChecks: [
+                NetworkRuleDeclarativeValidator.checkAllowRulesFn,
+                NetworkRuleDeclarativeValidator.checkRemoveHeaderModifierFn,
+            ],
+        },
+        Method: { name: '$method', customChecks: [NetworkRuleDeclarativeValidator.checkMethodModifierFn] },
 
         // Not supported.
         // Not supported yet.
@@ -232,7 +243,6 @@ export class NetworkRuleDeclarativeValidator {
         Network: { name: '$network', notSupported: true },
         Extension: { name: '$extension', notSupported: true },
     };
-    /* eslint-enable max-len */
 
     /**
      * Checks if a network rule can be converted to a declarative format or not.
