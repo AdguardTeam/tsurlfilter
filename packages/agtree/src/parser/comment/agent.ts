@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-case-declarations */
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
@@ -9,6 +10,15 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
+import { decoder, encoder } from '../../utils/text-encoder';
+
+const TYPE_MAP: Record<string, number> = {
+    Agent: 0,
+};
+
+const TYPE_MAP_REVERSE: Record<number, string> = {
+    0: 'Agent',
+};
 
 const ADG_NAME_MARKERS = new Set([
     'adguard',
@@ -208,5 +218,89 @@ export class AgentParser extends ParserBase {
         }
 
         return result;
+    }
+
+    /**
+     * Serializes an agent node to binary format.
+     *
+     * Node structure (from left to right):
+     * - 1 byte - type
+     * - n bytes - agent name
+     * - 1 byte - size of agent name
+     * - n bytes - agent version
+     * - 1 byte - size of agent version
+     *
+     * @param node Node to serialize.
+     * @returns Node serialized to binary format.
+     */
+    public static serialize(node: Agent): Uint8Array {
+        const nameLength = node.adblock.value.length;
+        const versionLength = node.version?.value?.length ?? 0;
+
+        const bufferSize = 3 + nameLength + versionLength;
+        const u8view = new Uint8Array(bufferSize);
+
+        // encode from left to right
+        let i = 0;
+
+        // type
+        u8view[i++] = TYPE_MAP[node.type];
+
+        // name
+        encoder.encodeInto(node.adblock.value, u8view.subarray(i, i + nameLength));
+        i += nameLength;
+        u8view[i++] = nameLength;
+
+        // version
+        if (node.version) {
+            encoder.encodeInto(node.version.value, u8view.subarray(i));
+            i += versionLength;
+        }
+        u8view[i++] = versionLength;
+
+        return u8view;
+    }
+
+    /**
+     * Deserializes an agent node from binary format.
+     *
+     * @param data Node serialized to binary format.
+     * @returns Deserialized node.
+     */
+    public static deserialize(data: Uint8Array): Agent {
+        // decode from right to left
+        let i = data.length - 1;
+
+        // read version
+        const versionSize = data[i];
+        const version = versionSize > 0
+            ? decoder.decode(data.subarray(i - versionSize, i))
+            : null;
+
+        i -= versionSize + 1;
+
+        // read name
+        const nameSize = data[i];
+        const name = decoder.decode(data.subarray(i - nameSize, i));
+
+        i -= nameSize + 1;
+
+        // read type
+        const type = TYPE_MAP_REVERSE[data[i]];
+
+        return {
+            type,
+            adblock: {
+                type: 'Value',
+                value: name,
+            },
+            version: version
+                ? {
+                    type: 'Value',
+                    value: version,
+                }
+                : null,
+            syntax: getAdblockSyntax(name),
+        } as Agent;
     }
 }
