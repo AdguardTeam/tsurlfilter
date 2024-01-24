@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## Added
+- Support of pipe separator in `$permissions` modifier values [#116](https://github.com/AdguardTeam/tsurlfilter/issues/116).
 - Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100](https://github.com/AdguardTeam/tsurlfilter/issues/100).
 - Support for regexp values in $domain modifier of network and cosmetic rules [#41](https://github.com/AdguardTeam/tsurlfilter/issues/41).
 - New `$permissions` modifier to set Permissions-Policy response header.
@@ -28,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 
+## [2.2.10] - 2024-01-09
+
+### Added
+- Export path for type declarations.
 
 ## [2.2.9] - 2023-12-27
 

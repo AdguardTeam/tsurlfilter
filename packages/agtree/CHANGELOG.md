@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
+## [Unreleased]
+
+### Added
+
+- Export path for type declarations.
+
 
 ## Unreleased
 
@@ -14,6 +20,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   parsing known-syntax filters.
 - Performance benchmarking.
 - `PositionProvider` to convert offsets to line/column pairs.
+- Protected Audience API directives to `$permissions` modifier validator.
 
 ### Changed
 

@@ -1,5 +1,6 @@
 import {
     CosmeticRule,
+    HTTPMethod,
     NetworkRule,
     RequestType,
 } from '@adguard/tsurlfilter';
@@ -9,6 +10,7 @@ import { ContentType, defaultFilteringLog } from '@lib/common';
 
 describe('Content string filter', () => {
     const context = {
+        eventId: '1',
         state: RequestContextState.HeadersReceived,
         requestId: '1',
         requestUrl: 'https://example.org',
@@ -17,7 +19,7 @@ describe('Content string filter', () => {
         frameId: 0,
         timestamp: 1643639355148,
         requestType: RequestType.Document,
-        method: 'GET',
+        method: HTTPMethod.GET,
         status: 200,
         requestFrameId: 0,
         contentType: ContentType.Document,

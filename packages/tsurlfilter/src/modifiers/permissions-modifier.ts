@@ -2,6 +2,10 @@ import { IAdvancedModifier } from './advanced-modifier';
 
 export const PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
 
+const COMMA_SEPARATOR = ',';
+
+const PIPE_SEPARATOR = '|';
+
 /**
  * Permissions modifier class.
  * Allows setting permission policies, effectively blocking specific page functionality.
@@ -21,7 +25,10 @@ export class PermissionsModifier implements IAdvancedModifier {
      * @param isAllowlist
      */
     constructor(permissionPolicyStr: string, isAllowlist: boolean) {
-        this.permissionPolicyDirective = permissionPolicyStr;
+        this.permissionPolicyDirective = permissionPolicyStr.includes(PIPE_SEPARATOR)
+            ? permissionPolicyStr.split(PIPE_SEPARATOR).join(COMMA_SEPARATOR)
+            : permissionPolicyStr;
+
         PermissionsModifier.validatePermissionPolicyDirective(this.permissionPolicyDirective, isAllowlist);
     }
 

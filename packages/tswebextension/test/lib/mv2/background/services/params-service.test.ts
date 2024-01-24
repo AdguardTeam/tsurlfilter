@@ -1,4 +1,9 @@
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import {
+    HTTPMethod,
+    MatchingResult,
+    NetworkRule,
+    RequestType,
+} from '@adguard/tsurlfilter';
 
 import { ParamsService } from '@lib/mv2/background/services/params-service';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
@@ -17,12 +22,13 @@ describe('Params service', () => {
 
     const testUrlPurge = (
         url: string,
-        method: string,
+        method: HTTPMethod,
         rulesText: string[],
     ): string | null => {
         const requestId = '12345';
 
         requestContextStorage.set(requestId, {
+            eventId: '1',
             state: RequestContextState.BeforeRequest,
             requestId,
             requestUrl: url,
@@ -50,7 +56,7 @@ describe('Params service', () => {
     it('returns null if removeparam rules is not exist', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
-            'GET',
+            HTTPMethod.GET,
             [],
         );
 
@@ -60,7 +66,7 @@ describe('Params service', () => {
     it('removes GET request params', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
-            'GET',
+            HTTPMethod.GET,
             ['||example.org^$removeparam'],
         );
 
@@ -73,7 +79,7 @@ describe('Params service', () => {
     it('removes POST request params', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
-            'POST',
+            HTTPMethod.POST,
             ['||example.org^$removeparam'],
         );
 
@@ -86,7 +92,7 @@ describe('Params service', () => {
     it('correctly processes allowlist rule', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1',
-            'GET',
+            HTTPMethod.GET,
             ['||example.org^$removeparam=param', '@@||example.org^$removeparam=param'],
         );
 
@@ -99,7 +105,7 @@ describe('Params service', () => {
     it('removes only specific param', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?param=1&test=1',
-            'GET',
+            HTTPMethod.GET,
             ['||example.org^$removeparam=param'],
         );
 
@@ -112,7 +118,7 @@ describe('Params service', () => {
     it('doesn\'t remove unspecific param', () => {
         const purgedUrl = testUrlPurge(
             'https://example.org?test=1',
-            'GET',
+            HTTPMethod.GET,
             ['||example.org^$removeparam=param'],
         );
 

@@ -693,7 +693,7 @@ describe('TestNewMatchingResult - stealth modifier', () => {
 
         const stealthRule = result.getStealthRule();
         expect(stealthRule).toBe(rule);
-        expect(stealthRule.getText()).toBe(ruleText);
+        expect(stealthRule?.getText()).toBe(ruleText);
     });
 
     it('manages stealth rules with single and multiple options', () => {

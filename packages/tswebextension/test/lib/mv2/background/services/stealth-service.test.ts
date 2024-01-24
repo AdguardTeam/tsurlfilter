@@ -2,6 +2,7 @@ import { WebRequest } from 'webextension-polyfill';
 import { nanoid } from 'nanoid';
 import {
     NetworkRule,
+    HTTPMethod,
     MatchingResult,
     RequestType,
     StealthOptionName,
@@ -109,7 +110,7 @@ describe('Stealth service', () => {
                 matchingResult: new MatchingResult(rules || [], null),
                 cookies: undefined,
                 contentTypeHeader: undefined,
-                method: 'GET',
+                method: HTTPMethod.GET,
                 requestHeaders: headers,
             };
         };
