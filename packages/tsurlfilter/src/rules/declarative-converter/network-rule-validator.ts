@@ -15,7 +15,7 @@ type NetworkOptionValidator = {
      */
     name: string,
     /**
-     * If rule supported without conversion to declarative syntax.
+     * If rule contains only this modifier - it's conversion can be skipped.
      */
     skipConversion?: true,
     /**
@@ -68,7 +68,16 @@ export class NetworkRuleDeclarativeValidator {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private static checkRemoveParamModifierFn(r: NetworkRule, name: string): UnsupportedModifierError | null {
-        const removeParam = r.getAdvancedModifier() as RemoveParamModifier;
+        const removeParam = r.getAdvancedModifier();
+
+        if (!removeParam) {
+            return null;
+        }
+
+        if (!RemoveParamModifier.isRemoveParamModifier(removeParam)) {
+            return null;
+        }
+
         if (!removeParam.getMV3Validity()) {
             return new UnsupportedModifierError(
                 `Network rule with $removeparam modifier with negation or regexp is not supported: "${r.getText()}"`,
@@ -99,15 +108,15 @@ export class NetworkRuleDeclarativeValidator {
     }
 
     /**
-     * Checks if the specified modifier is the only one the rule has.
+     * Checks if the specified modifier is the only one the rule has, then throws error.
      *
      * @param r Network rule.
      * @param name Modifier's name.
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    private static checkOnlyOneModifier(r: NetworkRule, name: string): UnsupportedModifierError | null {
-        // TODO: Remove small hack with "reparsing" rule to extract only options part.
+    private static checkNotOnlyOneModifier(r: NetworkRule, name: string): UnsupportedModifierError | null {
+        // TODO: Remove small hack with "re-parsing" rule to extract only options part.
         const { options } = NetworkRule.parseRuleText(r.getText());
         if (options === name.replace('$', '')) {
             return new UnsupportedModifierError(
@@ -130,7 +139,16 @@ export class NetworkRuleDeclarativeValidator {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private static checkRemoveHeaderModifierFn(r: NetworkRule, name: string): UnsupportedModifierError | null {
-        const removeHeader = r.getAdvancedModifier() as RemoveHeaderModifier;
+        const removeHeader = r.getAdvancedModifier();
+
+        if (!removeHeader) {
+            return null;
+        }
+
+        if (!RemoveHeaderModifier.isRemoveHeaderModifier(removeHeader)) {
+            return null;
+        }
+
         if (!removeHeader.isValid) {
             return new UnsupportedModifierError(
                 // eslint-disable-next-line max-len
@@ -213,7 +231,8 @@ export class NetworkRuleDeclarativeValidator {
         Jsinject: { name: '$jsinject', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
         Urlblock: { name: '$urlblock', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
         Content: { name: '$content', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
-        Popup: { name: '$popup', customChecks: [NetworkRuleDeclarativeValidator.checkOnlyOneModifier] },
+        // $popup is not supported in MV3, but rule with $all modifier includes $popup, so we should to skip it.
+        Popup: { name: '$popup', customChecks: [NetworkRuleDeclarativeValidator.checkNotOnlyOneModifier] },
         Csp: { name: '$csp', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
         Redirect: { name: '$redirect', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
         RemoveParam: {
