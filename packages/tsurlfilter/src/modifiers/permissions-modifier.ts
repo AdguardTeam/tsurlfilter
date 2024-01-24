@@ -52,9 +52,5 @@ export class PermissionsModifier implements IAdvancedModifier {
         if (!isAllowlist && !directive) {
             throw new SyntaxError('Invalid $permissions rule: permissions directive must not be empty');
         }
-
-        if (isAllowlist && directive) {
-            throw new SyntaxError(`Allowlist $permissions rule should not have directive specified: "${directive}"`);
-        }
     }
 }

@@ -153,6 +153,39 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
 
         expect(result.getBasicResult()!.getText()).toBe(redirectRule);
     });
+
+    it('correctly applies allowlist rule when filtering by exact modifier value', () => {
+        const rule = '||example.org^$permissions=autoplay=()';
+        const allowlistRule = '@@||example.org/page/*$permissions=autoplay=()';
+
+        const baseRuleList = new StringRuleList(1, [
+            rule,
+            allowlistRule,
+        ].join('\n'), false, false);
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        let request = new Request(
+            'https://example.org/page/gallery.hmtl',
+            null,
+            RequestType.Document,
+        );
+        let result = engine.matchRequest(request);
+
+        let permissionsRules = result.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(1);
+        expect(permissionsRules[0].getText()).toBe(allowlistRule);
+
+        request = new Request(
+            'https://example.org/page123/gallery.hmtl',
+            null,
+            RequestType.Document,
+        );
+        result = engine.matchRequest(request);
+
+        permissionsRules = result.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(1);
+        expect(permissionsRules[0].getText()).toBe(rule);
+    });
 });
 
 describe('TestEngineMatchRequest - redirect modifier', () => {

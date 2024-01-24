@@ -360,12 +360,12 @@ describe('NetworkRule constructor', () => {
         }).not.toThrow();
 
         expect(() => {
-            new NetworkRule(String.raw`||example.org$permissions`, 0);
-        }).toThrow(new SyntaxError('Invalid $permissions rule: permissions directive must not be empty'));
+            new NetworkRule(String.raw`@@||example.org$permissions=geolocation=*`, 0);
+        }).not.toThrow();
 
         expect(() => {
-            new NetworkRule(String.raw`@@||example.org$permissions=geolocation=*`, 0);
-        }).toThrow(new SyntaxError('Allowlist $permissions rule should not have directive specified: "geolocation=*"'));
+            new NetworkRule(String.raw`||example.org$permissions`, 0);
+        }).toThrow(new SyntaxError('Invalid $permissions rule: permissions directive must not be empty'));
 
         // Must throw on unsupported modifiers
         expect(() => {

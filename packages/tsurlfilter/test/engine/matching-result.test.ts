@@ -378,31 +378,52 @@ describe('TestNewMatchingResult - csp rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - permissions rules', () => {
-    const permissionsRule = String.raw`/ads^$permissions=sync-xhr=()\,accelerometer=self,domain=example.org`;
-    const globalAllowlistRule = '@@||example.org^$permissions';
+describe('TestNewMatchingResult - $permissions rules', () => {
+    const makeMatchingResult = (ruleTexts: string[]) => {
+        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        return {
+            expectedRules: rules,
+            matchingResult: new MatchingResult(rules, null),
+        };
+    };
 
-    it('works if permissions rule is found', () => {
-        const rules = [new NetworkRule(permissionsRule, 0)];
-        const result = new MatchingResult(rules, null);
+    it('finds $permissions rule', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            String.raw`/ads^$permissions=sync-xhr=()\,accelerometer=self,domain=example.org`,
+        ]);
+        expect(matchingResult).toBeTruthy();
 
-        expect(result).toBeTruthy();
-        const permissionsRules = result.getPermissionsPolicyRules();
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
         expect(permissionsRules.length).toBe(1);
-        expect(permissionsRules[0].getText()).toBe(permissionsRule);
+        expect(permissionsRules[0].getText()).toBe(expectedRules[0].getText());
     });
 
-    it('works if permissions global allowlist rule is found', () => {
-        const rules = [
-            new NetworkRule(permissionsRule, 0),
-            new NetworkRule(globalAllowlistRule, 0),
-        ];
+    it('finds global allowlist rule', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            '||example.*^$permissions=sync-xhr=()|accelerometer=self,domain=example.org',
+            '@@||example.org^$permissions',
+        ]);
+        expect(matchingResult).toBeTruthy();
 
-        const result = new MatchingResult(rules, null);
-        expect(result).toBeTruthy();
-        const cspRules = result.getPermissionsPolicyRules();
-        expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(globalAllowlistRule);
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(1);
+        expect(permissionsRules[0]).toBe(expectedRules[1]);
+    });
+
+    it('filters blocking and allowlist rules by modifier value', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            '/ads^$permissions=sync-xhr=(self)',
+            '/ads^$permissions=sync-xhr=("https://example.com")|accelerometer=self',
+            '@@||$permissions=sync-xhr=("https://example.com")|accelerometer=self',
+        ]);
+        expect(matchingResult).toBeTruthy();
+
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(2);
+        expect(permissionsRules[0]).toBe(expectedRules[0]);
+        expect(permissionsRules[1]).toBe(expectedRules[2]);
+        // Allowlisted rule gets removed from the result
+        expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
     });
 });
 
