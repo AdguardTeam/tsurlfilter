@@ -383,16 +383,16 @@ export class CosmeticRule implements rule.IRule {
      * Processes cosmetic rule modifiers, e.g. `$path`.
      *
      * @param ruleNode Cosmetic rule node to process
-     * @returns Processed modifiers ({@link ProcessedModifiers})
+     * @returns Processed modifiers ({@link ProcessedModifiers}) or `null` if there are no modifiers
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#modifiers-for-non-basic-type-of-rules}
      */
-    private static processModifiers(ruleNode: AnyCosmeticRule): ProcessedModifiers {
-        const result: ProcessedModifiers = {};
-
+    private static processModifiers(ruleNode: AnyCosmeticRule): ProcessedModifiers | null {
         // Do nothing if there are no modifiers in the rule node
         if (!ruleNode.modifiers) {
-            return result;
+            return null;
         }
+
+        const result: ProcessedModifiers = {};
 
         // We don't allow duplicate modifiers, so we collect them in a set
         const usedModifiers = new Set<string>();
@@ -658,18 +658,20 @@ export class CosmeticRule implements rule.IRule {
         this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
 
         // Process cosmetic rule modifiers
-        const { domainModifier, pathModifier, urlModifier } = CosmeticRule.processModifiers(ruleNode);
+        const processedModifiers = CosmeticRule.processModifiers(ruleNode);
 
-        if (domainModifier) {
-            this.domainModifier = domainModifier;
-        }
+        if (processedModifiers) {
+            if (processedModifiers.domainModifier) {
+                this.domainModifier = processedModifiers.domainModifier;
+            }
 
-        if (pathModifier) {
-            this.pathModifier = pathModifier;
-        }
+            if (processedModifiers.pathModifier) {
+                this.pathModifier = processedModifiers.pathModifier;
+            }
 
-        if (urlModifier) {
-            this.urlModifier = urlModifier;
+            if (processedModifiers.urlModifier) {
+                this.urlModifier = processedModifiers.urlModifier;
+            }
         }
 
         // Process domain list, if at least one domain is specified

@@ -22,9 +22,9 @@ import {
     type Value,
 } from '../common';
 import { StringUtils } from '../../utils/string';
-import { locRange, shiftLoc } from '../../utils/location';
 import { ParameterListParser } from '../misc/parameter-list';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -32,7 +32,7 @@ import { getParserOptions, type ParserOptions } from '../options';
  *
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
  */
-export class ConfigCommentRuleParser {
+export class ConfigCommentRuleParser extends ParserBase {
     /**
      * Checks if the raw rule is an inline configuration comment rule.
      *
@@ -64,14 +64,13 @@ export class ConfigCommentRuleParser {
     /**
      * Parses a raw rule as an inline configuration comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns
      * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): ConfigCommentRule | null {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ConfigCommentRule | null {
         if (!ConfigCommentRuleParser.isConfigComment(raw)) {
             return null;
         }
@@ -87,8 +86,9 @@ export class ConfigCommentRuleParser {
             value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
         };
 
-        if (isLocIncluded) {
-            marker.loc = locRange(baseLoc, offset, offset + 1);
+        if (options.isLocIncluded) {
+            marker.start = offset;
+            marker.end = offset + 1;
         }
 
         // Skip marker
@@ -105,11 +105,12 @@ export class ConfigCommentRuleParser {
 
         const command: Value = {
             type: 'Value',
-            value: raw.substring(commandStart, offset),
+            value: raw.slice(commandStart, offset),
         };
 
-        if (isLocIncluded) {
-            command.loc = locRange(baseLoc, commandStart, offset);
+        if (options.isLocIncluded) {
+            command.start = commandStart;
+            command.end = offset;
         }
 
         // Skip whitespace after command
@@ -125,11 +126,12 @@ export class ConfigCommentRuleParser {
         if (commentStart !== -1) {
             comment = {
                 type: 'Value',
-                value: raw.substring(commentStart, commentEnd),
+                value: raw.slice(commentStart, commentEnd),
             };
 
-            if (isLocIncluded) {
-                comment.loc = locRange(baseLoc, commentStart, commentEnd);
+            if (options.isLocIncluded) {
+                comment.start = commentStart;
+                comment.end = commentEnd;
             }
         }
 
@@ -150,11 +152,12 @@ export class ConfigCommentRuleParser {
                 // But don't forget to add { } to the beginning and end of the string,
                 // otherwise JSON5 will not be able to parse it.
                 // TODO: Better solution? ESLint uses "levn" package for parsing these comments.
-                value: JSON5.parse(`{${raw.substring(paramsStart, paramsEnd)}}`),
+                value: JSON5.parse(`{${raw.slice(paramsStart, paramsEnd)}}`),
             };
 
-            if (isLocIncluded) {
-                params.loc = locRange(baseLoc, paramsStart, paramsEnd);
+            if (options.isLocIncluded) {
+                params.start = paramsStart;
+                params.end = paramsEnd;
             }
 
             // Throw error for empty config
@@ -163,12 +166,10 @@ export class ConfigCommentRuleParser {
             }
         } else if (paramsStart < paramsEnd) {
             params = ParameterListParser.parse(
-                raw.substring(paramsStart, paramsEnd),
-                {
-                    isLocIncluded,
-                    separator: COMMA,
-                    baseLoc: shiftLoc(baseLoc, paramsStart),
-                },
+                raw.slice(paramsStart, paramsEnd),
+                options,
+                baseOffset + paramsStart,
+                COMMA,
             );
         }
 
@@ -185,8 +186,9 @@ export class ConfigCommentRuleParser {
             comment,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

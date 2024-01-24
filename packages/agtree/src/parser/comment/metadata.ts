@@ -13,8 +13,8 @@ import {
     RuleCategory,
     type Value,
 } from '../common';
-import { locRange } from '../../utils/location';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
@@ -29,21 +29,20 @@ import { getParserOptions, type ParserOptions } from '../options';
  * the list title is `My List`, and it can be used in the adblocker UI.
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
-export class MetadataCommentRuleParser {
+export class MetadataCommentRuleParser extends ParserBase {
     /**
      * Parses a raw rule as a metadata comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Metadata comment AST or null (if the raw rule cannot be parsed as a metadata comment)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): MetadataCommentRule | null {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): MetadataCommentRule | null {
         // Fast check to avoid unnecessary work
         if (raw.indexOf(COLON) === -1) {
             return null;
         }
-
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
 
         let offset = 0;
 
@@ -61,8 +60,9 @@ export class MetadataCommentRuleParser {
             value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
         };
 
-        if (isLocIncluded) {
-            marker.loc = locRange(baseLoc, offset, offset + 1);
+        if (options.isLocIncluded) {
+            marker.start = offset;
+            marker.end = offset + 1;
         }
 
         offset += 1;
@@ -88,8 +88,9 @@ export class MetadataCommentRuleParser {
                     value: raw.slice(headerStart, offset),
                 };
 
-                if (isLocIncluded) {
-                    header.loc = locRange(baseLoc, headerStart, offset);
+                if (options.isLocIncluded) {
+                    header.start = headerStart;
+                    header.end = offset;
                 }
 
                 // Skip spaces after the header
@@ -119,11 +120,12 @@ export class MetadataCommentRuleParser {
                 // Save the value
                 const value: Value = {
                     type: 'Value',
-                    value: raw.substring(valueStart, valueEnd),
+                    value: raw.slice(valueStart, valueEnd),
                 };
 
-                if (isLocIncluded) {
-                    value.loc = locRange(baseLoc, valueStart, valueEnd);
+                if (options.isLocIncluded) {
+                    value.start = valueStart;
+                    value.end = valueEnd;
                 }
 
                 const result: MetadataCommentRule = {
@@ -138,8 +140,9 @@ export class MetadataCommentRuleParser {
                     value,
                 };
 
-                if (isLocIncluded) {
-                    result.loc = locRange(baseLoc, 0, raw.length);
+                if (options.isLocIncluded) {
+                    result.start = baseOffset;
+                    result.end = baseOffset + raw.length;
                 }
 
                 return result;

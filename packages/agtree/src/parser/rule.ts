@@ -1,6 +1,5 @@
 import { AdblockSyntax } from '../utils/adblockers';
 import { EMPTY } from '../utils/constants';
-import { locRange } from '../utils/location';
 import { CommentRuleParser } from './comment';
 import { CosmeticRuleParser } from './cosmetic';
 import { NetworkRuleParser } from './network';
@@ -11,14 +10,15 @@ import {
     type EmptyRule,
 } from './common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { getParserOptions, type ParserOptions } from './options';
+import { defaultParserOptions } from './options';
+import { ParserBase } from './interface';
 
 /**
  * `RuleParser` is responsible for parsing the rules.
  *
  * It automatically determines the category and syntax of the rule, so you can pass any kind of rule to it.
  */
-export class RuleParser {
+export class RuleParser extends ParserBase {
     /**
      * Parse an adblock rule. You can pass any kind of rule to this method, since it will automatically determine
      * the category and syntax. If the rule is syntactically invalid, then an error will be thrown. If the
@@ -44,8 +44,9 @@ export class RuleParser {
      * scriptlet is supported by AdGuard or not. This is also the task of the "Compatibility table". Here, we simply
      * mark the rule with the `AdGuard` syntax in this case.
      *
-     * @param raw Raw adblock rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Adblock rule node
      * @throws If the input matches a pattern but syntactically invalid
      * @example
@@ -76,10 +77,7 @@ export class RuleParser {
      * const ast7 = RuleParser.parse("!#if (adguard)");
      * ```
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyRule {
-        const parsedOptions = getParserOptions(options);
-        const { baseLoc, isLocIncluded, tolerant } = parsedOptions;
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyRule {
         try {
             // Empty lines / rules (handle it just for convenience)
             if (raw.trim().length === 0) {
@@ -92,8 +90,9 @@ export class RuleParser {
                     syntax: AdblockSyntax.Common,
                 };
 
-                if (isLocIncluded) {
-                    result.loc = locRange(baseLoc, 0, raw.length);
+                if (options.isLocIncluded) {
+                    result.start = baseOffset;
+                    result.end = baseOffset + raw.length;
                 }
 
                 return result;
@@ -105,13 +104,36 @@ export class RuleParser {
             // doesn't start with comment marker. But if the rule matches the
             // pattern of a parser, then it will return the AST of the rule, or
             // throw an error if the rule is syntactically invalid.
-            return CommentRuleParser.parse(raw, parsedOptions)
-                || CosmeticRuleParser.parse(raw, parsedOptions)
-                || NetworkRuleParser.parse(raw, parsedOptions);
+            if (options.ignoreComments) {
+                if (CommentRuleParser.isCommentRule(raw)) {
+                    const result: EmptyRule = {
+                        type: 'EmptyRule',
+                        raws: {
+                            text: raw,
+                        },
+                        category: RuleCategory.Empty,
+                        syntax: AdblockSyntax.Common,
+                    };
+
+                    if (options.isLocIncluded) {
+                        result.start = baseOffset;
+                        result.end = baseOffset + raw.length;
+                    }
+
+                    return result;
+                }
+
+                return CosmeticRuleParser.parse(raw, options, baseOffset)
+                    || NetworkRuleParser.parse(raw, options, baseOffset);
+            }
+
+            return CommentRuleParser.parse(raw, options, baseOffset)
+                || CosmeticRuleParser.parse(raw, options, baseOffset)
+                || NetworkRuleParser.parse(raw, options, baseOffset);
         } catch (error: unknown) {
             // If tolerant mode is disabled or the error is not known, then simply
             // re-throw the error
-            if (!tolerant || !(error instanceof Error)) {
+            if (!options.tolerant || !(error instanceof Error)) {
                 throw error;
             }
 
@@ -133,11 +155,13 @@ export class RuleParser {
             // If the error is an AdblockSyntaxError, then we can add the
             // location of the error to the result
             if (error instanceof AdblockSyntaxError) {
-                result.error.loc = error.loc;
+                result.error.start = error.start;
+                result.error.end = error.end;
             }
 
-            if (isLocIncluded) {
-                result.loc = locRange(baseLoc, 0, raw.length);
+            if (options.isLocIncluded) {
+                result.start = baseOffset;
+                result.end = baseOffset + raw.length;
             }
 
             return result;

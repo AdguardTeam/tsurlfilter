@@ -35,14 +35,14 @@ import {
 } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { StringUtils } from '../../utils/string';
-import { locRange, shiftLoc } from '../../utils/location';
 import { CommentRuleParser } from '../comment';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
 import { UboPseudoName, type UboSelector, UboSelectorParser } from '../css/ubo-selector';
 import { AdgCssInjectionParser } from '../css/adg-css-injection';
 import { AbpSnippetInjectionBodyParser } from './body/abp-snippet';
 import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet';
 import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet';
+import { ParserBase } from '../interface';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -74,7 +74,7 @@ const ADG_CSS_INJECTION_PATTERN = /^(?:.+){(?:.+)}$/;
  */
 // TODO: Make raw body parsing optional
 // TODO: Split into smaller sections
-export class CosmeticRuleParser {
+export class CosmeticRuleParser extends ParserBase {
     /**
      * Determines whether a rule is a cosmetic rule. The rule is considered cosmetic if it
      * contains a cosmetic rule separator.
@@ -98,28 +98,21 @@ export class CosmeticRuleParser {
      *  - separator
      *  - body
      *
-     * @param raw Raw cosmetic rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns
      * Parsed cosmetic rule AST or null if it failed to parse based on the known cosmetic rules
      * @throws If the input matches the cosmetic rule pattern but syntactically invalid
      */
     // TODO: Split to smaller functions
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyCosmeticRule | null {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyCosmeticRule | null {
         // Find cosmetic rule separator - each cosmetic rule must have it, otherwise it is not a cosmetic rule
         const separatorResult = CosmeticRuleSeparatorUtils.find(raw);
 
         if (!separatorResult) {
             return null;
         }
-
-        // It is enough to handle parser config after checking the main condition
-        const {
-            baseLoc,
-            isLocIncluded,
-            parseAbpSpecificRules,
-            parseUboSpecificRules,
-        } = getParserOptions(options);
 
         let syntax = AdblockSyntax.Common;
         let modifiers: ModifierList | undefined;
@@ -134,7 +127,8 @@ export class CosmeticRuleParser {
         if (bodyEnd <= bodyStart) {
             throw new AdblockSyntaxError(
                 ERROR_MESSAGES.EMPTY_RULE_BODY,
-                locRange(baseLoc, 0, raw.length),
+                baseOffset,
+                baseOffset + raw.length,
             );
         }
 
@@ -156,7 +150,8 @@ export class CosmeticRuleParser {
             if (rawPattern[patternOffset] !== DOLLAR_SIGN) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_MARKER, DOLLAR_SIGN, rawPattern),
-                    locRange(baseLoc, patternOffset, rawPattern.length),
+                    baseOffset + patternOffset,
+                    baseOffset + rawPattern.length,
                 );
             }
 
@@ -172,19 +167,22 @@ export class CosmeticRuleParser {
             if (modifierListEnd === -1) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_END, CLOSE_SQUARE_BRACKET, rawPattern),
-                    locRange(baseLoc, patternOffset, rawPattern.length),
+                    baseOffset + patternOffset,
+                    baseOffset + rawPattern.length,
                 );
             }
 
             // Parse modifier list
-            modifiers = ModifierListParser.parse(raw.slice(patternOffset, modifierListEnd), {
-                isLocIncluded,
-                baseLoc: shiftLoc(baseLoc, patternOffset),
-            });
+            modifiers = ModifierListParser.parse(
+                raw.slice(patternOffset, modifierListEnd),
+                options,
+                baseOffset + patternOffset,
+            );
 
             // Expand modifier list location to include the opening and closing square brackets
-            if (isLocIncluded) {
-                modifiers.loc = locRange(baseLoc, modifierListStart, modifierListEnd + 1);
+            if (options.isLocIncluded) {
+                modifiers.start = baseOffset + modifierListStart;
+                modifiers.end = baseOffset + modifierListEnd + 1;
             }
 
             // Consume modifier list
@@ -198,10 +196,11 @@ export class CosmeticRuleParser {
         patternOffset = StringUtils.skipWS(rawPattern, patternOffset);
 
         // Parse domains
-        const domains = DomainListParser.parse(rawPattern.slice(patternOffset), {
-            isLocIncluded,
-            baseLoc: shiftLoc(baseLoc, patternOffset),
-        });
+        const domains = DomainListParser.parse(
+            rawPattern.slice(patternOffset),
+            options,
+            baseOffset + patternOffset,
+        );
 
         // Step 2. Parse the separator
         const separator: Value<CosmeticRuleSeparator> = {
@@ -209,8 +208,9 @@ export class CosmeticRuleParser {
             value: separatorResult.separator,
         };
 
-        if (isLocIncluded) {
-            separator.loc = locRange(baseLoc, separatorResult.start, separatorResult.end);
+        if (options.isLocIncluded) {
+            separator.start = baseOffset + separatorResult.start;
+            separator.end = baseOffset + separatorResult.end;
         }
 
         const exception = CosmeticRuleSeparatorUtils.isException(separatorResult.separator);
@@ -238,7 +238,8 @@ export class CosmeticRuleParser {
             if (syntax !== AdblockSyntax.Common && syntax !== expectedSyntax) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, expectedSyntax, syntax),
-                    locRange(baseLoc, patternStart, bodyEnd),
+                    baseOffset + patternStart,
+                    baseOffset + bodyEnd,
                 );
             }
         };
@@ -246,12 +247,8 @@ export class CosmeticRuleParser {
         let uboSelector: UboSelector | undefined;
 
         // Parse UBO rule modifiers
-        if (parseUboSpecificRules) {
-            uboSelector = UboSelectorParser.parse(rawBody, {
-                isLocIncluded,
-                baseLoc: shiftLoc(baseLoc, bodyStart),
-            });
-
+        if (options.parseUboSpecificRules) {
+            uboSelector = UboSelectorParser.parse(rawBody, options, baseOffset + bodyStart);
             rawBody = uboSelector.selector.value;
 
             // Do not allow ADG modifiers and UBO modifiers in the same rule
@@ -276,8 +273,9 @@ export class CosmeticRuleParser {
                                 children: [],
                             };
 
-                            if (isLocIncluded) {
-                                modifiers.loc = locRange(baseLoc, bodyStart, bodyEnd);
+                            if (options.isLocIncluded) {
+                                modifiers.start = baseOffset + bodyStart;
+                                modifiers.end = baseOffset + bodyEnd;
                             }
                         }
 
@@ -310,8 +308,9 @@ export class CosmeticRuleParser {
             separator,
         };
 
-        if (isLocIncluded) {
-            baseRule.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            baseRule.start = baseOffset;
+            baseRule.end = baseOffset + raw.length;
         }
 
         const parseUboCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
@@ -363,8 +362,9 @@ export class CosmeticRuleParser {
                 remove,
             };
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -380,8 +380,9 @@ export class CosmeticRuleParser {
                 value: rawBody,
             };
 
-            if (isLocIncluded) {
-                selectorList.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                selectorList.start = baseOffset + bodyStart;
+                selectorList.end = baseOffset + bodyEnd;
             }
 
             const body: ElementHidingRuleBody = {
@@ -389,8 +390,9 @@ export class CosmeticRuleParser {
                 selectorList,
             };
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -415,30 +417,26 @@ export class CosmeticRuleParser {
             return {
                 syntax: AdblockSyntax.Adg,
                 type: CosmeticRuleType.CssInjectionRule,
-                body: AdgCssInjectionParser.parse(rawBody, {
-                    isLocIncluded,
-                    baseLoc: shiftLoc(baseLoc, bodyStart),
-                }),
+                body: AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart),
             };
         };
 
         const parseAbpSnippetInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
-            if (!parseAbpSpecificRules) {
+            if (!options.parseAbpSpecificRules) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAX_DISABLED, AdblockSyntax.Abp),
-                    locRange(baseLoc, bodyStart, bodyEnd),
+                    baseOffset + bodyStart,
+                    baseOffset + bodyEnd,
                 );
             }
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Abp);
 
-            const body = AbpSnippetInjectionBodyParser.parse(rawBody, {
-                isLocIncluded,
-                baseLoc: shiftLoc(baseLoc, bodyStart),
-            });
+            const body = AbpSnippetInjectionBodyParser.parse(rawBody, options, baseOffset + bodyStart);
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -453,22 +451,20 @@ export class CosmeticRuleParser {
                 return null;
             }
 
-            if (!parseUboSpecificRules) {
+            if (!options.parseUboSpecificRules) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAX_DISABLED, AdblockSyntax.Ubo),
-                    locRange(baseLoc, bodyStart, bodyEnd),
+                    baseOffset + bodyStart,
+                    baseOffset + bodyEnd,
                 );
             }
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Ubo);
 
-            const body = UboScriptletInjectionBodyParser.parse(rawBody, {
-                isLocIncluded,
-                baseLoc: shiftLoc(baseLoc, bodyStart),
-            });
-
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            const body = UboScriptletInjectionBodyParser.parse(rawBody, options, baseOffset + bodyStart);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -486,13 +482,11 @@ export class CosmeticRuleParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Adg);
 
-            const body = AdgScriptletInjectionBodyParser.parse(rawBody, {
-                isLocIncluded,
-                baseLoc: shiftLoc(baseLoc, bodyStart),
-            });
+            const body = AdgScriptletInjectionBodyParser.parse(rawBody, options, baseOffset + bodyStart);
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -510,8 +504,9 @@ export class CosmeticRuleParser {
                 value: rawBody,
             };
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -526,10 +521,11 @@ export class CosmeticRuleParser {
                 return null;
             }
 
-            if (!parseUboSpecificRules) {
+            if (!options.parseUboSpecificRules) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAX_DISABLED, AdblockSyntax.Ubo),
-                    locRange(baseLoc, bodyStart, bodyEnd),
+                    baseOffset + bodyStart,
+                    baseOffset + bodyEnd,
                 );
             }
 
@@ -540,8 +536,9 @@ export class CosmeticRuleParser {
                 value: rawBody,
             };
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -559,8 +556,9 @@ export class CosmeticRuleParser {
                 value: rawBody,
             };
 
-            if (isLocIncluded) {
-                body.loc = locRange(baseLoc, bodyStart, bodyEnd);
+            if (options.isLocIncluded) {
+                body.start = baseOffset + bodyStart;
+                body.end = baseOffset + bodyEnd;
             }
 
             return {
@@ -609,7 +607,8 @@ export class CosmeticRuleParser {
         if (!restProps) {
             throw new AdblockSyntaxError(
                 sprintf(ERROR_MESSAGES.INVALID_BODY_FOR_SEPARATOR, rawBody, separatorResult.separator),
-                locRange(baseLoc, bodyStart, bodyEnd),
+                baseOffset + bodyStart,
+                baseOffset + bodyEnd,
             );
         }
 

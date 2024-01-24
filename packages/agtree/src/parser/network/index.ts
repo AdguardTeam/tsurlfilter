@@ -15,9 +15,9 @@ import {
     RuleCategory,
     type Value,
 } from '../common';
-import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.
@@ -28,16 +28,16 @@ import { getParserOptions, type ParserOptions } from '../options';
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#basic}
  */
-export class NetworkRuleParser {
+export class NetworkRuleParser extends ParserBase {
     /**
      * Parses a network rule (also known as basic rule).
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Network rule AST
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): NetworkRule {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): NetworkRule {
         let offset = 0;
 
         // Skip leading whitespace
@@ -67,11 +67,12 @@ export class NetworkRuleParser {
         // Extract the pattern
         const pattern: Value = {
             type: 'Value',
-            value: raw.substring(patternStart, patternEnd),
+            value: raw.slice(patternStart, patternEnd),
         };
 
-        if (isLocIncluded) {
-            pattern.loc = locRange(baseLoc, patternStart, patternEnd);
+        if (options.isLocIncluded) {
+            pattern.start = baseOffset + patternStart;
+            pattern.end = baseOffset + patternEnd;
         }
 
         // Parse modifiers (if any)
@@ -83,11 +84,9 @@ export class NetworkRuleParser {
 
         if (separatorIndex !== -1) {
             modifiers = ModifierListParser.parse(
-                raw.substring(modifiersStart, modifiersEnd),
-                {
-                    ...options,
-                    baseLoc: shiftLoc(baseLoc, modifiersStart),
-                },
+                raw.slice(modifiersStart, modifiersEnd),
+                options,
+                baseOffset + modifiersStart,
             );
         }
 
@@ -95,7 +94,8 @@ export class NetworkRuleParser {
         if (pattern.value.length === 0 && (modifiers === undefined || modifiers.children.length === 0)) {
             throw new AdblockSyntaxError(
                 'Network rule must have a pattern or modifiers',
-                locRange(baseLoc, 0, raw.length),
+                baseOffset,
+                baseOffset + raw.length,
             );
         }
 
@@ -111,8 +111,9 @@ export class NetworkRuleParser {
             modifiers,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

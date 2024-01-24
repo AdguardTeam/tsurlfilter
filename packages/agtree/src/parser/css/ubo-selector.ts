@@ -20,10 +20,10 @@ import {
     type Node,
     type Modifier,
 } from '../common';
-import { locRange } from '../../utils/location';
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -289,27 +289,27 @@ export const formatPseudoName = (name: string, wrapper?: string): string => {
 /**
  * Parser for uBO selectors.
  */
-export class UboSelectorParser {
+export class UboSelectorParser extends ParserBase {
     /**
      * Parses a uBO selector list, eg. `div:matches-path(/path)`.
      *
-     * @param raw Raw selector list text.
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed uBO selector {@link UboSelector}.
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): UboSelector {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): UboSelector {
         // Prepare helper variables
         const modifiers: ModifierList = {
             type: 'ModifierList',
             children: [],
         };
 
-        if (isLocIncluded) {
-            modifiers.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            modifiers.start = baseOffset;
+            modifiers.end = baseOffset + raw.length;
         }
 
         // Do not perform any parsing if the selector doesn't contain any uBO modifier
@@ -322,8 +322,9 @@ export class UboSelectorParser {
                 value: raw,
             };
 
-            if (isLocIncluded) {
-                selector.loc = locRange(baseLoc, 0, raw.length);
+            if (options.isLocIncluded) {
+                selector.start = baseOffset;
+                selector.end = baseOffset + raw.length;
             }
 
             const result: UboSelector = {
@@ -332,8 +333,9 @@ export class UboSelectorParser {
                 modifiers,
             };
 
-            if (isLocIncluded) {
-                result.loc = locRange(baseLoc, 0, raw.length);
+            if (options.isLocIncluded) {
+                result.start = baseOffset;
+                result.end = baseOffset + raw.length;
             }
 
             return result;
@@ -356,7 +358,8 @@ export class UboSelectorParser {
             if (processedModifiers.has(modifier.name)) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.DUPLICATED_UBO_MODIFIER, formatPseudoName(modifier.name)),
-                    locRange(baseLoc, modifier.modifierStart, raw.length),
+                    baseOffset + modifier.modifierStart,
+                    baseOffset + raw.length,
                 );
             }
             uboModifierStack.push(modifier);
@@ -391,7 +394,8 @@ export class UboSelectorParser {
             ) {
                 throw new AdblockSyntaxError(
                     ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                    locRange(baseLoc, start, raw.length),
+                    baseOffset + start,
+                    baseOffset + raw.length,
                 );
             }
 
@@ -399,7 +403,7 @@ export class UboSelectorParser {
             if (tokens[i - 1]?.type === TokenType.Colon && type === TokenType.Function) {
                 // Since closing parenthesis is always included in the function token, but we only need the function
                 // name, we need to cut off the last character, this is why we use `end - 1` here
-                const fn = raw.substring(start, end - 1);
+                const fn = raw.slice(start, end - 1);
 
                 // Check if the pseudo class is a known uBO modifier
                 if (KNOWN_UBO_MODIFIERS.has(fn)) {
@@ -432,7 +436,8 @@ export class UboSelectorParser {
                                         formatPseudoName(uboModifierStack[uboModifierStack.length - 1].name),
                                         formatPseudoName(CSS_NOT_PSEUDO),
                                     ),
-                                    locRange(baseLoc, start - 1, raw.length),
+                                    baseOffset + start - 1,
+                                    baseOffset + raw.length,
                                 );
                             }
 
@@ -452,7 +457,7 @@ export class UboSelectorParser {
                                 ) {
                                     continue;
                                 } else if (tokens[j].type === TokenType.Function) {
-                                    const wrapperFnName = raw.substring(tokens[j].start, tokens[j].end - 1);
+                                    const wrapperFnName = raw.slice(tokens[j].start, tokens[j].end - 1);
                                     if (wrapperFnName !== CSS_NOT_PSEUDO) {
                                         throw new AdblockSyntaxError(
                                             sprintf(
@@ -461,7 +466,8 @@ export class UboSelectorParser {
                                                 formatPseudoName(wrapperFnName),
                                                 formatPseudoName(CSS_NOT_PSEUDO),
                                             ),
-                                            locRange(baseLoc, tokens[j].start - 1, raw.length),
+                                            baseOffset + tokens[j].start - 1,
+                                            baseOffset + raw.length,
                                         );
                                     }
 
@@ -477,7 +483,9 @@ export class UboSelectorParser {
                                                 got,
                                                 formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
                                             ),
-                                            locRange(baseLoc, tokens[j - 1]?.start || 0, raw.length),
+                                            // eslint-disable-next-line no-unsafe-optional-chaining
+                                            baseOffset + tokens[j - 1]?.start || 0,
+                                            baseOffset + raw.length,
                                         );
                                     }
 
@@ -490,7 +498,8 @@ export class UboSelectorParser {
                                             formatPseudoName(UboPseudoName.MatchesPath),
                                             getFormattedTokenName(tokens[j].type),
                                         ),
-                                        locRange(baseLoc, tokens[j].start, raw.length),
+                                        baseOffset + tokens[j].start,
+                                        baseOffset + raw.length,
                                     );
                                 }
                             }
@@ -508,7 +517,8 @@ export class UboSelectorParser {
                         } else {
                             throw new AdblockSyntaxError(
                                 sprintf(ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED, formatPseudoName(fn)),
-                                locRange(baseLoc, start - 1, raw.length),
+                                baseOffset + start - 1,
+                                baseOffset + raw.length,
                             );
                         }
                     } else {
@@ -540,7 +550,8 @@ export class UboSelectorParser {
                                 formatPseudoName(UboPseudoName.MatchesPath),
                                 getFormattedTokenName(type),
                             ),
-                            locRange(baseLoc, start, raw.length),
+                            baseOffset + start,
+                            baseOffset + raw.length,
                         );
                     }
                 }
@@ -558,29 +569,23 @@ export class UboSelectorParser {
                             value: lastStackedModifier.name,
                         };
 
-                        if (isLocIncluded) {
+                        if (options.isLocIncluded) {
                             // TODO: Refactor
-                            modifierName.loc = locRange(
-                                baseLoc,
-                                lastStackedModifier.nameStart,
-                                lastStackedModifier.nameEnd,
-                            );
+                            modifierName.start = baseOffset + lastStackedModifier.nameStart;
+                            modifierName.end = baseOffset + lastStackedModifier.nameEnd;
                         }
 
                         const value: Value = {
                             type: 'Value',
-                            value: raw.substring(lastStackedModifier.valueStart, lastStackedModifier.valueEnd),
+                            value: raw.slice(lastStackedModifier.valueStart, lastStackedModifier.valueEnd),
                         };
 
-                        if (isLocIncluded) {
-                            value.loc = locRange(
-                                baseLoc,
-                                lastStackedModifier.valueStart,
-                                // It's safe to use `!` here, because we determined the value end index in the
-                                // previous `if` statement
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                lastStackedModifier.valueEnd!,
-                            );
+                        if (options.isLocIncluded) {
+                            value.start = baseOffset + lastStackedModifier.valueStart;
+                            // It's safe to use `!` here, because we determined the value end index in the
+                            // previous `if` statement
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            value.end = baseOffset + lastStackedModifier.valueEnd!;
                         }
 
                         const modifier: Modifier = {
@@ -590,8 +595,9 @@ export class UboSelectorParser {
                             exception: lastStackedModifier.isException,
                         };
 
-                        if (isLocIncluded) {
-                            modifier.loc = locRange(baseLoc, lastStackedModifier.modifierStart, end);
+                        if (options.isLocIncluded) {
+                            modifier.start = baseOffset + lastStackedModifier.modifierStart;
+                            modifier.end = baseOffset + end;
                         }
 
                         modifiers.children.push(modifier);
@@ -624,8 +630,9 @@ export class UboSelectorParser {
                 .trim(),
         };
 
-        if (isLocIncluded) {
-            selector.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            selector.start = baseOffset;
+            selector.end = baseOffset + raw.length;
         }
 
         const result: UboSelector = {
@@ -634,8 +641,9 @@ export class UboSelectorParser {
             modifiers,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

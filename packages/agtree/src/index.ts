@@ -102,11 +102,8 @@ export {
 } from './utils/constants';
 export { AdblockSyntax } from './utils/adblockers';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
-export { CssTree } from './utils/csstree';
-export { CssTreeNodeType, CssTreeParserContext } from './utils/csstree-constants';
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
-export { shiftLoc, locRange } from './utils/location';
 export {
     ADBLOCK_URL_START,
     ADBLOCK_URL_START_REGEX,
@@ -121,13 +118,13 @@ export {
     QuoteType,
     QuoteUtils,
 } from './utils/quotes';
+export { type Position, PositionProvider } from './utils/position-provider';
 
 // Constants
 export { METADATA_HEADERS } from './converter/data/metadata';
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
 
-// Re-export everything from ECSSTree
-export * as ECSSTree from '@adguard/ecss-tree';
+export { defaultParserOptions } from './parser/options';
 
 // Version
 export { version } from './version';

@@ -1,9 +1,9 @@
 import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
-import { locRange } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type Modifier, type Value } from '../common';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.
@@ -11,18 +11,18 @@ import { getParserOptions, type ParserOptions } from '../options';
  * @example
  * `match-case`, `~third-party`, `domain=example.com|~example.org`
  */
-export class ModifierParser {
+export class ModifierParser extends ParserBase {
     /**
      * Parses a modifier.
      *
-     * @param raw Raw modifier string
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed modifier
      * @throws An error if modifier name or value is empty.
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): Modifier {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Modifier {
         let offset = 0;
 
         // Skip leading whitespace
@@ -55,7 +55,8 @@ export class ModifierParser {
         if (modifierNameStart === modifierEnd) {
             throw new AdblockSyntaxError(
                 'Modifier name cannot be empty',
-                locRange(baseLoc, 0, raw.length),
+                baseOffset,
+                baseOffset + raw.length,
             );
         }
 
@@ -70,8 +71,9 @@ export class ModifierParser {
                 value: raw.slice(modifierNameStart, modifierEnd),
             };
 
-            if (isLocIncluded) {
-                modifier.loc = locRange(baseLoc, modifierNameStart, modifierEnd);
+            if (options.isLocIncluded) {
+                modifier.start = baseOffset + modifierNameStart;
+                modifier.end = baseOffset + modifierEnd;
             }
         } else {
             // If there is an assignment operator, first we need to find the
@@ -83,15 +85,17 @@ export class ModifierParser {
                 value: raw.slice(modifierNameStart, modifierNameEnd),
             };
 
-            if (isLocIncluded) {
-                modifier.loc = locRange(baseLoc, modifierNameStart, modifierNameEnd);
+            if (options.isLocIncluded) {
+                modifier.start = baseOffset + modifierNameStart;
+                modifier.end = baseOffset + modifierNameEnd;
             }
 
             // Value can't be empty
             if (assignmentIndex + 1 === modifierEnd) {
                 throw new AdblockSyntaxError(
                     'Modifier value cannot be empty',
-                    locRange(baseLoc, 0, raw.length),
+                    baseOffset,
+                    baseOffset + raw.length,
                 );
             }
 
@@ -103,8 +107,9 @@ export class ModifierParser {
                 value: raw.slice(valueStart, modifierEnd),
             };
 
-            if (isLocIncluded) {
-                value.loc = locRange(baseLoc, valueStart, modifierEnd);
+            if (options.isLocIncluded) {
+                value.start = baseOffset + valueStart;
+                value.end = baseOffset + modifierEnd;
             }
         }
 
@@ -115,8 +120,9 @@ export class ModifierParser {
             exception,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, modifierStart, modifierEnd);
+        if (options.isLocIncluded) {
+            result.start = baseOffset + modifierStart;
+            result.end = baseOffset + modifierEnd;
         }
 
         return result;

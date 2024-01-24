@@ -1,7 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { StringUtils } from '../../utils/string';
 import {
-    type Location,
     type AnyExpressionNode,
     type AnyOperator,
     type ExpressionParenthesisNode,
@@ -15,9 +14,9 @@ import {
     PIPE,
     UNDERSCORE,
 } from '../../utils/constants';
-import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * Possible operators in the logical expression.
@@ -87,17 +86,16 @@ interface Token {
  * this parser will parse the expression `(adguard_ext_android_cb || adguard_ext_safari)`.
  */
 // TODO: Refactor this class
-export class LogicalExpressionParser {
+export class LogicalExpressionParser extends ParserBase {
     /**
      * Split the expression into tokens.
      *
      * @param raw Source code of the expression
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Token list
      * @throws {AdblockSyntaxError} If the expression is invalid
      */
-    private static tokenize(raw: string, options: Partial<ParserOptions> = {}): Token[] {
-        const { baseLoc } = getParserOptions(options);
+    private static tokenize(raw: string, baseOffset = 0): Token[] {
         const tokens: Token[] = [];
         let offset = 0;
 
@@ -149,7 +147,8 @@ export class LogicalExpressionParser {
                 } else {
                     throw new AdblockSyntaxError(
                         `Unexpected character "${char}"`,
-                        locRange(baseLoc, offset, offset + 1),
+                        baseOffset + offset,
+                        baseOffset + offset + 1,
                     );
                 }
             } else if (char === EXCLAMATION_MARK) {
@@ -163,7 +162,8 @@ export class LogicalExpressionParser {
             } else {
                 throw new AdblockSyntaxError(
                     `Unexpected character "${char}"`,
-                    locRange(baseLoc, offset, offset + 1),
+                    baseOffset + offset,
+                    baseOffset + offset + 1,
                 );
             }
         }
@@ -174,16 +174,16 @@ export class LogicalExpressionParser {
     /**
      * Parses a logical expression.
      *
-     * @param raw Source code of the expression
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Parsed expression
      * @throws {AdblockSyntaxError} If the expression is invalid
      */
     // TODO: Create a separate TokenStream class
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyExpressionNode {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyExpressionNode {
         // Tokenize the source (produces an array of tokens)
-        const tokens = LogicalExpressionParser.tokenize(raw, options);
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+        const tokens = LogicalExpressionParser.tokenize(raw, baseOffset);
 
         // Current token index
         let tokenIndex = 0;
@@ -200,7 +200,8 @@ export class LogicalExpressionParser {
             if (!token) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but reached end of input`,
-                    locRange(baseLoc, 0, raw.length),
+                    baseOffset,
+                    baseOffset + raw.length,
                 );
             }
 
@@ -210,7 +211,8 @@ export class LogicalExpressionParser {
             if (token.type !== type) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but got "${token.type}"`,
-                    locRange(baseLoc, token.start, token.end),
+                    baseOffset + token.start,
+                    baseOffset + token.end,
                 );
             }
 
@@ -232,8 +234,9 @@ export class LogicalExpressionParser {
                 name: raw.slice(token.start, token.end),
             };
 
-            if (isLocIncluded) {
-                result.loc = locRange(baseLoc, token.start, token.end);
+            if (options.isLocIncluded) {
+                result.start = baseOffset + token.start;
+                result.end = baseOffset + token.end;
             }
 
             return result;
@@ -277,28 +280,9 @@ export class LogicalExpressionParser {
                     right,
                 };
 
-                if (isLocIncluded) {
-                    let start: Location;
-                    let end: Location;
-
-                    if (node.loc) {
-                        // no need to shift the node location, because it's already shifted
-                        start = node.loc.start;
-                    } else {
-                        start = shiftLoc(baseLoc, operatorToken.start);
-                    }
-
-                    if (right.loc) {
-                        // no need to shift the node location, because it's already shifted
-                        end = right.loc.end;
-                    } else {
-                        end = shiftLoc(baseLoc, operatorToken.end);
-                    }
-
-                    newNode.loc = {
-                        start,
-                        end,
-                    };
+                if (options.isLocIncluded) {
+                    newNode.start = node.start ?? baseOffset + operatorToken.start;
+                    newNode.end = right.end ?? baseOffset + operatorToken.end;
                 }
 
                 node = newNode;
@@ -323,8 +307,9 @@ export class LogicalExpressionParser {
                 expression,
             };
 
-            if (isLocIncluded) {
-                result.loc = expression.loc;
+            if (options.isLocIncluded) {
+                result.start = expression.start;
+                result.end = expression.end;
             }
 
             return result;
@@ -355,15 +340,14 @@ export class LogicalExpressionParser {
                     left: expression,
                 };
 
-                if (isLocIncluded) {
-                    if (expression.loc) {
-                        node.loc = {
-                            start: shiftLoc(baseLoc, token.start),
-                            // no need to shift the node location, because it's already shifted
-                            end: expression.loc.end,
-                        };
+                if (options.isLocIncluded) {
+                    if (expression.end) {
+                        node.start = baseOffset + token.start;
+                        // no need to shift the node location, because it's already shifted
+                        node.end = expression.end;
                     } else {
-                        node.loc = locRange(baseLoc, token.start, token.end);
+                        node.start = baseOffset + token.start;
+                        node.end = baseOffset + token.end;
                     }
                 }
             } else if (token.type === TokenType.Parenthesis && value === OPEN_PARENTHESIS) {
@@ -371,7 +355,8 @@ export class LogicalExpressionParser {
             } else {
                 throw new AdblockSyntaxError(
                     `Unexpected token "${value}"`,
-                    locRange(baseLoc, token.start, token.end),
+                    baseOffset + token.start,
+                    baseOffset + token.end,
                 );
             }
 
@@ -383,7 +368,8 @@ export class LogicalExpressionParser {
         if (tokenIndex !== tokens.length) {
             throw new AdblockSyntaxError(
                 `Unexpected token "${tokens[tokenIndex].type}"`,
-                locRange(baseLoc, tokens[tokenIndex].start, tokens[tokenIndex].end),
+                baseOffset + tokens[tokenIndex].start,
+                baseOffset + tokens[tokenIndex].end,
             );
         }
 

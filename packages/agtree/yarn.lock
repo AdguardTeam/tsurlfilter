@@ -7,18 +7,6 @@
   resolved "https://registry.yarnpkg.com/@aashutoshrathi/word-wrap/-/word-wrap-1.2.6.tgz#bd9154aec9983f77b3a034ecaa015c2e4201f6cf"
   integrity sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==
 
-"@adguard/css-tokenizer@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@adguard/css-tokenizer/-/css-tokenizer-0.0.1.tgz#dcf5935e650f5799688d08a3393249497535c0f0"
-  integrity sha512-s2GDWivUpgfUWmLY2diWIu/HRgaB0cDz2N40wGVZp+sXSg3+mKuxgXXnVuoMane6dr3tlqiODpbBDlfeJachSw==
-
-"@adguard/ecss-tree@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@adguard/ecss-tree/-/ecss-tree-1.0.8.tgz#9209c2118c88821fc822851153cc042d58abef67"
-  integrity sha512-Y5dfzWH5nnzEH9URuzOQ1RXl0bzmLiGO7Nt9Wc/na7uD5UHqoz4PlzVllFpO1bLA+Cqq5ebNrz+uWRKN3BxSTg==
-  dependencies:
-    css-tree "^2.3.1"
-
 "@adguard/scriptlets@^1.9.61":
   version "1.9.61"
   resolved "https://registry.yarnpkg.com/@adguard/scriptlets/-/scriptlets-1.9.61.tgz#3f0095a02e395bcb833823b7e1d5312602a5ffa2"
@@ -2393,14 +2381,6 @@ cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
     shebang-command "^2.0.0"
     which "^2.0.1"
 
-css-tree@^2.3.1:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/css-tree/-/css-tree-2.3.1.tgz#10264ce1e5442e8572fc82fbe490644ff54b5c20"
-  integrity sha512-6Fv1DV/TYw//QF5IzQdqsNDjx/wc8TrMBZsqjL9eW01tWb7R7k/mq+/VXfJCl7SoD5emsJop9cOByJZfs8hYIw==
-  dependencies:
-    mdn-data "2.0.30"
-    source-map-js "^1.0.1"
-
 debug@^3.2.7:
   version "3.2.7"
   resolved "https://registry.yarnpkg.com/debug/-/debug-3.2.7.tgz#72580b7e9145fb39b6676f9c5e5fb100b934179a"
@@ -4181,11 +4161,6 @@ marked@^4.0.10:
   resolved "https://registry.yarnpkg.com/marked/-/marked-4.3.0.tgz#796362821b019f734054582038b116481b456cf3"
   integrity sha512-PRsaiG84bK+AMvxziE/lCFss8juXjNaWzVbN5tXAm4XjeaS9NAHhop+PjQxz2A9h8Q4M/xGmzP8vqNwy6JeK0A==
 
-mdn-data@2.0.30:
-  version "2.0.30"
-  resolved "https://registry.yarnpkg.com/mdn-data/-/mdn-data-2.0.30.tgz#ce4df6f80af6cfbe218ecd5c552ba13c4dfa08cc"
-  integrity sha512-GaqWWShW4kv/G9IEucWScBx9G1/vsFZZJUO+tD26M8J8z3Kw5RDQjaoZe03YAClgeS/SWPOcb4nkFBTEi5DUEA==
-
 mdurl@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/mdurl/-/mdurl-1.0.1.tgz#fe85b2ec75a59037f2adfec100fd6c601761152e"
@@ -4805,11 +4780,6 @@ smob@^1.0.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/smob/-/smob-1.4.0.tgz#ac9751fe54b1fc1fc8286a628d4e7f824273b95a"
   integrity sha512-MqR3fVulhjWuRNSMydnTlweu38UhQ0HXM4buStD/S3mc/BzX3CuM9OmhyQpmtYCvoYdl5ris6TI0ZqH355Ymqg==
-
-source-map-js@^1.0.1:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/source-map-js/-/source-map-js-1.0.2.tgz#adbc361d9c62df380125e7f161f71c826f1e490c"
-  integrity sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==
 
 source-map-support@0.5.13:
   version "0.5.13"

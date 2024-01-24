@@ -104,18 +104,6 @@ const nodePlugins = (esm = false) => [
 const browserPlugins = [
     ...commonPlugins,
     nodePolyfills(),
-    // The build of CSSTree is a bit complicated (patches, require "emulation", etc.),
-    // so here we only specify the pre-built version by an alias
-    alias({
-        entries: [
-            {
-                find: '@adguard/ecss-tree',
-                replacement: path.join(
-                    'node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
-                ),
-            },
-        ],
-    }),
     // Provide better browser compatibility with Babel
     getBabelOutputPlugin({
         presets: [

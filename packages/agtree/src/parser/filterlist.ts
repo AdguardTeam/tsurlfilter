@@ -1,9 +1,4 @@
-import {
-    defaultLocation,
-    type AnyRule,
-    type FilterList,
-    type NewLine,
-} from './common';
+import { type AnyRule, type FilterList, type NewLine } from './common';
 import { RuleParser } from './rule';
 import {
     CR,
@@ -12,19 +7,20 @@ import {
     LF,
 } from '../utils/constants';
 import { StringUtils } from '../utils/string';
-import { getParserOptions, type ParserOptions } from './options';
-import { addLoc, locRange } from '../utils/location';
+import { defaultParserOptions } from './options';
+import { ParserBase } from './interface';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
  * It is a wrapper around `RuleParser` which parses each line separately.
  */
-export class FilterListParser {
+export class FilterListParser extends ParserBase {
     /**
      * Parses a whole adblock filter list (list of rules).
      *
-     * @param raw Filter list source code (including new lines)
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns AST of the source code (list of rules)
      * @example
      * ```js
@@ -39,9 +35,7 @@ export class FilterListParser {
      * ```
      * @throws If one of the rules is syntactically invalid (if `tolerant` is `false`)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): FilterList {
-        const { baseLoc, isLocIncluded, tolerant } = getParserOptions(options);
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): FilterList {
         // Actual position in the source code
         let offset = 0;
 
@@ -55,20 +49,10 @@ export class FilterListParser {
             // Check if we found a new line
             if (StringUtils.isEOL(raw[offset])) {
                 // Rule text
-                const text = raw.substring(lineStartOffset, offset);
-
-                const relativeLoc = {
-                    offset: lineStartOffset,
-                    line: rules.length + 1,
-                    column: 1,
-                };
+                const text = raw.slice(lineStartOffset, offset);
 
                 // Parse the rule
-                const rule = RuleParser.parse(text, {
-                    tolerant,
-                    isLocIncluded,
-                    baseLoc: addLoc(relativeLoc, baseLoc),
-                });
+                const rule = RuleParser.parse(text, options, lineStartOffset);
 
                 // Get newline type (possible values: 'crlf', 'lf', 'cr' or undefined if no newline found)
                 let nl: NewLine | undefined;
@@ -107,19 +91,9 @@ export class FilterListParser {
             }
         }
 
-        const relativeLoc = {
-            offset: lineStartOffset,
-            line: rules.length + 1,
-            column: 1,
-        };
-
         // Parse the last rule (it doesn't end with a new line)
         rules.push(
-            RuleParser.parse(raw.slice(lineStartOffset, offset), {
-                tolerant,
-                isLocIncluded,
-                baseLoc: addLoc(relativeLoc, baseLoc),
-            }),
+            RuleParser.parse(raw.slice(lineStartOffset, offset), options, baseOffset + lineStartOffset),
         );
 
         // Return the list of rules (FilterList node)
@@ -128,8 +102,9 @@ export class FilterListParser {
             children: rules,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(defaultLocation, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

@@ -85,100 +85,40 @@ describe('ConfigCommentRuleParser', () => {
         // !
         expect(ConfigCommentRuleParser.parse('! aglint-disable')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 16,
-                    line: 1,
-                    column: 17,
-                },
-            },
+            start: 0,
+            end: 16,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                },
+                start: 2,
+                end: 16,
                 value: 'aglint-disable',
             },
         });
 
         expect(ConfigCommentRuleParser.parse('!aglint-disable')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 1,
+                end: 15,
                 value: 'aglint-disable',
             },
         });
@@ -186,100 +126,40 @@ describe('ConfigCommentRuleParser', () => {
         // #
         expect(ConfigCommentRuleParser.parse('# aglint-disable')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 16,
-                    line: 1,
-                    column: 17,
-                },
-            },
+            start: 0,
+            end: 16,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                },
+                start: 2,
+                end: 16,
                 value: 'aglint-disable',
             },
         });
 
         expect(ConfigCommentRuleParser.parse('#aglint-disable')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 1,
+                end: 15,
                 value: 'aglint-disable',
             },
         });
@@ -287,131 +167,51 @@ describe('ConfigCommentRuleParser', () => {
         // Different command
         expect(ConfigCommentRuleParser.parse('! aglint-enable')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
         });
 
         expect(ConfigCommentRuleParser.parse('! aglint-enable rule1')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 21,
-                    line: 1,
-                    column: 22,
-                },
-            },
+            start: 0,
+            end: 21,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 21,
-                        line: 1,
-                        column: 22,
-                    },
-                },
+                start: 16,
+                end: 21,
                 children: [
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        start: 16,
+                        end: 21,
                         value: 'rule1',
                     },
                 ],
@@ -420,97 +220,37 @@ describe('ConfigCommentRuleParser', () => {
 
         expect(ConfigCommentRuleParser.parse('! aglint-enable rule1,rule2')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 27,
-                    line: 1,
-                    column: 28,
-                },
-            },
+            start: 0,
+            end: 27,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 27,
-                        line: 1,
-                        column: 28,
-                    },
-                },
+                start: 16,
+                end: 27,
                 children: [
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        start: 16,
+                        end: 21,
                         value: 'rule1',
                     },
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 22,
-                                line: 1,
-                                column: 23,
-                            },
-                            end: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                        },
+                        start: 22,
+                        end: 27,
                         value: 'rule2',
                     },
                 ],
@@ -519,97 +259,37 @@ describe('ConfigCommentRuleParser', () => {
 
         expect(ConfigCommentRuleParser.parse('! aglint-enable rule1, rule2')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 28,
-                    line: 1,
-                    column: 29,
-                },
-            },
+            start: 0,
+            end: 28,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 28,
-                        line: 1,
-                        column: 29,
-                    },
-                },
+                start: 16,
+                end: 28,
                 children: [
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        start: 16,
+                        end: 21,
                         value: 'rule1',
                     },
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                            end: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                        },
+                        start: 23,
+                        end: 28,
                         value: 'rule2',
                     },
                 ],
@@ -619,181 +299,71 @@ describe('ConfigCommentRuleParser', () => {
         // Ignore comment
         expect(ConfigCommentRuleParser.parse('! aglint-enable rule1, rule2 -- comment')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 39,
-                    line: 1,
-                    column: 40,
-                },
-            },
+            start: 0,
+            end: 39,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 28,
-                        line: 1,
-                        column: 29,
-                    },
-                },
+                start: 16,
+                end: 28,
                 children: [
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        start: 16,
+                        end: 21,
                         value: 'rule1',
                     },
                     {
                         type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                            end: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                        },
+                        start: 23,
+                        end: 28,
                         value: 'rule2',
                     },
                 ],
             },
             comment: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 29,
-                        line: 1,
-                        column: 30,
-                    },
-                    end: {
-                        offset: 39,
-                        line: 1,
-                        column: 40,
-                    },
-                },
+                start: 29,
+                end: 39,
                 value: '-- comment',
             },
         });
 
         expect(ConfigCommentRuleParser.parse('! aglint rule1: "off"')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 21,
-                    line: 1,
-                    column: 22,
-                },
-            },
+            start: 0,
+            end: 21,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                },
+                start: 2,
+                end: 8,
                 value: 'aglint',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 21,
-                        line: 1,
-                        column: 22,
-                    },
-                },
+                start: 9,
+                end: 21,
                 value: {
                     rule1: 'off',
                 },
@@ -802,66 +372,26 @@ describe('ConfigCommentRuleParser', () => {
 
         expect(ConfigCommentRuleParser.parse('! aglint rule1: 1')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 17,
-                    line: 1,
-                    column: 18,
-                },
-            },
+            start: 0,
+            end: 17,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                },
+                start: 2,
+                end: 8,
                 value: 'aglint',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 17,
-                        line: 1,
-                        column: 18,
-                    },
-                },
+                start: 9,
+                end: 17,
                 value: {
                     rule1: 1,
                 },
@@ -870,66 +400,26 @@ describe('ConfigCommentRuleParser', () => {
 
         expect(ConfigCommentRuleParser.parse('! aglint rule1: ["error", "double"]')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 35,
-                    line: 1,
-                    column: 36,
-                },
-            },
+            start: 0,
+            end: 35,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                },
+                start: 2,
+                end: 8,
                 value: 'aglint',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 35,
-                        line: 1,
-                        column: 36,
-                    },
-                },
+                start: 9,
+                end: 35,
                 value: {
                     rule1: [
                         'error',
@@ -947,66 +437,26 @@ describe('ConfigCommentRuleParser', () => {
             ),
         ).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 114,
-                    line: 1,
-                    column: 115,
-                },
-            },
+            start: 0,
+            end: 114,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                },
+                start: 2,
+                end: 8,
                 value: 'aglint',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 70,
-                        line: 1,
-                        column: 71,
-                    },
-                },
+                start: 9,
+                end: 70,
                 value: {
                     rule1: 'off',
                     rule2: [
@@ -1023,18 +473,8 @@ describe('ConfigCommentRuleParser', () => {
             },
             comment: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 71,
-                        line: 1,
-                        column: 72,
-                    },
-                    end: {
-                        offset: 114,
-                        line: 1,
-                        column: 115,
-                    },
-                },
+                start: 71,
+                end: 114,
                 value: "-- this is a comment -- this doesn't matter",
             },
         });

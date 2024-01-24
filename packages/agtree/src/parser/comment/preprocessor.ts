@@ -5,7 +5,6 @@
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
 
-import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
@@ -27,7 +26,8 @@ import { CommentRuleType, RuleCategory } from '../common';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.
@@ -45,7 +45,7 @@ import { getParserOptions, type ParserOptions } from '../options';
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
-export class PreProcessorCommentRuleParser {
+export class PreProcessorCommentRuleParser extends ParserBase {
     /**
      * Determines whether the rule is a pre-processor rule.
      *
@@ -62,18 +62,17 @@ export class PreProcessorCommentRuleParser {
     /**
      * Parses a raw rule as a pre-processor comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns
      * Pre-processor comment AST or null (if the raw rule cannot be parsed as a pre-processor comment)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): PreProcessorCommentRule | null {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): PreProcessorCommentRule | null {
         // Ignore non-pre-processor rules
         if (!PreProcessorCommentRuleParser.isPreProcessorRule(raw)) {
             return null;
         }
-
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
 
         let offset = 0;
 
@@ -108,11 +107,12 @@ export class PreProcessorCommentRuleParser {
         // Create name node
         const name: Value = {
             type: 'Value',
-            value: raw.substring(nameStart, nameEnd),
+            value: raw.slice(nameStart, nameEnd),
         };
 
-        if (isLocIncluded) {
-            name.loc = locRange(baseLoc, nameStart, nameEnd);
+        if (options.isLocIncluded) {
+            name.start = nameStart;
+            name.end = nameEnd;
         }
 
         // Ignore whitespace characters after the directive name (if any)
@@ -125,7 +125,8 @@ export class PreProcessorCommentRuleParser {
             if (offset > nameEnd) {
                 throw new AdblockSyntaxError(
                     `Unexpected whitespace after "${SAFARI_CB_AFFINITY}" directive name`,
-                    locRange(baseLoc, nameEnd, offset),
+                    baseOffset + nameEnd,
+                    baseOffset + offset,
                 );
             }
 
@@ -137,7 +138,8 @@ export class PreProcessorCommentRuleParser {
                 if (raw[offset] !== OPEN_PARENTHESIS) {
                     throw new AdblockSyntaxError(
                         `Unexpected character '${raw[offset]}' after '${SAFARI_CB_AFFINITY}' directive name`,
-                        locRange(baseLoc, offset, offset + 1),
+                        baseOffset + offset,
+                        baseOffset + offset + 1,
                     );
                 }
 
@@ -156,7 +158,8 @@ export class PreProcessorCommentRuleParser {
                 if (closingParenthesesIndex === -1 || raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS) {
                     throw new AdblockSyntaxError(
                         `Missing closing parenthesis for '${SAFARI_CB_AFFINITY}' directive`,
-                        locRange(baseLoc, offset, raw.length),
+                        baseOffset + offset,
+                        baseOffset + raw.length,
                     );
                 }
 
@@ -174,17 +177,16 @@ export class PreProcessorCommentRuleParser {
                     name,
                     // comma separated list of parameters
                     params: ParameterListParser.parse(
-                        raw.substring(parameterListStart, parameterListEnd),
-                        {
-                            isLocIncluded,
-                            separator: COMMA,
-                            baseLoc: shiftLoc(baseLoc, parameterListStart),
-                        },
+                        raw.slice(parameterListStart, parameterListEnd),
+                        options,
+                        baseOffset + parameterListStart,
+                        COMMA,
                     ),
                 };
 
-                if (isLocIncluded) {
-                    result.loc = locRange(baseLoc, 0, raw.length);
+                if (options.isLocIncluded) {
+                    result.start = baseOffset;
+                    result.end = baseOffset + raw.length;
                 }
 
                 return result;
@@ -200,7 +202,8 @@ export class PreProcessorCommentRuleParser {
             if (name.value === IF || name.value === INCLUDE) {
                 throw new AdblockSyntaxError(
                     `Directive "${name.value}" requires parameters`,
-                    locRange(baseLoc, 0, raw.length),
+                    baseOffset,
+                    baseOffset + raw.length,
                 );
             }
 
@@ -214,8 +217,9 @@ export class PreProcessorCommentRuleParser {
                 name,
             };
 
-            if (isLocIncluded) {
-                result.loc = locRange(baseLoc, 0, raw.length);
+            if (options.isLocIncluded) {
+                result.start = baseOffset;
+                result.end = baseOffset + raw.length;
             }
 
             return result;
@@ -233,19 +237,18 @@ export class PreProcessorCommentRuleParser {
         if (name.value === IF) {
             params = LogicalExpressionParser.parse(
                 raw.slice(paramsStart, paramsEnd),
-                {
-                    isLocIncluded,
-                    baseLoc: shiftLoc(baseLoc, paramsStart),
-                },
+                options,
+                baseOffset + paramsStart,
             );
         } else {
             params = {
                 type: 'Value',
-                value: raw.substring(paramsStart, paramsEnd),
+                value: raw.slice(paramsStart, paramsEnd),
             };
 
-            if (isLocIncluded) {
-                params.loc = locRange(baseLoc, paramsStart, paramsEnd);
+            if (options.isLocIncluded) {
+                params.start = paramsStart;
+                params.end = paramsEnd;
             }
         }
 
@@ -260,8 +263,9 @@ export class PreProcessorCommentRuleParser {
             params,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

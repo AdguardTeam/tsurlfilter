@@ -14,8 +14,8 @@ import { MetadataCommentRuleParser } from './metadata';
 import { PreProcessorCommentRuleParser } from './preprocessor';
 import { EMPTY } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { locRange } from '../../utils/location';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `CommentParser` is responsible for parsing any comment-like adblock rules.
@@ -73,7 +73,7 @@ import { getParserOptions, type ParserOptions } from '../options';
  *        ```
  *      - etc.
  */
-export class CommentRuleParser {
+export class CommentRuleParser extends ParserBase {
     /**
      * Checks whether a rule is a regular comment. Regular comments are the ones that start with
      * an exclamation mark (`!`).
@@ -129,25 +129,23 @@ export class CommentRuleParser {
     /**
      * Parses a raw rule as comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Comment AST or null (if the raw rule cannot be parsed as comment)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyCommentRule | null {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyCommentRule | null {
         // Ignore non-comment rules
         if (!CommentRuleParser.isCommentRule(raw)) {
             return null;
         }
 
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-        const options2 = { isLocIncluded, baseLoc };
-
         // First, try to parse as non-regular comment
-        const nonRegular = AgentCommentRuleParser.parse(raw, options2)
-            || HintCommentRuleParser.parse(raw, options2)
-            || PreProcessorCommentRuleParser.parse(raw, options2)
-            || MetadataCommentRuleParser.parse(raw, options2)
-            || ConfigCommentRuleParser.parse(raw, options2);
+        const nonRegular = AgentCommentRuleParser.parse(raw, options, baseOffset)
+            || HintCommentRuleParser.parse(raw, options, baseOffset)
+            || PreProcessorCommentRuleParser.parse(raw, options, baseOffset)
+            || MetadataCommentRuleParser.parse(raw, options, baseOffset)
+            || ConfigCommentRuleParser.parse(raw, options, baseOffset);
 
         if (nonRegular) {
             return nonRegular;
@@ -165,8 +163,9 @@ export class CommentRuleParser {
             value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
         };
 
-        if (isLocIncluded) {
-            marker.loc = locRange(baseLoc, offset, offset + 1);
+        if (options.isLocIncluded) {
+            marker.start = baseOffset + offset;
+            marker.end = baseOffset + offset + 1;
         }
 
         // Skip marker
@@ -178,8 +177,9 @@ export class CommentRuleParser {
             value: raw.slice(offset),
         };
 
-        if (isLocIncluded) {
-            text.loc = locRange(baseLoc, offset, raw.length);
+        if (options.isLocIncluded) {
+            text.start = baseOffset + offset;
+            text.end = baseOffset + raw.length;
         }
 
         // Regular comment rule
@@ -195,8 +195,9 @@ export class CommentRuleParser {
             text,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

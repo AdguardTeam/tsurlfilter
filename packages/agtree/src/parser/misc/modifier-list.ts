@@ -1,8 +1,8 @@
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
-import { locRange, shiftLoc } from '../../utils/location';
 import { StringUtils } from '../../utils/string';
 import { type ModifierList } from '../common';
-import { getParserOptions, type ParserOptions } from '../options';
+import { ParserBase } from '../interface';
+import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
 
 /**
@@ -13,27 +13,27 @@ import { ModifierParser } from './modifier';
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#non-basic-rules-modifiers}
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
  */
-export class ModifierListParser {
+export class ModifierListParser extends ParserBase {
     /**
      * Parses the cosmetic rule modifiers, eg. `third-party,domain=example.com|~example.org`.
      *
      * _Note:_ you should remove `$` separator before passing the raw modifiers to this function,
      *  or it will be parsed in the first modifier.
      *
-     * @param raw Raw modifier list
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Parsed modifiers interface
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): ModifierList {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ModifierList {
         const result: ModifierList = {
             type: 'ModifierList',
             children: [],
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         let offset = StringUtils.skipWS(raw);
@@ -56,11 +56,9 @@ export class ModifierListParser {
 
             // Parse the modifier
             const modifier = ModifierParser.parse(
-                raw.substring(modifierStart, modifierEnd),
-                {
-                    isLocIncluded,
-                    baseLoc: shiftLoc(baseLoc, modifierStart),
-                },
+                raw.slice(modifierStart, modifierEnd),
+                options,
+                baseOffset + modifierStart,
             );
 
             result.children.push(modifier);
@@ -73,13 +71,13 @@ export class ModifierListParser {
         if (separatorIndex !== -1) {
             const modifierStart = StringUtils.skipWS(raw, separatorIndex + 1);
 
-            result.children.push(ModifierParser.parse(
-                raw.substring(modifierStart, raw.length),
-                {
-                    isLocIncluded,
-                    baseLoc: shiftLoc(baseLoc, modifierStart),
-                },
-            ));
+            result.children.push(
+                ModifierParser.parse(
+                    raw.slice(modifierStart, raw.length),
+                    options,
+                    baseOffset + modifierStart,
+                ),
+            );
         }
 
         return result;

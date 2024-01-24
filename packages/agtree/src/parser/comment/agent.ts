@@ -1,13 +1,14 @@
+/* eslint-disable no-case-declarations */
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
 
-import { locRange } from '../../utils/location';
 import { EMPTY, SPACE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { type Agent, type Value } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { getParserOptions, type ParserOptions } from '../options';
+import { ParserBase } from '../interface';
+import { defaultParserOptions } from '../options';
 
 const ADG_NAME_MARKERS = new Set([
     'adguard',
@@ -60,7 +61,7 @@ const getAdblockSyntax = (name: string): AdblockSyntax => {
  * class is responsible for parsing them. The rule itself is parsed by
  * `AgentCommentRuleParser`, which uses this class to parse single agents.
  */
-export class AgentParser {
+export class AgentParser extends ParserBase {
     /**
      * Checks if the string is a valid version.
      *
@@ -74,13 +75,13 @@ export class AgentParser {
     /**
      * Parses a raw rule as an adblock agent comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Agent rule AST
      * @throws {AdblockSyntaxError} If the raw rule cannot be parsed as an adblock agent
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): Agent {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): Agent {
         let offset = 0;
 
         // Save name start position
@@ -100,18 +101,19 @@ export class AgentParser {
             offset = StringUtils.skipWS(raw, offset);
 
             const partEnd = StringUtils.findNextWhitespaceCharacter(raw, offset);
-            const part = raw.substring(offset, partEnd);
+            const part = raw.slice(offset, partEnd);
 
             if (AgentParser.isValidVersion(part)) {
                 // Multiple versions aren't allowed
                 if (version !== null) {
                     throw new AdblockSyntaxError(
                         'Duplicated versions are not allowed',
-                        locRange(baseLoc, offset, partEnd),
+                        baseOffset + offset,
+                        baseOffset + partEnd,
                     );
                 }
 
-                const parsedNamePart = raw.substring(nameStartIndex, nameEndIndex);
+                const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
 
                 // Save name
                 name = {
@@ -119,8 +121,9 @@ export class AgentParser {
                     value: parsedNamePart,
                 };
 
-                if (isLocIncluded) {
-                    name.loc = locRange(baseLoc, nameStartIndex, nameEndIndex);
+                if (options.isLocIncluded) {
+                    name.start = baseOffset + nameStartIndex;
+                    name.end = baseOffset + nameEndIndex;
                 }
 
                 // Save version
@@ -129,8 +132,9 @@ export class AgentParser {
                     value: part,
                 };
 
-                if (isLocIncluded) {
-                    version.loc = locRange(baseLoc, offset, partEnd);
+                if (options.isLocIncluded) {
+                    version.start = baseOffset + offset;
+                    version.end = baseOffset + partEnd;
                 }
 
                 // Save syntax
@@ -145,14 +149,15 @@ export class AgentParser {
 
         // If we didn't find a version, the whole string is the name
         if (name === null) {
-            const parsedNamePart = raw.substring(nameStartIndex, nameEndIndex);
+            const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
             name = {
                 type: 'Value',
                 value: parsedNamePart,
             };
 
-            if (isLocIncluded) {
-                name.loc = locRange(baseLoc, nameStartIndex, nameEndIndex);
+            if (options.isLocIncluded) {
+                name.start = baseOffset + nameStartIndex;
+                name.end = baseOffset + nameEndIndex;
             }
 
             syntax = getAdblockSyntax(parsedNamePart);
@@ -162,7 +167,8 @@ export class AgentParser {
         if (name.value.length === 0) {
             throw new AdblockSyntaxError(
                 'Agent name cannot be empty',
-                locRange(baseLoc, 0, raw.length),
+                baseOffset,
+                baseOffset + raw.length,
             );
         }
 
@@ -173,8 +179,9 @@ export class AgentParser {
             syntax,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

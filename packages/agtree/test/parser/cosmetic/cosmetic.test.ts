@@ -1,8 +1,6 @@
 /* eslint-disable max-len */
 import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultLocation } from '../../../src/parser/common';
-import { locRange } from '../../../src/utils/location';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 
 describe('CosmeticRuleParser - general tests', () => {
@@ -88,7 +86,8 @@ describe('CosmeticRuleParser - general tests', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', ERROR_MESSAGES.EMPTY_RULE_BODY);
-            expect(error).toHaveProperty('loc', locRange(defaultLocation, 0, actual.length));
+            expect(error).toHaveProperty('start', 0);
+            expect(error).toHaveProperty('end', actual.length);
         });
     });
 

@@ -107,6 +107,7 @@ export const enum RuleCategory {
  * which may be separated by a comma `,` (only for DomainList) or a pipe `|`.
  */
 export const enum ListNodeType {
+    Unknown = 'Unknown',
     AppList = 'AppList',
     DomainList = 'DomainList',
     MethodList = 'MethodList',
@@ -116,7 +117,8 @@ export const enum ListNodeType {
 /**
  * Represents child items for {@link ListNodeType}.
  */
-export const enum ListItemNodeType {
+export enum ListItemNodeType {
+    Unknown = 'Unknown',
     App = 'App',
     Domain = 'Domain',
     Method = 'Method',
@@ -231,14 +233,19 @@ export interface Node {
     type: string;
 
     /**
-     * Every node should support a loc property, which refers to the location of the node in the source code.
-     */
-    loc?: LocationRange;
-
-    /**
      * Optionally the raw representation of the node in the source code.
      */
     raw?: string;
+
+    /**
+     * Start offset of the node.
+     */
+    start?: number;
+
+    /**
+     * End offset of the node.
+     */
+    end?: number;
 }
 
 /**
@@ -434,9 +441,14 @@ export interface InvalidRule extends RuleBase {
         message: string;
 
         /**
-         * Error location (if any)
+         * Start offset of the error
          */
-        loc?: LocationRange;
+        start?: number;
+
+        /**
+         * End offset of the error
+         */
+        end?: number;
     }
 }
 
@@ -782,8 +794,8 @@ export type DomainListSeparator = CommaSeparator | PipeSeparator;
  * Common interface for a list item of $app, $denyallow, $domain, $method
  * which have similar syntax.
  */
-export interface ListItem extends Node {
-    type: ListItemNodeType;
+export interface ListItem<T extends ListItemNodeType> extends Node {
+    type: T;
 
     /**
      * Value of the node.
@@ -800,38 +812,29 @@ export interface ListItem extends Node {
 }
 
 /**
- * Represents a {@link ListItem} without the `type` property.
- * Needed for parsing similar-syntax modifier values with a common parse function.
- */
-export type ListItemNoType = Omit<ListItem, 'type'>;
-
-/**
  * Represents an element of the app list — $app.
  */
-export interface App extends ListItem {
-    type: ListItemNodeType.App;
-}
+export type App = ListItem<ListItemNodeType.App>;
 
 /**
  * Represents an element of the domain list — $domain, $denyallow.
  */
-export interface Domain extends ListItem {
-    type: ListItemNodeType.Domain;
-}
+export type Domain = ListItem<ListItemNodeType.Domain>;
 
 /**
  * Represents an element of the method list — $method.
  */
-export interface Method extends ListItem {
-    type: ListItemNodeType.Method;
-}
+export type Method = ListItem<ListItemNodeType.Method>;
 
 /**
  * Represents an element of the stealth option list — $stealth.
  */
-export interface StealthOption extends ListItem {
-    type: ListItemNodeType.StealthOption;
-}
+export type StealthOption = ListItem<ListItemNodeType.StealthOption>;
+
+/**
+ * Represents any list item.
+ */
+export type AnyListItem = App | Domain | Method | StealthOption;
 
 /**
  * Represents a list of domains.

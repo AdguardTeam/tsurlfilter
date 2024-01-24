@@ -11,12 +11,12 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../../utils/constants';
-import { locRange, shiftLoc } from '../../../utils/location';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../../misc/parameter-list';
 import { type ScriptletInjectionRuleBody } from '../../common';
-import { getParserOptions, type ParserOptions } from '../../options';
+import { defaultParserOptions } from '../../options';
+import { ParserBase } from '../../interface';
 
 /**
  * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
@@ -31,7 +31,7 @@ import { getParserOptions, type ParserOptions } from '../../options';
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
  */
-export class AdgScriptletInjectionBodyParser {
+export class AdgScriptletInjectionBodyParser extends ParserBase {
     /**
      * Error messages used by the parser.
      */
@@ -47,8 +47,9 @@ export class AdgScriptletInjectionBodyParser {
     /**
      * Parses the body of an AdGuard-style scriptlet rule.
      *
-     * @param raw Raw scriptlet call body
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Node of the parsed scriptlet call body
      * @throws If the body is syntactically incorrect
      * @example
@@ -56,8 +57,7 @@ export class AdgScriptletInjectionBodyParser {
      * //scriptlet('scriptlet0', 'arg0')
      * ```
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): ScriptletInjectionRuleBody {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ScriptletInjectionRuleBody {
         let offset = 0;
 
         // Skip leading spaces
@@ -67,7 +67,8 @@ export class AdgScriptletInjectionBodyParser {
         if (!raw.startsWith(ADG_SCRIPTLET_MASK, offset)) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_SCRIPTLET_MASK,
-                locRange(baseLoc, offset, raw.length),
+                baseOffset + offset,
+                baseOffset + raw.length,
             );
         }
 
@@ -77,7 +78,8 @@ export class AdgScriptletInjectionBodyParser {
         if (raw[offset] === SPACE) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.WHITESPACE_AFTER_MASK,
-                locRange(baseLoc, offset, raw.length),
+                baseOffset + offset,
+                baseOffset + raw.length,
             );
         }
 
@@ -85,7 +87,8 @@ export class AdgScriptletInjectionBodyParser {
         if (raw[offset] !== OPEN_PARENTHESIS) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_OPENING_PARENTHESIS,
-                locRange(baseLoc, offset, raw.length),
+                baseOffset + offset,
+                baseOffset + raw.length,
             );
         }
 
@@ -102,18 +105,17 @@ export class AdgScriptletInjectionBodyParser {
         ) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_CLOSING_PARENTHESIS,
-                locRange(baseLoc, offset, raw.length),
+                baseOffset + offset,
+                baseOffset + raw.length,
             );
         }
 
         // Parse parameter list
         const params = ParameterListParser.parse(
-            raw.substring(openingParenthesesIndex + 1, closingParenthesesIndex),
-            {
-                isLocIncluded,
-                baseLoc: shiftLoc(baseLoc, openingParenthesesIndex + 1),
-                separator: COMMA,
-            },
+            raw.slice(openingParenthesesIndex + 1, closingParenthesesIndex),
+            options,
+            baseOffset + openingParenthesesIndex + 1,
+            COMMA,
         );
 
         // Allow empty scriptlet call: //scriptlet(),
@@ -121,7 +123,8 @@ export class AdgScriptletInjectionBodyParser {
         if (params.children.length > 0 && params.children[0].value.trim() === EMPTY) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
-                locRange(baseLoc, offset, raw.length),
+                baseOffset + offset,
+                baseOffset + raw.length,
             );
         }
 
@@ -132,8 +135,9 @@ export class AdgScriptletInjectionBodyParser {
             ],
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

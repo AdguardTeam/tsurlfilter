@@ -24,23 +24,23 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#$?#',
-                            loc: context.getLocRangeFor('#$?#'),
+                            ...context.getRangeFor('#$?#'),
                         },
                         body: {
                             type: 'CssInjectionRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: 'body:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('body:-abp-has(.ad)'),
+                                ...context.getRangeFor('body:-abp-has(.ad)'),
                             },
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 0;',
-                                loc: context.getLocRangeFor('padding: 0;'),
+                                ...context.getRangeFor('padding: 0;'),
                             },
-                            loc: context.getLocRangeFor('body:-abp-has(.ad) { padding: 0; }'),
+                            ...context.getRangeFor('body:-abp-has(.ad) { padding: 0; }'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -59,29 +59,29 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#$?#',
-                            loc: context.getLocRangeFor('#$?#'),
+                            ...context.getRangeFor('#$?#'),
                         },
                         body: {
                             type: 'CssInjectionRuleBody',
                             mediaQueryList: {
                                 type: 'Value',
                                 value: '(min-height: 1024px) and (max-height: 1920px)',
-                                loc: context.getLocRangeFor('(min-height: 1024px) and (max-height: 1920px)'),
+                                ...context.getRangeFor('(min-height: 1024px) and (max-height: 1920px)'),
                             },
                             selectorList: {
                                 type: 'Value',
                                 value: 'body:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('body:-abp-has(.ad)'),
+                                ...context.getRangeFor('body:-abp-has(.ad)'),
                             },
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 0;',
-                                loc: context.getLocRangeFor('padding: 0;'),
+                                ...context.getRangeFor('padding: 0;'),
                             },
                             // eslint-disable-next-line max-len
-                            loc: context.getLocRangeFor('@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0; } }'),
+                            ...context.getRangeFor('@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0; } }'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -99,23 +99,23 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@$?#',
-                            loc: context.getLocRangeFor('#@$?#'),
+                            ...context.getRangeFor('#@$?#'),
                         },
                         body: {
                             type: 'CssInjectionRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: 'body:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('body:-abp-has(.ad)'),
+                                ...context.getRangeFor('body:-abp-has(.ad)'),
                             },
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 0;',
-                                loc: context.getLocRangeFor('padding: 0;'),
+                                ...context.getRangeFor('padding: 0;'),
                             },
-                            loc: context.getLocRangeFor('body:-abp-has(.ad) { padding: 0; }'),
+                            ...context.getRangeFor('body:-abp-has(.ad) { padding: 0; }'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -134,23 +134,23 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#$?#',
-                            loc: context.getLocRangeFor('#$?#'),
+                            ...context.getRangeFor('#$?#'),
                         },
                         body: {
                             type: 'CssInjectionRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: 'body:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('body:-abp-has(.ad)'),
+                                ...context.getRangeFor('body:-abp-has(.ad)'),
                             },
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 0;',
-                                loc: context.getLocRangeFor('padding: 0;'),
+                                ...context.getRangeFor('padding: 0;'),
                             },
-                            loc: context.getLocRangeFor('body:-abp-has(.ad) { padding: 0; }'),
+                            ...context.getRangeFor('body:-abp-has(.ad) { padding: 0; }'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -169,29 +169,29 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#$?#',
-                            loc: context.getLocRangeFor('#$?#'),
+                            ...context.getRangeFor('#$?#'),
                         },
                         body: {
                             type: 'CssInjectionRuleBody',
                             mediaQueryList: {
                                 type: 'Value',
                                 value: '(min-height: 1024px) and (max-height: 1920px)',
-                                loc: context.getLocRangeFor('(min-height: 1024px) and (max-height: 1920px)'),
+                                ...context.getRangeFor('(min-height: 1024px) and (max-height: 1920px)'),
                             },
                             selectorList: {
                                 type: 'Value',
                                 value: 'body:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('body:-abp-has(.ad)'),
+                                ...context.getRangeFor('body:-abp-has(.ad)'),
                             },
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 0;',
-                                loc: context.getLocRangeFor('padding: 0;'),
+                                ...context.getRangeFor('padding: 0;'),
                             },
                             // eslint-disable-next-line max-len
-                            loc: context.getLocRangeFor('@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0; } }'),
+                            ...context.getRangeFor('@media (min-height: 1024px) and (max-height: 1920px) { body:-abp-has(.ad) { padding: 0; } }'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -209,23 +209,23 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@$?#',
-                            loc: context.getLocRangeFor('#@$?#'),
+                            ...context.getRangeFor('#@$?#'),
                         },
                         body: {
                             type: 'CssInjectionRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: 'body:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('body:-abp-has(.ad)'),
+                                ...context.getRangeFor('body:-abp-has(.ad)'),
                             },
                             declarationList: {
                                 type: 'Value',
                                 value: 'padding: 0;',
-                                loc: context.getLocRangeFor('padding: 0;'),
+                                ...context.getRangeFor('padding: 0;'),
                             },
-                            loc: context.getLocRangeFor('body:-abp-has(.ad) { padding: 0; }'),
+                            ...context.getRangeFor('body:-abp-has(.ad) { padding: 0; }'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -243,7 +243,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.INVALID_BODY_FOR_SEPARATOR, 'abp-snippet', '#$?#'),
-                        context.getLocRangeFor('abp-snippet'),
+                        ...context.toTuple(context.getRangeFor('abp-snippet')),
                     );
                 },
             },
@@ -253,7 +253,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.INVALID_BODY_FOR_SEPARATOR, 'abp-snippet', '#@$?#'),
-                        context.getLocRangeFor('abp-snippet'),
+                        ...context.toTuple(context.getRangeFor('abp-snippet')),
                     );
                 },
             },
@@ -269,7 +269,8 @@ describe('CosmeticRuleParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 

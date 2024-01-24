@@ -4,16 +4,11 @@ import {
     EMPTY,
     PIPE,
 } from '../../utils/constants';
-import { locRange } from '../../utils/location';
-import {
-    type Domain,
-    type DomainList,
-    ListNodeType,
-    ListItemNodeType,
-} from '../common';
+import { type DomainList, ListNodeType, ListItemNodeType } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type ListParserOptions, parseListItems } from './list-helpers';
-import { getParserOptions } from '../options';
+import { parseListItems } from './list-helpers';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.
@@ -24,40 +19,33 @@ import { getParserOptions } from '../options';
  * This parser is responsible for parsing these domain lists.
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_domains}
  */
-export class DomainListParser {
+export class DomainListParser extends ParserBase {
     /**
      * Parses a domain list, eg. `example.com,example.org,~example.org`
      *
-     * @param raw Raw domain list.
-     * @param options Domain list parser options. See {@link ListParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @param separator Separator character (default: comma)
      *
      * @returns Domain list AST.
      * @throws An {@link AdblockSyntaxError} if the domain list is syntactically invalid.
      * @throws An {@link Error} if the options are invalid.
      */
-    public static parse(raw: string, options: Partial<ListParserOptions> = {}): DomainList {
-        const separator = options.separator ?? COMMA;
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0, separator = COMMA): DomainList {
         if (separator !== COMMA && separator !== PIPE) {
             throw new Error(`Invalid separator: ${separator}`);
         }
 
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
-        const rawItems = parseListItems(raw, { separator, baseLoc, isLocIncluded });
-        const children: Domain[] = rawItems.map((rawListItem) => ({
-            ...rawListItem,
-            type: ListItemNodeType.Domain,
-        }));
-
         const result: DomainList = {
             type: ListNodeType.DomainList,
             separator,
-            children,
+            children: parseListItems(raw, options, baseOffset, separator, ListItemNodeType.Domain),
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

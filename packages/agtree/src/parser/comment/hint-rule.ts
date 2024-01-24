@@ -14,10 +14,10 @@ import {
     RuleCategory,
 } from '../common';
 import { HintParser } from './hint';
-import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.
@@ -30,7 +30,7 @@ import { getParserOptions, type ParserOptions } from '../options';
  * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
-export class HintCommentRuleParser {
+export class HintCommentRuleParser extends ParserBase {
     /**
      * Checks if the raw rule is a hint rule.
      *
@@ -44,15 +44,14 @@ export class HintCommentRuleParser {
     /**
      * Parses a raw rule as a hint comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Hint AST or null (if the raw rule cannot be parsed as a hint comment)
      * @throws If the input matches the HINT pattern but syntactically invalid
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints-1}
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): HintCommentRule | null {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): HintCommentRule | null {
         // Ignore non-hint rules
         if (!HintCommentRuleParser.isHintRule(raw)) {
             return null;
@@ -93,7 +92,8 @@ export class HintCommentRuleParser {
                     if (balance > 1) {
                         throw new AdblockSyntaxError(
                             'Invalid hint: nested parentheses are not allowed',
-                            locRange(baseLoc, hintStartIndex, hintEndIndex),
+                            baseOffset + hintStartIndex,
+                            baseOffset + hintEndIndex,
                         );
                     }
                 } else if (raw[hintEndIndex] === CLOSE_PARENTHESIS && raw[hintEndIndex - 1] !== BACKSLASH) {
@@ -112,11 +112,9 @@ export class HintCommentRuleParser {
 
             // Parse the hint
             const hint = HintParser.parse(
-                raw.substring(hintStartIndex, hintEndIndex),
-                {
-                    isLocIncluded,
-                    baseLoc: shiftLoc(baseLoc, hintStartIndex),
-                },
+                raw.slice(hintStartIndex, hintEndIndex),
+                options,
+                baseOffset + hintStartIndex,
             );
 
             hints.push(hint);
@@ -126,7 +124,8 @@ export class HintCommentRuleParser {
         if (hints.length === 0) {
             throw new AdblockSyntaxError(
                 'Empty hint rule',
-                locRange(baseLoc, 0, offset),
+                baseOffset,
+                baseOffset + offset,
             );
         }
 
@@ -140,8 +139,9 @@ export class HintCommentRuleParser {
             children: hints,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, offset);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + offset;
         }
 
         return result;

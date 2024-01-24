@@ -7,9 +7,7 @@ import { sprintf } from 'sprintf-js';
 
 import { tokenizeBalanced } from './balancing';
 import { EMPTY } from '../../utils/constants';
-import { type Location, defaultLocation } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { locRange } from '../../utils/location';
 import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 import { ABP_EXT_CSS_PREFIX, EXT_CSS_PSEUDO_CLASSES, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../../converter/data/css';
 
@@ -88,17 +86,17 @@ export class CssTokenStream {
     private index = 0;
 
     /**
-     * The base location of the source string.
+     * The base offset of the source string.
      */
-    private baseLoc: Location;
+    private baseOffset: number;
 
     /**
      * Initializes a new instance of the TokenStream class.
      *
      * @param source The source string to tokenize.
-     * @param baseLoc The base location of the source string.
+     * @param baseOffset The base offset of the source string.
      */
-    constructor(source: string, baseLoc = defaultLocation) {
+    constructor(source: string, baseOffset = 0) {
         this.source = source;
 
         // Tokenize the source string with the CSS tokenizer and add balance level to each token.
@@ -120,7 +118,7 @@ export class CssTokenStream {
 
         this.index = 0;
 
-        this.baseLoc = baseLoc;
+        this.baseOffset = baseOffset;
     }
 
     /**
@@ -167,7 +165,8 @@ export class CssTokenStream {
                     ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
                     END_OF_INPUT,
                 ),
-                locRange(this.baseLoc, this.source.length - 1, this.source.length),
+                this.baseOffset + this.source.length - 1,
+                this.baseOffset + this.source.length,
             );
         }
 
@@ -355,7 +354,8 @@ export class CssTokenStream {
         if (this.isEof()) {
             throw new AdblockSyntaxError(
                 'Unexpected end of input',
-                locRange(this.baseLoc, this.source.length - 1, this.source.length),
+                this.baseOffset + this.source.length - 1,
+                this.baseOffset + this.source.length,
             );
         }
     }
@@ -377,7 +377,8 @@ export class CssTokenStream {
                     getFormattedTokenName(type),
                     END_OF_INPUT,
                 ),
-                locRange(this.baseLoc, this.source.length - 1, this.source.length),
+                this.baseOffset + this.source.length - 1,
+                this.baseOffset + this.source.length,
             );
         }
 
@@ -388,7 +389,8 @@ export class CssTokenStream {
                     getFormattedTokenName(type),
                     getFormattedTokenName(token.type),
                 ),
-                locRange(this.baseLoc, token.start, token.end),
+                this.baseOffset + token.start,
+                this.baseOffset + token.end,
             );
         }
 
@@ -400,7 +402,8 @@ export class CssTokenStream {
                     data.balance,
                     token.balance,
                 ),
-                locRange(this.baseLoc, token.start, token.end),
+                this.baseOffset + token.start,
+                this.baseOffset + token.end,
             );
         }
 
@@ -412,7 +415,8 @@ export class CssTokenStream {
                     data.value,
                     this.fragment(),
                 ),
-                locRange(this.baseLoc, token.start, token.end),
+                this.baseOffset + token.start,
+                this.baseOffset + token.end,
             );
         }
     }
@@ -437,7 +441,7 @@ export class CssTokenStream {
             const token = this.tokens[i];
 
             if (token.type === TokenType.Function) {
-                const name = this.source.substring(token.start, token.end - 1); // omit the last parenthesis
+                const name = this.source.slice(token.start, token.end - 1); // omit the last parenthesis
 
                 if (EXT_CSS_PSEUDO_CLASSES.has(name)) {
                     return true;

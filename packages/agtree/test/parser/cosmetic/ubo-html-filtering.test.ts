@@ -21,14 +21,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '##',
-                            loc: context.getLocRangeFor('##'),
+                            ...context.getRangeFor('##'),
                         },
                         body: {
                             type: 'Value',
                             value: '^script:has-text(adblock)',
-                            loc: context.getLocRangeFor('^script:has-text(adblock)'),
+                            ...context.getRangeFor('^script:has-text(adblock)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -45,14 +45,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@#',
-                            loc: context.getLocRangeFor('#@#'),
+                            ...context.getRangeFor('#@#'),
                         },
                         body: {
                             type: 'Value',
                             value: '^script:has-text(adblock)',
-                            loc: context.getLocRangeFor('^script:has-text(adblock)'),
+                            ...context.getRangeFor('^script:has-text(adblock)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -71,14 +71,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '##',
-                            loc: context.getLocRangeFor('##'),
+                            ...context.getRangeFor('##'),
                         },
                         body: {
                             type: 'Value',
                             value: '^script:has-text(adblock)',
-                            loc: context.getLocRangeFor('^script:has-text(adblock)'),
+                            ...context.getRangeFor('^script:has-text(adblock)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -95,14 +95,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@#',
-                            loc: context.getLocRangeFor('#@#'),
+                            ...context.getRangeFor('#@#'),
                         },
                         body: {
                             type: 'Value',
                             value: '^script:has-text(adblock)',
-                            loc: context.getLocRangeFor('^script:has-text(adblock)'),
+                            ...context.getRangeFor('^script:has-text(adblock)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },

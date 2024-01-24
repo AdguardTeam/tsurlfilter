@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Adjustable syntax parsing. This makes possible to disable parsing of uBO and ABP syntaxes, which can be useful when
   parsing known-syntax filters.
 - Performance benchmarking.
+- `PositionProvider` to convert offsets to line/column pairs.
 
 ### Changed
 
@@ -23,11 +24,14 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Modifier node's `modifier` property renamed to `name`.
 - `ScriptletInjectionBodyParser` divided into `AdgScriptletInjectionBodyParser`, `UboScriptletInjectionBodyParser`
   and `AbpSnippetInjectionBodyParser`.
+- Locations (`offset`, `line`, `column`) are changed to only one `offset` value.
+- Parser functions signature to `parse(source, options, baseOffset, ...additionalArgs)`.
 
 ### Fixed
 
 - HTML rule converter now correctly handles the new `:contains()` syntax.
 - Location handling for `FilterListParser`.
+- Performance issues.
 
 ### Removed
 

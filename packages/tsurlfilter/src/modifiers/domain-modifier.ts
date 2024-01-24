@@ -94,7 +94,7 @@ export class DomainModifier {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
-            const node = DomainListParser.parse(domains.trim(), { separator, isLocIncluded: false });
+            const node = DomainListParser.parse(domains.trim(), { isLocIncluded: false }, 0, separator);
 
             if (node.children.length === 0) {
                 throw new SyntaxError('At least one domain must be specified');

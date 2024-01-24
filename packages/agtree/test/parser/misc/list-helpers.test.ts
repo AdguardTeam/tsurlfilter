@@ -1,5 +1,6 @@
-import { type CommaSeparator, type PipeSeparator } from '../../../src/parser/common';
+import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/parser/common';
 import { LIST_PARSE_ERROR_PREFIX, parseListItems } from '../../../src/parser/misc/list-helpers';
+import { defaultParserOptions } from '../../../src/parser/options';
 import { COMMA_DOMAIN_LIST_SEPARATOR, PIPE } from '../../../src/utils/constants';
 
 /**
@@ -14,7 +15,7 @@ const expectToThrowWhileParse = (
     expected: string,
     separator: CommaSeparator | PipeSeparator = PIPE,
 ): void => {
-    expect(() => parseListItems(actual, { separator })).toThrowError(expected);
+    expect(() => parseListItems(actual, defaultParserOptions, 0, separator)).toThrowError(expected);
 };
 
 describe('common parseListItems', () => {
@@ -24,18 +25,9 @@ describe('common parseListItems', () => {
                 actual: 'example.com',
                 expected: [
                     {
-                        loc: {
-                            start: {
-                                offset: 0,
-                                line: 1,
-                                column: 1,
-                            },
-                            end: {
-                                offset: 11,
-                                line: 1,
-                                column: 12,
-                            },
-                        },
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 11,
                         value: 'example.com',
                         exception: false,
                     },
@@ -45,34 +37,16 @@ describe('common parseListItems', () => {
                 actual: '~post|~put',
                 expected: [
                     {
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 5,
-                                line: 1,
-                                column: 6,
-                            },
-                        },
+                        type: ListItemNodeType.Unknown,
+                        start: 1,
+                        end: 5,
                         value: 'post',
                         exception: true,
                     },
                     {
-                        loc: {
-                            start: {
-                                offset: 7,
-                                line: 1,
-                                column: 8,
-                            },
-                            end: {
-                                offset: 10,
-                                line: 1,
-                                column: 11,
-                            },
-                        },
+                        type: ListItemNodeType.Unknown,
+                        start: 7,
+                        end: 10,
                         value: 'put',
                         exception: true,
                     },
@@ -82,57 +56,30 @@ describe('common parseListItems', () => {
                 actual: 'Example.exe|com.example.app|com.example.osx',
                 expected: [
                     {
-                        loc: {
-                            start: {
-                                offset: 0,
-                                line: 1,
-                                column: 1,
-                            },
-                            end: {
-                                offset: 11,
-                                line: 1,
-                                column: 12,
-                            },
-                        },
+                        type: ListItemNodeType.Unknown,
+                        start: 0,
+                        end: 11,
                         value: 'Example.exe',
                         exception: false,
                     },
                     {
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                        },
+                        type: ListItemNodeType.Unknown,
+                        start: 12,
+                        end: 27,
                         value: 'com.example.app',
                         exception: false,
                     },
                     {
-                        loc: {
-                            start: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                            end: {
-                                offset: 43,
-                                line: 1,
-                                column: 44,
-                            },
-                        },
+                        type: ListItemNodeType.Unknown,
+                        start: 28,
+                        end: 43,
                         value: 'com.example.osx',
                         exception: false,
                     },
                 ],
             },
         ])('$actual', ({ actual, expected }) => {
-            expect(parseListItems(actual, { separator: PIPE })).toEqual(expected);
+            expect(parseListItems(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
         });
     });
 
@@ -277,13 +224,16 @@ describe('common parseListItems', () => {
                 actual: 'example.com',
                 expected: [
                     {
+                        type: ListItemNodeType.Unknown,
                         value: 'example.com',
                         exception: false,
                     },
                 ],
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(parseListItems(actual, { separator: PIPE, isLocIncluded: false })).toEqual(expected);
+            expect(
+                parseListItems(actual, { ...defaultParserOptions, isLocIncluded: false }, 0, PIPE),
+            ).toEqual(expected);
         });
     });
 });

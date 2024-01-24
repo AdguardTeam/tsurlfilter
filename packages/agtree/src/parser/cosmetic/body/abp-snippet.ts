@@ -3,12 +3,12 @@
  */
 
 import { SEMICOLON, SPACE } from '../../../utils/constants';
-import { locRange, shiftLoc } from '../../../utils/location';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../../misc/parameter-list';
 import { type ScriptletInjectionRuleBody } from '../../common';
-import { getParserOptions, type ParserOptions } from '../../options';
+import { defaultParserOptions } from '../../options';
+import { ParserBase } from '../../interface';
 
 /**
  * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
@@ -23,7 +23,7 @@ import { getParserOptions, type ParserOptions } from '../../options';
  *
  * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
  */
-export class AbpSnippetInjectionBodyParser {
+export class AbpSnippetInjectionBodyParser extends ParserBase {
     /**
      * Error messages used by the parser.
      */
@@ -34,8 +34,9 @@ export class AbpSnippetInjectionBodyParser {
     /**
      * Parses the body of an Adblock Plus-style snippet rule.
      *
-     * @param raw Raw scriptlet call body
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Node of the parsed scriptlet call body
      * @throws If the body is syntactically incorrect
      * @example
@@ -43,15 +44,15 @@ export class AbpSnippetInjectionBodyParser {
      * #$#snippet0 arg0
      * ```
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): ScriptletInjectionRuleBody {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ScriptletInjectionRuleBody {
         const result: ScriptletInjectionRuleBody = {
             type: 'ScriptletInjectionRuleBody',
             children: [],
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         let offset = 0;
@@ -74,12 +75,10 @@ export class AbpSnippetInjectionBodyParser {
             const scriptletCallEnd = Math.max(StringUtils.skipWSBack(raw, semicolonIndex - 1) + 1, scriptletCallStart);
 
             const params = ParameterListParser.parse(
-                raw.substring(scriptletCallStart, scriptletCallEnd),
-                {
-                    isLocIncluded,
-                    baseLoc: shiftLoc(baseLoc, scriptletCallStart),
-                    separator: SPACE,
-                },
+                raw.slice(scriptletCallStart, scriptletCallEnd),
+                options,
+                baseOffset + scriptletCallStart,
+                SPACE,
             );
 
             // Parse the scriptlet call
@@ -92,7 +91,8 @@ export class AbpSnippetInjectionBodyParser {
         if (result.children.length === 0) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
-                locRange(baseLoc, 0, raw.length),
+                baseOffset,
+                baseOffset + raw.length,
             );
         }
 

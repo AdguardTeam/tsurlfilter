@@ -4,12 +4,11 @@ import {
     CommentRuleType,
     CosmeticRuleType,
     RuleCategory,
-    defaultLocation,
 } from '../../src/parser/common';
 import { type ParserOptions } from '../../src/parser/options';
 import { RuleParser } from '../../src/parser/rule';
 import { AdblockSyntax } from '../../src/utils/adblockers';
-import { locRange } from '../../src/utils/location';
+import { defaultParserOptions } from '../../src/parser/options';
 
 describe('RuleParser', () => {
     test('parse', () => {
@@ -820,6 +819,7 @@ describe('RuleParser', () => {
         test.each<{ options: Partial<ParserOptions>; actual: string; expected: AnyRule | AdblockSyntaxError }>([
             {
                 options: {
+                    ...defaultParserOptions,
                     // do not include location in the nodes
                     isLocIncluded: false,
                 },
@@ -853,6 +853,7 @@ describe('RuleParser', () => {
             },
             {
                 options: {
+                    ...defaultParserOptions,
                     // do not throw on invalid rules - instead, return an InvalidRule node
                     tolerant: true,
                 },
@@ -869,13 +870,16 @@ describe('RuleParser', () => {
                     error: {
                         name: 'AdblockSyntaxError',
                         message: "Invalid uBO scriptlet call, no closing parentheses ')' found",
-                        loc: locRange(defaultLocation, 5, 15),
+                        start: 5,
+                        end: 15,
                     },
-                    loc: locRange(defaultLocation, 0, 15),
+                    start: 0,
+                    end: 15,
                 },
             },
             {
                 options: {
+                    ...defaultParserOptions,
                     // throw on invalid rules
                     tolerant: false,
                 },
@@ -883,7 +887,8 @@ describe('RuleParser', () => {
                 actual: '##+js(scriptlet',
                 expected: new AdblockSyntaxError(
                     "Invalid uBO scriptlet call, no closing parentheses ')' found",
-                    locRange(defaultLocation, 5, 15),
+                    5,
+                    15,
                 ),
             },
         ])('parser options should work for $actual', ({ options, actual, expected }) => {
@@ -897,7 +902,8 @@ describe('RuleParser', () => {
                 const error = fn.mock.results[0].value;
                 expect(error).toBeInstanceOf(AdblockSyntaxError);
                 expect(error).toHaveProperty('message', expected.message);
-                expect(error).toHaveProperty('loc', expected.loc);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
             } else {
                 expect(fn()).toEqual(expected);
             }
