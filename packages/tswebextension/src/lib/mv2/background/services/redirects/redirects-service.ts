@@ -1,16 +1,24 @@
 import { redirects } from '@adguard/scriptlets';
-import type { Redirects } from '@adguard/scriptlets';
+import type { Redirect, Redirects } from '@adguard/scriptlets';
 import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
 import { logger } from '../../../../common';
 
+const BASE_64 = 'base64';
+const CONTENT_TYPE_SEPARATOR = ';';
+
 /**
  * Service for working with redirects.
  */
 export class RedirectsService {
     redirects: Redirects | null = null;
+
+    /**
+     * Cache for encoded redirects.
+     */
+    dataUrlCache: Map<string, string> = new Map();
 
     /**
      * Creates {@link RedirectsService} instance.
@@ -31,6 +39,43 @@ export class RedirectsService {
         } catch (e) {
             throw new Error((e as Error).message);
         }
+    }
+
+    /**
+     * Checks whether content type is base64 encoded.
+     *
+     * @param contentType Content type.
+     * @returns True if content type is base64 encoded.
+     */
+    private static isBase64EncodedContentType = (contentType: string): boolean => {
+        return contentType.endsWith(BASE_64);
+    };
+
+    /**
+     * Creates data url for the specified redirect. It caches created urls.
+     *
+     * @param redirect Redirect.
+     * @returns Data URL.
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs
+     */
+    private createRedirectDataUrl(redirect: Redirect): string {
+        let url = this.dataUrlCache.get(redirect.title);
+
+        if (url) {
+            return url;
+        }
+
+        let { contentType, content } = redirect;
+
+        if (!RedirectsService.isBase64EncodedContentType(contentType)) {
+            contentType += CONTENT_TYPE_SEPARATOR + BASE_64;
+            content = btoa(content);
+        }
+
+        url = `data:${contentType},${content}`;
+        this.dataUrlCache.set(redirect.title, url);
+
+        return url;
     }
 
     /**
@@ -61,10 +106,13 @@ export class RedirectsService {
             return null;
         }
 
-        // For blocking redirects we generate additional search params.
-        const params = this.blockingUrlParams(title, requestUrl);
+        if (redirectSource.isBlocking) {
+            // For blocking redirects we generate additional search params.
+            const params = this.blockingUrlParams(title, requestUrl);
+            return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
+        }
 
-        return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
+        return this.createRedirectDataUrl(redirectSource);
     }
 
     /**
