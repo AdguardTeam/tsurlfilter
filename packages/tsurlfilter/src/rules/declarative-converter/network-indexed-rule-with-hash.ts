@@ -81,6 +81,9 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         // declarative rules, that's why we ignore cosmetic and host rules.
         let networkRule: IRule | null;
         try {
+            // Note: for correct throwing error it is important to use setConfiguration(),
+            // because it will set compatibility type and future parsing options
+            // for network rules will take it into account.
             networkRule = RuleFactory.createRule(
                 ruleConvertedToAGSyntax,
                 filterId,

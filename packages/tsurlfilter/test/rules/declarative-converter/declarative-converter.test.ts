@@ -680,7 +680,7 @@ describe('DeclarativeConverter', () => {
             const networkRule = new NetworkRule(rule, 0);
 
             const err = new UnsupportedModifierError(
-                `Unsupported option "${modifierName}" found in the rule: "${rule}"`,
+                `Unsupported option "${modifierName}" in the rule: "${rule}"`,
                 networkRule,
             );
 

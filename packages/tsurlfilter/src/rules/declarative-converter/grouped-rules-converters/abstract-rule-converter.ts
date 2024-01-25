@@ -27,7 +27,7 @@
  *                            │   └───────────────────────────┘         │                       │
  *                            │   Transforms a single Network Rule      │     ┌─────────────────▼────────────────────┐
  *                            │   into one or several                   │     │                                      │
- *                            │   declarative rules.                    │  ┌──┤ static checkNetworkRuleConvertible() │
+ *                            │   declarative rules.                    │  ┌──┤ static shouldConvertNetworkRule()    │
  *                            │                                         │  │  │                                      │
  *                            │                                         │  │  └──────────────────────────────────────┘
  *                            │                                         │  │  Checks if network rule conversion
@@ -133,6 +133,7 @@ import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier'
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
+import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -580,7 +581,7 @@ export abstract class DeclarativeRuleConverter {
         id: number,
     ): DeclarativeRule[] {
         // If the rule is not convertible - method will throw an error.
-        const shouldConvert = DeclarativeRuleConverter.checkNetworkRuleConvertible(rule);
+        const shouldConvert = NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule);
 
         // The rule does not require conversion.
         if (!shouldConvert) {
@@ -607,281 +608,6 @@ export abstract class DeclarativeRuleConverter {
         }
 
         return [declarativeRule];
-    }
-
-    /**
-     * TODO: Move this method to separate static class, because it accumulates
-     * a lot of logic tied to different types of rules and the method gets
-     * really puffy.
-     *
-     * Checks if a network rule can be converted to a declarative format or not.
-     * We skip the following modifiers:
-     *
-     * All specific exceptions:
-     * $genericblock;
-     * $jsinject;
-     * $urlblock;
-     * $content;
-     * $extension;
-     * $stealth;
-     *
-     * Following specific exceptions are not require conversion, but they
-     * are used in the {@link MatchingResult.getCosmeticOption}:
-     * $elemhide
-     * $generichide;
-     * $specifichide;
-     *
-     * Other:
-     * $popup;
-     * $csp;
-     * $replace;
-     * $cookie;
-     * $redirect - if the rule is a allowlist;
-     * $removeparam - if it contains a negation, or regexp,
-     * or the rule is a allowlist;
-     * $removeheader - if it contains a title from a prohibited list
-     * (see {@link RemoveHeaderModifier.FORBIDDEN_HEADERS});
-     * $jsonprune;
-     * $method - if the modifier contains 'trace' method,
-     * $hls.
-     *
-     * @param rule - Network rule.
-     *
-     * @throws Error with type {@link UnsupportedModifierError} if the rule is not
-     * convertible.
-     *
-     * @returns Boolean flag - `false` if the rule does not require conversion
-     * and `true` if the rule is convertible.
-     */
-    private static checkNetworkRuleConvertible(rule: NetworkRule): boolean {
-        /**
-         * Checks if the $redirect values in the provided network rule
-         * are supported for conversion to MV3.
-         *
-         * @param r Network rule.
-         * @param name Modifier's name.
-         *
-         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-         */
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const checkRemoveParamModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            const removeParam = r.getAdvancedModifier() as RemoveParamModifier;
-            if (!removeParam.getMV3Validity()) {
-                // eslint-disable-next-line max-len
-                const msg = `Network rule with $removeparam modifier with negation or regexp is not supported: "${r.getText()}"`;
-
-                return new UnsupportedModifierError(msg, r);
-            }
-
-            return null;
-        };
-
-        /**
-         * Checks if the provided rule is an allowlist rule.
-         *
-         * @param r Network rule.
-         * @param name Modifier's name.
-         *
-         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-         */
-        const checkAllowRulesFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            if (r.isAllowlist()) {
-                const msg = `Network allowlist rule with ${name} modifier is not supported: "${rule.getText()}"`;
-                return new UnsupportedModifierError(msg, r);
-            }
-
-            return null;
-        };
-
-        /**
-         * Checks if the specified modifier is the only one the rule has.
-         *
-         * @param r Network rule.
-         * @param name Modifier's name.
-         *
-         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-         */
-        const checkOnlyOneModifier = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            // TODO: Remove small hack with "reparsing" rule to extract only options part.
-            const { options } = NetworkRule.parseRuleText(r.getText());
-            if (options === name.replace('$', '')) {
-                const msg = `Network rule with only one enabled modifier ${name} is not supported: "${rule.getText()}"`;
-                return new UnsupportedModifierError(msg, r);
-            }
-
-            return null;
-        };
-
-        /**
-         * Checks if the $removeparam values in the provided network rule
-         * are supported for conversion to MV3.
-         *
-         * @param r Network rule.
-         * @param name Modifier's name.
-         *
-         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-         */
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const checkRemoveHeaderModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            const removeHeader = r.getAdvancedModifier() as RemoveHeaderModifier;
-            if (!removeHeader.isValid) {
-                return new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
-                    `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${r.getText()}"`,
-                    r,
-                );
-            }
-
-            return null;
-        };
-
-        /**
-         * Checks if the $method values in the provided network rule
-         * are supported for conversion to MV3.
-         *
-         * @param r Network rule.
-         * @param name Modifier's name.
-         *
-         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-         */
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const checkMethodModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            const permittedMethods = r.getPermittedMethods();
-            const restrictedMethods = r.getRestrictedMethods();
-            if (
-                permittedMethods?.some((method) => method === HTTPMethod.TRACE)
-                || restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
-            ) {
-                return new UnsupportedModifierError(
-                    `Network rule with $method modifier containing 'trace' method is not supported: "${r.getText()}"`,
-                    r,
-                );
-            }
-
-            return null;
-        };
-
-        /**
-         * Checks if rule is a "document"-allowlist and contains all these
-         * `$elemhide,content,urlblock,jsinject` modifiers at the same time.
-         * If it is - we allow partially convert this rule, because `$content`
-         * is not supported in the MV3 at all and `$jsinject` and `$urlblock`
-         * are not implemented yet, but we can support at least allowlist-rule
-         * with `$elemhide` modifier (not in the DNR, but with tsurlfilter engine).
-         *
-         * TODO: Change the description when `$jsinject` and `$urlblock`
-         * are implemented.
-         *
-         * @param r Network rule.
-         * @param name Modifier's name.
-         *
-         * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
-         */
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const checkDocumentAllowlistFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
-            if (rule.isFilteringDisabled()) {
-                return null;
-            }
-
-            return new UnsupportedModifierError(
-                `Network rule with "${name}" modifier is not supported: "${r.getText()}"`,
-                r,
-            );
-        };
-
-        const unsupportedOptions = [
-            /* Specific exceptions */
-            { option: NetworkRuleOption.Elemhide, name: '$elemhide', skipConversion: true },
-            { option: NetworkRuleOption.Generichide, name: '$generichide', skipConversion: true },
-            { option: NetworkRuleOption.Specifichide, name: '$specifichide', skipConversion: true },
-            { option: NetworkRuleOption.Genericblock, name: '$genericblock' },
-            {
-                option: NetworkRuleOption.Jsinject,
-                name: '$jsinject',
-                customChecks: [checkDocumentAllowlistFn],
-            },
-            {
-                option: NetworkRuleOption.Urlblock,
-                name: '$urlblock',
-                customChecks: [checkDocumentAllowlistFn],
-            },
-            {
-                option: NetworkRuleOption.Content,
-                name: '$content',
-                customChecks: [checkDocumentAllowlistFn],
-            },
-            { option: NetworkRuleOption.Extension, name: '$extension' },
-            { option: NetworkRuleOption.Stealth, name: '$stealth' },
-            /* Specific exceptions */
-            {
-                option: NetworkRuleOption.Popup,
-                name: '$popup',
-                customChecks: [checkOnlyOneModifier],
-            },
-            {
-                option: NetworkRuleOption.Csp,
-                name: '$csp',
-                customChecks: [checkAllowRulesFn],
-            },
-            { option: NetworkRuleOption.Replace, name: '$replace' },
-            { option: NetworkRuleOption.Cookie, name: '$cookie' },
-            {
-                option: NetworkRuleOption.Redirect,
-                name: '$redirect',
-                customChecks: [checkAllowRulesFn],
-            },
-            {
-                option: NetworkRuleOption.RemoveParam,
-                name: '$removeparam',
-                customChecks: [checkAllowRulesFn, checkRemoveParamModifierFn],
-            },
-            {
-                option: NetworkRuleOption.RemoveHeader,
-                name: '$removeheader',
-                customChecks: [checkAllowRulesFn, checkRemoveHeaderModifierFn],
-            },
-            {
-                option: NetworkRuleOption.Method,
-                name: '$method',
-                customChecks: [checkMethodModifierFn],
-            },
-            { option: NetworkRuleOption.JsonPrune, name: '$jsonprune' },
-            { option: NetworkRuleOption.Hls, name: '$hls' },
-        ];
-
-        for (let i = 0; i < unsupportedOptions.length; i += 1) {
-            const {
-                option,
-                name,
-                customChecks,
-                skipConversion,
-            } = unsupportedOptions[i];
-
-            if (!rule.isOptionEnabled(option)) {
-                continue;
-            }
-
-            if (skipConversion) {
-                if (rule.isSingleOptionEnabled(option)) {
-                    return false;
-                }
-                continue;
-            }
-
-            if (customChecks) {
-                for (let j = 0; j < customChecks.length; j += 1) {
-                    const err = customChecks[j](rule, name);
-                    if (err !== null) {
-                        throw err;
-                    }
-                }
-            } else {
-                const msg = `Unsupported option "${name}" found in the rule: "${rule.getText()}"`;
-                throw new UnsupportedModifierError(msg, rule);
-            }
-        }
-
-        return true;
     }
 
     /**

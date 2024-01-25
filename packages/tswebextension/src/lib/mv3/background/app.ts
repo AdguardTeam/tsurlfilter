@@ -1,4 +1,5 @@
 import { IFilter, IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter/es';
 
 import { AppInterface, defaultFilteringLog, getErrorMessage } from '../../common';
 import { logger } from '../utils/logger';
@@ -221,6 +222,14 @@ MessagesHandlerMV3
 
         const configuration = configurationMV3Validator.parse(config);
 
+        // Update configuration of engine.
+        setConfiguration({
+            engine: 'extension',
+            version: chrome.runtime.getManifest().version,
+            verbose: configuration.verbose,
+            compatibility: CompatibilityTypes.Extension,
+        });
+
         // Extract filter into from configuration.
         const {
             staticFilters,
@@ -256,7 +265,6 @@ MessagesHandlerMV3
                 ...customFilters,
             ],
             userrules: configuration.userrules,
-            verbose: configuration.verbose,
         });
         await engineApi.waitingForEngine;
 
