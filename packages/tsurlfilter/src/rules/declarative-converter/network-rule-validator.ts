@@ -1,3 +1,4 @@
+import { CookieModifier } from '../../modifiers/cookie-modifier';
 import { HTTPMethod } from '../../modifiers/method-modifier';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
@@ -152,7 +153,7 @@ export class NetworkRuleDeclarativeValidator {
         if (!removeHeader.isValid) {
             return new UnsupportedModifierError(
                 // eslint-disable-next-line max-len
-                `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${r.getText()}"`,
+                `Network rule with $removeheader modifier contains some of the unsupported headers: "${r.getText()}"`,
                 r,
             );
         }
@@ -185,6 +186,37 @@ export class NetworkRuleDeclarativeValidator {
 
         return null;
     }
+
+    /**
+     * Checks if the $cookie values in the provided network rule
+     * are supported for conversion to MV3.
+     *
+     * @param r Network rule.
+     * @param name Modifier's name.
+     *
+     * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private static checkCookieModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+        const cookieModifier = r.getAdvancedModifier();
+
+        if (!cookieModifier) {
+            return null;
+        }
+
+        if (!CookieModifier.isCookieModifier(cookieModifier)) {
+            return null;
+        }
+
+        if (!cookieModifier.isEmpty()) {
+            // eslint-disable-next-line max-len
+            const msg = `The use of additional parameters in $cookie (apart from $cookie itself) is not supported: "${r.getText()}"`;
+
+            return new UnsupportedModifierError(msg, r);
+        }
+
+        return null;
+    };
 
     /**
      * Checks if rule is a "document"-allowlist and contains all these
@@ -249,11 +281,18 @@ export class NetworkRuleDeclarativeValidator {
                 NetworkRuleDeclarativeValidator.checkRemoveHeaderModifierFn,
             ],
         },
+        Cookie: {
+            name: '$cookie',
+            customChecks: [
+                NetworkRuleDeclarativeValidator.checkAllowRulesFn,
+                NetworkRuleDeclarativeValidator.checkCookieModifierFn,
+            ],
+        },
         Method: { name: '$method', customChecks: [NetworkRuleDeclarativeValidator.checkMethodModifierFn] },
 
         // Not supported.
         // Not supported yet.
-        Cookie: { name: '$cookie', notSupported: true },
+        Header: { name: '$cookie', notSupported: true },
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },
         Permissions: { name: '$permissions', notSupported: true },
@@ -290,10 +329,11 @@ export class NetworkRuleDeclarativeValidator {
      * $specifichide;
      *
      * Other:
+     * $header;
      * $popup;
      * $csp;
      * $replace;
-     * $cookie;
+     * $cookie - if modifier is not empty and contains any parameters;
      * $redirect - if the rule is a allowlist;
      * $removeparam - if it contains a negation, or regexp,
      * or the rule is a allowlist;
