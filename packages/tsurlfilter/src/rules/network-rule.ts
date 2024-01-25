@@ -1823,8 +1823,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleOption.HeaderCompatibleOptions)
-                        !== NetworkRuleOption.HeaderCompatibleOptions) {
+        if ((this.enabledOptions | NetworkRuleGroupOptions.HeaderCompatibleOptions)
+                        !== NetworkRuleGroupOptions.HeaderCompatibleOptions) {
             throw new SyntaxError('$header rules are not compatible with some other modifiers');
         }
         if (this.advancedModifier && this.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
@@ -1842,8 +1842,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validatePermissionsRule(): void {
-        if ((this.enabledOptions | NetworkRuleOption.PermissionsCompatibleOptions)
-                !== NetworkRuleOption.PermissionsCompatibleOptions) {
+        if ((this.enabledOptions | NetworkRuleGroupOptions.PermissionsCompatibleOptions)
+                !== NetworkRuleGroupOptions.PermissionsCompatibleOptions) {
             throw new SyntaxError('$permissions rules are not compatible with some other modifiers');
         }
     }

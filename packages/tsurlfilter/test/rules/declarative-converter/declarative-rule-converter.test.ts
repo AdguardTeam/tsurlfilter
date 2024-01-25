@@ -1760,9 +1760,9 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     describe('check unsupported options', () => {
-        it('returns UnsupportedModifierError for "permissions" option', async () => {
+        it('returns UnsupportedModifierError for "genericblock" option', async () => {
             const filterId = 0;
-            const ruleText = '||example.org^$permissions=sync-xhr=()';
+            const ruleText = '@@||example.org^$genericblock';
             const filter = await createFilter(filterId, [ruleText]);
 
             const {
@@ -1777,7 +1777,7 @@ describe('DeclarativeRuleConverter', () => {
             const networkRule = new NetworkRule(ruleText, filterId);
 
             const err = new UnsupportedModifierError(
-                `Unsupported option "$permissions" in the rule: "${networkRule.getText()}"`,
+                `Unsupported option "$genericblock" in the rule: "${networkRule.getText()}"`,
                 networkRule,
             );
             expect(errors[0]).toStrictEqual(err);

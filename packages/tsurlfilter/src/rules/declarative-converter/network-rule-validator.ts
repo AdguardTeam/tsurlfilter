@@ -253,6 +253,7 @@ export class NetworkRuleDeclarativeValidator {
         Important: { name: '$important' },
         To: { name: '$to' },
         Badfilter: { name: '$badfilter' },
+        Permissions: { name: '$permissions' },
 
         // Supported without conversion.
         Elemhide: { name: '$elemhide', skipConversion: true },
@@ -295,7 +296,6 @@ export class NetworkRuleDeclarativeValidator {
         Header: { name: '$cookie', notSupported: true },
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },
-        Permissions: { name: '$permissions', notSupported: true },
         // Will not be supported.
         Replace: { name: '$replace', notSupported: true },
         JsonPrune: { name: '$jsonprune', notSupported: true },
