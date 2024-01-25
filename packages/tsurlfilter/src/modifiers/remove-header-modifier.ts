@@ -122,6 +122,16 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     }
 
     /**
+     * Checks if the given modifier is an instance of RemoveHeaderModifier.
+     *
+     * @param m The modifier to check.
+     * @returns True if the modifier is an instance of RemoveHeaderModifier, false otherwise.
+     */
+    public static isRemoveHeaderModifier = (m: IAdvancedModifier): m is RemoveHeaderModifier => {
+        return m instanceof RemoveHeaderModifier;
+    };
+
+    /**
      * Returns effective header name to be removed
      *
      * @param isRequestHeaders

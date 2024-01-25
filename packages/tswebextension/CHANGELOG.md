@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of internal urls (e.g `view-source:...`) [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 - Blocked ads count leaking between websites [#2080](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080).
 
+## [1.0.9] - 2024-01-25
+
+### Changed
+- Correct usage of `setConfiguration`.
+
 ## [1.0.8] - 2023-12-27
 
 ### Changed

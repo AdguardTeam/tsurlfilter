@@ -2,8 +2,6 @@ import {
     StringRuleList,
     RuleStorage,
     Engine,
-    setConfiguration,
-    CompatibilityTypes,
     RequestType,
     Request,
     CosmeticResult,
@@ -28,7 +26,7 @@ import { ConfigurationMV3 } from './configuration';
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
+type EngineConfig = Pick<ConfigurationMV3, 'userrules'> & {
     filters: IFilter[],
 };
 
@@ -73,9 +71,7 @@ export class EngineApi {
      * custom), custom rules and the verbose flag.
      */
     async startEngine(config: EngineConfig): Promise<void> {
-        const {
-            filters, userrules, verbose,
-        } = config;
+        const { filters, userrules } = config;
 
         const lists: StringRuleList[] = [];
 
@@ -105,13 +101,6 @@ export class EngineApi {
         }
 
         const ruleStorage = new RuleStorage(lists);
-
-        setConfiguration({
-            engine: 'extension',
-            version: chrome.runtime.getManifest().version,
-            verbose,
-            compatibility: CompatibilityTypes.Extension,
-        });
 
         /*
          * UI thread becomes blocked on the options page while request filter is

@@ -23,12 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#100](https://github.com/AdguardTeam/tsurlfilter/issues/110).
 
-
 ### Fixed
 - Scriptlets not being logged when filtering log is open [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481).
 - Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 - Extension leaking it's instance id when redirecting requests [#69](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278).
+
+
+## [2.2.11] - 2024-01-25
+
+### Changed
+- Disable default support of newly added modifiers in MV3 converter.
 
 ## [2.2.10] - 2024-01-09
 

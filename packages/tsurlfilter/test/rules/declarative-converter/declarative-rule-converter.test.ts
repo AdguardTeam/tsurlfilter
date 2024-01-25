@@ -841,13 +841,31 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('ignores rules with single one modifier enabled - popup', async () => {
+        const rules = [
+            '||example.org^$popup',
+            '||test.com^$document,popup',
+        ];
         const filterId = 0;
 
         const filter = await createFilter(
             filterId,
-            ['||example.org^$popup', '||test.com^$document,popup'],
+            rules,
         );
-        const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
+        const {
+            declarativeRules,
+            errors,
+        } = DeclarativeRulesConverter.convert([filter]);
+
+        const networkRule = new NetworkRule(rules[0], filterId);
+        const expectedError = new UnsupportedModifierError(
+            // eslint-disable-next-line max-len
+            `Network rule with only one enabled modifier $popup is not supported: "${networkRule.getText()}"`,
+            networkRule,
+        );
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toStrictEqual(expectedError);
+
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
             id: 2,
@@ -1738,6 +1756,31 @@ describe('DeclarativeRuleConverter', () => {
                     isUrlFilterCaseSensitive: false,
                 },
             });
+        });
+    });
+
+    describe('check unsupported options', () => {
+        it('returns UnsupportedModifierError for "permissions" option', async () => {
+            const filterId = 0;
+            const ruleText = '||example.org^$permissions=sync-xhr=()';
+            const filter = await createFilter(filterId, [ruleText]);
+
+            const {
+                declarativeRules,
+                errors,
+            } = DeclarativeRulesConverter.convert(
+                [filter],
+            );
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors).toHaveLength(1);
+
+            const networkRule = new NetworkRule(ruleText, filterId);
+
+            const err = new UnsupportedModifierError(
+                `Unsupported option "$permissions" in the rule: "${networkRule.getText()}"`,
+                networkRule,
+            );
+            expect(errors[0]).toStrictEqual(err);
         });
     });
 });

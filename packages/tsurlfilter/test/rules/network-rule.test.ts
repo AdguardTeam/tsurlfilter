@@ -7,6 +7,7 @@ import {
     HTTPMethod,
     StealthOptionName,
     setLogger,
+    NetworkRuleGroupOptions,
 } from '../../src';
 import { LoggerMock } from '../mocks';
 
@@ -526,7 +527,7 @@ describe('NetworkRule constructor', () => {
 
     function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, allowlist = false): void {
         let ruleText = `||example.org^$${name}`;
-        if (allowlist || (option & NetworkRuleOption.AllowlistOnly) === option) {
+        if (allowlist || (option & NetworkRuleGroupOptions.AllowlistOnly) === option) {
             ruleText = `@@${ruleText}`;
         }
 
