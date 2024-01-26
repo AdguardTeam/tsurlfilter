@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.10] - 2024-01-27
+
+### Fixed
+- Export correct types for TS.
+- Exclude usage of ExtendedCSS in common to prevent errors in background in the MV.
+
 ## [1.0.9] - 2024-01-25
 
 ### Changed

@@ -1,8 +1,6 @@
 import { z as zod } from 'zod';
 import { version } from '../../../package.json';
 
-export { EXTENDED_CSS_VERSION } from '@adguard/extended-css';
-
 export const TSWEBEXTENSION_VERSION = version;
 
 /**

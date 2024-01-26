@@ -1,5 +1,5 @@
 import { IFilter, IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
-import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter/es';
+import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
 import { AppInterface, defaultFilteringLog, getErrorMessage } from '../../common';
 import { logger } from '../utils/logger';
