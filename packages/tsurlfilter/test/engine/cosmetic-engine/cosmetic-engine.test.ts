@@ -347,9 +347,47 @@ describe('Test cosmetic engine - JS rules', () => {
 
             const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
 
-            // FIXME consider to print in log that scriptlet rules were disabled
             expect(result.JS.specific.length).toBe(0);
             expect(result.JS.generic.length).toBe(0);
+        });
+        it('specific #@%#//scriptlet() disables all scriptlet rules only matching request', () => {
+            const allowlistScriptletRule = 'example.org#@%#//scriptlet()';
+            const specificScriptletRule = "example.org#%#//scriptlet('set-cookie', 'adcook2', '2')";
+            const specificScriptletRule2 = "example.com#%#//scriptlet('set-cookie', 'adcook2', '2')";
+            const genericScriptletRule = "#%#//scriptlet('set-local-storage-item', 'aditem1', '1')";
+            const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+                allowlistScriptletRule,
+                specificScriptletRule,
+                genericScriptletRule,
+                specificScriptletRule2,
+            ]));
+
+            const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+            // FIXME report to the filtering log that scriptlet rules were allowlisted
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+
+            const result2 = cosmeticEngine.match(createRequest('example.com'), CosmeticOption.CosmeticOptionAll);
+            expect(result2.JS.specific.map((r) => r.getText())).toEqual([specificScriptletRule2]);
+            expect(result2.JS.generic.map((r) => r.getText())).toEqual([genericScriptletRule]);
+        });
+
+        it('allowlists scriptlets with the same name', () => {
+            const allowlistScriptletRule = "#@%#//scriptlet('set-cookie')";
+            const specificSetCookieScriptletRule = "example.org#%#//scriptlet('set-cookie', 'test1', '1')";
+            const genericSetCookieScriptletRule = "#%#//scriptlet('set-cookie', 'test2', '2')";
+            const specificSetStorageScriptletRule = "example.org#%#//scriptlet('set-local-storage-item', 'test1', '1')";
+            const genericSetStorageScriptletRule = "#%#//scriptlet('set-local-storage-item', 'test2', '2')";
+            const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+                allowlistScriptletRule,
+                specificSetCookieScriptletRule,
+                genericSetCookieScriptletRule,
+                specificSetStorageScriptletRule,
+                genericSetStorageScriptletRule,
+            ]));
+            const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+            expect(result.JS.specific.map((r) => r.getText())).toEqual([specificSetStorageScriptletRule]);
+            expect(result.JS.generic.map((r) => r.getText())).toEqual([genericSetStorageScriptletRule]);
         });
     });
 });

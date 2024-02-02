@@ -130,11 +130,17 @@ export class ScriptletParser {
     };
 
     /**
-     * Parse and validate scriptlet rule
-     * @param {*} ruleContent
-     * @returns {{name: string, args: Array<string>}}
+     * Parses and validates scriptlet rule content
+     * @param scriptletContent scriptlet rule content, all after "//scriptlet"
+     * @returns parsed name and args
      */
-    public static parseRule(ruleContent: string): { name: string; args: string[] } {
+    public static parseRule(scriptletContent: string): { name: string | null; args: string[] } {
+        if (scriptletContent === '()') {
+            return {
+                name: null,
+                args: [],
+            };
+        }
         const transitions = {
             [ScriptletParser.TRANSITION.OPENED]: ScriptletParser.opened,
             [ScriptletParser.TRANSITION.PARAM]: ScriptletParser.param,
@@ -145,17 +151,18 @@ export class ScriptletParser {
         const saver = new ScriptletParser.WordSaver();
 
         const state = ScriptletParser.iterateWithTransitions(
-            ruleContent,
+            scriptletContent,
             transitions,
             ScriptletParser.TRANSITION.OPENED,
             { sep, saver },
         );
 
         if (state !== 'closed') {
-            throw new Error(`Invalid scriptlet ${ruleContent}`);
+            throw new Error(`Invalid scriptlet ${scriptletContent}`);
         }
 
         const args = saver.getAll();
+
         return {
             name: args[0],
             args: args.slice(1),

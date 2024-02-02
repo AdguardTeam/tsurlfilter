@@ -40,6 +40,12 @@ export class CosmeticLookupTable {
     private readonly ruleStorage: RuleStorage;
 
     /**
+     * // FIXME come up with a better name, only special allowlisting rules are here, without arguments
+     * Map with allowlist scriptlet rules indices. Key is the scriptlet name
+     */
+    private allowlistScriptlets: Map<null | string, number[]>;
+
+    /**
      * Creates a new instance
      *
      * @param storage rules storage. We store "rule indexes" in the lookup table which
@@ -50,6 +56,7 @@ export class CosmeticLookupTable {
         this.wildcardRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
         this.allowlist = new Map();
+        this.allowlistScriptlets = new Map();
         this.ruleStorage = storage;
     }
 
@@ -60,8 +67,19 @@ export class CosmeticLookupTable {
      */
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
+            if (
+                rule.scriptletOptions
+                && rule.scriptletOptions.name !== undefined
+                && rule.scriptletOptions.args.length === 0
+            ) {
+                const { name } = rule.scriptletOptions;
+                const existingRules = this.allowlistScriptlets.get(name) || [];
+                existingRules.push(storageIdx);
+                this.allowlistScriptlets.set(name, existingRules);
+                return;
+            }
             const key = rule.getContent();
-            const existingRules = this.allowlist.get(key) || [] as number[];
+            const existingRules: number[] = this.allowlist.get(key) || [];
             existingRules.push(storageIdx);
             this.allowlist.set(key, existingRules);
             return;
@@ -96,7 +114,6 @@ export class CosmeticLookupTable {
     /**
      * Finds rules by hostname
      * @param request
-     * @param subdomains
      */
     findByHostname(request: Request): CosmeticRule[] {
         const result = [] as CosmeticRule[];
@@ -123,11 +140,53 @@ export class CosmeticLookupTable {
     }
 
     /**
+     * FIXME write better documentation
+     * @param name
+     * @param request
+     */
+    isScriptletAllowlistedByName = (name: string | null, request: Request) => {
+        // check for rules with names
+        const allowlistScriptletRulesIndexes = this.allowlistScriptlets.get(name);
+        if (allowlistScriptletRulesIndexes) {
+            const rules = allowlistScriptletRulesIndexes
+                .map((i) => {
+                    return this.ruleStorage.retrieveRule(i) as CosmeticRule;
+                })
+                .filter((r) => r);
+            // here we check if there is at least one generic allowlist rule
+            const hasAllowlistGenericScriptlet = rules.some((r) => {
+                return r.isGeneric();
+            });
+            if (hasAllowlistGenericScriptlet) {
+                return true;
+            }
+            // here we check if there is at least one allowlist rule that matches the request
+            const hasRuleMatchingRequest = rules.some((r) => r.match(request));
+            if (hasRuleMatchingRequest) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
      * Checks if the rule is disabled on the specified hostname.
      * @param request
      * @param rule
      */
     isAllowlisted(request: Request, rule: CosmeticRule): boolean {
+        if (rule.scriptletOptions) {
+            // null is a special case for scriptlet when the allowlist scriptlet has no name
+            // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();
+            if (this.isScriptletAllowlistedByName(null, request)) {
+                return true;
+            }
+
+            if (this.isScriptletAllowlistedByName(rule.scriptletOptions.name, request)) {
+                return true;
+            }
+        }
+
         const rulesIndexes = this.allowlist.get(rule.getContent());
         if (!rulesIndexes) {
             return false;

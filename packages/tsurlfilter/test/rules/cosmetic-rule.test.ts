@@ -788,6 +788,18 @@ describe('Javascript rules', () => {
             new CosmeticRule(jsRule, 0);
         }).toThrow(new SyntaxError('Invalid scriptlet'));
     });
+
+    it('returns scriptlet name', () => {
+        const getScriptletName = (ruleText: string): string | null => {
+            return (new CosmeticRule(ruleText, 0)).scriptletOptions?.name || null;
+        };
+        expect(getScriptletName("example.org#%#//scriptlet('log', 'arg')")).toBe('log');
+        expect(getScriptletName("#%#//scriptlet('log', 'arg')")).toBe('log');
+        expect(getScriptletName('example.org#%#//scriptlet()')).toBe(null);
+        expect(getScriptletName('#@%#//scriptlet()')).toBe(null);
+        expect(getScriptletName("#@%#//scriptlet('set-cookie')")).toBe('set-cookie');
+        expect(getScriptletName('#@%#//scriptlet("set-cookie")')).toBe('set-cookie');
+    });
 });
 
 describe('HTML filtering rules (content rules)', () => {

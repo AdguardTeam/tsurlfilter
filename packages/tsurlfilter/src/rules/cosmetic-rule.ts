@@ -180,6 +180,14 @@ export class CosmeticRule implements rule.IRule {
     public isScriptlet = false;
 
     /**
+     * Scriptlet options, where added for applying allowlist scriptlet rules
+     */
+    public scriptletOptions: {
+        name: string | null,
+        args: string[],
+    } | null = null;
+
+    /**
      * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
      * which contains a lot more selectors. So, if CSS selector contains a pseudo-class, we should try to validate it.
      * <p>
@@ -415,6 +423,11 @@ export class CosmeticRule implements rule.IRule {
 
         this.allowlist = CosmeticRule.parseAllowlist(marker);
         this.isScriptlet = this.content.startsWith(ADG_SCRIPTLET_MASK);
+
+        if (this.isScriptlet) {
+            const scriptletContent = this.content.substring(ADG_SCRIPTLET_MASK.length);
+            this.scriptletOptions = ScriptletParser.parseRule(scriptletContent);
+        }
     }
 
     /**
@@ -682,7 +695,8 @@ export class CosmeticRule implements rule.IRule {
         const params: scriptlets.IConfiguration = {
             args: scriptletParams.args,
             engine: config.engine || '',
-            name: scriptletParams.name,
+            // @ts-ignore
+            name: scriptletParams.name, // FIXME update configuration type in the scriptlets package
             ruleText: this.getText(),
             verbose: debug,
             domainName: frameUrl,
