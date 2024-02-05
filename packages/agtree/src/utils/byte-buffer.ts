@@ -156,7 +156,11 @@ export class ByteBuffer {
         const encoded = this.encoder.encode(value);
         const { length } = encoded;
 
-        // Add the length of the string as Uint32
+        // Add the encoded string length as Uint32
+        // Note: string length and its encoded buffer length can be different, for example:
+        //   - `'你好'.length` is 2
+        //   - but `new TextEncoder().encode('你好').length` is 6
+        // when we want to decode the string, we need to know the length of the encoded buffer
         this.addUint32(byteOffset, length);
 
         // Do nothing if the string is empty
@@ -200,7 +204,7 @@ export class ByteBuffer {
         // with the remaining bytes. This way, we can guarantee that all chunks are 64 bytes long
         if (encodedOffset < length) {
             if (!this.hasCapacity(bufferOffset)) {
-                this.chunks.push(new Uint8Array(64));
+                this.allocate();
             }
 
             this.chunks[bufferOffset >> 6].set(encoded.subarray(encodedOffset, length), bufferOffset & 63);
