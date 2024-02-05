@@ -20,6 +20,16 @@ export class ByteBuffer {
     public byteOffset = 0;
 
     /**
+     * TextEncoder instance for encoding strings to bytes.
+     */
+    private encoder = new TextEncoder();
+
+    /**
+     * TextDecoder instance for decoding bytes to strings.
+     */
+    private decoder = new TextDecoder();
+
+    /**
      * Gets the total byte length of all chunks.
      *
      * @returns The total byte length.
@@ -130,5 +140,94 @@ export class ByteBuffer {
      */
     private allocate(): void {
         this.chunks.push(new Uint8Array(64));
+    }
+
+    /**
+     * Adds a string to the buffer, encoding it and allocating more space if necessary.
+     *
+     * @param str The string to add.
+     */
+    public addString(str: string): void {
+        const { length } = str;
+
+        // Add the length of the string as Uint32
+        // This is necessary to know how many data should be read when getting the string
+        this.addUint32(this.byteOffset, length);
+
+        // Skip if the string is empty
+        if (length < 1) {
+            return;
+        }
+
+        // Index to keep track of the current position in the string
+        let i = 0;
+
+        // Get the remaining space in the current (last) chunk
+        const remainingSpace = 64 - (this.byteOffset & 63);
+
+        // If there are remaining space, we need to fill it first
+        if (remainingSpace > 0) {
+            const encoded = this.encoder.encodeInto(
+                str.slice(i, remainingSpace),
+                this.chunks[this.byteOffset >> 6].subarray(this.byteOffset & 63),
+            );
+
+            this.byteOffset += encoded.written;
+            i += remainingSpace;
+        }
+
+        // Encode the rest of the string in chunks of 64 bytes
+        while (i < length) {
+            this.allocate();
+
+            const encoded = this.encoder.encodeInto(
+                str.slice(i, i + 64),
+                this.chunks[this.byteOffset >> 6].subarray(this.byteOffset & 63),
+            );
+
+            this.byteOffset += encoded.written;
+            i += 64;
+        }
+    }
+
+    /**
+     * Reads a string from the buffer starting at the specified byte offset.
+     *
+     * @param byteOffset The offset to start reading from.
+     * @returns The string read from the buffer.
+     */
+    public getString(byteOffset: number): string {
+        // Read the length of the string as Uint32
+        const length = this.getUint32(byteOffset);
+
+        // Skip if the string is empty
+        if (length < 1) {
+            return '';
+        }
+
+        let i = byteOffset + 4;
+        let result = '';
+        let bytesToRead = length;
+
+        while (bytesToRead > 0) {
+            const chunkIndex = i >> 6;
+            const chunkOffset = i & 63;
+            const currentChunk = this.chunks[chunkIndex];
+
+            // Determine how many bytes we can read from this chunk
+            const readLength = Math.min(bytesToRead, 64 - chunkOffset);
+
+            // Decode the current segment of the string
+            result += this.decoder.decode(
+                currentChunk.subarray(chunkOffset, chunkOffset + readLength),
+                { stream: true },
+            );
+
+            // Update the counters
+            i += readLength;
+            bytesToRead -= readLength;
+        }
+
+        return result;
     }
 }
