@@ -3,6 +3,8 @@
  * @file Utility class for handling byte arrays.
  */
 
+import { EMPTY } from './constants';
+
 /**
  * ByteBuffer class for handling operations on byte arrays.
  * This class allows for the manipulation of Uint8Array chunks,
@@ -150,31 +152,38 @@ export class ByteBuffer {
      *
      * @param byteOffset The offset where the string will be added.
      * @param value The string to add.
+     * @returns Length of the encoded string buffer.
+     * @note String length and its encoded buffer length can be different, for example:
+     * ```js
+     * '你好'.length // 2
+     * new TextEncoder().encode('你好').length // 6
+     * ```
      */
-    public addString(byteOffset: number, value: string): void {
+    public addString(byteOffset: number, value: string): number {
         // TextEncoder.encode returns a Uint8Array, we plan to re-use it where possible, and do not create new ones
         const encoded = this.encoder.encode(value);
         const { length } = encoded;
 
-        // Add the encoded string length as Uint32
-        // Note: string length and its encoded buffer length can be different, for example:
-        //   - `'你好'.length` is 2
-        //   - but `new TextEncoder().encode('你好').length` is 6
-        // when we want to decode the string, we need to know the length of the encoded buffer
-        this.addUint32(byteOffset, length);
-
-        // Do nothing if the string is empty
+        // Stop, if the length is less than 1
         if (length < 1) {
-            return;
+            return 0;
         }
 
-        let bufferOffset = byteOffset + 4; // Position in the byte buffer instance
+        let bufferOffset = byteOffset; // Position in the byte buffer instance
         let encodedOffset = 0; // Position in the 'encoded' buffer
 
         // Fill remaining space in the current chunk, if any
         if (this.hasCapacity(bufferOffset)) {
             const freeSpaceInCurrentChunk = 64 - (bufferOffset & 63);
             if (freeSpaceInCurrentChunk > 0) {
+                // Maybe we can fit the whole string in the current chunk
+                if (freeSpaceInCurrentChunk >= length) {
+                    this.chunks[bufferOffset >> 6].set(encoded, bufferOffset & 63);
+                    this.byteOffset = bufferOffset + length;
+                    return length;
+                }
+
+                // Otherwise, we fill the remaining space in the current chunk
                 this.chunks[bufferOffset >> 6].set(encoded.subarray(0, freeSpaceInCurrentChunk), bufferOffset & 63);
                 bufferOffset += freeSpaceInCurrentChunk;
                 encodedOffset += freeSpaceInCurrentChunk;
@@ -212,24 +221,26 @@ export class ByteBuffer {
         }
 
         this.byteOffset = bufferOffset;
+
+        return length;
     }
 
     /**
      * Reads a string from the buffer starting at the specified byte offset.
      *
+     * The string is decoded from bytes using the {@link TextDecoder} instance.
+     *
      * @param byteOffset The offset to start reading from.
+     * @param length The length of the buffer to read.
      * @returns The string read from the buffer.
      */
-    public getString(byteOffset: number): string {
-        // Read the length of the string as Uint32
-        const length = this.getUint32(byteOffset);
-
-        // Skip if the string is empty
+    public getString(byteOffset: number, length: number): string {
+        // Stop, if the length is less than 1
         if (length < 1) {
-            return '';
+            return EMPTY;
         }
 
-        const startOffset = byteOffset + 4; // skip the length
+        const startOffset = byteOffset;
         const stringData = new Uint8Array(length);
         let copiedBytes = 0;
 
@@ -243,5 +254,37 @@ export class ByteBuffer {
         }
 
         return this.decoder.decode(stringData);
+    }
+
+    /**
+     * Pushes a Uint8 value to the buffer at the current byte offset.
+     *
+     * @param value The Uint8 value to push.
+     * @returns The number of bytes pushed.
+     */
+    public pushUint8(value: number): number {
+        this.addUint8(this.byteOffset, value);
+        return 1;
+    }
+
+    /**
+     * Pushes a Uint32 value to the buffer at the current byte offset.
+     *
+     * @param value The Uint32 value to push.
+     * @returns The number of bytes pushed.
+     */
+    public pushUint32(value: number): number {
+        this.addUint32(this.byteOffset, value);
+        return 4;
+    }
+
+    /**
+     * Pushes a string to the buffer at the current byte offset.
+     *
+     * @param value The string to push.
+     * @returns The number of bytes pushed.
+     */
+    public pushString(value: string): number {
+        return this.addString(this.byteOffset, value);
     }
 }
