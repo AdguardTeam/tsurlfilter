@@ -175,7 +175,7 @@ export class ByteBuffer {
         // by splitting the encoded array into chunks.
         // To do this, we get the maximum multiple of 64 that is less than the length of the encoded string,
         // and add as many 64-byte chunks as possible.
-        const maxDivisibleBy64 = (length - offset) & ~63;
+        const maxDivisibleBy64 = (length - freeSpaceInCurrentChunk) & ~63;
 
         while (offset < maxDivisibleBy64) {
             this.chunks.push(encoded.subarray(offset, offset + 64));
