@@ -291,6 +291,10 @@ export class AdguardApi {
     private async handleDeleteFilters(event: DeleteFiltersEvent): Promise<void> {
         const deletedFiltersIds = event.data.filtersIds;
 
+        if (deletedFiltersIds.length === 0) {
+            return;
+        }
+
         deletedFiltersIds.forEach((filterId) => {
             this.onFilterDeletion.dispatch(filterId);
         });
