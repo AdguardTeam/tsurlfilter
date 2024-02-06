@@ -230,6 +230,9 @@ export class WebRequestApi {
         RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
+        // Note: We need to force set matching result in Opera before run `WebRequestApi.onCommitted`
+        // TODO: remove this when Opera bug is fixed.
+        browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommittedOperaHook);
         browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
         browser.webNavigation.onDOMContentLoaded.addListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
@@ -693,33 +696,6 @@ export class WebRequestApi {
             url,
         } = details;
 
-        /**
-         * There is Opera bug that prevents firing WebRequest events for document and subdocument requests.
-         * We now handle this by checking if matching result exists for main frame and if not - we create it.
-         *
-         * TODO remove this when Opera bug is fixed.
-         */
-        if (isOpera && frameId === MAIN_FRAME_ID) {
-            const tabContext = tabsApi.getTabContext(tabId);
-            if (!tabContext) {
-                return;
-            }
-
-            const frame = tabContext.frames.get(frameId);
-            if (!frame || frame.matchingResult) {
-                return;
-            }
-
-            const matchingResult = engineApi.matchRequest({
-                requestUrl: url,
-                frameUrl: url,
-                requestType: RequestType.Document,
-                frameRule: tabContext.mainFrameRule,
-            });
-
-            frame.matchingResult = matchingResult;
-        }
-
         WebRequestApi.injectCosmetic({
             frameId,
             tabId,
@@ -876,5 +852,46 @@ export class WebRequestApi {
          * etc.
          */
         setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT);
+    }
+
+    /**
+     * On committed web navigation event handler only for Opera.
+     *
+     * There is Opera bug that prevents firing WebRequest events for document
+     * and subdocument requests.
+     * We now handle this by checking if matching result exists for main frame
+     * and if not - we force create it.
+     *
+     * TODO: remove this when Opera bug is fixed.
+     *
+     * @param details Event details.
+     */
+    private static onCommittedOperaHook(details: WebNavigation.OnCommittedDetailsType): void {
+        const {
+            frameId,
+            tabId,
+            url,
+        } = details;
+
+        if (isOpera && frameId === MAIN_FRAME_ID) {
+            const tabContext = tabsApi.getTabContext(tabId);
+            if (!tabContext) {
+                return;
+            }
+
+            const frame = tabContext.frames.get(frameId);
+            if (!frame || frame.matchingResult) {
+                return;
+            }
+
+            const matchingResult = engineApi.matchRequest({
+                requestUrl: url,
+                frameUrl: url,
+                requestType: RequestType.Document,
+                frameRule: tabContext.mainFrameRule,
+            });
+
+            frame.matchingResult = matchingResult;
+        }
     }
 }
