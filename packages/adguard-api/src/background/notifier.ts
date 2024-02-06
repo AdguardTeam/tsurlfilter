@@ -19,6 +19,7 @@
 export enum NotifierEventType {
     DetectFilters = "DetectFilters",
     UpdateFilters = "UpdateFilters",
+    DeleteFilters = "DetectFilters",
 }
 
 export type DetectFiltersEvent = {
@@ -28,11 +29,18 @@ export type DetectFiltersEvent = {
     };
 };
 
+export type DeleteFiltersEvent = {
+    type: NotifierEventType.DeleteFilters;
+    data: {
+        filtersIds: number[];
+    };
+};
+
 export type UpdateFiltersEvent = {
     type: NotifierEventType.UpdateFilters;
 };
 
-export type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent;
+export type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent | DeleteFiltersEvent;
 
 export type ExtractedNotifierEvent<T> = Extract<NotifierEvent, { type: T }>;
 

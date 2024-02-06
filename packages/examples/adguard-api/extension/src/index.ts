@@ -6,8 +6,11 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     // create new AdguardApi instance
     const adguardApi = await AdguardApi.create();
 
-    const configuration: Configuration = {
-        filters: [2],
+    let configuration: Configuration = {
+        filters: [
+            2,
+            215, // obsoleted
+        ],
         filteringEnabled: true,
         allowlist: ["www.example.com"],
         rules: ["example.org##h1"],
@@ -27,9 +30,10 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
 
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
-    await adguardApi.start(configuration);
+    configuration = await adguardApi.start(configuration);
 
     console.log("Finished Adguard API initialization.");
+    console.log("Applied configuration: ", JSON.stringify(configuration));
     logTotalCount();
 
     configuration.allowlist!.push("www.google.com");
@@ -39,11 +43,23 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     console.log("Finished Adguard API re-configuration");
     logTotalCount();
 
+    // FIXME:
     // update config on assistant rule apply
     adguardApi.onAssistantCreateRule.subscribe(async (rule) => {
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
         await adguardApi.configure(configuration);
+        console.log("Finished Adguard API re-configuration");
+        logTotalCount();
+    });
+
+    // update config on assistant rule apply
+    adguardApi.onFilterDeletion.subscribe(async (filterId) => {
+        console.log(`Filter with id ${filterId} deleted because it became obsoleted.`);
+        configuration.filters = configuration.filters.filter((id) => id !== filterId);
+
+        await adguardApi.configure(configuration);
+
         console.log("Finished Adguard API re-configuration");
         logTotalCount();
     });
