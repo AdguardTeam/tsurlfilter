@@ -113,6 +113,7 @@ export class AdguardApi {
         this.openAssistant = this.openAssistant.bind(this);
         this.handleDetectFilters = this.handleDetectFilters.bind(this);
         this.handleUpdateFilters = this.handleUpdateFilters.bind(this);
+        this.handleDeleteFilters = this.handleDeleteFilters.bind(this);
     }
 
     /**
