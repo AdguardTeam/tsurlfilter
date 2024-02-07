@@ -2,7 +2,7 @@
 /**
  * @file Utility for encoding strings to byte sequences.
  */
-import { type ByteBuffer } from './byte-buffer-new';
+import { type ByteBuffer } from './byte-buffer';
 
 /**
  * Checks if the given code point is an ASCII code point.

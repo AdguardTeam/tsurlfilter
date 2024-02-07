@@ -1,0 +1,290 @@
+/* eslint-disable no-bitwise */
+/**
+ * @file Utility class for handling byte arrays.
+ */
+
+import { EMPTY } from './constants';
+
+/**
+ * ByteBuffer class for handling operations on byte arrays.
+ * This class allows for the manipulation of Uint8Array chunks,
+ * supporting operations like set and get for Uint8 and Uint32 values.
+ */
+export class ByteBuffer {
+    /**
+     * Array of Uint8Array chunks.
+     */
+    public chunks: Uint8Array[] = [];
+
+    /**
+     * Current byte offset.
+     */
+    public byteOffset = 0;
+
+    /**
+     * TextEncoder instance for encoding strings to bytes.
+     */
+    private encoder = new TextEncoder();
+
+    /**
+     * TextDecoder instance for decoding bytes to strings.
+     */
+    private decoder = new TextDecoder();
+
+    /**
+     * Gets the total byte length of all chunks.
+     *
+     * @returns The total byte length.
+     */
+    public get byteLength(): number {
+        return this.chunks.length << 6;
+    }
+
+    /**
+     * Constructs a new ByteBuffer instance.
+     *
+     * @param chunks Initial chunks to store in the buffer. Defaults to an empty array.
+     */
+    constructor(chunks: Uint8Array[] = []) {
+        this.chunks = chunks;
+    }
+
+    /**
+     * Sets a Uint8 value at the specified byte offset.
+     *
+     * @param byteOffset The offset where the value will be set.
+     * @param value The Uint8 value to set.
+     */
+    public setUint8(byteOffset: number, value: number): void {
+        this.chunks[byteOffset >> 6][byteOffset & 63] = value;
+    }
+
+    /**
+     * Gets a Uint8 value from the specified byte offset.
+     *
+     * @param byteOffset The offset to retrieve the value from.
+     * @returns The Uint8 value at the specified offset.
+     */
+    public getUint8(byteOffset: number): number {
+        return this.chunks[byteOffset >> 6][byteOffset & 63];
+    }
+
+    /**
+     * Adds a Uint8 value to the buffer at the specified byte offset.
+     * Allocates more space if necessary.
+     *
+     * @param byteOffset The offset where the value will be added.
+     * @param value The Uint8 value to add.
+     */
+    public addUint8(byteOffset: number, value: number): void {
+        if (!this.hasCapacity(byteOffset)) {
+            this.allocate();
+        }
+
+        this.setUint8(byteOffset, value);
+        this.byteOffset += 1;
+    }
+
+    /**
+     * Sets a Uint32 value at the specified byte offset.
+     *
+     * @param byteOffset The offset where the value will be set.
+     * @param value The Uint32 value to set.
+     */
+    public setUint32(byteOffset: number, value: number) {
+        this.setUint8(byteOffset, value >> 24);
+        this.setUint8(byteOffset + 1, value >> 16);
+        this.setUint8(byteOffset + 2, value >> 8);
+        this.setUint8(byteOffset + 3, value);
+    }
+
+    /**
+     * Gets a Uint32 value from the specified byte offset.
+     *
+     * @param byteOffset The offset to retrieve the value from.
+     * @returns The Uint32 value at the specified offset.
+     */
+    public getUint32(byteOffset: number) {
+        return ((this.getUint8(byteOffset + 3) << 0)
+            | (this.getUint8(byteOffset + 2) << 8)
+            | (this.getUint8(byteOffset + 1) << 16)
+            | (this.getUint8(byteOffset + 0) << 24)) >>> 0;
+    }
+
+    /**
+     * Adds a Uint32 value to the buffer at the specified byte offset.
+     * Allocates more space if necessary.
+     *
+     * @param byteOffset The offset where the value will be added.
+     * @param value The Uint32 value to add.
+     */
+    public addUint32(byteOffset: number, value: number): void {
+        if (!this.hasCapacity(byteOffset + 3)) {
+            this.allocate();
+        }
+
+        this.setUint32(byteOffset, value);
+        this.byteOffset += 4;
+    }
+
+    /**
+     * Checks if there is sufficient capacity in the buffer for a new entry.
+     *
+     * @param index The index to check for capacity.
+     * @returns True if there is enough capacity, false otherwise.
+     */
+    private hasCapacity(index: number): boolean {
+        return index + 1 >> 6 < this.chunks.length;
+    }
+
+    /**
+     * Allocates a new chunk in the buffer.
+     */
+    private allocate(): void {
+        this.chunks.push(new Uint8Array(64));
+    }
+
+    /**
+     * Adds a string to the buffer at the specified byte offset.
+     * Allocates more space if necessary.
+     *
+     * The string is encoded to bytes using the {@link TextEncoder} instance.
+     *
+     * @param byteOffset The offset where the string will be added.
+     * @param value The string to add.
+     * @returns Length of the encoded string buffer.
+     * @note String length and its encoded buffer length can be different, for example:
+     * ```js
+     * '你好'.length // 2
+     * new TextEncoder().encode('你好').length // 6
+     * ```
+     */
+    public addString(byteOffset: number, value: string): number {
+        // TextEncoder.encode returns a Uint8Array, we plan to re-use it where possible, and do not create new ones
+        const encoded = this.encoder.encode(value);
+        const { length } = encoded;
+
+        // Stop, if the length is less than 1
+        if (length < 1) {
+            return 0;
+        }
+
+        let bufferOffset = byteOffset; // Position in the byte buffer instance
+        let encodedOffset = 0; // Position in the 'encoded' buffer
+
+        // Fill remaining space in the current chunk, if any
+        if (this.hasCapacity(bufferOffset)) {
+            const freeSpaceInCurrentChunk = 64 - (bufferOffset & 63);
+            if (freeSpaceInCurrentChunk > 0) {
+                // Maybe we can fit the whole string in the current chunk
+                if (freeSpaceInCurrentChunk >= length) {
+                    this.chunks[bufferOffset >> 6].set(encoded, bufferOffset & 63);
+                    this.byteOffset = bufferOffset + length;
+                    return length;
+                }
+
+                // Otherwise, we fill the remaining space in the current chunk
+                this.chunks[bufferOffset >> 6].set(encoded.subarray(0, freeSpaceInCurrentChunk), bufferOffset & 63);
+                bufferOffset += freeSpaceInCurrentChunk;
+                encodedOffset += freeSpaceInCurrentChunk;
+            }
+        }
+
+        // Get the maximum multiple of 64 that is less than the length of the encoded string,
+        // and add as many 64-byte chunks as possible
+        const maxDivisibleBy64 = (length - encodedOffset) & ~63;
+
+        while (encodedOffset < maxDivisibleBy64) {
+            if (!this.hasCapacity(bufferOffset)) {
+                this.chunks.push(encoded.subarray(encodedOffset, encodedOffset + 64));
+            } else {
+                this.chunks[bufferOffset >> 6].set(
+                    encoded.subarray(encodedOffset, encodedOffset + 64),
+                    bufferOffset & 63,
+                );
+            }
+
+            this.chunks.push(encoded.subarray(encodedOffset, encodedOffset + 64));
+            bufferOffset += 64;
+            encodedOffset += 64;
+        }
+
+        // If we still have remaining bytes (but less than 64), we add a new 64-byte chunk and fill it
+        // with the remaining bytes. This way, we can guarantee that all chunks are 64 bytes long
+        if (encodedOffset < length) {
+            if (!this.hasCapacity(bufferOffset)) {
+                this.allocate();
+            }
+
+            this.chunks[bufferOffset >> 6].set(encoded.subarray(encodedOffset, length), bufferOffset & 63);
+            bufferOffset += length - encodedOffset;
+        }
+
+        this.byteOffset = bufferOffset;
+
+        return length;
+    }
+
+    /**
+     * Reads a string from the buffer starting at the specified byte offset.
+     *
+     * The string is decoded from bytes using the {@link TextDecoder} instance.
+     *
+     * @param byteOffset The offset to start reading from.
+     * @param length The length of the buffer to read.
+     * @returns The string read from the buffer.
+     */
+    public getString(byteOffset: number, length: number): string {
+        // Stop, if the length is less than 1
+        if (length < 1) {
+            return EMPTY;
+        }
+
+        const startOffset = byteOffset;
+        const stringData = new Uint8Array(length);
+        let copiedBytes = 0;
+
+        while (copiedBytes < length) {
+            const chunkIndex = (startOffset + copiedBytes) >> 6;
+            const chunkOffset = (startOffset + copiedBytes) & 63;
+            const bytesToCopy = Math.min(length - copiedBytes, 64 - chunkOffset);
+
+            stringData.set(this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + bytesToCopy), copiedBytes);
+            copiedBytes += bytesToCopy;
+        }
+
+        return this.decoder.decode(stringData);
+    }
+
+    /**
+     * Pushes a Uint8 value to the buffer at the current byte offset.
+     *
+     * @param value The Uint8 value to push.
+     * @returns The number of bytes pushed.
+     */
+    public pushUint8(value: number): number {
+        this.addUint8(this.byteOffset, value);
+        return 1;
+    }
+
+    /**
+     * Pushes a Uint32 value to the buffer at the current byte offset.
+     *
+     * @param value The Uint32 value to push.
+     * @returns The number of bytes pushed.
+     */
+    public pushUint32(value: number): number {
+        this.addUint32(this.byteOffset, value);
+        return 4;
+    }
+
+    /**
+     * Pushes a string to the buffer at the current byte offset.
+     *
+     * @param value The string to push.
+     * @returns The number of bytes pushed.
+     */
+    public pushString(value: string): number {
+        return this.addString(this.byteOffset, value);
+    }
+}

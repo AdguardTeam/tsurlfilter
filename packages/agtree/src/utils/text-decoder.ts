@@ -2,7 +2,7 @@
 /**
  * @file Utility for decoding strings from byte sequences.
  */
-import { type ByteBuffer } from './byte-buffer-new';
+import { type ByteBuffer } from './byte-buffer';
 import { EMPTY } from './constants';
 
 const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);

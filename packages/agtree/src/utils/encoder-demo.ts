@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 // FIXME: temporary file
 // use: npx tsx encoder-demo.ts
-import { ByteBuffer } from './byte-buffer-new';
+import { ByteBuffer } from './byte-buffer';
 import { decode } from './text-decoder';
 import { encode } from './text-encoder';
 
