@@ -3,8 +3,10 @@
  * A ByteBuffer class for handling binary data in chunks.
  * This class allows for efficient byte storage and manipulation by organizing data into chunks
  * and providing methods to read and write bytes.
- * This is a core implementation, helper methods are available in the `ByteBuffer` class.
- * This buffer is designed for linear data manipulation and optimized for AGTree.
+ *
+ * @note This is a core implementation, helper methods are available in the `ByteBuffer` class.
+ * @note This buffer is quite simple and designed for adding data linearly,
+ * because we don't need to modify the already written data.
  */
 export class ByteBufferCore {
     /**
