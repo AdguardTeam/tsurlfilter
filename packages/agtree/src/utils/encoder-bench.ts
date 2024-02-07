@@ -6,8 +6,8 @@ import { ByteBuffer } from './byte-buffer';
 import { encode } from './text-encoder';
 
 const ITERS = 100;
-// const BASE_TEST_STRING = 'hello world';
-const BASE_TEST_STRING = 'hello world, ÜПривет, мир, 你好世界';
+const BASE_TEST_STRING = 'hello world';
+// const BASE_TEST_STRING = 'hello world, ÜПривет, мир, 你好世界';
 
 // generate test strings
 const testStrings = new Array(ITERS);

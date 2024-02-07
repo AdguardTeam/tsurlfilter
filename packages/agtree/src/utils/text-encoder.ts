@@ -34,7 +34,7 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
 
         // Handle ASCII code points directly.
         if (isAsciiCodePoint(codePoint)) {
-            buffer.writeByte(codePoint);
+            buffer.pushByte(codePoint);
             bytesWritten += 1;
             i += 1;
             continue;
@@ -56,12 +56,12 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
         }
 
         // Prepare the first byte.
-        buffer.writeByte((codePoint >> (6 * count)) + offset);
+        buffer.pushByte((codePoint >> (6 * count)) + offset);
         bytesWritten += 1;
 
         // Append subsequent bytes.
         while (count > 0) {
-            buffer.writeByte(0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
+            buffer.pushByte(0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
             bytesWritten += 1;
             count -= 1;
         }

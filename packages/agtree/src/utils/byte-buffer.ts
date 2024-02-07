@@ -16,6 +16,11 @@ export class ByteBuffer {
     private chunks: Uint8Array[];
 
     /**
+     * The total number of chunks in the buffer.
+     */
+    private chunksLength: number;
+
+    /**
      * The current position in the buffer for writing.
      */
     private offset = 0;
@@ -27,6 +32,7 @@ export class ByteBuffer {
      */
     constructor(chunks?: Uint8Array[]) {
         this.chunks = chunks || [new Uint8Array(ByteBuffer.CHUNK_SIZE)];
+        this.chunksLength = this.chunks.length;
     }
 
     /**
@@ -69,8 +75,9 @@ export class ByteBuffer {
      */
     private ensureCapacity(position: number) {
         const requiredChunkIndex = position >>> 0x000F;
-        for (let i = this.chunks.length; i <= requiredChunkIndex; i += 1) {
+        for (let i = this.chunksLength; i <= requiredChunkIndex; i += 1) {
             this.chunks.push(new Uint8Array(ByteBuffer.CHUNK_SIZE));
+            this.chunksLength += 1;
         }
     }
 
@@ -86,7 +93,7 @@ export class ByteBuffer {
         const chunkIndex = pos >>> 0x000F; // Same as floor(pos / 32 * 1024) for 32KB chunks, using bit shift for speed
         const chunkOffset = pos & 0x7FFF; // Same as pos % this.chunkSize for 32KB chunks
 
-        if (chunkIndex >= this.chunks.length) {
+        if (chunkIndex >= this.chunksLength) {
             this.ensureCapacity(pos);
         }
 
@@ -96,6 +103,24 @@ export class ByteBuffer {
         if (position === undefined) {
             this.offset = pos + 1;
         }
+    }
+
+    /**
+     * Writes a byte at the current offset in the buffer.
+     * This method automatically expands the buffer if necessary.
+     *
+     * @param value The byte value to write (0-255).
+     */
+    public pushByte(value: number): void {
+        const chunkIndex = this.offset >>> 0x000F;
+        const chunkOffset = this.offset & 0x7FFF;
+
+        if (chunkIndex >= this.chunksLength) {
+            this.ensureCapacity(this.offset);
+        }
+
+        this.chunks[chunkIndex][chunkOffset] = value;
+        this.offset += 1;
     }
 
     /**
@@ -109,7 +134,7 @@ export class ByteBuffer {
         const chunkIndex = position >>> 0x000F;
         const chunkOffset = position & 0x7FFF;
 
-        if (chunkIndex >= this.chunks.length) {
+        if (chunkIndex >= this.chunksLength) {
             return undefined;
         }
 
