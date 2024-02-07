@@ -29,15 +29,15 @@ export type DetectFiltersEvent = {
     };
 };
 
+export type UpdateFiltersEvent = {
+    type: NotifierEventType.UpdateFilters;
+};
+
 export type DeleteFiltersEvent = {
     type: NotifierEventType.DeleteFilters;
     data: {
         filtersIds: number[];
     };
-};
-
-export type UpdateFiltersEvent = {
-    type: NotifierEventType.UpdateFilters;
 };
 
 export type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent | DeleteFiltersEvent;
@@ -56,9 +56,9 @@ export type NotifierListenersMap = { [K in NotifierEventType]: NotifierListener<
 export class Notifier {
     // registered listeners mapping
     private listenersMap: NotifierListenersMap = {
-        [NotifierEventType.DeleteFilters]: [],
         [NotifierEventType.DetectFilters]: [],
         [NotifierEventType.UpdateFilters]: [],
+        [NotifierEventType.DeleteFilters]: [],
     };
 
     /**

@@ -63,9 +63,7 @@ export class FiltersApi {
         await this.metadataApi.init();
         await this.versionsApi.init();
 
-        const obsoletedFiltersIds = await this.removeObsoleteFilters(filterIds);
-
-        return obsoletedFiltersIds;
+        return this.removeObsoleteFilters(filterIds);
     }
 
     /**
