@@ -1,5 +1,7 @@
 /* eslint-disable no-bitwise */
 import { ByteBufferCore } from './byte-buffer-core';
+import { decode } from './text-decoder';
+import { encode } from './text-encoder';
 
 /**
  * A ByteBuffer class for handling binary data in chunks.
@@ -35,5 +37,24 @@ export class ByteBuffer extends ByteBufferCore {
             | ((this.readByte(position + 3) ?? 0))) >>> 0;
     }
 
-    // FIXME: implement `writeString` and `readString`
+    /**
+     * Writes a string to the buffer.
+     *
+     * @param value The string to write.
+     * @returns The number of bytes written to the buffer.
+     */
+    public writeString(value: string): number {
+        return encode(value, this);
+    }
+
+    /**
+     * Reads a string from the buffer.
+     *
+     * @param position The position to read from.
+     * @param length The length of the string to read.
+     * @returns The string at the specified position and length.
+     */
+    public readString(position: number, length: number): string {
+        return decode(this, position, length);
+    }
 }
