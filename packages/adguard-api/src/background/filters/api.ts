@@ -166,7 +166,7 @@ export class FiltersApi {
                 await this.versionsApi.delete(id);
                 await this.filterRulesApi.remove(id);
 
-                this.logger.info(`Filter with id: ${id} removed from the storage`);
+                this.logger.info(`Obsoleted filter with id: ${id} removed from the storage`);
             }
         });
 
