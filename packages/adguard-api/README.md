@@ -111,7 +111,7 @@ type Configuration = {
 - `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing filters metadata. Once started, AdGuard will periodically check filters updates by downloading this file. Example: `https://filters.adtidy.org/extension/chromium/filters.json`.
 
 - `filterRulesUrl` (mandatory) - URL mask used for fetching filters rules. `{filter_id}` parameter will be replaced with an actual filter identifier. Example: `https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt` (English filter (filter id = 2) will be loaded from: `https://filters.adtidy.org/extension/chromium/2.txt`)
-  
+
 - `documentBlockingPageUrl` (optional) - Path to the document blocking page. If not specified, the default browser page will be shown.
 
 **Example:**
@@ -169,12 +169,12 @@ const handleAppMessage = async (message: Message) => {
 };
 
 // route message depending on handler name
-browser.runtime.onMessage.addListener(async (message, sender) => { 
+browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message?.handlerName === MESSAGE_HANDLER_NAME) {
     return Promise.resolve(handleApiMessage(message, sender));
   }
   return handleAppMessage(message);
-});    
+});
 ```
 
 **Returns:**
@@ -355,6 +355,36 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 
 // remove listener
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
+```
+
+### `adguardApi.onFilterDeletion`
+
+TsWebExtension Event channel, which fires event on obsoleted filters deletion.
+It can be fired after checking an update for filters in the FiltersUpdateService.
+
+**Syntax:**
+
+```typescript
+public onFilterDeletion: EventChannel<number[]>;
+```
+
+**Example:**
+
+```typescript
+
+// update config on filter deletion
+const removeObsoletedFilterId = async (filterIds: number[]): Promise<void> => {
+  console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
+  configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
+
+  await adguardApi.configure(configuration);
+};
+
+// add listener
+adguardApi.onFilterDeletion.subscribe(removeObsoletedFilterId);
+
+// remove listener
+adguardApi.onFilterDeletion.unsubscribe(removeObsoletedFilterId);
 ```
 
 ### `adguardApi.onRequestBlocking`

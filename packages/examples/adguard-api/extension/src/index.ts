@@ -9,7 +9,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     let configuration: Configuration = {
         filters: [
             2,
-            215, // obsoleted
+            215, // example of obsoleted filter.
         ],
         filteringEnabled: true,
         allowlist: ["www.example.com"],
@@ -43,26 +43,29 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     console.log("Finished Adguard API re-configuration");
     logTotalCount();
 
-    // FIXME:
-    // update config on assistant rule apply
-    adguardApi.onAssistantCreateRule.subscribe(async (rule) => {
+    const onAssistantCreateRule = async (rule: string) => {
+        // update config on assistant rule apply
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
         await adguardApi.configure(configuration);
         console.log("Finished Adguard API re-configuration");
         logTotalCount();
-    });
+    };
 
-    // update config on assistant rule apply
-    adguardApi.onFilterDeletion.subscribe(async (filterId) => {
-        console.log(`Filter with id ${filterId} deleted because it became obsoleted.`);
-        configuration.filters = configuration.filters.filter((id) => id !== filterId);
+    adguardApi.onAssistantCreateRule.subscribe(onAssistantCreateRule);
+
+    const onFilterDeletion = async (filterIds: number[]) => {
+        console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
+        configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
 
         await adguardApi.configure(configuration);
 
         console.log("Finished Adguard API re-configuration");
         logTotalCount();
-    });
+    };
+
+    // update config on filter deletion
+    adguardApi.onFilterDeletion.subscribe(onFilterDeletion);
 
     // get tswebextension message handler
     const handleApiMessage = adguardApi.getMessageHandler();
@@ -93,6 +96,8 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     // Disable Adguard in 1 minute
     setTimeout(async () => {
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
+        adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
+        adguardApi.onFilterDeletion.unsubscribe(onFilterDeletion);
         await adguardApi.stop();
         console.log("Adguard API has been disabled.");
     }, 60 * 1000);

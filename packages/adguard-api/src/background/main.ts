@@ -80,9 +80,9 @@ export class AdguardApi {
     public onAssistantCreateRule: EventChannel<string>;
 
     /**
-     * {@link TsWebExtension} {@link EventChannel}, which fires event on obsoleted filter deletion.
+     * {@link TsWebExtension} {@link EventChannel}, which fires event on obsoleted filters deletion.
      */
-    public onFilterDeletion: EventChannel<number>;
+    public onFilterDeletion: EventChannel<number[]>;
 
     /**
      * API for adding and removing listeners for request blocking events.
@@ -96,7 +96,7 @@ export class AdguardApi {
 
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
 
-        this.onFilterDeletion = new EventChannel<number>();
+        this.onFilterDeletion = new EventChannel<number[]>();
 
         this.network = new Network();
 
@@ -295,11 +295,9 @@ export class AdguardApi {
             return;
         }
 
-        deletedFiltersIds.forEach((filterId) => {
-            this.onFilterDeletion.dispatch(filterId);
-        });
+        this.onFilterDeletion.dispatch(deletedFiltersIds);
 
-        this.logger.info(`Filter with ids ${deletedFiltersIds} has been removed.`);
+        this.logger.info(`Filters with ids ${deletedFiltersIds} has been removed.`);
     }
 
     /**
