@@ -1,6 +1,6 @@
 /* eslint-disable no-bitwise */
 /**
- * @file Utility for encoding and decoding strings to and from byte sequences.
+ * @file Utility for encoding strings to byte sequences.
  */
 import { type ByteBuffer } from './byte-buffer-new';
 
