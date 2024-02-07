@@ -2,7 +2,7 @@
 /**
  * @file Utility for decoding strings from byte sequences.
  */
-import { type ByteBuffer } from './byte-buffer';
+import { type ByteBufferCore } from './byte-buffer-core';
 import { EMPTY } from './constants';
 
 const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
@@ -16,7 +16,7 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
  * @returns The decoded string
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-decoder}
  */
-export const decode = (buffer: ByteBuffer, start: number, length: number): string => {
+export const decode = (buffer: ByteBufferCore, start: number, length: number): string => {
     const codePoints: string[] = new Array(length);
     const end = start + length;
     let i = start;

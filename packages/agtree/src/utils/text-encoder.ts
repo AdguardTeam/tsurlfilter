@@ -2,7 +2,7 @@
 /**
  * @file Utility for encoding strings to byte sequences.
  */
-import { type ByteBuffer } from './byte-buffer';
+import { type ByteBufferCore } from './byte-buffer-core';
 
 /**
  * Checks if the given code point is an ASCII code point.
@@ -25,7 +25,7 @@ const isAsciiCodePoint = (codePoint: number): boolean => {
  * @note Bytes written maybe larger than the string length, but never smaller.
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const encode = (str: string, buffer: ByteBuffer): number => {
+export const encode = (str: string, buffer: ByteBufferCore): number => {
     let bytesWritten = 0;
     let i = 0;
 
@@ -34,7 +34,7 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
 
         // Handle ASCII code points directly.
         if (isAsciiCodePoint(codePoint)) {
-            buffer.pushByte(codePoint);
+            buffer.writeByte(codePoint);
             bytesWritten += 1;
             i += 1;
             continue;
@@ -56,12 +56,12 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
         }
 
         // Prepare the first byte.
-        buffer.pushByte((codePoint >> (6 * count)) + offset);
+        buffer.writeByte((codePoint >> (6 * count)) + offset);
         bytesWritten += 1;
 
         // Append subsequent bytes.
         while (count > 0) {
-            buffer.pushByte(0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
+            buffer.writeByte(0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
             bytesWritten += 1;
             count -= 1;
         }
