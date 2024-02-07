@@ -13,7 +13,7 @@ export class ByteBuffer {
     /**
      * An array of Uint8Array chunks that make up the buffer.
      */
-    private chunks: Uint8Array[];
+    public chunks: Uint8Array[];
 
     /**
      * The current position in the buffer for writing.
@@ -27,6 +27,38 @@ export class ByteBuffer {
      */
     constructor(chunks?: Uint8Array[]) {
         this.chunks = chunks || [new Uint8Array(ByteBuffer.CHUNK_SIZE)];
+    }
+
+    /**
+     * Returns the current offset in the buffer for writing.
+     *
+     * @returns The current offset in the buffer.
+     */
+    public get byteOffset(): number {
+        return this.offset;
+    }
+
+    /**
+     * Gets a subarray of the buffer from the specified start to end position.
+     *
+     * @param start The start position of the subarray (inclusive).
+     * @param end The end position of the subarray (exclusive).
+     * @returns A new Uint8Array containing the subarray.
+     */
+    public subarray(start: number, end: number): Uint8Array {
+        const subarray = new Uint8Array(end - start);
+        let subarrayOffset = 0;
+        let i = start;
+        while (i < end) {
+            const chunkIndex = i >>> 0x000F;
+            const chunkOffset = i & 0x7FFF;
+            const chunk = this.chunks[chunkIndex];
+            const remaining = Math.min(end - i, chunk.byteLength - chunkOffset);
+            subarray.set(chunk.subarray(chunkOffset, chunkOffset + remaining), subarrayOffset);
+            subarrayOffset += remaining;
+            i += remaining;
+        }
+        return subarray;
     }
 
     /**
