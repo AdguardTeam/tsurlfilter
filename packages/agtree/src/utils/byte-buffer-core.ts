@@ -4,12 +4,13 @@
  * This class allows for efficient byte storage and manipulation by organizing data into chunks
  * and providing methods to read and write bytes.
  * This is a core implementation, helper methods are available in the `ByteBuffer` class.
+ * This buffer is designed for linear data manipulation and optimized for AGTree.
  */
 export class ByteBufferCore {
     /**
-     * The size of each chunk in bytes. Default is set to 32 KB.
+     * The size of each chunk in bytes (32 KB).
      */
-    public static readonly CHUNK_SIZE = 32768; // 32 * 1024;
+    public static readonly CHUNK_SIZE = 32768; // 32 * 1024
 
     /**
      * An array of Uint8Array chunks that make up the buffer.

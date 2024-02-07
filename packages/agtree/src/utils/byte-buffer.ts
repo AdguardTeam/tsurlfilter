@@ -14,7 +14,6 @@ export class ByteBuffer extends ByteBufferCore {
      * @returns The number of bytes written to the buffer.
      */
     public writeUint32(value: number): number {
-        this.ensureCapacity(this.byteOffset + 4);
         this.writeByte(value >> 24);
         this.writeByte(value >> 16);
         this.writeByte(value >> 8);
