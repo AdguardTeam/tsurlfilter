@@ -26,7 +26,7 @@ const isAsciiCodePoint = (codePoint: number): boolean => {
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
 export const encode = (str: string, buffer: ByteBuffer): number => {
-    let bytesWritten = 0;
+    const startOffset = buffer.byteOffset;
     let i = 0;
 
     while (i < str.length) {
@@ -35,7 +35,6 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
         // Handle ASCII code points directly.
         if (isAsciiCodePoint(codePoint)) {
             buffer.writeByte(codePoint);
-            bytesWritten += 1;
             i += 1;
             continue;
         }
@@ -57,12 +56,10 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
 
         // Prepare the first byte.
         buffer.writeByte((codePoint >> (6 * count)) + offset);
-        bytesWritten += 1;
 
         // Append subsequent bytes.
         while (count > 0) {
             buffer.writeByte(0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
-            bytesWritten += 1;
             count -= 1;
         }
 
@@ -70,5 +67,5 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
         i += codePoint >= 0x10000 ? 2 : 1;
     }
 
-    return bytesWritten;
+    return buffer.byteOffset - startOffset;
 };
