@@ -54,8 +54,7 @@ export class ByteBuffer extends ByteBufferCore {
      * @returns 8-bit unsigned integer from the buffer.
      */
     public readUint8(position: number): number {
-        this.readByte(position);
-        return 1;
+        return this.readByte(position) ?? 0;
     }
 
     /**
