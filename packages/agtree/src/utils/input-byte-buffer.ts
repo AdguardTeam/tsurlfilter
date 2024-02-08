@@ -23,7 +23,7 @@ export class InputByteBuffer {
      */
     constructor(byteBuffer: ByteBuffer) {
         this.byteBuffer = byteBuffer;
-        this.offset = byteBuffer.byteOffset;
+        this.offset = byteBuffer.byteOffset - 1; // last is always undefined
     }
 
     /**
@@ -42,7 +42,7 @@ export class InputByteBuffer {
      */
     public readUint8(): number {
         this.offset -= 1;
-        return this.byteBuffer.readByte(this.offset) ?? 0;
+        return this.byteBuffer.readByte(this.offset + 1) ?? 0;
     }
 
     /**
@@ -52,10 +52,12 @@ export class InputByteBuffer {
      */
     public readUint32(): number {
         this.offset -= 4;
-        return (((this.byteBuffer.readByte(this.offset) ?? 0) << 24)
-            | ((this.byteBuffer.readByte(this.offset + 1) ?? 0) << 16)
-            | ((this.byteBuffer.readByte(this.offset + 2) ?? 0) << 8)
-            | ((this.byteBuffer.readByte(this.offset + 3) ?? 0))) >>> 0;
+        return (
+            ((this.byteBuffer.readByte(this.offset + 1) ?? 0) << 24)
+            | ((this.byteBuffer.readByte(this.offset + 2) ?? 0) << 16)
+            | ((this.byteBuffer.readByte(this.offset + 3) ?? 0) << 8)
+            | (this.byteBuffer.readByte(this.offset + 4) ?? 0)
+        ) >>> 0;
     }
 
     /**
@@ -66,6 +68,6 @@ export class InputByteBuffer {
      */
     public readString(length: number): string {
         this.offset -= length;
-        return decode(this.byteBuffer, this.offset, length);
+        return decode(this.byteBuffer, this.offset + 1, length);
     }
 }

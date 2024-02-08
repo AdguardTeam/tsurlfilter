@@ -80,7 +80,7 @@ export class ValueParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Value>): void {
         // deserialize "from right to left"
-        const endOffset = buffer.byteOffset;
+        const endOffset = buffer.byteOffset + 1;
 
         // check node type
         const type = buffer.readUint8();
@@ -96,7 +96,7 @@ export class ValueParser extends ParserBase {
 
         // read properties
         const startOffset = endOffset - length;
-        while (buffer.byteOffset > startOffset) {
+        while (startOffset < buffer.byteOffset) {
             // read property type
             const prop = buffer.readUint8();
 

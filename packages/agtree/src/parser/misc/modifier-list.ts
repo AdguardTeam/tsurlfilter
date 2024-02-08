@@ -122,12 +122,13 @@ export class ModifierListParser extends ParserBase {
             buffer.writeUint8(2);
         }
 
-        if (node.children && node.children.length > 0) {
-            const childrenCount = node.children.length;
-            for (let i = 0; i < childrenCount; i += 1) {
+        const childrenCount = node.children.length;
+        if (childrenCount) {
+            // add them in reverse order to keep the original order when deserializing
+            for (let i = childrenCount - 1; i >= 0; i -= 1) {
                 ModifierParser.serialize(node.children[i], buffer);
             }
-            buffer.writeUint32(node.children.length);
+            buffer.writeUint32(childrenCount);
             buffer.writeUint8(3);
         }
 
@@ -143,7 +144,7 @@ export class ModifierListParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
         // deserialize "from right to left"
-        const endOffset = buffer.byteOffset;
+        const endOffset = buffer.byteOffset + 1;
 
         // check node type
         const type = buffer.readUint8();
@@ -153,13 +154,14 @@ export class ModifierListParser extends ParserBase {
         }
 
         node.type = 'ModifierList';
+        node.children = [];
 
         // read node length (node length within the buffer)
         const length = buffer.readUint32();
 
         // read properties
         const startOffset = endOffset - length;
-        while (buffer.byteOffset > startOffset) {
+        while (startOffset < buffer.byteOffset) {
             // read property type
             const prop = buffer.readUint8();
 
@@ -171,7 +173,10 @@ export class ModifierListParser extends ParserBase {
                     node.start = buffer.readUint32();
                     break;
                 case 3:
+                    // read children length and prepare the array to store them
                     node.children = new Array(buffer.readUint32());
+
+                    // read children
                     for (let i = 0; i < node.children.length; i += 1) {
                         node.children[i] = {} as Modifier;
                         ModifierParser.deserialize(buffer, node.children[i]);
@@ -185,10 +190,10 @@ export class ModifierListParser extends ParserBase {
 }
 
 // FIXME: remove this
-const node = ModifierListParser.parse('third-party,domain=example.com|~example.org', {
+const node = ModifierListParser.parse('third-party,domain=example.com|~example.org,script', {
     isLocIncluded: false,
 });
-console.log(inspect(node, false, null, true));
+// console.log(inspect(node, false, null, true));
 const buffer = new ByteBuffer();
 ModifierListParser.serialize(node, new OutputByteBuffer(buffer));
 const deserializedNode = {} as ModifierList;

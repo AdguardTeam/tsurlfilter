@@ -175,13 +175,17 @@ export class ModifierParser extends ParserBase {
             buffer.writeUint8(2);
         }
 
+        // FIXME
+        // buffer.writeUint8(node.exception === true ? 1 : 0);
+        // buffer.writeUint8(3);
+
         if (node.value !== undefined) {
             ValueParser.serialize(node.value, buffer);
-            buffer.writeUint8(3);
+            buffer.writeUint8(4);
         }
 
         ValueParser.serialize(node.name, buffer);
-        buffer.writeUint8(4);
+        buffer.writeUint8(5);
 
         buffer.writeUint32(buffer.byteOffset - startOffset + 1); // value node length
         buffer.writeUint8(AST_TYPE_MAP.modifierNode); // value node type
@@ -195,7 +199,7 @@ export class ModifierParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Modifier>): void {
         // deserialize "from left to right"
-        const endOffset = buffer.byteOffset;
+        const endOffset = buffer.byteOffset + 1;
 
         // check node type
         const type = buffer.readUint8();
@@ -204,17 +208,18 @@ export class ModifierParser extends ParserBase {
             throw new Error(`Invalid node type: ${type}.`);
         }
 
-        node.type = 'Value';
+        node.type = 'Modifier';
+        node.exception = false;
 
         // read node length (node length within the buffer)
         const length = buffer.readUint32();
 
         // read properties
         const startOffset = endOffset - length;
-        while (buffer.byteOffset > startOffset) {
-            const type = buffer.readUint8();
+        while (startOffset < buffer.byteOffset) {
+            const prop = buffer.readUint8();
 
-            switch (type) {
+            switch (prop) {
                 case 1:
                     node.end = buffer.readUint32();
                     break;
@@ -222,11 +227,14 @@ export class ModifierParser extends ParserBase {
                     node.start = buffer.readUint32();
                     break;
                 case 3:
+                    node.exception = buffer.readUint8() === 1;
+                    break;
+                case 4:
                     // FIXME: find better way to handle this
                     node.value = {} as Value;
                     ValueParser.deserialize(buffer, node.value);
                     break;
-                case 4:
+                case 5:
                     node.name = {} as Value;
                     ValueParser.deserialize(buffer, node.name);
                     break;
