@@ -1,7 +1,9 @@
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { AST_TYPE_MAP, VALUE_PROPS_MAP, type Value } from '../common';
-import { type ByteBuffer } from '../../utils/byte-buffer';
+import { OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { InputByteBuffer } from '../../utils/input-byte-buffer';
+import { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * Value parser.
@@ -47,7 +49,7 @@ export class ValueParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
-    public static serialize(node: Value, buffer: ByteBuffer): void {
+    public static serialize(node: Value, buffer: OutputByteBuffer): void {
         // serialize "from left to right"
         const startOffset = buffer.byteOffset;
 
@@ -77,13 +79,12 @@ export class ValueParser extends ParserBase {
      * @returns Deserialized value node.
      * @throws If the binary data is malformed.
      */
-    public static deserialize(buffer: ByteBuffer, endOffset: number): Value {
+    public static deserialize(buffer: InputByteBuffer): Value {
         // deserialize "from right to left"
-        let offset = endOffset;
+        const endOffset = buffer.byteOffset;
 
         // check node type
-        offset -= 1;
-        const type = buffer.readUint8(offset);
+        const type = buffer.readUint8();
 
         if (type !== AST_TYPE_MAP.Value) {
             throw new Error(`Invalid node type: ${type}.`);
@@ -95,35 +96,29 @@ export class ValueParser extends ParserBase {
         };
 
         // read node length (node length within the buffer)
-        offset -= 4;
-        const length = buffer.readUint32(offset);
+        const length = buffer.readUint32();
 
         // read properties
-        const startOffset = offset - length;
-        while (offset > startOffset) {
+        const startOffset = endOffset - length;
+        while (buffer.byteOffset > startOffset) {
             // read property type
-            offset -= 1;
-            const prop = buffer.readUint8(offset);
+            const prop = buffer.readUint8();
 
             switch (prop) {
                 case VALUE_PROPS_MAP.value: {
                     // read value length
-                    offset -= 4;
-                    const valueLength = buffer.readUint32(offset);
+                    const valueLength = buffer.readUint32();
 
                     // read value
-                    offset -= valueLength;
-                    result.value = buffer.readString(offset, valueLength);
+                    result.value = buffer.readString(valueLength);
                     break;
                 }
                 case VALUE_PROPS_MAP.start: {
-                    offset -= 4;
-                    result.start = buffer.readUint32(offset);
+                    result.start = buffer.readUint32();
                     break;
                 }
                 case VALUE_PROPS_MAP.end: {
-                    offset -= 4;
-                    result.end = buffer.readUint32(offset);
+                    result.end = buffer.readUint32();
                     break;
                 }
                 default:
@@ -137,8 +132,8 @@ export class ValueParser extends ParserBase {
 }
 
 // FIXME: remove these lines
-// const node = ValueParser.parse('hello 你好', defaultParserOptions, 0);
-// console.log(node);
-// const buffer = new ByteBuffer();
-// ValueParser.serialize(node, buffer);
-// console.log(ValueParser.deserialize(buffer, buffer.byteOffset));
+const node = ValueParser.parse('hello 你好', defaultParserOptions, 0);
+console.log(node);
+const buffer = new ByteBuffer();
+ValueParser.serialize(node, new OutputByteBuffer(buffer));
+console.log(ValueParser.deserialize(new InputByteBuffer(buffer)));

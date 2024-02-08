@@ -2,7 +2,7 @@
 /**
  * @file Utility for decoding strings from byte sequences.
  */
-import { type ByteBufferCore } from './byte-buffer-core';
+import { type ByteBuffer } from './byte-buffer';
 import { EMPTY } from './constants';
 
 const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
@@ -10,7 +10,7 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
 /**
  * Decodes a byte sequence into an UTF-8 string according to the WHATWG spec.
  *
- * @param buffer Buffer to read the bytes from. See {@link ByteBufferCore}.
+ * @param buffer Buffer to read the bytes from. See {@link ByteBuffer}.
  * @param start Start index of the byte sequence within the buffer.
  * @param length Length of the byte sequence to decode.
  * @returns Decoded string.
@@ -18,7 +18,7 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
  * @note Bytes written maybe larger than the string length, but never smaller.
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const decode = (buffer: ByteBufferCore, start: number, length: number): string => {
+export const decode = (buffer: ByteBuffer, start: number, length: number): string => {
     let result = EMPTY;
     const end = start + length;
     let i = start;

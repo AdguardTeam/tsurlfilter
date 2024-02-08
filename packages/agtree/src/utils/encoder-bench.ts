@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 // FIXME: temporary file
 // use: npx tsx encoder-bench.ts
-import { ByteBufferCore } from './byte-buffer-core';
+import { ByteBuffer } from './byte-buffer';
 import { encode } from './text-encoder';
 
 const ITERS = 100;
@@ -33,11 +33,11 @@ console.log(`TextEncoder average time: ${textEncoderAvg}ms`);
 
 // benchmark encode
 const encodeTimes = new Array(ITERS);
-const byteBuffer = new ByteBufferCore();
+const byteBuffer = new ByteBuffer();
 start = performance.now();
 for (let i = 0; i < ITERS; i++) {
     const s = performance.now();
-    encode(testStrings[i], byteBuffer);
+    encode(byteBuffer, testStrings[i]);
     encodeTimes[i] = performance.now() - s;
 }
 console.log(`encode overall time: ${performance.now() - start}ms`);

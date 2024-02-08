@@ -1,80 +1,116 @@
 /* eslint-disable no-bitwise */
-import { ByteBufferCore } from './byte-buffer-core';
-import { decode } from './text-decoder';
-import { encode } from './text-encoder';
-
 /**
  * A ByteBuffer class for handling binary data in chunks.
  * This class allows for efficient byte storage and manipulation by organizing data into chunks
  * and providing methods to read and write bytes.
+ *
+ * @note This buffer is quite simple and designed for adding data linearly,
+ * because we don't need to modify the already written data.
  */
-export class ByteBuffer extends ByteBufferCore {
+export class ByteBuffer {
     /**
-     * Writes a 32-bit unsigned integer to the buffer.
-     *
-     * @param value Value to write.
-     * @returns Number of bytes written to the buffer.
+     * The size of each chunk in bytes (32 KB).
      */
-    public writeUint32(value: number): number {
-        this.writeByte(value >> 24);
-        this.writeByte(value >> 16);
-        this.writeByte(value >> 8);
-        this.writeByte(value);
-        return 4;
+    public static readonly CHUNK_SIZE = 32768; // 32 * 1024
+
+    /**
+     * An array of Uint8Array chunks that make up the buffer.
+     */
+    private chunks: Uint8Array[];
+
+    /**
+     * The total number of chunks in the buffer.
+     */
+    private chunksLength: number;
+
+    /**
+     * The current position in the buffer for writing.
+     */
+    private offset: number;
+
+    /**
+     * Constructs a new ByteBuffer instance.
+     *
+     * @param chunks An optional initial array of chunks.
+     */
+    constructor(chunks?: Uint8Array[]) {
+        this.chunks = chunks || [new Uint8Array(ByteBuffer.CHUNK_SIZE)];
+        this.chunksLength = this.chunks.length;
+        this.offset = 0;
+
+        // Calculate the initial offset based on the total size of the provided chunks.
+        // This assumes that each chunk is fully utilized except possibly the last one.
+        if (chunks && chunks.length > 0) {
+            // Sum the lengths of all chunks except the last one, assuming they are full.
+            const totalSize = (chunks.length - 1) * ByteBuffer.CHUNK_SIZE;
+
+            // Find the last non-zero byte in the last chunk.
+            const lastChunk = chunks[chunks.length - 1];
+            for (let i = lastChunk.length - 1; i >= 0; i -= 1) {
+                if (lastChunk[i] !== 0) {
+                    this.offset = totalSize + i + 1;
+                    break;
+                }
+            }
+        }
     }
 
     /**
-     * Reads a 32-bit unsigned integer from the buffer.
+     * Returns the current offset in the buffer for writing.
      *
-     * @param position Position in the buffer to read from.
-     * @returns 32-bit unsigned integer from the buffer.
+     * @returns The current offset in the buffer.
      */
-    public readUint32(position: number): number {
-        return (((this.readByte(position) ?? 0) << 24)
-            | ((this.readByte(position + 1) ?? 0) << 16)
-            | ((this.readByte(position + 2) ?? 0) << 8)
-            | ((this.readByte(position + 3) ?? 0))) >>> 0;
+    public get byteOffset(): number {
+        return this.offset;
     }
 
     /**
-     * Writes a 8-bit unsigned integer to the buffer.
+     * Ensures that the buffer has enough capacity to accommodate a given position.
+     * This method adjusts the `chunks` array size to ensure it can hold the specified position.
      *
-     * @param value Value to write.
-     * @returns Number of bytes written to the buffer.
+     * @param position The position to ensure capacity for.
      */
-    public writeUint8(value: number): number {
-        this.writeByte(value);
-        return 1;
+    private ensureCapacity(position: number) {
+        const requiredChunkIndex = position >>> 0x000F;
+        for (let i = this.chunksLength; i <= requiredChunkIndex; i += 1) {
+            this.chunks.push(new Uint8Array(ByteBuffer.CHUNK_SIZE));
+            this.chunksLength += 1;
+        }
     }
 
     /**
-     * Reads a 8-bit unsigned integer from the buffer.
+     * Writes a byte at the last position in the buffer and advances the position by one.
+     * This method automatically adds a new chunk if the current one is full.
      *
-     * @param position Position in the buffer to read from.
-     * @returns 8-bit unsigned integer from the buffer.
+     * @param value The byte value to write (0-255).
      */
-    public readUint8(position: number): number {
-        return this.readByte(position) ?? 0;
+    public writeByte(value: number): void {
+        const chunkIndex = this.offset >>> 0x000F;
+        const chunkOffset = this.offset & 0x7FFF;
+
+        if (chunkIndex >= this.chunksLength) {
+            this.ensureCapacity(this.offset);
+        }
+
+        this.chunks[chunkIndex][chunkOffset] = value;
+        this.offset += 1;
     }
 
     /**
-     * Writes a string to the buffer.
+     * Reads a byte from the specified position in the buffer.
+     * Returns `undefined` if the position is outside of the buffer's current size.
      *
-     * @param value Value to write.
-     * @returns Number of bytes written to the buffer.
+     * @param position The position from which to read the byte.
+     * @returns The read byte value, or `undefined` if the position is out of bounds.
      */
-    public writeString(value: string): number {
-        return encode(this, value);
-    }
+    public readByte(position: number): number | undefined {
+        const chunkIndex = position >>> 0x000F;
+        const chunkOffset = position & 0x7FFF;
 
-    /**
-     * Reads a string from the buffer.
-     *
-     * @param position Position in the buffer to read from.
-     * @param length Length of the byte sequence to decode.
-     * @returns Decoded string from the buffer.
-     */
-    public readString(position: number, length: number): string {
-        return decode(this, position, length);
+        if (chunkIndex >= this.chunksLength) {
+            return undefined;
+        }
+
+        return this.chunks[chunkIndex][chunkOffset];
     }
 }
