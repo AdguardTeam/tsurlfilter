@@ -19,7 +19,7 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
 export const decode = (buffer: ByteBufferCore, start: number, length: number): string => {
-    const codePoints: string[] = new Array(length);
+    let result = EMPTY;
     const end = start + length;
     let i = start;
 
@@ -30,12 +30,11 @@ export const decode = (buffer: ByteBufferCore, start: number, length: number): s
     let upperBoundary = 0x00BF;
 
     while (i < end) {
-        const byte = buffer.readByte(i) || 0;
+        const byte = buffer.readByte(i) ?? 0;
         i += 1;
         if (bytesNeeded === 0) {
-            if (byte > 0x0000 && byte <= 0x007F) {
-                // 1-byte sequence
-                codePoints.push(String.fromCodePoint(byte));
+            if (byte <= 0x007F) {
+                codePoint = byte & 0x00FF;
             } else if (byte >= 0x00C2 && byte <= 0x00DF) {
                 bytesNeeded = 1;
                 codePoint = byte & 0x001F;
@@ -61,7 +60,7 @@ export const decode = (buffer: ByteBufferCore, start: number, length: number): s
                 }
             } else {
                 // For bytes that are not valid initial bytes of UTF-8 sequences, add replacement character
-                codePoints.push(REPLACEMENT_CHAR);
+                result += REPLACEMENT_CHAR;
                 continue;
             }
         } else {
@@ -72,7 +71,7 @@ export const decode = (buffer: ByteBufferCore, start: number, length: number): s
                 bytesSeen = 0;
                 lowerBoundary = 0x0080;
                 upperBoundary = 0x00BF;
-                codePoints.push(REPLACEMENT_CHAR);
+                result += REPLACEMENT_CHAR;
                 // Decrement `i` to re-evaluate this byte as the start of a new sequence
                 i -= 1;
                 continue;
@@ -86,7 +85,7 @@ export const decode = (buffer: ByteBufferCore, start: number, length: number): s
 
         if (bytesSeen === bytesNeeded) {
             // Complete the code point assembly and add it to the result
-            codePoints.push(String.fromCodePoint(codePoint));
+            result += String.fromCodePoint(codePoint);
             // Reset for the next character
             bytesNeeded = 0;
             bytesSeen = 0;
@@ -94,5 +93,5 @@ export const decode = (buffer: ByteBufferCore, start: number, length: number): s
         }
     }
 
-    return codePoints.join(EMPTY);
+    return result;
 };
