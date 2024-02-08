@@ -99,8 +99,8 @@ export class ValueParser extends ParserBase {
         const length = buffer.readUint32(offset);
 
         // read properties
-        const start = offset - length;
-        while (offset > start) {
+        const startOffset = offset - length;
+        while (offset > startOffset) {
             // read property type
             offset -= 1;
             const prop = buffer.readUint8(offset);
