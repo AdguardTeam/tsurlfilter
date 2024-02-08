@@ -122,11 +122,14 @@ export class ModifierListParser extends ParserBase {
             buffer.writeUint8(2);
         }
 
-        for (const child of node.children) {
-            ModifierParser.serialize(child, buffer);
+        if (node.children && node.children.length > 0) {
+            const childrenCount = node.children.length;
+            for (let i = 0; i < childrenCount; i += 1) {
+                ModifierParser.serialize(node.children[i], buffer);
+            }
+            buffer.writeUint32(node.children.length);
+            buffer.writeUint8(3);
         }
-        buffer.writeUint32(node.children.length);
-        buffer.writeUint8(3);
 
         buffer.writeUint32(buffer.byteOffset - startOffset + 1); // modifier list length
         buffer.writeUint8(AST_TYPE_MAP.modifierListNode); // modifier list type
