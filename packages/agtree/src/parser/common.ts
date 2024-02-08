@@ -224,6 +224,38 @@ export const enum CosmeticRuleSeparator {
 }
 
 /**
+ * Property map for Value nodes.
+ *
+ * @note Values should be fit into 8 bits.
+ */
+export const VALUE_PROPS_MAP = Object.freeze({
+    start: 1,
+    end: 2,
+    value: 3,
+});
+
+/**
+ * Type map for binary serialization.
+ *
+ * @note Values should be fit into 8 bits.
+ */
+export const AST_TYPE_MAP = Object.freeze({
+    // basic types
+    Null: 1,
+    Undefined: 2,
+    Boolean: 3,
+    Int: 4,
+    Float: 5,
+    String: 6,
+    Array: 7,
+
+    // agtree nodes
+    // FIXME: add all types
+    Value: 8,
+    Raw: 9,
+});
+
+/**
  * Represents a basic node in the AST.
  */
 export interface Node {
