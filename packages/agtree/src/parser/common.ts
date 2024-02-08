@@ -241,18 +241,18 @@ export const VALUE_PROPS_MAP = Object.freeze({
  */
 export const AST_TYPE_MAP = Object.freeze({
     // basic types
-    Null: 1,
-    Undefined: 2,
-    Boolean: 3,
-    Int: 4,
-    Float: 5,
-    String: 6,
-    Array: 7,
+    null: 1,
+    undefined: 2,
+    boolean: 3,
+    int: 4,
+    float: 5,
+    string: 6,
+    array: 7,
 
     // agtree nodes
     // FIXME: add all types
-    Value: 8,
-    Raw: 9,
+    valueNode: 8,
+    rawNode: 9,
 });
 
 /**

@@ -69,7 +69,7 @@ export class ValueParser extends ParserBase {
         buffer.writeUint8(VALUE_PROPS_MAP.value);
 
         buffer.writeUint32(buffer.byteOffset - startOffset + 1); // value node length
-        buffer.writeUint8(AST_TYPE_MAP.Value); // value node type
+        buffer.writeUint8(AST_TYPE_MAP.valueNode); // value node type
     }
 
     /**
@@ -86,11 +86,10 @@ export class ValueParser extends ParserBase {
         // check node type
         const type = buffer.readUint8();
 
-        if (type !== AST_TYPE_MAP.Value) {
+        if (type !== AST_TYPE_MAP.valueNode) {
             throw new Error(`Invalid node type: ${type}.`);
         }
 
-        // prepare the result
         node.type = 'Value';
 
         // read node length (node length within the buffer)
