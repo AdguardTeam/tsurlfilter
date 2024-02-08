@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { inspect } from 'util';
+
 import { ByteBuffer } from '../../utils/byte-buffer';
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -144,8 +145,6 @@ export class ModifierListParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
         // deserialize "from right to left"
-        const endOffset = buffer.byteOffset + 1;
-
         // check node type
         const type = buffer.readUint8();
 
@@ -158,10 +157,11 @@ export class ModifierListParser extends ParserBase {
 
         // read node length (node length within the buffer)
         const length = buffer.readUint32();
+        const endOffset = buffer.byteOffset + 1;
 
         // read properties
         const startOffset = endOffset - length;
-        while (startOffset < buffer.byteOffset) {
+        while (buffer.byteOffset > startOffset) {
             // read property type
             const prop = buffer.readUint8();
 
@@ -190,8 +190,8 @@ export class ModifierListParser extends ParserBase {
 }
 
 // FIXME: remove this
-const node = ModifierListParser.parse('third-party,domain=example.com|~example.org,script', {
-    isLocIncluded: false,
+const node = ModifierListParser.parse('~third-party,domain=example.com|~example.org,script', {
+    isLocIncluded: true,
 });
 // console.log(inspect(node, false, null, true));
 const buffer = new ByteBuffer();
@@ -199,5 +199,5 @@ ModifierListParser.serialize(node, new OutputByteBuffer(buffer));
 const deserializedNode = {} as ModifierList;
 ModifierListParser.deserialize(new InputByteBuffer(buffer), deserializedNode);
 console.log(inspect(deserializedNode, false, null, true));
-
+console.log(ModifierListParser.generate(deserializedNode));
 console.log(buffer.byteOffset);

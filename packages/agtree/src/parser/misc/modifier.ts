@@ -175,9 +175,8 @@ export class ModifierParser extends ParserBase {
             buffer.writeUint8(2);
         }
 
-        // FIXME
-        // buffer.writeUint8(node.exception === true ? 1 : 0);
-        // buffer.writeUint8(3);
+        buffer.writeUint8(node.exception === true ? 1 : 0);
+        buffer.writeUint8(3);
 
         if (node.value !== undefined) {
             ValueParser.serialize(node.value, buffer);
@@ -187,7 +186,7 @@ export class ModifierParser extends ParserBase {
         ValueParser.serialize(node.name, buffer);
         buffer.writeUint8(5);
 
-        buffer.writeUint32(buffer.byteOffset - startOffset + 1); // value node length
+        buffer.writeUint32(buffer.byteOffset - startOffset); // value node length
         buffer.writeUint8(AST_TYPE_MAP.modifierNode); // value node type
     }
 
@@ -199,8 +198,6 @@ export class ModifierParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Modifier>): void {
         // deserialize "from left to right"
-        const endOffset = buffer.byteOffset + 1;
-
         // check node type
         const type = buffer.readUint8();
 
@@ -213,10 +210,11 @@ export class ModifierParser extends ParserBase {
 
         // read node length (node length within the buffer)
         const length = buffer.readUint32();
+        const endOffset = buffer.byteOffset + 1;
 
         // read properties
         const startOffset = endOffset - length;
-        while (startOffset < buffer.byteOffset) {
+        while (buffer.byteOffset > startOffset) {
             const prop = buffer.readUint8();
 
             switch (prop) {

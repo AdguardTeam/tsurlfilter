@@ -67,7 +67,7 @@ export class ValueParser extends ParserBase {
         buffer.writeUint32(valueLength);
         buffer.writeUint8(VALUE_PROPS_MAP.value);
 
-        buffer.writeUint32(buffer.byteOffset - startOffset + 1); // value node length
+        buffer.writeUint32(buffer.byteOffset - startOffset); // value node length (bytes written)
         buffer.writeUint8(AST_TYPE_MAP.valueNode); // value node type
     }
 
@@ -80,8 +80,6 @@ export class ValueParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Value>): void {
         // deserialize "from right to left"
-        const endOffset = buffer.byteOffset + 1;
-
         // check node type
         const type = buffer.readUint8();
 
@@ -93,10 +91,11 @@ export class ValueParser extends ParserBase {
 
         // read node length (node length within the buffer)
         const length = buffer.readUint32();
+        const endOffset = buffer.byteOffset + 1;
 
         // read properties
         const startOffset = endOffset - length;
-        while (startOffset < buffer.byteOffset) {
+        while (buffer.byteOffset > startOffset) {
             // read property type
             const prop = buffer.readUint8();
 
