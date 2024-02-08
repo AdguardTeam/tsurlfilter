@@ -2,9 +2,8 @@
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { AST_TYPE_MAP, VALUE_PROPS_MAP, type Value } from '../common';
-import { OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ByteBuffer } from '../../utils/byte-buffer';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 /**
  * Value parser.
@@ -124,12 +123,3 @@ export class ValueParser extends ParserBase {
         }
     }
 }
-
-// FIXME: remove these lines
-const node = ValueParser.parse('hello 你好', defaultParserOptions, 0);
-console.log(node);
-const buffer = new ByteBuffer();
-ValueParser.serialize(node, new OutputByteBuffer(buffer));
-const deserializedNode: Partial<Value> = {};
-ValueParser.deserialize(new InputByteBuffer(buffer), deserializedNode);
-console.log(deserializedNode);

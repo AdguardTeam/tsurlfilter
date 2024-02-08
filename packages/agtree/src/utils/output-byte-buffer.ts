@@ -1,5 +1,5 @@
 /* eslint-disable no-bitwise */
-import { type ByteBuffer } from './byte-buffer';
+import { ByteBuffer } from './byte-buffer';
 import { encode } from './text-encoder';
 
 /**
@@ -14,10 +14,10 @@ export class OutputByteBuffer {
     /**
      * Constructs a new OutputByteBuffer instance.
      *
-     * @param buffer ByteBuffer for writing binary data.
+     * @param buffer ByteBuffer for writing binary data. If not provided, a new buffer will be created.
      */
-    constructor(buffer: ByteBuffer) {
-        this.byteBuffer = buffer;
+    constructor(buffer?: ByteBuffer) {
+        this.byteBuffer = buffer || new ByteBuffer();
     }
 
     /**

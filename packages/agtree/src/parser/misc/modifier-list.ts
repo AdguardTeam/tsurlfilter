@@ -1,6 +1,11 @@
+/* eslint-disable no-param-reassign */
+import { inspect } from 'util';
+import { ByteBuffer } from '../../utils/byte-buffer';
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
+import { InputByteBuffer } from '../../utils/input-byte-buffer';
+import { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
-import { type ModifierList } from '../common';
+import { AST_TYPE_MAP, type Modifier, type ModifierList } from '../common';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
@@ -96,4 +101,95 @@ export class ModifierListParser extends ParserBase {
 
         return result;
     }
+
+    /**
+     * Serializes a modifier list AST to binary format.
+     *
+     * @param node AST to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: ModifierList, buffer: OutputByteBuffer): void {
+        // serialize "from left to right"
+        const startOffset = buffer.byteOffset;
+
+        if (node.end !== undefined) {
+            buffer.writeUint32(node.end);
+            buffer.writeUint8(1);
+        }
+
+        if (node.start !== undefined) {
+            buffer.writeUint32(node.start);
+            buffer.writeUint8(2);
+        }
+
+        for (const child of node.children) {
+            ModifierParser.serialize(child, buffer);
+        }
+        buffer.writeUint32(node.children.length);
+        buffer.writeUint8(3);
+
+        buffer.writeUint32(buffer.byteOffset - startOffset + 1); // modifier list length
+        buffer.writeUint8(AST_TYPE_MAP.modifierListNode); // modifier list type
+    }
+
+    /**
+     * Deserializes a modifier list AST from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
+        // deserialize "from right to left"
+        const endOffset = buffer.byteOffset;
+
+        // check node type
+        const type = buffer.readUint8();
+
+        if (type !== AST_TYPE_MAP.modifierListNode) {
+            throw new Error(`Invalid node type: ${type}.`);
+        }
+
+        node.type = 'ModifierList';
+
+        // read node length (node length within the buffer)
+        const length = buffer.readUint32();
+
+        // read properties
+        const startOffset = endOffset - length;
+        while (buffer.byteOffset > startOffset) {
+            // read property type
+            const prop = buffer.readUint8();
+
+            switch (prop) {
+                case 1:
+                    node.end = buffer.readUint32();
+                    break;
+                case 2:
+                    node.start = buffer.readUint32();
+                    break;
+                case 3:
+                    node.children = new Array(buffer.readUint32());
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        node.children[i] = {} as Modifier;
+                        ModifierParser.deserialize(buffer, node.children[i]);
+                    }
+                    break;
+                default:
+                    throw new Error(`Invalid property type: ${prop}.`);
+            }
+        }
+    }
 }
+
+// FIXME: remove this
+const node = ModifierListParser.parse('third-party,domain=example.com|~example.org', {
+    isLocIncluded: false,
+});
+console.log(inspect(node, false, null, true));
+const buffer = new ByteBuffer();
+ModifierListParser.serialize(node, new OutputByteBuffer(buffer));
+const deserializedNode = {} as ModifierList;
+ModifierListParser.deserialize(new InputByteBuffer(buffer), deserializedNode);
+console.log(inspect(deserializedNode, false, null, true));
+
+console.log(buffer.byteOffset);

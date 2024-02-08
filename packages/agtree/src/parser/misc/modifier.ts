@@ -1,9 +1,13 @@
+/* eslint-disable no-param-reassign */
 import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type Modifier, type Value } from '../common';
+import { AST_TYPE_MAP, type Modifier, type Value } from '../common';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { ValueParser } from './value';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.
@@ -149,5 +153,86 @@ export class ModifierParser extends ParserBase {
         }
 
         return result;
+    }
+
+    /**
+     * Serializes a modifier node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: Modifier, buffer: OutputByteBuffer): void {
+        // serialize "from left to right"
+        const startOffset = buffer.byteOffset;
+
+        if (node.end !== undefined) {
+            buffer.writeUint32(node.end);
+            buffer.writeUint8(1);
+        }
+
+        if (node.start !== undefined) {
+            buffer.writeUint32(node.start);
+            buffer.writeUint8(2);
+        }
+
+        if (node.value !== undefined) {
+            ValueParser.serialize(node.value, buffer);
+            buffer.writeUint8(3);
+        }
+
+        ValueParser.serialize(node.name, buffer);
+        buffer.writeUint8(4);
+
+        buffer.writeUint32(buffer.byteOffset - startOffset + 1); // value node length
+        buffer.writeUint8(AST_TYPE_MAP.modifierNode); // value node type
+    }
+
+    /**
+     * Deserializes a modifier node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Modifier>): void {
+        // deserialize "from left to right"
+        const endOffset = buffer.byteOffset;
+
+        // check node type
+        const type = buffer.readUint8();
+
+        if (type !== AST_TYPE_MAP.modifierNode) {
+            throw new Error(`Invalid node type: ${type}.`);
+        }
+
+        node.type = 'Value';
+
+        // read node length (node length within the buffer)
+        const length = buffer.readUint32();
+
+        // read properties
+        const startOffset = endOffset - length;
+        while (buffer.byteOffset > startOffset) {
+            const type = buffer.readUint8();
+
+            switch (type) {
+                case 1:
+                    node.end = buffer.readUint32();
+                    break;
+                case 2:
+                    node.start = buffer.readUint32();
+                    break;
+                case 3:
+                    // FIXME: find better way to handle this
+                    node.value = {} as Value;
+                    ValueParser.deserialize(buffer, node.value);
+                    break;
+                case 4:
+                    node.name = {} as Value;
+                    ValueParser.deserialize(buffer, node.name);
+                    break;
+                default:
+                    throw new Error(`Invalid node type: ${type}.`);
+            }
+        }
     }
 }

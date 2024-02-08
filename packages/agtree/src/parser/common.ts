@@ -253,6 +253,8 @@ export const AST_TYPE_MAP = Object.freeze({
     // FIXME: add all types
     valueNode: 8,
     rawNode: 9,
+    modifierNode: 10,
+    modifierListNode: 11,
 });
 
 /**
