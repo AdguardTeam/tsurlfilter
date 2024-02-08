@@ -8,7 +8,7 @@ import { encode } from './text-encoder';
 const buffer = new ByteBuffer();
 const str = '你好';
 const byteOffsetBefore = buffer.byteOffset;
-const bytesWritten = encode(buffer, str);
+const bytesWritten = encode(str, buffer);
 console.log(`Bytes written: ${bytesWritten}`);
 // console.log(`Buffer: ${buffer.subarray(byteOffsetBefore, byteOffsetBefore + bytesWritten)}`);
 const decodedStr = decode(buffer, byteOffsetBefore, bytesWritten);

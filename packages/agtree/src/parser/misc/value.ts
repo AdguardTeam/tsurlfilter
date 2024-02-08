@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { AST_TYPE_MAP, VALUE_PROPS_MAP, type Value } from '../common';
@@ -75,11 +76,10 @@ export class ValueParser extends ParserBase {
      * Deserializes a value node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
-     * @param endOffset Offset of the end of the node in the buffer.
-     * @returns Deserialized value node.
+     * @param node Destination node.
      * @throws If the binary data is malformed.
      */
-    public static deserialize(buffer: InputByteBuffer): Value {
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Value>): void {
         // deserialize "from right to left"
         const endOffset = buffer.byteOffset;
 
@@ -91,9 +91,7 @@ export class ValueParser extends ParserBase {
         }
 
         // prepare the result
-        const result: Partial<Value> = {
-            type: 'Value',
-        };
+        node.type = 'Value';
 
         // read node length (node length within the buffer)
         const length = buffer.readUint32();
@@ -110,24 +108,21 @@ export class ValueParser extends ParserBase {
                     const valueLength = buffer.readUint32();
 
                     // read value
-                    result.value = buffer.readString(valueLength);
+                    node.value = buffer.readString(valueLength);
                     break;
                 }
                 case VALUE_PROPS_MAP.start: {
-                    result.start = buffer.readUint32();
+                    node.start = buffer.readUint32();
                     break;
                 }
                 case VALUE_PROPS_MAP.end: {
-                    result.end = buffer.readUint32();
+                    node.end = buffer.readUint32();
                     break;
                 }
                 default:
                     throw new Error(`Invalid property type: ${prop}.`);
             }
         }
-
-        // FIXME: at this point, we don't check - for example - if value is present or not
-        return result as Value;
     }
 }
 
@@ -136,4 +131,6 @@ const node = ValueParser.parse('hello 你好', defaultParserOptions, 0);
 console.log(node);
 const buffer = new ByteBuffer();
 ValueParser.serialize(node, new OutputByteBuffer(buffer));
-console.log(ValueParser.deserialize(new InputByteBuffer(buffer)));
+const deserializedNode: Partial<Value> = {};
+ValueParser.deserialize(new InputByteBuffer(buffer), deserializedNode);
+console.log(deserializedNode);

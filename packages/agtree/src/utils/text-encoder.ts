@@ -18,14 +18,14 @@ const isAsciiCodePoint = (codePoint: number): boolean => {
 /**
  * Encodes an UTF-8 string into a byte sequence according to the WHATWG spec.
  *
- * @param buffer Buffer to write the encoded bytes to. See {@link ByteBuffer}.
  * @param str String to encode.
+ * @param buffer Buffer to write the encoded bytes to. See {@link ByteBuffer}.
  * @returns Number of bytes written to the buffer.
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-encoder}
  * @note Bytes written maybe larger than the string length, but never smaller.
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const encode = (buffer: ByteBuffer, str: string): number => {
+export const encode = (str: string, buffer: ByteBuffer): number => {
     let bytesWritten = 0;
     let i = 0;
 

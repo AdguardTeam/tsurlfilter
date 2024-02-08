@@ -37,7 +37,7 @@ const byteBuffer = new ByteBuffer();
 start = performance.now();
 for (let i = 0; i < ITERS; i++) {
     const s = performance.now();
-    encode(byteBuffer, testStrings[i]);
+    encode(testStrings[i], byteBuffer);
     encodeTimes[i] = performance.now() - s;
 }
 console.log(`encode overall time: ${performance.now() - start}ms`);

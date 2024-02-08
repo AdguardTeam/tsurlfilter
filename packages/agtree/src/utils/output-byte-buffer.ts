@@ -61,6 +61,6 @@ export class OutputByteBuffer {
      * @returns Number of bytes written to the buffer.
      */
     public writeString(value: string): number {
-        return encode(this.byteBuffer, value);
+        return encode(value, this.byteBuffer);
     }
 }
