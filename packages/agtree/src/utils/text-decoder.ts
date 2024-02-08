@@ -10,11 +10,13 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
 /**
  * Decodes a byte sequence into an UTF-8 string according to the WHATWG spec.
  *
- * @param buffer ByteBuffer to read the bytes from
- * @param start Start index of the byte sequence within the buffer
- * @param length Length of the byte sequence to decode
- * @returns The decoded string
+ * @param buffer Buffer to read the bytes from. See {@link ByteBufferCore}.
+ * @param start Start index of the byte sequence within the buffer.
+ * @param length Length of the byte sequence to decode.
+ * @returns Decoded string.
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-decoder}
+ * @note Bytes written maybe larger than the string length, but never smaller.
+ * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
 export const decode = (buffer: ByteBufferCore, start: number, length: number): string => {
     const codePoints: string[] = new Array(length);

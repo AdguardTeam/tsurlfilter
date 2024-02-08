@@ -7,7 +7,7 @@ import { type ByteBufferCore } from './byte-buffer-core';
 /**
  * Checks if the given code point is an ASCII code point.
  *
- * @param codePoint Code point to check
+ * @param codePoint Code point to check.
  * @returns `true` if the given code point is an ASCII code point, `false` otherwise.
  * @see https://infra.spec.whatwg.org/#ascii-code-point
  */
@@ -18,14 +18,14 @@ const isAsciiCodePoint = (codePoint: number): boolean => {
 /**
  * Encodes an UTF-8 string into a byte sequence according to the WHATWG spec.
  *
- * @param str String to encode
- * @param buffer ByteBuffer to write the encoded bytes to
+ * @param buffer Buffer to write the encoded bytes to. See {@link ByteBufferCore}.
+ * @param str String to encode.
+ * @returns Number of bytes written to the buffer.
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-encoder}
- * @returns The number of bytes written to the buffer.
  * @note Bytes written maybe larger than the string length, but never smaller.
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const encode = (str: string, buffer: ByteBufferCore): number => {
+export const encode = (buffer: ByteBufferCore, str: string): number => {
     let bytesWritten = 0;
     let i = 0;
 

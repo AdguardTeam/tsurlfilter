@@ -12,8 +12,8 @@ export class ByteBuffer extends ByteBufferCore {
     /**
      * Writes a 32-bit unsigned integer to the buffer.
      *
-     * @param value The value to write.
-     * @returns The number of bytes written to the buffer.
+     * @param value Value to write.
+     * @returns Number of bytes written to the buffer.
      */
     public writeUint32(value: number): number {
         this.writeByte(value >> 24);
@@ -26,9 +26,8 @@ export class ByteBuffer extends ByteBufferCore {
     /**
      * Reads a 32-bit unsigned integer from the buffer.
      *
-     * @param position The position to read from.
-     * @returns The 32-bit unsigned integer at the specified position.
-     * @note The returned value is an unsigned integer.
+     * @param position Position in the buffer to read from.
+     * @returns 32-bit unsigned integer from the buffer.
      */
     public readUint32(position: number): number {
         return (((this.readByte(position) ?? 0) << 24)
@@ -38,21 +37,43 @@ export class ByteBuffer extends ByteBufferCore {
     }
 
     /**
+     * Writes a 8-bit unsigned integer to the buffer.
+     *
+     * @param value Value to write.
+     * @returns Number of bytes written to the buffer.
+     */
+    public writeUint8(value: number): number {
+        this.writeByte(value);
+        return 1;
+    }
+
+    /**
+     * Reads a 8-bit unsigned integer from the buffer.
+     *
+     * @param position Position in the buffer to read from.
+     * @returns 8-bit unsigned integer from the buffer.
+     */
+    public readUint8(position: number): number {
+        this.readByte(position);
+        return 1;
+    }
+
+    /**
      * Writes a string to the buffer.
      *
-     * @param value The string to write.
-     * @returns The number of bytes written to the buffer.
+     * @param value Value to write.
+     * @returns Number of bytes written to the buffer.
      */
     public writeString(value: string): number {
-        return encode(value, this);
+        return encode(this, value);
     }
 
     /**
      * Reads a string from the buffer.
      *
-     * @param position The position to read from.
-     * @param length The length of the string to read.
-     * @returns The string at the specified position and length.
+     * @param position Position in the buffer to read from.
+     * @param length Length of the byte sequence to decode.
+     * @returns Decoded string from the buffer.
      */
     public readString(position: number, length: number): string {
         return decode(this, position, length);
