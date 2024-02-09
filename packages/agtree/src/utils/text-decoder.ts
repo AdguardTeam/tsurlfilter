@@ -21,7 +21,6 @@ interface DecoderResult {
  *
  * @param buffer Buffer to read the bytes from. See {@link ByteBuffer}.
  * @param start Start index of the byte sequence within the buffer.
- * @param length Length of the byte sequence to decode.
  * @returns Decoded string.
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-decoder}
  * @note Bytes written maybe larger than the string length, but never smaller.
