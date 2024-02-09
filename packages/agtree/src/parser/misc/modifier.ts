@@ -212,17 +212,11 @@ export class ModifierParser extends ParserBase {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Modifier>): void {
-        const type = buffer.readUint8();
-
-        if (type !== BinaryTypeMap.ModifierNode) {
-            throw new Error(`Not a modifier node: ${type}.`);
-        }
-
+        buffer.assertUint8(BinaryTypeMap.ModifierNode);
         node.type = 'Modifier';
 
+        // read buffer until NULL
         let prop = buffer.readUint8();
-
-        // while prop is not undefined or NULL (0)
         while (prop) {
             switch (prop) {
                 case BinaryPropMap.Name:
@@ -241,7 +235,7 @@ export class ModifierParser extends ParserBase {
                     node.end = buffer.readUint32();
                     break;
                 default:
-                    throw new Error(`Invalid prop type: ${type}.`);
+                    throw new Error(`Invalid property: ${prop}.`);
             }
             prop = buffer.readUint8();
         }

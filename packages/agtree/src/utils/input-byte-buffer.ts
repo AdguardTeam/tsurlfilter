@@ -74,4 +74,16 @@ export class InputByteBuffer {
 
         return result.decodedText;
     }
+
+    /**
+     * Helper method for asserting the next 8-bit unsigned integer in the buffer.
+     *
+     * @param value Expected value.
+     * @throws If the next value in the buffer is not equal to the expected value.
+     */
+    public assertUint8(value: number): void {
+        if (this.readUint8() !== value) {
+            throw new Error(`Expected ${value}, but got ${value}`);
+        }
+    }
 }

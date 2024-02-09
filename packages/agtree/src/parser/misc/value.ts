@@ -115,17 +115,11 @@ export class ValueParser extends ParserBase {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Value>): void {
-        const type = buffer.readUint8();
-
-        if (type !== BinaryTypeMap.ValueNode) {
-            throw new Error(`Not a value node: ${type}.`);
-        }
-
+        buffer.assertUint8(BinaryTypeMap.ValueNode);
         node.type = 'Value';
 
+        // read buffer until NULL
         let prop = buffer.readUint8();
-
-        // while prop is not undefined or NULL (0)
         while (prop) {
             switch (prop) {
                 case BinaryPropMap.Value: {
@@ -145,7 +139,7 @@ export class ValueParser extends ParserBase {
                     break;
                 }
                 default:
-                    throw new Error(`Invalid property type: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}.`);
             }
             prop = buffer.readUint8();
         }

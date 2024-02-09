@@ -152,17 +152,11 @@ export class ModifierListParser extends ParserBase {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
-        const type = buffer.readUint8();
-
-        if (type !== BinaryTypeMap.ModifierListNode) {
-            throw new Error(`Not a modifier list node: ${type}.`);
-        }
-
+        buffer.assertUint8(BinaryTypeMap.ModifierListNode);
         node.type = 'ModifierList';
 
+        // read buffer until NULL
         let prop = buffer.readUint8();
-
-        // while prop is not undefined or NULL (0)
         while (prop) {
             switch (prop) {
                 case BinaryPropMap.Children:
@@ -180,7 +174,7 @@ export class ModifierListParser extends ParserBase {
                     node.end = buffer.readUint32();
                     break;
                 default:
-                    throw new Error(`Invalid property type: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}.`);
             }
             prop = buffer.readUint8();
         }
@@ -189,7 +183,7 @@ export class ModifierListParser extends ParserBase {
 
 // FIXME: remove this
 const node = ModifierListParser.parse('~third-party,domain=example.com|~example.org,script', {
-    isLocIncluded: false,
+    isLocIncluded: true,
 });
 const outBuffer = new OutputByteBuffer();
 ModifierListParser.serialize(node, outBuffer);
