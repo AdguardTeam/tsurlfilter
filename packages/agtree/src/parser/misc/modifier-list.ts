@@ -189,7 +189,7 @@ export class ModifierListParser extends ParserBase {
 
 // FIXME: remove this
 const node = ModifierListParser.parse('~third-party,domain=example.com|~example.org,script', {
-    isLocIncluded: true,
+    isLocIncluded: false,
 });
 const outBuffer = new OutputByteBuffer();
 ModifierListParser.serialize(node, outBuffer);

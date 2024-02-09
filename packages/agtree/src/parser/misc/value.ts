@@ -12,9 +12,31 @@ import { isUndefined } from '../../utils/common';
  */
 const enum BinaryPropMap {
     Value = 1,
+    FrequentValue,
     Start,
     End,
 }
+
+/**
+ * Some values are very frequent and can be represented by a single byte.
+ * This map is used to serialize and deserialize such values.
+ */
+// FIXME: add all frequent values
+const FREQUENT_VALUES_MAP: Record<string, number> = Object.freeze({
+    domain: 1,
+    'third-party': 2,
+    script: 3,
+});
+
+/**
+ * Reverse frequent values map.
+ */
+// FIXME: add all frequent values
+const FREQUENT_VALUES_MAP_REVERSE: Record<number, string> = Object.freeze({
+    1: 'domain',
+    2: 'third-party',
+    3: 'script',
+});
 
 /**
  * Value parser.
@@ -63,8 +85,14 @@ export class ValueParser extends ParserBase {
     public static serialize(node: Value, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ValueNode);
 
-        buffer.writeUint8(BinaryPropMap.Value);
-        buffer.writeString(node.value);
+        const frequentValue = FREQUENT_VALUES_MAP[node.value];
+        if (frequentValue) {
+            buffer.writeUint8(BinaryPropMap.FrequentValue);
+            buffer.writeUint8(frequentValue);
+        } else {
+            buffer.writeUint8(BinaryPropMap.Value);
+            buffer.writeString(node.value);
+        }
 
         if (!isUndefined(node.start)) {
             buffer.writeUint8(BinaryPropMap.Start);
@@ -102,6 +130,10 @@ export class ValueParser extends ParserBase {
             switch (prop) {
                 case BinaryPropMap.Value: {
                     node.value = buffer.readString();
+                    break;
+                }
+                case BinaryPropMap.FrequentValue: {
+                    node.value = FREQUENT_VALUES_MAP_REVERSE[buffer.readUint8()];
                     break;
                 }
                 case BinaryPropMap.Start: {
