@@ -5,6 +5,7 @@
  */
 
 import { ByteBuffer } from './byte-buffer';
+import { type Storage } from './storage-interface';
 import { decodeText } from './text-decoder';
 
 /**
@@ -32,6 +33,18 @@ export class InputByteBuffer {
     constructor(chunks: Uint8Array[]) {
         this.byteBuffer = new ByteBuffer(chunks);
         this.offset = 0;
+    }
+
+    /**
+     * Creates a new InputByteBuffer instance from a Storage instance by reading chunks from the storage.
+     *
+     * @param storage Storage instance.
+     * @param key Key to read from the storage.
+     * @returns New InputByteBuffer instance.
+     */
+    public static async createFromStorage(storage: Storage, key: string): Promise<InputByteBuffer> {
+        const chunks = await storage.read(key);
+        return new InputByteBuffer(chunks);
     }
 
     /**
