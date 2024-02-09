@@ -1,9 +1,7 @@
 /* eslint-disable no-param-reassign */
-import { inspect } from 'util';
-
 import { MODIFIERS_SEPARATOR, NULL } from '../../utils/constants';
-import { InputByteBuffer } from '../../utils/input-byte-buffer';
-import { OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
 import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
 import { ParserBase } from '../interface';
@@ -180,19 +178,3 @@ export class ModifierListParser extends ParserBase {
         }
     }
 }
-
-// FIXME: remove this
-const testStr = '~third-party,domain=example.com|~example.org,script';
-const node = ModifierListParser.parse(testStr, {
-    isLocIncluded: false,
-});
-const outBuffer = new OutputByteBuffer();
-ModifierListParser.serialize(node, outBuffer);
-console.log('Original size:', new Blob([testStr]).size);
-console.log('Binary serialized size:', outBuffer.offset);
-// console.log(outBuffer.byteBuffer.chunks[0].slice(0, 100));
-const inBuffer = new InputByteBuffer(outBuffer.byteBuffer.chunks);
-const newNode = {} as ModifierList;
-ModifierListParser.deserialize(inBuffer, newNode);
-console.log(inspect(newNode, false, null, true));
-console.log(ModifierListParser.generate(newNode));
