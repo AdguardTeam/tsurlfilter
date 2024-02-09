@@ -1,9 +1,20 @@
 /* eslint-disable no-param-reassign */
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
-import { AST_TYPE_MAP, VALUE_PROPS_MAP, type Value } from '../common';
+import { BinaryTypeMap, type Value } from '../common';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { NULL } from '../../utils/constants';
+import { isUndefined } from '../../utils/common';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Value = 1,
+    Start,
+    End,
+}
 
 /**
  * Value parser.
@@ -50,25 +61,22 @@ export class ValueParser extends ParserBase {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: Value, buffer: OutputByteBuffer): void {
-        // serialize "from left to right"
-        const startOffset = buffer.byteOffset;
+        buffer.writeUint8(BinaryTypeMap.ValueNode);
 
-        if (node.end !== undefined) {
-            buffer.writeUint32(node.end);
-            buffer.writeUint8(VALUE_PROPS_MAP.end);
-        }
+        buffer.writeUint8(BinaryPropMap.Value);
+        buffer.writeString(node.value);
 
-        if (node.start !== undefined) {
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
             buffer.writeUint32(node.start);
-            buffer.writeUint8(VALUE_PROPS_MAP.start);
         }
 
-        const valueLength = buffer.writeString(node.value);
-        buffer.writeUint32(valueLength);
-        buffer.writeUint8(VALUE_PROPS_MAP.value);
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
 
-        buffer.writeUint32(buffer.byteOffset - startOffset); // value node length (bytes written)
-        buffer.writeUint8(AST_TYPE_MAP.valueNode); // value node type
+        buffer.writeUint8(NULL);
     }
 
     /**
@@ -79,46 +87,35 @@ export class ValueParser extends ParserBase {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Value>): void {
-        // deserialize "from right to left"
-        // check node type
         const type = buffer.readUint8();
 
-        if (type !== AST_TYPE_MAP.valueNode) {
-            throw new Error(`Invalid node type: ${type}.`);
+        if (type !== BinaryTypeMap.ValueNode) {
+            throw new Error(`Not a value node: ${type}.`);
         }
 
         node.type = 'Value';
 
-        // read node length (node length within the buffer)
-        const length = buffer.readUint32();
-        const endOffset = buffer.byteOffset + 1;
+        let prop = buffer.readUint8();
 
-        // read properties
-        const startOffset = endOffset - length;
-        while (buffer.byteOffset > startOffset) {
-            // read property type
-            const prop = buffer.readUint8();
-
+        // while prop is not undefined or NULL (0)
+        while (prop) {
             switch (prop) {
-                case VALUE_PROPS_MAP.value: {
-                    // read value length
-                    const valueLength = buffer.readUint32();
-
-                    // read value
-                    node.value = buffer.readString(valueLength);
+                case BinaryPropMap.Value: {
+                    node.value = buffer.readString();
                     break;
                 }
-                case VALUE_PROPS_MAP.start: {
+                case BinaryPropMap.Start: {
                     node.start = buffer.readUint32();
                     break;
                 }
-                case VALUE_PROPS_MAP.end: {
+                case BinaryPropMap.End: {
                     node.end = buffer.readUint32();
                     break;
                 }
                 default:
                     throw new Error(`Invalid property type: ${prop}.`);
             }
+            prop = buffer.readUint8();
         }
     }
 }

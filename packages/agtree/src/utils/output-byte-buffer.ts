@@ -1,6 +1,8 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-bitwise */
 import { ByteBuffer } from './byte-buffer';
-import { encode } from './text-encoder';
+import { type Storage } from './storage-interface';
+import { encodeText } from './text-encoder';
 
 /**
  * Output byte buffer for writing binary data from left to right.
@@ -12,21 +14,16 @@ export class OutputByteBuffer {
     private byteBuffer: ByteBuffer;
 
     /**
-     * Constructs a new OutputByteBuffer instance.
-     *
-     * @param buffer ByteBuffer for writing binary data. If not provided, a new buffer will be created.
+     * Current offset in the buffer for writing.
      */
-    constructor(buffer?: ByteBuffer) {
-        this.byteBuffer = buffer || new ByteBuffer();
-    }
+    private offset: number;
 
     /**
-     * Returns the current offset in the buffer for reading.
-     *
-     * @returns The current offset in the buffer.
+     * Constructs a new OutputByteBuffer instance.
      */
-    public get byteOffset(): number {
-        return this.byteBuffer.byteOffset;
+    constructor() {
+        this.byteBuffer = new ByteBuffer();
+        this.offset = 0;
     }
 
     /**
@@ -36,7 +33,7 @@ export class OutputByteBuffer {
      * @returns Number of bytes written to the buffer.
      */
     public writeUint8(value: number): number {
-        this.byteBuffer.writeByte(value);
+        this.byteBuffer.writeByte(this.offset++, value);
         return 1;
     }
 
@@ -47,10 +44,10 @@ export class OutputByteBuffer {
      * @returns Number of bytes written to the buffer.
      */
     public writeUint32(value: number): number {
-        this.byteBuffer.writeByte(value >> 24);
-        this.byteBuffer.writeByte(value >> 16);
-        this.byteBuffer.writeByte(value >> 8);
-        this.byteBuffer.writeByte(value);
+        this.byteBuffer.writeByte(this.offset++, value >> 24);
+        this.byteBuffer.writeByte(this.offset++, value >> 16);
+        this.byteBuffer.writeByte(this.offset++, value >> 8);
+        this.byteBuffer.writeByte(this.offset++, value);
         return 4;
     }
 
@@ -61,6 +58,18 @@ export class OutputByteBuffer {
      * @returns Number of bytes written to the buffer.
      */
     public writeString(value: string): number {
-        return encode(value, this.byteBuffer);
+        const bytesWritten = encodeText(value, this.byteBuffer, this.offset);
+        this.offset += bytesWritten;
+        return bytesWritten;
+    }
+
+    /**
+     * Writes chunks to the storage.
+     *
+     * @param storage Storage to write the chunks to.
+     * @param key Key to write the chunks to.
+     */
+    public async writeChunksToStorage(storage: Storage, key: string): Promise<void> {
+        await this.byteBuffer.writeChunksToStorage(storage, key);
     }
 }

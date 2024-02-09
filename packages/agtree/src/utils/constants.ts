@@ -293,3 +293,5 @@ export const PREPROCESSOR_SEPARATOR = ' ';
 export const SAFARI_CB_AFFINITY = 'safari_cb_affinity';
 export const IF = 'if';
 export const INCLUDE = 'include';
+
+export const NULL = 0;

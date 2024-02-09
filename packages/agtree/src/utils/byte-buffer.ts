@@ -1,4 +1,7 @@
 /* eslint-disable no-bitwise */
+
+import { type Storage } from './storage-interface';
+
 /**
  * A ByteBuffer class for handling binary data in chunks.
  * This class allows for efficient byte storage and manipulation by organizing data into chunks
@@ -24,44 +27,14 @@ export class ByteBuffer {
     private chunksLength: number;
 
     /**
-     * The current position in the buffer for writing.
-     */
-    private offset: number;
-
-    /**
      * Constructs a new ByteBuffer instance.
      *
-     * @param chunks An optional initial array of chunks.
+     * @param chunks Optional array of chunks to initialize the ByteBuffer with.
+     * @note If you provide chunks, they will be used by reference, not copied.
      */
     constructor(chunks?: Uint8Array[]) {
-        this.chunks = chunks || [new Uint8Array(ByteBuffer.CHUNK_SIZE)];
-        this.chunksLength = this.chunks.length;
-        this.offset = 0;
-
-        // Calculate the initial offset based on the total size of the provided chunks.
-        // This assumes that each chunk is fully utilized except possibly the last one.
-        if (chunks && chunks.length > 0) {
-            // Sum the lengths of all chunks except the last one, assuming they are full.
-            const totalSize = (chunks.length - 1) * ByteBuffer.CHUNK_SIZE;
-
-            // Find the last non-zero byte in the last chunk.
-            const lastChunk = chunks[chunks.length - 1];
-            for (let i = lastChunk.length - 1; i >= 0; i -= 1) {
-                if (lastChunk[i] !== 0) {
-                    this.offset = totalSize + i + 1;
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Returns the current offset in the buffer for writing.
-     *
-     * @returns The current offset in the buffer.
-     */
-    public get byteOffset(): number {
-        return this.offset;
+        this.chunks = chunks ?? [];
+        this.chunksLength = chunks?.length ?? 0;
     }
 
     /**
@@ -79,21 +52,21 @@ export class ByteBuffer {
     }
 
     /**
-     * Writes a byte at the last position in the buffer and advances the position by one.
-     * This method automatically adds a new chunk if the current one is full.
+     * Writes a byte to the buffer at the specified position.
+     * If the position is outside of the buffer's current size, the buffer is resized to accommodate it.
      *
+     * @param position The position at which to write the byte.
      * @param value The byte value to write (0-255).
      */
-    public writeByte(value: number): void {
-        const chunkIndex = this.offset >>> 0x000F;
-        const chunkOffset = this.offset & 0x7FFF;
+    public writeByte(position: number, value: number): void {
+        const chunkIndex = position >>> 0x000F;
+        const chunkOffset = position & 0x7FFF;
 
         if (chunkIndex >= this.chunksLength) {
-            this.ensureCapacity(this.offset);
+            this.ensureCapacity(position);
         }
 
         this.chunks[chunkIndex][chunkOffset] = value;
-        this.offset += 1;
     }
 
     /**
@@ -112,5 +85,15 @@ export class ByteBuffer {
         }
 
         return this.chunks[chunkIndex][chunkOffset];
+    }
+
+    /**
+     * Writes chunks to the storage.
+     *
+     * @param storage Storage to write the chunks to.
+     * @param key Key to write the chunks to.
+     */
+    public async writeChunksToStorage(storage: Storage, key: string): Promise<void> {
+        await storage.write(key, this.chunks);
     }
 }

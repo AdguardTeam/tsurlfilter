@@ -1,15 +1,24 @@
 /* eslint-disable no-param-reassign */
 import { inspect } from 'util';
 
-import { ByteBuffer } from '../../utils/byte-buffer';
-import { MODIFIERS_SEPARATOR } from '../../utils/constants';
+import { MODIFIERS_SEPARATOR, NULL } from '../../utils/constants';
 import { InputByteBuffer } from '../../utils/input-byte-buffer';
 import { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
-import { AST_TYPE_MAP, type Modifier, type ModifierList } from '../common';
+import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
+import { isUndefined } from '../../utils/common';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Children = 1,
+    Start,
+    End,
+}
 
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
@@ -110,31 +119,30 @@ export class ModifierListParser extends ParserBase {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: ModifierList, buffer: OutputByteBuffer): void {
-        // serialize "from left to right"
-        const startOffset = buffer.byteOffset;
+        buffer.writeUint8(BinaryTypeMap.ModifierListNode);
 
-        if (node.end !== undefined) {
-            buffer.writeUint32(node.end);
-            buffer.writeUint8(1);
-        }
+        const count = node.children.length;
+        if (count) {
+            // FIXME
+            buffer.writeUint8(BinaryPropMap.Children);
+            buffer.writeUint32(count);
 
-        if (node.start !== undefined) {
-            buffer.writeUint32(node.start);
-            buffer.writeUint8(2);
-        }
-
-        const childrenCount = node.children.length;
-        if (childrenCount) {
-            // add them in reverse order to keep the original order when deserializing
-            for (let i = childrenCount - 1; i >= 0; i -= 1) {
+            for (let i = 0; i < count; i += 1) {
                 ModifierParser.serialize(node.children[i], buffer);
             }
-            buffer.writeUint32(childrenCount);
-            buffer.writeUint8(3);
         }
 
-        buffer.writeUint32(buffer.byteOffset - startOffset + 1); // modifier list length
-        buffer.writeUint8(AST_TYPE_MAP.modifierListNode); // modifier list type
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
     }
 
     /**
@@ -144,47 +152,37 @@ export class ModifierListParser extends ParserBase {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
-        // deserialize "from right to left"
-        // check node type
         const type = buffer.readUint8();
 
-        if (type !== AST_TYPE_MAP.modifierListNode) {
-            throw new Error(`Invalid node type: ${type}.`);
+        if (type !== BinaryTypeMap.ModifierListNode) {
+            throw new Error(`Not a modifier list node: ${type}.`);
         }
 
         node.type = 'ModifierList';
-        node.children = [];
 
-        // read node length (node length within the buffer)
-        const length = buffer.readUint32();
-        const endOffset = buffer.byteOffset + 1;
+        let prop = buffer.readUint8();
 
-        // read properties
-        const startOffset = endOffset - length;
-        while (buffer.byteOffset > startOffset) {
-            // read property type
-            const prop = buffer.readUint8();
-
+        // while prop is not undefined or NULL (0)
+        while (prop) {
             switch (prop) {
-                case 1:
-                    node.end = buffer.readUint32();
-                    break;
-                case 2:
-                    node.start = buffer.readUint32();
-                    break;
-                case 3:
-                    // read children length and prepare the array to store them
+                case BinaryPropMap.Children:
                     node.children = new Array(buffer.readUint32());
 
                     // read children
                     for (let i = 0; i < node.children.length; i += 1) {
-                        node.children[i] = {} as Modifier;
-                        ModifierParser.deserialize(buffer, node.children[i]);
+                        ModifierParser.deserialize(buffer, node.children[i] = {} as Modifier);
                     }
+                    break;
+                case BinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case BinaryPropMap.End:
+                    node.end = buffer.readUint32();
                     break;
                 default:
                     throw new Error(`Invalid property type: ${prop}.`);
             }
+            prop = buffer.readUint8();
         }
     }
 }
@@ -193,11 +191,12 @@ export class ModifierListParser extends ParserBase {
 const node = ModifierListParser.parse('~third-party,domain=example.com|~example.org,script', {
     isLocIncluded: true,
 });
-// console.log(inspect(node, false, null, true));
-const buffer = new ByteBuffer();
-ModifierListParser.serialize(node, new OutputByteBuffer(buffer));
-const deserializedNode = {} as ModifierList;
-ModifierListParser.deserialize(new InputByteBuffer(buffer), deserializedNode);
-console.log(inspect(deserializedNode, false, null, true));
-console.log(ModifierListParser.generate(deserializedNode));
-console.log(buffer.byteOffset);
+const outBuffer = new OutputByteBuffer();
+ModifierListParser.serialize(node, outBuffer);
+console.log(outBuffer.offset);
+console.log(outBuffer.byteBuffer.chunks[0].slice(0, 100));
+const inBuffer = new InputByteBuffer(outBuffer.byteBuffer.chunks);
+const newNode = {} as ModifierList;
+ModifierListParser.deserialize(inBuffer, newNode);
+console.log(inspect(newNode, false, null, true));
+console.log(ModifierListParser.generate(newNode));

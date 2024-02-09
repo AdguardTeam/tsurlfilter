@@ -3,7 +3,7 @@
 // FIXME: temporary file
 // use: npx tsx encoder-bench.ts
 import { ByteBuffer } from './byte-buffer';
-import { encode } from './text-encoder';
+import { encodeText } from './text-encoder';
 
 const ITERS = 100;
 const BASE_TEST_STRING = 'hello world';
@@ -37,7 +37,7 @@ const byteBuffer = new ByteBuffer();
 start = performance.now();
 for (let i = 0; i < ITERS; i++) {
     const s = performance.now();
-    encode(testStrings[i], byteBuffer);
+    encodeText(testStrings[i], byteBuffer, 0);
     encodeTimes[i] = performance.now() - s;
 }
 console.log(`encode overall time: ${performance.now() - start}ms`);

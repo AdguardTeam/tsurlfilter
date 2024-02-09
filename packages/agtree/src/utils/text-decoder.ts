@@ -8,6 +8,14 @@ import { EMPTY } from './constants';
 const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
 
 /**
+ * Result of a decoder operation.
+ */
+interface DecoderResult {
+    decodedText: string;
+    bytesConsumed: number;
+}
+
+/**
  * Decodes a byte sequence into an UTF-8 string according to the WHATWG spec.
  *
  * @param buffer Buffer to read the bytes from. See {@link ByteBuffer}.
@@ -18,10 +26,8 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
  * @note Bytes written maybe larger than the string length, but never smaller.
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const decode = (buffer: ByteBuffer, start: number, length: number): string => {
+export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => {
     let result = EMPTY;
-    const end = start + length;
-    let i = start;
 
     let codePoint = 0;
     let bytesSeen = 0;
@@ -29,8 +35,9 @@ export const decode = (buffer: ByteBuffer, start: number, length: number): strin
     let lowerBoundary = 0x0080;
     let upperBoundary = 0x00BF;
 
-    while (i < end) {
-        const byte = buffer.readByte(i) ?? 0;
+    let i = start;
+
+    for (let byte = buffer.readByte(i); byte; byte = buffer.readByte(i)) {
         i += 1;
         if (bytesNeeded === 0) {
             if (byte <= 0x007F) {
@@ -93,5 +100,8 @@ export const decode = (buffer: ByteBuffer, start: number, length: number): strin
         }
     }
 
-    return result;
+    return {
+        decodedText: result,
+        bytesConsumed: i - start,
+    };
 };

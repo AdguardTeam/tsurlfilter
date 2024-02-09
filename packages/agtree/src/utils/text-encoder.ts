@@ -20,13 +20,14 @@ const isAsciiCodePoint = (codePoint: number): boolean => {
  *
  * @param str String to encode.
  * @param buffer Buffer to write the encoded bytes to. See {@link ByteBuffer}.
+ * @param start Start index of the byte sequence within the buffer.
  * @returns Number of bytes written to the buffer.
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-encoder}
  * @note Bytes written maybe larger than the string length, but never smaller.
  * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const encode = (str: string, buffer: ByteBuffer): number => {
-    const startOffset = buffer.byteOffset;
+export const encodeText = (str: string, buffer: ByteBuffer, start: number): number => {
+    let bytesWritten = 0;
     let i = 0;
 
     while (i < str.length) {
@@ -34,7 +35,8 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
 
         // Handle ASCII code points directly.
         if (isAsciiCodePoint(codePoint)) {
-            buffer.writeByte(codePoint);
+            buffer.writeByte(start + bytesWritten, codePoint);
+            bytesWritten += 1;
             i += 1;
             continue;
         }
@@ -55,11 +57,13 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
         }
 
         // Prepare the first byte.
-        buffer.writeByte((codePoint >> (6 * count)) + offset);
+        buffer.writeByte(start + bytesWritten, (codePoint >> (6 * count)) + offset);
+        bytesWritten += 1;
 
         // Append subsequent bytes.
         while (count > 0) {
-            buffer.writeByte(0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
+            buffer.writeByte(start + bytesWritten, 0x0080 | ((codePoint >> (6 * (count - 1))) & 0x003F));
+            bytesWritten += 1;
             count -= 1;
         }
 
@@ -67,5 +71,9 @@ export const encode = (str: string, buffer: ByteBuffer): number => {
         i += codePoint >= 0x10000 ? 2 : 1;
     }
 
-    return buffer.byteOffset - startOffset;
+    // Write a \0 byte to terminate the string.
+    buffer.writeByte(start + bytesWritten, 0x0000);
+    bytesWritten += 1;
+
+    return bytesWritten;
 };
