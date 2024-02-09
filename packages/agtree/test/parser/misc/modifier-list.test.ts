@@ -1,6 +1,7 @@
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { type ModifierList } from '../../../src/parser/common';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import '../../matchers/check-serialization';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
@@ -746,5 +747,28 @@ describe('ModifierListParser', () => {
                 '~path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
             ),
         ).toEqual('~path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i');
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            // single modifier
+            'foo',
+            '~foo',
+            'foo=bar',
+            '~foo=bar',
+
+            // multiple modifiers
+            'foo,bar',
+            'foo,~bar',
+            '~foo,bar',
+            '~foo,~bar',
+            'foo=bar,bar=foo',
+            '~foo=bar,~bar=foo',
+            'foo=bar,~bar=foo',
+            '~foo=bar,bar=foo',
+            'foo=bar,bar=foo,~foo=bar,~bar=foo',
+        ])('should serialize and deserialize %p', async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(ModifierListParser);
+        });
     });
 });
