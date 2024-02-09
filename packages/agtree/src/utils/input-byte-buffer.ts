@@ -59,6 +59,17 @@ export class InputByteBuffer {
     }
 
     /**
+     * Reads a 16-bit unsigned integer from the buffer.
+     *
+     * @returns 16-bit unsigned integer from the buffer.
+     */
+    public readUint16(): number {
+        const result = (((this.byteBuffer.readByte(this.offset++) ?? 0) << 8)
+            | ((this.byteBuffer.readByte(this.offset++) ?? 0))) >>> 0;
+        return result;
+    }
+
+    /**
      * Reads a 32-bit unsigned integer from the buffer.
      *
      * @returns 32-bit unsigned integer from the buffer.

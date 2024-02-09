@@ -125,7 +125,7 @@ export class ModifierListParser extends ParserBase {
         if (count) {
             // FIXME
             buffer.writeUint8(BinaryPropMap.Children);
-            buffer.writeUint32(count);
+            buffer.writeUint16(count);
 
             for (let i = 0; i < count; i += 1) {
                 ModifierParser.serialize(node.children[i], buffer);
@@ -160,7 +160,7 @@ export class ModifierListParser extends ParserBase {
         while (prop) {
             switch (prop) {
                 case BinaryPropMap.Children:
-                    node.children = new Array(buffer.readUint32());
+                    node.children = new Array(buffer.readUint16());
 
                     // read children
                     for (let i = 0; i < node.children.length; i += 1) {
@@ -182,13 +182,15 @@ export class ModifierListParser extends ParserBase {
 }
 
 // FIXME: remove this
-const node = ModifierListParser.parse('~third-party,domain=example.com|~example.org,script', {
-    isLocIncluded: true,
+const testStr = '~third-party,domain=example.com|~example.org,script';
+const node = ModifierListParser.parse(testStr, {
+    isLocIncluded: false,
 });
 const outBuffer = new OutputByteBuffer();
 ModifierListParser.serialize(node, outBuffer);
-console.log(outBuffer.offset);
-console.log(outBuffer.byteBuffer.chunks[0].slice(0, 100));
+console.log('Original size:', new Blob([testStr]).size);
+console.log('Binary serialized size:', outBuffer.offset);
+// console.log(outBuffer.byteBuffer.chunks[0].slice(0, 100));
 const inBuffer = new InputByteBuffer(outBuffer.byteBuffer.chunks);
 const newNode = {} as ModifierList;
 ModifierListParser.deserialize(inBuffer, newNode);

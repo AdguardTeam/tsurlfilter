@@ -45,6 +45,18 @@ export class OutputByteBuffer {
     }
 
     /**
+     * Writes a 16-bit unsigned integer to the buffer.
+     *
+     * @param value Value to write.
+     * @returns Number of bytes written to the buffer.
+     */
+    public writeUint16(value: number): number {
+        this.byteBuffer.writeByte(this.offset++, value >> 8);
+        this.byteBuffer.writeByte(this.offset++, value);
+        return 2;
+    }
+
+    /**
      * Writes a 32-bit unsigned integer to the buffer.
      *
      * @param value Value to write.
