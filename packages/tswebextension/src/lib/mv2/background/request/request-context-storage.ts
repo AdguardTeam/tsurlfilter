@@ -2,7 +2,8 @@ import { nanoid } from 'nanoid';
 import type { WebRequest } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
 
-import type { ContentType } from '../../../common';
+import { logger } from '../../../common/utils/logger';
+import type { ContentType } from '../../../common/request-type';
 import type ParsedCookie from '../services/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../tabs/tabs-api';
 
@@ -97,8 +98,7 @@ export class RequestContextStorage extends Map<string, RequestContext> {
             return requestContext;
         }
 
-        // TODO: Throws error if request context not found after RequestEvents refactoring.
-        super.set(requestId, data as RequestContext);
+        logger.error(`Context for request ${requestId} does not exist`);
         return undefined;
     }
 }
