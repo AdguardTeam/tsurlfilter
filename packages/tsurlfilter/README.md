@@ -12,48 +12,50 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
         - [TSURLFILTER_VERSION](#tsurlfilter-version)
       - [Public classes](#public-classes)
         - [Engine](#engine)
-            - [**Constructor**](#constructor)
-            - [**matchRequest**](#matchrequest)
-            - [**matchFrame**](#matchframe)
-            - [Starting engine](#starting-engine)
-            - [Matching requests](#matching-requests)
-            - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+          - [**Constructor**](#constructor)
+          - [**matchRequest**](#matchrequest)
+          - [**matchFrame**](#matchframe)
+          - [Starting engine](#starting-engine)
+          - [Matching requests](#matching-requests)
+          - [Retrieving cosmetic data](#retrieving-cosmetic-data)
         - [MatchingResult](#matchingresult)
-            - [**getBasicResult**](#getbasicresult)
-            - [**getCosmeticOption**](#getcosmeticoption)
-            - [**Other rules**](#other-rules)
+          - [**getBasicResult**](#getbasicresult)
+          - [**getCosmeticOption**](#getcosmeticoption)
+          - [**Other rules**](#other-rules)
         - [CosmeticResult](#cosmeticresult)
-            - [Applying cosmetic result - css](#applying-cosmetic-result---css)
-            - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+          - [Applying cosmetic result - css](#applying-cosmetic-result---css)
+          - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
         - [DnsEngine](#dnsengine)
-            - [**Constructor**](#constructor-1)
-            - [**match**](#match)
-            - [Matching hostname](#matching-hostname)
+          - [**Constructor**](#constructor-1)
+          - [**match**](#match)
+          - [Matching hostname](#matching-hostname)
         - [RuleConverter](#ruleconverter)
-            - [**convertRules**](#convertrules)
+          - [**convertRules**](#convertrules)
         - [RuleValidator](#rulevalidator)
-            - [Public methods](#public-methods)
+          - [Public methods](#public-methods)
         - [RuleSyntaxUtils](#rulesyntaxutils)
-            - [Public methods](#public-methods-1)
+          - [Public methods](#public-methods-1)
         - [DeclarativeConverter](#declarativeconverter)
-            - [Public methods](#public-methods-2)
-            - [Problems](#problems)
+          - [Public methods](#public-methods-2)
+          - [Problems](#problems)
   - [Development](#development)
     - [NPM scripts](#npm-scripts)
     - [Excluding peerDependencies](#excluding-peerdependencies)
     - [Git Hooks](#git-hooks)
 
 ## <a id="idea"></a> Idea
+
 The idea is to have a single library that we can reuse for the following tasks:
 
--   Doing content blocking in our Chrome and Firefox extensions (obviously)
--   Using this library for parsing rules and converting to Safari-compatible content blocking lists (see [AdGuard for Safari](https://github.com/AdguardTeam/AdguardForSafari), [AdGuard for iOS](https://github.com/AdguardTeam/AdguardForiOS))
--   Using this library for validating and linting filter lists (see [FiltersRegistry](https://github.com/AdguardTeam/FiltersRegistry), [AdguardFilters](https://github.com/AdguardTeam/AdguardFilters))
--   It could also be used as a basis for the [VS code extension](https://github.com/ameshkov/VscodeAdblockSyntax/)
+- Doing content blocking in our Chrome and Firefox extensions (obviously)
+- Using this library for parsing rules and converting to Safari-compatible content blocking lists (see [AdGuard for Safari](https://github.com/AdguardTeam/AdguardForSafari), [AdGuard for iOS](https://github.com/AdguardTeam/AdguardForiOS))
+- Using this library for validating and linting filter lists (see [FiltersRegistry](https://github.com/AdguardTeam/FiltersRegistry), [AdguardFilters](https://github.com/AdguardTeam/AdguardFilters))
+- It could also be used as a basis for the [VS code extension](https://github.com/ameshkov/VscodeAdblockSyntax/)
 
 ## <a id="usage"></a> Usage
 
 Install the tsurlfilter:
+
 ```
 npm install @adguard/tsurlfilter
 ```
@@ -75,6 +77,7 @@ Version of the library.
 Engine is a main class of this library. It represents the filtering functionality for loaded rules
 
 ##### **Constructor**
+
 ```
     /**
      * Creates an instance of Engine
@@ -89,6 +92,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 ```
 
 ##### **matchRequest**
+
 ```
 
 
@@ -104,6 +108,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 ```
 
 ##### **matchFrame**
+
 ```
     /**
      * Matches current frame and returns document-level allowlist rule if found.
@@ -114,6 +119,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 ```
 
 ##### Starting engine
+
 ```
     const list = new StringRuleList(listId, rulesText, false, false);
     const ruleStorage = new RuleStorage([list]);
@@ -130,12 +136,14 @@ Engine is a main class of this library. It represents the filtering functionalit
 ```
 
 ##### Matching requests
+
 ```
     const request = new Request(url, sourceUrl, RequestType.Document);
     const result = engine.matchRequest(request);
 ```
 
 ##### Retrieving cosmetic data
+
 ```
     const cosmeticResult = engine.getCosmeticResult(request, CosmeticOption.CosmeticOptionAll);
 ```
@@ -145,6 +153,7 @@ Engine is a main class of this library. It represents the filtering functionalit
 MatchingResult contains all the rules matching a web request, and provides methods that define how a web request should be processed
 
 ##### **getBasicResult**
+
 ```
     /**
      * GetBasicResult returns a rule that should be applied to the web request.
@@ -172,6 +181,7 @@ This flag should be used for `getCosmeticResult(request: Request, option: Cosmet
 ```
 
 ##### **Other rules**
+
 ```
     /**
      * Return an array of replace rules
@@ -193,6 +203,7 @@ This flag should be used for `getCosmeticResult(request: Request, option: Cosmet
 
 Cosmetic result is the representation of matching cosmetic rules.
 It contains the following properties:
+
 ```
     /**
      * Storage of element hiding rules
@@ -221,6 +232,7 @@ It contains the following properties:
 ```
 
 ##### Applying cosmetic result - css
+
 ```
    const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
            .map((rule) => `${rule.getContent()} { display: none!important; }`);
@@ -235,6 +247,7 @@ It contains the following properties:
 ```
 
 ##### Applying cosmetic result - scripts
+
 ```
     const cosmeticRules = cosmeticResult.getScriptRules();
     const scriptsCode = cosmeticRules.map((x) => x.getScript()).join('\r\n');
@@ -250,6 +263,7 @@ It contains the following properties:
 DNSEngine combines host rules and network rules and is supposed to quickly find matching rules for hostnames.
 
 ##### **Constructor**
+
 ```
     /**
      * Builds an instance of dns engine
@@ -260,6 +274,7 @@ DNSEngine combines host rules and network rules and is supposed to quickly find 
 ```
 
 ##### **match**
+
 ```
     /**
      * Match searches over all filtering and host rules loaded to the engine
@@ -271,6 +286,7 @@ DNSEngine combines host rules and network rules and is supposed to quickly find 
 ```
 
 ##### Matching hostname
+
 ```
     const dnsResult = dnsEngine.match(hostname);
     if (dnsResult.basicRule && !dnsResult.basicRule.isAllowlist()) {
@@ -301,9 +317,11 @@ The text will be processed line by line, converting each line from known externa
 ```
 
 #### <a id="rule-validator"></a> RuleValidator
+
 This module is not used in the engine directly, but it can be used to validate filter rules in other libraries or tools
 
 ##### Public methods
+
 ```
     /**
      * Validates raw rule string
@@ -311,6 +329,7 @@ This module is not used in the engine directly, but it can be used to validate f
      */
     public static validate(rawRule: string): ValidationResult
 ```
+
 ```
     /**
     * Valid true - means that the rule is valid, otherwise rule is not valid
@@ -323,9 +342,11 @@ This module is not used in the engine directly, but it can be used to validate f
 ```
 
 #### <a id="rule-syntax-utils"></a> RuleSyntaxUtils
+
 This module is not used in the engine directly, but it can be used in other libraries
 
 ##### Public methods
+
 ```
     /**
      * Checks if rule can be matched by domain
@@ -334,6 +355,7 @@ This module is not used in the engine directly, but it can be used in other libr
      */
     public static isRuleForDomain(ruleText: string, domain: string): boolean {
 ```
+
 ```
     /**
      * Checks if rule can be matched by url
@@ -344,9 +366,11 @@ This module is not used in the engine directly, but it can be used in other libr
 ```
 
 #### <a id="declarative-converter"></a> DeclarativeConverter
+
 Provides a functionality of conversion AG rules to manifest v3 declarative syntax. See `examples/manifest-v3/` for an example usage.
 
 ##### Public methods
+
 ```
     /**
      * Converts a set of rules to declarative rules array
@@ -355,12 +379,16 @@ Provides a functionality of conversion AG rules to manifest v3 declarative synta
      */
     public convert(ruleList: IRuleList): DeclarativeRule[] {
 ```
+
 ##### Problems
+
 [QueryTransform](https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform)
+
 - Regexp is not supported in remove params
 - We cannot implement inversion in remove params
 - We cannot filter by request methods
 - Only one rule applies for a redirect. For this reason, different rules with the same url may not work. Example below:
+
 ```
 Works   ||testcases.adguard.com$removeparam=p1case6|p2case6
 
@@ -379,12 +407,12 @@ npx nx run @adguard/tsurlfilter:<script>
 
 ### <a id="npm-scripts"></a> NPM scripts
 
--   `t`: Run test suite
--   `start`: Run `build` in watch mode
--   `test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
--   `test:prod`: Run linting and generate coverage
--   `build`: Generate bundles and typings, create docs
--   `lint`: Lints code
+- `t`: Run test suite
+- `start`: Run `build` in watch mode
+- `test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
+- `test:prod`: Run linting and generate coverage
+- `build`: Generate bundles and typings, create docs
+- `lint`: Lints code
 
 ### <a id="excluding-peer-dependencies"></a> Excluding peerDependencies
 
