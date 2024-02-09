@@ -4,7 +4,7 @@ import { ParserBase } from '../interface';
 import { BinaryTypeMap, type Value } from '../common';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { NULL } from '../../utils/constants';
+import { EMPTY, NULL } from '../../utils/constants';
 import { isUndefined } from '../../utils/common';
 
 /**
@@ -16,27 +16,6 @@ const enum BinaryPropMap {
     Start,
     End,
 }
-
-/**
- * Some values are very frequent and can be represented by a single byte.
- * This map is used to serialize and deserialize such values.
- */
-// FIXME: add all frequent values
-const FREQUENT_VALUES_MAP: Record<string, number> = Object.freeze({
-    domain: 1,
-    'third-party': 2,
-    script: 3,
-});
-
-/**
- * Reverse frequent values map.
- */
-// FIXME: add all frequent values
-const FREQUENT_VALUES_MAP_REVERSE: Record<number, string> = Object.freeze({
-    1: 'domain',
-    2: 'third-party',
-    3: 'script',
-});
 
 /**
  * Value parser.
@@ -81,11 +60,12 @@ export class ValueParser extends ParserBase {
      *
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
+     * @param frequentValuesMap Optional map of frequent values.
      */
-    public static serialize(node: Value, buffer: OutputByteBuffer): void {
+    public static serialize(node: Value, buffer: OutputByteBuffer, frequentValuesMap?: Map<string, number>): void {
         buffer.writeUint8(BinaryTypeMap.ValueNode);
 
-        const frequentValue = FREQUENT_VALUES_MAP[node.value];
+        const frequentValue = frequentValuesMap?.get(node.value);
         if (frequentValue) {
             buffer.writeUint8(BinaryPropMap.FrequentValue);
             buffer.writeUint8(frequentValue);
@@ -112,9 +92,14 @@ export class ValueParser extends ParserBase {
      *
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
+     * @param frequentValuesMap Optional map of frequent values.
      * @throws If the binary data is malformed.
      */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<Value>): void {
+    public static deserialize(
+        buffer: InputByteBuffer,
+        node: Partial<Value>,
+        frequentValuesMap?: Map<number, string>,
+    ): void {
         buffer.assertUint8(BinaryTypeMap.ValueNode);
         node.type = 'Value';
 
@@ -127,7 +112,7 @@ export class ValueParser extends ParserBase {
                     break;
                 }
                 case BinaryPropMap.FrequentValue: {
-                    node.value = FREQUENT_VALUES_MAP_REVERSE[buffer.readUint8()];
+                    node.value = frequentValuesMap?.get(buffer.readUint8()) ?? EMPTY;
                     break;
                 }
                 case BinaryPropMap.Start: {

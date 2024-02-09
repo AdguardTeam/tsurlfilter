@@ -38,8 +38,9 @@ export class ParserBase {
      *
      * @param node AST node to serialize.
      * @param buffer Output byte buffer to write to.
+     * @param args Additional, parser-specific arguments, if needed.
      */
-    public static serialize(node: Node, buffer: OutputByteBuffer): void {
+    public static serialize(node: Node, buffer: OutputByteBuffer, ...args: unknown[]): void {
         throw new NotImplementedError();
     }
 
@@ -48,8 +49,9 @@ export class ParserBase {
      *
      * @param buffer Input byte buffer to read from.
      * @param node Destination node to write to.
+     * @param args Additional, parser-specific arguments, if needed.
      */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<Node>): void {
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Node>, ...args: unknown[]): void {
         throw new NotImplementedError();
     }
 }
