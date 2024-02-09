@@ -1,9 +1,13 @@
+/**
+ * @file Simple storage implementation for testing.
+ */
+
 import { type Storage } from '../../src/utils/storage-interface';
 
 /**
  * Represents a simple storage implementation that stores Uint8Array arrays.
  *
- * @note Storage is not implemented in AGTree, but we need this simple implementation for testing.
+ * @note Storage is not a scope of the library, this is just a simple implementation for testing purposes.
  */
 export class SimpleStorage implements Storage<Uint8Array[]> {
     private storage: { [key: string]: Uint8Array[] } = {};
