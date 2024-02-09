@@ -1,7 +1,6 @@
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { type ModifierList } from '../../../src/parser/common';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import '../../matchers/check-serialization';
 
 describe('ModifierListParser', () => {
     test('parse', () => {

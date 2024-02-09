@@ -1,6 +1,5 @@
 import { type Modifier } from '../../../src/parser/common';
 import { ModifierParser } from '../../../src/parser/misc/modifier';
-import '../../matchers/check-serialization';
 
 /**
  * Helper function that parses and generates a modifier.

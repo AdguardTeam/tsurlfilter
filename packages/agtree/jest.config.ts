@@ -10,6 +10,8 @@ const config: Config = {
         // Speed up tests by using SWC instead of Babel
         '.ts': '@swc/jest',
     },
+    // Load custom matchers automatically
+    setupFilesAfterEnv: ['./test/matchers/index.ts'],
 };
 
 export default config;
