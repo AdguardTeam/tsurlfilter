@@ -42,7 +42,7 @@ export class InputByteBuffer {
      * @param key Key to read from the storage.
      * @returns New InputByteBuffer instance.
      */
-    public static async createFromStorage(storage: Storage, key: string): Promise<InputByteBuffer> {
+    public static async createFromStorage(storage: Storage<Uint8Array[]>, key: string): Promise<InputByteBuffer> {
         const chunks = await storage.read(key);
         return new InputByteBuffer(chunks);
     }

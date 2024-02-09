@@ -76,7 +76,7 @@ export class OutputByteBuffer {
      * @param storage Storage to write the chunks to.
      * @param key Key to write the chunks to.
      */
-    public async writeChunksToStorage(storage: Storage, key: string): Promise<void> {
+    public async writeChunksToStorage(storage: Storage<Uint8Array[]>, key: string): Promise<void> {
         await this.byteBuffer.writeChunksToStorage(storage, key);
     }
 }
