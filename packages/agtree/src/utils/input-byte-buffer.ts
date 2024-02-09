@@ -1,9 +1,16 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-bitwise */
+/**
+ * @file Input byte buffer for reading binary data.
+ */
+
 import { ByteBuffer } from './byte-buffer';
 import { decodeText } from './text-decoder';
 
 /**
- * Input byte buffer for reading binary data from right to left.
+ * Input byte buffer for reading binary data.
+ *
+ * @note Internally, this class uses a {@link ByteBuffer} instance, just providing a convenient API for reading data.
  */
 export class InputByteBuffer {
     /**
@@ -19,9 +26,10 @@ export class InputByteBuffer {
     /**
      * Constructs a new InputByteBuffer instance.
      *
-     * @param chunks Optional array of chunks to initialize the ByteBuffer with.
+     * @param chunks Array of chunks to initialize the ByteBuffer with.
+     * @note Chunks are used by reference, not copied.
      */
-    constructor(chunks?: Uint8Array[]) {
+    constructor(chunks: Uint8Array[]) {
         this.byteBuffer = new ByteBuffer(chunks);
         this.offset = 0;
     }
@@ -43,11 +51,10 @@ export class InputByteBuffer {
      * @returns 32-bit unsigned integer from the buffer.
      */
     public readUint32(): number {
-        const result = (((this.byteBuffer.readByte(this.offset) ?? 0) << 24)
-            | ((this.byteBuffer.readByte(this.offset + 1) ?? 0) << 16)
-            | ((this.byteBuffer.readByte(this.offset + 2) ?? 0) << 8)
-            | ((this.byteBuffer.readByte(this.offset + 3) ?? 0))) >>> 0;
-        this.offset += 4;
+        const result = (((this.byteBuffer.readByte(this.offset++) ?? 0) << 24)
+            | ((this.byteBuffer.readByte(this.offset++) ?? 0) << 16)
+            | ((this.byteBuffer.readByte(this.offset++) ?? 0) << 8)
+            | ((this.byteBuffer.readByte(this.offset++) ?? 0))) >>> 0;
         return result;
     }
 
@@ -60,7 +67,7 @@ export class InputByteBuffer {
         const result = decodeText(this.byteBuffer, this.offset);
         this.offset += result.bytesConsumed;
 
-        // if the current byte is 0, we need to skip it
+        // Skip the null terminator
         if (this.byteBuffer.readByte(this.offset) === 0) {
             this.offset += 1;
         }

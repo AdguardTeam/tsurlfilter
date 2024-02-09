@@ -1,19 +1,20 @@
 /* eslint-disable no-bitwise */
+/**
+ * @file Core ByteBuffer implementation for handling binary data in chunks.
+ */
 
 import { type Storage } from './storage-interface';
 
 /**
- * A ByteBuffer class for handling binary data in chunks.
+ * Core ByteBuffer implementation for handling binary data in chunks.
  * This class allows for efficient byte storage and manipulation by organizing data into chunks
  * and providing methods to read and write bytes.
- *
- * @note This buffer is quite simple and designed for adding data linearly,
- * because we don't need to modify the already written data.
  */
 export class ByteBuffer {
     /**
      * The size of each chunk in bytes (32 KB).
      */
+    // ! IMPORTANT: If you ever change this value, make sure to update optimized bitwise operations in the code.
     public static readonly CHUNK_SIZE = 32768; // 32 * 1024
 
     /**
@@ -44,6 +45,7 @@ export class ByteBuffer {
      * @param position The position to ensure capacity for.
      */
     private ensureCapacity(position: number) {
+        // same as Math.floor(position / chunk size), just optimized for the 32 KB chunk size
         const requiredChunkIndex = position >>> 0x000F;
         for (let i = this.chunksLength; i <= requiredChunkIndex; i += 1) {
             this.chunks.push(new Uint8Array(ByteBuffer.CHUNK_SIZE));
@@ -59,7 +61,9 @@ export class ByteBuffer {
      * @param value The byte value to write (0-255).
      */
     public writeByte(position: number, value: number): void {
+        // same as Math.floor(position / chunk size), just optimized for the 32 KB chunk size
         const chunkIndex = position >>> 0x000F;
+        // same as position % chunk size, just optimized for the 32 KB chunk size
         const chunkOffset = position & 0x7FFF;
 
         if (chunkIndex >= this.chunksLength) {

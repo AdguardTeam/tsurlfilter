@@ -1,11 +1,17 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-bitwise */
+/**
+ * @file Output byte buffer for writing binary data.
+ */
+
 import { ByteBuffer } from './byte-buffer';
 import { type Storage } from './storage-interface';
 import { encodeText } from './text-encoder';
 
 /**
- * Output byte buffer for writing binary data from left to right.
+ * Output byte buffer for writing binary data.
+ *
+ * @note Internally, this class uses a {@link ByteBuffer} instance, just providing a convenient API for reading data.
  */
 export class OutputByteBuffer {
     /**
@@ -21,6 +27,7 @@ export class OutputByteBuffer {
     /**
      * Constructs a new OutputByteBuffer instance.
      */
+    // TODO: add chunks as a parameter, if ever needed
     constructor() {
         this.byteBuffer = new ByteBuffer();
         this.offset = 0;

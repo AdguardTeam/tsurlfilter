@@ -2,6 +2,7 @@
 /**
  * @file Utility for decoding strings from byte sequences.
  */
+
 import { type ByteBuffer } from './byte-buffer';
 import { EMPTY } from './constants';
 

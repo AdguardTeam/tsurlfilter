@@ -2,14 +2,16 @@
 /**
  * @file Utility for encoding strings to byte sequences.
  */
+
 import { type ByteBuffer } from './byte-buffer';
+import { NULL } from './constants';
 
 /**
  * Checks if the given code point is an ASCII code point.
  *
  * @param codePoint Code point to check.
  * @returns `true` if the given code point is an ASCII code point, `false` otherwise.
- * @see https://infra.spec.whatwg.org/#ascii-code-point
+ * @see {@link https://infra.spec.whatwg.org/#ascii-code-point}
  */
 const isAsciiCodePoint = (codePoint: number): boolean => {
     return codePoint >= 0x0000 && codePoint <= 0x007F;
@@ -71,8 +73,8 @@ export const encodeText = (str: string, buffer: ByteBuffer, start: number): numb
         i += codePoint >= 0x10000 ? 2 : 1;
     }
 
-    // Write a \0 byte to terminate the string.
-    buffer.writeByte(start + bytesWritten, 0x0000);
+    // Write the null terminator.
+    buffer.writeByte(start + bytesWritten, NULL);
     bytesWritten += 1;
 
     return bytesWritten;
