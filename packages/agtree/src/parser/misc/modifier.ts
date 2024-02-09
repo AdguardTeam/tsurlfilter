@@ -87,29 +87,21 @@ export class ModifierParser extends ParserBase {
         // If there is no assignment operator, the whole modifier is the name
         // without a value
         if (assignmentIndex === -1) {
-            modifier = {
-                type: 'Value',
-                value: raw.slice(modifierNameStart, modifierEnd),
-            };
-
-            if (options.isLocIncluded) {
-                modifier.start = baseOffset + modifierNameStart;
-                modifier.end = baseOffset + modifierEnd;
-            }
+            modifier = ValueParser.parse(
+                raw.slice(modifierNameStart, modifierEnd),
+                options,
+                baseOffset + modifierNameStart,
+            );
         } else {
             // If there is an assignment operator, first we need to find the
             // end of the modifier name, then we can parse the value
             const modifierNameEnd = StringUtils.skipWSBack(raw, assignmentIndex - 1) + 1;
 
-            modifier = {
-                type: 'Value',
-                value: raw.slice(modifierNameStart, modifierNameEnd),
-            };
-
-            if (options.isLocIncluded) {
-                modifier.start = baseOffset + modifierNameStart;
-                modifier.end = baseOffset + modifierNameEnd;
-            }
+            modifier = ValueParser.parse(
+                raw.slice(modifierNameStart, modifierNameEnd),
+                options,
+                baseOffset + modifierNameStart,
+            );
 
             // Value can't be empty
             if (assignmentIndex + 1 === modifierEnd) {
@@ -123,15 +115,11 @@ export class ModifierParser extends ParserBase {
             // Skip whitespace after the assignment operator
             const valueStart = StringUtils.skipWS(raw, assignmentIndex + MODIFIER_ASSIGN_OPERATOR.length);
 
-            value = {
-                type: 'Value',
-                value: raw.slice(valueStart, modifierEnd),
-            };
-
-            if (options.isLocIncluded) {
-                value.start = baseOffset + valueStart;
-                value.end = baseOffset + modifierEnd;
-            }
+            value = ValueParser.parse(
+                raw.slice(valueStart, modifierEnd),
+                options,
+                baseOffset + valueStart,
+            );
         }
 
         const result: Modifier = {
