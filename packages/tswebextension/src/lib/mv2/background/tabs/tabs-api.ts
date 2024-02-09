@@ -3,7 +3,7 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 
 import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
-import { FrameRequestContext, TabContext } from './tab-context';
+import { FrameRequestContext, LightweightTabContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
 
 /**
@@ -20,11 +20,11 @@ export class TabsApi {
     // TODO: Use a persistent map when the extended serialization is implemented. (AG-27098)
     public context = new Map<number, TabContext>();
 
-    public onCreate = new EventChannel<TabContext>();
+    public onCreate = new EventChannel<LightweightTabContext>();
 
-    public onUpdate = new EventChannel<TabContext>();
+    public onUpdate = new EventChannel<LightweightTabContext>();
 
-    public onDelete = new EventChannel<TabContext>();
+    public onDelete = new EventChannel<LightweightTabContext>();
 
     public onActivate = new EventChannel<TabContext>();
 
@@ -209,6 +209,18 @@ export class TabsApi {
     }
 
     /**
+     * Retrieves tab context by tab ID.
+     *
+     * @param tabId Tab ID.
+     * @returns Tab context or undefined if not found.
+     */
+    public getLightweightTabContext(tabId: number): LightweightTabContext | undefined {
+        const tabContext = this.context.get(tabId);
+
+        return tabContext ? tabContext.lightweightTabContext : undefined;
+    }
+
+    /**
      * Checks whether the tab with the specified ID is open in incognito mode
      * or not.
      *
@@ -312,7 +324,7 @@ export class TabsApi {
 
         const tabContext = TabContext.createNewTabContext(tab, this.documentApi);
         this.context.set(tab.id, tabContext);
-        this.onCreate.dispatch(tabContext);
+        this.onCreate.dispatch(tabContext.lightweightTabContext);
         return tabContext;
     }
 
@@ -325,7 +337,7 @@ export class TabsApi {
         const tabContext = this.context.get(tabId);
         if (tabContext) {
             this.context.delete(tabId);
-            this.onDelete.dispatch(tabContext);
+            this.onDelete.dispatch(tabContext.lightweightTabContext);
         }
     }
 
@@ -341,7 +353,7 @@ export class TabsApi {
         const tabContext = this.context.get(tabId);
         if (tabContext && TabContext.isBrowserTab(tabInfo)) {
             tabContext.updateTabInfo(changeInfo, tabInfo);
-            this.onUpdate.dispatch(tabContext);
+            this.onUpdate.dispatch(tabContext.lightweightTabContext);
         }
     }
 

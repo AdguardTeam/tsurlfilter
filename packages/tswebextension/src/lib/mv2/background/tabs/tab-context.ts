@@ -31,6 +31,34 @@ export type FrameRequestContext = {
 };
 
 /**
+ * Small copy of the main frame rule with only valuable data to decrease memory
+ * usage and prevent possible memory leaks.
+ */
+export type MainFrameRule = {
+    /**
+     * Filter id.
+     */
+    filterId: number;
+
+    /**
+     * The original text of the rule from which it was parsed.
+     */
+    text: string;
+
+    /**
+     * If the rule completely disables filtering.
+     */
+    isFilteringDisabled: boolean;
+};
+
+export type LightweightTabContext = Omit<TabContext, 'mainFrameRule'> & {
+    /**
+     * Document level rule, applied to the tab.
+     */
+    mainFrameRule: MainFrameRule | null;
+};
+
+/**
  * Tab context.
  */
 export class TabContext {
@@ -262,5 +290,29 @@ export class TabContext {
      */
     public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
         return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
+    }
+
+    /**
+     * Creates a simplified tab context to prevent memory leaks by focusing on
+     * essential information: filter ID, rule text, and filtering status.
+     * If the main frame rule exists, its key details are included; otherwise,
+     * they're null. This is crucial for GC efficiency, as persistent links
+     * to filter data can hinder memory cleanup.
+     * Ensures lean memory use by retaining only essential rule details,
+     * aiding in performance optimization.
+     *
+     * @returns {LightweightTabContext} A simplified object with key details of
+     * the tab's context, reducing memory usage and leak risks.
+     */
+    public get lightweightTabContext(): LightweightTabContext {
+        const mainFrameRule = this.mainFrameRule
+            ? {
+                filterId: this.mainFrameRule.getFilterListId(),
+                text: this.mainFrameRule.getText().split('').join(''),
+                isFilteringDisabled: this.mainFrameRule.isFilteringDisabled(),
+            }
+            : null;
+
+        return Object.assign(this, { mainFrameRule });
     }
 }
