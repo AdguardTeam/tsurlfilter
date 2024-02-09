@@ -3,6 +3,8 @@
  * @file Base parser class.
  */
 import { NotImplementedError } from '../errors/not-implemented-error';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type Node } from './common';
 import { type ParserOptions } from './options';
 
@@ -28,6 +30,26 @@ export class ParserBase {
      * @param node AST node to generate a string from.
      */
     public static generate(node: Node): string {
+        throw new NotImplementedError();
+    }
+
+    /**
+     * Serializes the AST node to a byte buffer.
+     *
+     * @param node AST node to serialize.
+     * @param buffer Output byte buffer to write to.
+     */
+    public static serialize(node: Node, buffer: OutputByteBuffer): void {
+        throw new NotImplementedError();
+    }
+
+    /**
+     * Deserializes the AST node from a byte buffer.
+     *
+     * @param buffer Input byte buffer to read from.
+     * @param node Destination node to write to.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Node>): void {
         throw new NotImplementedError();
     }
 }
