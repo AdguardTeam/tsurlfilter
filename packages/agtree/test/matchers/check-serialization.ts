@@ -40,7 +40,7 @@ expect.extend({
         received: unknown,
         parser: typeof ParserBase,
     ): Promise<jest.CustomMatcherResult> {
-        // Validate the received parameter with the zod schema
+        // Validate the received parameter
         if (!isString(received)) {
             return {
                 pass: false,
