@@ -1,6 +1,6 @@
 import { ByteBuffer } from '../../src/utils/byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
-import { isArrayOfUint8Arrays } from '../../src/utils/common';
+import { isArrayOfUint8Arrays } from '../../src/utils/type-guards';
 
 let buffer: ByteBuffer;
 

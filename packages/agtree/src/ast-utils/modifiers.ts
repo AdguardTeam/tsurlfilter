@@ -3,7 +3,7 @@
  */
 
 import { type Modifier, type ModifierList } from '../parser/common';
-import { isUndefined } from '../utils/common';
+import { isUndefined } from '../utils/type-guards';
 import { clone } from '../utils/clone';
 
 /**

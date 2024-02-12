@@ -7,7 +7,7 @@ import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
-import { isUndefined } from '../../utils/common';
+import { isUndefined } from '../../utils/type-guards';
 
 /**
  * Property map for binary serialization.

@@ -24,7 +24,7 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/common';
+import { isUndefined } from '../../utils/type-guards';
 import { ValueParser } from '../misc/value';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 

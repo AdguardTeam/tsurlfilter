@@ -5,7 +5,7 @@ import { BinaryTypeMap, type Value } from '../common';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { EMPTY, NULL } from '../../utils/constants';
-import { isUndefined } from '../../utils/common';
+import { isUndefined } from '../../utils/type-guards';
 
 /**
  * Property map for binary serialization.

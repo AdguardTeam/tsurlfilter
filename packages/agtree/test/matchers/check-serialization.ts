@@ -9,7 +9,7 @@ import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { defaultParserOptions } from '../../src/parser/options';
-import { isString } from '../../src/utils/common';
+import { isString } from '../../src/utils/type-guards';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {

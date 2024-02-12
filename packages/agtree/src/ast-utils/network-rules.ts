@@ -2,7 +2,7 @@
  * @file Utility functions for working with network rule nodes
  */
 
-import { isUndefined } from '../utils/common';
+import { isUndefined } from '../utils/type-guards';
 import { type ModifierList, type NetworkRule, RuleCategory } from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
 import { clone } from '../utils/clone';

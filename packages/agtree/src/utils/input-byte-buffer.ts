@@ -5,7 +5,7 @@
  */
 
 import { ByteBuffer } from './byte-buffer';
-import { isArrayOfUint8Arrays } from './common';
+import { isArrayOfUint8Arrays } from './type-guards';
 import { type Storage } from './storage-interface';
 import { decodeText } from './text-decoder';
 

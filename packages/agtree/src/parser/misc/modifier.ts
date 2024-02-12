@@ -13,7 +13,7 @@ import { ParserBase } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueParser } from './value';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isUndefined } from '../../utils/common';
+import { isUndefined } from '../../utils/type-guards';
 
 /**
  * Property map for binary serialization.
