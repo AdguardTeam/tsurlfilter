@@ -111,9 +111,9 @@ export class ModifierListParser extends ParserBase {
     }
 
     /**
-     * Serializes a modifier list AST to binary format.
+     * Serializes a modifier list node to binary format.
      *
-     * @param node AST to serialize.
+     * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: ModifierList, buffer: OutputByteBuffer): void {
@@ -144,7 +144,7 @@ export class ModifierListParser extends ParserBase {
     }
 
     /**
-     * Deserializes a modifier list AST from binary format.
+     * Deserializes a modifier list node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
