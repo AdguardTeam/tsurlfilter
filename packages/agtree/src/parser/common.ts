@@ -1,4 +1,4 @@
-import { type AdblockSyntax } from '../utils/adblockers';
+import { AdblockSyntax } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 
 /**
@@ -239,12 +239,30 @@ export const enum BinaryTypeMap {
     Array,
 
     // AGTree nodes
-    // FIXME: add all types
+    // FIXME: add all types and group them properly
     ValueNode,
     RawNode,
     ModifierNode,
     ModifierListNode,
+    NetworkRuleNode,
 }
+
+/**
+ * Binary serialization map for adblock syntaxes.
+ */
+export const SYNTAX_BINARY_MAP: Map<AdblockSyntax, number> = new Map([
+    [AdblockSyntax.Common, 0],
+    [AdblockSyntax.Abp, 1],
+    [AdblockSyntax.Adg, 2],
+    [AdblockSyntax.Ubo, 3],
+]);
+
+/**
+ * Binary deserialization map for adblock syntaxes.
+ */
+export const SYNTAX_BINARY_MAP_REVERSE = new Map<number, AdblockSyntax>(
+    Array.from(SYNTAX_BINARY_MAP, ([key, value]) => [value, key]),
+);
 
 /**
  * Represents a basic node in the AST.

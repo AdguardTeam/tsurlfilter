@@ -28,6 +28,11 @@ export interface ParserOptions {
     parseUboSpecificRules?: boolean;
 
     /**
+     * Whether to parse raw parts.
+     */
+    parseRaws?: boolean;
+
+    /**
      * Whether to ignore comment-rules.
      */
     ignoreComments?: boolean;
@@ -41,5 +46,6 @@ export const defaultParserOptions: ParserOptions = {
     isLocIncluded: true,
     parseAbpSpecificRules: true,
     parseUboSpecificRules: true,
+    parseRaws: true,
     ignoreComments: false,
 };
