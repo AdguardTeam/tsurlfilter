@@ -2,8 +2,8 @@
 /* eslint-disable no-console */
 // FIXME: temporary file
 // use: npx tsx encoder-bench.ts
-import { ByteBuffer } from './byte-buffer';
-import { encodeText } from './text-encoder';
+import { ByteBuffer } from '../utils/byte-buffer';
+import { encodeText } from '../utils/text-encoder';
 
 const ITERS = 100;
 const BASE_TEST_STRING = 'hello world';
