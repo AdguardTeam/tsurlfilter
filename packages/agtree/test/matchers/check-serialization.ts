@@ -9,6 +9,7 @@ import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { defaultParserOptions } from '../../src/parser/options';
+import { isString } from '../../src/utils/common';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
@@ -19,14 +20,6 @@ declare global {
         }
     }
 }
-
-/**
- * Checks if the parameter is a string
- *
- * @param param Parameter to check
- * @returns `true` if the parameter is a string
- */
-const isString = (param: unknown): param is string => typeof param === 'string';
 
 // Extend Jest's expect() with the custom matcher
 expect.extend({

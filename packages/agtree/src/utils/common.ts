@@ -3,10 +3,20 @@
  *
  * @param value Value to check.
  *
- * @returns True if the value type is not 'undefined'.
+ * @returns `true` if the value is 'undefined', `false` otherwise.
  */
 export const isUndefined = (value: unknown): value is undefined => {
     return typeof value === 'undefined';
+};
+
+/**
+ * Checks whether the given value is a string.
+ *
+ * @param value Value to check.
+ * @returns `true` if the value is a string, `false` otherwise.
+ */
+export const isString = (value: unknown): value is string => {
+    return typeof value === 'string';
 };
 
 /**
