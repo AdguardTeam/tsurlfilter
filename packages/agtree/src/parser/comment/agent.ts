@@ -1,14 +1,29 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-case-declarations */
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
 
-import { EMPTY, SPACE } from '../../utils/constants';
+import { EMPTY, NULL, SPACE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type Agent, type Value } from '../common';
+import { BinaryTypeMap, type Agent, type Value } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
+import { ValueParser } from '../misc/value';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Adblock = 1,
+    Version,
+    Start,
+    End,
+}
 
 const ADG_NAME_MARKERS = new Set([
     'adguard',
@@ -26,6 +41,29 @@ const ABP_NAME_MARKERS = new Set([
     'adblock plus',
     'adblockplus',
     'abp',
+]);
+
+/**
+ * Binary serialization map for agents.
+ */
+const KNOWN_AGENTS = new Map<string, number>([
+    // AdGuard
+    ...Array.from(ADG_NAME_MARKERS).map((name) => [name, 0] as const),
+    // uBlock Origin
+    ...Array.from(UBO_NAME_MARKERS).map((name) => [name, 1] as const),
+    // Adblock Plus
+    ...Array.from(ABP_NAME_MARKERS).map((name) => [name, 2] as const),
+] as const);
+
+/**
+ * Binary deserialization map for agents.
+ *
+ * @note While `KNOWN_AGENTS` support multiple forms, `KNOWN_AGENTS_REVERSE` only supports the "canonical form".
+ */
+const KNOWN_AGENTS_REVERSE: Map<number, string> = new Map([
+    [0, 'AdGuard'],
+    [1, 'uBlock Origin'],
+    [2, 'Adblock Plus'],
 ]);
 
 /**
@@ -89,8 +127,8 @@ export class AgentParser extends ParserBase {
         let nameEndIndex = offset;
 
         // Prepare variables for name and version
-        let name: Value | null = null;
-        let version: Value | null = null;
+        let name: Value | undefined;
+        let version: Value | undefined;
         // default value for the syntax
         let syntax: AdblockSyntax = AdblockSyntax.Common;
 
@@ -104,8 +142,7 @@ export class AgentParser extends ParserBase {
             const part = raw.slice(offset, partEnd);
 
             if (AgentParser.isValidVersion(part)) {
-                // Multiple versions aren't allowed
-                if (version !== null) {
+                if (!isUndefined(version)) {
                     throw new AdblockSyntaxError(
                         'Duplicated versions are not allowed',
                         baseOffset + offset,
@@ -115,29 +152,8 @@ export class AgentParser extends ParserBase {
 
                 const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
 
-                // Save name
-                name = {
-                    type: 'Value',
-                    value: parsedNamePart,
-                };
-
-                if (options.isLocIncluded) {
-                    name.start = baseOffset + nameStartIndex;
-                    name.end = baseOffset + nameEndIndex;
-                }
-
-                // Save version
-                version = {
-                    type: 'Value',
-                    value: part,
-                };
-
-                if (options.isLocIncluded) {
-                    version.start = baseOffset + offset;
-                    version.end = baseOffset + partEnd;
-                }
-
-                // Save syntax
+                name = ValueParser.parse(parsedNamePart, options, baseOffset + nameStartIndex);
+                version = ValueParser.parse(part, options, baseOffset + offset);
                 syntax = getAdblockSyntax(parsedNamePart);
             } else {
                 nameEndIndex = partEnd;
@@ -148,18 +164,9 @@ export class AgentParser extends ParserBase {
         }
 
         // If we didn't find a version, the whole string is the name
-        if (name === null) {
+        if (isUndefined(name)) {
             const parsedNamePart = raw.slice(nameStartIndex, nameEndIndex);
-            name = {
-                type: 'Value',
-                value: parsedNamePart,
-            };
-
-            if (options.isLocIncluded) {
-                name.start = baseOffset + nameStartIndex;
-                name.end = baseOffset + nameEndIndex;
-            }
-
+            name = ValueParser.parse(parsedNamePart, options, baseOffset + nameStartIndex);
             syntax = getAdblockSyntax(parsedNamePart);
         }
 
@@ -188,25 +195,92 @@ export class AgentParser extends ParserBase {
     }
 
     /**
-     * Converts an adblock agent AST to a string.
+     * Converts an adblock agent node to a string.
      *
-     * @param ast Agent AST
+     * @param value Agent node
      * @returns Raw string
      */
-    public static generate(ast: Agent): string {
+    public static generate(value: Agent): string {
         let result = EMPTY;
 
         // Agent adblock name
-        result += ast.adblock.value;
+        result += value.adblock.value;
 
         // Agent adblock version (if present)
-        if (ast.version !== null) {
+        if (!isUndefined(value.version)) {
             // Add a space between the name and the version
             result += SPACE;
 
-            result += ast.version.value;
+            result += value.version.value;
         }
 
         return result;
+    }
+
+    /**
+     * Serializes an agent node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: Agent, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.AgentNode);
+
+        buffer.writeUint8(BinaryPropMap.Adblock);
+        ValueParser.serialize(node.adblock, buffer, KNOWN_AGENTS, true);
+
+        if (!isUndefined(node.version)) {
+            buffer.writeUint8(BinaryPropMap.Version);
+            ValueParser.serialize(node.version, buffer);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes an agent node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(
+        buffer: InputByteBuffer,
+        node: Partial<Agent>,
+    ): void {
+        buffer.assertUint8(BinaryTypeMap.AgentNode);
+        node.type = 'Agent';
+
+        // read buffer until NULL
+        let prop = buffer.readUint8();
+        while (prop) {
+            switch (prop) {
+                case BinaryPropMap.Adblock:
+                    ValueParser.deserialize(buffer, node.adblock = {} as Value, KNOWN_AGENTS_REVERSE);
+                    break;
+                case BinaryPropMap.Version:
+                    ValueParser.deserialize(buffer, node.version = {} as Value);
+                    break;
+                case BinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case BinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
     }
 }

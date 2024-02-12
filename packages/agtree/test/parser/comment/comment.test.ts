@@ -102,7 +102,6 @@ describe('CommentRuleParser', () => {
                         end: 8,
                         value: 'AdGuard',
                     },
-                    version: null,
                 },
             ],
         });

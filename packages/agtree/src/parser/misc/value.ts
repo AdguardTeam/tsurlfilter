@@ -61,11 +61,17 @@ export class ValueParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      * @param frequentValuesMap Optional map of frequent values.
+     * @param toLower Whether to lowercase the value before the frequent value match (defaults to `false`).
      */
-    public static serialize(node: Value, buffer: OutputByteBuffer, frequentValuesMap?: Map<string, number>): void {
+    public static serialize(
+        node: Value,
+        buffer: OutputByteBuffer,
+        frequentValuesMap?: Map<string, number>,
+        toLower = false,
+    ): void {
         buffer.writeUint8(BinaryTypeMap.ValueNode);
 
-        const frequentValue = frequentValuesMap?.get(node.value);
+        const frequentValue = frequentValuesMap?.get(toLower ? node.value.toLocaleLowerCase() : node.value);
         if (frequentValue) {
             buffer.writeUint8(BinaryPropMap.FrequentValue);
             buffer.writeUint8(frequentValue);

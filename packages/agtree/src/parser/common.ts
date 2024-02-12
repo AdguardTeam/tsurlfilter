@@ -245,6 +245,8 @@ export const enum BinaryTypeMap {
     ModifierNode,
     ModifierListNode,
     NetworkRuleNode,
+    AgentNode,
+    AgentRuleNode,
 }
 
 /**
@@ -673,7 +675,7 @@ export interface Agent extends Node {
     /**
      * Adblock version (if specified).
      */
-    version: Value | null;
+    version?: Value;
 
     /**
      * Needed for network rules modifier validation.
