@@ -30,6 +30,8 @@ const enum BinaryPropMap {
  * Some values are very frequent and can be represented by a single byte.
  * This map is used to serialize and deserialize such values.
  *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION
+ *
  * @note Only 256 values can be represented this way.
  */
 const KNOWN_MODIFIERS = new Map<string, number>([
@@ -106,6 +108,8 @@ const KNOWN_MODIFIERS = new Map<string, number>([
 
 /**
  * Reverse frequent values map.
+ *
+ * @note Only 256 values can be represented this way.
  */
 const KNOWN_MODIFIERS_REVERSE = new Map<number, string>(
     Array.from(KNOWN_MODIFIERS, ([key, value]) => [value, key]),
@@ -115,10 +119,14 @@ const KNOWN_MODIFIERS_REVERSE = new Map<number, string>(
  * Some values are very frequent and can be represented by a single byte.
  * This map is used to serialize and deserialize such values.
  *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION
+ *
  * @note Only 256 values can be represented this way.
  */
 const KNOWN_MODIFIER_VALUES = new Map<string, number>([
     ['noopjs', 0],
+    // FIXME: add known redirects
+    // TODO: add new redirects here
 ]);
 
 /**
