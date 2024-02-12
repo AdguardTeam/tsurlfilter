@@ -405,7 +405,7 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
 ```
 
-### `adguardApi.onFilterDeletion`
+### `adguardApi.onFiltersDeletion`
 
 TsWebExtension Event channel, which fires event on obsoleted filters deletion.
 It can be fired after checking an update for filters in the FiltersUpdateService.
@@ -413,7 +413,7 @@ It can be fired after checking an update for filters in the FiltersUpdateService
 **Syntax:**
 
 ```typescript
-public onFilterDeletion: EventChannel<number[]>;
+public onFiltersDeletion: EventChannel<number[]>;
 ```
 
 **Example:**
@@ -429,10 +429,10 @@ const removeObsoletedFilterId = async (filterIds: number[]): Promise<void> => {
 };
 
 // add listener
-adguardApi.onFilterDeletion.subscribe(removeObsoletedFilterId);
+adguardApi.onFiltersDeletion.subscribe(removeObsoletedFilterId);
 
 // remove listener
-adguardApi.onFilterDeletion.unsubscribe(removeObsoletedFilterId);
+adguardApi.onFiltersDeletion.unsubscribe(removeObsoletedFilterId);
 ```
 
 ### `adguardApi.onRequestBlocking`

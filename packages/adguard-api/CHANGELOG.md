@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - New private method `removeObsoletedFilters` to prevent usage of obsoleted filters.
-- New public event channel `AdguardApi.onFilterDeletion`.
+- New public event channel `AdguardApi.onFiltersDeletion`.
 
 ### Changed
 - `adguardApi.start` returns Promise with applied configuration with already removed

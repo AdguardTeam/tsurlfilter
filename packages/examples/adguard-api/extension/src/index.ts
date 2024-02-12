@@ -54,7 +54,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
 
     adguardApi.onAssistantCreateRule.subscribe(onAssistantCreateRule);
 
-    const onFilterDeletion = async (filterIds: number[]) => {
+    const onFiltersDeletion = async (filterIds: number[]) => {
         console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
         configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
 
@@ -65,7 +65,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     };
 
     // update config on filter deletion
-    adguardApi.onFilterDeletion.subscribe(onFilterDeletion);
+    adguardApi.onFiltersDeletion.subscribe(onFiltersDeletion);
 
     // get tswebextension message handler
     const handleApiMessage = adguardApi.getMessageHandler();
@@ -97,7 +97,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     setTimeout(async () => {
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
-        adguardApi.onFilterDeletion.unsubscribe(onFilterDeletion);
+        adguardApi.onFiltersDeletion.unsubscribe(onFiltersDeletion);
         await adguardApi.stop();
         console.log("Adguard API has been disabled.");
     }, 60 * 1000);
