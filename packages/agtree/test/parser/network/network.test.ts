@@ -961,6 +961,7 @@ describe('NetworkRuleParser', () => {
     describe('serialize & deserialize', () => {
         test.each([
             'example.com',
+            '$script,redirect-rule=noopjs,domain=aternos.org',
             '@@||example.com',
             '@@||example.com^$script,third-party',
             '/ads.js^$script',
