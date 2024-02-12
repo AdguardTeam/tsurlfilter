@@ -5,12 +5,13 @@
 import { type Storage } from '../../src/utils/storage-interface';
 
 /**
- * Represents a simple storage implementation that stores Uint8Array arrays.
+ * Represents a very simple storage implementation.
  *
- * @note Storage is not a scope of the library, this is just a simple implementation for testing purposes.
+ * @note Handling storage is not a scope of the AGTree library,
+ * this is just a simple implementation for testing purposes.
  */
-export class SimpleStorage implements Storage<Uint8Array[]> {
-    private storage: { [key: string]: Uint8Array[] } = {};
+export class SimpleStorage implements Storage {
+    private storage: Map<string, unknown> = new Map();
 
     /**
      * Reads the value associated with the specified key from the storage.
@@ -18,8 +19,8 @@ export class SimpleStorage implements Storage<Uint8Array[]> {
      * @param key The key to read the value for.
      * @returns A promise that resolves to the value associated with the key, or an empty array if the key is not found.
      */
-    public async read(key: string): Promise<Uint8Array[]> {
-        return this.storage[key] ?? [];
+    public async read(key: string): Promise<unknown | undefined> {
+        return this.storage.get(key);
     }
 
     /**
@@ -29,7 +30,8 @@ export class SimpleStorage implements Storage<Uint8Array[]> {
      * @param value The value to write.
      * @returns A promise that resolves when the value is successfully written to the storage.
      */
-    public async write(key: string, value: Uint8Array[]): Promise<void> {
-        this.storage[key] = value;
+    public async write(key: string, value: unknown): Promise<void> {
+        // practically, storage makes a deep copy of the value, so we do the same here
+        this.storage.set(key, structuredClone(value));
     }
 }

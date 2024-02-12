@@ -31,7 +31,7 @@ export class ByteBuffer {
      * Constructs a new ByteBuffer instance.
      *
      * @param chunks Optional array of chunks to initialize the ByteBuffer with.
-     * @note If you provide chunks, they will be used by reference, not copied.
+     * @note If you provide chunks, for performance reasons, they are passed by reference and not copied.
      */
     constructor(chunks?: Uint8Array[]) {
         this.chunks = chunks ?? [];
@@ -96,8 +96,10 @@ export class ByteBuffer {
      *
      * @param storage Storage to write the chunks to.
      * @param key Key to write the chunks to.
+     * @note For performance reasons, chunks are passed by reference and not copied.
+     * @throws If the storage write operation throws.
      */
-    public async writeChunksToStorage(storage: Storage<Uint8Array[]>, key: string): Promise<void> {
+    public async writeChunksToStorage(storage: Storage, key: string): Promise<void> {
         await storage.write(key, this.chunks);
     }
 }

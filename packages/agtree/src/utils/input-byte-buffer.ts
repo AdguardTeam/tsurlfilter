@@ -5,6 +5,7 @@
  */
 
 import { ByteBuffer } from './byte-buffer';
+import { isArrayOfUint8Arrays } from './common';
 import { type Storage } from './storage-interface';
 import { decodeText } from './text-decoder';
 
@@ -28,7 +29,7 @@ export class InputByteBuffer {
      * Constructs a new InputByteBuffer instance.
      *
      * @param chunks Array of chunks to initialize the ByteBuffer with.
-     * @note Chunks are used by reference, not copied.
+     * @note If you provide chunks, for performance reasons, they are passed by reference and not copied.
      */
     constructor(chunks: Uint8Array[]) {
         this.byteBuffer = new ByteBuffer(chunks);
@@ -41,9 +42,16 @@ export class InputByteBuffer {
      * @param storage Storage instance.
      * @param key Key to read from the storage.
      * @returns New InputByteBuffer instance.
+     * @note For performance reasons, chunks are passed by reference and not copied.
      */
-    public static async createFromStorage(storage: Storage<Uint8Array[]>, key: string): Promise<InputByteBuffer> {
+    public static async createFromStorage(storage: Storage, key: string): Promise<InputByteBuffer> {
         const chunks = await storage.read(key);
+
+        // FIXME
+        if (!isArrayOfUint8Arrays(chunks)) {
+            throw new Error('The data from storage is not an array of Uint8Arrays');
+        }
+
         return new InputByteBuffer(chunks);
     }
 
@@ -90,12 +98,6 @@ export class InputByteBuffer {
     public readString(): string {
         const result = decodeText(this.byteBuffer, this.offset);
         this.offset += result.bytesConsumed;
-
-        // Skip the null terminator
-        if (this.byteBuffer.readByte(this.offset) === 0) {
-            this.offset += 1;
-        }
-
         return result.decodedText;
     }
 

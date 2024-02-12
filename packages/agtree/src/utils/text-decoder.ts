@@ -100,6 +100,9 @@ export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => 
         }
     }
 
+    // Null terminator
+    i += 1;
+
     return {
         decodedText: result,
         bytesConsumed: i - start,

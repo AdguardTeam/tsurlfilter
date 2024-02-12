@@ -29,75 +29,79 @@ const enum BinaryPropMap {
 /**
  * Some values are very frequent and can be represented by a single byte.
  * This map is used to serialize and deserialize such values.
+ *
+ * @note Only 256 values can be represented this way.
  */
 const KNOWN_MODIFIERS = new Map<string, number>([
-    ['1p', 0],
-    ['3p', 1],
-    ['all', 2],
-    ['app', 3],
-    ['badfilter', 4],
-    ['cname', 5],
-    ['content', 6],
-    ['cookie', 7],
-    ['csp', 8],
-    ['css', 9],
-    ['denyallow', 10],
-    ['doc', 11],
-    ['document', 12],
-    ['domain', 13],
+    ['_', 0],
+    ['all', 1],
+    ['app', 2],
+    ['badfilter', 3],
+    ['cname', 4],
+    ['content', 5],
+    ['cookie', 6],
+    ['csp', 7],
+    ['denyallow', 8],
+    ['document', 9],
+    ['doc', 10],
+    ['domain', 11],
+    ['from', 12],
+    ['elemhide', 13],
     ['ehide', 14],
-    ['elemhide', 15],
-    ['empty', 16],
-    ['extension', 17],
-    ['first-party', 18],
+    ['empty', 15],
+    ['first-party', 16],
+    ['1p', 17],
+    ['extension', 18],
     ['font', 19],
-    ['frame', 20],
-    ['from', 21],
-    ['genericblock', 22],
-    ['generichide', 23],
-    ['ghide', 24],
-    ['header', 25],
-    ['hls', 26],
-    ['image', 27],
-    ['important', 28],
-    ['inline-font', 29],
-    ['inline-script', 30],
-    ['jsinject', 31],
-    ['jsonprune', 32],
-    ['match-case', 33],
-    ['media', 34],
-    ['method', 35],
-    ['mp4', 36],
-    ['network', 37],
-    ['object', 38],
-    ['object-subrequest', 39],
-    ['other', 40],
-    ['permissions', 41],
-    ['ping', 42],
-    ['popunder', 43],
-    ['popup', 44],
-    ['redirect', 45],
-    ['redirect-rule', 46],
-    ['referrerpolicy', 47],
-    ['removeheader', 48],
-    ['removeparam', 49],
-    ['replace', 50],
-    ['rewrite', 51],
-    ['script', 52],
-    ['shide', 53],
-    ['specifichide', 54],
-    ['stealth', 55],
-    ['strict1p', 56],
-    ['strict3p', 57],
-    ['stylesheet', 58],
-    ['subdocument', 59],
+    ['genericblock', 20],
+    ['generichide', 21],
+    ['ghide', 22],
+    ['header', 23],
+    ['hls', 24],
+    ['image', 25],
+    ['important', 26],
+    ['inline-font', 27],
+    ['inline-script', 28],
+    ['jsinject', 29],
+    ['jsonprune', 30],
+    ['match-case', 31],
+    ['media', 32],
+    ['method', 33],
+    ['mp4', 34],
+    ['network', 35],
+    ['object-subrequest', 36],
+    ['object', 37],
+    ['other', 38],
+    ['permissions', 39],
+    ['ping', 40],
+    ['popunder', 41],
+    ['popup', 42],
+    ['redirect-rule', 43],
+    ['redirect', 44],
+    ['rewrite', 45],
+    ['referrerpolicy', 46],
+    ['removeheader', 47],
+    ['removeparam', 48],
+    ['replace', 49],
+    ['script', 50],
+    ['specifichide', 51],
+    ['shide', 52],
+    ['stealth', 53],
+    ['strict1p', 54],
+    ['strict3p', 55],
+    ['stylesheet', 56],
+    ['css', 57],
+    ['subdocument', 58],
+    ['frame', 59],
     ['third-party', 60],
-    ['to', 61],
-    ['urlblock', 62],
-    ['webrtc', 63],
-    ['websocket', 64],
-    ['xhr', 65],
+    ['3p', 61],
+    ['to', 62],
+    ['urlblock', 63],
+    ['webrtc', 64],
+    ['websocket', 65],
     ['xmlhttprequest', 66],
+    ['xhr', 67],
+    // TODO: add new modifiers here
 ]);
 
 /**
@@ -105,6 +109,23 @@ const KNOWN_MODIFIERS = new Map<string, number>([
  */
 const KNOWN_MODIFIERS_REVERSE = new Map<number, string>(
     Array.from(KNOWN_MODIFIERS, ([key, value]) => [value, key]),
+);
+
+/**
+ * Some values are very frequent and can be represented by a single byte.
+ * This map is used to serialize and deserialize such values.
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const KNOWN_MODIFIER_VALUES = new Map<string, number>([
+    ['noopjs', 0],
+]);
+
+/**
+ * Reverse frequent values map.
+ */
+const KNOWN_MODIFIER_VALUES_REVERSE = new Map<number, string>(
+    Array.from(KNOWN_MODIFIER_VALUES, ([key, value]) => [value, key]),
 );
 
 /**
@@ -255,7 +276,7 @@ export class ModifierParser extends ParserBase {
 
         if (!isUndefined(node.value)) {
             buffer.writeUint8(BinaryPropMap.Value);
-            ValueParser.serialize(node.value, buffer);
+            ValueParser.serialize(node.value, buffer, KNOWN_MODIFIER_VALUES);
         }
 
         buffer.writeUint8(BinaryPropMap.Exception);
@@ -292,7 +313,7 @@ export class ModifierParser extends ParserBase {
                     ValueParser.deserialize(buffer, node.name = {} as Value, KNOWN_MODIFIERS_REVERSE);
                     break;
                 case BinaryPropMap.Value:
-                    ValueParser.deserialize(buffer, node.value = {} as Value);
+                    ValueParser.deserialize(buffer, node.value = {} as Value, KNOWN_MODIFIER_VALUES_REVERSE);
                     break;
                 case BinaryPropMap.Exception:
                     node.exception = buffer.readUint8() === 1;

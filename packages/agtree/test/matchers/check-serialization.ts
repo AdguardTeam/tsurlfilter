@@ -92,7 +92,7 @@ expect.extend({
         } catch (error: unknown) {
             return {
                 pass: false,
-                message: () => `Deserialization failed with error: ${getErrorMessage(error)}`,
+                message: () => `Failed to deserialize '${received}', got error: '${getErrorMessage(error)}'`,
             };
         }
 
