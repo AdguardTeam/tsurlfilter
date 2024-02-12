@@ -1,17 +1,37 @@
+/* eslint-disable no-param-reassign */
 import {
     CLOSE_SQUARE_BRACKET,
+    NULL,
     OPEN_SQUARE_BRACKET,
     SEMICOLON,
     SPACE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../common';
+import {
+    type AgentCommentRule,
+    CommentRuleType,
+    RuleCategory,
+    BinaryTypeMap,
+    type Agent,
+} from '../common';
 import { AgentParser } from './agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Children = 1,
+    Start,
+    End,
+}
 
 /**
  * `AgentParser` is responsible for parsing an Adblock agent rules.
@@ -89,13 +109,16 @@ export class AgentCommentRuleParser extends ParserBase {
         // Initialize the agent list
         const result: AgentCommentRule = {
             type: CommentRuleType.AgentCommentRule,
-            raws: {
-                text: raw,
-            },
             syntax: AdblockSyntax.Common,
             category: RuleCategory.Comment,
             children: [],
         };
+
+        if (options.parseRaws) {
+            result.raws = {
+                text: raw,
+            };
+        }
 
         if (options.isLocIncluded) {
             result.start = baseOffset;
@@ -157,5 +180,75 @@ export class AgentCommentRuleParser extends ParserBase {
         result += CLOSE_SQUARE_BRACKET;
 
         return result;
+    }
+
+    /**
+     * Serializes an adblock agent list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: AgentCommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.AgentRuleNode);
+
+        const count = node.children.length;
+        if (count) {
+            buffer.writeUint8(BinaryPropMap.Children);
+            // 8 bits is more than enough here
+            buffer.writeUint8(count);
+
+            for (let i = 0; i < count; i += 1) {
+                AgentParser.serialize(node.children[i], buffer);
+            }
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes an agent list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: AgentCommentRule): void {
+        buffer.assertUint8(BinaryTypeMap.AgentRuleNode);
+        node.type = CommentRuleType.AgentCommentRule;
+        node.syntax = AdblockSyntax.Common;
+        node.category = RuleCategory.Comment;
+
+        // read buffer until NULL
+        let prop = buffer.readUint8();
+        while (prop) {
+            switch (prop) {
+                case BinaryPropMap.Children:
+                    node.children = new Array(buffer.readUint8());
+
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        AgentParser.deserialize(buffer, node.children[i] = {} as Agent);
+                    }
+                    break;
+                case BinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case BinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
     }
 }

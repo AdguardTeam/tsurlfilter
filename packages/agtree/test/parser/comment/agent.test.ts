@@ -478,4 +478,15 @@ describe('AgentCommentRuleParser', () => {
         expect(parseAndGenerate('[Adblock Plus 2.0; AdGuard]')).toEqual('[Adblock Plus 2.0; AdGuard]');
         expect(parseAndGenerate('[  Adblock Plus 2.0  ; AdGuard  ]')).toEqual('[Adblock Plus 2.0; AdGuard]');
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '[Adblock Plus 2.0]',
+            '[AdGuard]',
+            '[AdGuard 1.0]',
+            '[Adblock Plus 3.0; AdGuard]',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(AgentCommentRuleParser);
+        });
+    });
 });

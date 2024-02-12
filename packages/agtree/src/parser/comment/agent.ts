@@ -25,17 +25,26 @@ const enum BinaryPropMap {
     End,
 }
 
+/**
+ * Possible AdGuard agent markers.
+ */
 const ADG_NAME_MARKERS = new Set([
     'adguard',
     'adg',
 ]);
 
+/**
+ * Possible uBlock Origin agent markers.
+ */
 const UBO_NAME_MARKERS = new Set([
     'ublock',
     'ublock origin',
     'ubo',
 ]);
 
+/**
+ * Possible Adblock Plus agent markers.
+ */
 const ABP_NAME_MARKERS = new Set([
     'adblock',
     'adblock plus',
@@ -59,6 +68,7 @@ const KNOWN_AGENTS = new Map<string, number>([
  * Binary deserialization map for agents.
  *
  * @note While `KNOWN_AGENTS` support multiple forms, `KNOWN_AGENTS_REVERSE` only supports the "canonical form".
+ * For example, if you serialize 'adg', it would be deserialized as 'AdGuard'.
  */
 const KNOWN_AGENTS_REVERSE: Map<number, string> = new Map([
     [0, 'AdGuard'],
@@ -77,11 +87,12 @@ const KNOWN_AGENTS_REVERSE: Map<number, string> = new Map([
  */
 const getAdblockSyntax = (name: string): AdblockSyntax => {
     let syntax = AdblockSyntax.Common;
-    if (ADG_NAME_MARKERS.has(name.toLowerCase())) {
+    const lowerCaseName = name.toLowerCase();
+    if (ADG_NAME_MARKERS.has(lowerCaseName)) {
         syntax = AdblockSyntax.Adg;
-    } else if (UBO_NAME_MARKERS.has(name.toLowerCase())) {
+    } else if (UBO_NAME_MARKERS.has(lowerCaseName)) {
         syntax = AdblockSyntax.Ubo;
-    } else if (ABP_NAME_MARKERS.has(name.toLowerCase())) {
+    } else if (ABP_NAME_MARKERS.has(lowerCaseName)) {
         syntax = AdblockSyntax.Abp;
     }
     return syntax;
@@ -267,6 +278,9 @@ export class AgentParser extends ParserBase {
             switch (prop) {
                 case BinaryPropMap.Adblock:
                     ValueParser.deserialize(buffer, node.adblock = {} as Value, KNOWN_AGENTS_REVERSE);
+                    if (node.adblock) {
+                        node.syntax = getAdblockSyntax(node.adblock.value);
+                    }
                     break;
                 case BinaryPropMap.Version:
                     ValueParser.deserialize(buffer, node.version = {} as Value);
