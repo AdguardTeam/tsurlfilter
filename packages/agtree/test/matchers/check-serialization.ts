@@ -22,7 +22,7 @@ declare global {
 }
 
 // We have 2 possible parameters here:
-//  1. simply a string
+//  1. simply a string - in this case, the original and expected rules are the same
 //  2. a tuple, where the first member is the original rule, and the second is the expected one (if they differs)
 const paramSchema = zod.union([
     zod.string(),
