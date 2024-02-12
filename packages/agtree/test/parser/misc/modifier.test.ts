@@ -206,7 +206,7 @@ describe('ModifierParser', () => {
             '~foo',
             'foo=bar',
             '~foo=bar',
-        ])('should serialize and deserialize %p', async (input) => {
+        ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(ModifierParser);
         });
     });

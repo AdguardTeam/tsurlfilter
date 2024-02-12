@@ -761,6 +761,7 @@ describe('ModifierListParser', () => {
             'foo,~bar',
             '~foo,bar',
             '~foo,~bar',
+
             'foo=bar,bar=foo',
             '~foo=bar,~bar=foo',
             'foo=bar,~bar=foo',
@@ -769,7 +770,7 @@ describe('ModifierListParser', () => {
             // complicated
             'path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
             'foo=你好,bar=世界',
-        ])('should serialize and deserialize %p', async (input) => {
+        ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(ModifierListParser);
         });
     });
