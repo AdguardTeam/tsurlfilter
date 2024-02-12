@@ -1,6 +1,7 @@
 import { NetworkRuleParser } from '../../../src/parser/network';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type NetworkRule, RuleCategory } from '../../../src/parser/common';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
@@ -916,7 +917,9 @@ describe('NetworkRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(NetworkRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                NetworkRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -953,5 +956,17 @@ describe('NetworkRuleParser', () => {
         expect(parseAndGenerate('@@||example.org^$removeheader=header-name')).toEqual(
             '@@||example.org^$removeheader=header-name',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'example.com',
+            '@@||example.com',
+            '@@||example.com^$script,third-party',
+            '/ads.js^$script',
+            '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser);
+        });
     });
 });

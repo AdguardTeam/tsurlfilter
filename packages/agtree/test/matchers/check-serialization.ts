@@ -8,6 +8,7 @@ import { type ParserBase } from '../../src/parser/interface';
 import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
+import { defaultParserOptions } from '../../src/parser/options';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
@@ -52,8 +53,17 @@ expect.extend({
         let originalNode: Node | null;
 
         try {
-            // Omit location data
-            originalNode = parser.parse(received, { isLocIncluded: false }, 0);
+            originalNode = parser.parse(
+                received,
+                {
+                    ...defaultParserOptions,
+                    // omit location data
+                    isLocIncluded: false,
+                    // FIXME: omit raws
+                    parseRaws: false,
+                },
+                0,
+            );
         } catch (error: unknown) {
             return {
                 pass: false,
