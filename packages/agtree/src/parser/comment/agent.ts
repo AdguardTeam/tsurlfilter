@@ -193,9 +193,13 @@ export class AgentParser extends ParserBase {
         const result: Agent = {
             type: 'Agent',
             adblock: name,
-            version,
             syntax,
         };
+
+        // only add version if it's present
+        if (version) {
+            result.version = version;
+        }
 
         if (options.isLocIncluded) {
             result.start = baseOffset;

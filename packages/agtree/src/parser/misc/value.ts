@@ -71,8 +71,9 @@ export class ValueParser extends ParserBase {
     ): void {
         buffer.writeUint8(BinaryTypeMap.ValueNode);
 
-        const frequentValue = frequentValuesMap?.get(toLower ? node.value.toLocaleLowerCase() : node.value);
-        if (frequentValue) {
+        const frequentValue = frequentValuesMap?.get(toLower ? node.value.toLowerCase() : node.value);
+        // note: do not use just `if (frequentValue)` because it can be 0
+        if (!isUndefined(frequentValue)) {
             buffer.writeUint8(BinaryPropMap.FrequentValue);
             buffer.writeUint8(frequentValue);
         } else {
@@ -80,6 +81,7 @@ export class ValueParser extends ParserBase {
             buffer.writeString(node.value);
         }
 
+        // note: do not use just `if (node.start)` because it can be 0
         if (!isUndefined(node.start)) {
             buffer.writeUint8(BinaryPropMap.Start);
             buffer.writeUint32(node.start);
