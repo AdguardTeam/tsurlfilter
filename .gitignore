@@ -6,3 +6,4 @@ node_modules
 .idea
 .awcache
 .rpt2_cache
+.nx

@@ -252,6 +252,7 @@ export class WebRequestApi {
         RequestEvents.onCompleted.removeListener(WebRequestApi.onCompleted);
 
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
+        browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommittedOperaHook);
         browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
