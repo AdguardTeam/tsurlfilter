@@ -195,12 +195,12 @@ const handleAppMessage = async (message: Message) => {
 };
 
 // route message depending on handler name
-browser.runtime.onMessage.addListener(async (message, sender) => { 
+browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message?.handlerName === MESSAGE_HANDLER_NAME) {
     return Promise.resolve(handleApiMessage(message, sender));
   }
   return handleAppMessage(message);
-});    
+});
 ```
 
 **Returns:**
@@ -403,6 +403,36 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 
 // remove listener
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
+```
+
+### `adguardApi.onFiltersDeletion`
+
+TsWebExtension Event channel, which fires event on obsoleted filters deletion.
+It can be fired after checking an update for filters in the FiltersUpdateService.
+
+**Syntax:**
+
+```typescript
+public onFiltersDeletion: EventChannel<number[]>;
+```
+
+**Example:**
+
+```typescript
+
+// update config on filter deletion
+const removeObsoletedFilterId = async (filterIds: number[]): Promise<void> => {
+  console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
+  configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
+
+  await adguardApi.configure(configuration);
+};
+
+// add listener
+adguardApi.onFiltersDeletion.subscribe(removeObsoletedFilterId);
+
+// remove listener
+adguardApi.onFiltersDeletion.unsubscribe(removeObsoletedFilterId);
 ```
 
 ### `adguardApi.onRequestBlocking`

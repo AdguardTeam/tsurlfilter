@@ -61,7 +61,7 @@ export class Version {
      */
     public compare(version: Version): number {
         for (let i = 0; i < Version.MAX_LENGTH; i += 1) {
-            const leftPart = this?.data?.[i];
+            const leftPart = this.data[i];
             const rightPart = version?.data?.[i];
 
             if (typeof leftPart !== "number" || typeof rightPart !== "number") {

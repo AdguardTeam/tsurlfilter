@@ -19,8 +19,8 @@
 import {
     type TsWebExtension,
     type ConfigurationMV2 as TsWebExtensionConfiguration,
-    type EventChannel,
     type MessageHandlerMV2,
+    EventChannel,
     createTsWebExtension,
 } from "@adguard/tswebextension";
 
@@ -28,7 +28,7 @@ import { Network } from "./network";
 import { Storage } from "./storage";
 import { FiltersApi, FiltersUpdateService, LocaleDetectService } from "./filters";
 import { Configuration, configurationValidator } from "./schemas";
-import { DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
+import { DeleteFiltersEvent, DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
 import { RequestBlockingLogger } from "./request-blocking-logger";
 import { Logger } from "./logger";
 
@@ -80,6 +80,11 @@ export class AdguardApi {
     public onAssistantCreateRule: EventChannel<string>;
 
     /**
+     * {@link TsWebExtension} {@link EventChannel}, which fires event on obsoleted filters deletion.
+     */
+    public onFiltersDeletion: EventChannel<number[]>;
+
+    /**
      * API for adding and removing listeners for request blocking events.
      *
      */
@@ -90,6 +95,8 @@ export class AdguardApi {
         this.tswebextension.setLocalScriptRules(localScriptRules);
 
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
+
+        this.onFiltersDeletion = new EventChannel<number[]>();
 
         this.network = new Network();
 
@@ -106,6 +113,7 @@ export class AdguardApi {
         this.openAssistant = this.openAssistant.bind(this);
         this.handleDetectFilters = this.handleDetectFilters.bind(this);
         this.handleUpdateFilters = this.handleUpdateFilters.bind(this);
+        this.handleDeleteFilters = this.handleDeleteFilters.bind(this);
     }
 
     /**
@@ -121,25 +129,28 @@ export class AdguardApi {
      * Initializes AdGuard with specified {@link Configuration} and starts it immediately.
      *
      * @param configuration - api {@link Configuration}
-     * @returns applied {@link Configuration} promise
+     *
+     * @returns applied {@link Configuration} promise.
      */
     public async start(configuration: Configuration): Promise<Configuration> {
         this.configuration = configurationValidator.parse(configuration);
 
         this.network.configure(this.configuration);
 
-        await this.filtersApi.init();
+        const obsoletedFiltersIds = await this.filtersApi.init(configuration.filters);
+        this.configuration.filters = this.configuration.filters.filter((id) => !obsoletedFiltersIds.includes(id));
         this.filtersUpdateService.start();
         this.localeDetectService.start();
 
         notifier.addListener(NotifierEventType.UpdateFilters, this.handleUpdateFilters);
         notifier.addListener(NotifierEventType.DetectFilters, this.handleDetectFilters);
+        notifier.addListener(NotifierEventType.DeleteFilters, this.handleDeleteFilters);
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         await this.tswebextension.start(tsWebExtensionConfiguration);
 
-        return configuration;
+        return this.configuration;
     }
 
     /**
@@ -155,7 +166,8 @@ export class AdguardApi {
      * Modifies AdGuard {@link Configuration}. Please note, that Adguard must be already started.
      *
      * @param configuration - api {@link Configuration}
-     * @returns applied {@link Configuration} promise
+     *
+     * @returns applied {@link Configuration} promise.
      */
     public async configure(configuration: Configuration): Promise<Configuration> {
         this.configuration = configurationValidator.parse(configuration);
@@ -166,7 +178,7 @@ export class AdguardApi {
 
         await this.tswebextension.configure(tsWebExtensionConfiguration);
 
-        return configuration;
+        return this.configuration;
     }
 
     /**
@@ -269,6 +281,23 @@ export class AdguardApi {
         await this.tswebextension.configure(tsWebExtensionConfig);
 
         this.logger.info("Reload engine with updated filter ids list");
+    }
+
+    /**
+     * Handles fired {@link DeleteFiltersEvent}
+     *
+     * @param event - fired {@link DeleteFiltersEvent}
+     */
+    private async handleDeleteFilters(event: DeleteFiltersEvent): Promise<void> {
+        const deletedFiltersIds = event.data.filtersIds;
+
+        if (deletedFiltersIds.length === 0) {
+            return;
+        }
+
+        this.onFiltersDeletion.dispatch(deletedFiltersIds);
+
+        this.logger.info(`Filters with ids ${deletedFiltersIds} has been removed.`);
     }
 
     /**
