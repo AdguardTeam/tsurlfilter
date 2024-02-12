@@ -36,7 +36,7 @@ import { countEnabledBits, getBitCount } from '../utils/bit-utils';
 /**
  * NetworkRuleOption is the enumeration of various rule options.
  * In order to save memory, we store some options as a flag.
- * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#modifiers
+ * https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rule-modifiers
  */
 export enum NetworkRuleOption {
     /** No value is set. Syntax sugar to simplify code. */
@@ -266,6 +266,7 @@ export class NetworkRule implements rule.IRule {
      */
     private static readonly CATEGORY_1_OPTIONS_MASK = NetworkRuleOption.ThirdParty
         | NetworkRuleOption.MatchCase
+        | NetworkRuleOption.Popup
         | NetworkRuleOption.DnsRewrite;
 
     /**
@@ -1342,13 +1343,15 @@ export class NetworkRule implements rule.IRule {
             case NOT_MARK + OPTIONS.DOC:
                 this.setRequestType(RequestType.Document, false);
                 break;
-            // $stealh
+            // $stealth
             case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
                 break;
             // $popup
             case OPTIONS.POPUP:
-                this.setRequestType(RequestType.Document, true);
+                // do not add document content-type to $popup
+                // because it may be a single modifier in rule
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
             // Content type options

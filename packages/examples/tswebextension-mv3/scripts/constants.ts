@@ -18,7 +18,6 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     settings: {
         assistantUrl: '',
         collectStats: true,
-        debugScriptlets: false,
         allowlistEnabled: true,
         allowlistInverted: false,
         stealthModeEnabled: true,
