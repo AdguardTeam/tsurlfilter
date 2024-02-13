@@ -19,7 +19,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getFullRange(),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
@@ -41,12 +41,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getFullRange(),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg0`),
                                         value: String.raw`arg0`,
                                     },
@@ -68,17 +68,17 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getFullRange(),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg0`),
                                         value: String.raw`arg0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg1`),
                                         value: String.raw`arg1`,
                                     },
@@ -100,17 +100,17 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getFullRange(),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg0_0\ arg0_1`),
                                         value: String.raw`arg0_0\ arg0_1`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg1`),
                                         value: String.raw`arg1`,
                                     },
@@ -132,17 +132,17 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0 arg0 arg1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg0`),
                                         value: String.raw`arg0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg1`),
                                         value: String.raw`arg1`,
                                     },
@@ -164,12 +164,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0 'arg0 arg1;`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg0 arg1;`),
                                         value: String.raw`'arg0 arg1;`,
                                     },
@@ -192,12 +192,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0 "arg0 arg1;`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"arg0 arg1;`),
                                         value: String.raw`"arg0 arg1;`,
                                     },
@@ -220,12 +220,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getFullRange(),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`some'thing`),
                                         value: String.raw`some'thing`,
                                     },
@@ -250,17 +250,17 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0 arg00 arg01`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg00`),
                                         value: String.raw`arg00`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg01`),
                                         value: String.raw`arg01`,
                                     },
@@ -271,7 +271,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet1`),
                                         value: String.raw`scriptlet1`,
                                     },
@@ -282,12 +282,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet2 arg20`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet2`),
                                         value: String.raw`scriptlet2`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg20`),
                                         value: String.raw`arg20`,
                                     },
@@ -312,27 +312,27 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0 arg00 /a;b/ 'a;b' "a;b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: String.raw`scriptlet0`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg00`),
                                         value: String.raw`arg00`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`/a;b/`),
                                         value: String.raw`/a;b/`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'a;b'`),
                                         value: String.raw`'a;b'`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"a;b"`),
                                         value: String.raw`"a;b"`,
                                     },
@@ -343,7 +343,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet-1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet-1`),
                                         value: String.raw`scriptlet-1`,
                                     },
@@ -354,17 +354,17 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet2 'arg20' arg21\ something`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet2`),
                                         value: String.raw`scriptlet2`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg20'`),
                                         value: String.raw`'arg20'`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg21\ something`),
                                         value: String.raw`arg21\ something`,
                                     },
@@ -387,12 +387,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-matches-xpath './/*[@class="test-xpath-class"]'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-matches-xpath`),
                                         value: String.raw`hide-if-matches-xpath`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'.//*[@class="test-xpath-class"]'`),
                                         value: String.raw`'.//*[@class="test-xpath-class"]'`,
                                     },
@@ -403,12 +403,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-matches-xpath './/div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-matches-xpath`, 2),
                                         value: String.raw`hide-if-matches-xpath`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'.//div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`),
                                         value: String.raw`'.//div[@id="aaa"]//div[starts-with(@id,"aaa")][.//h1//span/text()="aaa"]'`,
                                     },
@@ -419,12 +419,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-matches-xpath './/div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-matches-xpath`, 3),
                                         value: String.raw`hide-if-matches-xpath`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'.//div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`),
                                         value: String.raw`'.//div[@id="bbb"]//div[starts-with(@id,"bbb")][.//h1//span/text()="bbb"]'`,
                                     },
@@ -448,12 +448,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`race start`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`race`),
                                         value: String.raw`race`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`start`),
                                         value: String.raw`start`,
                                     },
@@ -464,22 +464,22 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href="#"][role="link"]`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-contains-visible-text`, 1),
                                         value: String.raw`hide-if-contains-visible-text`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`, 1),
                                         value: String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'div[role=feed] div[role=article]'`, 1),
                                         value: String.raw`'div[role=feed] div[role=article]'`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`a[href="#"][role="link"]`),
                                         value: String.raw`a[href="#"][role="link"]`,
                                     },
@@ -490,22 +490,22 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href^="?__cft__"]`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-contains-visible-text`, 2),
                                         value: String.raw`hide-if-contains-visible-text`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`, 2),
                                         value: String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'div[role=feed] div[role=article]'`, 2),
                                         value: String.raw`'div[role=feed] div[role=article]'`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`a[href^="?__cft__"]`),
                                         value: String.raw`a[href^="?__cft__"]`,
                                     },
@@ -516,22 +516,22 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-contains-visible-text /[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/ 'div[role=feed] div[role=article]' a[href="#"][role="link"]>span>span>b`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-contains-visible-text`, 3),
                                         value: String.raw`hide-if-contains-visible-text`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`, 3),
                                         value: String.raw`/[Sponsred]{9}|[Gesponrtd]{10}|[Sponrisé]{10}|[Comandité]{9}|[Publicda]{10}|[Sponsrwae]{12}|[Patrocind]{11}|[Sponsrizat]{13}/`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'div[role=feed] div[role=article]'`, 3),
                                         value: String.raw`'div[role=feed] div[role=article]'`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`a[href="#"][role="link"]>span>span>b`),
                                         value: String.raw`a[href="#"][role="link"]>span>span>b`,
                                     },
@@ -542,12 +542,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`hide-if-matches-xpath './/div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`hide-if-matches-xpath`),
                                         value: String.raw`hide-if-matches-xpath`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`),
                                         value: String.raw`'.//div[@role="feed"]//div[@role="article"]//a[@aria-label[.="Patrocinado" or .="Sponsa" or .="Bersponsor" or .="Commandité" or .="Ditaja" or .="Gesponsert" or .="Gesponsord" or .="Sponsrad" or .="Publicidad" or .="Sponsoreret" or .="Sponset" or .="Sponsored" or .="Sponsorisé" or .="Sponsorizat" or .="Sponsorizzato" or .="Sponsorlu" or .="Sponsorowane" or .="Реклама" or .="ממומן" or .="تمويل شوي" or .="دارای پشتیبانی مالی" or .="سپانسرڈ" or .="مُموَّل" or .="प्रायोजित" or .="সৌজন্যে" or .="ได้รับการสนับสนุน" or .="内容" or .="贊助" or .="Sponsoroitu" or .="May Sponsor" or .="Được tài trợ"]]/ancestor::div[@role="article"]'`,
                                     },
@@ -558,12 +558,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`race stop`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`race`, 2),
                                         value: String.raw`race`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`stop`),
                                         value: String.raw`stop`,
                                     },

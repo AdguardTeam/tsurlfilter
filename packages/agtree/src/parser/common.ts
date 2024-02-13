@@ -247,6 +247,9 @@ export const enum BinaryTypeMap {
     NetworkRuleNode,
     AgentNode,
     AgentRuleNode,
+    HintNode,
+    HintRuleNode,
+    ParameterListNode,
 }
 
 /**
@@ -360,18 +363,6 @@ export interface Raw extends Node {
 }
 
 /**
- * Represents a basic parameter node in the AST.
- */
-export interface Parameter extends Node {
-    type: 'Parameter';
-
-    /**
-     * Value of the node.
-     */
-    value: string;
-}
-
-/**
  * Represents a list of parameters.
  */
 export interface ParameterList extends Node {
@@ -379,8 +370,10 @@ export interface ParameterList extends Node {
 
     /**
      * List of values
+     *
+     * @note `null` values are allowed in the list, they represent empty parameters.
      */
-    children: Parameter[];
+    children: (Value | null)[];
 }
 
 /**
@@ -754,7 +747,7 @@ export interface HintCommentRule extends RuleBase {
     /**
      * Currently only AdGuard supports hints.
      */
-    syntax: AdblockSyntax.Adg;
+    syntax: AdblockSyntax;
 
     /**
      * List of hints.

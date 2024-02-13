@@ -91,6 +91,15 @@ export class InputByteBuffer {
     }
 
     /**
+     * Looks ahead and reads a 8-bit unsigned integer from the buffer, without advancing the offset.
+     *
+     * @returns 8-bit unsigned integer from the buffer.
+     */
+    public lookaheadUint8(): number {
+        return this.byteBuffer.readByte(this.offset) ?? 0;
+    }
+
+    /**
      * Reads a string from the buffer.
      *
      * @returns Decoded string from the buffer.

@@ -1,8 +1,10 @@
+/* eslint-disable no-param-reassign */
 import {
     BACKSLASH,
     CLOSE_PARENTHESIS,
     HINT_MARKER,
     HINT_MARKER_LEN,
+    NULL,
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
@@ -12,12 +14,28 @@ import {
     type Hint,
     type HintCommentRule,
     RuleCategory,
+    BinaryTypeMap,
+    SYNTAX_BINARY_MAP,
+    SYNTAX_BINARY_MAP_REVERSE,
 } from '../common';
 import { HintParser } from './hint';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Syntax = 1,
+    Children,
+    Start,
+    End,
+}
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.
@@ -131,13 +149,16 @@ export class HintCommentRuleParser extends ParserBase {
 
         const result: HintCommentRule = {
             type: CommentRuleType.HintCommentRule,
-            raws: {
-                text: raw,
-            },
             category: RuleCategory.Comment,
             syntax: AdblockSyntax.Adg,
             children: hints,
         };
+
+        if (options.parseRaws) {
+            result.raws = {
+                text: raw,
+            };
+        }
 
         if (options.isLocIncluded) {
             result.start = baseOffset;
@@ -148,16 +169,93 @@ export class HintCommentRuleParser extends ParserBase {
     }
 
     /**
-     * Converts a hint rule AST to a raw string.
+     * Converts a hint rule node to a raw string.
      *
-     * @param ast Hint rule AST
+     * @param node Hint rule node
      * @returns Raw string
      */
-    public static generate(ast: HintCommentRule): string {
+    public static generate(node: HintCommentRule): string {
         let result = HINT_MARKER + SPACE;
 
-        result += ast.children.map(HintParser.generate).join(SPACE);
+        result += node.children.map(HintParser.generate).join(SPACE);
 
         return result;
+    }
+
+    /**
+     * Serializes a hint rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: HintCommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.HintRuleNode);
+
+        if (node.syntax === AdblockSyntax.Adg) {
+            buffer.writeUint8(BinaryPropMap.Syntax);
+            buffer.writeUint8(SYNTAX_BINARY_MAP.get(AdblockSyntax.Adg) ?? 0);
+        }
+
+        const count = node.children.length;
+        if (count) {
+            buffer.writeUint8(BinaryPropMap.Children);
+            buffer.writeUint8(count);
+
+            for (let i = 0; i < count; i += 1) {
+                HintParser.serialize(node.children[i], buffer);
+            }
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a hint rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: HintCommentRule): void {
+        buffer.assertUint8(BinaryTypeMap.HintRuleNode);
+        node.category = RuleCategory.Comment;
+        node.type = CommentRuleType.HintCommentRule;
+
+        // read buffer until NULL
+        let prop = buffer.readUint8();
+        while (prop) {
+            switch (prop) {
+                case BinaryPropMap.Syntax:
+                    node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    break;
+                case BinaryPropMap.Children:
+                    node.children = new Array(buffer.readUint8());
+
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        HintParser.deserialize(buffer, node.children[i] = {} as Hint);
+                    }
+                    break;
+                case BinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case BinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
     }
 }

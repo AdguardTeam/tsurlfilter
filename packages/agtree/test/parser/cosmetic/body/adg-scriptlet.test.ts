@@ -19,7 +19,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'a\'b'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'a\'b'`),
                                         value: String.raw`'a\'b'`,
                                     },
@@ -41,7 +41,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"a\"b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"a\"b"`),
                                         value: String.raw`"a\"b"`,
                                     },
@@ -65,7 +65,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'a"b'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'a"b'`),
                                         value: String.raw`'a"b'`,
                                     },
@@ -87,7 +87,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"a'b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"a'b"`),
                                         value: String.raw`"a'b"`,
                                     },
@@ -111,7 +111,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'scriptlet0'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: String.raw`'scriptlet0'`,
                                     },
@@ -134,7 +134,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw` 'scriptlet0' `),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: String.raw`'scriptlet0'`,
                                     },
@@ -156,7 +156,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"scriptlet0"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"scriptlet0"`),
                                         value: String.raw`"scriptlet0"`,
                                     },
@@ -178,17 +178,17 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'scriptlet0', 'arg0', 'arg1'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: "'scriptlet0'",
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg0'`),
                                         value: "'arg0'",
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg1'`),
                                         value: "'arg1'",
                                     },
@@ -210,17 +210,17 @@ describe('AdgScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"scriptlet0", "arg0", "arg1"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"scriptlet0"`),
                                         value: '"scriptlet0"',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"arg0"`),
                                         value: '"arg0"',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"arg1"`),
                                         value: '"arg1"',
                                     },

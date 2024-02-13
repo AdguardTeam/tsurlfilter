@@ -19,7 +19,7 @@ import {
 export function cloneScriptletRuleNode(node: ParameterList): ParameterList {
     return {
         type: node.type,
-        children: node.children.map((child) => ({ ...child })),
+        children: node.children.map((child) => (child === null ? null : { ...child })),
     };
 }
 

@@ -185,13 +185,13 @@ describe('CommentRuleParser', () => {
                         end: 38,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 26,
                                 end: 33,
                                 value: 'windows',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 35,
                                 end: 38,
                                 value: 'mac',
@@ -215,13 +215,13 @@ describe('CommentRuleParser', () => {
                         end: 65,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 53,
                                 end: 60,
                                 value: 'android',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 62,
                                 end: 65,
                                 value: 'ios',
@@ -429,13 +429,13 @@ describe('CommentRuleParser', () => {
                 end: 29,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 17,
                         end: 22,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 24,
                         end: 29,
                         value: 'rule2',
@@ -468,13 +468,13 @@ describe('CommentRuleParser', () => {
                 end: 28,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 23,
                         end: 28,
                         value: 'rule2',
@@ -507,13 +507,13 @@ describe('CommentRuleParser', () => {
                 end: 29,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 17,
                         end: 22,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 24,
                         end: 29,
                         value: 'rule2',
@@ -546,13 +546,13 @@ describe('CommentRuleParser', () => {
                 end: 28,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 23,
                         end: 28,
                         value: 'rule2',

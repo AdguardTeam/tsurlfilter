@@ -120,7 +120,7 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
 
         // Allow empty scriptlet call: +js()
         // but not allow parameters without scriptlet: +js(, arg0, arg1)
-        if (params.children.length > 0 && params.children[0].value.trim() === EMPTY) {
+        if (params.children.length > 0 && params.children[0] === null) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
                 baseOffset + offset,

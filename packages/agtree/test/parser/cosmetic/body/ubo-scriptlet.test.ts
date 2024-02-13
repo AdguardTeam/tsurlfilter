@@ -19,7 +19,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'a\'b'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'a\'b'`),
                                         value: String.raw`'a\'b'`,
                                     },
@@ -41,7 +41,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"a\"b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"a\"b"`),
                                         value: String.raw`"a\"b"`,
                                     },
@@ -65,7 +65,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'a"b'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'a"b'`),
                                         value: String.raw`'a"b'`,
                                     },
@@ -87,7 +87,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"a'b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"a'b"`),
                                         value: String.raw`"a'b"`,
                                     },
@@ -111,7 +111,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'scriptlet0'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: String.raw`'scriptlet0'`,
                                     },
@@ -134,7 +134,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw` 'scriptlet0' `),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: String.raw`'scriptlet0'`,
                                     },
@@ -156,7 +156,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"scriptlet0"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"scriptlet0"`),
                                         value: String.raw`"scriptlet0"`,
                                     },
@@ -178,12 +178,12 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw` scriptlet0 , arg0 `),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg0`),
                                         value: 'arg0',
                                     },
@@ -205,17 +205,17 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0, arg0, arg1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg0`),
                                         value: 'arg0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg1`),
                                         value: 'arg1',
                                     },
@@ -237,17 +237,17 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0, arg00\,arg01, arg1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg00\,arg01`),
                                         value: String.raw`arg00\,arg01`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg1`),
                                         value: 'arg1',
                                     },
@@ -269,27 +269,27 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0, 'arg0', "arg1", /arg2/, arg3`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg0'`),
                                         value: "'arg0'",
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"arg1"`),
                                         value: '"arg1"',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`/arg2/`),
                                         value: '/arg2/',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`arg3`),
                                         value: 'arg3',
                                     },
@@ -311,22 +311,22 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`scriptlet0, 'ar\'g0', "ar\"g1", /ar\/g2/`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'ar\'g0'`),
                                         value: String.raw`'ar\'g0'`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"ar\"g1"`),
                                         value: String.raw`"ar\"g1"`,
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`/ar\/g2/`),
                                         value: String.raw`/ar\/g2/`,
                                     },
@@ -348,17 +348,17 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`'scriptlet0', 'arg0', 'arg1'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: "'scriptlet0'",
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg0'`),
                                         value: "'arg0'",
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`'arg1'`),
                                         value: "'arg1'",
                                     },
@@ -380,17 +380,17 @@ describe('UboScriptletInjectionBodyParser', () => {
                                 ...context.getRangeFor(String.raw`"scriptlet0", "arg0", "arg1"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"scriptlet0"`),
                                         value: '"scriptlet0"',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"arg0"`),
                                         value: '"arg0"',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         ...context.getRangeFor(String.raw`"arg1"`),
                                         value: '"arg1"',
                                     },

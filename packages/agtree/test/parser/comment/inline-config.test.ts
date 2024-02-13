@@ -209,7 +209,7 @@ describe('ConfigCommentRuleParser', () => {
                 end: 21,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
@@ -242,13 +242,13 @@ describe('ConfigCommentRuleParser', () => {
                 end: 27,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 22,
                         end: 27,
                         value: 'rule2',
@@ -281,13 +281,13 @@ describe('ConfigCommentRuleParser', () => {
                 end: 28,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 23,
                         end: 28,
                         value: 'rule2',
@@ -321,13 +321,13 @@ describe('ConfigCommentRuleParser', () => {
                 end: 28,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 23,
                         end: 28,
                         value: 'rule2',

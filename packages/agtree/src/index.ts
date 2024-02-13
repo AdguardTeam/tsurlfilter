@@ -44,7 +44,6 @@ export {
     type ModifierList,
     type NetworkRule,
     type Node,
-    type Parameter,
     type ParameterList,
     type PreProcessorCommentRule,
     type RuleBase,

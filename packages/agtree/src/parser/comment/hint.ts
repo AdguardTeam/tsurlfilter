@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * @file AdGuard Hints
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
@@ -7,16 +8,76 @@ import {
     CLOSE_PARENTHESIS,
     COMMA,
     EMPTY,
+    NULL,
     OPEN_PARENTHESIS,
     SPACE,
     UNDERSCORE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { type Hint, type Value } from '../common';
+import {
+    BinaryTypeMap,
+    type ParameterList,
+    type Hint,
+    type Value,
+} from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
+import { ValueParser } from '../misc/value';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Name = 1,
+    Params,
+    Start,
+    End,
+}
+
+/**
+ * Binary serialization map for hints.
+ */
+const KNOWN_HINTS = new Map<string, number>([
+    ['NOT_OPTIMIZED', 0],
+    ['PLATFORM', 1],
+    ['NOT_PLATFORM', 2],
+]);
+
+/**
+ * Reverse map for binary serialization.
+ */
+const KNOWN_HINTS_REVERSE = new Map<number, string>(
+    Array.from(KNOWN_HINTS).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Binary serialization map for platforms.
+ */
+const KNOWN_PLATFORMS = new Map<string, number>([
+    ['windows', 0],
+    ['mac', 1],
+    ['android', 2],
+    ['ios', 3],
+    ['ext_chromium', 4],
+    ['ext_ff', 5],
+    ['ext_edge', 6],
+    ['ext_opera', 7],
+    ['ext_safari', 8],
+    ['ext_android_cb', 9],
+    ['ext_ublock', 10],
+]);
+
+/**
+ * Reverse map for binary serialization.
+ */
+const KNOWN_PLATFORMS_REVERSE = new Map<number, string>(
+    Array.from(KNOWN_PLATFORMS).map(([key, value]) => [value, key]),
+);
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.
@@ -99,15 +160,7 @@ export class HintParser extends ParserBase {
         }
 
         // Create the hint name node (we can reuse it in the 'HINT_NAME' case, if needed)
-        const nameNode: Value = {
-            type: 'Value',
-            value: name,
-        };
-
-        if (options.isLocIncluded) {
-            nameNode.start = baseOffset + nameStartIndex;
-            nameNode.end = baseOffset + nameEndIndex;
-        }
+        const nameNode = ValueParser.parse(name, options, baseOffset + nameStartIndex);
 
         // Just return the hint name if we have 'HINT_NAME' case (no params)
         if (raw[offset] !== OPEN_PARENTHESIS) {
@@ -199,5 +252,69 @@ export class HintParser extends ParserBase {
         }
 
         return result;
+    }
+
+    /**
+     * Serializes a hint node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: Hint, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.HintNode);
+
+        buffer.writeUint8(BinaryPropMap.Name);
+        ValueParser.serialize(node.name, buffer, KNOWN_HINTS);
+
+        if (!isUndefined(node.params)) {
+            buffer.writeUint8(BinaryPropMap.Params);
+            ParameterListParser.serialize(node.params, buffer, KNOWN_PLATFORMS);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a hint node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Hint>): void {
+        buffer.assertUint8(BinaryTypeMap.HintNode);
+        node.type = 'Hint';
+
+        // read buffer until NULL
+        let prop = buffer.readUint8();
+        while (prop) {
+            switch (prop) {
+                case BinaryPropMap.Name:
+                    ValueParser.deserialize(buffer, node.name = {} as Value, KNOWN_HINTS_REVERSE);
+                    break;
+                case BinaryPropMap.Params:
+                    ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, KNOWN_PLATFORMS_REVERSE);
+                    break;
+                case BinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case BinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
     }
 }

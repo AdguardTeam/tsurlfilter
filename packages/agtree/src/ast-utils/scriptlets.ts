@@ -3,6 +3,7 @@
  */
 
 import { type ParameterList } from '../parser/common';
+import { EMPTY } from '../utils/constants';
 import { type QuoteType, QuoteUtils } from '../utils/quotes';
 
 /**
@@ -17,7 +18,7 @@ export function getScriptletName(scriptletNode: ParameterList): string {
         throw new Error('Empty scriptlet');
     }
 
-    return scriptletNode.children[0].value;
+    return scriptletNode.children[0]?.value ?? EMPTY;
 }
 
 /**
@@ -28,7 +29,7 @@ export function getScriptletName(scriptletNode: ParameterList): string {
  * @param name Name to set
  */
 export function setScriptletName(scriptletNode: ParameterList, name: string): void {
-    if (scriptletNode.children.length > 0) {
+    if (scriptletNode.children.length > 0 && scriptletNode.children[0] !== null) {
         // eslint-disable-next-line no-param-reassign
         scriptletNode.children[0].value = name;
     }
@@ -43,9 +44,14 @@ export function setScriptletName(scriptletNode: ParameterList, name: string): vo
 export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): void {
     if (scriptletNode.children.length > 0) {
         for (let i = 0; i < scriptletNode.children.length; i += 1) {
+            const child = scriptletNode.children[i];
+            if (child === null) {
+                continue;
+            }
+
             // eslint-disable-next-line no-param-reassign
-            scriptletNode.children[i].value = QuoteUtils.setStringQuoteType(
-                scriptletNode.children[i].value,
+            child.value = QuoteUtils.setStringQuoteType(
+                child.value,
                 quoteType,
             );
         }
