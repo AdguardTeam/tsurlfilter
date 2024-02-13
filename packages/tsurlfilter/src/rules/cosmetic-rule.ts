@@ -692,11 +692,16 @@ export class CosmeticRule implements rule.IRule {
         const scriptletContent = ruleContent.substring(ADG_SCRIPTLET_MASK.length);
         const scriptletParams = ScriptletParser.parseRule(scriptletContent);
 
+        // A scriptlet without a name can only be an allowlist scriptlet.
+        // It does not require finding scriptData and scriptletData.
+        if (!scriptletParams.name) {
+            return;
+        }
+
         const params: scriptlets.IConfiguration = {
             args: scriptletParams.args,
             engine: config.engine || '',
-            // @ts-ignore
-            name: scriptletParams.name, // FIXME update configuration type in the scriptlets package
+            name: scriptletParams.name,
             ruleText: this.getText(),
             verbose: debug,
             domainName: frameUrl,

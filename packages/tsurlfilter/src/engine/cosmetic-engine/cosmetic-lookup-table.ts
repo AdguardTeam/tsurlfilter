@@ -40,8 +40,11 @@ export class CosmeticLookupTable {
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * // FIXME come up with a better name, only special allowlisting rules are here, without arguments
-     * Map with allowlist scriptlet rules indices. Key is the scriptlet name
+     * Map just for special allowlist scriptlet rules indices. Key is the scriptlet name.
+     * Examples of rules:
+     * - #@%#//scriptlet()
+     * - example.org#@%#//scriptlet()
+     * - #@%#//scriptlet("set-cookie")
      */
     private allowlistScriptlets: Map<null | string, number[]>;
 
@@ -140,9 +143,14 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * FIXME write better documentation
-     * @param name
-     * @param request
+     * Checks if a scriptlet is allowlisted for a request. It looks up the scriptlet by name in the
+     * allowlistScriptlets map and evaluates two conditions:
+     * 1. If there's a generic allowlist rule applicable to all sites.
+     * 2. If there's a specific allowlist rule that matches the request.
+     *
+     * @param name Name of the scriptlet. `null` searches for scriptlets allowlisted globally.
+     * @param request Request details to match against allowlist rules.
+     * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
     isScriptletAllowlistedByName = (name: string | null, request: Request) => {
         // check for rules with names
