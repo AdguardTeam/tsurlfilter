@@ -1,5 +1,6 @@
 import { MetadataCommentRuleParser } from '../../../src/parser/comment/metadata';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
@@ -193,7 +194,9 @@ describe('MetadataCommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(MetadataCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                MetadataCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -220,5 +223,16 @@ describe('MetadataCommentRuleParser', () => {
         expect(parseAndGenerate('# Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
             '# Homepage: https://github.com/AdguardTeam/some-repo/wiki',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '! Title: FilterList Title',
+            '!   Title: Filter   ',
+            '# Title: Filter',
+            '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(MetadataCommentRuleParser);
+        });
     });
 });

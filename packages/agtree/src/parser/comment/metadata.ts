@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * @file Metadata comments
  */
@@ -5,16 +6,37 @@
 import { StringUtils } from '../../utils/string';
 import { METADATA_HEADERS } from '../../converter/data/metadata';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { COLON, EMPTY, SPACE } from '../../utils/constants';
+import {
+    COLON,
+    EMPTY,
+    NULL,
+    SPACE,
+} from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
     type MetadataCommentRule,
     RuleCategory,
+    BinaryTypeMap,
     type Value,
 } from '../common';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
+import { ValueParser } from '../misc/value';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Marker = 1,
+    Header,
+    Value,
+    Start,
+    End,
+}
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
@@ -55,15 +77,7 @@ export class MetadataCommentRuleParser extends ParserBase {
         }
 
         // Consume the comment marker
-        const marker: Value<CommentMarker> = {
-            type: 'Value',
-            value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
-        };
-
-        if (options.isLocIncluded) {
-            marker.start = offset;
-            marker.end = offset + 1;
-        }
+        const marker = ValueParser.parse(raw[offset], options, baseOffset + offset);
 
         offset += 1;
 
@@ -83,15 +97,7 @@ export class MetadataCommentRuleParser extends ParserBase {
                 offset += METADATA_HEADERS[i].length;
 
                 // Save header
-                const header: Value = {
-                    type: 'Value',
-                    value: raw.slice(headerStart, offset),
-                };
-
-                if (options.isLocIncluded) {
-                    header.start = headerStart;
-                    header.end = offset;
-                }
+                const header = ValueParser.parse(raw.slice(headerStart, offset), options, baseOffset + headerStart);
 
                 // Skip spaces after the header
                 offset = StringUtils.skipWS(raw, offset);
@@ -118,27 +124,22 @@ export class MetadataCommentRuleParser extends ParserBase {
                 const valueEnd = StringUtils.skipWSBack(raw, raw.length - 1) + 1;
 
                 // Save the value
-                const value: Value = {
-                    type: 'Value',
-                    value: raw.slice(valueStart, valueEnd),
-                };
-
-                if (options.isLocIncluded) {
-                    value.start = valueStart;
-                    value.end = valueEnd;
-                }
+                const value = ValueParser.parse(raw.slice(valueStart, valueEnd), options, baseOffset + valueStart);
 
                 const result: MetadataCommentRule = {
                     type: CommentRuleType.MetadataCommentRule,
-                    raws: {
-                        text: raw,
-                    },
                     category: RuleCategory.Comment,
                     syntax: AdblockSyntax.Common,
                     marker,
                     header,
                     value,
                 };
+
+                if (options.parseRaws) {
+                    result.raws = {
+                        text: raw,
+                    };
+                }
 
                 if (options.isLocIncluded) {
                     result.start = baseOffset;
@@ -169,5 +170,75 @@ export class MetadataCommentRuleParser extends ParserBase {
         result += ast.value.value;
 
         return result;
+    }
+
+    /**
+     * Serializes a metadata comment node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: MetadataCommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.MetadataCommentRuleNode);
+
+        buffer.writeUint8(BinaryPropMap.Marker);
+        ValueParser.serialize(node.marker, buffer);
+
+        buffer.writeUint8(BinaryPropMap.Header);
+        ValueParser.serialize(node.header, buffer);
+
+        buffer.writeUint8(BinaryPropMap.Value);
+        ValueParser.serialize(node.value, buffer);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a metadata comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<MetadataCommentRule>): void {
+        buffer.assertUint8(BinaryTypeMap.MetadataCommentRuleNode);
+        node.type = CommentRuleType.MetadataCommentRule;
+        node.category = RuleCategory.Comment;
+        node.syntax = AdblockSyntax.Common;
+
+        // read buffer until NULL
+        let prop = buffer.readUint8();
+        while (prop) {
+            switch (prop) {
+                case BinaryPropMap.Marker:
+                    ValueParser.deserialize(buffer, node.marker = {} as Value);
+                    break;
+                case BinaryPropMap.Header:
+                    ValueParser.deserialize(buffer, node.header = {} as Value);
+                    break;
+                case BinaryPropMap.Value:
+                    ValueParser.deserialize(buffer, node.value = {} as Value);
+                    break;
+                case BinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+                case BinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
     }
 }

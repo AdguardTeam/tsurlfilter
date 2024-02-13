@@ -250,6 +250,7 @@ export const enum BinaryTypeMap {
     HintNode,
     HintRuleNode,
     ParameterListNode,
+    MetadataCommentRuleNode,
 }
 
 /**
@@ -561,7 +562,7 @@ export interface MetadataCommentRule extends CommentBase {
     /**
      * Comment marker.
      */
-    marker: Value<CommentMarker>;
+    marker: Value;
 
     /**
      * Metadata header name.
