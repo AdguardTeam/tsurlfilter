@@ -288,7 +288,7 @@ export class ConfigCommentRuleParser extends ParserBase {
      * @param node Destination node.
      * @throws If the binary data is malformed.
      */
-    public static deserializeConfigNode(buffer: InputByteBuffer, node: Partial<ConfigNode>): void {
+    private static deserializeConfigNode(buffer: InputByteBuffer, node: Partial<ConfigNode>): void {
         buffer.assertUint8(BinaryTypeMap.ConfigNode);
         node.type = 'ConfigNode';
 
