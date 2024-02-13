@@ -30,6 +30,7 @@ import { isUndefined } from '../../utils/type-guards';
  */
 const enum VariableNodeBinaryPropMap {
     Name = 1,
+    FrequentName,
     Start,
     End,
 }
@@ -113,6 +114,58 @@ const getOperatorOrFail = (binary: number): AnyOperator => {
         throw new Error(`Unknown operator: ${binary}`);
     }
     return operator;
+};
+
+/**
+ * Serialization map for known variables.
+ */
+const KNOWN_VARIABLES_MAP = new Map<string, number>([
+    ['ext_abp', 0],
+    ['ext_ublock', 1],
+    ['ext_ubol', 2],
+    ['ext_devbuild', 3],
+    ['env_chromium', 4],
+    ['env_edge', 5],
+    ['env_firefox', 6],
+    ['env_mobile', 7],
+    ['env_safari', 8],
+    ['env_mv3', 9],
+    ['false', 10],
+    ['cap_html_filtering', 11],
+    ['cap_user_stylesheet', 12],
+    ['adguard', 13],
+    ['adguard_app_windows', 14],
+    ['adguard_app_mac', 15],
+    ['adguard_app_android', 16],
+    ['adguard_app_ios', 17],
+    ['adguard_ext_safari', 18],
+    ['adguard_ext_chromium', 19],
+    ['adguard_ext_firefox', 20],
+    ['adguard_ext_edge', 21],
+    ['adguard_ext_opera', 22],
+    ['adguard_ext_android_cb', 23],
+]);
+
+/**
+ * Deserialization map for known variables.
+ */
+const KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
+    Array.from(KNOWN_VARIABLES_MAP).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Gets the frequent name of the variable from the binary representation.
+ *
+ * @param binary Binary representation of the variable
+ * @returns Frequent name of the variable
+ * @throws If the variable is unknown
+ */
+const getFrequentNameOrFail = (binary: number): string => {
+    const name = KNOWN_VARIABLES_MAP_REVERSE.get(binary);
+    if (isUndefined(name)) {
+        throw new Error(`Unknown frequent name: ${binary}`);
+    }
+    return name;
 };
 
 /**
@@ -478,10 +531,18 @@ export class LogicalExpressionParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
+    // FIXME: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
     private static serializeVariableNode(node: ExpressionVariableNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ExpressionVariableNode);
-        buffer.writeUint8(VariableNodeBinaryPropMap.Name);
-        buffer.writeString(node.name);
+
+        const frequentName = KNOWN_VARIABLES_MAP.get(node.name);
+        if (!isUndefined(frequentName)) {
+            buffer.writeUint8(VariableNodeBinaryPropMap.FrequentName);
+            buffer.writeUint8(frequentName);
+        } else {
+            buffer.writeUint8(VariableNodeBinaryPropMap.Name);
+            buffer.writeString(node.name);
+        }
 
         if (!isUndefined(node.start)) {
             buffer.writeUint8(VariableNodeBinaryPropMap.Start);
@@ -600,6 +661,9 @@ export class LogicalExpressionParser extends ParserBase {
             switch (prop) {
                 case VariableNodeBinaryPropMap.Name:
                     node.name = buffer.readString();
+                    break;
+                case VariableNodeBinaryPropMap.FrequentName:
+                    node.name = getFrequentNameOrFail(buffer.readUint8());
                     break;
                 case VariableNodeBinaryPropMap.Start:
                     node.start = buffer.readUint32();
