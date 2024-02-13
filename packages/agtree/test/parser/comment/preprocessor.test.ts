@@ -1,5 +1,6 @@
 import { PreProcessorCommentRuleParser } from '../../../src/parser/comment/preprocessor';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
@@ -216,7 +217,9 @@ describe('PreProcessorParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(PreProcessorCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                PreProcessorCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -251,5 +254,20 @@ describe('PreProcessorParser', () => {
         expect(parseAndGenerate('!#if (adguard && !adguard_ext_safari)')).toEqual(
             '!#if (adguard && !adguard_ext_safari)',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '!#endif',
+            '!#include ../sections/ads.txt',
+            '!#if adguard',
+            '!#if (adguard)',
+            '!#if (adguard && !adguard_ext_safari)',
+            '!#safari_cb_affinity(content_blockers)',
+            '!#safari_cb_affinity(general)',
+            '!#safari_cb_affinity',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(PreProcessorCommentRuleParser);
+        });
     });
 });

@@ -256,6 +256,7 @@ export const enum BinaryTypeMap {
     ExpressionParenthesisNode,
     ConfigCommentRuleNode,
     ConfigNode,
+    PreProcessorCommentRuleNode,
 }
 
 /**
