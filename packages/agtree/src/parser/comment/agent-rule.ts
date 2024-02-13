@@ -22,7 +22,7 @@ import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
+import { isNull, isUndefined } from '../../utils/type-guards';
 
 /**
  * Property map for binary serialization.
@@ -67,7 +67,7 @@ export class AgentCommentRuleParser extends ParserBase {
 
         if (rawTrimmed.startsWith(OPEN_SQUARE_BRACKET) && rawTrimmed.endsWith(CLOSE_SQUARE_BRACKET)) {
             // Avoid this case: [$adg-modifier]##[class^="adg-"]
-            return CosmeticRuleSeparatorUtils.find(rawTrimmed) === null;
+            return isNull(CosmeticRuleSeparatorUtils.find(rawTrimmed));
         }
 
         return false;

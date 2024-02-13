@@ -91,12 +91,13 @@ export class InputByteBuffer {
     }
 
     /**
-     * Looks ahead and reads a 8-bit unsigned integer from the buffer, without advancing the offset.
+     * Reads a 32-bit signed integer from the buffer.
      *
-     * @returns 8-bit unsigned integer from the buffer.
+     * @returns 32-bit signed integer from the buffer.
      */
-    public lookaheadUint8(): number {
-        return this.byteBuffer.readByte(this.offset) ?? 0;
+    public readInt32(): number {
+        const result = this.readUint32();
+        return result > 0x7fffffff ? result - 0x100000000 : result;
     }
 
     /**
@@ -108,6 +109,15 @@ export class InputByteBuffer {
         const result = decodeText(this.byteBuffer, this.offset);
         this.offset += result.bytesConsumed;
         return result.decodedText;
+    }
+
+    /**
+     * Looks ahead and reads a 8-bit unsigned integer from the buffer, without advancing the offset.
+     *
+     * @returns 8-bit unsigned integer from the buffer.
+     */
+    public lookaheadUint8(): number {
+        return this.byteBuffer.readByte(this.offset) ?? 0;
     }
 
     /**

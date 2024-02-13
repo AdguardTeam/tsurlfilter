@@ -235,8 +235,8 @@ export const enum BinaryTypeMap {
     Boolean,
     Int,
     Float,
+    NotANumber,
     String,
-    Array,
 
     // AGTree nodes
     // FIXME: add all types and group them properly

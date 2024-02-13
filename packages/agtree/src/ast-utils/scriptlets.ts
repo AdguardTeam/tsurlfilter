@@ -5,6 +5,7 @@
 import { type ParameterList } from '../parser/common';
 import { EMPTY } from '../utils/constants';
 import { type QuoteType, QuoteUtils } from '../utils/quotes';
+import { isNull } from '../utils/type-guards';
 
 /**
  * Get name of the scriptlet from the scriptlet node
@@ -45,7 +46,7 @@ export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: Q
     if (scriptletNode.children.length > 0) {
         for (let i = 0; i < scriptletNode.children.length; i += 1) {
             const child = scriptletNode.children[i];
-            if (child === null) {
+            if (isNull(child)) {
                 continue;
             }
 

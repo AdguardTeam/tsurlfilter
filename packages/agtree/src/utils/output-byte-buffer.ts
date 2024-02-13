@@ -71,6 +71,16 @@ export class OutputByteBuffer {
     }
 
     /**
+     * Writes a 32-bit signed integer to the buffer.
+     *
+     * @param value Value to write.
+     * @returns Number of bytes written to the buffer.
+     */
+    public writeInt32(value: number): number {
+        return this.writeUint32(value ? value >>> 0 : 0);
+    }
+
+    /**
      * Writes a string to the buffer.
      *
      * @param value Value to write.

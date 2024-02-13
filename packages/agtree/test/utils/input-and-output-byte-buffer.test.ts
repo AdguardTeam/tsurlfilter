@@ -4,7 +4,7 @@ import { SimpleStorage } from '../helpers/simple-storage';
 import { ByteBuffer } from '../../src/utils/byte-buffer';
 
 type DataPoolItem =
-    | { type: 'Uint8' | 'Uint16' | 'Uint32', value: number }
+    | { type: 'Uint8' | 'Uint16' | 'Uint32' | 'Int32', value: number }
     | { type: 'String', value: string };
 
 describe('ByteBuffer', () => {
@@ -23,6 +23,12 @@ describe('ByteBuffer', () => {
             { type: 'String', value: 'a'.repeat(2 ** 16 - 1) },
 
             { type: 'Uint32', value: 2 ** 32 - 1 },
+
+            { type: 'Int32', value: 0 },
+            { type: 'Int32', value: -1 },
+            { type: 'Int32', value: 1 },
+            { type: 'Int32', value: 2 ** 31 - 1 },
+            { type: 'Int32', value: -(2 ** 31) },
         ];
 
         const output = new OutputByteBuffer();
