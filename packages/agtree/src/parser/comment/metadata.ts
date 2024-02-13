@@ -38,6 +38,8 @@ const enum BinaryPropMap {
     End,
 }
 
+// FIXME: add map for known metadata headers
+
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
  * Metadata comments are special comments that specify some properties of the list.
