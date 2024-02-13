@@ -8,10 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.13] - 2024-02-13
+
+### Added
+- New cleanup mechanism for `RequestContextStorage` to prevent memory leaks during internal redirects.
+
+### Changed
+- Updated `@adguard/tsurlfilter` to `v2.2.13`.
+- Updated `@adguard/scriptlets` to `v1.10.1`.
+
+### Fixed
+- Prevent memory leaks due to V8 optimizations of substring operations.
+
+
 ## [1.0.12] - 2024-02-07
 
 ### Fixed
 - Applying of `$all` modifier rules [#2620](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620)
+
 
 ## [1.0.11] - 2024-02-06
 
@@ -20,16 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recalculating matching result.
 - Correct export of `EXTENDED_CSS_VERSION` for mv2 version.
 
+
 ## [1.0.10] - 2024-01-27
 
 ### Fixed
 - Export correct types for TS.
 - Exclude usage of ExtendedCSS in common to prevent errors in background in the MV.
 
+
 ## [1.0.9] - 2024-01-25
 
 ### Changed
 - Correct usage of `setConfiguration`.
+
 
 ## [1.0.8] - 2023-12-27
 
@@ -38,15 +55,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `@adguard/tsurlfilter` to `v2.2.9`.
 - Updated `@adguard/scriptlets` to `v1.9.105`.
 
+
 ## [1.0.6] - 2023-12-19
 
 ### Changed
 - Stealth options that are applied to the document can now be disabled by the $stealth rule. [#2648](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2648).
 
+
 ## [1.0.5] - 2023-12-08
 
 ### Fixed
 - `Do Not Track` and `Hide Referrer from third parties` ignoring global Stealth mode toggle.
+
 
 ## [1.0.4] - 2023-12-08
 
@@ -59,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Incorrect path for `typings` in `package.json`.
 
+
 ## [1.0.2] - 2023-12-07
 
 ### Added
@@ -70,10 +91,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Remove referrer from the document.referrer [#1844](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1844)
 
+
 ## [1.0.1] - 2023-12-06
 
 ### Fixed
 - HTML ($$) rules break encoding on some websites [#2249](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2249)
+
 
 ## [1.0.0] - 2023-12-01
 
@@ -84,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [BREAKING CHANGE] In preparation for using event-driven background scripts, we started using a session store to persist application context on restart. Since extension session store CRUD operations are asynchronous, we added protection against reading the context before initialization to avoid unexpected behavior. Some code that depends on this restored data may be called before the `start` method to prepare the `configuration`, so we split the initialization process into two parts: the new `initStorage` method, which is called as soon as possible and allows access to the actual context before directly starting the filtration, and the `start` method, which initializes the filtration.
 - [BREAKING CHANGE] `TsWebExtension` constructor now accepts submodules as arguments. To get the `TsWebExtension` instance with `webAccessibleResources` param, use the new `createTsWebExtension` method.
+
 
 ## [0.4.9] - 2023-11-30
 
