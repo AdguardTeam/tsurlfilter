@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.14] - 2024-02-13
+
+### Changed
+- Filtering engine now uses the new `BufferRuleList` provided by `@adguard/tsurlfilter`
+  to improve performance and memory usage.
+
 ## [1.0.13] - 2024-02-13
 
 ### Added

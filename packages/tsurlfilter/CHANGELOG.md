@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version to the end of the file -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [2.2.14] - 2024-02-13
+
+### Added
+- New `BufferRuleList` class that is supposed to replace `StringRuleList`.
+  It provides the same performance, but at the same time uses less memory
+  as the original filter list is stored as a UTF-8 encoded byte array.
+  In addition to that, it solves the problem of leaking links to the original leaking strings
+  that in turn was leading to higher memory usage.
+
 ## [2.2.13] - 2024-02-13
 
 ### Changed
