@@ -7,5 +7,7 @@ import type { AppContext } from '@lib/mv2/background/context';
 export class MockAppContext implements AppContext {
     isAppStarted: boolean = false;
 
+    isStorageInitialized: boolean = false;
+
     configuration: ConfigurationMV2Context | undefined = undefined;
 }

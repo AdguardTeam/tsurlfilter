@@ -1,9 +1,17 @@
 import fs from 'fs';
 
+import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { type DeclarativeRule, DeclarativeFilterConverter, Filter } from '../src/rules/declarative-converter';
 
 const readmeTxtPath = './src/rules/declarative-converter/readme.txt';
 const readmeMdPath = './src/rules/declarative-converter/README.md';
+
+setConfiguration({
+    engine: 'extension',
+    version: '3',
+    verbose: true,
+    compatibility: CompatibilityTypes.Extension,
+});
 
 const filterConverter = new DeclarativeFilterConverter();
 

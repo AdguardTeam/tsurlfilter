@@ -1491,22 +1491,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	}
-]
+[]
 
 ```
 example 3

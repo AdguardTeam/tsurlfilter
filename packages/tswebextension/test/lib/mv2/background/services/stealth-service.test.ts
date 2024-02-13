@@ -1,5 +1,5 @@
 import { WebRequest } from 'webextension-polyfill';
-import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { ContentType } from '@lib/common';
 import { RequestContext, RequestContextState } from '@lib/mv2';
@@ -87,6 +87,7 @@ describe('Stealth service', () => {
     describe('Stealth service - headers', () => {
         const getContextWithHeaders = (headers: WebRequest.HttpHeaders): RequestContext => {
             return {
+                eventId: '1',
                 state: RequestContextState.BeforeSendHeaders,
                 requestId: '1',
                 requestUrl: 'https://example.org',
@@ -102,7 +103,7 @@ describe('Stealth service', () => {
                 matchingResult: new MatchingResult([], null),
                 cookies: undefined,
                 contentTypeHeader: undefined,
-                method: 'GET',
+                method: HTTPMethod.GET,
                 requestHeaders: headers,
             };
         };
@@ -179,23 +180,33 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.sendDoNotTrack = true;
             const service = new StealthService(appContext, filteringLog);
 
-            // Here we check that the function is written correctly in the string,
-            // to avoid changing its form to a lambda function, for example.
-            const funcTxt = service.getSetDomSignalScript();
-            expect(funcTxt).toStrictEqual(`;(function setDomSignal() {
-    try {
-      if ('globalPrivacyControl' in Navigator.prototype) {
-        return;
-      }
-      Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
-        get: () => true,
-        configurable: true,
-        enumerable: true
-      });
-    } catch (ex) {
-      // Ignore
-    }
-  })();`);
+            // Here we check that the function is written correctly in the
+            // string, to avoid changing its form to a lambda function, for
+            // example.
+            const funcTxt = service.getSetDomSignalScript()
+                .replaceAll('() => true', '()=>true');
+
+            const expectedFuncTxt = `;(function setDomSignal() {
+                try {
+                  if ('globalPrivacyControl' in Navigator.prototype) {
+                    return;
+                  }
+                  Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
+                    get: ()=>true,
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch (ex) {
+                  // Ignore
+                }
+              })();`;
+
+            // Compare line-with-line to make sure that formatting does not
+            // affect the result.
+            const funcLines = funcTxt.split('\n').map((l) => l.trim());
+            const expectedFuncLines = expectedFuncTxt.split('\n').map((l) => l.trim());
+
+            expect(funcLines).toEqual(expectedFuncLines);
         });
     });
 });

@@ -1,6 +1,6 @@
 import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter';
+import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
 import { RequestEvents } from '@lib/mv2/background/request/events/request-events';
 import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
@@ -28,7 +28,7 @@ describe('Request Events', () => {
         referrerUrl: 'https://testcases.adguard.com',
         requestFrameId: 0,
         requestType: RequestType.Document,
-        method: 'GET',
+        method: HTTPMethod.GET,
         contentType: ContentType.Document,
         thirdParty: true,
     };

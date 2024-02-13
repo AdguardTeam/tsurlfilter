@@ -1,6 +1,11 @@
 import browser from 'sinon-chrome';
 import { WebRequest } from 'webextension-polyfill';
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import {
+    HTTPMethod,
+    MatchingResult,
+    NetworkRule,
+    RequestType,
+} from '@adguard/tsurlfilter';
 
 import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import BrowserCookieApi from '@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
@@ -47,6 +52,7 @@ describe('Cookie filtering', () => {
         requestId = '1';
 
         context = {
+            eventId: '1',
             state: RequestContextState.HeadersReceived,
             requestId,
             requestUrl: 'https://example.org',
@@ -62,7 +68,7 @@ describe('Cookie filtering', () => {
             matchingResult: new MatchingResult([], null),
             cookies: undefined,
             contentTypeHeader: undefined,
-            method: 'GET',
+            method: HTTPMethod.GET,
         };
     });
 

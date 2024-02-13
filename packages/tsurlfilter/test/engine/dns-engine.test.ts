@@ -1,8 +1,8 @@
 import { DnsEngine } from '../../src/engine/dns-engine';
-import { StringRuleList } from '../../src/filterlist/rule-list';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 
-describe('General', () => {
+describe('General DNS engine tests', () => {
     /**
      * Helper function creates rule storage
      *
@@ -10,7 +10,7 @@ describe('General', () => {
      * @param rules
      */
     const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
-        const list = new StringRuleList(listId, rules.join('\n'), false);
+        const list = new BufferRuleList(listId, rules.join('\n'), false);
         return new RuleStorage([list]);
     };
 
