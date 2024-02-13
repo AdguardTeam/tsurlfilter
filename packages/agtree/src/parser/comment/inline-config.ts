@@ -56,7 +56,7 @@ const enum ConfigNodeBinaryPropMap {
 }
 
 /**
- * Binary serialization map for hints.
+ * Binary serialization map for known commands.
  *
  * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
  */
