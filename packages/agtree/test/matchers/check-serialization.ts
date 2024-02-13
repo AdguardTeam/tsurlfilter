@@ -74,6 +74,8 @@ expect.extend({
                         raw,
                         {
                             ...defaultParserOptions,
+                            // FIXME: handle location if input and expected are different, like in the agent below:
+                            // [adg 1.0] vs [AdGuard 1.0]
                             // omit location data
                             isLocIncluded: false,
                             // FIXME: omit raws
@@ -118,7 +120,7 @@ expect.extend({
             }
 
             // Original and deserialized nodes should be equal (but of course they are not the same object)
-            // expect(deserializedNode).toEqual(expectedNode);
+            expect(deserializedNode).toEqual(expectedNode);
 
             // Generated strings should be equal as well
             expect(parser.generate(deserializedNode)).toEqual(parser.generate(expectedNode));

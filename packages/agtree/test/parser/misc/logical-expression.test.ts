@@ -400,4 +400,23 @@ describe('LogicalExpressionParser', () => {
             'Unexpected node type',
         );
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            // simple expressions
+            'a',
+            '(a)',
+            '!a',
+            '!!a',
+            '!(!a)',
+            'a||b',
+
+            // complex expressions
+            '((!!a) || (!(b))) && ((!!(!!c)))',
+            // eslint-disable-next-line max-len
+            '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(LogicalExpressionParser);
+        });
+    });
 });

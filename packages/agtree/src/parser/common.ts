@@ -251,6 +251,9 @@ export const enum BinaryTypeMap {
     HintRuleNode,
     ParameterListNode,
     MetadataCommentRuleNode,
+    ExpressionVariableNode,
+    ExpressionOperatorNode,
+    ExpressionParenthesisNode,
 }
 
 /**
