@@ -112,11 +112,11 @@ export class InputByteBuffer {
     }
 
     /**
-     * Looks ahead and reads a 8-bit unsigned integer from the buffer, without advancing the offset.
+     * Reads a 8-bit unsigned integer from the buffer without advancing the offset.
      *
      * @returns 8-bit unsigned integer from the buffer.
      */
-    public lookaheadUint8(): number {
+    public peekUint8(): number {
         return this.byteBuffer.readByte(this.offset) ?? 0;
     }
 

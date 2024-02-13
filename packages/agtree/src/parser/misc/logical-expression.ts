@@ -759,7 +759,7 @@ export class LogicalExpressionParser extends ParserBase {
     public static deserialize(buffer: InputByteBuffer, node: Partial<AnyExpressionNode>): void {
         // note: we just do a simple lookahead here, because advancing the buffer is done in the
         // 'sub' deserialization methods
-        let type = buffer.lookaheadUint8();
+        let type = buffer.peekUint8();
         while (type !== NULL) {
             switch (type) {
                 case BinaryTypeMap.ExpressionVariableNode:
@@ -779,7 +779,7 @@ export class LogicalExpressionParser extends ParserBase {
                     throw new Error(`Unexpected node type: ${type}`);
             }
 
-            type = buffer.lookaheadUint8();
+            type = buffer.peekUint8();
         }
 
         // consume NULL

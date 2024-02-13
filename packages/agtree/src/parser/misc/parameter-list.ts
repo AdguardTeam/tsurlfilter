@@ -200,7 +200,7 @@ export class ParameterListParser extends ParserBase {
 
                     // read children
                     for (let i = 0; i < node.children.length; i += 1) {
-                        switch (buffer.lookaheadUint8()) {
+                        switch (buffer.peekUint8()) {
                             case BinaryTypeMap.Null:
                                 buffer.readUint8();
                                 node.children[i] = null;
@@ -209,7 +209,7 @@ export class ParameterListParser extends ParserBase {
                                 ValueParser.deserialize(buffer, node.children[i] = {} as Value, frequentValuesMap);
                                 break;
                             default:
-                                throw new Error(`Invalid child type: ${buffer.lookaheadUint8()}.`);
+                                throw new Error(`Invalid child type: ${buffer.peekUint8()}.`);
                         }
                     }
                     break;

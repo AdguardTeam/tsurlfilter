@@ -580,7 +580,7 @@ describe('CommentRuleParser', () => {
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
+                type: 'ConfigNode',
                 start: 9,
                 end: 40,
                 value: {
@@ -618,7 +618,7 @@ describe('CommentRuleParser', () => {
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
+                type: 'ConfigNode',
                 start: 9,
                 end: 40,
                 value: {

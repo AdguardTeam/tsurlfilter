@@ -254,6 +254,8 @@ export const enum BinaryTypeMap {
     ExpressionVariableNode,
     ExpressionOperatorNode,
     ExpressionParenthesisNode,
+    ConfigCommentRuleNode,
+    ConfigNode,
 }
 
 /**
@@ -579,6 +581,22 @@ export interface MetadataCommentRule extends CommentBase {
 }
 
 /**
+ * Represents an AGLint configuration node.
+ *
+ * Used within config comments.
+ *
+ * @example
+ * ```adblock
+ * ! aglint "rule-1": ["warn", { "option1": "value1" }], "rule-2": "off"
+ * !        ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+ * ```
+ */
+export interface ConfigNode extends Node {
+    type: 'ConfigNode';
+    value: object;
+}
+
+/**
  * Represents an inline linter configuration comment.
  *
  * @example
@@ -595,7 +613,7 @@ export interface ConfigCommentRule extends CommentBase {
     /**
      * The marker for the comment. It can be `!` or `#`. It is always the first non-whitespace character in the comment.
      */
-    marker: Value<CommentMarker>;
+    marker: Value;
 
     /**
      * The command for the comment. It is always begins with the `aglint` prefix.
@@ -617,7 +635,7 @@ export interface ConfigCommentRule extends CommentBase {
      * ```
      * the params would be `["some-rule", "another-rule"]`.
      */
-    params?: Value<object> | ParameterList;
+    params?: ConfigNode | ParameterList;
 
     /**
      * Config comment text. The idea is generally the same as in ESLint.
