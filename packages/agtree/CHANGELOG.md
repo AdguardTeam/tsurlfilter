@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Performance benchmarking.
 - `PositionProvider` to convert offsets to line/column pairs.
 - Protected Audience API directives to `$permissions` modifier validator.
+- Binary serialization / deserialization of AST.
 
 ### Changed
 
@@ -33,6 +34,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   and `AbpSnippetInjectionBodyParser`.
 - Locations (`offset`, `line`, `column`) are changed to only one `offset` value.
 - Parser functions signature to `parse(source, options, baseOffset, ...additionalArgs)`.
+- Removed `Parameter` node from the AST and replaced it with `Value` node.
+- If a parameter is empty, it parsed as `null` instead of empty string.
 
 ### Fixed
 
