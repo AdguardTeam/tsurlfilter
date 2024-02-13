@@ -1,5 +1,5 @@
 import browser from 'webextension-polyfill';
-import { StringRuleList } from '@adguard/tsurlfilter';
+import { IRuleList, BufferRuleList } from '@adguard/tsurlfilter';
 import type { NetworkRule, MatchingResult } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
@@ -111,14 +111,14 @@ export class StealthApi {
      *
      * @returns String rule list or null.
      */
-    public getStealthModeRuleList(): StringRuleList | null {
+    public getStealthModeRuleList(): IRuleList | null {
         if (!this.engine || !this.isStealthModeEnabled) {
             return null;
         }
 
         const rulesTexts = this.engine.getCookieRulesTexts().join('\n');
 
-        return new StringRuleList(StealthApi.STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
+        return new BufferRuleList(StealthApi.STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
     }
 
     /**

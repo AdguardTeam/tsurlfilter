@@ -1,12 +1,13 @@
-import { LIST_ID_MAX_VALUE, StringRuleList } from '../../src/filterlist/rule-list';
+import { LIST_ID_MAX_VALUE } from '../../src/filterlist/rule-list';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { NetworkRule } from '../../src';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 
 describe('Test RuleStorage', () => {
-    const list1 = new StringRuleList(1, '||example.org\n! test\n##banner', false);
-    const list2 = new StringRuleList(2, '||example.com\n! test\n##advert', false);
-    const list3 = new StringRuleList(1001, '||example.net\n! test\n##advert', false);
+    const list1 = new BufferRuleList(1, '||example.org\n! test\n##banner', false);
+    const list2 = new BufferRuleList(2, '||example.com\n! test\n##advert', false);
+    const list3 = new BufferRuleList(1001, '||example.net\n! test\n##advert', false);
 
     // Create storage from two lists
     const storage = new RuleStorage([list1, list2, list3]);

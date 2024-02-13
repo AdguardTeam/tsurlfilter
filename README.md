@@ -97,3 +97,49 @@ Test pages:
 
 [testcasessimplerules]: https://testcases.agrd.dev/Filters/simple-rules/test-simple-rules.html
 [testcasesscriptrules]: https://testcases.agrd.dev/Filters/script-rules/test-script-rules.html
+
+### Visual Studio Code Workspace
+
+If you're using Visual Studio Code for development, it may be easier to work
+with the monorepo if you use the workspace functionality. To do this, create a
+`tsurlfilter.code-workspace` file in the monorepo root directory.
+
+`jest.runMode` and `jest.enable` would be useful to those that use
+[Jest][jestplugin] plugin.
+
+```json
+{
+    "folders": [
+        {
+            "path": "packages/tsurlfilter",
+        },
+        {
+            "path": "packages/tswebextension",
+        },
+        {
+            "path": "packages/agtree",
+        },
+        {
+            "path": "packages/css-tokenizer",
+        },
+        {
+            "path": "packages/adguard-api",
+        },
+        {
+            "path": "packages/examples/adguard-api",
+        },
+        {
+            "path": "packages/examples/tswebextension-mv2",
+        },
+        {
+            "path": "packages/examples/tswebextension-mv3",
+        }
+    ],
+    "settings": {
+        "jest.runMode": "on-demand",
+        "jest.enable": true,
+    }
+}
+```
+
+[jestplugin]: https://marketplace.visualstudio.com/items?itemName=Orta.vscode-jest
