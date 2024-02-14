@@ -33,8 +33,8 @@ import {
     BinaryTypeMap,
     CommentRuleType,
     RuleCategory,
-    SYNTAX_BINARY_MAP,
-    SYNTAX_BINARY_MAP_REVERSE,
+    SYNTAX_SERIALIZATION_MAP,
+    SYNTAX_DESERIALIZATION_MAP,
 } from '../common';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
@@ -396,8 +396,7 @@ export class PreProcessorCommentRuleParser extends ParserBase {
         ValueParser.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
 
         buffer.writeUint8(PreProcessorRuleSerializationMap.Syntax);
-        // FIXME: improve 0 fallback (and in other places too)
-        buffer.writeUint8(SYNTAX_BINARY_MAP.get(node.syntax) ?? 0);
+        buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
 
         if (!isUndefined(node.params)) {
             buffer.writeUint8(PreProcessorRuleSerializationMap.Params);
@@ -446,7 +445,7 @@ export class PreProcessorCommentRuleParser extends ParserBase {
                     break;
 
                 case PreProcessorRuleSerializationMap.Syntax:
-                    node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
                 case PreProcessorRuleSerializationMap.Params:

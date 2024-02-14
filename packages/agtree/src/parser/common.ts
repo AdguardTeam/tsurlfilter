@@ -261,9 +261,14 @@ export const enum BinaryTypeMap {
 }
 
 /**
- * Binary serialization map for adblock syntaxes.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-export const SYNTAX_BINARY_MAP: Map<AdblockSyntax, number> = new Map([
+export const SYNTAX_SERIALIZATION_MAP: Map<AdblockSyntax, number> = new Map([
     [AdblockSyntax.Common, 0],
     [AdblockSyntax.Abp, 1],
     [AdblockSyntax.Adg, 2],
@@ -271,10 +276,11 @@ export const SYNTAX_BINARY_MAP: Map<AdblockSyntax, number> = new Map([
 ]);
 
 /**
- * Binary deserialization map for adblock syntaxes.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-export const SYNTAX_BINARY_MAP_REVERSE = new Map<number, AdblockSyntax>(
-    Array.from(SYNTAX_BINARY_MAP, ([key, value]) => [value, key]),
+export const SYNTAX_DESERIALIZATION_MAP = new Map<number, AdblockSyntax>(
+    Array.from(SYNTAX_SERIALIZATION_MAP, ([key, value]) => [value, key]),
 );
 
 /**
