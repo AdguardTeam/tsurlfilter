@@ -4,7 +4,6 @@
  */
 
 import { StringUtils } from '../../utils/string';
-import { METADATA_HEADERS } from '../../converter/data/metadata';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     COLON,
@@ -43,7 +42,39 @@ const enum MetadataCommentRuleSerializationMap {
     End,
 }
 
-// FIXME: add map for known metadata headers
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>([
+    ['Checksum', 1],
+    ['Description', 2],
+    ['Expires', 3],
+    ['Homepage', 4],
+    ['Last Modified', 5],
+    ['Licence', 6],
+    ['License', 7],
+    ['TimeUpdated', 8],
+    ['Version', 9],
+    ['Title', 10],
+]);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_HEADERS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_HEADERS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Known metadata headers.
+ */
+export const KNOWN_METADATA_HEADERS = Array.from(FREQUENT_HEADERS_SERIALIZATION_MAP.keys());
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
@@ -97,11 +128,11 @@ export class MetadataCommentRuleParser extends ParserBase {
         // Check if the comment text starts with a known header
         const text = raw.slice(offset);
 
-        for (let i = 0; i < METADATA_HEADERS.length; i += 1) {
+        for (let i = 0; i < KNOWN_METADATA_HEADERS.length; i += 1) {
             // Check if the comment text starts with the header (case-insensitive)
-            if (text.toLocaleLowerCase().startsWith(METADATA_HEADERS[i].toLocaleLowerCase())) {
+            if (text.toLocaleLowerCase().startsWith(KNOWN_METADATA_HEADERS[i].toLocaleLowerCase())) {
                 // Skip the header
-                offset += METADATA_HEADERS[i].length;
+                offset += KNOWN_METADATA_HEADERS[i].length;
 
                 // Save header
                 const header = ValueParser.parse(raw.slice(headerStart, offset), options, baseOffset + headerStart);
@@ -192,7 +223,7 @@ export class MetadataCommentRuleParser extends ParserBase {
         ValueParser.serialize(node.marker, buffer);
 
         buffer.writeUint8(MetadataCommentRuleSerializationMap.Header);
-        ValueParser.serialize(node.header, buffer);
+        ValueParser.serialize(node.header, buffer, FREQUENT_HEADERS_SERIALIZATION_MAP, true);
 
         buffer.writeUint8(MetadataCommentRuleSerializationMap.Value);
         ValueParser.serialize(node.value, buffer);
@@ -232,7 +263,7 @@ export class MetadataCommentRuleParser extends ParserBase {
                     break;
 
                 case MetadataCommentRuleSerializationMap.Header:
-                    ValueParser.deserialize(buffer, node.header = {} as Value);
+                    ValueParser.deserialize(buffer, node.header = {} as Value, FREQUENT_HEADERS_DESERIALIZATION_MAP);
                     break;
 
                 case MetadataCommentRuleSerializationMap.Value:

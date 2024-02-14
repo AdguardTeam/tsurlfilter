@@ -66,7 +66,7 @@ export { FilterListParser } from './parser/filterlist';
 export { HintCommentRuleParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
 export { LogicalExpressionParser } from './parser/misc/logical-expression';
-export { MetadataCommentRuleParser } from './parser/comment/metadata';
+export { MetadataCommentRuleParser, KNOWN_METADATA_HEADERS } from './parser/comment/metadata';
 export { ModifierListParser } from './parser/misc/modifier-list';
 export { ModifierParser } from './parser/misc/modifier';
 export { NetworkRuleParser } from './parser/network';
@@ -120,7 +120,6 @@ export {
 export { type Position, PositionProvider } from './utils/position-provider';
 
 // Constants
-export { METADATA_HEADERS } from './converter/data/metadata';
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
 
 export { defaultParserOptions } from './parser/options';
