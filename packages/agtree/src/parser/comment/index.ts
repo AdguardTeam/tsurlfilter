@@ -180,7 +180,7 @@ export class CommentRuleParser extends ParserBase {
     }
 
     /**
-     * Deserializes a metadata comment node from binary format.
+     * Deserializes a comment rule node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
