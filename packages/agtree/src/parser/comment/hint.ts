@@ -30,9 +30,14 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum HintNodeSerializationMap {
     Name = 1,
     Params,
     Start,
@@ -40,25 +45,36 @@ const enum BinaryPropMap {
 }
 
 /**
- * Binary serialization map for hints.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const KNOWN_HINTS = new Map<string, number>([
+const FREQUENT_HINTS_SERIALIZATION_MAP = new Map<string, number>([
     ['NOT_OPTIMIZED', 0],
     ['PLATFORM', 1],
     ['NOT_PLATFORM', 2],
 ]);
 
 /**
- * Reverse map for binary serialization.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-const KNOWN_HINTS_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_HINTS).map(([key, value]) => [value, key]),
+const FREQUENT_HINTS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_HINTS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
 
 /**
- * Binary serialization map for platforms.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const KNOWN_PLATFORMS = new Map<string, number>([
+const FREQUENT_PLATFORMS_SERIALIZATION_MAP = new Map<string, number>([
     ['windows', 0],
     ['mac', 1],
     ['android', 2],
@@ -73,10 +89,11 @@ const KNOWN_PLATFORMS = new Map<string, number>([
 ]);
 
 /**
- * Reverse map for binary serialization.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-const KNOWN_PLATFORMS_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_PLATFORMS).map(([key, value]) => [value, key]),
+const FREQUENT_PLATFORMS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_PLATFORMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
 
 /**
@@ -263,21 +280,21 @@ export class HintParser extends ParserBase {
     public static serialize(node: Hint, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.HintNode);
 
-        buffer.writeUint8(BinaryPropMap.Name);
-        ValueParser.serialize(node.name, buffer, KNOWN_HINTS);
+        buffer.writeUint8(HintNodeSerializationMap.Name);
+        ValueParser.serialize(node.name, buffer, FREQUENT_HINTS_SERIALIZATION_MAP);
 
         if (!isUndefined(node.params)) {
-            buffer.writeUint8(BinaryPropMap.Params);
-            ParameterListParser.serialize(node.params, buffer, KNOWN_PLATFORMS);
+            buffer.writeUint8(HintNodeSerializationMap.Params);
+            ParameterListParser.serialize(node.params, buffer, FREQUENT_PLATFORMS_SERIALIZATION_MAP);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(HintNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(HintNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -299,19 +316,20 @@ export class HintParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Name:
-                    ValueParser.deserialize(buffer, node.name = {} as Value, KNOWN_HINTS_REVERSE);
+                case HintNodeSerializationMap.Name:
+                    ValueParser.deserialize(buffer, node.name = {} as Value, FREQUENT_HINTS_DESERIALIZATION_MAP);
                     break;
 
-                case BinaryPropMap.Params:
-                    ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, KNOWN_PLATFORMS_REVERSE);
+                case HintNodeSerializationMap.Params:
+                    // eslint-disable-next-line max-len
+                    ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, FREQUENT_PLATFORMS_DESERIALIZATION_MAP);
                     break;
 
-                case BinaryPropMap.Start:
+                case HintNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case HintNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

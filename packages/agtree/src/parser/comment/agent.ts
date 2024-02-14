@@ -16,9 +16,14 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum AgentNodeSerializationMap {
     Adblock = 1,
     Version,
     Start,
@@ -53,32 +58,37 @@ const ABP_NAME_MARKERS = new Set([
 ]);
 
 /**
- * Binary serialization map for agents.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const KNOWN_AGENTS = new Map<string, number>([
+const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>([
     // AdGuard
     ...Array.from(ADG_NAME_MARKERS).map((name) => [name, 0] as const),
     // uBlock Origin
     ...Array.from(UBO_NAME_MARKERS).map((name) => [name, 1] as const),
     // Adblock Plus
     ...Array.from(ABP_NAME_MARKERS).map((name) => [name, 2] as const),
-] as const);
+]);
 
 /**
- * Binary deserialization map for agents.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  *
- * @note While `KNOWN_AGENTS` support multiple forms, `KNOWN_AGENTS_REVERSE` only supports the "canonical form".
+ * @note While `FREQUENT_AGENTS_SERIALIZATION_MAP` support multiple forms, this map only supports the "canonical form".
  * For example, if you serialize 'adg', it would be deserialized as 'AdGuard'.
  */
-const KNOWN_AGENTS_REVERSE: Map<number, string> = new Map([
+const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
     [0, 'AdGuard'],
     [1, 'uBlock Origin'],
     [2, 'Adblock Plus'],
 ]);
 
 /**
- * Returns the adblock syntax based on the adblock name
- * parsed from the agent type comment.
+ * Returns the adblock syntax based on the adblock name parsed from the agent type comment.
  * Needed for modifiers validation of network rules by AGLint.
  *
  * @param name Adblock name.
@@ -241,21 +251,21 @@ export class AgentParser extends ParserBase {
     public static serialize(node: Agent, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.AgentNode);
 
-        buffer.writeUint8(BinaryPropMap.Adblock);
-        ValueParser.serialize(node.adblock, buffer, KNOWN_AGENTS, true);
+        buffer.writeUint8(AgentNodeSerializationMap.Adblock);
+        ValueParser.serialize(node.adblock, buffer, FREQUENT_AGENTS_SERIALIZATION_MAP, true);
 
         if (!isUndefined(node.version)) {
-            buffer.writeUint8(BinaryPropMap.Version);
+            buffer.writeUint8(AgentNodeSerializationMap.Version);
             ValueParser.serialize(node.version, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(AgentNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(AgentNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -277,22 +287,22 @@ export class AgentParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Adblock:
-                    ValueParser.deserialize(buffer, node.adblock = {} as Value, KNOWN_AGENTS_REVERSE);
+                case AgentNodeSerializationMap.Adblock:
+                    ValueParser.deserialize(buffer, node.adblock = {} as Value, FREQUENT_AGENTS_DESERIALIZATION_MAP);
                     if (node.adblock) {
                         node.syntax = getAdblockSyntax(node.adblock.value);
                     }
                     break;
 
-                case BinaryPropMap.Version:
+                case AgentNodeSerializationMap.Version:
                     ValueParser.deserialize(buffer, node.version = {} as Value);
                     break;
 
-                case BinaryPropMap.Start:
+                case AgentNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case AgentNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

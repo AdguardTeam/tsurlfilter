@@ -16,9 +16,14 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum ModifierNodeSerializationMap {
     Name = 1,
     Value,
     Exception,
@@ -27,14 +32,14 @@ const enum BinaryPropMap {
 }
 
 /**
- * Some values are very frequent and can be represented by a single byte.
- * This map is used to serialize and deserialize such values.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  *
- * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
  *
  * @note Only 256 values can be represented this way.
  */
-const KNOWN_MODIFIERS = new Map<string, number>([
+const FREQUENT_MODIFIERS_SERIALIZATION_MAP = new Map<string, number>([
     ['_', 0],
     ['all', 1],
     ['app', 2],
@@ -107,33 +112,35 @@ const KNOWN_MODIFIERS = new Map<string, number>([
 ]);
 
 /**
- * Reverse frequent values map.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  *
  * @note Only 256 values can be represented this way.
  */
-const KNOWN_MODIFIERS_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_MODIFIERS, ([key, value]) => [value, key]),
+const FREQUENT_MODIFIERS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_MODIFIERS_SERIALIZATION_MAP, ([key, value]) => [value, key]),
 );
 
 /**
- * Some values are very frequent and can be represented by a single byte.
- * This map is used to serialize and deserialize such values.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  *
  * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION
  *
  * @note Only 256 values can be represented this way.
  */
-const KNOWN_MODIFIER_VALUES = new Map<string, number>([
+const FREQUENT_VALUES_SERIALIZATION_MAP = new Map<string, number>([
     ['noopjs', 0],
     // FIXME: add known redirects
     // TODO: add new redirects here
 ]);
 
 /**
- * Reverse frequent values map.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-const KNOWN_MODIFIER_VALUES_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_MODIFIER_VALUES, ([key, value]) => [value, key]),
+const FREQUENT_VALUES_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_VALUES_SERIALIZATION_MAP, ([key, value]) => [value, key]),
 );
 
 /**
@@ -279,24 +286,24 @@ export class ModifierParser extends ParserBase {
     public static serialize(node: Modifier, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ModifierNode);
 
-        buffer.writeUint8(BinaryPropMap.Name);
-        ValueParser.serialize(node.name, buffer, KNOWN_MODIFIERS);
+        buffer.writeUint8(ModifierNodeSerializationMap.Name);
+        ValueParser.serialize(node.name, buffer, FREQUENT_MODIFIERS_SERIALIZATION_MAP);
 
         if (!isUndefined(node.value)) {
-            buffer.writeUint8(BinaryPropMap.Value);
-            ValueParser.serialize(node.value, buffer, KNOWN_MODIFIER_VALUES);
+            buffer.writeUint8(ModifierNodeSerializationMap.Value);
+            ValueParser.serialize(node.value, buffer, FREQUENT_VALUES_SERIALIZATION_MAP);
         }
 
-        buffer.writeUint8(BinaryPropMap.Exception);
+        buffer.writeUint8(ModifierNodeSerializationMap.Exception);
         buffer.writeUint8(node.exception ? 1 : 0);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(ModifierNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(ModifierNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -317,23 +324,23 @@ export class ModifierParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Name:
-                    ValueParser.deserialize(buffer, node.name = {} as Value, KNOWN_MODIFIERS_REVERSE);
+                case ModifierNodeSerializationMap.Name:
+                    ValueParser.deserialize(buffer, node.name = {} as Value, FREQUENT_MODIFIERS_DESERIALIZATION_MAP);
                     break;
 
-                case BinaryPropMap.Value:
-                    ValueParser.deserialize(buffer, node.value = {} as Value, KNOWN_MODIFIER_VALUES_REVERSE);
+                case ModifierNodeSerializationMap.Value:
+                    ValueParser.deserialize(buffer, node.value = {} as Value, FREQUENT_VALUES_DESERIALIZATION_MAP);
                     break;
 
-                case BinaryPropMap.Exception:
+                case ModifierNodeSerializationMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
 
-                case BinaryPropMap.Start:
+                case ModifierNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case ModifierNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

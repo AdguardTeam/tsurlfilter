@@ -8,9 +8,14 @@ import { EMPTY, NULL } from '../../utils/constants';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum ValueNodeSerializationMap {
     Value = 1,
     FrequentValue,
     Start,
@@ -74,21 +79,21 @@ export class ValueParser extends ParserBase {
         const frequentValue = frequentValuesMap?.get(toLower ? node.value.toLowerCase() : node.value);
         // note: do not use just `if (frequentValue)` because it can be 0
         if (!isUndefined(frequentValue)) {
-            buffer.writeUint8(BinaryPropMap.FrequentValue);
+            buffer.writeUint8(ValueNodeSerializationMap.FrequentValue);
             buffer.writeUint8(frequentValue);
         } else {
-            buffer.writeUint8(BinaryPropMap.Value);
+            buffer.writeUint8(ValueNodeSerializationMap.Value);
             buffer.writeString(node.value);
         }
 
         // note: do not use just `if (node.start)` because it can be 0
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(ValueNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(ValueNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -115,19 +120,19 @@ export class ValueParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Value:
+                case ValueNodeSerializationMap.Value:
                     node.value = buffer.readString();
                     break;
 
-                case BinaryPropMap.FrequentValue:
+                case ValueNodeSerializationMap.FrequentValue:
                     node.value = frequentValuesMap?.get(buffer.readUint8()) ?? EMPTY;
                     break;
 
-                case BinaryPropMap.Start:
+                case ValueNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case ValueNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

@@ -28,9 +28,14 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum HintRuleSerializationMap {
     Syntax = 1,
     Children,
     Start,
@@ -192,13 +197,14 @@ export class HintCommentRuleParser extends ParserBase {
         buffer.writeUint8(BinaryTypeMap.HintRuleNode);
 
         if (node.syntax === AdblockSyntax.Adg) {
-            buffer.writeUint8(BinaryPropMap.Syntax);
+            buffer.writeUint8(HintRuleSerializationMap.Syntax);
             buffer.writeUint8(SYNTAX_BINARY_MAP.get(AdblockSyntax.Adg) ?? 0);
         }
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(BinaryPropMap.Children);
+            buffer.writeUint8(HintRuleSerializationMap.Children);
+            // note: we store the count, because re-construction of the array is faster if we know the length
             buffer.writeUint8(count);
 
             for (let i = 0; i < count; i += 1) {
@@ -207,12 +213,12 @@ export class HintCommentRuleParser extends ParserBase {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(HintRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(HintRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -235,11 +241,11 @@ export class HintCommentRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Syntax:
+                case HintRuleSerializationMap.Syntax:
                     node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case BinaryPropMap.Children:
+                case HintRuleSerializationMap.Children:
                     node.children = new Array(buffer.readUint8());
 
                     // read children
@@ -248,11 +254,11 @@ export class HintCommentRuleParser extends ParserBase {
                     }
                     break;
 
-                case BinaryPropMap.Start:
+                case HintRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case HintRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

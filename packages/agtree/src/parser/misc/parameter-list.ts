@@ -15,9 +15,14 @@ import { ValueParser } from './value';
 import { isNull, isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum ParameterListNodeSerializationMap {
     Children = 1,
     Start,
     End,
@@ -149,7 +154,8 @@ export class ParameterListParser extends ParserBase {
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(BinaryPropMap.Children);
+            buffer.writeUint8(ParameterListNodeSerializationMap.Children);
+            // note: we store the count, because re-construction of the array is faster if we know the length
             buffer.writeUint32(count);
 
             for (let i = 0; i < count; i += 1) {
@@ -163,12 +169,12 @@ export class ParameterListParser extends ParserBase {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(ParameterListNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(ParameterListNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -195,7 +201,7 @@ export class ParameterListParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Children:
+                case ParameterListNodeSerializationMap.Children:
                     node.children = new Array(buffer.readUint32());
 
                     // read children
@@ -216,11 +222,11 @@ export class ParameterListParser extends ParserBase {
                     }
                     break;
 
-                case BinaryPropMap.Start:
+                case ParameterListNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case ParameterListNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

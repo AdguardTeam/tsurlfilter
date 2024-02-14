@@ -35,9 +35,14 @@ import { isUndefined } from '../../utils/type-guards';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum ConfigCommentNodeBinaryPropMap {
+const enum ConfigCommentRuleSerializationMap {
     Marker = 1,
     Command,
     Params,
@@ -47,20 +52,30 @@ const enum ConfigCommentNodeBinaryPropMap {
 }
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum ConfigNodeBinaryPropMap {
+const enum ConfigNodeSerializationMap {
     Value = 1,
     Start,
     End,
 }
 
 /**
- * Binary serialization map for known commands.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  *
  * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
  */
-const KNOWN_COMMANDS = new Map<string, number>([
+const FREQUENT_COMMANDS_SERIALIZATION_MAP = new Map<string, number>([
     ['aglint', 0],
     ['aglint-disable', 1],
     ['aglint-enable', 2],
@@ -69,10 +84,11 @@ const KNOWN_COMMANDS = new Map<string, number>([
 ]);
 
 /**
- * Reverse map for binary serialization.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-const KNOWN_COMMANDS_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_COMMANDS).map(([key, value]) => [value, key]),
+const FREQUENT_COMMANDS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_COMMANDS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
 
 /**
@@ -263,18 +279,18 @@ export class ConfigCommentRuleParser extends ParserBase {
     private static serializeConfigNode(node: ConfigNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ConfigNode);
 
-        buffer.writeUint8(ConfigNodeBinaryPropMap.Value);
+        buffer.writeUint8(ConfigNodeSerializationMap.Value);
         // note: we don't support serializing generic objects, only AGTree nodes
         // this is a very special case, so we just stringify the configuration object
         buffer.writeString(JSON.stringify(node.value));
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ConfigNodeBinaryPropMap.Start);
+            buffer.writeUint8(ConfigNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ConfigNodeBinaryPropMap.End);
+            buffer.writeUint8(ConfigNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -296,16 +312,16 @@ export class ConfigCommentRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ConfigNodeBinaryPropMap.Value:
+                case ConfigNodeSerializationMap.Value:
                     // note: it is safe to use JSON.parse here, because we serialized it with JSON.stringify
                     node.value = JSON.parse(buffer.readString());
                     break;
 
-                case ConfigNodeBinaryPropMap.Start:
+                case ConfigNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ConfigNodeBinaryPropMap.End:
+                case ConfigNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 
@@ -326,14 +342,14 @@ export class ConfigCommentRuleParser extends ParserBase {
     public static serialize(node: ConfigCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ConfigCommentRuleNode);
 
-        buffer.writeUint8(ConfigCommentNodeBinaryPropMap.Marker);
+        buffer.writeUint8(ConfigCommentRuleSerializationMap.Marker);
         ValueParser.serialize(node.marker, buffer);
 
-        buffer.writeUint8(ConfigCommentNodeBinaryPropMap.Command);
-        ValueParser.serialize(node.command, buffer, KNOWN_COMMANDS);
+        buffer.writeUint8(ConfigCommentRuleSerializationMap.Command);
+        ValueParser.serialize(node.command, buffer, FREQUENT_COMMANDS_SERIALIZATION_MAP, true);
 
         if (!isUndefined(node.params)) {
-            buffer.writeUint8(ConfigCommentNodeBinaryPropMap.Params);
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.Params);
             if (node.params.type === 'ParameterList') {
                 ParameterListParser.serialize(node.params, buffer);
             } else {
@@ -342,17 +358,17 @@ export class ConfigCommentRuleParser extends ParserBase {
         }
 
         if (!isUndefined(node.comment)) {
-            buffer.writeUint8(ConfigCommentNodeBinaryPropMap.Comment);
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.Comment);
             ValueParser.serialize(node.comment, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ConfigCommentNodeBinaryPropMap.Start);
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ConfigCommentNodeBinaryPropMap.End);
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -376,15 +392,15 @@ export class ConfigCommentRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ConfigCommentNodeBinaryPropMap.Marker:
+                case ConfigCommentRuleSerializationMap.Marker:
                     ValueParser.deserialize(buffer, node.marker = {} as Value);
                     break;
 
-                case ConfigCommentNodeBinaryPropMap.Command:
-                    ValueParser.deserialize(buffer, node.command = {} as Value, KNOWN_COMMANDS_REVERSE);
+                case ConfigCommentRuleSerializationMap.Command:
+                    ValueParser.deserialize(buffer, node.command = {} as Value, FREQUENT_COMMANDS_DESERIALIZATION_MAP);
                     break;
 
-                case ConfigCommentNodeBinaryPropMap.Params:
+                case ConfigCommentRuleSerializationMap.Params:
                     if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
                         ConfigCommentRuleParser.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
                     } else {
@@ -392,15 +408,15 @@ export class ConfigCommentRuleParser extends ParserBase {
                     }
                     break;
 
-                case ConfigCommentNodeBinaryPropMap.Comment:
+                case ConfigCommentRuleSerializationMap.Comment:
                     ValueParser.deserialize(buffer, node.comment = {} as Value);
                     break;
 
-                case ConfigCommentNodeBinaryPropMap.Start:
+                case ConfigCommentRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ConfigCommentNodeBinaryPropMap.End:
+                case ConfigCommentRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

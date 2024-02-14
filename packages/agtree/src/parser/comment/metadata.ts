@@ -28,9 +28,14 @@ import { isUndefined } from '../../utils/type-guards';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum MetadataCommentRuleSerializationMap {
     Marker = 1,
     Header,
     Value,
@@ -156,20 +161,20 @@ export class MetadataCommentRuleParser extends ParserBase {
     }
 
     /**
-     * Converts a metadata comment AST to a string.
+     * Converts a metadata comment rule node to a string.
      *
-     * @param ast - Metadata comment AST
-     * @returns Raw string
+     * @param node Metadata comment rule node.
+     * @returns Raw string.
      */
-    public static generate(ast: MetadataCommentRule): string {
+    public static generate(node: MetadataCommentRule): string {
         let result = EMPTY;
 
-        result += ast.marker.value;
+        result += ValueParser.generate(node.marker);
         result += SPACE;
-        result += ast.header.value;
+        result += ValueParser.generate(node.header);
         result += COLON;
         result += SPACE;
-        result += ast.value.value;
+        result += ValueParser.generate(node.value);
 
         return result;
     }
@@ -183,22 +188,22 @@ export class MetadataCommentRuleParser extends ParserBase {
     public static serialize(node: MetadataCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.MetadataCommentRuleNode);
 
-        buffer.writeUint8(BinaryPropMap.Marker);
+        buffer.writeUint8(MetadataCommentRuleSerializationMap.Marker);
         ValueParser.serialize(node.marker, buffer);
 
-        buffer.writeUint8(BinaryPropMap.Header);
+        buffer.writeUint8(MetadataCommentRuleSerializationMap.Header);
         ValueParser.serialize(node.header, buffer);
 
-        buffer.writeUint8(BinaryPropMap.Value);
+        buffer.writeUint8(MetadataCommentRuleSerializationMap.Value);
         ValueParser.serialize(node.value, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(MetadataCommentRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(MetadataCommentRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -222,23 +227,23 @@ export class MetadataCommentRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Marker:
+                case MetadataCommentRuleSerializationMap.Marker:
                     ValueParser.deserialize(buffer, node.marker = {} as Value);
                     break;
 
-                case BinaryPropMap.Header:
+                case MetadataCommentRuleSerializationMap.Header:
                     ValueParser.deserialize(buffer, node.header = {} as Value);
                     break;
 
-                case BinaryPropMap.Value:
+                case MetadataCommentRuleSerializationMap.Value:
                     ValueParser.deserialize(buffer, node.value = {} as Value);
                     break;
 
-                case BinaryPropMap.Start:
+                case MetadataCommentRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case MetadataCommentRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

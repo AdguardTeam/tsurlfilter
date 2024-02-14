@@ -47,9 +47,14 @@ import { ValueParser } from '../misc/value';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum PreProcessorRuleSerializationMap {
     Name = 1,
     Params,
     Syntax,
@@ -58,12 +63,17 @@ const enum BinaryPropMap {
 }
 
 /**
- * Binary serialization map for pre-processor comment nodes.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  *
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#preprocessor-directives}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
-const KNOWN_DIRECTIVES = new Map<string, number>([
+const FREQUENT_DIRECTIVES_SERIALIZATION_MAP = new Map<string, number>([
     ['if', 0],
     ['else', 1],
     ['endif', 2],
@@ -72,16 +82,22 @@ const KNOWN_DIRECTIVES = new Map<string, number>([
 ]);
 
 /**
- * Binary deserialization map for pre-processor comment nodes.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-const KNOWN_DIRECTIVES_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_DIRECTIVES).map(([key, value]) => [value, key]),
+const FREQUENT_DIRECTIVES_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
 
 /**
- * Binary serialization map for known parameters.
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const KNOWN_PARAMS = new Map<string, number>([
+const FREQUENT_PARAMS_SERIALIZATION_MAP = new Map<string, number>([
     // safari_cb_affinity parameters
     ['general', 0],
     ['privacy', 1],
@@ -93,10 +109,11 @@ const KNOWN_PARAMS = new Map<string, number>([
 ]);
 
 /**
- * Binary deserialization map for known parameters.
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
  */
-const KNOWN_PARAMS_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_PARAMS).map(([key, value]) => [value, key]),
+const FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
 
 /**
@@ -375,32 +392,32 @@ export class PreProcessorCommentRuleParser extends ParserBase {
     public static serialize(node: PreProcessorCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
 
-        buffer.writeUint8(BinaryPropMap.Name);
-        ValueParser.serialize(node.name, buffer, KNOWN_DIRECTIVES);
+        buffer.writeUint8(PreProcessorRuleSerializationMap.Name);
+        ValueParser.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
 
-        buffer.writeUint8(BinaryPropMap.Syntax);
+        buffer.writeUint8(PreProcessorRuleSerializationMap.Syntax);
         // FIXME: improve 0 fallback (and in other places too)
         buffer.writeUint8(SYNTAX_BINARY_MAP.get(node.syntax) ?? 0);
 
         if (!isUndefined(node.params)) {
-            buffer.writeUint8(BinaryPropMap.Params);
+            buffer.writeUint8(PreProcessorRuleSerializationMap.Params);
 
             if (node.params.type === 'Value') {
                 ValueParser.serialize(node.params, buffer);
             } else if (node.params.type === 'ParameterList') {
-                ParameterListParser.serialize(node.params, buffer, KNOWN_PARAMS);
+                ParameterListParser.serialize(node.params, buffer, FREQUENT_PARAMS_SERIALIZATION_MAP, true);
             } else {
                 LogicalExpressionParser.serialize(node.params, buffer);
             }
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(PreProcessorRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(PreProcessorRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -424,15 +441,15 @@ export class PreProcessorCommentRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Name:
-                    ValueParser.deserialize(buffer, node.name = {} as Value, KNOWN_DIRECTIVES_REVERSE);
+                case PreProcessorRuleSerializationMap.Name:
+                    ValueParser.deserialize(buffer, node.name = {} as Value, FREQUENT_DIRECTIVES_DESERIALIZATION_MAP);
                     break;
 
-                case BinaryPropMap.Syntax:
+                case PreProcessorRuleSerializationMap.Syntax:
                     node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case BinaryPropMap.Params:
+                case PreProcessorRuleSerializationMap.Params:
                     switch (buffer.peekUint8()) {
                         case BinaryTypeMap.ValueNode:
                             ValueParser.deserialize(buffer, node.params = {} as Value);
@@ -440,7 +457,7 @@ export class PreProcessorCommentRuleParser extends ParserBase {
 
                         case BinaryTypeMap.ParameterListNode:
                             // eslint-disable-next-line max-len
-                            ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, KNOWN_PARAMS_REVERSE);
+                            ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, FREQUENT_PARAMS_DESERIALIZATION_MAP);
                             break;
 
                         case BinaryTypeMap.ExpressionOperatorNode:
@@ -454,11 +471,11 @@ export class PreProcessorCommentRuleParser extends ParserBase {
                     }
                     break;
 
-                case BinaryPropMap.Start:
+                case PreProcessorRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case PreProcessorRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

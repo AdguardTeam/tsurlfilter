@@ -10,9 +10,14 @@ import { ModifierParser } from './modifier';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum ModifierListNodeSerializationMap {
     Children = 1,
     Start,
     End,
@@ -121,7 +126,8 @@ export class ModifierListParser extends ParserBase {
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(BinaryPropMap.Children);
+            buffer.writeUint8(ModifierListNodeSerializationMap.Children);
+            // note: we store the count, because re-construction of the array is faster if we know the length
             if (count > UINT16_MAX) {
                 throw new Error(`Too many modifiers: ${count}, the limit is ${UINT16_MAX}`);
             }
@@ -133,12 +139,12 @@ export class ModifierListParser extends ParserBase {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(ModifierListNodeSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(ModifierListNodeSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -159,7 +165,7 @@ export class ModifierListParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Children:
+                case ModifierListNodeSerializationMap.Children:
                     node.children = new Array(buffer.readUint16());
 
                     // read children
@@ -168,11 +174,11 @@ export class ModifierListParser extends ParserBase {
                     }
                     break;
 
-                case BinaryPropMap.Start:
+                case ModifierListNodeSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case ModifierListNodeSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

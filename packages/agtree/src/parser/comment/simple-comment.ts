@@ -19,9 +19,14 @@ import { ValueParser } from '../misc/value';
 import { defaultParserOptions } from '../options';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum SimpleCommentRuleSerializationMap {
     Marker = 1,
     Text,
     Start,
@@ -158,19 +163,19 @@ export class SimpleCommentParser extends ParserBase {
     public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
 
-        buffer.writeUint8(BinaryPropMap.Marker);
+        buffer.writeUint8(SimpleCommentRuleSerializationMap.Marker);
         ValueParser.serialize(node.marker, buffer);
 
-        buffer.writeUint8(BinaryPropMap.Text);
+        buffer.writeUint8(SimpleCommentRuleSerializationMap.Text);
         ValueParser.serialize(node.text, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(SimpleCommentRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(SimpleCommentRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -194,19 +199,19 @@ export class SimpleCommentParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Marker:
+                case SimpleCommentRuleSerializationMap.Marker:
                     ValueParser.deserialize(buffer, (node as CommentRule).marker = {} as Value);
                     break;
 
-                case BinaryPropMap.Text:
+                case SimpleCommentRuleSerializationMap.Text:
                     ValueParser.deserialize(buffer, (node as CommentRule).text = {} as Value);
                     break;
 
-                case BinaryPropMap.Start:
+                case SimpleCommentRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case SimpleCommentRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

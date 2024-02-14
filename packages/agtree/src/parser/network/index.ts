@@ -29,9 +29,14 @@ import { ValueParser } from '../misc/value';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum NetworkRuleSerializationMap {
     Syntax = 1,
     Raws,
     Exception,
@@ -202,27 +207,27 @@ export class NetworkRuleParser extends ParserBase {
         //     ...
         // }
 
-        buffer.writeUint8(BinaryPropMap.Syntax);
+        buffer.writeUint8(NetworkRuleSerializationMap.Syntax);
         buffer.writeUint8(SYNTAX_BINARY_MAP.get(node.syntax) ?? 0);
 
-        buffer.writeUint8(BinaryPropMap.Exception);
+        buffer.writeUint8(NetworkRuleSerializationMap.Exception);
         buffer.writeUint8(node.exception ? 1 : 0);
 
-        buffer.writeUint8(BinaryPropMap.Pattern);
+        buffer.writeUint8(NetworkRuleSerializationMap.Pattern);
         ValueParser.serialize(node.pattern, buffer);
 
         if (!isUndefined(node.modifiers)) {
-            buffer.writeUint8(BinaryPropMap.ModifierList);
+            buffer.writeUint8(NetworkRuleSerializationMap.ModifierList);
             ModifierListParser.serialize(node.modifiers, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(NetworkRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(NetworkRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -245,27 +250,27 @@ export class NetworkRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Syntax:
+                case NetworkRuleSerializationMap.Syntax:
                     node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case BinaryPropMap.Exception:
+                case NetworkRuleSerializationMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
 
-                case BinaryPropMap.Pattern:
+                case NetworkRuleSerializationMap.Pattern:
                     ValueParser.deserialize(buffer, node.pattern = {} as Value);
                     break;
 
-                case BinaryPropMap.ModifierList:
+                case NetworkRuleSerializationMap.ModifierList:
                     ModifierListParser.deserialize(buffer, node.modifiers = {} as ModifierList);
                     break;
 
-                case BinaryPropMap.Start:
+                case NetworkRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case NetworkRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 

@@ -26,9 +26,14 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isNull, isUndefined } from '../../utils/type-guards';
 
 /**
- * Property map for binary serialization.
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
  */
-const enum BinaryPropMap {
+const enum AgentRuleSerializationMap {
     Children = 1,
     Start,
     End,
@@ -194,8 +199,9 @@ export class AgentCommentRuleParser extends ParserBase {
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(BinaryPropMap.Children);
+            buffer.writeUint8(AgentRuleSerializationMap.Children);
 
+            // note: we store the count, because re-construction of the array is faster if we know the length
             // 8 bits is more than enough here
             if (count > UINT8_MAX) {
                 throw new Error(`Too many children: ${count}, the limit is ${UINT8_MAX}`);
@@ -208,12 +214,12 @@ export class AgentCommentRuleParser extends ParserBase {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(BinaryPropMap.Start);
+            buffer.writeUint8(AgentRuleSerializationMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(BinaryPropMap.End);
+            buffer.writeUint8(AgentRuleSerializationMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -236,7 +242,7 @@ export class AgentCommentRuleParser extends ParserBase {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Children:
+                case AgentRuleSerializationMap.Children:
                     node.children = new Array(buffer.readUint8());
 
                     // read children
@@ -245,11 +251,11 @@ export class AgentCommentRuleParser extends ParserBase {
                     }
                     break;
 
-                case BinaryPropMap.Start:
+                case AgentRuleSerializationMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case BinaryPropMap.End:
+                case AgentRuleSerializationMap.End:
                     node.end = buffer.readUint32();
                     break;
 
