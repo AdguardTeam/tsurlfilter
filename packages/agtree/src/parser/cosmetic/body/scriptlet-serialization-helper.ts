@@ -30,8 +30,14 @@ const enum AbpSnippetBodySerializationMap {
  *
  * @param node Node to serialize.
  * @param buffer ByteBuffer for writing binary data.
+ * @param frequentScriptletArgs Map of frequently used scriptlet names / arguments
+ * and their serialization index (optional).
  */
-export const serializeScriptletBody = (node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void => {
+export const serializeScriptletBody = (
+    node: ScriptletInjectionRuleBody,
+    buffer: OutputByteBuffer,
+    frequentScriptletArgs: Map<string, number> = new Map(),
+): void => {
     buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
 
     const { length } = node.children;
@@ -43,7 +49,7 @@ export const serializeScriptletBody = (node: ScriptletInjectionRuleBody, buffer:
     }
     buffer.writeUint8(length);
     for (let i = 0; i < length; i += 1) {
-        ParameterListParser.serialize(node.children[i], buffer);
+        ParameterListParser.serialize(node.children[i], buffer, frequentScriptletArgs);
     }
 
     if (!isUndefined(node.start)) {
@@ -64,9 +70,15 @@ export const serializeScriptletBody = (node: ScriptletInjectionRuleBody, buffer:
  *
  * @param buffer ByteBuffer for reading binary data.
  * @param node Destination node.
+ * @param frequentScriptletArgs Map of frequently used scriptlet names / arguments
+ * and their serialization index (optional).
  * @throws If the binary data is malformed.
  */
-export const deserializeScriptletBody = (buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void => {
+export const deserializeScriptletBody = (
+    buffer: InputByteBuffer,
+    node: Partial<ScriptletInjectionRuleBody>,
+    frequentScriptletArgs: Map<number, string> = new Map(),
+): void => {
     buffer.assertUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
 
     node.type = 'ScriptletInjectionRuleBody';
@@ -79,7 +91,8 @@ export const deserializeScriptletBody = (buffer: InputByteBuffer, node: Partial<
 
                 // read children
                 for (let i = 0; i < node.children.length; i += 1) {
-                    ParameterListParser.deserialize(buffer, node.children[i] = {} as ParameterList);
+                    // eslint-disable-next-line max-len
+                    ParameterListParser.deserialize(buffer, node.children[i] = {} as ParameterList, frequentScriptletArgs);
                 }
                 break;
 

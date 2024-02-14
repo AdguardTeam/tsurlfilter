@@ -48,6 +48,27 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
     };
 
     /**
+     * Value map for binary serialization. This helps to reduce the size of the serialized data,
+     * as it allows us to use a single byte to represent frequently used values.
+     *
+     * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+     *
+     * @note Only 256 values can be represented this way.
+     */
+    private static readonly FREQUENT_ARGS_SERIALIZATION_MAP = new Map<string, number>([
+        // FIXME: Add frequently used scriptlet names and their serialization index
+        // ['scriptlet-name', 0],
+    ]);
+
+    /**
+     * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+     * as it allows us to use a single byte to represent frequently used values.
+     */
+    private static readonly FREQUENT_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+        Array.from(this.FREQUENT_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+    );
+
+    /**
      * Parses the body of a uBlock-style scriptlet rule.
      *
      * @param raw Raw input to parse.
@@ -178,7 +199,7 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void {
-        serializeScriptletBody(node, buffer);
+        serializeScriptletBody(node, buffer, this.FREQUENT_ARGS_SERIALIZATION_MAP);
     }
 
     /**
@@ -189,6 +210,6 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
-        deserializeScriptletBody(buffer, node);
+        deserializeScriptletBody(buffer, node, this.FREQUENT_ARGS_DESERIALIZATION_MAP);
     }
 }
