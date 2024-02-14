@@ -36,7 +36,7 @@ const enum AbpSnippetBodySerializationMap {
 export const serializeScriptletBody = (
     node: ScriptletInjectionRuleBody,
     buffer: OutputByteBuffer,
-    frequentScriptletArgs: Map<string, number> = new Map(),
+    frequentScriptletArgs?: Map<string, number>,
 ): void => {
     buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
 
@@ -77,7 +77,7 @@ export const serializeScriptletBody = (
 export const deserializeScriptletBody = (
     buffer: InputByteBuffer,
     node: Partial<ScriptletInjectionRuleBody>,
-    frequentScriptletArgs: Map<number, string> = new Map(),
+    frequentScriptletArgs?: Map<number, string>,
 ): void => {
     buffer.assertUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
 
