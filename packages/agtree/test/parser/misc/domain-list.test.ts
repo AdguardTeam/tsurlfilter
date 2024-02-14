@@ -358,4 +358,17 @@ describe('DomainListParser', () => {
             '~example.com|example.org|example.net',
         );
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'example.com',
+            '~example.com',
+
+            'example.com,example.org',
+            'example.com,~example.org',
+            '~example.com,~example.org',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(DomainListParser);
+        });
+    });
 });

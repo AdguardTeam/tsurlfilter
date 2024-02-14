@@ -258,6 +258,14 @@ export const enum BinaryTypeMap {
     ConfigNode,
     PreProcessorCommentRuleNode,
     CommentRuleNode,
+    DomainListNode,
+    DomainNode,
+    MethodListNode,
+    MethodNode,
+    StealthOptionListNode,
+    StealthOptionNode,
+    AppListNode,
+    AppNode,
 }
 
 /**
