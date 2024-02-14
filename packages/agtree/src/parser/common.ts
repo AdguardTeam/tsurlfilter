@@ -266,6 +266,7 @@ export const enum BinaryTypeMap {
     StealthOptionNode,
     AppListNode,
     AppNode,
+    ScriptletInjectionRuleBodyNode,
 }
 
 /**

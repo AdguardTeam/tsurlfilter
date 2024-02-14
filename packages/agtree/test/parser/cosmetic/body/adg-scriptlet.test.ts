@@ -386,4 +386,14 @@ describe('AdgScriptletInjectionBodyParser', () => {
             expect(AdgScriptletInjectionBodyParser.generate(ruleNode)).toBe(expected);
         });
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '//scriptlet()',
+            '//scriptlet("scriptlet0")',
+            '//scriptlet("scriptlet0", "arg0", "arg1")',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(AdgScriptletInjectionBodyParser);
+        });
+    });
 });

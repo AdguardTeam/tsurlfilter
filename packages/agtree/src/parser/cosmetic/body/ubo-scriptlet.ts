@@ -17,6 +17,9 @@ import { ParameterListParser } from '../../misc/parameter-list';
 import { type ScriptletInjectionRuleBody } from '../../common';
 import { defaultParserOptions } from '../../options';
 import { ParserBase } from '../../interface';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
+import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 
 /**
  * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.
@@ -166,5 +169,26 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
         result.push(CLOSE_PARENTHESIS);
 
         return result.join(EMPTY);
+    }
+
+    /**
+     * Serializes a scriptlet call body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void {
+        serializeScriptletBody(node, buffer);
+    }
+
+    /**
+     * Deserializes a scriptlet call body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
+        deserializeScriptletBody(buffer, node);
     }
 }

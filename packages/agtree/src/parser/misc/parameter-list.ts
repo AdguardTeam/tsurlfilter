@@ -153,19 +153,17 @@ export class ParameterListParser extends ParserBase {
         buffer.writeUint8(BinaryTypeMap.ParameterListNode);
 
         const count = node.children.length;
-        if (count) {
-            buffer.writeUint8(ParameterListNodeSerializationMap.Children);
-            // note: we store the count, because re-construction of the array is faster if we know the length
-            buffer.writeUint32(count);
+        buffer.writeUint8(ParameterListNodeSerializationMap.Children);
+        // note: we store the count, because re-construction of the array is faster if we know the length
+        buffer.writeUint32(count);
 
-            for (let i = 0; i < count; i += 1) {
-                const child = node.children[i];
-                if (isNull(child)) {
-                    buffer.writeUint8(BinaryTypeMap.Null);
-                    continue;
-                }
-                ValueParser.serialize(child, buffer, frequentValuesMap, toLower);
+        for (let i = 0; i < count; i += 1) {
+            const child = node.children[i];
+            if (isNull(child)) {
+                buffer.writeUint8(BinaryTypeMap.Null);
+                continue;
             }
+            ValueParser.serialize(child, buffer, frequentValuesMap, toLower);
         }
 
         if (!isUndefined(node.start)) {

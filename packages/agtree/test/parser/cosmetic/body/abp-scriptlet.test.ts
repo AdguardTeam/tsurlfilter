@@ -682,4 +682,15 @@ describe('AbpSnippetInjectionBodyParser', () => {
             expect(AbpSnippetInjectionBodyParser.generate(ruleNode)).toBe(expected);
         });
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'scriptlet0',
+            'scriptlet0 arg0',
+            'scriptlet0 arg0 arg1',
+            'scriptlet0 arg00 arg01; scriptlet1; scriptlet2 arg20',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(AbpSnippetInjectionBodyParser);
+        });
+    });
 });

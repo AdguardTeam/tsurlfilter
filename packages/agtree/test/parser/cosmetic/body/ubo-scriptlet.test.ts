@@ -581,4 +581,15 @@ describe('UboScriptletInjectionBodyParser', () => {
             expect(UboScriptletInjectionBodyParser.generate(ruleNode)).toBe(expected);
         });
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '+js()',
+            "+js('scriptlet0')",
+            "+js('scriptlet0', 'arg0', 'arg1')",
+            '+js(scriptlet0, arg0, arg1)',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(UboScriptletInjectionBodyParser);
+        });
+    });
 });
