@@ -61,8 +61,7 @@ export class InputByteBuffer {
      * @returns 8-bit unsigned integer from the buffer.
      */
     public readUint8(): number {
-        const result = this.byteBuffer.readByte(this.offset) ?? 0;
-        this.offset += 1;
+        const result = this.byteBuffer.readByte(this.offset++) ?? 0;
         return result;
     }
 
