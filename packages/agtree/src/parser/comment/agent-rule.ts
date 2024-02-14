@@ -221,7 +221,7 @@ export class AgentCommentRuleParser extends ParserBase {
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
      */
-    public static deserialize(buffer: InputByteBuffer, node: AgentCommentRule): void {
+    public static deserialize(buffer: InputByteBuffer, node: Partial<AgentCommentRule>): void {
         buffer.assertUint8(BinaryTypeMap.AgentRuleNode);
         node.type = CommentRuleType.AgentCommentRule;
         node.syntax = AdblockSyntax.Common;

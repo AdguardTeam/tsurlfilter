@@ -226,7 +226,7 @@ export class HintCommentRuleParser extends ParserBase {
      * @param node Destination node.
      * @throws If the binary data is malformed.
      */
-    public static deserialize(buffer: InputByteBuffer, node: HintCommentRule): void {
+    public static deserialize(buffer: InputByteBuffer, node: Partial<HintCommentRule>): void {
         buffer.assertUint8(BinaryTypeMap.HintRuleNode);
         node.category = RuleCategory.Comment;
         node.type = CommentRuleType.HintCommentRule;

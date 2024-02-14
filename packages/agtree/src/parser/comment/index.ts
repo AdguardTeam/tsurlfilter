@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AgentCommentRuleParser } from './agent-rule';
 import {
@@ -6,16 +7,37 @@ import {
     CommentRuleType,
     RuleCategory,
     type Value,
+    BinaryTypeMap,
+    type AgentCommentRule,
+    type HintCommentRule,
+    type PreProcessorCommentRule,
+    type MetadataCommentRule,
+    type ConfigCommentRule,
+    type CommentRule,
 } from '../common';
 import { ConfigCommentRuleParser } from './inline-config';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { HintCommentRuleParser } from './hint-rule';
 import { MetadataCommentRuleParser } from './metadata';
 import { PreProcessorCommentRuleParser } from './preprocessor';
-import { EMPTY } from '../../utils/constants';
+import { EMPTY, NULL } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
+import { ValueParser } from '../misc/value';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum BinaryPropMap {
+    Marker = 1,
+    Text,
+    Start,
+    End,
+}
 
 /**
  * `CommentParser` is responsible for parsing any comment-like adblock rules.
@@ -158,42 +180,29 @@ export class CommentRuleParser extends ParserBase {
         offset = StringUtils.skipWS(raw, offset);
 
         // Get comment marker
-        const marker: Value<CommentMarker> = {
-            type: 'Value',
-            value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
-        };
-
-        if (options.isLocIncluded) {
-            marker.start = baseOffset + offset;
-            marker.end = baseOffset + offset + 1;
-        }
+        const marker = ValueParser.parse(raw[offset], options, baseOffset + offset);
 
         // Skip marker
         offset += 1;
 
         // Get comment text
-        const text: Value = {
-            type: 'Value',
-            value: raw.slice(offset),
-        };
-
-        if (options.isLocIncluded) {
-            text.start = baseOffset + offset;
-            text.end = baseOffset + raw.length;
-        }
+        const text = ValueParser.parse(raw.slice(offset), options, baseOffset + offset);
 
         // Regular comment rule
         const result: AnyCommentRule = {
             category: RuleCategory.Comment,
             type: CommentRuleType.CommentRule,
-            raws: {
-                text: raw,
-            },
             // TODO: Change syntax when hashmark is used?
             syntax: AdblockSyntax.Common,
             marker,
             text,
         };
+
+        if (options.parseRaws) {
+            result.raws = {
+                text: raw,
+            };
+        }
 
         if (options.isLocIncluded) {
             result.start = baseOffset;
@@ -204,39 +213,165 @@ export class CommentRuleParser extends ParserBase {
     }
 
     /**
-     * Converts a comment AST to a string.
+     * Converts a comment rule node to a string.
      *
-     * @param ast Comment AST
+     * @param node Comment rule node
      * @returns Raw string
      */
-    public static generate(ast: AnyCommentRule): string {
+    public static generate(node: AnyCommentRule): string {
         let result = EMPTY;
 
         // Generate based on the rule type
-        switch (ast.type) {
+        switch (node.type) {
             case CommentRuleType.AgentCommentRule:
-                return AgentCommentRuleParser.generate(ast);
+                return AgentCommentRuleParser.generate(node);
 
             case CommentRuleType.HintCommentRule:
-                return HintCommentRuleParser.generate(ast);
+                return HintCommentRuleParser.generate(node);
 
             case CommentRuleType.PreProcessorCommentRule:
-                return PreProcessorCommentRuleParser.generate(ast);
+                return PreProcessorCommentRuleParser.generate(node);
 
             case CommentRuleType.MetadataCommentRule:
-                return MetadataCommentRuleParser.generate(ast);
+                return MetadataCommentRuleParser.generate(node);
 
             case CommentRuleType.ConfigCommentRule:
-                return ConfigCommentRuleParser.generate(ast);
+                return ConfigCommentRuleParser.generate(node);
 
             // Regular comment rule
             case CommentRuleType.CommentRule:
-                result += ast.marker.value;
-                result += ast.text.value;
+                result += node.marker.value;
+                result += node.text.value;
                 return result;
 
             default:
                 throw new Error('Unknown comment rule type');
+        }
+    }
+
+    /**
+     * Serializes a comment rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: AnyCommentRule, buffer: OutputByteBuffer): void {
+        switch (node.type) {
+            case CommentRuleType.AgentCommentRule:
+                AgentCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.HintCommentRule:
+                HintCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.PreProcessorCommentRule:
+                PreProcessorCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.MetadataCommentRule:
+                MetadataCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.ConfigCommentRule:
+                ConfigCommentRuleParser.serialize(node, buffer);
+                return;
+
+            // Regular comment rule
+            case CommentRuleType.CommentRule:
+                buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
+
+                buffer.writeUint8(BinaryPropMap.Marker);
+                ValueParser.serialize(node.marker, buffer);
+
+                buffer.writeUint8(BinaryPropMap.Text);
+                ValueParser.serialize(node.text, buffer);
+
+                if (!isUndefined(node.start)) {
+                    buffer.writeUint8(BinaryPropMap.Start);
+                    buffer.writeUint32(node.start);
+                }
+
+                if (!isUndefined(node.end)) {
+                    buffer.writeUint8(BinaryPropMap.End);
+                    buffer.writeUint32(node.end);
+                }
+
+                buffer.writeUint8(NULL);
+                break;
+
+            default:
+                throw new Error('Unknown comment rule type');
+        }
+    }
+
+    /**
+     * Deserializes a metadata comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyCommentRule>): void {
+        const type = buffer.peekUint8();
+
+        switch (type) {
+            case BinaryTypeMap.AgentRuleNode:
+                AgentCommentRuleParser.deserialize(buffer, node as Partial<AgentCommentRule>);
+                return;
+
+            case BinaryTypeMap.HintRuleNode:
+                HintCommentRuleParser.deserialize(buffer, node as Partial<HintCommentRule>);
+                return;
+
+            case BinaryTypeMap.PreProcessorCommentRuleNode:
+                PreProcessorCommentRuleParser.deserialize(buffer, node as Partial<PreProcessorCommentRule>);
+                return;
+
+            case BinaryTypeMap.MetadataCommentRuleNode:
+                MetadataCommentRuleParser.deserialize(buffer, node as Partial<MetadataCommentRule>);
+                return;
+
+            case BinaryTypeMap.ConfigCommentRuleNode:
+                ConfigCommentRuleParser.deserialize(buffer, node as Partial<ConfigCommentRule>);
+                return;
+
+            case BinaryTypeMap.CommentRuleNode:
+                buffer.assertUint8(BinaryTypeMap.CommentRuleNode);
+
+                node.type = CommentRuleType.CommentRule;
+                node.category = RuleCategory.Comment;
+                node.syntax = AdblockSyntax.Common;
+
+                // eslint-disable-next-line no-case-declarations
+                let prop = buffer.readUint8();
+                while (prop !== NULL) {
+                    switch (prop) {
+                        case BinaryPropMap.Marker:
+                            ValueParser.deserialize(buffer, (node as CommentRule).marker = {} as Value);
+                            break;
+
+                        case BinaryPropMap.Text:
+                            ValueParser.deserialize(buffer, (node as CommentRule).text = {} as Value);
+                            break;
+
+                        case BinaryPropMap.Start:
+                            node.start = buffer.readUint32();
+                            break;
+
+                        case BinaryPropMap.End:
+                            node.end = buffer.readUint32();
+                            break;
+
+                        default:
+                            throw new Error(`Invalid property: ${prop}`);
+                    }
+                    prop = buffer.readUint8();
+                }
+                return;
+
+            default:
+                throw new Error(`Unknown comment rule type: ${type}.`);
         }
     }
 }

@@ -1,5 +1,6 @@
 import { CommentRuleParser } from '../../../src/parser/comment';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
@@ -742,7 +743,9 @@ describe('CommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(CommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                CommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -785,5 +788,22 @@ describe('CommentRuleParser', () => {
         );
 
         expect(parseAndGenerate('! This is just a comment')).toEqual('! This is just a comment');
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '[Adblock Plus 2.0]',
+            '[Adblock Plus 2.0; AdGuard]',
+            '!+ NOT_OPTIMIZED',
+            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
+            '!#if (adguard && !adguard_ext_safari)',
+            '! Homepage: example.org',
+            '! aglint-enable rule1, rule2 -- comment',
+            '# aglint-enable rule1, rule2 -- comment',
+            '! This is just a comment',
+            '# This is just a comment',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(CommentRuleParser);
+        });
     });
 });

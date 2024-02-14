@@ -257,6 +257,7 @@ export const enum BinaryTypeMap {
     ConfigCommentRuleNode,
     ConfigNode,
     PreProcessorCommentRuleNode,
+    CommentRuleNode,
 }
 
 /**
@@ -540,7 +541,7 @@ export interface CommentRule extends CommentBase {
      * - If the rule is `! This is just a comment`, then the marker will be `!`.
      * - If the rule is `# This is just a comment`, then the marker will be `#`.
      */
-    marker: Value<CommentMarker>;
+    marker: Value;
 
     /**
      * Comment text.
