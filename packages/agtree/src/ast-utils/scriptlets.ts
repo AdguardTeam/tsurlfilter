@@ -30,7 +30,7 @@ export function getScriptletName(scriptletNode: ParameterList): string {
  * @param name Name to set
  */
 export function setScriptletName(scriptletNode: ParameterList, name: string): void {
-    if (scriptletNode.children.length > 0 && scriptletNode.children[0] !== null) {
+    if (scriptletNode.children.length > 0 && !isNull(scriptletNode.children[0])) {
         // eslint-disable-next-line no-param-reassign
         scriptletNode.children[0].value = name;
     }
