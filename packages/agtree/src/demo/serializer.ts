@@ -5,26 +5,30 @@
 
 import { inspect } from 'util';
 
-import { ModifierListParser } from '../parser/misc/modifier-list';
 import { OutputByteBuffer } from '../utils/output-byte-buffer';
 import { SimpleStorage } from '../../test/helpers/simple-storage';
-import { type ModifierList } from '../parser/common';
+import { type AnyCommentRule } from '../parser/common';
 import { InputByteBuffer } from '../utils/input-byte-buffer';
+import { CommentRuleParser } from '../parser/comment';
 
-const TEST_STR = '~third-party,domain=example.com|~example.org,script';
+const TEST_STR = '[Adblock Plus 2.0]';
 
 ((async () => {
     // Parse node from string
-    const node = ModifierListParser.parse(TEST_STR, {
+    const node = CommentRuleParser.parse(TEST_STR, {
         isLocIncluded: false,
     });
+
+    if (node === null) {
+        throw new Error('Parsing failed');
+    }
 
     // Show the parsed node
     console.log(inspect(node, false, null, true));
 
     // Create output buffer and serialize the node
     const outBuffer = new OutputByteBuffer();
-    ModifierListParser.serialize(node, outBuffer);
+    CommentRuleParser.serialize(node, outBuffer);
 
     // Show the sizes (in bytes) of the original string and the serialized binary data
     console.log('Original size:', new Blob([TEST_STR]).size);
@@ -38,12 +42,12 @@ const TEST_STR = '~third-party,domain=example.com|~example.org,script';
     const inBuffer = await InputByteBuffer.createFromStorage(storage, 'test');
 
     // Deserialize the node from the input buffer
-    const newNode = {} as ModifierList;
-    ModifierListParser.deserialize(inBuffer, newNode);
+    const newNode = {} as AnyCommentRule;
+    CommentRuleParser.deserialize(inBuffer, newNode);
 
     // Show the deserialized node
     console.log(inspect(newNode, false, null, true));
 
     // Generate the string from the deserialized node
-    console.log(ModifierListParser.generate(newNode));
+    console.log(CommentRuleParser.generate(newNode));
 })());
