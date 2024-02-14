@@ -215,7 +215,7 @@ export class CommentRuleParser extends ParserBase {
                 return;
 
             default:
-                throw new Error(`Unknown comment rule type: ${type}.`);
+                throw new Error(`Unknown comment rule type: ${type}`);
         }
     }
 }

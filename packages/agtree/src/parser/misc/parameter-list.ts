@@ -12,7 +12,7 @@ import { ParserBase } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from './value';
-import { isUndefined } from '../../utils/type-guards';
+import { isNull, isUndefined } from '../../utils/type-guards';
 
 /**
  * Property map for binary serialization.
@@ -154,7 +154,7 @@ export class ParameterListParser extends ParserBase {
 
             for (let i = 0; i < count; i += 1) {
                 const child = node.children[i];
-                if (child === null) {
+                if (isNull(child)) {
                     buffer.writeUint8(BinaryTypeMap.Null);
                     continue;
                 }
@@ -189,11 +189,11 @@ export class ParameterListParser extends ParserBase {
         frequentValuesMap?: Map<number, string>,
     ): void {
         buffer.assertUint8(BinaryTypeMap.ParameterListNode);
+
         node.type = 'ParameterList';
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Children:
                     node.children = new Array(buffer.readUint32());
@@ -205,23 +205,29 @@ export class ParameterListParser extends ParserBase {
                                 buffer.readUint8();
                                 node.children[i] = null;
                                 break;
+
                             case BinaryTypeMap.ValueNode:
                                 ValueParser.deserialize(buffer, node.children[i] = {} as Value, frequentValuesMap);
                                 break;
+
                             default:
-                                throw new Error(`Invalid child type: ${buffer.peekUint8()}.`);
+                                throw new Error(`Invalid child type: ${buffer.peekUint8()}`);
                         }
                     }
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }

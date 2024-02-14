@@ -5,6 +5,7 @@ import {
     OPEN_SQUARE_BRACKET,
     SEMICOLON,
     SPACE,
+    UINT8_MAX,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import {
@@ -194,7 +195,11 @@ export class AgentCommentRuleParser extends ParserBase {
         const count = node.children.length;
         if (count) {
             buffer.writeUint8(BinaryPropMap.Children);
+
             // 8 bits is more than enough here
+            if (count > UINT8_MAX) {
+                throw new Error(`Too many children: ${count}, the limit is ${UINT8_MAX}`);
+            }
             buffer.writeUint8(count);
 
             for (let i = 0; i < count; i += 1) {
@@ -223,13 +228,13 @@ export class AgentCommentRuleParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<AgentCommentRule>): void {
         buffer.assertUint8(BinaryTypeMap.AgentRuleNode);
+
         node.type = CommentRuleType.AgentCommentRule;
         node.syntax = AdblockSyntax.Common;
         node.category = RuleCategory.Comment;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Children:
                     node.children = new Array(buffer.readUint8());
@@ -239,15 +244,19 @@ export class AgentCommentRuleParser extends ParserBase {
                         AgentParser.deserialize(buffer, node.children[i] = {} as Agent);
                     }
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }

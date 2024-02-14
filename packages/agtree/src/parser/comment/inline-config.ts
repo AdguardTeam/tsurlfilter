@@ -290,23 +290,25 @@ export class ConfigCommentRuleParser extends ParserBase {
      */
     private static deserializeConfigNode(buffer: InputByteBuffer, node: Partial<ConfigNode>): void {
         buffer.assertUint8(BinaryTypeMap.ConfigNode);
+
         node.type = 'ConfigNode';
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-
         while (prop !== NULL) {
             switch (prop) {
                 case ConfigNodeBinaryPropMap.Value:
                     // note: it is safe to use JSON.parse here, because we serialized it with JSON.stringify
                     node.value = JSON.parse(buffer.readString());
                     break;
+
                 case ConfigNodeBinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case ConfigNodeBinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
                     throw new Error(`Invalid property: ${prop}.`);
             }
@@ -371,16 +373,17 @@ export class ConfigCommentRuleParser extends ParserBase {
         node.category = RuleCategory.Comment;
         node.syntax = AdblockSyntax.Common;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case ConfigCommentNodeBinaryPropMap.Marker:
                     ValueParser.deserialize(buffer, node.marker = {} as Value);
                     break;
+
                 case ConfigCommentNodeBinaryPropMap.Command:
                     ValueParser.deserialize(buffer, node.command = {} as Value, KNOWN_COMMANDS_REVERSE);
                     break;
+
                 case ConfigCommentNodeBinaryPropMap.Params:
                     if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
                         ConfigCommentRuleParser.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
@@ -388,17 +391,21 @@ export class ConfigCommentRuleParser extends ParserBase {
                         ParameterListParser.deserialize(buffer, node.params = {} as ParameterList);
                     }
                     break;
+
                 case ConfigCommentNodeBinaryPropMap.Comment:
                     ValueParser.deserialize(buffer, node.comment = {} as Value);
                     break;
+
                 case ConfigCommentNodeBinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case ConfigCommentNodeBinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
 
             prop = buffer.readUint8();

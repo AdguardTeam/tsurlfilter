@@ -214,32 +214,38 @@ export class MetadataCommentRuleParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<MetadataCommentRule>): void {
         buffer.assertUint8(BinaryTypeMap.MetadataCommentRuleNode);
+
         node.type = CommentRuleType.MetadataCommentRule;
         node.category = RuleCategory.Comment;
         node.syntax = AdblockSyntax.Common;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Marker:
                     ValueParser.deserialize(buffer, node.marker = {} as Value);
                     break;
+
                 case BinaryPropMap.Header:
                     ValueParser.deserialize(buffer, node.header = {} as Value);
                     break;
+
                 case BinaryPropMap.Value:
                     ValueParser.deserialize(buffer, node.value = {} as Value);
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }

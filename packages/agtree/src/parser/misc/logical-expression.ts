@@ -653,24 +653,28 @@ export class LogicalExpressionParser extends ParserBase {
      */
     private static deserializeVariableNode(buffer: InputByteBuffer, node: Partial<ExpressionVariableNode>): void {
         buffer.assertUint8(BinaryTypeMap.ExpressionVariableNode);
+
         node.type = NodeType.Variable;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case VariableNodeBinaryPropMap.Name:
                     node.name = buffer.readString();
                     break;
+
                 case VariableNodeBinaryPropMap.FrequentName:
                     node.name = getFrequentNameOrFail(buffer.readUint8());
                     break;
+
                 case VariableNodeBinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case VariableNodeBinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
                     throw new Error(`Invalid property: ${prop}`);
             }
@@ -688,21 +692,24 @@ export class LogicalExpressionParser extends ParserBase {
      */
     private static deserializeParenthesisNode(buffer: InputByteBuffer, node: Partial<ExpressionParenthesisNode>): void {
         buffer.assertUint8(BinaryTypeMap.ExpressionParenthesisNode);
+
         node.type = NodeType.Parenthesis;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case ParenthesisNodeBinaryPropMap.Expression:
                     LogicalExpressionParser.deserialize(buffer, node.expression = {} as AnyExpressionNode);
                     break;
+
                 case ParenthesisNodeBinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case ParenthesisNodeBinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
                     throw new Error(`Invalid property: ${prop}`);
             }
@@ -720,27 +727,32 @@ export class LogicalExpressionParser extends ParserBase {
      */
     private static deserializeOperatorNode(buffer: InputByteBuffer, node: Partial<ExpressionOperatorNode>): void {
         buffer.assertUint8(BinaryTypeMap.ExpressionOperatorNode);
+
         node.type = NodeType.Operator;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case OperatorNodeBinaryPropMap.Operator:
                     node.operator = getOperatorOrFail(buffer.readUint8());
                     break;
+
                 case OperatorNodeBinaryPropMap.Left:
                     LogicalExpressionParser.deserialize(buffer, node.left = {} as AnyExpressionNode);
                     break;
+
                 case OperatorNodeBinaryPropMap.Right:
                     LogicalExpressionParser.deserialize(buffer, node.right = {} as AnyExpressionNode);
                     break;
+
                 case OperatorNodeBinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case OperatorNodeBinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
                     throw new Error(`Invalid property: ${prop}`);
             }
@@ -758,7 +770,7 @@ export class LogicalExpressionParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<AnyExpressionNode>): void {
         // note: we just do a simple lookahead here, because advancing the buffer is done in the
-        // 'sub' deserialization methods
+        // 'sub-deserialize' methods
         let type = buffer.peekUint8();
         while (type !== NULL) {
             switch (type) {

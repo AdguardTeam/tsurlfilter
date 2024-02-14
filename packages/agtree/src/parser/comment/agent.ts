@@ -269,16 +269,13 @@ export class AgentParser extends ParserBase {
      * @param node Destination node.
      * @throws If the binary data is malformed.
      */
-    public static deserialize(
-        buffer: InputByteBuffer,
-        node: Partial<Agent>,
-    ): void {
+    public static deserialize(buffer: InputByteBuffer, node: Partial<Agent>): void {
         buffer.assertUint8(BinaryTypeMap.AgentNode);
+
         node.type = 'Agent';
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Adblock:
                     ValueParser.deserialize(buffer, node.adblock = {} as Value, KNOWN_AGENTS_REVERSE);
@@ -286,18 +283,23 @@ export class AgentParser extends ParserBase {
                         node.syntax = getAdblockSyntax(node.adblock.value);
                     }
                     break;
+
                 case BinaryPropMap.Version:
                     ValueParser.deserialize(buffer, node.version = {} as Value);
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }

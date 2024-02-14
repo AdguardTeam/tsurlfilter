@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { MODIFIERS_SEPARATOR, NULL } from '../../utils/constants';
+import { MODIFIERS_SEPARATOR, NULL, UINT16_MAX } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
@@ -121,8 +121,10 @@ export class ModifierListParser extends ParserBase {
 
         const count = node.children.length;
         if (count) {
-            // FIXME
             buffer.writeUint8(BinaryPropMap.Children);
+            if (count > UINT16_MAX) {
+                throw new Error(`Too many modifiers: ${count}, the limit is ${UINT16_MAX}`);
+            }
             buffer.writeUint16(count);
 
             for (let i = 0; i < count; i += 1) {
@@ -151,11 +153,11 @@ export class ModifierListParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
         buffer.assertUint8(BinaryTypeMap.ModifierListNode);
+
         node.type = 'ModifierList';
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Children:
                     node.children = new Array(buffer.readUint16());
@@ -165,12 +167,15 @@ export class ModifierListParser extends ParserBase {
                         ModifierParser.deserialize(buffer, node.children[i] = {} as Modifier);
                     }
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
                     throw new Error(`Invalid property: ${prop}.`);
             }

@@ -237,35 +237,42 @@ export class NetworkRuleParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<NetworkRule>): void {
         buffer.assertUint8(BinaryTypeMap.NetworkRuleNode);
+
         node.type = 'NetworkRule';
         node.category = RuleCategory.Network;
         node.modifiers = undefined;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Syntax:
                     node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
+
                 case BinaryPropMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
+
                 case BinaryPropMap.Pattern:
                     ValueParser.deserialize(buffer, node.pattern = {} as Value);
                     break;
+
                 case BinaryPropMap.ModifierList:
                     ModifierListParser.deserialize(buffer, node.modifiers = {} as ModifierList);
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
                     throw new Error(`Invalid property: ${prop}.`);
             }
+
             prop = buffer.readUint8();
         }
     }

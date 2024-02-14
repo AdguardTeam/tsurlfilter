@@ -228,16 +228,17 @@ export class HintCommentRuleParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<HintCommentRule>): void {
         buffer.assertUint8(BinaryTypeMap.HintRuleNode);
+
         node.category = RuleCategory.Comment;
         node.type = CommentRuleType.HintCommentRule;
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Syntax:
                     node.syntax = SYNTAX_BINARY_MAP_REVERSE.get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
+
                 case BinaryPropMap.Children:
                     node.children = new Array(buffer.readUint8());
 
@@ -246,15 +247,19 @@ export class HintCommentRuleParser extends ParserBase {
                         HintParser.deserialize(buffer, node.children[i] = {} as Hint);
                     }
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }

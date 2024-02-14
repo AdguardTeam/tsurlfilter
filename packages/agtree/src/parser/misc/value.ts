@@ -109,31 +109,32 @@ export class ValueParser extends ParserBase {
         frequentValuesMap?: Map<number, string>,
     ): void {
         buffer.assertUint8(BinaryTypeMap.ValueNode);
+
         node.type = 'Value';
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
-                case BinaryPropMap.Value: {
+                case BinaryPropMap.Value:
                     node.value = buffer.readString();
                     break;
-                }
-                case BinaryPropMap.FrequentValue: {
+
+                case BinaryPropMap.FrequentValue:
                     node.value = frequentValuesMap?.get(buffer.readUint8()) ?? EMPTY;
                     break;
-                }
-                case BinaryPropMap.Start: {
+
+                case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
-                }
-                case BinaryPropMap.End: {
+
+                case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
-                }
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }

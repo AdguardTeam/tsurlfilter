@@ -293,27 +293,32 @@ export class HintParser extends ParserBase {
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Hint>): void {
         buffer.assertUint8(BinaryTypeMap.HintNode);
+
         node.type = 'Hint';
 
-        // read buffer until NULL
         let prop = buffer.readUint8();
-        while (prop) {
+        while (prop !== NULL) {
             switch (prop) {
                 case BinaryPropMap.Name:
                     ValueParser.deserialize(buffer, node.name = {} as Value, KNOWN_HINTS_REVERSE);
                     break;
+
                 case BinaryPropMap.Params:
                     ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, KNOWN_PLATFORMS_REVERSE);
                     break;
+
                 case BinaryPropMap.Start:
                     node.start = buffer.readUint32();
                     break;
+
                 case BinaryPropMap.End:
                     node.end = buffer.readUint32();
                     break;
+
                 default:
-                    throw new Error(`Invalid property: ${prop}.`);
+                    throw new Error(`Invalid property: ${prop}`);
             }
+
             prop = buffer.readUint8();
         }
     }
