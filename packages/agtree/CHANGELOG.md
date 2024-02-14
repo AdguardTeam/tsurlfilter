@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Parser functions signature to `parse(source, options, baseOffset, ...additionalArgs)`.
 - Removed `Parameter` node from the AST and replaced it with `Value` node.
 - If a parameter is empty, it parsed as `null` instead of empty string.
+- `SimpleCommentParser` now has a separate class.
 
 ### Fixed
 
