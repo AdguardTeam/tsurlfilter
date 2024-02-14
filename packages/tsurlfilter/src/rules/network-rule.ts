@@ -1,5 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
-import { ModifierList, NetworkRuleParser } from '@adguard/agtree';
+import { ModifierList, NetworkRuleParser, defaultParserOptions } from '@adguard/agtree';
 
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
@@ -1004,7 +1004,7 @@ export class NetworkRule implements rule.IRule {
      * @throws error if it fails to parse the rule.
      */
     constructor(ruleText: string, filterListId: number) {
-        const node = NetworkRuleParser.parse(ruleText.trim(), { isLocIncluded: false });
+        const node = NetworkRuleParser.parse(ruleText.trim(), { ...defaultParserOptions, isLocIncluded: false });
         // Raw rule text definitely present here
         this.ruleText = node.raws!.text!;
 

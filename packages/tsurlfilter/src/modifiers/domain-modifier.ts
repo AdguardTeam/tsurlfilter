@@ -1,5 +1,5 @@
 import { getPublicSuffix } from 'tldts';
-import { DomainList, DomainListParser } from '@adguard/agtree';
+import { DomainList, DomainListParser, defaultParserOptions } from '@adguard/agtree';
 
 import { logger } from '../utils/logger';
 import { SimpleRegex } from '../rules/simple-regex';
@@ -94,7 +94,8 @@ export class DomainModifier {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
-            const node = DomainListParser.parse(domains.trim(), { isLocIncluded: false }, 0, separator);
+            // eslint-disable-next-line max-len
+            const node = DomainListParser.parse(domains.trim(), { ...defaultParserOptions, isLocIncluded: false }, 0, separator);
 
             if (node.children.length === 0) {
                 throw new SyntaxError('At least one domain must be specified');
