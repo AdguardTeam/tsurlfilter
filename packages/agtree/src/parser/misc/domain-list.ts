@@ -124,10 +124,8 @@ export class DomainListParser extends ParserBase {
         buffer.writeUint8(DomainListSerializationMap.Separator);
         buffer.writeUint8(separator);
 
-        if (node.children?.length > 0) {
-            buffer.writeUint8(DomainListSerializationMap.Children);
-            serializeListItems(node.children, buffer);
-        }
+        buffer.writeUint8(DomainListSerializationMap.Children);
+        serializeListItems(node.children, buffer);
 
         if (!isUndefined(node.start)) {
             buffer.writeUint8(DomainListSerializationMap.Start);

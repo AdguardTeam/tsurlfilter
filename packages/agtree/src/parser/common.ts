@@ -267,6 +267,15 @@ export const enum BinaryTypeMap {
     AppListNode,
     AppNode,
     ScriptletInjectionRuleBodyNode,
+    ElementHidingRuleBody,
+    CssInjectionRuleBody,
+    HtmlFilteringRuleBody,
+    JsInjectionRuleBody,
+    ElementHidingRule,
+    CssInjectionRule,
+    ScriptletInjectionRule,
+    JsInjectionRule,
+    HtmlFilteringRule,
 }
 
 /**

@@ -145,4 +145,58 @@ describe('CosmeticRuleParser - general tests', () => {
             }
         });
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '##.ad',
+            'example.com,~example.org##.ad',
+            '#@#.ad',
+            'example.com,~example.org#@#.ad',
+
+            '#$#body { padding: 0; }',
+            'example.com,~example.org#$#body { padding: 0; }',
+            '#@$#body { padding: 0; }',
+            'example.com,~example.org#@$#body { padding: 0; }',
+
+            '#$?#:contains(ad) { color: red; padding: 0 !important; }',
+            'example.com,~example.org#$?#:contains(ad) { color: red; padding: 0 !important; }',
+            '#@$?#:contains(ad) { color: red; padding: 0 !important; }',
+            'example.com,~example.org#@$?#:contains(ad) { color: red; padding: 0 !important; }',
+            '#$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+            'example.com,~example.org#$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+
+            "#%#//scriptlet('foo', 'bar')",
+            "example.com,~example.org#%#//scriptlet('foo', 'bar')",
+
+            '##+js(foo, bar)',
+            'example.com,~example.org##+js(foo, bar)',
+            '#@#+js(foo, bar)',
+            'example.com,~example.org#@#+js(foo, bar)',
+
+            '#$#scriptlet0 arg0 arg1',
+            'example.com,~example.org#$#scriptlet0 arg0 arg1',
+            '#@$#scriptlet0 arg0 arg1',
+            'example.com,~example.org#@$#scriptlet0 arg0 arg1',
+
+            '##^script:has-text(ads)',
+            'example.com,~example.org##^script:has-text(ads)',
+            '#@#^script:has-text(ads)',
+            'example.com,~example.org#@#^script:has-text(ads)',
+
+            '$$script[tag-content="ads"]',
+            'example.com,~example.org$$script[tag-content="ads"]',
+            '$@$script[tag-content="ads"]',
+            'example.com,~example.org$@$script[tag-content="ads"]',
+
+            // ADG modifiers
+            '[$path=/foo/bar]##.foo',
+            '[$path=/foo/bar]example.com,~example.org##.foo',
+
+            // uBO modifiers
+            '##:matches-path(/foo/bar) .foo',
+            'example.com,~example.org##:matches-path(/foo/bar) .foo',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(CosmeticRuleParser);
+        });
+    });
 });
