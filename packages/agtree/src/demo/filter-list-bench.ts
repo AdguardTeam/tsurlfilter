@@ -27,22 +27,33 @@ const FILTER_LIST = 'adg-base.txt';
         throw new Error('Parsing failed');
     }
 
-    // Create output buffer and serialize the node
+    // benchmark serialization
+    const ITERS = 20;
+    const times: number[] = [];
+
+    for (let i = 0; i < ITERS; i += 1) {
+        const outBuffer = new OutputByteBuffer();
+        const start = performance.now();
+        FilterListParser.serialize(node, outBuffer);
+        times.push(performance.now() - start);
+    }
+
+    console.log('Average serialization time (ms):', times.reduce((a, b) => a + b, 0) / ITERS);
+
+    // benchmark deserialization
     const outBuffer = new OutputByteBuffer();
     FilterListParser.serialize(node, outBuffer);
-
-    // Show the sizes (in bytes) of the original string and the serialized binary data
-    console.log('Original size (MB):', new Blob([filterListContent]).size / 1024 / 1024);
-    console.log('Binary serialized size (MB):', (outBuffer as any).offset / 1024 / 1024);
-
-    // Write the output buffer data to the storage (simulating the storage in the browser environment)
     const storage = new SimpleStorage();
     await outBuffer.writeChunksToStorage(storage, 'test');
 
-    // Create input buffer from the storage (simulating the storage in the browser environment)
-    const inBuffer = await InputByteBuffer.createFromStorage(storage, 'test');
+    const deserializationTimes: number[] = [];
+    for (let i = 0; i < ITERS; i += 1) {
+        const inBuffer = await InputByteBuffer.createFromStorage(storage, 'test');
+        const newNode = {} as FilterList;
+        const start = performance.now();
+        FilterListParser.deserialize(inBuffer, newNode);
+        deserializationTimes.push(performance.now() - start);
+    }
 
-    // Deserialize the node from the input buffer
-    const newNode = {} as FilterList;
-    FilterListParser.deserialize(inBuffer, newNode);
+    console.log('Average deserialization time (ms):', deserializationTimes.reduce((a, b) => a + b, 0) / ITERS);
 })());

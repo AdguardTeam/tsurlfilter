@@ -172,6 +172,7 @@ export class FilterListParser extends ParserBase {
     public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.FilterListNode);
 
+        buffer.writeUint8(FilterListNodeSerializationMap.Children);
         const count = node.children.length;
         buffer.writeUint32(count);
         for (let i = 0; i < count; i += 1) {
