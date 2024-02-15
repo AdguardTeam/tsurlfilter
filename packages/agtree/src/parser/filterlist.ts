@@ -1,14 +1,30 @@
-import { type AnyRule, type FilterList, type NewLine } from './common';
+/* eslint-disable no-param-reassign */
+import {
+    BinaryTypeMap,
+    type AnyRule,
+    type FilterList,
+    type NewLine,
+} from './common';
 import { RuleParser } from './rule';
 import {
     CR,
     CRLF,
     EMPTY,
     LF,
+    NULL,
 } from '../utils/constants';
 import { StringUtils } from '../utils/string';
 import { defaultParserOptions } from './options';
 import { ParserBase } from './interface';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { isUndefined } from '../utils/type-guards';
+
+const enum FilterListNodeSerializationMap {
+    Children = 1,
+    Start,
+    End,
+}
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
@@ -149,5 +165,60 @@ export class FilterListParser extends ParserBase {
         }
 
         return result;
+    }
+
+    // FIXME: jsdoc, raws (nl)
+
+    public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.FilterListNode);
+
+        const count = node.children.length;
+        buffer.writeUint32(count);
+        for (let i = 0; i < count; i += 1) {
+            RuleParser.serialize(node.children[i], buffer);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(FilterListNodeSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(FilterListNodeSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    public static deserialize(buffer: InputByteBuffer, node: Partial<FilterList>): void {
+        buffer.assertUint8(BinaryTypeMap.FilterListNode);
+
+        node.type = 'FilterList';
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case FilterListNodeSerializationMap.Children:
+                    node.children = new Array(buffer.readUint32());
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        RuleParser.deserialize(buffer, node.children[i] = {} as AnyRule);
+                    }
+                    break;
+
+                case FilterListNodeSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case FilterListNodeSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+
+            prop = buffer.readUint8();
+        }
     }
 }
