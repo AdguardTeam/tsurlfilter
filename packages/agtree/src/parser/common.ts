@@ -240,6 +240,12 @@ export const enum BinaryTypeMap {
 
     // AGTree nodes
     // FIXME: add all types and group them properly
+    FilterListNode,
+    EmptyRule,
+    InvalidRule,
+
+    InvalidRuleErrorNode,
+
     ValueNode,
     RawNode,
     ModifierNode,
@@ -478,6 +484,20 @@ export interface RuleBase extends Node {
     }
 }
 
+export interface InvalidRuleError extends Node {
+    type: 'InvalidRuleError';
+
+    /**
+     * Error name
+     */
+    name: string;
+
+    /**
+     * Error message
+     */
+    message: string;
+}
+
 /**
  * Represents an invalid rule (used by tolerant mode).
  */
@@ -497,27 +517,7 @@ export interface InvalidRule extends RuleBase {
     /**
      * Error details
      */
-    error: {
-        /**
-         * Error name
-         */
-        name: string;
-
-        /**
-         * Error message
-         */
-        message: string;
-
-        /**
-         * Start offset of the error
-         */
-        start?: number;
-
-        /**
-         * End offset of the error
-         */
-        end?: number;
-    }
+    error: InvalidRuleError;
 }
 
 /**
