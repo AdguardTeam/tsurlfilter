@@ -11,7 +11,7 @@ const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
 /**
  * Result of a decoder operation.
  */
-interface DecoderResult {
+export interface DecoderResult {
     decodedText: string;
     bytesConsumed: number;
 }
