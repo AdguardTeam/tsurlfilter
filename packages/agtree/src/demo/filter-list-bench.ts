@@ -21,14 +21,38 @@ const FILTER_LIST = 'adg-base.txt';
         ...defaultParserOptions,
         tolerant: true,
         isLocIncluded: false,
+        ignoreComments: true,
     });
 
     if (node === null) {
         throw new Error('Parsing failed');
     }
 
+    const ITERS = 10;
+
+    // benchmark parsing
+    const parsingTimes: number[] = [];
+    for (let i = 0; i < ITERS; i += 1) {
+        const start = performance.now();
+        FilterListParser.parse(filterListContent, {
+            ...defaultParserOptions,
+            tolerant: true,
+            isLocIncluded: false,
+        });
+        parsingTimes.push(performance.now() - start);
+    }
+    console.log('Average parsing time (ms):', parsingTimes.reduce((a, b) => a + b, 0) / ITERS);
+
+    // cloning benchmark
+    const cloningTimes: number[] = [];
+    for (let i = 0; i < ITERS; i += 1) {
+        const start = performance.now();
+        structuredClone(node);
+        cloningTimes.push(performance.now() - start);
+    }
+    console.log('Average cloning time (ms):', cloningTimes.reduce((a, b) => a + b, 0) / ITERS);
+
     // benchmark serialization
-    const ITERS = 20;
     const times: number[] = [];
 
     for (let i = 0; i < ITERS; i += 1) {
