@@ -3,7 +3,7 @@
  *
  * ! Please ALWAYS use the "yarn build" command for building!
  */
-
+import { fileURLToPath } from 'node:url';
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -15,10 +15,13 @@ import { getBabelOutputPlugin } from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import yaml from '@rollup/plugin-yaml';
-import path from 'path';
-import { readFileSync } from 'fs';
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
-const ROOT_DIR = './';
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const ROOT_DIR = __dirname;
 const BASE_FILE_NAME = 'agtree';
 const BASE_NAME = 'AGTree';
 const PKG_FILE_NAME = 'package.json';
@@ -54,6 +57,7 @@ const banner = `/*
 
 // Pre-configured TypeScript plugin
 const typeScriptPlugin = typescript({
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
     compilerOptions: {
         // Don't emit declarations, we will do it in a separate command
         declaration: false,
@@ -101,7 +105,7 @@ const nodePlugins = (esm = false) => [
 ];
 
 // Plugins for browser builds
-const browserPlugins = [
+export const browserPlugins = [
     ...commonPlugins,
     nodePolyfills(),
     // Provide better browser compatibility with Babel
