@@ -835,6 +835,12 @@ export class CosmeticRuleParser extends ParserBase {
         return result;
     }
 
+    /**
+     * Serializes an element hiding rule body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     private static serializeElementHidingBody(node: ElementHidingRuleBody, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ElementHidingRuleBody);
 
@@ -854,7 +860,13 @@ export class CosmeticRuleParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
-    private static deserializeElementHidingBody(buffer: InputByteBuffer, node: ElementHidingRuleBody): void {
+    /**
+     * Deserializes an element hiding rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    private static deserializeElementHidingBody(buffer: InputByteBuffer, node: Partial<ElementHidingRuleBody>): void {
         buffer.assertUint8(BinaryTypeMap.ElementHidingRuleBody);
 
         node.type = 'ElementHidingRuleBody';
@@ -882,6 +894,12 @@ export class CosmeticRuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Serializes a CSS injection rule body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     private static serializeCssInjectionBody(node: CssInjectionRuleBody, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.CssInjectionRuleBody);
 
@@ -915,6 +933,12 @@ export class CosmeticRuleParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
+    /**
+     * Deserializes CSS injection rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     private static deserializeCssInjectionBody(buffer: InputByteBuffer, node: CssInjectionRuleBody): void {
         buffer.assertUint8(BinaryTypeMap.CssInjectionRuleBody);
 
@@ -956,6 +980,12 @@ export class CosmeticRuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Serializes a cosmetic rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     public static serialize(node: AnyCosmeticRule, buffer: OutputByteBuffer): void {
         // FIXME
         // specific properties
@@ -1057,6 +1087,12 @@ export class CosmeticRuleParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
+    /**
+     * Deserializes a cosmetic rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     public static deserialize(buffer: InputByteBuffer, node: Partial<AnyCosmeticRule>): void {
         const type = COSMETIC_RULE_TYPE_DESERIALIZATION_MAP.get(buffer.readUint8());
         if (isUndefined(type)) {

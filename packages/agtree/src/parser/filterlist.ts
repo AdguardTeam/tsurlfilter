@@ -167,8 +167,14 @@ export class FilterListParser extends ParserBase {
         return result;
     }
 
-    // FIXME: jsdoc, raws (nl)
+    // FIXME: raws (nl)
 
+    /**
+     * Serializes a filter list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.FilterListNode);
 
@@ -192,6 +198,12 @@ export class FilterListParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
+    /**
+     * Deserializes a filter list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     public static deserialize(buffer: InputByteBuffer, node: Partial<FilterList>): void {
         buffer.assertUint8(BinaryTypeMap.FilterListNode);
 

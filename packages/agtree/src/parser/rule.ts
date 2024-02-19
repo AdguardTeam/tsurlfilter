@@ -250,6 +250,12 @@ export class RuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Serializes an empty rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     public static serializeEmptyRule(node: EmptyRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.EmptyRule);
 
@@ -266,6 +272,12 @@ export class RuleParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
+    /**
+     * Deserializes an empty rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     public static deserializeEmptyRule(buffer: InputByteBuffer, node: EmptyRule): void {
         buffer.assertUint8(BinaryTypeMap.EmptyRule);
 
@@ -291,6 +303,12 @@ export class RuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Serializes an invalid rule error node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     public static serializeInvalidRuleErrorNode(node: InvalidRuleError, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.InvalidRuleErrorNode);
 
@@ -313,6 +331,12 @@ export class RuleParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
+    /**
+     * Deserializes an invalid rule error node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     public static deserializeInvalidRuleErrorNode(buffer: InputByteBuffer, node: Partial<InvalidRuleError>): void {
         buffer.assertUint8(BinaryTypeMap.InvalidRuleErrorNode);
 
@@ -344,6 +368,12 @@ export class RuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Serializes an invalid rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     public static serializeInvalidRule(node: InvalidRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.InvalidRule);
 
@@ -363,6 +393,12 @@ export class RuleParser extends ParserBase {
         buffer.writeUint8(NULL);
     }
 
+    /**
+     * Deserializes an invalid rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     public static deserializeInvalidRule(buffer: InputByteBuffer, node: InvalidRule): void {
         buffer.assertUint8(BinaryTypeMap.InvalidRule);
 
@@ -392,6 +428,12 @@ export class RuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Serializes a rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
     public static serialize(node: AnyRule, buffer: OutputByteBuffer): void {
         switch (node.category) {
             case RuleCategory.Comment:
@@ -419,6 +461,12 @@ export class RuleParser extends ParserBase {
         }
     }
 
+    /**
+     * Deserializes a rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
     public static deserialize(buffer: InputByteBuffer, node: Partial<AnyRule>): void {
         // lookup instead of storing +1 byte
         const type = buffer.peekUint8();
