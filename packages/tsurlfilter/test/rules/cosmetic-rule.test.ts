@@ -806,7 +806,7 @@ describe('Javascript rules', () => {
             return (new CosmeticRule(ruleText, 0)).scriptletParams.toString();
         };
         expect(getScriptletContent("example.org#%#//scriptlet('log', 'arg')")).toBe("//scriptlet('log', 'arg')");
-        expect(getScriptletContent('example.org#%#//scriptlet()')).toBe('//scriptlet()');
+        expect(getScriptletContent('example.org#@%#//scriptlet()')).toBe('//scriptlet()');
         expect(getScriptletContent('example.org#@%#//scriptlet("set-cookie")')).toBe("//scriptlet('set-cookie')");
         expect(getScriptletContent('example.org#@%#//scriptlet("set-cookie")')).toBe("//scriptlet('set-cookie')");
 
