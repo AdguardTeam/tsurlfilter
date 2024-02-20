@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
-- Add possibility to allowlist scriptlets [#377](https://github.com/AdguardTeam/Scriptlets/issues/377)
+- Add possibility to allowlist scriptlets by name [#377].
+
+[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
 ## [2.2.14] - 2024-02-13
 
