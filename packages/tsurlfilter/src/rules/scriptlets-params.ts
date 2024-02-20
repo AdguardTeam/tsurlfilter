@@ -50,20 +50,20 @@ export class ScriptletsParams {
      * Returns normalized string representation of the scriptlet rule content
      */
     toString(): string {
-        // Process arguments to handle escaping properly
-        const argsStr = this.args
-            .map(ScriptletsParams.adjustQuoteEscaping)
-            .join("', '");
-
-        if (!this.name && argsStr.length === 0) {
+        if (!this.name) {
             return `${ADG_SCRIPTLET_MASK}()`;
         }
 
-        if (argsStr.length === 0) {
-            return `${ADG_SCRIPTLET_MASK}('${this.name}')`;
-        }
+        // Process arguments to handle escaping properly
+        const args = this.args
+            .map(ScriptletsParams.adjustQuoteEscaping);
 
-        return `${ADG_SCRIPTLET_MASK}('${this.name}', '${argsStr}')`;
+        // append scriptlet name to the arguments' head
+        args.unshift(this.name);
+
+        const argsStr = args.join("', '");
+
+        return `${ADG_SCRIPTLET_MASK}('${argsStr}')`;
     }
 
     /**
