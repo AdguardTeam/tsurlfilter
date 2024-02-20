@@ -72,11 +72,16 @@ export class CosmeticLookupTable {
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
             if (rule.isScriptlet) {
+                // Store scriptlet rules by name to enable the possibility of allowlisting them.
+                // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
                 if (rule.scriptletParams.name !== undefined) {
                     this.addAllowlistRule(rule.scriptletParams.name, storageIdx);
                 }
+                // Use normalized scriptlet content for better matching.
+                // For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
                 this.addAllowlistRule(rule.scriptletParams.toString(), storageIdx);
             } else {
+                // Store all other rules by their content.
                 this.addAllowlistRule(rule.getContent(), storageIdx);
             }
             return;
