@@ -8,8 +8,14 @@ import { getErrorMessage } from '../common/error';
  * It is used in the lazy way, so the parsing is done only when the properties are accessed.
  */
 export class ScriptletsParams {
+    /**
+     * Parsed scriptlet properties
+     */
     parsedProps: ScriptletsProps | null = null;
 
+    /**
+     * Scriptlet rule content
+     */
     ruleContent: string;
 
     constructor(content: string) {
