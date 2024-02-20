@@ -683,7 +683,8 @@ export class CosmeticRule implements rule.IRule {
             return;
         }
 
-        // A scriptlet without a name can only be an allowlist scriptlet,
+        // A scriptlet without a name can only be an allowlist scriptlet
+        // https://github.com/AdguardTeam/Scriptlets/issues/377
         // or it is considered invalid if the scriptlet was invalid.
         // This does not require finding scriptData and scriptletData.
         if (!this.scriptletParams.name) {
