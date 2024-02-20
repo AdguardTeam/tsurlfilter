@@ -55,8 +55,8 @@ export class CosmeticLookupTable {
 
     /**
      * Adds rule to the allowlist map
-     * @param key
-     * @param storageIdx
+     * @param key Can be used any string, but here we use ruleContent, scriptlet content, or scriptlet name.
+     * @param storageIdx Index of the rule.
      */
     addAllowlistRule(key: string, storageIdx: number): void {
         const existingRules = this.allowlist.get(key) || [];
