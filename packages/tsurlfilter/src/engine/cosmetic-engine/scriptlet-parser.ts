@@ -1,8 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-classes-per-file */
+/**
+ * Represents scriptlet properties parsed from the rule content.
+ */
+export type ScriptletsProps = {
+    name: string;
+    args: string[],
+};
+
 /**
  * Scriptlets helper class
  */
-// eslint-disable-next-line max-classes-per-file
 export class ScriptletParser {
     /**
      * Helper class to accumulate an array of strings char by char
@@ -132,12 +139,15 @@ export class ScriptletParser {
     /**
      * Parses and validates scriptlet rule content
      * @param scriptletContent scriptlet rule content, all after "//scriptlet"
+     *
      * @returns parsed name and args
+     * @throws Error if the scriptlet is invalid
      */
-    public static parseRule(scriptletContent: string): { name: string | null; args: string[] } {
+    public static parseRule(scriptletContent: string): ScriptletsProps {
+        // Special case for allowlist scriptlets
         if (scriptletContent === '()') {
             return {
-                name: null,
+                name: '',
                 args: [],
             };
         }
@@ -162,6 +172,11 @@ export class ScriptletParser {
         }
 
         const args = saver.getAll();
+
+        // If there is no name, it means that the scriptlet is invalid
+        if (!args[0]) {
+            throw new Error(`Invalid scriptlet ${scriptletContent}`);
+        }
 
         return {
             name: args[0],

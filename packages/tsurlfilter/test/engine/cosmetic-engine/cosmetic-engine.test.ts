@@ -317,22 +317,43 @@ describe('Test cosmetic engine - JS rules', () => {
         expect(scriptletData.func.name).toBe('log');
     });
 
-    it('checks scriptlet exceptions', () => {
-        const ruleContent = "//scriptlet('abort-on-property-read', 'I10C')";
-        const jsRule = `testcases.adguard.com,surge.sh#%#${ruleContent}`;
-        const jsExceptionRule = `testcases.adguard.com,surge.sh#@%#${ruleContent}`;
-        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
-            jsRule,
-            jsExceptionRule,
-        ]));
-
-        const result = cosmeticEngine.match(createRequest('testcases.adguard.com'), CosmeticOption.CosmeticOptionAll);
-
-        expect(result.JS.specific.length).toBe(0);
-        expect(result.JS.generic.length).toBe(0);
-    });
-
     describe('scriptlets exceptions', () => {
+        it('checks scriptlet exceptions', () => {
+            const ruleContent = "//scriptlet('abort-on-property-read', 'I10C')";
+            const jsRule = `testcases.adguard.com,surge.sh#%#${ruleContent}`;
+            const jsExceptionRule = `testcases.adguard.com,surge.sh#@%#${ruleContent}`;
+            const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+                jsRule,
+                jsExceptionRule,
+            ]));
+
+            const result = cosmeticEngine.match(
+                createRequest('testcases.adguard.com'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
+        it('checks scriptlet exception even if content has different quotes', () => {
+            const jsRule = String.raw`testcases.adguard.com,surge.sh#%#//scriptlet('abort-on-property-read', 'I10\'C')`;
+            // eslint-disable-next-line max-len
+            const jsExceptionRule = String.raw`testcases.adguard.com,surge.sh#@%#//scriptlet("abort-on-property-read", "I10'C")`;
+            const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, [
+                jsRule,
+                jsExceptionRule,
+            ]));
+
+            const result = cosmeticEngine.match(
+                createRequest('testcases.adguard.com'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(0);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
         it('generic #@%#//scriptlet() disables all scriptlet rules', () => {
             const allowlistScriptletRule = '#@%#//scriptlet()';
             const specificScriptletRule = "example.org#%#//scriptlet('set-cookie', 'adcook2', '2')";
@@ -348,6 +369,7 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(result.JS.specific.length).toBe(0);
             expect(result.JS.generic.length).toBe(0);
         });
+
         it('specific #@%#//scriptlet() disables all scriptlet rules only matching request', () => {
             const allowlistScriptletRule = 'example.org#@%#//scriptlet()';
             const specificScriptletRule = "example.org#%#//scriptlet('set-cookie', 'adcook2', '2')";

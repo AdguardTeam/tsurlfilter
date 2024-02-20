@@ -40,15 +40,6 @@ export class CosmeticLookupTable {
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * Map just for special allowlist scriptlet rules indices. Key is the scriptlet name.
-     * Examples of rules:
-     * - #@%#//scriptlet()
-     * - example.org#@%#//scriptlet()
-     * - #@%#//scriptlet("set-cookie")
-     */
-    private allowlistScriptlets: Map<null | string, number[]>;
-
-    /**
      * Creates a new instance
      *
      * @param storage rules storage. We store "rule indexes" in the lookup table which
@@ -59,8 +50,18 @@ export class CosmeticLookupTable {
         this.wildcardRules = [] as CosmeticRule[];
         this.genericRules = [] as CosmeticRule[];
         this.allowlist = new Map();
-        this.allowlistScriptlets = new Map();
         this.ruleStorage = storage;
+    }
+
+    /**
+     * Adds rule to the allowlist map
+     * @param key
+     * @param storageIdx
+     */
+    addAllowlistRule(key: string, storageIdx: number): void {
+        const existingRules = this.allowlist.get(key) || [];
+        existingRules.push(storageIdx);
+        this.allowlist.set(key, existingRules);
     }
 
     /**
@@ -70,21 +71,14 @@ export class CosmeticLookupTable {
      */
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
-            if (
-                rule.scriptletOptions
-                && rule.scriptletOptions.name !== undefined
-                && rule.scriptletOptions.args.length === 0
-            ) {
-                const { name } = rule.scriptletOptions;
-                const existingRules = this.allowlistScriptlets.get(name) || [];
-                existingRules.push(storageIdx);
-                this.allowlistScriptlets.set(name, existingRules);
-                return;
+            if (rule.isScriptlet) {
+                if (rule.scriptletParams.name !== undefined) {
+                    this.addAllowlistRule(rule.scriptletParams.name, storageIdx);
+                }
+                this.addAllowlistRule(rule.scriptletParams.toString(), storageIdx);
+            } else {
+                this.addAllowlistRule(rule.getContent(), storageIdx);
             }
-            const key = rule.getContent();
-            const existingRules: number[] = this.allowlist.get(key) || [];
-            existingRules.push(storageIdx);
-            this.allowlist.set(key, existingRules);
             return;
         }
 
@@ -148,13 +142,13 @@ export class CosmeticLookupTable {
      * 1. If there's a generic allowlist rule applicable to all sites.
      * 2. If there's a specific allowlist rule that matches the request.
      *
-     * @param name Name of the scriptlet. `null` searches for scriptlets allowlisted globally.
+     * @param name Name of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
      * @param request Request details to match against allowlist rules.
      * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
-    isScriptletAllowlistedByName = (name: string | null, request: Request) => {
+    isScriptletAllowlistedByName = (name: string, request: Request) => {
         // check for rules with names
-        const allowlistScriptletRulesIndexes = this.allowlistScriptlets.get(name);
+        const allowlistScriptletRulesIndexes = this.allowlist.get(name);
         if (allowlistScriptletRulesIndexes) {
             const rules = allowlistScriptletRulesIndexes
                 .map((i) => {
@@ -183,14 +177,16 @@ export class CosmeticLookupTable {
      * @param rule
      */
     isAllowlisted(request: Request, rule: CosmeticRule): boolean {
-        if (rule.scriptletOptions) {
-            // null is a special case for scriptlet when the allowlist scriptlet has no name
+        if (rule.isScriptlet) {
+            // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
             // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();
-            if (this.isScriptletAllowlistedByName(null, request)) {
+            const EMPTY_SCRIPTLET_NAME = '';
+            if (this.isScriptletAllowlistedByName(EMPTY_SCRIPTLET_NAME, request)) {
                 return true;
             }
 
-            if (this.isScriptletAllowlistedByName(rule.scriptletOptions.name, request)) {
+            if (rule.scriptletParams.name !== undefined
+                && this.isScriptletAllowlistedByName(rule.scriptletParams.name, request)) {
                 return true;
             }
         }
