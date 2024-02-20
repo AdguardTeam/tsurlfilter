@@ -82,7 +82,7 @@ export class ScriptletsParams {
     }
 
     /**
-     * Returns scriptlet name
+     * Returns scriptlet name, if present
      */
     get name(): string | undefined {
         return this.props?.name;
