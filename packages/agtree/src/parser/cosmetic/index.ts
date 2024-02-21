@@ -55,6 +55,14 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
 import { isUndefined } from '../../utils/type-guards';
 
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
+ */
 const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
     ['##', 0],
     ['#@#', 1],
@@ -74,10 +82,18 @@ const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
     ['$@$', 11],
 ]);
 
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
 const SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
     Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
 
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
 const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMap, CosmeticRuleType>([
     [BinaryTypeMap.ElementHidingRule, CosmeticRuleType.ElementHidingRule],
     [BinaryTypeMap.CssInjectionRule, CosmeticRuleType.CssInjectionRule],
@@ -86,12 +102,28 @@ const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMap, CosmeticRu
     [BinaryTypeMap.HtmlFilteringRule, CosmeticRuleType.HtmlFilteringRule],
 ]);
 
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
+ */
 const enum ElementHidingRuleSerializationMap {
     SelectorList = 1,
     Start,
     End,
 }
 
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
+ */
 const enum CssInjectionRuleSerializationMap {
     SelectorList = 1,
     DeclarationList,
@@ -101,6 +133,14 @@ const enum CssInjectionRuleSerializationMap {
     End,
 }
 
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
+ */
 const enum CosmeticRuleSerializationMap {
     Syntax = 1,
     Exception,

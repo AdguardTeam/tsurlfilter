@@ -20,6 +20,14 @@ import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
+ *
+ * @note Only 256 values can be represented this way.
+ */
 const enum FilterListNodeSerializationMap {
     Children = 1,
     Start,
