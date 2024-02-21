@@ -490,10 +490,10 @@ describe('AgentCommentRuleParser', () => {
             '[Adblock Plus 3.1; AdGuard]',
 
             // shorthands
-            ['[abp]', '[Adblock Plus]'],
-            ['[adg]', '[AdGuard]'],
-            ['[abp 2.0]', '[Adblock Plus 2.0]'],
-            ['[abp 3.1; adg]', '[Adblock Plus 3.1; AdGuard]'],
+            ['[abp]', '[ABP]'],
+            ['[adg]', '[ADG]'],
+            ['[abp 2.0]', '[ABP 2.0]'],
+            ['[abp 3.1; adguard]', '[ABP 3.1; AdGuard]'],
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(AgentCommentRuleParser);
         });

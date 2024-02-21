@@ -74,10 +74,6 @@ expect.extend({
                         raw,
                         {
                             ...defaultParserOptions,
-                            // FIXME: handle location if input and expected are different, like in the agent below:
-                            // [adg 1.0] vs [AdGuard 1.0]
-                            // omit location data
-                            isLocIncluded: false,
                             // TODO: add support for raws, if ever needed
                             parseRaws: false,
                         },

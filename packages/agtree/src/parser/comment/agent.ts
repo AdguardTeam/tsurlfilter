@@ -58,6 +58,27 @@ const ABP_NAME_MARKERS = new Set([
 ]);
 
 /**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
+    // AdGuard
+    [0, 'AdGuard'],
+    [1, 'ADG'],
+
+    // uBlock Origin
+    [2, 'uBlock Origin'],
+    [3, 'uBlock'],
+    [4, 'uBO'],
+
+    // Adblock Plus
+    [5, 'Adblock Plus'],
+    [6, 'AdblockPlus'],
+    [7, 'ABP'],
+    [8, 'AdBlock'],
+]);
+
+/**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  *
@@ -65,27 +86,9 @@ const ABP_NAME_MARKERS = new Set([
  *
  * @note Only 256 values can be represented this way.
  */
-const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>([
-    // AdGuard
-    ...Array.from(ADG_NAME_MARKERS).map((name) => [name, 0] as const),
-    // uBlock Origin
-    ...Array.from(UBO_NAME_MARKERS).map((name) => [name, 1] as const),
-    // Adblock Plus
-    ...Array.from(ABP_NAME_MARKERS).map((name) => [name, 2] as const),
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * @note While `FREQUENT_AGENTS_SERIALIZATION_MAP` support multiple forms, this map only supports the "canonical form".
- * For example, if you serialize 'adg', it would be deserialized as 'AdGuard'.
- */
-const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
-    [0, 'AdGuard'],
-    [1, 'uBlock Origin'],
-    [2, 'Adblock Plus'],
-]);
+const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
+    Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
+);
 
 /**
  * Returns the adblock syntax based on the adblock name parsed from the agent type comment.
