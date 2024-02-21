@@ -72,7 +72,7 @@ describe('Text Encoder and Decoder', () => {
             expected: 'مرحبا بالعالم',
         },
 
-        // FIXME: add more tests
+        // TODO: add more tests
     ])("encode and decode should work for '$actual'", ({ actual, expected }) => {
         const byteBuffer = new ByteBuffer();
         const bytesWritten = encodeText(actual, byteBuffer, 0);
