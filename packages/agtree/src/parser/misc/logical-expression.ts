@@ -531,7 +531,7 @@ export class LogicalExpressionParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
-    // FIXME: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
+    // TODO: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
     private static serializeVariableNode(node: ExpressionVariableNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ExpressionVariableNode);
 
