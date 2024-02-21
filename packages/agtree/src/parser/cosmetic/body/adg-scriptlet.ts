@@ -48,70 +48,69 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
     };
 
     /**
-     * Value map for binary deserialization. This helps to reduce the size of the serialized data,
-     * as it allows us to use a single byte to represent frequently used values.
-     */
-    private static readonly FREQUENT_ARGS_DESERIALIZATION_MAP = new Map<number, string>([
-        [0, 'abort-current-inline-script'],
-        [1, 'abort-on-property-read'],
-        [2, 'abort-on-property-write'],
-        [3, 'abort-on-stack-trace'],
-        [4, 'adjust-setInterval'],
-        [5, 'adjust-setTimeout'],
-        [6, 'close-window'],
-        [7, 'debug-current-inline-script'],
-        [8, 'debug-on-property-read'],
-        [9, 'debug-on-property-write'],
-        [10, 'dir-string'],
-        [11, 'disable-newtab-links'],
-        [12, 'evaldata-prune'],
-        [13, 'json-prune'],
-        [14, 'log'],
-        [15, 'log-addEventListener'],
-        [16, 'log-eval'],
-        [17, 'log-on-stack-trace'],
-        [18, 'm3u-prune'],
-        [19, 'noeval'],
-        [20, 'nowebrtc'],
-        [21, 'no-topics'],
-        [22, 'prevent-addEventListener'],
-        [23, 'prevent-adfly'],
-        [24, 'prevent-bab'],
-        [25, 'prevent-eval-if'],
-        [26, 'prevent-fab-3.2.0'],
-        [27, 'prevent-fetch'],
-        [28, 'prevent-xhr'],
-        [29, 'prevent-popads-net'],
-        [30, 'prevent-refresh'],
-        [31, 'prevent-requestAnimationFrame'],
-        [32, 'prevent-setInterval'],
-        [33, 'prevent-setTimeout'],
-        [34, 'prevent-window-open'],
-        [35, 'remove-attr'],
-        [36, 'remove-class'],
-        [37, 'remove-cookie'],
-        [38, 'remove-node-text'],
-        [39, 'set-attr'],
-        [40, 'set-constant'],
-        [41, 'set-cookie'],
-        [42, 'set-cookie-reload'],
-        [43, 'set-local-storage-item'],
-        [44, 'set-popads-dummy'],
-        [45, 'set-session-storage-item'],
-        [46, 'xml-prune'],
-    ]);
-
-    /**
      * Value map for binary serialization. This helps to reduce the size of the serialized data,
      * as it allows us to use a single byte to represent frequently used values.
      *
      * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
      *
      * @note Only 256 values can be represented this way.
-     * @note We generate serialization map from deserialization map to keep capital characters.
      */
-    private static readonly FREQUENT_ARGS_SERIALIZATION_MAP = new Map<string, number>(
-        Array.from(this.FREQUENT_ARGS_DESERIALIZATION_MAP.entries()).map(([key, value]) => [value.toLowerCase(), key]),
+    private static readonly FREQUENT_ARGS_SERIALIZATION_MAP = new Map<string, number>([
+        ['abort-current-inline-script', 0],
+        ['abort-on-property-read', 1],
+        ['abort-on-property-write', 2],
+        ['abort-on-stack-trace', 3],
+        ['adjust-setInterval', 4],
+        ['adjust-setTimeout', 5],
+        ['close-window', 6],
+        ['debug-current-inline-script', 7],
+        ['debug-on-property-read', 8],
+        ['debug-on-property-write', 9],
+        ['dir-string', 10],
+        ['disable-newtab-links', 11],
+        ['evaldata-prune', 12],
+        ['json-prune', 13],
+        ['log', 14],
+        ['log-addEventListener', 15],
+        ['log-eval', 16],
+        ['log-on-stack-trace', 17],
+        ['m3u-prune', 18],
+        ['noeval', 19],
+        ['nowebrtc', 20],
+        ['no-topics', 21],
+        ['prevent-addEventListener', 22],
+        ['prevent-adfly', 23],
+        ['prevent-bab', 24],
+        ['prevent-eval-if', 25],
+        ['prevent-fab-3.2.0', 26],
+        ['prevent-fetch', 27],
+        ['prevent-xhr', 28],
+        ['prevent-popads-net', 29],
+        ['prevent-refresh', 30],
+        ['prevent-requestAnimationFrame', 31],
+        ['prevent-setInterval', 32],
+        ['prevent-setTimeout', 33],
+        ['prevent-window-open', 34],
+        ['remove-attr', 35],
+        ['remove-class', 36],
+        ['remove-cookie', 37],
+        ['remove-node-text', 38],
+        ['set-attr', 39],
+        ['set-constant', 40],
+        ['set-cookie', 41],
+        ['set-cookie-reload', 42],
+        ['set-local-storage-item', 43],
+        ['set-popads-dummy', 44],
+        ['set-session-storage-item', 45],
+        ['xml-prune', 46],
+    ]);
+
+    /**
+     * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+     * as it allows us to use a single byte to represent frequently used values.
+     */
+    private static readonly FREQUENT_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+        Array.from(this.FREQUENT_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
     );
 
     /**
