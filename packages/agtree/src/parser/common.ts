@@ -239,31 +239,39 @@ export const enum BinaryTypeMap {
     String,
 
     // AGTree nodes
-    // FIXME: add all types and group them properly
     FilterListNode,
     EmptyRule,
     InvalidRule,
 
-    InvalidRuleErrorNode,
+    CommentRuleNode,
+    AgentNode,
+    AgentRuleNode,
+    HintNode,
+    HintRuleNode,
+    MetadataCommentRuleNode,
+    ConfigCommentRuleNode,
+    PreProcessorCommentRuleNode,
+    ConfigNode,
+
+    NetworkRuleNode,
+
+    ElementHidingRule,
+    CssInjectionRule,
+    ScriptletInjectionRule,
+    JsInjectionRule,
+    HtmlFilteringRule,
+
+    ScriptletInjectionRuleBodyNode,
+    ElementHidingRuleBody,
+    CssInjectionRuleBody,
+    HtmlFilteringRuleBody,
+    JsInjectionRuleBody,
 
     ValueNode,
     RawNode,
     ModifierNode,
     ModifierListNode,
-    NetworkRuleNode,
-    AgentNode,
-    AgentRuleNode,
-    HintNode,
-    HintRuleNode,
     ParameterListNode,
-    MetadataCommentRuleNode,
-    ExpressionVariableNode,
-    ExpressionOperatorNode,
-    ExpressionParenthesisNode,
-    ConfigCommentRuleNode,
-    ConfigNode,
-    PreProcessorCommentRuleNode,
-    CommentRuleNode,
     DomainListNode,
     DomainNode,
     MethodListNode,
@@ -272,16 +280,12 @@ export const enum BinaryTypeMap {
     StealthOptionNode,
     AppListNode,
     AppNode,
-    ScriptletInjectionRuleBodyNode,
-    ElementHidingRuleBody,
-    CssInjectionRuleBody,
-    HtmlFilteringRuleBody,
-    JsInjectionRuleBody,
-    ElementHidingRule,
-    CssInjectionRule,
-    ScriptletInjectionRule,
-    JsInjectionRule,
-    HtmlFilteringRule,
+
+    InvalidRuleErrorNode,
+
+    ExpressionVariableNode,
+    ExpressionOperatorNode,
+    ExpressionParenthesisNode,
 }
 
 /**
