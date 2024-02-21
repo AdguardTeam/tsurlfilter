@@ -1,5 +1,5 @@
 import { Engine } from '../../src/engine/engine';
-import { StringRuleList } from '../../src/filterlist/rule-list';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
@@ -11,7 +11,7 @@ const createRequest = (url: string): Request => new Request(url, null, RequestTy
 describe('Engine Tests', () => {
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
-        const list = new StringRuleList(1, rules.join('\n'), false);
+        const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
         expect(engine.getRulesCount()).toBe(1);
@@ -40,7 +40,7 @@ describe('Engine Tests', () => {
     it('works if frame matches rule', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];
-        const list = new StringRuleList(1, rules.join('\n'), false);
+        const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
         expect(engine.getRulesCount()).toBe(1);
@@ -63,7 +63,7 @@ describe('Engine Tests', () => {
 
 describe('TestEngine - postponed load rules', () => {
     const rules = ['||example.org^$third-party', 'example.org##banner'];
-    const list = new StringRuleList(1, rules.join('\n'), false);
+    const list = new BufferRuleList(1, rules.join('\n'), false);
     const ruleStorage = new RuleStorage([list]);
 
     it('works rules are loaded', () => {
@@ -89,7 +89,7 @@ describe('TestEngine - postponed load rules', () => {
 
 describe('TestEngine - configuration', () => {
     const rules = ['||example.org^$third-party'];
-    const list = new StringRuleList(1, rules.join('\n'), false);
+    const list = new BufferRuleList(1, rules.join('\n'), false);
     setConfiguration({
         engine: 'test-engine',
         version: 'test-version',
@@ -111,7 +111,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const removeParamRule = '||example.org^$removeparam=p1';
         const rules = [cspRule, replaceRule, cookieRule, removeParamRule];
 
-        const list = new StringRuleList(1, rules.join('\n'), false);
+        const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
         const request = new Request('https://example.org', '', RequestType.Document);
@@ -136,7 +136,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const allowlistBadfilterRule = '@@/fuckadblock.min.js$domain=example.org,badfilter';
         const badfilterRule = '/fuckadblock.min.js$badfilter';
 
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             redirectRule,
             allowlistRule,
             badfilterRule,
@@ -190,7 +190,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
 
 describe('TestEngineMatchRequest - redirect modifier', () => {
     it('checks if with redirect modifier resource type is not ignored', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=1x1-transparent.gif',
@@ -209,7 +209,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks if with allowlist redirect modifier resource type is not ignored', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=1x1-transparent.gif,image',
         ].join('\n'));
@@ -232,7 +232,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks that unrelated exception does not exclude other blocking rules', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=2x2-transparent.png',
         ].join('\n'));
@@ -250,7 +250,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
             '||ya.ru$redirect=2x2-transparent.png',
@@ -275,7 +275,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule - resource type', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
             '||ya.ru$redirect=2x2-transparent.png',
@@ -302,7 +302,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
 
 describe('TestEngineMatchRequest - redirect-rule modifier', () => {
     it('checks if redirect-rule is found for blocked requests only', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||example.org/script.js',
             '||example.org^$redirect-rule=noopjs',
         ].join('\n'));
@@ -328,7 +328,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
     });
 
     it('checks if redirect-rule is negated by allowlist $redirect rule', () => {
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             '||example.org/script.js',
             '||example.org^$redirect-rule=noopjs',
             '@@||example.org/script.js?unblock$redirect',
@@ -367,7 +367,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
 describe('TestEngineMatchRequest - document modifier', () => {
     it('respects document modifier request type in blocking rules', () => {
         const documentBlockingRuleText = '||example.org^$document';
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             documentBlockingRuleText,
         ].join('\n'));
 
@@ -389,7 +389,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
 
     it('respects document modifier request type in blocking rules - other request types', () => {
         const documentBlockingRuleText = '||example.org^$document,script';
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             documentBlockingRuleText,
         ].join('\n'));
 
@@ -414,7 +414,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
 describe('TestEngineMatchRequest - all modifier', () => {
     it('respects $all modifier with all request types in blocking rules', () => {
         const allBlockingRuleText = '||example.org^$all';
-        const baseRuleList = new StringRuleList(1, [
+        const baseRuleList = new BufferRuleList(1, [
             allBlockingRuleText,
         ].join('\n'));
 
@@ -460,7 +460,7 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         extCssGenericRule,
     ];
 
-    const list = new StringRuleList(1, rules.join('\n'), false);
+    const list = new BufferRuleList(1, rules.join('\n'), false);
     const engine = new Engine(new RuleStorage([list]));
 
     it('works if returns correct cosmetic elemhide result', () => {
@@ -516,7 +516,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         extCssGenericCssRule,
     ];
 
-    const list = new StringRuleList(1, rules.join('\n'), false);
+    const list = new BufferRuleList(1, rules.join('\n'), false);
     const engine = new Engine(new RuleStorage([list]));
 
     it('works if returns correct cosmetic css result', () => {
@@ -570,7 +570,7 @@ describe('TestEngineCosmeticResult - js', () => {
     it('matches wildcard cosmetic rules with private domains (com.ru)', () => {
         const hidingRule = 'flightradar24.*##body';
         const jsRule = 'flightradar24.*#%#alert(1);';
-        const list = new StringRuleList(
+        const list = new BufferRuleList(
             1,
             [hidingRule, jsRule].join('\n'),
             false,
@@ -586,7 +586,7 @@ describe('TestEngineCosmeticResult - js', () => {
     });
 
     it('works if returns correct cosmetic js result', () => {
-        const list = new StringRuleList(1, rules.join('\n'), false);
+        const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
         let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
@@ -606,7 +606,7 @@ describe('TestEngineCosmeticResult - js', () => {
     });
 
     it('works javascript rules are ignored with filter list setting', () => {
-        const list = new StringRuleList(1, rules.join('\n'), false, true);
+        const list = new BufferRuleList(1, rules.join('\n'), false, true);
         const engine = new Engine(new RuleStorage([list]));
 
         let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
@@ -631,7 +631,7 @@ describe('$urlblock modifier', () => {
         const important = '||example.com$important';
         const urlblock = '@@||example.org$urlblock';
 
-        const list = new StringRuleList(1, [important, urlblock].join('\n'));
+        const list = new BufferRuleList(1, [important, urlblock].join('\n'));
         const engine = new Engine(new RuleStorage([list]));
 
         const frameRule = engine.matchFrame('http://example.org');
@@ -651,7 +651,7 @@ describe('$badfilter modifier', () => {
             '$script,domain=example.com|example.org',
             '$script,domain=example.com,badfilter',
         ];
-        const list = new StringRuleList(1, rules.join('\n'), false);
+        const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = new Engine(new RuleStorage([list]));
 
         expect(engine.getRulesCount()).toBe(2);
@@ -672,7 +672,7 @@ describe('$genericblock modifier', () => {
         const networkGenericRule = '||example.org^';
         const networkNegatedGenericRule = '||domain.com^$domain=~example.com';
 
-        const list = new StringRuleList(1, [
+        const list = new BufferRuleList(1, [
             networkGenericRule,
             networkNegatedGenericRule,
             genericblockRule,
@@ -703,7 +703,7 @@ describe('Match subdomains', () => {
             specificHidingRule,
             specificHidingRuleSubdomain,
         ];
-        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const list = new BufferRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
         let res = engine.getCosmeticResult(createRequest('https://www.example.org'), CosmeticOption.CosmeticOptionAll);
@@ -726,7 +726,7 @@ describe('Match subdomains', () => {
             specificHidingRuleWithWww,
             specificHidingRuleWithoutWww,
         ];
-        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const list = new BufferRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
         let res = engine.getCosmeticResult(createRequest('https://i.ua'), CosmeticOption.CosmeticOptionAll);
@@ -751,7 +751,7 @@ describe('Match subdomains', () => {
             otherSubDomainScriptletRule,
         ];
 
-        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const list = new BufferRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
         const resOne = engine.getCosmeticResult(
@@ -776,7 +776,7 @@ describe('Match subdomains', () => {
     it('should match rules with tld domain only', () => {
         const hidingRule = 'org##body';
         const rules = [hidingRule];
-        const list = new StringRuleList(1, rules.join('\n'), false, false);
+        const list = new BufferRuleList(1, rules.join('\n'), false, false);
         const engine = new Engine(new RuleStorage([list]));
 
         let res = engine.getCosmeticResult(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
@@ -795,7 +795,7 @@ describe('$specifichide modifier', () => {
         const genericElemhideRule = '##div';
         const genericCssRuleWithExclusion = '~google.com#$#div { display: none !important }';
         const specifichideRule = '@@||example.org^$specifichide';
-        const list = new StringRuleList(1, [
+        const list = new BufferRuleList(1, [
             elemhideRule,
             cosmeticRule,
             genericCosmeticRule,
@@ -823,7 +823,7 @@ describe('$specifichide modifier', () => {
 describe('Stealth cookie rules', () => {
     it('allowlists stealth cookie rules', () => {
         const stealthCookieRule = '$cookie=/.+/;maxAge=60';
-        let list = new StringRuleList(1, [
+        let list = new BufferRuleList(1, [
             stealthCookieRule,
         ].join('\n'));
         let engine = new Engine(new RuleStorage([list]));
@@ -833,7 +833,7 @@ describe('Stealth cookie rules', () => {
         expect(cookieRules[0].getText()).toBe(stealthCookieRule);
 
         const allowlistRule = '@@||example.org^$stealth,removeparam,cookie';
-        list = new StringRuleList(1, [
+        list = new BufferRuleList(1, [
             stealthCookieRule,
             allowlistRule,
         ].join('\n'));

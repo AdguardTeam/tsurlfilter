@@ -1,5 +1,6 @@
 import {
-    StringRuleList,
+    type IRuleList,
+    BufferRuleList,
     RuleStorage,
     Engine,
     RequestType,
@@ -73,14 +74,14 @@ export class EngineApi {
     async startEngine(config: EngineConfig): Promise<void> {
         const { filters, userrules } = config;
 
-        const lists: StringRuleList[] = [];
+        const lists: IRuleList[] = [];
 
-        // Wrap IFilter to StringRuleList
+        // Wrap IFilter to IRuleList
         const tasks = filters.map(async (filter) => {
             const content = await filter.getContent();
             // TODO: Maybe pass filters content via FilterList to exclude double conversion
             const convertedContent = RuleConverter.convertRules(content.join('\n'));
-            lists.push(new StringRuleList(filter.getId(), convertedContent));
+            lists.push(new BufferRuleList(filter.getId(), convertedContent));
         });
 
         try {
@@ -89,15 +90,15 @@ export class EngineApi {
             const filterListIds = filters.map((f) => f.getId());
 
             // eslint-disable-next-line max-len
-            logger.error(`Cannot create StringRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
+            logger.error(`Cannot create IRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
 
             // Do not return value here because we can try to convert at least user rules.
         }
 
-        // Wrap user rules to StringRuleList
+        // Wrap user rules to IRuleList
         if (userrules.length > 0) {
             const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
-            lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
+            lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
         const ruleStorage = new RuleStorage(lists);

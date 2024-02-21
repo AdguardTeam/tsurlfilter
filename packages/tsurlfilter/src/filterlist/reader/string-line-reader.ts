@@ -1,32 +1,33 @@
-import { ILineReader } from './line-reader';
+import { type ILineReader } from './line-reader';
 
 /**
- * Reads string line by line
+ * StringLineReader is a class responsible for reading content line by line
+ * from a string.
  */
 export class StringLineReader implements ILineReader {
     /**
-     * Full string
+     * Full string to read lines from.
      */
     private readonly text: string;
 
     /**
-     * Current position
+     * Current position of the line reader.
      */
     private currentIndex = 0;
 
     /**
-     * Constructor
+     * Constructor of the StringLineReader.
      *
-     * @param text
+     * @param text - Text to read line by line.
      */
     constructor(text: string) {
         this.text = text;
     }
 
     /**
-     * Reads next line
+     * Reads next line in the reader.
      *
-     * @return text or null on end
+     * @return - Text or null if there's nothing to read left.
      */
     public readLine(): string | null {
         if (this.currentIndex === -1) {
@@ -40,9 +41,21 @@ export class StringLineReader implements ILineReader {
             return this.text.substring(startIndex);
         }
 
+        // Increment to not include the EOL character.
+        const line = this.text.substring(startIndex, this.currentIndex);
+
         this.currentIndex += 1;
 
-        // - 1 in order to exclude EOL
-        return this.text.substring(startIndex, this.currentIndex - 1);
+        return line;
+    }
+
+    /**
+     * Returns the current position of this reader or -1 if there's nothing to
+     * read.
+     *
+     * @returns - The current position or -1.
+     */
+    public getCurrentPos(): number {
+        return this.currentIndex;
     }
 }

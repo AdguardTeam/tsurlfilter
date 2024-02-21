@@ -3,23 +3,98 @@ import fs from 'fs';
 import zlib from 'zlib';
 import console from 'console';
 import { performance } from 'perf_hooks';
-import { NetworkEngine } from '../../src/engine/network-engine';
 import {
+    type IRuleList,
     CosmeticOption,
     Engine,
     Request,
     RequestType,
+    BufferRuleList,
+    StringRuleList,
+    RuleStorage,
+    DnsEngine,
+    CosmeticEngine,
+    setLogger,
 } from '../../src';
-import { StringRuleList } from '../../src/filterlist/rule-list';
-import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { DnsEngine } from '../../src/engine/dns-engine';
-import { setLogger } from '../../src/utils/logger';
-import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
 
-// Benchmarks (Average per request)
-//     ✓ runs network-engine (40 μs)
-//     ✓ runs engine - async load (50 μs)
-//     ✓ runs dns-engine (12 μs)
+/**
+ * The comment below describes the bench test results that are achieved on
+ * different machines. The results are not stable and can vary from machine to
+ * machine, so you need to include your configuration in the comment.
+ *
+ * Machine: MPB, M1 Max, 32GB Ram, node v20.5.0.
+ * ========================================================================
+ *
+ * Benchmark: "Benchmarks runs network-engine with a StringRuleList storage"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 225 ms
+ * Engine memory: 22.81 MB total heap size, 16.07 MB used
+ * Average per request: 17.123 μs
+ * Max per request: 1476.125 μs
+ * Min per request: 0.208 μs
+ * Allocations + cache overhead: 5.5 MB total heap size, 9.86 MB used
+ *
+ * Benchmark: "Benchmarks runs network-engine with a BufferRuleList storage"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 225 ms
+ * Engine memory: 22.81 MB total heap size, 24.83 MB used
+ * Average per request: 16.824 μs
+ * Max per request: 1568.999 μs
+ * Min per request: 0.208 μs
+ * Allocations + cache overhead: 5.5 MB total heap size, -5.22 MB used
+ *
+ * Note: negative values are possible, we don't control GC in these tests.
+ *
+ * Benchmark: "Benchmarks runs network-engine with async load"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 181 ms
+ * Note: smaller time elapsed on parsing is due to how the rules are loaded in
+ * the Engine. If the rules are loaded synchronously, then the engine does
+ * several scans for every engine (network, cosmetic).
+ *
+ * Benchmark: "Benchmarks runs dns-engine with a StringRuleList storage"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 97 ms
+ * Engine memory: 21.36 MB total heap size, 31.18 MB used
+ * Average per request: 3.759 μs
+ * Max per request: 1471.125 μs
+ * Min per request: 0.875 μs
+ * Allocations + cache overhead: 18 MB total heap size, 7.69 MB used
+ *
+ * Benchmark: "Benchmarks runs dns-engine with a BufferRuleList storage"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 109 ms
+ * Engine memory: 19.8 MB total heap size, 22.63 MB used
+ * Average per request: 3.931 μs
+ * Max per request: 2691.5 μs
+ * Min per request: 0.916 μs
+ * Allocations + cache overhead: 15.25 MB total heap size, 18.23 MB used
+ *
+ * Benchmark: "Benchmarks runs cosmetic-engine with a StringRuleList storage"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 212 ms
+ * Engine memory: 14.98 MB total heap size, 27.08 MB used
+ * Average per request: 105.499 μs
+ * Max per request: 9642.167 μs
+ * Min per request: 0 μs
+ * Allocations + cache overhead: 10.69 MB total heap size, 8.16 MB used
+ *
+ * Benchmark: "Benchmarks runs cosmetic-engine with a BufferRuleList storage"
+ * ========================================================================
+ *
+ * Elapsed on parsing rules: 232 ms
+ * Engine memory: 16.23 MB total heap size, 23.74 MB used
+ * Average per request: 104.447 μs
+ * Max per request: 8816.25 μs
+ * Min per request: 0 μs
+ * Allocations + cache overhead: 8.94 MB total heap size, 8.94 MB used
+ */
 
 /**
  * Resources file paths
@@ -115,6 +190,8 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
 }
 
 function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): number {
+    console.log(`Processing ${requests.length} requests...`);
+
     let totalMatches = 0;
     let totalElapsed = 0;
     let minElapsedMatch = 100 * 1000; // 100 seconds
@@ -156,12 +233,6 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
     return totalMatches;
 }
 
-const enum RuleListFilePath {
-    Easylist = './test/resources/easylist.txt',
-    AdguardBaseFilter = './test/resources/adguard_base_filter.txt',
-    AdguardDomainModifierRules = './test/resources/adguard_domain_modifier_rules.txt',
-}
-
 describe('Benchmarks', () => {
     beforeAll(() => {
         /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -190,88 +261,120 @@ describe('Benchmarks', () => {
         setLogger(console);
     });
 
-    it('runs network-engine', async () => {
+    /**
+     * Using a generic constructor to trick typescrpit into accepting a class
+     * that extends IRuleList as a function argument (see below).
+     */
+    interface IRuleListConstructor<T extends IRuleList> {
+        new(...args: any[]): T;
+    }
+
+    /**
+     * Helper function that formats memory usage.
+     *
+     * @param mem - Memory usage info.
+     */
+    function formatMemory(mem: { heapTotal: number, heapUsed: number }): string {
+        function formatBytes(b: number): string {
+            if (b === 0) return '0 Bytes';
+
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+            const i = Math.floor(Math.log(Math.abs(b)) / Math.log(k));
+
+            return `${parseFloat((b / k ** i).toFixed(2))} ${sizes[i]}`;
+        }
+
+        return `${formatBytes(mem.heapTotal)} total heap size, ${formatBytes(mem.heapUsed)} used`;
+    }
+
+    /**
+     * Runs a bench on the Engine, but limits rules to network rules only.
+     * Effectively, it only tests the network engine. This function allows
+     * parameterizing the storage type (IRuleList). This test ignores cosmetic
+     * rules.
+     *
+     * @param listClass - controls that IRuleList implementation will be used
+     * when running the test.
+     * @param loadAsync - controls how the NetworkEngine will be initialized
+     * (synchronously or not).
+     */
+    async function benchNetworkEngine<T extends IRuleList>(listClass: IRuleListConstructor<T>, loadAsync: boolean) {
+        const rulesFilePath = './test/resources/easylist.txt';
+
         /**
          * Expected matches for specified requests and rules
          */
-        const expectedMatchesCount = 6868;
+        const expectedMatchesCount = 4667;
+        const expectedLoadedRules = 38577;
 
-        const baseMemory = memoryUsage();
+        const baseMem = memoryUsage();
         const requests = await parseRequests();
 
-        const initMemory = memoryUsage(baseMemory);
-        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
+        const initMem = memoryUsage(baseMem);
+        const filterText = await fs.promises.readFile(rulesFilePath, 'utf8');
+
+        console.log(`Memory after initialization: ${formatMemory(initMem)}`);
 
         const startParse = Date.now();
-        const ruleStorage = new RuleStorage([
-            new StringRuleList(1, await fs.promises.readFile(RuleListFilePath.Easylist, 'utf8'), true),
-            new StringRuleList(2, await fs.promises.readFile(RuleListFilePath.AdguardDomainModifierRules, 'utf8'), true),
-        ]);
+        const ignoreCosmetic = true;
 
-        const engine = new NetworkEngine(ruleStorage);
+        // eslint-disable-next-line new-cap
+        const list = new listClass(1, filterText, ignoreCosmetic);
+        const ruleStorage = new RuleStorage([list]);
+
+        const engine = new Engine(ruleStorage, loadAsync);
+
+        if (loadAsync) {
+            const chunkSize = 1000;
+            await engine.loadRulesAsync(chunkSize);
+        }
+
         expect(engine).toBeTruthy();
-
-        console.log(`Loaded rules: ${engine.rulesCount}`);
-        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
-
-        const loadingMemory = memoryUsage(baseMemory);
-        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
-
-        const totalMatches = runEngine(requests, (request) => {
-            const rule = engine.match(request);
-            return !!(rule && !rule.isAllowlist());
-        });
-
-        expect(totalMatches).toBe(expectedMatchesCount);
-
-        const afterMatch = memoryUsage(baseMemory);
-        console.log(`Memory after matching: ${afterMatch.heapTotal / 1024} kB`);
-        console.log(`Memory after matching, used: ${afterMatch.heapUsed / 1024} kB`);
-    });
-
-    it('runs engine - async load', async () => {
-        /**
-         * Expected matches for specified requests and rules
-         */
-        const expectedMatchesCount = 586;
-
-        const baseMemory = memoryUsage();
-        const requests = await parseRequests();
-
-        const initMemory = memoryUsage(baseMemory);
-        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
-
-        const startParse = Date.now();
-        const ruleStorage = new RuleStorage([
-            new StringRuleList(1, await fs.promises.readFile(RuleListFilePath.Easylist, 'utf8'), true),
-            new StringRuleList(2, await fs.promises.readFile(RuleListFilePath.AdguardDomainModifierRules, 'utf8'), true),
-        ]);
-
-        const engine = new Engine(ruleStorage, true);
-        expect(engine).toBeTruthy();
-
-        await engine.loadRulesAsync(1000);
+        expect(engine.getRulesCount()).toBe(expectedLoadedRules);
 
         console.log(`Loaded rules: ${engine.getRulesCount()}`);
-        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
+        console.log(`Elapsed on parsing rules: ${Date.now() - startParse} ms`);
 
-        const loadingMemory = memoryUsage(baseMemory);
-        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
+        const engineMem = memoryUsage(baseMem);
+        const engineUsageMem = {
+            heapTotal: engineMem.heapTotal - initMem.heapTotal,
+            heapUsed: engineMem.heapUsed - initMem.heapUsed,
+        };
+
+        console.log(`Memory after engine initialization: ${formatMemory(engineMem)}`);
+        console.log(`Engine memory: ${formatMemory(engineUsageMem)}`);
 
         const totalMatches = runEngine(requests, (request) => {
             const matchingResult = engine.matchRequest(request);
+
             return !!(matchingResult
                 && matchingResult.basicRule
-                && matchingResult.basicRule!.isAllowlist());
+                && !matchingResult.basicRule.isAllowlist());
         });
 
         expect(totalMatches).toBe(expectedMatchesCount);
 
-        const afterMatch = memoryUsage(baseMemory);
-        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
-    });
+        const matchingMem = memoryUsage(baseMem);
+        const matchingOverheadMem = {
+            heapTotal: matchingMem.heapTotal - engineMem.heapTotal,
+            heapUsed: matchingMem.heapUsed - engineMem.heapUsed,
+        };
 
-    it('runs dns-engine', async () => {
+        console.log(`Cache size after matching: ${ruleStorage.getCacheSize()}`);
+        console.log(`Memory after matching: ${formatMemory(matchingMem)}`);
+        console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
+    }
+
+    /**
+     * Runs a bench on the DnsEngine. This function allows parameterizing the
+     * storage type (IRuleList). This test ignores cosmetic rules.
+     *
+     * @param listClass - controls that IRuleList implementation will be used
+     * when running the test.
+     */
+    async function benchDnsEngine<T extends IRuleList>(listClass: IRuleListConstructor<T>) {
         const rulesFilePath = './test/resources/adguard_sdn_filter.txt';
         const hostsFilePath = './test/resources/hosts';
 
@@ -280,25 +383,34 @@ describe('Benchmarks', () => {
          */
         const expectedMatchesCount = 11043;
 
-        const baseMemory = memoryUsage();
+        const baseMem = memoryUsage();
         const requests = await parseRequests();
+        const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const hostsText = await fs.promises.readFile(hostsFilePath, 'utf8');
 
-        const initMemory = memoryUsage(baseMemory);
-        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
+        const initMem = memoryUsage(baseMem);
+        console.log(`Memory after initialization: ${formatMemory(initMem)})`);
 
         const startParse = Date.now();
-        const ruleList = new StringRuleList(1, await fs.promises.readFile(rulesFilePath, 'utf8'), true);
-        const hostsList = new StringRuleList(2, await fs.promises.readFile(hostsFilePath, 'utf8'), true);
+        // eslint-disable-next-line new-cap
+        const ruleList = new listClass(1, rulesText, true);
+        // eslint-disable-next-line new-cap
+        const hostsList = new listClass(2, hostsText, true);
         const ruleStorage = new RuleStorage([ruleList, hostsList]);
 
         const engine = new DnsEngine(ruleStorage);
         expect(engine).toBeTruthy();
 
         console.log(`Loaded rules: ${engine.rulesCount}`);
-        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
+        console.log(`Elapsed on parsing rules: ${Date.now() - startParse} ms`);
 
-        const loadingMemory = memoryUsage(baseMemory);
-        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
+        const engineMem = memoryUsage(baseMem);
+        const engineUsageMem = {
+            heapTotal: engineMem.heapTotal - initMem.heapTotal,
+            heapUsed: engineMem.heapUsed - initMem.heapUsed,
+        };
+        console.log(`Memory after loading rules: ${formatMemory(engineMem)}`);
+        console.log(`Engine memory: ${formatMemory(engineUsageMem)}`);
 
         const totalMatches = runEngine(requests, (request) => {
             const dnsResult = engine.match(request.hostname);
@@ -315,36 +427,57 @@ describe('Benchmarks', () => {
 
         expect(totalMatches).toBe(expectedMatchesCount);
 
-        const afterMatch = memoryUsage(baseMemory);
-        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
-    });
+        const matchingMem = memoryUsage(baseMem);
+        const matchingOverheadMem = {
+            heapTotal: matchingMem.heapTotal - engineMem.heapTotal,
+            heapUsed: matchingMem.heapUsed - engineMem.heapUsed,
+        };
 
-    it('runs cosmetic-engine', async () => {
+        console.log(`Cache size after matching: ${ruleStorage.getCacheSize()}`);
+        console.log(`Memory after matching: ${formatMemory(matchingMem)}`);
+        console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
+    }
+
+    /**
+     * Runs a bench on the CosmeticEngine. This function allows parameterizing
+     * the storage type (IRuleList). This test ignores cosmetic rules.
+     *
+     * @param listClass - controls that IRuleList implementation will be used
+     * when running the test.
+     */
+    async function benchCosmeticEngine<T extends IRuleList>(listClass: IRuleListConstructor<T>) {
+        const rulesFilePath = './test/resources/adguard_base_filter.txt';
+
         /**
          * Expected matches for specified requests and rules
          */
         const expectedMatchesCount = 1754;
 
-        const baseMemory = memoryUsage();
+        const baseMem = memoryUsage();
         const requests = await parseRequests();
+        const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
 
-        const initMemory = memoryUsage(baseMemory);
-        console.log(`Memory after initialization - ${initMemory.heapTotal / 1024} kB (${initMemory.heapUsed / 1024} kB used)`);
+        const initMem = memoryUsage(baseMem);
+        console.log(`Memory after initialization: ${formatMemory(initMem)}`);
 
         const startParse = Date.now();
-        const ruleStorage = new RuleStorage([
-            new StringRuleList(1, await fs.promises.readFile(RuleListFilePath.Easylist, 'utf8'), false),
-            new StringRuleList(2, await fs.promises.readFile(RuleListFilePath.AdguardDomainModifierRules, 'utf8'), false),
-        ]);
+        // eslint-disable-next-line new-cap
+        const list = new listClass(1, rulesText, false);
+        const ruleStorage = new RuleStorage([list]);
 
         const engine = new CosmeticEngine(ruleStorage);
         expect(engine).toBeTruthy();
 
         console.log(`Loaded rules: ${engine.rulesCount}`);
-        console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);
+        console.log(`Elapsed on parsing rules: ${Date.now() - startParse} ms`);
 
-        const loadingMemory = memoryUsage(baseMemory);
-        console.log(`Memory after loading rules - ${loadingMemory.heapTotal / 1024} kB (${loadingMemory.heapUsed / 1024} kB used)`);
+        const engineMem = memoryUsage(baseMem);
+        const engineUsageMem = {
+            heapTotal: engineMem.heapTotal - initMem.heapTotal,
+            heapUsed: engineMem.heapUsed - initMem.heapUsed,
+        };
+        console.log(`Memory after loading rules: ${formatMemory(engineMem)}`);
+        console.log(`Engine memory: ${formatMemory(engineUsageMem)}`);
 
         const totalMatches = runEngine(requests, (request) => {
             if (request.requestType !== RequestType.SubDocument) {
@@ -357,7 +490,42 @@ describe('Benchmarks', () => {
 
         expect(totalMatches).toBe(expectedMatchesCount);
 
-        const afterMatch = memoryUsage(baseMemory);
-        console.log(`Memory after matching - ${afterMatch.heapTotal / 1024} kB (${afterMatch.heapUsed / 1024} kB used)`);
+        const matchingMem = memoryUsage(baseMem);
+        const matchingOverheadMem = {
+            heapTotal: matchingMem.heapTotal - engineMem.heapTotal,
+            heapUsed: matchingMem.heapUsed - engineMem.heapUsed,
+        };
+
+        console.log(`Cache size after matching: ${ruleStorage.getCacheSize()}`);
+        console.log(`Memory after matching: ${formatMemory(matchingMem)}`);
+        console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
+    }
+
+    it('runs network-engine with a StringRuleList storage', async () => {
+        await benchNetworkEngine(StringRuleList, false);
+    });
+
+    it('runs network-engine with a BufferRuleList storage', async () => {
+        await benchNetworkEngine(BufferRuleList, false);
+    });
+
+    it('runs network-engine with async load', async () => {
+        await benchNetworkEngine(BufferRuleList, true);
+    });
+
+    it('runs dns-engine with a StringRuleList storage', async () => {
+        await benchDnsEngine(StringRuleList);
+    });
+
+    it('runs dns-engine with a BufferRuleList storage', async () => {
+        await benchDnsEngine(BufferRuleList);
+    });
+
+    it('runs cosmetic-engine with a StringRuleList storage', async () => {
+        await benchCosmeticEngine(StringRuleList);
+    });
+
+    it('runs cosmetic-engine with a BufferRuleList storage', async () => {
+        await benchCosmeticEngine(BufferRuleList);
     });
 });

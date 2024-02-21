@@ -8,6 +8,7 @@ import {
 import { Assistant } from './assistant';
 import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
+import { logger } from '../../common/utils/logger';
 import type { AppContext } from './context';
 import type { StealthApi } from './stealth-api';
 import type { TabsApi } from './tabs';
@@ -146,6 +147,9 @@ MessageHandlerMV2
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
+        logger.setVerbose(configuration.verbose);
+        logger.setLogLevel(configuration.logLevel);
+
         RequestEvents.init();
         await this.redirectsService.start();
         this.documentBlockingService.configure(configuration);
@@ -188,6 +192,9 @@ MessageHandlerMV2
         }
 
         configurationMV2Validator.parse(configuration);
+
+        logger.setVerbose(configuration.verbose);
+        logger.setLogLevel(configuration.logLevel);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 

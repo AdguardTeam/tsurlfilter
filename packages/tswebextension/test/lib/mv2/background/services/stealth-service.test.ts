@@ -252,23 +252,33 @@ describe('Stealth service', () => {
             appContext.configuration.settings.stealth.sendDoNotTrack = true;
             const service = new StealthService(appContext, filteringLog);
 
-            // Here we check that the function is written correctly in the string,
-            // to avoid changing its form to a lambda function, for example.
-            const funcTxt = service.getSetDomSignalScript();
-            expect(funcTxt).toStrictEqual(`;(function setDomSignal() {
-    try {
-      if ('globalPrivacyControl' in Navigator.prototype) {
-        return;
-      }
-      Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
-        get: () => true,
-        configurable: true,
-        enumerable: true
-      });
-    } catch (ex) {
-      // Ignore
-    }
-  })();`);
+            // Here we check that the function is written correctly in the
+            // string, to avoid changing its form to a lambda function, for
+            // example.
+            const funcTxt = service.getSetDomSignalScript()
+                .replaceAll('() => true', '()=>true');
+
+            const expectedFuncTxt = `;(function setDomSignal() {
+                try {
+                  if ('globalPrivacyControl' in Navigator.prototype) {
+                    return;
+                  }
+                  Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
+                    get: ()=>true,
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch (ex) {
+                  // Ignore
+                }
+              })();`;
+
+            // Compare line-with-line to make sure that formatting does not
+            // affect the result.
+            const funcLines = funcTxt.split('\n').map((l) => l.trim());
+            const expectedFuncLines = expectedFuncTxt.split('\n').map((l) => l.trim());
+
+            expect(funcLines).toEqual(expectedFuncLines);
         });
     });
 });

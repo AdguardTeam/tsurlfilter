@@ -19,6 +19,7 @@
 export enum NotifierEventType {
     DetectFilters = "DetectFilters",
     UpdateFilters = "UpdateFilters",
+    DeleteFilters = "DeleteFilters",
 }
 
 export type DetectFiltersEvent = {
@@ -32,7 +33,14 @@ export type UpdateFiltersEvent = {
     type: NotifierEventType.UpdateFilters;
 };
 
-export type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent;
+export type DeleteFiltersEvent = {
+    type: NotifierEventType.DeleteFilters;
+    data: {
+        filtersIds: number[];
+    };
+};
+
+export type NotifierEvent = DetectFiltersEvent | UpdateFiltersEvent | DeleteFiltersEvent;
 
 export type ExtractedNotifierEvent<T> = Extract<NotifierEvent, { type: T }>;
 
@@ -50,6 +58,7 @@ export class Notifier {
     private listenersMap: NotifierListenersMap = {
         [NotifierEventType.DetectFilters]: [],
         [NotifierEventType.UpdateFilters]: [],
+        [NotifierEventType.DeleteFilters]: [],
     };
 
     /**
@@ -79,7 +88,7 @@ export class Notifier {
      *
      * @param event - event data
      */
-    public publishEvent<T extends DetectFiltersEvent | UpdateFiltersEvent>(event: T): void {
+    public publishEvent<T extends NotifierEvent>(event: T): void {
         const listeners = this.listenersMap[event.type] as NotifierListener<NotifierEventType>[];
 
         listeners.forEach((listener) => {

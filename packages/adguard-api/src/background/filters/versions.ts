@@ -110,6 +110,22 @@ export class VersionsApi {
     }
 
     /**
+     * Deletes specified filter version.
+     *
+     * @param filterId Filter id.
+     * @throws Error if filter version data is not initialized.
+     */
+    public async delete(filterId: number): Promise<void> {
+        if (!this.versions) {
+            throw new Error("Filter versions are not initialized");
+        }
+
+        delete this.versions[filterId];
+
+        await this.saveData();
+    }
+
+    /**
      * Save data in extension storage
      */
     private async saveData(): Promise<void> {

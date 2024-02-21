@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tswebextension",
-  "version": "1.0.9",
+  "version": "1.0.14",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/index.js",
   "typings": "dist/types/src/lib/mv2/background/index.d.ts",
@@ -17,25 +17,25 @@
   "typesVersions": {
     "*": {
       "mv3": [
-        "dist/types/lib/mv3/background/index.d.ts"
+        "dist/types/src/lib/mv3/background/index.d.ts"
       ],
       "mv3/utils": [
-        "dist/types/lib/mv3/utils/get-filter-name.d.ts"
+        "dist/types/src/lib/mv3/utils/get-filter-name.d.ts"
       ],
       "mv3/content-script": [
-        "dist/types/lib/mv3/content-script/index.d.ts"
+        "dist/types/src/lib/mv3/content-script/index.d.ts"
       ],
       "content-script": [
-        "dist/types/lib/mv2/content-script/index.d.ts"
+        "dist/types/src/lib/mv2/content-script/index.d.ts"
       ],
       "content-script/css-hits-counter": [
-        "dist/types/lib/mv2/content-script/css-hits-counter.d.ts"
+        "dist/types/src/lib/mv2/content-script/css-hits-counter.d.ts"
       ],
       "cli": [
-        "dist/types/cli/index.d.ts"
+        "dist/types/src/cli/index.d.ts"
       ],
       "assistant-inject": [
-        "dist/types/lib/mv2/content-script/assistant-inject.d.ts"
+        "dist/types/src/lib/mv2/content-script/assistant-inject.d.ts"
       ]
     }
   },
@@ -84,8 +84,8 @@
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
     "@adguard/extended-css": "^2.0.56",
-    "@adguard/scriptlets": "^1.9.105",
-    "@adguard/tsurlfilter": "^2.2.9",
+    "@adguard/scriptlets": "^1.10.1",
+    "@adguard/tsurlfilter": "^2.2.14",
     "bowser": "2.11.0",
     "commander": "11.0.0",
     "fs-extra": "11.1.1",

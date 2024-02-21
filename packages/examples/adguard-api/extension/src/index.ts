@@ -6,8 +6,11 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     // create new AdguardApi instance
     const adguardApi = await AdguardApi.create();
 
-    const configuration: Configuration = {
-        filters: [2],
+    let configuration: Configuration = {
+        filters: [
+            2,
+            215, // example of obsoleted filter.
+        ],
         filteringEnabled: true,
         allowlist: ["www.example.com"],
         rules: ["example.org##h1"],
@@ -27,9 +30,10 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
 
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
-    await adguardApi.start(configuration);
+    configuration = await adguardApi.start(configuration);
 
     console.log("Finished Adguard API initialization.");
+    console.log("Applied configuration: ", JSON.stringify(configuration));
     logTotalCount();
 
     configuration.allowlist!.push("www.google.com");
@@ -39,14 +43,29 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     console.log("Finished Adguard API re-configuration");
     logTotalCount();
 
-    // update config on assistant rule apply
-    adguardApi.onAssistantCreateRule.subscribe(async (rule) => {
+    const onAssistantCreateRule = async (rule: string) => {
+        // update config on assistant rule apply
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
         await adguardApi.configure(configuration);
         console.log("Finished Adguard API re-configuration");
         logTotalCount();
-    });
+    };
+
+    adguardApi.onAssistantCreateRule.subscribe(onAssistantCreateRule);
+
+    const onFiltersDeletion = async (filterIds: number[]) => {
+        console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
+        configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
+
+        await adguardApi.configure(configuration);
+
+        console.log("Finished Adguard API re-configuration");
+        logTotalCount();
+    };
+
+    // update config on filter deletion
+    adguardApi.onFiltersDeletion.subscribe(onFiltersDeletion);
 
     // get tswebextension message handler
     const handleApiMessage = adguardApi.getMessageHandler();
@@ -77,6 +96,8 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     // Disable Adguard in 1 minute
     setTimeout(async () => {
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
+        adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
+        adguardApi.onFiltersDeletion.unsubscribe(onFiltersDeletion);
         await adguardApi.stop();
         console.log("Adguard API has been disabled.");
     }, 60 * 1000);

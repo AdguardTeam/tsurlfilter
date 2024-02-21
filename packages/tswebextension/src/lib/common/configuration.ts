@@ -1,30 +1,8 @@
 import { z as zod } from 'zod';
+import { logLevelSchema, verboseSchema } from './utils/logger';
 import { version } from '../../../package.json';
 
-export { EXTENDED_CSS_VERSION } from '@adguard/extended-css';
-
 export const TSWEBEXTENSION_VERSION = version;
-
-/**
- * String presentation of log levels, for convenient users usage.
- */
-export const enum LogLevelName {
-    Error = 'error',
-    Warn = 'warn',
-    Info = 'info',
-    Debug = 'debug',
-}
-
-export const logLevelNames: [string, ...string[]] = [
-    LogLevelName.Error,
-    LogLevelName.Warn,
-    LogLevelName.Info,
-    LogLevelName.Debug,
-];
-
-export const LogLevelEnum = zod.enum(logLevelNames);
-const LogLevelValidator = LogLevelEnum.optional();
-export type LogLevelType = zod.infer<typeof LogLevelValidator>;
 
 /**
  * Stealth mode configuration schema.
@@ -183,12 +161,12 @@ export const configurationValidator = zod.object({
      * @deprecated  Will be removed in the next minor version.
      * Use {@link Configuration.logLevel} instead.
      */
-    verbose: zod.boolean().optional(),
+    verbose: verboseSchema.optional(),
 
     /**
      * Logging level.
      */
-    logLevel: LogLevelValidator,
+    logLevel: logLevelSchema.optional(),
 
     settings: settingsConfigValidator,
 
