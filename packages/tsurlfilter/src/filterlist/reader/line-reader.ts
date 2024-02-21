@@ -3,9 +3,14 @@
  */
 export interface ILineReader {
     /**
-     * Reads the next line
+     * Reads the next line.
      *
-     * @return line string or null
+     * @return line string or null.
      */
     readLine(): string | null;
+
+    /**
+     * Returns the current position of this line reader.
+     */
+    getCurrentPos(): number;
 }

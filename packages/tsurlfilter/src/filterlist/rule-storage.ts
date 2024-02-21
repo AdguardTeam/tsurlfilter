@@ -7,6 +7,7 @@ import { HostRule } from '../rules/host-rule';
 import { ScannerType } from './scanner/scanner-type';
 import { RuleFactory } from '../rules/rule-factory';
 import { ListCache } from './list-cache';
+import { logger } from '../utils/logger';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -89,16 +90,19 @@ export class RuleStorage {
 
         const list = this.listsMap.get(listId);
         if (!list) {
-            // List doesn't exist
+            logger.warn(`Failed to retrieve list ${listId}, should not happen in normal operation`);
+
             return null;
         }
 
         const ruleText = list.retrieveRuleText(ruleIdx);
         if (!ruleText) {
+            logger.warn(`Failed to retrieve rule ${ruleIdx}, should not happen in normal operation`);
+
             return null;
         }
 
-        const result = RuleFactory.createRule(ruleText!, listId, false, false, ignoreHost);
+        const result = RuleFactory.createRule(ruleText, listId, false, false, ignoreHost);
         if (result) {
             this.saveToCache(listId, ruleIdx, result);
         }
@@ -142,6 +146,14 @@ export class RuleStorage {
         }
 
         return null;
+    }
+
+    /**
+     * Returns the size of the cache.
+     */
+    getCacheSize(): number {
+        return Array.from(this.cache.values())
+            .reduce((acc, listCache) => acc + listCache.getSize(), 0);
     }
 
     /**

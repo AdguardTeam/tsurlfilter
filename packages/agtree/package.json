@@ -27,6 +27,7 @@
     "types": "dist/agtree.d.ts",
     "exports": {
         ".": {
+            "types": "./dist/agtree.d.ts",
             "import": "./dist/agtree.esm.js",
             "require": "./dist/agtree.cjs"
         },

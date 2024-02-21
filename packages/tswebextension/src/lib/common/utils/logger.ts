@@ -1,9 +1,4 @@
-import { LogLevelType, LogLevelName, logLevelNames } from '../configuration';
-import { appContext } from '../../mv2/background/context';
-// TODO (v.zhelvis) move app context to common and make it generic.
-
-const DEFAULT_VERBOSE_FLAG = true;
-const DEFAULT_LOG_LEVEL: LogLevelType = LogLevelName.Error;
+import { z as zod } from 'zod';
 
 /**
  * Number presentation of log levels. Order is important. Higher number, more messages to be visible.
@@ -14,6 +9,12 @@ const enum LogLevelWeight {
     Info,
     Debug,
 }
+
+export const logLevelSchema = zod.enum(['error', 'warn', 'info', 'debug']);
+
+export const verboseSchema = zod.boolean();
+
+export type LogLevel = zod.infer<typeof logLevelSchema>;
 
 /**
  * Logger interface.
@@ -29,42 +30,22 @@ export interface LoggerInterface {
  * Export logger implementation.
  */
 export class Logger implements LoggerInterface {
-    /**
-     * Gets app verbose status.
-     *
-     * TODO (v.zhelvis) remove eslint rule after passing appContext the right way.
-     *
-     * @returns App verbose status.
-     */
-    // eslint-disable-next-line class-methods-use-this
-    private get verbose(): boolean {
-        return appContext.configuration?.verbose ?? DEFAULT_VERBOSE_FLAG;
-    }
+    private static readonly levelWeightMap: Record<LogLevel, LogLevelWeight> = {
+        [logLevelSchema.enum.error]: LogLevelWeight.Error,
+        [logLevelSchema.enum.warn]: LogLevelWeight.Warn,
+        [logLevelSchema.enum.info]: LogLevelWeight.Info,
+        [logLevelSchema.enum.debug]: LogLevelWeight.Debug,
+    };
 
     /**
-     * Gets app log level.
-     *
-     * TODO (v.zhelvis) remove eslint rule after passing appContext the right way.
-     *
-     * @returns Log level.
+     * Verbose status.
      */
-    // eslint-disable-next-line class-methods-use-this
-    private get logLevel(): LogLevelWeight {
-        const logLevelString = appContext.configuration?.logLevel ?? DEFAULT_LOG_LEVEL;
+    private verbose: boolean = true;
 
-        switch (logLevelString) {
-            case LogLevelName.Error:
-                return LogLevelWeight.Error;
-            case LogLevelName.Warn:
-                return LogLevelWeight.Warn;
-            case LogLevelName.Info:
-                return LogLevelWeight.Info;
-            case LogLevelName.Debug:
-                return LogLevelWeight.Debug;
-            default:
-                throw new Error(`Logger only supports following levels: ${[logLevelNames.join(', ')]}`);
-        }
-    }
+    /**
+     * Log level.
+     */
+    private logLevel: LogLevelWeight = LogLevelWeight.Error;
 
     private loggerImpl: LoggerInterface;
 
@@ -80,6 +61,26 @@ export class Logger implements LoggerInterface {
         this.warn = this.warn.bind(this);
         this.debug = this.debug.bind(this);
         this.info = this.info.bind(this);
+    }
+
+    /**
+     * Sets log level weight from passed level name.
+     * @param logLevelName Log level name.
+     * @throws Error if log level name is not found.
+     */
+    public setLogLevel(logLevelName: LogLevel = logLevelSchema.enum.error): void {
+        this.logLevel = logLevelSchema
+            .transform((value) => Logger.levelWeightMap[value])
+            .parse(logLevelName);
+    }
+
+    /**
+     * Sets verbose option.
+     * @param verbose Verbose boolean flag.
+     * @throws Error if verbose flag is not a boolean.
+     */
+    public setVerbose(verbose = true): void {
+        this.verbose = verboseSchema.parse(verbose);
     }
 
     /**
