@@ -90,5 +90,23 @@ describe('ByteBuffer', () => {
         });
     });
 
-    // FIXME: test InputByteBuffer.assertUint8
+    describe('InputByteBuffer.assertUint8', () => {
+        test('should work on valid data', async () => {
+            const storage = new SimpleStorage();
+
+            await storage.write('test', [new Uint8Array([1])]);
+            const input = await InputByteBuffer.createFromStorage(storage, 'test');
+
+            expect(() => input.assertUint8(1)).not.toThrow();
+        });
+
+        test('should throw error on invalid data', async () => {
+            const storage = new SimpleStorage();
+
+            await storage.write('test', [new Uint8Array([1])]);
+            const input = await InputByteBuffer.createFromStorage(storage, 'test');
+
+            expect(() => input.assertUint8(2)).toThrow('Expected 2, but got 1');
+        });
+    });
 });
