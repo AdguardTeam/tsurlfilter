@@ -100,6 +100,6 @@ export class ByteBuffer {
      * @throws If the storage write operation throws.
      */
     public async writeChunksToStorage(storage: Storage, key: string): Promise<void> {
-        await storage.write(key, this.chunks);
+        await storage.set(key, this.chunks);
     }
 }

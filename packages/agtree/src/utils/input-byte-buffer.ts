@@ -45,9 +45,8 @@ export class InputByteBuffer {
      * @note For performance reasons, chunks are passed by reference and not copied.
      */
     public static async createFromStorage(storage: Storage, key: string): Promise<InputByteBuffer> {
-        const chunks = await storage.read(key);
+        const chunks = await storage.get(key);
 
-        // FIXME
         if (!isArrayOfUint8Arrays(chunks)) {
             throw new Error('The data from storage is not an array of Uint8Arrays');
         }

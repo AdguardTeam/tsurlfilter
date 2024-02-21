@@ -65,7 +65,7 @@ describe('ByteBuffer', () => {
         test('should work on valid data', async () => {
             const storage = new SimpleStorage();
 
-            await storage.write('test', [new Uint8Array(ByteBuffer.CHUNK_SIZE)]);
+            await storage.set('test', [new Uint8Array(ByteBuffer.CHUNK_SIZE)]);
             await expect(
                 InputByteBuffer.createFromStorage(storage, 'test'),
             ).resolves.toBeInstanceOf(InputByteBuffer);
@@ -82,10 +82,10 @@ describe('ByteBuffer', () => {
                 );
             };
 
-            await storage.write('test', [new Uint32Array(ByteBuffer.CHUNK_SIZE)]);
+            await storage.set('test', [new Uint32Array(ByteBuffer.CHUNK_SIZE)]);
             await testStorage('test');
 
-            await storage.write('test', new Uint8Array(ByteBuffer.CHUNK_SIZE));
+            await storage.set('test', new Uint8Array(ByteBuffer.CHUNK_SIZE));
             await testStorage('test');
         });
     });
@@ -94,7 +94,7 @@ describe('ByteBuffer', () => {
         test('should work on valid data', async () => {
             const storage = new SimpleStorage();
 
-            await storage.write('test', [new Uint8Array([1])]);
+            await storage.set('test', [new Uint8Array([1])]);
             const input = await InputByteBuffer.createFromStorage(storage, 'test');
 
             expect(() => input.assertUint8(1)).not.toThrow();
@@ -103,7 +103,7 @@ describe('ByteBuffer', () => {
         test('should throw error on invalid data', async () => {
             const storage = new SimpleStorage();
 
-            await storage.write('test', [new Uint8Array([1])]);
+            await storage.set('test', [new Uint8Array([1])]);
             const input = await InputByteBuffer.createFromStorage(storage, 'test');
 
             expect(() => input.assertUint8(2)).toThrow('Expected 2, but got 1');

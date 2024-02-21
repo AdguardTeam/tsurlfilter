@@ -47,7 +47,7 @@ describe('ByteBuffer', () => {
     test('should extract chunks into a storage', async () => {
         // spy on the storage
         const storage = new SimpleStorage();
-        const writeSpy = jest.spyOn(storage, 'write');
+        const writeSpy = jest.spyOn(storage, 'set');
 
         for (let i = 0; i < ByteBuffer.CHUNK_SIZE * 2; i += 1) {
             buffer.writeByte(i, 0xFF);
@@ -67,7 +67,7 @@ describe('ByteBuffer', () => {
         buffer.writeByte(ByteBuffer.CHUNK_SIZE + 1, 0xFF);
         await buffer.writeChunksToStorage(storage, 'test');
 
-        const dataFromStorage = await storage.read('test');
+        const dataFromStorage = await storage.get('test');
 
         if (!isArrayOfUint8Arrays(dataFromStorage)) {
             throw new Error('The data from storage is not an array of Uint8Arrays');
