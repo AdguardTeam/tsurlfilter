@@ -167,14 +167,13 @@ export class FilterListParser extends ParserBase {
         return result;
     }
 
-    // FIXME: raws (nl)
-
     /**
      * Serializes a filter list node to binary format.
      *
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
+    // TODO: add support for raws, if ever needed
     public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.FilterListNode);
 

@@ -160,6 +160,7 @@ export class SimpleCommentParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
+    // TODO: add support for raws, if ever needed
     public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
 

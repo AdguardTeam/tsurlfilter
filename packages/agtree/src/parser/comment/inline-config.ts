@@ -339,6 +339,7 @@ export class ConfigCommentRuleParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
+    // TODO: add support for raws, if ever needed
     public static serialize(node: ConfigCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ConfigCommentRuleNode);
 

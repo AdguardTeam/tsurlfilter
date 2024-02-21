@@ -198,14 +198,9 @@ export class NetworkRuleParser extends ParserBase {
      * @param node Node to serialize.
      * @param buffer ByteBuffer for writing binary data.
      */
+    // TODO: add support for raws, if ever needed
     public static serialize(node: NetworkRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.NetworkRuleNode);
-
-        // FIXME: solve this somehow
-        // if (!isUndefined(node.raws)) {
-        //     buffer.writeUint8(BinaryPropMap.Raws);
-        //     ...
-        // }
 
         buffer.writeUint8(NetworkRuleSerializationMap.Syntax);
         buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);

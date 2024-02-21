@@ -78,7 +78,7 @@ expect.extend({
                             // [adg 1.0] vs [AdGuard 1.0]
                             // omit location data
                             isLocIncluded: false,
-                            // FIXME: omit raws
+                            // TODO: add support for raws, if ever needed
                             parseRaws: false,
                         },
                         0,
