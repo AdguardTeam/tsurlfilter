@@ -43,32 +43,36 @@ const enum MetadataCommentRuleSerializationMap {
 }
 
 /**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_HEADERS_DESERIALIZATION_MAP = new Map<number, string>([
+    [1, 'Checksum'],
+    [2, 'Description'],
+    [3, 'Expires'],
+    [4, 'Homepage'],
+    [5, 'Last Modified'],
+    [6, 'LastModified'],
+    [7, 'Licence'],
+    [8, 'License'],
+    [9, 'Time Updated'],
+    [10, 'TimeUpdated'],
+    [11, 'Version'],
+    [12, 'Title'],
+]);
+
+/**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  *
  * ! IMPORTANT: WHEN ADDING A NEW VALUE, DO _NOT_ MODIFY EXISTING VALUES AS THIS WILL BREAK DESERIALIZATION!
  *
  * @note Only 256 values can be represented this way.
+ * @note This map is generated from `FREQUENT_HEADERS_DESERIALIZATION_MAP` to keep uppercase characters
+ * while deserializing.
  */
-const FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>([
-    ['Checksum', 1],
-    ['Description', 2],
-    ['Expires', 3],
-    ['Homepage', 4],
-    ['Last Modified', 5],
-    ['Licence', 6],
-    ['License', 7],
-    ['TimeUpdated', 8],
-    ['Version', 9],
-    ['Title', 10],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-const FREQUENT_HEADERS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_HEADERS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+const FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>(
+    Array.from(FREQUENT_HEADERS_DESERIALIZATION_MAP.entries()).map(([key, value]) => [value.toLowerCase(), key]),
 );
 
 /**
