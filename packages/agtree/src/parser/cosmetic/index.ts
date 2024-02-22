@@ -1036,7 +1036,6 @@ export class CosmeticRuleParser extends ParserBase {
                 // syntax
                 buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
                 // rule body
-                // buffer.writeUint8(CosmeticRuleSerializationMap.Body);
                 CosmeticRuleParser.serializeElementHidingBody(node.body, buffer);
                 break;
 
@@ -1046,7 +1045,6 @@ export class CosmeticRuleParser extends ParserBase {
                 // syntax
                 buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
                 // rule body
-                // buffer.writeUint8(CosmeticRuleSerializationMap.Body);
                 CosmeticRuleParser.serializeCssInjectionBody(node.body, buffer);
                 break;
 
@@ -1056,7 +1054,6 @@ export class CosmeticRuleParser extends ParserBase {
                 // syntax
                 buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
                 // rule body
-                // buffer.writeUint8(CosmeticRuleSerializationMap.Body);
                 ValueParser.serialize(node.body, buffer);
                 break;
 
@@ -1066,7 +1063,6 @@ export class CosmeticRuleParser extends ParserBase {
                 // syntax
                 buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
                 // rule body
-                // buffer.writeUint8(CosmeticRuleSerializationMap.Body);
                 ValueParser.serialize(node.body, buffer);
                 break;
 
@@ -1076,7 +1072,6 @@ export class CosmeticRuleParser extends ParserBase {
                 // syntax
                 buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
                 // rule body
-                // buffer.writeUint8(CosmeticRuleSerializationMap.Body);
                 switch (node.syntax) {
                     case AdblockSyntax.Adg:
                         AdgScriptletInjectionBodyParser.serialize(node.body, buffer);
