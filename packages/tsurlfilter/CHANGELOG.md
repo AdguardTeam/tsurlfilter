@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   In addition to that, it solves the problem of leaking links to the original leaking strings
   that in turn was leading to higher memory usage.
 
+[2.2.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.14
+
 ## [2.2.13] - 2024-02-13
 
 ### Changed
