@@ -1,5 +1,4 @@
 /* eslint-disable no-param-reassign */
-/* eslint-disable no-case-declarations */
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
 
