@@ -3,6 +3,8 @@
     "include": [
       ".eslintrc.cjs",
       "benchmark/**/*.ts",
+      "browser-benchmark/**/*.ts",
+      "browser-benchmark/.eslintrc.cjs",
       "jest.config.ts",
       "rollup.config.ts",
       "scripts/**/*.ts",
