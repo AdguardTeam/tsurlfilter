@@ -41,7 +41,7 @@ export interface PageContextBenchmarkResults {
 
 export const pageContextBenchmark = async (
     { rawFilterList, agtreeParserOptions }: PageContextBenchmarkArgs,
-): Promise<any> => {
+): Promise<PageContextBenchmarkResults> => {
     const { AGTree, Benchmark, ObjectSizeof } = window;
 
     const node = AGTree.FilterListParser.parse(rawFilterList, agtreeParserOptions);
