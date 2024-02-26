@@ -17,11 +17,13 @@ export interface FilterListResource {
      * Filter list URL.
      */
     url: string;
+}
 
+export interface DownloadedFilterListResource extends FilterListResource {
     /**
-     * Filter list contents (if not specified, it will be fetched from the URL).
+     * Filter list contents.
      */
-    raw?: string;
+    contents: string;
 }
 
 /**

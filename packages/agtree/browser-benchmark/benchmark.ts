@@ -25,7 +25,7 @@ import {
 } from './page-context-benchmark';
 import { buildIife } from './helpers/build-iife';
 import { benchmarkConfig } from './config';
-import { type FilterListResource } from './interfaces';
+import { type DownloadedFilterListResource, type FilterListResource } from './interfaces';
 import { fetchFile } from './helpers/fetch-file';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
@@ -46,7 +46,7 @@ const consola = createConsola();
  */
 const runBenchmark = async (
     browserLauncher: BrowserType,
-    filterList: FilterListResource,
+    filterList: DownloadedFilterListResource,
     agtreeParserOptions: ParserOptions,
     agtreeIife: string,
     objectSizeofIife: string,
@@ -73,7 +73,7 @@ const runBenchmark = async (
         const result = await page.evaluate(
             pageContextBenchmark,
             {
-                rawFilterList: filterList.raw,
+                rawFilterList: filterList.contents,
                 agtreeParserOptions,
             } as PageContextBenchmarkArgs,
         );
@@ -97,25 +97,17 @@ const runBenchmark = async (
  * Helper function to download filter lists.
  *
  * @param filterLists Filter lists to download.
- * @returns Number of downloaded filter lists.
- *
- * @note This function modifies the input array
+ * @returns Downloaded filter lists.
  */
-const downloadFilterLists = async (filterLists: FilterListResource[]): Promise<number> => {
-    let downloaded = 0;
+const downloadFilterLists = async (filterLists: FilterListResource[]): Promise<DownloadedFilterListResource[]> => {
+    const downloadedFilterLists: DownloadedFilterListResource[] = [];
 
     for (const filterList of filterLists) {
-        // Skip if already downloaded
-        if (filterList.raw) {
-            continue;
-        }
-
-        const raw = await fetchFile(filterList.url);
-        filterList.raw = raw;
-        downloaded += 1;
+        const contents = await fetchFile(filterList.url);
+        downloadedFilterLists.push({ ...filterList, contents });
     }
 
-    return downloaded;
+    return downloadedFilterLists;
 };
 
 /**
@@ -172,8 +164,9 @@ const printResults = (results: PageContextBenchmarkResults): void => {
     consola.info('Starting the benchmark');
 
     consola.info('Downloading filter lists...');
-    const downloaded = await downloadFilterLists(benchmarkConfig.filterLists);
-    consola.success(`Downloaded ${downloaded} filter lists`);
+    const downloadedFilterLists = await downloadFilterLists(benchmarkConfig.filterLists);
+    // eslint-disable-next-line max-len
+    consola.success(`Downloaded ${downloadedFilterLists.length} filter list${downloadedFilterLists.length > 1 ? 's' : ''}`);
 
     consola.info('Building AGTree IIFE...');
     const agtreeIife = await buildIife(
@@ -190,7 +183,7 @@ const printResults = (results: PageContextBenchmarkResults): void => {
     consola.success('Build successful');
 
     consola.info('Benchmarking...');
-    for (const filterList of benchmarkConfig.filterLists) {
+    for (const filterList of downloadedFilterLists) {
         consola.box(`Benchmarking ${filterList.name}`);
 
         for (const launcher of [chromium, firefox, webkit]) {
