@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createConsola } from 'consola';
 import { Table } from 'console-table-printer';
+import si from 'systeminformation';
 
 import { type ParserOptions } from '../src/parser/options';
 import {
@@ -158,10 +159,37 @@ const printResults = (results: PageContextBenchmarkResults): void => {
 };
 
 /**
+ * Helper function to print system specs.
+ */
+const printSystemSpecs = async () => {
+    const cpu = await si.cpu();
+    const os = await si.osInfo();
+    const mem = await si.mem();
+
+    consola.info('System specs:');
+
+    const table = new Table();
+
+    const specsWithTitles = {
+        CPU: `${cpu.manufacturer} ${cpu.brand} (${cpu.cores} cores)`,
+        OS: `${os.distro} ${os.release} ${os.arch}`,
+        Memory: `${printBytesAsMegabytes(mem.total)}`,
+    };
+
+    for (const [key, value] of Object.entries(specsWithTitles)) {
+        table.addRow({ Spec: key, Value: value });
+    }
+
+    table.printTable();
+};
+
+/**
  * Main IIFE to run the benchmark.
  */
 ((async () => {
-    consola.info('Starting the benchmark');
+    consola.info('Starting the benchmark...');
+
+    await printSystemSpecs();
 
     consola.info('Downloading filter lists...');
     const downloadedFilterLists = await downloadFilterLists(benchmarkConfig.filterLists);
