@@ -6,6 +6,7 @@ import {
     chromium,
     firefox,
     webkit,
+    type BrowserType,
 } from 'playwright';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -25,12 +26,11 @@ import { fetchFile } from './helpers/fetch-file';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const benchmarkBrowser = async (
-    browserLauncher: typeof chromium | typeof firefox | typeof webkit,
+    browserLauncher: BrowserType,
     filterLists: FilterList[],
     agtreeIife: string,
     objectSizeofIife: string,
     agtreeParserOptions: ParserOptions,
-    iterations: number,
 ): Promise<BenchmarkResultSummary | null> => {
     console.log(`Launching ${browserLauncher.name()}`);
 
@@ -57,7 +57,6 @@ const benchmarkBrowser = async (
                 {
                     rawFilterList: filterList.raw,
                     agtreeParserOptions,
-                    iterations,
                 } as PageContextBenchmarkArgs,
             );
 
@@ -116,7 +115,6 @@ const downloadFilterLists = async (filterLists: FilterList[]): Promise<void> => 
             agtreeIife,
             objectSizeofIife,
             benchmarkConfig.parserOptions,
-            benchmarkConfig.iterations,
         );
 
         if (result) {

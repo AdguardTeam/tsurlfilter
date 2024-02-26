@@ -2,7 +2,6 @@ import { defaultParserOptions } from '../src/parser/options';
 import { type BenchmarkConfig } from './interfaces';
 
 export const benchmarkConfig: BenchmarkConfig = {
-    iterations: 5,
     filterLists: [
         {
             name: 'AdGuard Base List',

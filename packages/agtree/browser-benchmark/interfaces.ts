@@ -7,7 +7,6 @@ export interface FilterList {
 }
 
 export interface BenchmarkConfig {
-    iterations: number;
     filterLists: FilterList[];
     parserOptions: ParserOptions;
 }
