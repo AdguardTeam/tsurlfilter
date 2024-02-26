@@ -1,6 +1,6 @@
 # Benchmark results
 
-Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
+Report generated on: Mon, 26 Feb 2024 15:29:52 GMT
 
 ## System specs
 
@@ -18,12 +18,12 @@ Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
 
 #### Benchmark results
 
-| Action                                | Ops/s          | Runs sampled | Average runtime   | Status |
-| ------------------------------------- | -------------- | ------------ | ----------------- | ------ |
-| Serialize AST to byte buffer          | 25.95 (±0.58%) | 47           | 38.5425531915 ms  | passed |
-| Deserialize byte buffer to AST        | 11.72 (±4.54%) | 31           | 85.3548387097 ms  | passed |
-| Parse string to AST                   | 6.08 (±10.49%) | 20           | 164.3500000000 ms | passed |
-| Clone AST to AST with structuredClone | 1.87 (±0.56%)  | 10           | 534.6000000000 ms | passed |
+| Action | Ops/s           | Runs sampled | Average runtime   | Status |
+| ------ | --------------- | ------------ | ----------------- | ------ |
+|        | 25.77 (±0.66%)  | 47           | 38.8085106383 ms  | passed |
+|        | 10.70 (±10.02%) | 31           | 93.4193548387 ms  | passed |
+|        | 6.49 (±5.36%)   | 21           | 154.1428571429 ms | passed |
+|        | 1.87 (±0.66%)   | 10           | 534.5000000000 ms | passed |
 
 #### Stats
 
@@ -38,12 +38,12 @@ Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
 
 #### Benchmark results
 
-| Action                                | Ops/s         | Runs sampled | Average runtime   | Status |
-| ------------------------------------- | ------------- | ------------ | ----------------- | ------ |
-| Deserialize byte buffer to AST        | 5.69 (±6.09%) | 18           | 175.7777777778 ms | passed |
-| Parse string to AST                   | 4.81 (±5.05%) | 16           | 207.7500000000 ms | passed |
-| Serialize AST to byte buffer          | 4.70 (±1.51%) | 16           | 212.6250000000 ms | passed |
-| Clone AST to AST with structuredClone | 1.76 (±6.60%) | 9            | 569.1111111111 ms | passed |
+| Action | Ops/s          | Runs sampled | Average runtime   | Status |
+| ------ | -------------- | ------------ | ----------------- | ------ |
+|        | 7.41 (±1.50%)  | 23           | 135.0434782609 ms | passed |
+|        | 5.26 (±14.05%) | 17           | 190.1176470588 ms | passed |
+|        | 4.76 (±3.59%)  | 16           | 209.8750000000 ms | passed |
+|        | 1.73 (±7.08%)  | 9            | 577.1111111111 ms | passed |
 
 #### Stats
 
@@ -58,12 +58,12 @@ Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
 
 #### Benchmark results
 
-| Action                                | Ops/s          | Runs sampled | Average runtime   | Status |
-| ------------------------------------- | -------------- | ------------ | ----------------- | ------ |
-| Serialize AST to byte buffer          | 32.52 (±0.90%) | 45           | 30.7481481481 ms  | passed |
-| Parse string to AST                   | 8.38 (±2.87%)  | 26           | 119.3846153846 ms | passed |
-| Deserialize byte buffer to AST        | 7.04 (±2.02%)  | 22           | 142.1363636364 ms | passed |
-| Clone AST to AST with structuredClone | 3.19 (±2.02%)  | 12           | 313.4166666667 ms | passed |
+| Action | Ops/s          | Runs sampled | Average runtime   | Status |
+| ------ | -------------- | ------------ | ----------------- | ------ |
+|        | 32.99 (±0.72%) | 45           | 30.3111111111 ms  | passed |
+|        | 8.49 (±2.45%)  | 26           | 117.7692307692 ms | passed |
+|        | 7.04 (±2.14%)  | 22           | 142.0454545455 ms | passed |
+|        | 3.16 (±1.64%)  | 12           | 316.0833333333 ms | passed |
 
 #### Stats
 
@@ -81,12 +81,12 @@ Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
 
 #### Benchmark results
 
-| Action                                | Ops/s          | Runs sampled | Average runtime   | Status |
-| ------------------------------------- | -------------- | ------------ | ----------------- | ------ |
-| Serialize AST to byte buffer          | 73.95 (±0.48%) | 57           | 13.5233918129 ms  | passed |
-| Deserialize byte buffer to AST        | 29.34 (±3.77%) | 41           | 34.0813008130 ms  | passed |
-| Parse string to AST                   | 17.16 (±2.95%) | 33           | 58.2727272727 ms  | passed |
-| Clone AST to AST with structuredClone | 6.00 (±0.89%)  | 18           | 166.6111111111 ms | passed |
+| Action | Ops/s          | Runs sampled | Average runtime   | Status |
+| ------ | -------------- | ------------ | ----------------- | ------ |
+|        | 74.14 (±0.48%) | 57           | 13.4883040936 ms  | passed |
+|        | 28.37 (±3.06%) | 40           | 35.2500000000 ms  | passed |
+|        | 16.96 (±2.67%) | 33           | 58.9696969697 ms  | passed |
+|        | 5.99 (±1.05%)  | 18           | 167.0555555556 ms | passed |
 
 #### Stats
 
@@ -101,12 +101,12 @@ Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
 
 #### Benchmark results
 
-| Action                                | Ops/s          | Runs sampled | Average runtime   | Status |
-| ------------------------------------- | -------------- | ------------ | ----------------- | ------ |
-| Deserialize byte buffer to AST        | 12.48 (±4.70%) | 26           | 80.1153846154 ms  | passed |
-| Serialize AST to byte buffer          | 12.42 (±0.87%) | 35           | 80.5142857143 ms  | passed |
-| Parse string to AST                   | 12.01 (±8.15%) | 25           | 83.2600000000 ms  | passed |
-| Clone AST to AST with structuredClone | 4.22 (±5.94%)  | 15           | 236.8000000000 ms | passed |
+| Action | Ops/s          | Runs sampled | Average runtime   | Status |
+| ------ | -------------- | ------------ | ----------------- | ------ |
+|        | 12.54 (±0.64%) | 35           | 79.7428571429 ms  | passed |
+|        | 12.38 (±5.60%) | 26           | 80.7692307692 ms  | passed |
+|        | 11.98 (±7.17%) | 25           | 83.4400000000 ms  | passed |
+|        | 4.19 (±6.58%)  | 15           | 238.4000000000 ms | passed |
 
 #### Stats
 
@@ -121,12 +121,12 @@ Report generated on: Mon, 26 Feb 2024 15:19:57 GMT
 
 #### Benchmark results
 
-| Action                                | Ops/s          | Runs sampled | Average runtime   | Status |
-| ------------------------------------- | -------------- | ------------ | ----------------- | ------ |
-| Serialize AST to byte buffer          | 95.05 (±0.98%) | 56           | 10.5204081633 ms  | passed |
-| Parse string to AST                   | 21.33 (±1.18%) | 39           | 46.8846153846 ms  | passed |
-| Deserialize byte buffer to AST        | 19.31 (±1.17%) | 36           | 51.7916666667 ms  | passed |
-| Clone AST to AST with structuredClone | 7.77 (±1.54%)  | 24           | 128.7083333333 ms | passed |
+| Action | Ops/s          | Runs sampled | Average runtime   | Status |
+| ------ | -------------- | ------------ | ----------------- | ------ |
+|        | 96.86 (±0.80%) | 57           | 10.3245614035 ms  | passed |
+|        | 21.10 (±1.05%) | 40           | 47.4000000000 ms  | passed |
+|        | 20.07 (±1.05%) | 38           | 49.8289473684 ms  | passed |
+|        | 7.77 (±1.93%)  | 24           | 128.6250000000 ms | passed |
 
 #### Stats
 
