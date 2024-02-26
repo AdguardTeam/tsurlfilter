@@ -41,7 +41,7 @@ interface BenchmarkJsResult {
     /**
      * Action name.
      */
-    toolName: string;
+    actionName: string;
 
     /**
      * Operations per second.
@@ -95,7 +95,17 @@ interface PageContextStats {
 /**
  * Interface for the benchmark results.
  */
-export interface PageContextBenchmarkResults {
+export interface PageContextBenchmarkResult {
+    /**
+     * Browser name.
+     */
+    browserName: string;
+
+    /**
+     * Browser version.
+     */
+    browserVersion: string;
+
     /**
      * Stats.
      */
@@ -104,8 +114,10 @@ export interface PageContextBenchmarkResults {
     /**
      * Benchmark results.
      */
-    results: BenchmarkJsResult[];
+    benchmarkJsResults: BenchmarkJsResult[];
 }
+
+type PageContextBenchmarkResultWithoutBrowser = Omit<PageContextBenchmarkResult, 'browserName' | 'browserVersion'>;
 
 /**
  * Benchmark code to be run in the browser.
@@ -118,7 +130,7 @@ export interface PageContextBenchmarkResults {
  */
 export const pageContextBenchmark = async (
     { rawFilterList, agtreeParserOptions }: PageContextBenchmarkArgs,
-): Promise<PageContextBenchmarkResults> => {
+): Promise<PageContextBenchmarkResultWithoutBrowser> => {
     const { AGTree, Benchmark, ObjectSizeof } = window;
 
     const node = AGTree.FilterListParser.parse(rawFilterList, agtreeParserOptions);
@@ -136,8 +148,8 @@ export const pageContextBenchmark = async (
         deserializedFilterListSize: ObjectSizeof(deserializedNode),
     };
 
-    const result: PageContextBenchmarkResults = {
-        results: [],
+    const result: PageContextBenchmarkResultWithoutBrowser = {
+        benchmarkJsResults: [],
         stats,
     };
 
@@ -147,7 +159,7 @@ export const pageContextBenchmark = async (
         AGTree.FilterListParser.parse(rawFilterList, agtreeParserOptions);
     });
 
-    suite.add('Clone AST to AST', () => {
+    suite.add('Clone AST to AST with structuredClone', () => {
         structuredClone(node);
     });
 
@@ -167,7 +179,7 @@ export const pageContextBenchmark = async (
         this.sort((a, b) => b.hz - a.hz);
 
         // Iterate over the benchmarks and save the results
-        result.results.push(
+        result.benchmarkJsResults.push(
             ...this.map((bench: Benchmark) => {
                 // Some calculations here based on the Benchmark.js source code:
                 // https://github.com/bestiejs/benchmark.js/blob/42f3b732bac3640eddb3ae5f50e445f3141016fd/benchmark.js#L1525

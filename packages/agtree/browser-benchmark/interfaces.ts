@@ -3,6 +3,7 @@
  */
 
 import { type ParserOptions } from '../src/parser/options';
+import { type PageContextBenchmarkResult } from './page-context-benchmark';
 
 /**
  * Filter list resource.
@@ -24,6 +25,21 @@ export interface DownloadedFilterListResource extends FilterListResource {
      * Filter list contents.
      */
     contents: string;
+}
+
+/**
+ * Filter list benchmark result.
+ */
+export interface FilterListBenchmarkResult {
+    /**
+     * Filter list name.
+     */
+    name: string;
+
+    /**
+     * Benchmark results for each browser.
+     */
+    results: PageContextBenchmarkResult[];
 }
 
 /**
