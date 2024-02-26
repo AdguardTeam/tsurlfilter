@@ -2,10 +2,10 @@
 // Usage: npx tsx benchmark.ts
 
 import {
-    type Browser,
     chromium,
     firefox,
     webkit,
+    type Browser,
     type BrowserType,
 } from 'playwright';
 import { fileURLToPath } from 'url';
@@ -13,7 +13,7 @@ import path from 'path';
 
 import { type ParserOptions } from '../src/parser/options';
 import {
-    type BenchmarkResultSummary,
+    type PageContextBenchmarkResults,
     pageContextBenchmark,
     type PageContextBenchmarkArgs,
 } from './page-context-benchmark';
@@ -31,27 +31,30 @@ const benchmarkBrowser = async (
     agtreeIife: string,
     objectSizeofIife: string,
     agtreeParserOptions: ParserOptions,
-): Promise<BenchmarkResultSummary | null> => {
-    console.log(`Launching ${browserLauncher.name()}`);
+): Promise<PageContextBenchmarkResults | null> => {
+    console.log(`Launching ${browserLauncher.name()}...`);
 
     let browser: Browser | null = null;
 
     try {
         browser = await browserLauncher.launch();
-        console.log(`Version: ${browser.version()}`);
+        console.log(`Running benchmark in ${browser.browserType().name()} ${browser.version()}...`);
         const context = await browser.newContext();
 
-        let result: BenchmarkResultSummary | null = null;
+        let result: PageContextBenchmarkResults | null = null;
 
         for (const filterList of filterLists) {
-            console.log(`Benchmarking ${filterList.name}`);
+            console.log(`Benchmarking ${filterList.name}...`);
             const page = await context.newPage();
 
+            // These modules requires pre-building
             await page.addScriptTag({ content: agtreeIife });
             await page.addScriptTag({ content: objectSizeofIife });
+            // These modules can be used directly from 'node_modules'
             await page.addScriptTag({ path: '../node_modules/lodash/lodash.js' });
             await page.addScriptTag({ path: '../node_modules/benchmark/benchmark.js' });
 
+            // Evaluate the benchmark in the browser
             result = await page.evaluate(
                 pageContextBenchmark,
                 {
@@ -120,13 +123,26 @@ const downloadFilterLists = async (filterLists: FilterList[]): Promise<void> => 
         if (result) {
             console.table(result.results);
 
-            // sizes
-            console.log(`- Raw filter list size (MB): ${(result.rawFilterListSize / 1024 / 1024).toFixed(2)}`);
-            // eslint-disable-next-line max-len
-            console.log(`- Parsed filter list AST size (MB): ${(result.parsedFilterListSize / 1024 / 1024).toFixed(2)}`);
-            console.log(`- Serialized size (MB): ${(result.serializedFilterListSize / 1024 / 1024).toFixed(2)}`);
-            // eslint-disable-next-line max-len
-            console.log(`- Deserialized filter list AST size (MB): ${(result.deserializedFilterListSize / 1024 / 1024).toFixed(2)}`);
+            const statsTable = [
+                {
+                    Stat: 'Raw filter list size (MB)',
+                    Value: +(result.stats.rawFilterListSize / 1024 / 1024).toFixed(2),
+                },
+                {
+                    Stat: 'Parsed filter list AST size (MB)',
+                    Value: +(result.stats.parsedFilterListSize / 1024 / 1024).toFixed(2),
+                },
+                {
+                    Stat: 'Serialized size (MB)',
+                    Value: +(result.stats.serializedFilterListSize / 1024 / 1024).toFixed(2),
+                },
+                {
+                    Stat: 'Deserialized filter list AST size (MB)',
+                    Value: +(result.stats.deserializedFilterListSize / 1024 / 1024).toFixed(2),
+                },
+            ];
+
+            console.table(statsTable);
         }
 
         console.log();
