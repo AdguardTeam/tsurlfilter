@@ -1,6 +1,7 @@
 /**
  * @file This is a small helper to build an IIFE bundle for the browser environment.
- * It uses the main Rollup configuration from the root of the project.
+ *
+ * @note It uses the main Rollup configuration from the root of the project.
  */
 import { rollup } from 'rollup';
 

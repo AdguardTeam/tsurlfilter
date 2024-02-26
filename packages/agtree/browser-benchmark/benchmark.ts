@@ -1,5 +1,9 @@
 /* eslint-disable no-console */
-// Usage: npx tsx benchmark.ts
+/**
+ * @file Benchmark script for AGTree which measures the performance of the library in browser environment.
+ *
+ * @note Usage: npx tsx benchmark.ts
+ */
 
 import {
     chromium,
@@ -21,7 +25,7 @@ import {
 } from './page-context-benchmark';
 import { buildIife } from './helpers/build-iife';
 import { benchmarkConfig } from './config';
-import { type FilterList } from './interfaces';
+import { type FilterListResource } from './interfaces';
 import { fetchFile } from './helpers/fetch-file';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
@@ -30,9 +34,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // TODO: Add 'debug' logs, if needed
 const consola = createConsola();
 
+/**
+ * Run the benchmark in the given browser.
+ *
+ * @param browserLauncher Browser launcher to use.
+ * @param filterList Filter list resource to benchmark.
+ * @param agtreeParserOptions AGTree parser options.
+ * @param agtreeIife AGTree IIFE code to be injected into the browser.
+ * @param objectSizeofIife object-sizeof IIFE code to be injected into the browser.
+ * @returns Benchmark results or null if an error occurred.
+ */
 const runBenchmark = async (
     browserLauncher: BrowserType,
-    filterList: FilterList,
+    filterList: FilterListResource,
     agtreeParserOptions: ParserOptions,
     agtreeIife: string,
     objectSizeofIife: string,
@@ -79,11 +93,19 @@ const runBenchmark = async (
     }
 };
 
-const downloadFilterLists = async (filterLists: FilterList[]): Promise<number> => {
+/**
+ * Helper function to download filter lists.
+ *
+ * @param filterLists Filter lists to download.
+ * @returns Number of downloaded filter lists.
+ *
+ * @note This function modifies the input array
+ */
+const downloadFilterLists = async (filterLists: FilterListResource[]): Promise<number> => {
     let downloaded = 0;
 
     for (const filterList of filterLists) {
-        // skip if already downloaded
+        // Skip if already downloaded
         if (filterList.raw) {
             continue;
         }
@@ -96,10 +118,21 @@ const downloadFilterLists = async (filterLists: FilterList[]): Promise<number> =
     return downloaded;
 };
 
+/**
+ * Helper function to print bytes as megabytes.
+ *
+ * @param bytes Bytes to print.
+ * @returns String representation of bytes in megabytes.
+ */
 const printBytesAsMegabytes = (bytes: number): string => {
     return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 };
 
+/**
+ * Helper function to print benchmark results.
+ *
+ * @param results Benchmark results to print.
+ */
 const printResults = (results: PageContextBenchmarkResults): void => {
     const table = new Table();
 
@@ -132,6 +165,9 @@ const printResults = (results: PageContextBenchmarkResults): void => {
     statsTable.printTable();
 };
 
+/**
+ * Main IIFE to run the benchmark.
+ */
 ((async () => {
     consola.info('Starting the benchmark');
 

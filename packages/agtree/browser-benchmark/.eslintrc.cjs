@@ -1,5 +1,5 @@
 /**
- * @file ESLint configuration for the benchmark folder.
+ * @file ESLint configuration for the benchmark.
  */
 
 module.exports = {

@@ -1,3 +1,7 @@
+/**
+ * @file Configuration for the benchmark.
+ */
+
 import { defaultParserOptions } from '../src/parser/options';
 import { type BenchmarkConfig } from './interfaces';
 

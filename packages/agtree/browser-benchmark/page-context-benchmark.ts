@@ -1,11 +1,16 @@
 /* eslint-disable func-names */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @file Benchmark code to be run in the browser.
+ */
+
 import type Benchmark from 'benchmark';
 import type ObjectSizeof from 'object-sizeof';
 
 import type * as AGTree from '../src/index';
 import { type ParserOptions } from '../src/parser/options';
 
+// Extend the global window object with the necessary types.
 declare global {
     interface Window {
         AGTree: typeof AGTree;
@@ -14,31 +19,103 @@ declare global {
     }
 }
 
+/**
+ * Interface for the benchmark arguments.
+ */
 export interface PageContextBenchmarkArgs {
+    /**
+     * Raw filter list contents to benchmark.
+     */
     rawFilterList: string;
+
+    /**
+     * AGTree parser options to use when parsing the filter list.
+     */
     agtreeParserOptions: ParserOptions;
 }
 
+/**
+ * Interface for the Benchmark.js result.
+ */
 interface BenchmarkJsResult {
+    /**
+     * Action name.
+     */
     toolName: string;
+
+    /**
+     * Operations per second.
+     */
     opsPerSecond: string;
+
+    /**
+     * Number of runs sampled.
+     */
     runsSampled: number;
+
+    /**
+     * Average runtime of the action in milliseconds.
+     */
     averageRuntime: string;
+
+    /**
+     * Status of the action ('passed' or 'failed').
+     */
     status: string;
 }
 
+/**
+ * Interface for the stats.
+ */
 interface PageContextStats {
+    /**
+     * Size of the raw filter list in bytes.
+     */
     rawFilterListSize: number;
+
+    /**
+     * Size of the parsed filter list AST in bytes.
+     */
     parsedFilterListSize: number;
+
+    /**
+     * Size of the serialized filter list in bytes (how much space it takes in the byte buffer).
+     */
     serializedFilterListSize: number;
+
+    /**
+     * Size of the deserialized filter list AST in bytes.
+     *
+     * @note It may be different from the parsed filter list size, because serialization may drop some data,
+     * like raws.
+     */
     deserializedFilterListSize: number;
 }
 
+/**
+ * Interface for the benchmark results.
+ */
 export interface PageContextBenchmarkResults {
+    /**
+     * Stats.
+     */
     stats: PageContextStats;
+
+    /**
+     * Benchmark results.
+     */
     results: BenchmarkJsResult[];
 }
 
+/**
+ * Benchmark code to be run in the browser.
+ *
+ * @param root0 Arguments.
+ * @param root0.rawFilterList Raw filter list contents to benchmark.
+ * @param root0.agtreeParserOptions AGTree parser options to use when parsing the filter list.
+ *
+ * @returns Benchmark results.
+ */
 export const pageContextBenchmark = async (
     { rawFilterList, agtreeParserOptions }: PageContextBenchmarkArgs,
 ): Promise<PageContextBenchmarkResults> => {
