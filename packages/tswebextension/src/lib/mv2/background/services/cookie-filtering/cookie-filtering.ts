@@ -97,8 +97,6 @@ export class CookieFiltering {
         // Note: this method won't work in the extension build with manifest v3.
         const headersModified = this.applyRulesToRequestCookieHeaders(context);
 
-        console.log(headersModified);
-
         return headersModified;
     }
 
@@ -225,7 +223,6 @@ export class CookieFiltering {
                 continue;
             }
 
-            const oldCookie = header.value;
             const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, thirdParty);
 
             if (bRule) {
@@ -241,8 +238,7 @@ export class CookieFiltering {
             const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
             if (mRules.length > 0) {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
-                const newCookie = CookieUtils.serializeCookieToResponseHeader(cookie);
-                console.log({ newCookie, oldCookie }, newCookie === oldCookie);
+
                 if (appliedRules.length > 0) {
                     headersModified = true;
                     responseHeaders[i] = {
