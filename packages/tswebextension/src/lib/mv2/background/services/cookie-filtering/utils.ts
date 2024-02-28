@@ -8,6 +8,16 @@ import { logger } from '../../../../common/utils/logger';
  */
 export default class CookieUtils {
     /**
+     * Set-Cookie header name.
+     */
+    private static SET_COOKIE_HEADER_NAME = 'set-cookie';
+
+    /**
+     * Line feed character.
+     */
+    private static LINE_FEED = '\n';
+
+    /**
      * RegExp to match field-content in RFC 7230 sec 3.2.
      *
      * Example:
@@ -35,6 +45,37 @@ export default class CookieUtils {
         }
 
         return CookieUtils.parseSetCookie(header.value, url);
+    }
+
+    /**
+     * Splits a single `set-cookie` header with multiline cookies into
+     * multiple `set-cookie` headers with single-line cookies.
+     *
+     * Firefox packs all cookies in a single set-cookie header concatenated with `\n`
+     * https://bugzilla.mozilla.org/show_bug.cgi?id=1349151#c1.
+     *
+     * @param responseHeaders HTTP response headers.
+     */
+    static splitMultilineCookies(responseHeaders: WebRequest.HttpHeaders): void {
+        for (let i = responseHeaders.length - 1; i > 0; i -= 1) {
+            const { name, value } = responseHeaders[i];
+            if (name.toLowerCase() !== CookieUtils.SET_COOKIE_HEADER_NAME
+                || !value
+                || !value.includes(CookieUtils.LINE_FEED)) {
+                continue;
+            }
+
+            const values = value.split(CookieUtils.LINE_FEED);
+
+            // Remove the original header, iteration won't be broken
+            // as the array is being modified from the end
+            responseHeaders.splice(i, 1);
+
+            // eslint-disable-next-line @typescript-eslint/no-shadow
+            values.forEach((value) => {
+                responseHeaders.push({ name: CookieUtils.SET_COOKIE_HEADER_NAME, value });
+            });
+        }
     }
 
     /**

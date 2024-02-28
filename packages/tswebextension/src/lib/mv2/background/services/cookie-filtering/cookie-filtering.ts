@@ -212,22 +212,9 @@ export class CookieFiltering {
         }
 
         const cookieRules = matchingResult.getCookieRules();
+
         if (isFirefox) {
-            for (let i = responseHeaders.length - 1; i > 0; i -= 1) {
-                const header = responseHeaders[i];
-                if (header.name.toLowerCase() === 'set-cookie') {
-                    const { value } = header;
-                    if (!value) {
-                        continue;
-                    }
-                    const values = value.split('\n');
-                    delete responseHeaders[i];
-                    // eslint-disable-next-line @typescript-eslint/no-shadow
-                    values.forEach((value) => {
-                        responseHeaders.push({ name: 'set-cookie', value });
-                    });
-                }
-            }
+            CookieUtils.splitMultilineCookies(responseHeaders);
         }
 
         for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
