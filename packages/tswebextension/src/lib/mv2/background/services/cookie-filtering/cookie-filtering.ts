@@ -2,6 +2,7 @@
 import { nanoid } from 'nanoid';
 import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
+import { isFirefox } from '../../utils';
 import {
     ContentType,
     defaultFilteringLog,
@@ -95,6 +96,8 @@ export class CookieFiltering {
         // Removes cookie from headers and updates context.
         // Note: this method won't work in the extension build with manifest v3.
         const headersModified = this.applyRulesToRequestCookieHeaders(context);
+
+        console.log(headersModified);
 
         return headersModified;
     }
@@ -209,6 +212,23 @@ export class CookieFiltering {
         }
 
         const cookieRules = matchingResult.getCookieRules();
+        if (isFirefox) {
+            for (let i = responseHeaders.length - 1; i > 0; i -= 1) {
+                const header = responseHeaders[i];
+                if (header.name.toLowerCase() === 'set-cookie') {
+                    const { value } = header;
+                    if (!value) {
+                        continue;
+                    }
+                    const values = value.split('\n');
+                    delete responseHeaders[i];
+                    // eslint-disable-next-line @typescript-eslint/no-shadow
+                    values.forEach((value) => {
+                        responseHeaders.push({ name: 'set-cookie', value });
+                    });
+                }
+            }
+        }
 
         for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
             const header = responseHeaders[i];
@@ -218,6 +238,7 @@ export class CookieFiltering {
                 continue;
             }
 
+            const oldCookie = header.value;
             const bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, cookieRules, thirdParty);
 
             if (bRule) {
@@ -229,9 +250,12 @@ export class CookieFiltering {
                 this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, thirdParty);
             }
 
+            // TODO is mRules are allowlist, we should not serialize cookies at all
             const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
             if (mRules.length > 0) {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
+                const newCookie = CookieUtils.serializeCookieToResponseHeader(cookie);
+                console.log({ newCookie, oldCookie }, newCookie === oldCookie);
                 if (appliedRules.length > 0) {
                     headersModified = true;
                     responseHeaders[i] = {
