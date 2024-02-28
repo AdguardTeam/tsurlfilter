@@ -234,9 +234,8 @@ export class CookieFiltering {
                 this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, thirdParty);
             }
 
-            // TODO is mRules are allowlist, we should not serialize cookies at all
             const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
-            if (mRules.length > 0) {
+            if (mRules.length > 0 && mRules.some((r) => !r.isAllowlist())) {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
 
                 if (appliedRules.length > 0) {
