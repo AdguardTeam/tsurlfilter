@@ -102,6 +102,29 @@ export class ByteBuffer {
     }
 
     /**
+     * Reads a string encoded as length+bytes.
+     *
+     * @param position Position to start from.
+     * @returns String that was read from the byte buffer.
+     */
+    public readStringNew(position: number): string {
+        const chunkIndex = position >>> 0x000F;
+        const chunkOffset = position & 0x7FFF;
+        const leftInChunk = this.chunks[chunkIndex].subarray(chunkOffset);
+
+        // Decode string length first.
+        const highByte = leftInChunk[0];
+        const lowByte = leftInChunk[1];
+        // eslint-disable-next-line no-bitwise
+        const bytesToRead = (highByte << 8) | lowByte;
+
+        // TODO: Handle the case when string does not fit in one chunk:
+        // Use an intermediate shared buffer in this case.
+
+        return ByteBuffer.DECODER.decode(leftInChunk.subarray(2, bytesToRead + 2));
+    }
+
+    /**
      * Reads a sequence of bytes from the buffer into the specified destination
      * array starting at the specified position. Returns the number of bytes
      * that it was able to read.

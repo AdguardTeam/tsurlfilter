@@ -32,6 +32,7 @@ describe('Benchmark decode/encode', () => {
         expect(decodeText3(byteBuffer, 0).decodedText).toBe(str);
         expect(byteBuffer.readString(0)).toBe(str);
         expect(decodeTextNew(byteBufferNew, 0).decodedText).toBe(str);
+        expect(byteBufferNew.readStringNew(0)).toBe(str);
 
         suite.add('Native decoder', () => {
             decoder.decode(stringBytes);
@@ -50,11 +51,15 @@ describe('Benchmark decode/encode', () => {
         });
 
         suite.add('readString (native + chunks directly)', () => {
-            decodeText3(byteBuffer, 0);
+            byteBuffer.readString(0);
         });
 
-        suite.add('decodeTextNew (different encoding)', () => {
+        suite.add('decodeTextNew (new encoding)', () => {
             decodeTextNew(byteBufferNew, 0);
+        });
+
+        suite.add('readStringNew (new encoding directly)', () => {
+            byteBufferNew.readStringNew(0);
         });
 
         // Run the benchmark suite for the current resource
