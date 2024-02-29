@@ -51,6 +51,8 @@ export default class CookieUtils {
      * Splits a single `set-cookie` header with multiline cookies into
      * multiple `set-cookie` headers with single-line cookies.
      *
+     * Mutates `responseHeaders`.
+     *
      * Firefox packs all cookies in a single set-cookie header concatenated with `\n`
      * https://bugzilla.mozilla.org/show_bug.cgi?id=1349151#c1.
      *

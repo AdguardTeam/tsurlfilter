@@ -235,6 +235,8 @@ export class CookieFiltering {
             }
 
             const mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, cookieRules, thirdParty);
+
+            // Only apply if there is at least one non-allowlist rule
             if (mRules.length > 0 && mRules.some((r) => !r.isAllowlist())) {
                 const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
 
