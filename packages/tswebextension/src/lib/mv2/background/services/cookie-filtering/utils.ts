@@ -77,9 +77,6 @@ export default class CookieUtils {
             values.forEach((value) => {
                 responseHeaders.push({ name: CookieUtils.SET_COOKIE_HEADER_NAME, value });
             });
-
-            // there can only be one multiline `set-cookie` header
-            break;
         }
     }
 
