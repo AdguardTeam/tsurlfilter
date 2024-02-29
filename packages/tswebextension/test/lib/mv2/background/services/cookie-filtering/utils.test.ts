@@ -1,6 +1,6 @@
 import CookieUtils from '@lib/mv2/background/services/cookie-filtering/utils';
 import ParsedCookie from '@lib/mv2/background/services/cookie-filtering/parsed-cookie';
-import { RESPONSE_HEADERS } from '../../fixtures/response-headers';
+import { getResponseHeaders } from '../../fixtures/response-headers';
 
 const TEST_URL = 'https://test.com/url';
 
@@ -260,7 +260,7 @@ describe('Cookie utils - splitMultilineCookies', () => {
     };
 
     it('splits single `set-cookie` header into multiple', () => {
-        const responseHeaders = [...RESPONSE_HEADERS, MULTILINE_COOKIE];
+        const responseHeaders = [...getResponseHeaders(), MULTILINE_COOKIE];
         const initialLength = responseHeaders.length;
 
         CookieUtils.splitMultilineCookies(responseHeaders);
@@ -273,7 +273,7 @@ describe('Cookie utils - splitMultilineCookies', () => {
     });
 
     it('does nothing for a single line `set-cookie` headers or any other', () => {
-        const responseHeaders = [...RESPONSE_HEADERS, SINGLE_LINE_COOKIE];
+        const responseHeaders = [...getResponseHeaders(), SINGLE_LINE_COOKIE];
         const initialLength = responseHeaders.length;
 
         CookieUtils.splitMultilineCookies(responseHeaders);
