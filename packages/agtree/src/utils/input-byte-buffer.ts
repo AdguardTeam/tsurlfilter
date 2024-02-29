@@ -9,6 +9,8 @@ import { isArrayOfUint8Arrays } from './type-guards';
 import { type Storage } from './storage-interface';
 import { decodeText } from './text-decoder';
 
+const TMP_BUFFER_SIZE = 8192;
+
 /**
  * Input byte buffer for reading binary data.
  *
@@ -24,6 +26,10 @@ export class InputByteBuffer {
      * Current offset in the buffer for reading.
      */
     private offset: number;
+
+    private decoder = new TextDecoder();
+
+    private buffer = new Uint8Array(TMP_BUFFER_SIZE);
 
     /**
      * Constructs a new InputByteBuffer instance.
@@ -104,9 +110,23 @@ export class InputByteBuffer {
      * @returns Decoded string from the buffer.
      */
     public readString(): string {
-        const result = decodeText(this.byteBuffer, this.offset);
-        this.offset += result.bytesConsumed;
-        return result.decodedText;
+        // const result = decodeText(this.byteBuffer, this.offset);
+        // this.offset += result.bytesConsumed;
+        // return result.decodedText;
+
+        let result = '';
+        let byte = this.byteBuffer.readByte(this.offset++);
+
+        while (byte) {
+            let i = 0;
+            for (; i < TMP_BUFFER_SIZE && byte; i++) {
+                this.buffer[i] = byte;
+                byte = this.byteBuffer.readByte(this.offset++);
+            }
+            result += this.decoder.decode(this.buffer.subarray(0, i));
+        }
+
+        return result;
     }
 
     /**
