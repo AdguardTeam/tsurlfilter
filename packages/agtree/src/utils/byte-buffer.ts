@@ -73,6 +73,58 @@ export class ByteBuffer {
         this.chunks[chunkIndex][chunkOffset] = value;
     }
 
+    private static readonly DECODER = new TextDecoder();
+
+    /**
+     * Reads a null-terminated string from the byte buffer.
+     *
+     * @param position Position to start from.
+     * @returns String that was read from the byte buffer.
+     */
+    public readString(position: number): string {
+        // TODO: !!! DIRTY JUST FOR BENCH
+        // WHERE POSITION IS 0 AND EVERYTHING FITS IN ONE CHUNK.
+
+        const chunkIndex = position >>> 0x000F;
+        const chunkOffset = position & 0x7FFF;
+        const leftInChunk = this.chunks[chunkIndex].subarray(chunkOffset);
+        let endOfString = 0;
+
+        for (let i = 0; i < leftInChunk.length; i += 1) {
+            if (leftInChunk[i] === 0) {
+                endOfString = i;
+
+                break;
+            }
+        }
+
+        return ByteBuffer.DECODER.decode(leftInChunk.subarray(0, endOfString));
+    }
+
+    /**
+     * Reads a sequence of bytes from the buffer into the specified destination
+     * array starting at the specified position. Returns the number of bytes
+     * that it was able to read.
+     *
+     * @param position The position at which to start reading.
+     * @param dst Destination array.
+     * @returns The number of bytes read.
+     */
+    public read(position: number, dst: Uint8Array): number {
+        const chunkIndex = position >>> 0x000F;
+        const chunkOffset = position & 0x7FFF;
+
+        if (chunkIndex >= this.chunksLength) {
+            return 0;
+        }
+
+        const leftInChunkSlice = this.chunks[chunkIndex].subarray(chunkOffset);
+        const bytesToRead = Math.min(dst.length, leftInChunkSlice.length);
+        dst.set(leftInChunkSlice.subarray(0, bytesToRead));
+
+        return bytesToRead;
+    }
+
     /**
      * Reads a byte from the specified position in the buffer.
      * Returns `undefined` if the position is outside of the buffer's current size.
