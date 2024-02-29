@@ -90,18 +90,18 @@ const nodePlugins = (esm = false) => [
     }),
     externals(),
     // Provide better browser compatibility with Babel
-    getBabelOutputPlugin({
-        presets: [
-            [
-                '@babel/preset-env',
-                {
-                    modules: esm ? false : 'auto',
-                },
-            ],
-        ],
-        allowAllFormats: true,
-        compact: false,
-    }),
+    // getBabelOutputPlugin({
+    //     presets: [
+    //         [
+    //             '@babel/preset-env',
+    //             {
+    //                 modules: esm ? false : 'auto',
+    //             },
+    //         ],
+    //     ],
+    //     allowAllFormats: true,
+    //     compact: false,
+    // }),
 ];
 
 // Plugins for browser builds
@@ -158,10 +158,12 @@ const esm = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(distDir, `${BASE_FILE_NAME}.esm.js`),
+            // file: path.join(distDir, `${BASE_FILE_NAME}.esm.js`),
+            dir: distDir,
             format: 'esm',
             sourcemap: false,
             banner,
+            preserveModules: true,
         },
     ],
     plugins: nodePlugins(),
@@ -215,4 +217,4 @@ const dts = {
 };
 
 // Export build configs for Rollup
-export default [cjs, esm, umd, iife, dts];
+export default [cjs, esm, /*umd, iife,*/ dts];
