@@ -31,6 +31,7 @@ describe('Benchmark decode/encode', () => {
         expect(decodeText2(byteBuffer, 0).decodedText).toBe(str);
         expect(decodeText3(byteBuffer, 0).decodedText).toBe(str);
         expect(byteBuffer.readString(0)).toBe(str);
+        expect(byteBuffer.readString2(0)).toBe(str);
         expect(decodeTextNew(byteBufferNew, 0).decodedText).toBe(str);
         expect(byteBufferNew.readStringNew(0)).toBe(str);
 
@@ -51,6 +52,10 @@ describe('Benchmark decode/encode', () => {
         });
 
         suite.add('readString (native + chunks directly)', () => {
+            byteBuffer.readString(0);
+        });
+
+        suite.add('readString2 (native + chunks directly)', () => {
             byteBuffer.readString(0);
         });
 

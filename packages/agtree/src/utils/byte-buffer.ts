@@ -101,6 +101,28 @@ export class ByteBuffer {
         return ByteBuffer.DECODER.decode(leftInChunk.subarray(0, endOfString));
     }
 
+    readString2(position: number): string {
+        let chunkIndex = position >>> 0x000F;
+        // TODO: check out of bounds
+        let chunkOffset = position & 0x7FFF;
+        let chunk = this.chunks[chunkIndex];
+        let result = '';
+        let nullIdx;
+
+        while (chunkIndex < this.chunksLength) {
+            nullIdx = chunk.indexOf(0, chunkOffset);
+            if (nullIdx !== -1) {
+                result += ByteBuffer.DECODER.decode(chunk.subarray(0, nullIdx));
+                return result;
+            }
+            result += ByteBuffer.DECODER.decode(chunk, { stream: true });
+            chunkIndex += 1;
+            chunkOffset = 0;
+            chunk = this.chunks[chunkIndex];
+        }
+        return result;
+    }
+
     /**
      * Reads a string encoded as length+bytes.
      *
