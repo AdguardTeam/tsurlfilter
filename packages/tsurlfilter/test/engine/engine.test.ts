@@ -466,6 +466,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
 
+        // TODO: In the future it can be $all modifier, if we make it's priority higher than $popup
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
         result = engine.matchRequest(request);
