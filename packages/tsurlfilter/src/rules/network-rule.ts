@@ -266,7 +266,6 @@ export class NetworkRule implements rule.IRule {
      */
     private static readonly CATEGORY_1_OPTIONS_MASK = NetworkRuleOption.ThirdParty
         | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Popup
         | NetworkRuleOption.DnsRewrite;
 
     /**
@@ -1349,9 +1348,7 @@ export class NetworkRule implements rule.IRule {
                 break;
             // $popup
             case OPTIONS.POPUP:
-                // do not add document content-type to $popup
-                // because it may be a single modifier in rule
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
+                this.setRequestType(RequestType.Document, true);
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
             // Content type options

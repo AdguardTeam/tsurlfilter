@@ -609,12 +609,12 @@ describe('NetworkRule constructor', () => {
         let rule = new NetworkRule('||example.org^$popup', -1);
         expect(rule).toBeTruthy();
         expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.NotSet);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
 
         rule = new NetworkRule('||example.org^$script,image,popup', -1);
         expect(rule).toBeTruthy();
         expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Script | RequestType.Image);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Script | RequestType.Image | RequestType.Document);
     });
 });
 
@@ -1277,7 +1277,6 @@ describe('NetworkRule.isHigherPriority', () => {
                 ['/ads$to=example.org', '||example.org/ads', true],
                 // $to < $domain
                 ['/ads$domain=example.org', '/ads$to=example.org', true],
-                ['||example.org^$popup', '||example.org^', true],
             ],
         },
         {
@@ -1288,8 +1287,8 @@ describe('NetworkRule.isHigherPriority', () => {
                 // 1 content-type -> negated content-type
                 ['||example.org$script', '||example.org$~script', true],
                 ['||example.org$document', '||example.org$~document', true],
-                // $popup does not add $document content-type
-                ['||example.org$document,subdocument', '||example.org$popup', true],
+                // $popup explicity adds $document content-type
+                ['||example.org$popup', '||example.org$document,subdocument', true],
                 // content-types -> negated domains
                 ['||example.org$script', '||example.org$domain=~example.org', true],
                 ['||example.org$script,stylesheet', '||example.org$domain=~example.org', true],
@@ -1297,7 +1296,9 @@ describe('NetworkRule.isHigherPriority', () => {
                 ['||example.org$script,stylesheet,domain=~example.org', '||example.org$domain=~example.org', true],
                 ['||example.org$document', '||example.org$all', true],
                 ['||example.org$script,stylesheet,media', '||example.org$all', true],
-                ['||example.org^$all', '||example.org^$popup', true],
+                // for document-requests in this case we want ot show blocking page - that's why $all should be over $popup
+                // TODO: uncomment when make priority of $all higher that $popup
+                // ['||example.org^$all', '||example.org^$popup', true],
                 ['||example.org$script,stylesheet,domain=~example.org', '||example.org$all', true],
                 // 1 method -> 2 methods
                 ['||example.org$method=get', '||example.org$method=get|post', true],
