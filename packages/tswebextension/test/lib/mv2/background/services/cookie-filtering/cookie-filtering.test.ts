@@ -156,7 +156,7 @@ describe('Cookie filtering', () => {
 
     // TODO: Add more edge-cases
 
-    it('only apply rules if there are at least one non-allowlist rule', async () => {
+    it('does not attempt to apply rules if there are no modifying ones', async () => {
         const allowlistRule = new NetworkRule('@@||example.org^$cookie=pick', 1);
         const rules = [allowlistRule];
 
