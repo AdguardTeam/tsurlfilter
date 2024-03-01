@@ -130,9 +130,9 @@ export class RequestBlockingApi {
             //
             // Note: for both rules `||example.com^$document,popup` and `||example.com^$all`
             // there will be document type set so blocking page should be shown
-            // -1 for RequestType.NotSet
             const types = rule.getPermittedRequestTypes();
             // TODO: Remove this hack which is needed to detect $all modifier.
+            // -1 for RequestType.NotSet
             const isOptionAllEnabled = getBitCount(types) === Object.values(RequestType).length - 1;
             const isDocumentRequestTypePermitted = (types & RequestType.Document) === RequestType.Document;
             if (requestType === RequestType.Document && isOptionAllEnabled && isDocumentRequestTypePermitted) {
