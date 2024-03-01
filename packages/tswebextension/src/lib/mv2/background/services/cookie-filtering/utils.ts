@@ -59,7 +59,7 @@ export default class CookieUtils {
      * @param responseHeaders HTTP response headers.
      */
     static splitMultilineCookies(responseHeaders: WebRequest.HttpHeaders): void {
-        for (let i = responseHeaders.length - 1; i > 0; i -= 1) {
+        for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
             const { name, value } = responseHeaders[i];
             if (name.toLowerCase() !== CookieUtils.SET_COOKIE_HEADER_NAME
                 || !value
