@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 
+## [1.0.16] - 2024-03-01
+
+### Changed
+
+- `$popup` should not disable simple blocking rule [#2728].
+
+[1.0.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.16
+[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+
 ## [1.0.15] - 2024-02-22
 
 ### Fixed
