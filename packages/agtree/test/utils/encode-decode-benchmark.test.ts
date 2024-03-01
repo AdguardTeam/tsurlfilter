@@ -13,7 +13,7 @@ describe('Benchmark decode/encode', () => {
     it('Benchmark decode', () => {
         const suite = new Benchmark.Suite();
 
-        const str = 'abc'.repeat(1000);
+        const str = 'abc'.repeat(10);
         const encoder = new TextEncoder();
         const decoder = new TextDecoder();
         const stringBytes = encoder.encode(str);
@@ -26,6 +26,9 @@ describe('Benchmark decode/encode', () => {
         const byteBufferNew = new ByteBuffer();
         encodeTextNew(str, byteBufferNew, 0);
 
+        const byteBufferNew2 = new ByteBuffer();
+        byteBufferNew2.writeString3(0, str);
+
         expect(decoder.decode(stringBytes)).toBe(str);
         expect(decodeText(byteBuffer, 0).decodedText).toBe(str);
         expect(decodeText2(byteBuffer, 0).decodedText).toBe(str);
@@ -34,6 +37,7 @@ describe('Benchmark decode/encode', () => {
         expect(byteBuffer.readString2(0)).toBe(str);
         expect(decodeTextNew(byteBufferNew, 0).decodedText).toBe(str);
         expect(byteBufferNew.readStringNew(0)).toBe(str);
+        expect(byteBufferNew2.readString3(0)).toBe(str);
 
         suite.add('Native decoder', () => {
             decoder.decode(stringBytes);
@@ -56,7 +60,11 @@ describe('Benchmark decode/encode', () => {
         });
 
         suite.add('readString2 (native + chunks directly)', () => {
-            byteBuffer.readString(0);
+            byteBuffer.readString2(0);
+        });
+
+        suite.add('readString3 (native + chunks directly)', () => {
+            byteBufferNew2.readString3(0);
         });
 
         suite.add('decodeTextNew (new encoding)', () => {

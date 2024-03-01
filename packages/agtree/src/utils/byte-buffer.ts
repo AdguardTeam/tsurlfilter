@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-bitwise */
 /**
  * @file Core ByteBuffer implementation for handling binary data in chunks.
@@ -137,7 +138,7 @@ export class ByteBuffer {
         // Decode string length first.
         const highByte = leftInChunk[0];
         const lowByte = leftInChunk[1];
-        // eslint-disable-next-line no-bitwise
+
         const bytesToRead = (highByte << 8) | lowByte;
 
         // TODO: Handle the case when string does not fit in one chunk:
@@ -168,6 +169,121 @@ export class ByteBuffer {
         dst.set(leftInChunkSlice.subarray(0, bytesToRead));
 
         return bytesToRead;
+    }
+
+    public writeBuffer(position: number, buffer: Uint8Array): number {
+        let chunkIndex = position >>> 0x000F;
+        let chunkOffset = position & 0x7FFF;
+
+        const { length } = buffer;
+
+        this.ensureCapacity(position + length);
+
+        let remaining = length;
+
+        // write buffer to chunks
+        while (remaining > 0) {
+            const leftInChunk = ByteBuffer.CHUNK_SIZE - chunkOffset;
+            const toWrite = Math.min(remaining, leftInChunk);
+            // eslint-disable-next-line max-len
+            this.chunks[chunkIndex].set(buffer.subarray(buffer.length - remaining, buffer.length - remaining + toWrite), chunkOffset);
+            remaining -= toWrite;
+            chunkIndex += 1;
+            chunkOffset = 0;
+        }
+
+        return length;
+    }
+
+    private static readonly ENCODER = new TextEncoder();
+
+    // quick writeString3 implementation for readString3 benchmark
+    public writeString3(position: number, value: string): number {
+        // TODO: !!! DIRTY, REWORK THIS - optimize length size, avoid unnecessary allocations
+
+        const encoded = ByteBuffer.ENCODER.encode(value);
+        const { length } = encoded;
+
+        // Ensure capacity for the encoded string + null terminator
+        this.ensureCapacity(position + length + 4);
+
+        // Write the string length (unsigned 32-bit little-endian integer)
+        this.writeByte(position, (length >> 24) & 0xFF);
+        this.writeByte(position + 1, (length >> 16) & 0xFF);
+        this.writeByte(position + 2, (length >> 8) & 0xFF);
+        this.writeByte(position + 3, length & 0xFF);
+
+        // Write the encoded string bytes
+        this.writeBuffer(position + 4, encoded);
+
+        return length + 4;
+    }
+
+    private static SHARED_BUFFER = new Uint8Array(ByteBuffer.CHUNK_SIZE * 2);
+
+    public readString3(position: number): string {
+        // Read string length
+        // TODO: If string is small, we don't need 32 bits - we just use 32 bits for testing the performance first
+        const length = ((this.readByte(position) ?? 0) << 24)
+                    | ((this.readByte(position + 1) ?? 0) << 16)
+                    | ((this.readByte(position + 2) ?? 0) << 8)
+                    | (this.readByte(position + 3) ?? 0);
+
+        position += 4;
+
+        let chunkIndex = position >>> 0x000F;
+        const chunkOffset = position & 0x7FFF; // offset is only relevant for the first chunk
+
+        // In 99% of cases string is:
+        //  1. stored in the current chunk, or
+        //  2. stored in the end of the current chunk and the beginning of the next chunk
+        // We should decode these cases without using decoder's stream option
+
+        // case 1.
+        if (chunkOffset + length < ByteBuffer.CHUNK_SIZE) {
+            return ByteBuffer.DECODER.decode(this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + length));
+        }
+
+        // case 2.
+        if (chunkOffset + length < ByteBuffer.CHUNK_SIZE * 2 - chunkOffset) {
+            ByteBuffer.SHARED_BUFFER.set(this.chunks[chunkIndex].subarray(chunkOffset), 0);
+            ByteBuffer.SHARED_BUFFER.set(
+                this.chunks[chunkIndex + 1].subarray(0, length - (ByteBuffer.CHUNK_SIZE - chunkOffset)),
+                ByteBuffer.CHUNK_SIZE - chunkOffset,
+            );
+            return ByteBuffer.DECODER.decode(ByteBuffer.SHARED_BUFFER.subarray(0, length));
+        }
+
+        // If we are still here, we should decode the string using the stream option
+        const result = [];
+
+        // add first 2 chunks to the result
+        result.push(ByteBuffer.DECODER.decode(this.chunks[chunkIndex].subarray(chunkOffset), { stream: true }));
+        result.push(ByteBuffer.DECODER.decode(this.chunks[chunkIndex + 1], { stream: true }));
+
+        chunkIndex += 2;
+        let remaining = length - (ByteBuffer.CHUNK_SIZE * 2 - chunkOffset);
+
+        while (remaining > 0) {
+            const chunk = this.chunks[chunkIndex];
+            if (!chunk) {
+                throw new Error('Invalid string length');
+            }
+            const toRead = Math.min(remaining, ByteBuffer.CHUNK_SIZE);
+            result.push(
+                ByteBuffer.DECODER.decode(
+                    chunk.subarray(0, toRead),
+                    { stream: true },
+                ),
+            );
+            remaining -= toRead;
+            chunkIndex += 1;
+        }
+
+        // Finish decoding, if something is left
+        result.push(ByteBuffer.DECODER.decode());
+
+        return result.join('');
     }
 
     /**
