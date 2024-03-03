@@ -136,15 +136,26 @@ export class ByteBuffer {
         const leftInChunk = this.chunks[chunkIndex].subarray(chunkOffset);
 
         // Decode string length first.
-        const highByte = leftInChunk[0];
-        const lowByte = leftInChunk[1];
+        let offset = 1;
+        let bytesToRead = 0;
+        const firstByte = leftInChunk[0];
 
-        const bytesToRead = (highByte << 8) | lowByte;
+        if (firstByte < 128) {
+            bytesToRead = firstByte;
+        } else if (firstByte < 192) {
+            const secondByte = leftInChunk[1];
+            offset = 2;
+
+            // eslint-disable-next-line no-bitwise
+            bytesToRead = ((firstByte & 0x3F) << 8) | secondByte;
+        } else {
+            throw new Error('The encoded string is too large');
+        }
 
         // TODO: Handle the case when string does not fit in one chunk:
         // Use an intermediate shared buffer in this case.
 
-        return ByteBuffer.DECODER.decode(leftInChunk.subarray(2, bytesToRead + 2));
+        return ByteBuffer.DECODER.decode(leftInChunk.subarray(offset, bytesToRead + offset));
     }
 
     /**

@@ -31,14 +31,19 @@ export const encodeTextNew = (str: string, buffer: ByteBuffer, start: number): n
     // Write the length first.
     let position = start;
 
-    // eslint-disable-next-line no-bitwise
-    const highByte = (result.written >> 8) & 0xFF;
-    // eslint-disable-next-line no-bitwise
-    const lowByte = result.written & 0xFF;
-    buffer.writeByte(position, highByte);
-    position += 1;
-    buffer.writeByte(position, lowByte);
-    position += 1;
+    if (result.written < 128) {
+        buffer.writeByte(position, result.written);
+        position += 1;
+    } else if (result.written < 16384) {
+        // eslint-disable-next-line no-bitwise
+        buffer.writeByte(position, 128 | (result.written >> 8));
+        position += 1;
+        // eslint-disable-next-line no-bitwise
+        buffer.writeByte(position, result.written & 0xFF);
+        position += 1;
+    } else {
+        throw new Error('The string is too large, do not allow ');
+    }
 
     // TODO: Rework this, provide a "write" function that uses "Uint8Array.set"
     // to write buffer directly.

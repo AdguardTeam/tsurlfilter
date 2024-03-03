@@ -27,12 +27,21 @@ export const decodeTextNew = (buffer: ByteBuffer, start: number): DecoderResult 
     let position = start;
 
     // Decode string length first.
-    const highByte = buffer.readByte(position) || 0;
+    let bytesToRead = 0;
+    const firstByte = buffer.readByte(position) || 0;
     position += 1;
-    const lowByte = buffer.readByte(position) || 0;
-    position += 1;
-    // eslint-disable-next-line no-bitwise
-    const bytesToRead = (highByte << 8) | lowByte;
+
+    if (firstByte < 128) {
+        bytesToRead = firstByte;
+    } else if (firstByte < 192) {
+        const secondByte = buffer.readByte(position) || 0;
+        position += 1;
+
+        // eslint-disable-next-line no-bitwise
+        bytesToRead = ((firstByte & 0x3F) << 8) | secondByte;
+    } else {
+        throw new Error('The encoded string is too large');
+    }
 
     // Re-use the existing buffer, it should fit 99.9999% of all strings.
     let buf = BUFFER;
