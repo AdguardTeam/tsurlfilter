@@ -5,11 +5,7 @@ import { type Browser, type BrowserType } from 'playwright';
 
 import { type ParserOptions } from '../src/parser/options';
 import { type DownloadedFilterListResource } from './interfaces';
-import {
-    type PageContextBenchmarkArgs,
-    pageContextBenchmark,
-    type PageContextBenchmarkResult,
-} from './page-context-benchmark';
+import { benchmark, type BenchmarkArgs, type BenchmarkResult } from './benchmark-code';
 
 /**
  * Run the benchmark in the given browser.
@@ -21,13 +17,13 @@ import {
  * @param objectSizeofIife object-sizeof IIFE code to be injected into the browser.
  * @returns Benchmark results or null if an error occurred.
  */
-export const runBenchmark = async (
+export const runBenchmarkBrowser = async (
     browserLauncher: BrowserType,
     filterList: DownloadedFilterListResource,
     agtreeParserOptions: ParserOptions,
     agtreeIife: string,
     objectSizeofIife: string,
-): Promise<PageContextBenchmarkResult | Error> => {
+): Promise<BenchmarkResult | Error> => {
     let browser: Browser | null = null;
 
     try {
@@ -42,13 +38,19 @@ export const runBenchmark = async (
         await page.addScriptTag({ path: '../node_modules/lodash/lodash.js' });
         await page.addScriptTag({ path: '../node_modules/benchmark/benchmark.js' });
 
+        // Display console logs, if any
+        page.on('console', (message) => {
+            // eslint-disable-next-line no-console
+            console.log('PAGE LOG:', message.text());
+        });
+
         // Evaluate the benchmark in the browser
         const resultWithoutBrowser = await page.evaluate(
-            pageContextBenchmark,
+            benchmark,
             {
                 rawFilterList: filterList.contents,
                 agtreeParserOptions,
-            } as PageContextBenchmarkArgs,
+            } as BenchmarkArgs,
         );
 
         await page.close();
@@ -56,8 +58,8 @@ export const runBenchmark = async (
 
         return {
             ...resultWithoutBrowser,
-            browserName: browser.browserType().name(),
-            browserVersion: browser.version(),
+            environment: browser.browserType().name(),
+            environmentVersion: browser.version(),
         };
     } catch (error) {
         if (browser !== null) {

@@ -2,7 +2,7 @@
 /**
  * @file Benchmark script for AGTree which measures the performance of the library in browser environment.
  *
- * @note Usage: npx tsx benchmark.ts
+ * @note Usage: npx ts-node benchmark.ts
  */
 
 import { chromium, firefox, webkit } from 'playwright';
@@ -10,17 +10,20 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createConsola } from 'consola';
 import { Table } from 'console-table-printer';
-import { writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 
-import { type PageContextBenchmarkResult } from './page-context-benchmark';
 import { buildIife } from './helpers/build-iife';
 import { benchmarkConfig } from './config';
 import { type SystemSpecs, getSystemSpecs } from './helpers/system-specs';
 import { printBytesAsMegabytes } from './helpers/format-size';
 import { downloadFilterLists } from './helpers/filter-downloader';
 import { getMdFileContents } from './helpers/md-contents';
-import { runBenchmark } from './benchmark-runner';
+import { runBenchmarkBrowser } from './benchmark-runner-browser';
 import { type FilterListBenchmarkResult } from './interfaces';
+import { type BenchmarkResult } from './benchmark-code';
+import { runBenchmarkNode } from './benchmark-runner-node';
+import { buildAgTreeForNode } from './helpers/build-agtree-node';
+import { pathExists } from './helpers/fs';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,8 +36,8 @@ const consola = createConsola();
  *
  * @param results Benchmark results to print.
  */
-const printResults = (results: PageContextBenchmarkResult): void => {
-    consola.info(`Benchmark results for ${results.browserName} ${results.browserVersion}`);
+const printResults = (results: BenchmarkResult): void => {
+    consola.info(`Benchmark results for ${results.environment} ${results.environmentVersion}`);
 
     const table = new Table();
 
@@ -110,6 +113,16 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
     );
     consola.success('Build successful');
 
+    consola.info('Build AGTree for Node.js...');
+    // make temp directory if it doesn't exist
+    const tempDir = path.join(__dirname, 'temp');
+    if (!await pathExists(tempDir)) {
+        await mkdir(tempDir);
+    }
+    const agTreeBundlePath = path.join(tempDir, 'agtree-node.js');
+    await writeFile(agTreeBundlePath, await buildAgTreeForNode());
+    consola.success('Build successful');
+
     const results: FilterListBenchmarkResult[] = [];
 
     consola.info('Benchmarking...');
@@ -121,8 +134,22 @@ const printSystemSpecs = async (specs: SystemSpecs) => {
             results: [],
         };
 
+        // run in Node.js
+        const nodeResult = await runBenchmarkNode(
+            filterList,
+            benchmarkConfig.parserOptions,
+        );
+
+        if (nodeResult instanceof Error) {
+            consola.error(nodeResult);
+        } else {
+            printResults(nodeResult);
+            filterListResult.results.push({ ...nodeResult });
+            console.log();
+        }
+
         for (const launcher of [chromium, firefox, webkit]) {
-            const result = await runBenchmark(
+            const result = await runBenchmarkBrowser(
                 launcher,
                 filterList,
                 benchmarkConfig.parserOptions,

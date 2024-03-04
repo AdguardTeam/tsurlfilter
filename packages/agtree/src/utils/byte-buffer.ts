@@ -358,12 +358,8 @@ export class ByteBuffer {
 
         // case 1.
         if (chunkOffset + length < ByteBuffer.CHUNK_SIZE) {
-            // const s = this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + length);
-            // console.log(length, this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + length).length);
             return [
                 ByteBuffer.DECODER.decode(this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + length)),
-                // new String(this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + length).length),
-                // '',
                 lengthRead + length,
             ];
         }
@@ -377,7 +373,6 @@ export class ByteBuffer {
             );
             return [
                 ByteBuffer.DECODER.decode(ByteBuffer.SHARED_BUFFER.subarray(0, length)),
-                // '',
                 lengthRead + length,
             ];
         }
@@ -394,7 +389,8 @@ export class ByteBuffer {
         while (remaining) {
             const chunk = this.chunks[chunkIndex];
             if (!chunk) {
-                throw new Error('Invalid string length');
+                // throw new Error('Invalid string length');
+                break;
             }
             const toRead = Math.min(remaining, ByteBuffer.CHUNK_SIZE);
             result.push(

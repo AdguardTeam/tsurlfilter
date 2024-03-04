@@ -74,7 +74,7 @@ const commonPlugins = [
 ];
 
 // Plugins for Node.js builds
-const nodePlugins = (esm = false) => [
+export const nodePlugins = (esm = false) => [
     ...commonPlugins,
     alias({
         // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
@@ -89,7 +89,7 @@ const nodePlugins = (esm = false) => [
         ],
     }),
     externals(),
-    // Provide better browser compatibility with Babel
+    // // Provide better browser compatibility with Babel
     // getBabelOutputPlugin({
     //     presets: [
     //         [
@@ -107,35 +107,35 @@ const nodePlugins = (esm = false) => [
 // Plugins for browser builds
 export const browserPlugins = [
     ...commonPlugins,
-    nodePolyfills(),
-    // Provide better browser compatibility with Babel
-    getBabelOutputPlugin({
-        presets: [
-            [
-                '@babel/preset-env',
-                {
-                    targets: {
-                        // Simply use the recommended practice
-                        // https://github.com/browserslist/browserslist#best-practices
-                        browsers: [
-                            'last 2 versions',
-                            'not dead',
-                            '> 0.2%',
-                        ],
-                    },
-                },
-            ],
-        ],
-        allowAllFormats: true,
-        compact: false,
-    }),
+    // nodePolyfills(),
+    // // Provide better browser compatibility with Babel
+    // getBabelOutputPlugin({
+    //     presets: [
+    //         [
+    //             '@babel/preset-env',
+    //             {
+    //                 targets: {
+    //                     // Simply use the recommended practice
+    //                     // https://github.com/browserslist/browserslist#best-practices
+    //                     browsers: [
+    //                         'last 2 versions',
+    //                         'not dead',
+    //                         '> 0.2%',
+    //                     ],
+    //                 },
+    //             },
+    //         ],
+    //     ],
+    //     allowAllFormats: true,
+    //     compact: false,
+    // }),
     // Minify the output with Terser
-    terser({
-        output: {
-            // Keep the banner in the minified output
-            preamble: banner,
-        },
-    }),
+    // terser({
+    //     output: {
+    //         // Keep the banner in the minified output
+    //         preamble: banner,
+    //     },
+    // }),
 ];
 
 // CommonJS build configuration
@@ -217,4 +217,4 @@ const dts = {
 };
 
 // Export build configs for Rollup
-export default [cjs, esm, /*umd, iife,*/ dts];
+export default [cjs, esm, umd, iife, dts];
