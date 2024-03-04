@@ -20,16 +20,16 @@ export class InputByteBuffer {
     /**
      * ByteBuffer instance.
      */
-    private byteBuffer: ByteBuffer;
+    protected byteBuffer: ByteBuffer;
 
     /**
      * Current offset in the buffer for reading.
      */
-    private offset: number;
-
-    private decoder = new TextDecoder();
+    protected offset: number;
 
     private buffer = new Uint8Array(TMP_BUFFER_SIZE);
+
+    private decoder = new TextDecoder();
 
     /**
      * Constructs a new InputByteBuffer instance.
@@ -111,14 +111,9 @@ export class InputByteBuffer {
      */
     public readString(): string {
         // custom decoder
-        // const result = decodeText(this.byteBuffer, this.offset);
-        // this.offset += result.bytesConsumed;
-        // return result.decodedText;
-
-        // wrapped native decoder
-        const [result, bytesConsumed] = this.byteBuffer.readString3(this.offset);
-        this.offset += bytesConsumed;
-        return result;
+        const result = decodeText(this.byteBuffer, this.offset);
+        this.offset += result.bytesConsumed;
+        return result.decodedText;
     }
 
     /**

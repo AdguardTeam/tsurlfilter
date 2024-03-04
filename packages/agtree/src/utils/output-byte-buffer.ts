@@ -17,12 +17,12 @@ export class OutputByteBuffer {
     /**
      * ByteBuffer instance.
      */
-    private byteBuffer: ByteBuffer;
+    protected byteBuffer: ByteBuffer;
 
     /**
      * Current offset in the buffer for writing.
      */
-    private offset: number;
+    protected offset: number;
 
     /**
      * Constructs a new OutputByteBuffer instance.
@@ -88,9 +88,7 @@ export class OutputByteBuffer {
      */
     public writeString(value: string): number {
         // custom encoder
-        // const bytesWritten = encodeText(value, this.byteBuffer, this.offset);
-        // wrapped native encoder
-        const bytesWritten = this.byteBuffer.writeString3(this.offset, value);
+        const bytesWritten = encodeText(value, this.byteBuffer, this.offset);
         this.offset += bytesWritten;
         return bytesWritten;
     }
