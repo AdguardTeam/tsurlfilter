@@ -3,7 +3,7 @@
  */
 
 import { type ParserOptions } from '../src/parser/options';
-import { type PageContextBenchmarkResult } from './page-context-benchmark';
+import { type BenchmarkResult } from './benchmark-code';
 
 /**
  * Filter list resource.
@@ -39,7 +39,7 @@ export interface FilterListBenchmarkResult {
     /**
      * Benchmark results for each browser.
      */
-    results: PageContextBenchmarkResult[];
+    results: BenchmarkResult[];
 }
 
 /**

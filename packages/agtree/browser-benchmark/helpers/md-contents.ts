@@ -39,8 +39,8 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
         result.push(`## ${filterListResult.name}`);
         result.push(EMPTY);
 
-        for (const browserResult of filterListResult.results) {
-            result.push(`### ${browserResult.browserName} ${browserResult.browserVersion}`);
+        for (const benchResult of filterListResult.results) {
+            result.push(`### ${benchResult.environment} ${benchResult.environmentVersion}`);
             result.push(EMPTY);
 
             result.push('#### Benchmark results');
@@ -51,7 +51,7 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
                 markdownTable(
                     [
                         ['Action', 'Ops/s', 'Runs sampled', 'Average runtime', 'Status'],
-                        ...browserResult.benchmarkJsResults.map((benchmarkResult) => [
+                        ...benchResult.benchmarkJsResults.map((benchmarkResult) => [
                             benchmarkResult.actionName,
                             benchmarkResult.opsPerSecond,
                             String(benchmarkResult.runsSampled),
@@ -72,11 +72,11 @@ export const getMdFileContents = async (specs: SystemSpecs, filterListResults: F
                 markdownTable(
                     [
                         ['Stat', 'Value'],
-                        ['Raw filter list size', printBytesAsMegabytes(browserResult.stats.rawFilterListSize)],
-                        ['Parsed filter list size', printBytesAsMegabytes(browserResult.stats.parsedFilterListSize)],
-                        ['Serialized size', printBytesAsMegabytes(browserResult.stats.serializedFilterListSize)],
+                        ['Raw filter list size', printBytesAsMegabytes(benchResult.stats.rawFilterListSize)],
+                        ['Parsed filter list size', printBytesAsMegabytes(benchResult.stats.parsedFilterListSize)],
+                        ['Serialized size', printBytesAsMegabytes(benchResult.stats.serializedFilterListSize)],
                         // eslint-disable-next-line max-len
-                        ['Deserialized filter list size', printBytesAsMegabytes(browserResult.stats.deserializedFilterListSize)],
+                        ['Deserialized filter list size', printBytesAsMegabytes(benchResult.stats.deserializedFilterListSize)],
                     ],
                 ),
             );
