@@ -87,7 +87,10 @@ export class OutputByteBuffer {
      * @returns Number of bytes written to the buffer.
      */
     public writeString(value: string): number {
-        const bytesWritten = encodeText(value, this.byteBuffer, this.offset);
+        // custom encoder
+        // const bytesWritten = encodeText(value, this.byteBuffer, this.offset);
+        // wrapped native encoder
+        const bytesWritten = this.byteBuffer.writeString3(this.offset, value);
         this.offset += bytesWritten;
         return bytesWritten;
     }

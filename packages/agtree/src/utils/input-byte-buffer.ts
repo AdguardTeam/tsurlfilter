@@ -110,22 +110,14 @@ export class InputByteBuffer {
      * @returns Decoded string from the buffer.
      */
     public readString(): string {
+        // custom decoder
         // const result = decodeText(this.byteBuffer, this.offset);
         // this.offset += result.bytesConsumed;
         // return result.decodedText;
 
-        let result = '';
-        let byte = this.byteBuffer.readByte(this.offset++);
-
-        while (byte) {
-            let i = 0;
-            for (; i < TMP_BUFFER_SIZE && byte; i++) {
-                this.buffer[i] = byte;
-                byte = this.byteBuffer.readByte(this.offset++);
-            }
-            result += this.decoder.decode(this.buffer.subarray(0, i));
-        }
-
+        // wrapped native decoder
+        const [result, bytesConsumed] = this.byteBuffer.readString3(this.offset);
+        this.offset += bytesConsumed;
         return result;
     }
 

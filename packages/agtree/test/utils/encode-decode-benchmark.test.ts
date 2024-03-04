@@ -8,12 +8,14 @@ import { decodeText2 } from '../../src/utils/text-decoder2';
 import { decodeText3 } from '../../src/utils/text-decoder3';
 import { encodeTextNew } from '../../src/utils/text-encoder-new';
 import { decodeTextNew } from '../../src/utils/text-decoder-new';
+import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
+import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 
 describe('Benchmark decode/encode', () => {
     it('Benchmark decode', () => {
         const suite = new Benchmark.Suite();
 
-        const str = 'abc'.repeat(10);
+        const str = 'abc'.repeat(1000);
         const encoder = new TextEncoder();
         const decoder = new TextDecoder();
         const stringBytes = encoder.encode(str);
@@ -21,6 +23,7 @@ describe('Benchmark decode/encode', () => {
         // null-terminated
         const byteBuffer = new ByteBuffer();
         encodeText(str, byteBuffer, 0);
+        // byteBuffer.writeString2(0, str);
 
         // length + string
         const byteBufferNew = new ByteBuffer();
@@ -29,18 +32,25 @@ describe('Benchmark decode/encode', () => {
         const byteBufferNew2 = new ByteBuffer();
         byteBufferNew2.writeString3(0, str);
 
+        const outBuf = new OutputByteBuffer();
+        outBuf.writeString(str);
+
         expect(decoder.decode(stringBytes)).toBe(str);
         expect(decodeText(byteBuffer, 0).decodedText).toBe(str);
         expect(decodeText2(byteBuffer, 0).decodedText).toBe(str);
         expect(decodeText3(byteBuffer, 0).decodedText).toBe(str);
         expect(byteBuffer.readString(0)).toBe(str);
-        expect(byteBuffer.readString2(0)).toBe(str);
+        expect(byteBuffer.readString2(0)[0]).toBe(str);
         expect(decodeTextNew(byteBufferNew, 0).decodedText).toBe(str);
         expect(byteBufferNew.readStringNew(0)).toBe(str);
-        expect(byteBufferNew2.readString3(0)).toBe(str);
+        expect(byteBufferNew2.readString3(0)[0]).toBe(str);
 
         suite.add('Native decoder', () => {
             decoder.decode(stringBytes);
+        }, {
+            setup: () => {
+                // console.log('setup');
+            },
         });
 
         suite.add('decodeText (first version)', () => {
@@ -65,6 +75,13 @@ describe('Benchmark decode/encode', () => {
 
         suite.add('readString3 (native + chunks directly)', () => {
             byteBufferNew2.readString3(0);
+        });
+
+        const inBuf = new InputByteBuffer((outBuf as any).byteBuffer.chunks);
+
+        suite.add('InputByteBuffer.readString3 (native + chunks directly)', () => {
+            (inBuf as any).offset = 0;
+            inBuf.readString();
         });
 
         suite.add('decodeTextNew (new encoding)', () => {
