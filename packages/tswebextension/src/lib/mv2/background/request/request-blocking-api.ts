@@ -1,5 +1,10 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
+import {
+    RequestType,
+    NetworkRuleOption,
+    NetworkRule,
+    getBitCount,
+} from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import {
@@ -106,7 +111,7 @@ export class RequestBlockingApi {
 
         // Blocking rule can be with $popup modifier - in this case we need
         // to close the tab as soon as possible.
-        // https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#popup-modifier
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
         if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
             const isNewTab = tabsApi.isNewPopupTab(tabId);
 
@@ -125,7 +130,11 @@ export class RequestBlockingApi {
             //
             // Note: for both rules `||example.com^$document,popup` and `||example.com^$all`
             // there will be document type set so blocking page should be shown
-            if ((rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document) {
+            // TODO: Remove this hack which is needed to detect $all modifier.
+            const types = rule.getPermittedRequestTypes();
+            // -1 for RequestType.NotSet
+            const isOptionAllEnabled = getBitCount(types) === Object.values(RequestType).length - 1;
+            if (requestType === RequestType.Document && isOptionAllEnabled) {
                 return documentBlockingService.getDocumentBlockingResponse({
                     eventId,
                     requestUrl,
