@@ -2,7 +2,6 @@
 import { nanoid } from 'nanoid';
 import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
-import { isFirefox } from '../../utils';
 import {
     ContentType,
     defaultFilteringLog,
@@ -210,10 +209,6 @@ export class CookieFiltering {
         }
 
         const cookieRules = matchingResult.getCookieRules();
-
-        if (isFirefox) {
-            CookieUtils.splitMultilineCookies(responseHeaders);
-        }
 
         for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
             const header = responseHeaders[i];

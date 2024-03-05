@@ -53,9 +53,6 @@ export default class CookieUtils {
      *
      * Mutates `responseHeaders`.
      *
-     * Firefox packs all cookies in a single set-cookie header concatenated with `\n`
-     * https://bugzilla.mozilla.org/show_bug.cgi?id=1349151#c1.
-     *
      * @param responseHeaders HTTP response headers.
      */
     static splitMultilineCookies(responseHeaders: WebRequest.HttpHeaders): void {
