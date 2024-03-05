@@ -30,7 +30,9 @@ export class DomainsLookupTable implements ILookupTable {
 
     private readonly byteBuffer: ByteBuffer;
 
-    private readonly storageIndexesList: U32LinkedList;
+    private readonly storageIndexesListPosition: number = 0;
+
+    private binaryMapPosition!: number;
 
     /**
      * Creates a new instance
@@ -41,7 +43,7 @@ export class DomainsLookupTable implements ILookupTable {
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
-        this.storageIndexesList = U32LinkedList.create(this.byteBuffer);
+        this.storageIndexesListPosition = U32LinkedList.create(buffer);
     }
 
     /**
@@ -64,17 +66,16 @@ export class DomainsLookupTable implements ILookupTable {
             const hash = fastHash(domain);
 
             // Add the rule to the lookup table
-            const storageIndex = StorageIndex.create(this.byteBuffer, storageIdx);
-            const storageIndexesPosition = this.domainsLookupTable.get(hash);
+            const storageIndexPosition = StorageIndex.add(this.byteBuffer, storageIdx);
+            let storageIndexesPosition = this.domainsLookupTable.get(hash);
 
             if (storageIndexesPosition === undefined) {
-                const storageIndexes = U32LinkedList.create(this.byteBuffer);
-                storageIndexes.add(storageIndex.offset);
-                this.storageIndexesList.add(storageIndexes.offset);
-                this.domainsLookupTable.set(hash, storageIndexes.offset);
+                storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
+                U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
+                U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
+                this.domainsLookupTable.set(hash, storageIndexesPosition);
             } else {
-                const storageIndexes = new U32LinkedList(this.byteBuffer, storageIndexesPosition);
-                storageIndexes.add(storageIndex.offset);
+                U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
             }
         });
 
@@ -107,19 +108,17 @@ export class DomainsLookupTable implements ILookupTable {
 
         for (let i = 0; i < domains.length; i += 1) {
             const hash = fastHash(domains[i]);
-            const storageIndexesPosition = this.domainsLookupTable.get(hash);
+            const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.binaryMapPosition);
             if (storageIndexesPosition !== undefined) {
-                const storageIndexes = new U32LinkedList(this.byteBuffer, storageIndexesPosition);
+                U32LinkedList.forEach((storageIndexPosition) => {
+                    const storageIndex = StorageIndex.get(this.byteBuffer, storageIndexPosition);
 
-                storageIndexes.forEach((storageIndexPosition) => {
-                    const storageIndex = new StorageIndex(this.byteBuffer, storageIndexPosition);
-
-                    const rule = this.ruleStorage.retrieveNetworkRule(storageIndex.value);
+                    const rule = this.ruleStorage.retrieveNetworkRule(storageIndex);
 
                     if (rule && rule.match(request)) {
                         result.push(rule);
                     }
-                });
+                }, this.byteBuffer, storageIndexesPosition);
             }
         }
 
@@ -127,11 +126,6 @@ export class DomainsLookupTable implements ILookupTable {
     }
 
     finalize(): void {
-        // TODO: fix typing
-        this.domainsLookupTable = new BinaryMap(
-            this.domainsLookupTable,
-            this.byteBuffer,
-            this.byteBuffer.byteOffset,
-        ) as unknown as Map<number, number>;
+        this.binaryMapPosition = BinaryMap.create(this.domainsLookupTable, this.byteBuffer);
     }
 }

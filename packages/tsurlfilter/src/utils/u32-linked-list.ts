@@ -3,64 +3,56 @@ import { ByteBuffer } from './byte-buffer';
 export class U32LinkedList {
     public static readonly EMPTY_POSITION = 0;
 
-    public readonly buffer: ByteBuffer;
+    public static add(value: number, buffer: ByteBuffer, listPosition: number) {
+        const position = buffer.byteOffset;
 
-    public readonly offset: number;
-
-    public get size(): number {
-        return this.buffer.getUint32(this.offset);
+        buffer.addUint32(position, value);
+        const lastNodePosition = U32LinkedList.getLastNodePosition(buffer, listPosition);
+        buffer.addUint32(position + Uint32Array.BYTES_PER_ELEMENT, lastNodePosition);
+        U32LinkedList.setLastNodePosition(buffer, listPosition, position);
+        const size = U32LinkedList.getSize(buffer, listPosition);
+        U32LinkedList.setSize(buffer, listPosition, size + 1);
     }
 
-    public set size(value: number) {
-        this.buffer.setUint32(this.offset, value);
-    }
-
-    public get lastNodePosition(): number {
-        return this.buffer.getUint32(this.offset + Uint32Array.BYTES_PER_ELEMENT);
-    }
-
-    public set lastNodePosition(value: number) {
-        this.buffer.setUint32(this.offset + Uint32Array.BYTES_PER_ELEMENT, value);
-    }
-
-    constructor(buffer: ByteBuffer, offset: number) {
-        this.buffer = buffer;
-        this.offset = offset;
-    }
-
-    public add(value: number) {
-        const position = this.buffer.byteOffset;
-
-        this.buffer.addUint32(position, value);
-        this.buffer.addUint32(position + Uint32Array.BYTES_PER_ELEMENT, this.lastNodePosition);
-
-        this.lastNodePosition = position;
-        this.size += 1;
-    }
-
-    public get(position: number): [value: number, next: number] {
+    public static get(position: number, buffer: ByteBuffer): [value: number, next: number] {
         return [
-            this.buffer.getUint32(position),
-            this.buffer.getUint32(position + Uint32Array.BYTES_PER_ELEMENT),
+            buffer.getUint32(position),
+            buffer.getUint32(position + Uint32Array.BYTES_PER_ELEMENT),
         ];
     }
 
-    public forEach(callback: (value: number) => void): void {
-        let cursor = this.lastNodePosition;
+    public static forEach(callback: (value: number) => void, buffer: ByteBuffer, listPosition: number): void {
+        let cursor = U32LinkedList.getLastNodePosition(buffer, listPosition);
 
         while (cursor !== U32LinkedList.EMPTY_POSITION) {
-            const [nodeValue, nextNodePosition] = this.get(cursor);
+            const [nodeValue, nextNodePosition] = U32LinkedList.get(cursor, buffer);
             callback(nodeValue);
             cursor = nextNodePosition;
         }
     }
 
-    public static create(buffer: ByteBuffer): U32LinkedList {
+    public static create(buffer: ByteBuffer): number {
         const { byteOffset } = buffer;
 
         buffer.addUint32(byteOffset, 0);
         buffer.addUint32(byteOffset + Uint32Array.BYTES_PER_ELEMENT, U32LinkedList.EMPTY_POSITION);
 
-        return new U32LinkedList(buffer, byteOffset);
+        return byteOffset;
+    }
+
+    private static getSize(buffer: ByteBuffer, listPosition: number) {
+        return buffer.getUint32(listPosition);
+    }
+
+    private static setSize(buffer: ByteBuffer, listPosition: number, value: number) {
+        buffer.setUint32(listPosition, value);
+    }
+
+    private static getLastNodePosition(buffer: ByteBuffer, listPosition: number): number {
+        return buffer.getUint32(listPosition + Uint32Array.BYTES_PER_ELEMENT);
+    }
+
+    private static setLastNodePosition(buffer: ByteBuffer, listPosition: number, value: number) {
+        buffer.setUint32(listPosition + Uint32Array.BYTES_PER_ELEMENT, value);
     }
 }

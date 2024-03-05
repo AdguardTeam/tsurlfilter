@@ -8,26 +8,20 @@ export class BinaryMap {
     // Reserved position for the 'undefined' value
     private static readonly EMPTY_POSITION = 0;
 
-    private readonly offset: number;
-
-    private readonly buffer: ByteBuffer;
-
-    constructor(map: Map<number, number>, buffer: ByteBuffer, offset: number) {
-        this.buffer = buffer;
-        this.offset = offset;
-
+    public static create(map: Map<number, number>, buffer: ByteBuffer): number {
         const { size } = map;
+        const { byteOffset } = buffer;
 
-        let cursor = this.offset;
+        let cursor = byteOffset;
 
         // set size
-        this.buffer.addUint32(cursor, size);
+        buffer.addUint32(cursor, size);
         cursor += 4;
 
         const endOfLookup = size * 4 + cursor;
 
         while (cursor < endOfLookup) {
-            this.buffer.addUint32(cursor, BinaryMap.EMPTY_POSITION);
+            buffer.addUint32(cursor, BinaryMap.EMPTY_POSITION);
             cursor += 4;
         }
 
@@ -36,9 +30,9 @@ export class BinaryMap {
 
         map.forEach((value, key) => {
             const keyPosition = cursor;
-            this.buffer.addUint32(cursor, key);
+            buffer.addUint32(cursor, key);
             cursor += 4;
-            this.buffer.addUint32(cursor, value);
+            buffer.addUint32(cursor, value);
             cursor += 4;
             // key is a djb2 hash of the string
             const hash = key % size;
@@ -54,25 +48,27 @@ export class BinaryMap {
 
         bucketsMap.forEach((value, key) => {
             const bucketPosition = cursor;
-            this.buffer.addUint32(cursor, value.length);
+            buffer.addUint32(cursor, value.length);
             cursor += 4;
 
             value.forEach((element) => {
-                this.buffer.addUint32(cursor, element);
+                buffer.addUint32(cursor, element);
                 cursor += 4;
             });
 
             // Map bucket position with hash
-            this.buffer.setUint32(key * 4 + 4 + this.offset, bucketPosition);
+            buffer.setUint32(key * 4 + 4 + byteOffset, bucketPosition);
         });
+
+        return byteOffset;
     }
 
-    public get(input: number): number | undefined {
-        const size = this.buffer.getUint32(this.offset);
+    public static get(input: number, buffer: ByteBuffer, offset: number): number | undefined {
+        const size = buffer.getUint32(offset);
 
         // Get the bucket position
         const hash = input % size;
-        const bucketPosition = this.buffer.getUint32(hash * 4 + 4 + this.offset);
+        const bucketPosition = buffer.getUint32(hash * 4 + 4 + offset);
 
         // If the bucket position is empty, data is not found
         if (bucketPosition === BinaryMap.EMPTY_POSITION) {
@@ -80,17 +76,17 @@ export class BinaryMap {
         }
 
         // Get the bucket
-        const bucketLength = this.buffer.getUint32(bucketPosition);
+        const bucketLength = buffer.getUint32(bucketPosition);
 
         let cursor = bucketPosition + 4;
         const endOfBucket = cursor + (bucketLength * 4);
 
         while (cursor < endOfBucket) {
-            const keyPosition = this.buffer.getUint32(cursor);
-            const key = this.buffer.getUint32(keyPosition);
+            const keyPosition = buffer.getUint32(cursor);
+            const key = buffer.getUint32(keyPosition);
 
             if (key === input) {
-                return this.buffer.getUint32(keyPosition + 4);
+                return buffer.getUint32(keyPosition + 4);
             }
 
             cursor += 4;

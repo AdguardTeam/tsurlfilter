@@ -3,10 +3,6 @@ export class ByteBuffer {
 
     public byteOffset: number = 0;
 
-    public get byteLength(): number {
-        return this.chunks.length << 6;
-    }
-
     constructor(chunks: Uint8Array[] = []) {
         this.chunks = chunks;
     }
