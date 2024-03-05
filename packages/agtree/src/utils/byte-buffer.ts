@@ -360,6 +360,7 @@ export class ByteBuffer {
         if (chunkOffset + length < ByteBuffer.CHUNK_SIZE) {
             return [
                 ByteBuffer.DECODER.decode(this.chunks[chunkIndex].subarray(chunkOffset, chunkOffset + length)),
+                // '',
                 lengthRead + length,
             ];
         }

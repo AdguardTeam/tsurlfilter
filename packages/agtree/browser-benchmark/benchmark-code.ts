@@ -314,8 +314,14 @@ export const benchmark = async (
         agTreeModule.FilterListParser.deserialize(tmpInBuffer, tmpDeserializedNode);
     });
 
-    suite.add('Deserialize byte buffer to AST (new)', () => {
+    suite.add('Deserialize byte buffer to AST (InputByteBuffer2)', () => {
         const tmpInBuffer = new agTreeModule.InputByteBuffer2((outBuffer2 as any).byteBuffer.chunks);
+        const tmpDeserializedNode = {} as AGTree.FilterList;
+        agTreeModule.FilterListParser.deserialize(tmpInBuffer, tmpDeserializedNode);
+    });
+
+    suite.add('Deserialize byte buffer to AST (InputByteBuffer3)', () => {
+        const tmpInBuffer = new agTreeModule.InputByteBuffer3((outBuffer2 as any).byteBuffer.chunks);
         const tmpDeserializedNode = {} as AGTree.FilterList;
         agTreeModule.FilterListParser.deserialize(tmpInBuffer, tmpDeserializedNode);
     });

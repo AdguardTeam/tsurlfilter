@@ -126,6 +126,7 @@ export { decodeText, type DecoderResult } from './utils/text-decoder';
 
 export { OutputByteBuffer2 } from './utils/output-byte-buffer2';
 export { InputByteBuffer2 } from './utils/input-byte-buffer2';
+export { InputByteBuffer3 } from './utils/input-byte-buffer3';
 
 // Constants
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
