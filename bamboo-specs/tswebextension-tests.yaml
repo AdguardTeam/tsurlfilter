@@ -55,13 +55,29 @@ Test:
 
             # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
             npx lerna@6 run --scope @adguard/tswebextension test:prod
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
 
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+            
             # cleanup parent
             rm -rf node_modules
             # cleanup child packages
             npx lerna@6 clean -y
-  final-tasks:
-    - clean
+            # cleanup smoke test packages
+            rm -rf packages/tswebextension/test/builders/rollup-ts/node_modules
+  
+            echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
     - adg-docker: 'true'
 

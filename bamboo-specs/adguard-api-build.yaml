@@ -42,12 +42,6 @@ Build:
 
             cd packages/adguard-api/
             yarn pack --filename adguard-api.tgz
-            cd ../../
-
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
     - inject-variables:
         file: ./packages/adguard-api/dist/build.txt
         scope: RESULT
@@ -57,6 +51,27 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: adguard-api-v${bamboo.inject.version}
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+            
+            # cleanup parent
+            rm -rf node_modules
+            # cleanup child packages
+            npx lerna@6 clean -y
+  
+            echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: adguard-api.tgz
       location: packages/adguard-api/
