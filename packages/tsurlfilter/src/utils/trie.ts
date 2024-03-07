@@ -8,12 +8,12 @@ export class TrieNode {
      * - an instance of TrieNode in case of lonely child
      * - a map where key is a character code and value is it's trie node.
     */
-    private children: Map<number, TrieNode> | TrieNode | undefined;
+    public children: Map<number, TrieNode> | TrieNode | undefined;
 
     /**
      * Character code of this TrieNode.
      */
-    private code: number;
+    public code: number;
 
     /**
      * Data, attached to this trie node. When trie traversal is being done,
