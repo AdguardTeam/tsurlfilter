@@ -1,3 +1,4 @@
+import { WebRequest } from 'webextension-polyfill';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { CookieUtils as CommonCookieUtils } from '../../../../common/cookie-filtering/utils';
 
@@ -5,6 +6,46 @@ import { CookieUtils as CommonCookieUtils } from '../../../../common/cookie-filt
  * Cookie Utils.
  */
 export default class CookieUtils extends CommonCookieUtils {
+    /**
+     * Set-Cookie header name.
+     */
+    private static SET_COOKIE_HEADER_NAME = 'set-cookie';
+
+    /**
+     * Line feed character.
+     */
+    private static LINE_FEED = '\n';
+
+    /**
+     * Splits a single `set-cookie` header with multiline cookies into
+     * multiple `set-cookie` headers with single-line cookies.
+     *
+     * Mutates `responseHeaders`.
+     *
+     * @param responseHeaders HTTP response headers.
+     */
+    static splitMultilineCookies(responseHeaders: WebRequest.HttpHeaders): void {
+        for (let i = responseHeaders.length - 1; i >= 0; i -= 1) {
+            const { name, value } = responseHeaders[i];
+            if (name.toLowerCase() !== CookieUtils.SET_COOKIE_HEADER_NAME
+                || !value
+                || !value.includes(CookieUtils.LINE_FEED)) {
+                continue;
+            }
+
+            const values = value.split(CookieUtils.LINE_FEED);
+
+            // Remove the original header, iteration won't be broken
+            // as the array is being modified from the end
+            responseHeaders.splice(i, 1);
+
+            // eslint-disable-next-line @typescript-eslint/no-shadow
+            values.forEach((value) => {
+                responseHeaders.push({ name: CookieUtils.SET_COOKIE_HEADER_NAME, value });
+            });
+        }
+    }
+
     /**
      * Serializes cookie data into a string suitable for Set-Cookie header.
      *

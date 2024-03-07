@@ -13,6 +13,8 @@ import {
 } from '../../../../common';
 import { MAIN_FRAME_ID, type TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
+import { isFirefox } from '../../utils';
+import CookieUtils from '../../services/cookie-filtering/utils';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -309,6 +311,14 @@ export class RequestEvents {
             responseHeaders,
             statusCode,
         } = details;
+
+        /**
+         * Firefox packs all cookies in a single set-cookie header concatenated with `\n`
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=1349151#c1.
+         */
+        if (responseHeaders && isFirefox) {
+            CookieUtils.splitMultilineCookies(responseHeaders);
+        }
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.HeadersReceived,
