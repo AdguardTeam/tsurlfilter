@@ -74,7 +74,7 @@ const commonPlugins = [
 ];
 
 // Plugins for Node.js builds
-const nodePlugins = (esm = false) => [
+export const nodePlugins = (esm = false) => [
     ...commonPlugins,
     alias({
         // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
