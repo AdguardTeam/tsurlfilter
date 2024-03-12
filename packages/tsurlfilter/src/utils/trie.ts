@@ -19,7 +19,7 @@ export class TrieNode {
      * Data, attached to this trie node. When trie traversal is being done,
      * data from all trie nodes is collected.
      */
-    private data: number[] | undefined;
+    public data: number | undefined;
 
     /**
      * Creates an instance of a TrieNode with the specified char code.
@@ -28,19 +28,6 @@ export class TrieNode {
      */
     constructor(code: number) {
         this.code = code;
-    }
-
-    /**
-     * Attaches data to this TrieNode.
-     *
-     * @param data
-     */
-    attach(data: number): void {
-        if (!this.data) {
-            this.data = [];
-        }
-
-        this.data.push(data);
     }
 
     /**
@@ -62,7 +49,22 @@ export class TrieNode {
 
             root = next;
         }
-        root.attach(data);
+
+        root.data = data;
+    }
+
+    public search(input: string): number {
+        let current: TrieNode = this;
+        for (let i = 0; i < input.length; i += 1) {
+            const c = input.charCodeAt(i);
+            const next = current.getChild(c);
+            if (!next) {
+                return -1;
+            }
+            current = next;
+        }
+
+        return current.data ?? -1;
     }
 
     /**
@@ -84,8 +86,8 @@ export class TrieNode {
             if (!next) {
                 break;
             }
-            if (next.data) {
-                result.push(...next.data);
+            if (typeof next.data === 'number') {
+                result.push(next.data);
             }
             current = next;
         }

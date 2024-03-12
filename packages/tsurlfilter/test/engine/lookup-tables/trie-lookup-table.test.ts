@@ -2,11 +2,12 @@ import { NetworkRule, RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { TrieLookupTable } from '../../../src/engine/lookup-tables/trie-lookup-table';
+import { ByteBuffer } from '../../../src/utils/byte-buffer';
 
 describe('Trie Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const ruleStorage = createRuleStorage([]);
-        const table = new TrieLookupTable(ruleStorage);
+        const table = new TrieLookupTable(ruleStorage, new ByteBuffer());
 
         expect(table.addRule(new NetworkRule('http://p', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
@@ -34,9 +35,10 @@ describe('Trie Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new TrieLookupTable(ruleStorage);
+        const table = new TrieLookupTable(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
+        table.finalize();
         expect(table.getRulesCount()).toBe(4);
 
         expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);

@@ -32,7 +32,7 @@ export class NetworkEngine {
     /**
      * Lookup table that relies on the rule shortcuts to speed up the search.
      */
-    private readonly shortcutsLookupTable: ILookupTable;
+    private readonly shortcutsLookupTable: TrieLookupTable;
 
     /**
      * Lookup table for rules like '||hostname^' or '||hostname/path'
@@ -57,7 +57,7 @@ export class NetworkEngine {
         this.rulesCount = 0;
         this.domainsLookupTable = new DomainsLookupTable(storage, this.byteBuffer);
         this.hostnameLookupTable = new HostnameLookupTable(storage, this.byteBuffer);
-        this.shortcutsLookupTable = new TrieLookupTable(storage);
+        this.shortcutsLookupTable = new TrieLookupTable(storage, this.byteBuffer);
         this.seqScanLookupTable = new SeqScanLookupTable();
 
         if (skipStorageScan) {
@@ -131,5 +131,6 @@ export class NetworkEngine {
     public finalize(): void {
         this.domainsLookupTable.finalize();
         this.hostnameLookupTable.finalize();
+        this.shortcutsLookupTable.finalize();
     }
 }

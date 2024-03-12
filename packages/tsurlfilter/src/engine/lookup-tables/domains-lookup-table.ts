@@ -32,7 +32,7 @@ export class DomainsLookupTable implements ILookupTable {
 
     private readonly storageIndexesListPosition: number = 0;
 
-    private binaryMapPosition!: number;
+    declare private binaryMapPosition: number;
 
     /**
      * Creates a new instance
@@ -71,12 +71,11 @@ export class DomainsLookupTable implements ILookupTable {
 
             if (storageIndexesPosition === undefined) {
                 storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
-                U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
                 U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
                 this.domainsLookupTable.set(hash, storageIndexesPosition);
-            } else {
-                U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
             }
+
+            U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
         });
 
         this.rulesCount += 1;

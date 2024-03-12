@@ -4,6 +4,10 @@ import { NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
 import { ILookupTable } from './lookup-table';
 import { SimpleRegex } from '../../rules/simple-regex';
+import { U32LinkedList } from '../../utils/u32-linked-list';
+import type { ByteBuffer } from '../../utils/byte-buffer';
+import { StorageIndex } from '../../utils/storage-index';
+import { BinaryTrie } from '../../utils/binary-trie';
 
 /**
  * Look up table with underlying prefix tree
@@ -19,6 +23,12 @@ export class TrieLookupTable implements ILookupTable {
      */
     private readonly ruleStorage: RuleStorage;
 
+    private readonly byteBuffer: ByteBuffer;
+
+    private readonly storageIndexesListPosition: number = 0;
+
+    declare private binaryTriePosition: number;
+
     /**
      * Trie that stores rules' shortcuts.
      */
@@ -30,8 +40,10 @@ export class TrieLookupTable implements ILookupTable {
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
-    constructor(storage: RuleStorage) {
+    constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
+        this.byteBuffer = buffer;
+        this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
         this.trie = new TrieNode(0);
     }
 
@@ -62,7 +74,16 @@ export class TrieLookupTable implements ILookupTable {
             return false;
         }
 
-        this.trie.add(shortcut, storageIdx);
+        const storageIndexPosition = StorageIndex.add(this.byteBuffer, storageIdx);
+        let storageIndexesPosition = this.trie.search(shortcut);
+
+        if (storageIndexesPosition === -1) {
+            storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
+            U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
+            this.trie.add(shortcut, storageIndexesPosition);
+        }
+
+        U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
         this.rulesCount += 1;
         return true;
     }
@@ -72,6 +93,10 @@ export class TrieLookupTable implements ILookupTable {
      */
     public getRulesCount(): number {
         return this.rulesCount;
+    }
+
+    public finalize() {
+        this.binaryTriePosition = BinaryTrie.create(this.trie, this.byteBuffer);
     }
 
     /**
@@ -104,7 +129,24 @@ export class TrieLookupTable implements ILookupTable {
      * @param request
      */
     private traverse(request: Request): number[] {
-        return this.trie.traverseAll(request.urlLowercase, request.urlLowercase.length);
+        const storageIndexesPositions = BinaryTrie.traverseAll(
+            request.urlLowercase,
+            request.urlLowercase.length,
+            this.byteBuffer,
+            this.binaryTriePosition,
+        );
+
+        const result: number[] = [];
+
+        for (let i = 0; i < storageIndexesPositions.length; i += 1) {
+            const storageIndexesPosition = storageIndexesPositions[i];
+            U32LinkedList.forEach((storageIndexPosition) => {
+                const storageIndex = StorageIndex.get(this.byteBuffer, storageIndexPosition);
+                result.push(storageIndex);
+            }, this.byteBuffer, storageIndexesPosition);
+        }
+
+        return result;
     }
 
     /**
