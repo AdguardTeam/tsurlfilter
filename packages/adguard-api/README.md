@@ -1,17 +1,23 @@
 # AdGuard API
-**Version: 2.1.0**
 
-AdGuard API is filtering library, provided following features:
+> [!NOTE]
+> Version: **v2.1.0**
 
-- request and content filtering, using [@adguard/tswebextension](../tswebextension/README.md)
-- filtering rules list management (downloading, caching and auto updates)
-- content blocking via AdGuard Assistant UI
-- auto detecting language filters
-- logging request processing
+AdGuard API is a filtering library that provides the following features:
 
-## Table of content
+- Request and content filtering, using
+[@adguard/tswebextension][tswebextensionreadme].
+- Filtering rules list management (downloading, caching, and auto updates).
+- Content blocking via AdGuard Assistant UI.
+- Auto-detecting language filters.
+- Logging request processing.
+
+[tswebextensionreadme]: ../tswebextension/README.md
+
+## Table of contents
+
 - [AdGuard API](#adguard-api)
-  - [Table of content](#table-of-content)
+  - [Table of content](#table-of-contents)
     - [Installation](#installation)
     - [Required web accessible resources](#required-web-accessible-resources)
   - [Configuration](#configuration)
@@ -33,56 +39,51 @@ AdGuard API is filtering library, provided following features:
 
 ### Installation
 
-1. Install `@adguard/api` module via `npm` or `yarn`
-```
-npm install @adguard/api
-```
-or
-```
-yarn add @adguard/api
-```
+1. Install the `@adguard/api` module via `npm` or `yarn`
 
-1. Import `AdguardApi` class to background script
-```
-import { AdguardApi } from "@adguard/api";
-```
+  ```shell
+  npm install @adguard/api
+  ```
 
-1. Import `adguard-contents` in top of you content script entry
+  or
 
-```
-import '@adguard/api/content-script';
-```
+  ```shell
+  yarn add @adguard/api
+  ```
 
-4. Import `adguard-assistant` in top of you assistant script entry
+1. Import the `AdguardApi` class to the background script
 
-```
-import '@adguard/api/assistant';
-```
+  ```ts
+  import { AdguardApi } from "@adguard/api";
+  ```
 
-5. Add [web accessible resources](#required-web-accessible-resources) downloading in you build pipeline or load it manually
+1. Import `adguard-contents` at the top of your content script entry
 
-6. Setup manifest content-script with imported `adguard-contents` as follow
+  ```ts
+  import '@adguard/api/content-script';
+  ```
 
-```
-    {
-      "all_frames": true,
-      "js": [<YOUR content-script bundle>],
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "match_about_blank": true,
-      "run_at": "document_start"
-    }
-```
+1. Import `adguard-assistant` at the top of your assistant script entry
+
+  ```ts
+  import '@adguard/api/assistant';
+  ```
 
 ### Required web accessible resources
 
-Adguard API requires [web accessible resources](https://developer.chrome.com/docs/extensions/mv3/manifest/web_accessible_resources/) from [Adguard Scriptlets library](https://github.com/AdguardTeam/Scriptlets#redirect-resources) for able to redirect web requests to a local "resource" using `$redirect` rule modifier. You can use [@adguard/tswebextenison CLI](../tswebextension/README.md#usage) for downloading it.
+AdGuard API requires [web accessible resources][webaccessibleresources] from the
+[AdGuard Scriptlets library][scriptletsredirectres] to be able to redirect web
+requests to a local "resource" using the `$redirect` rule modifier. You can use
+[@adguard/tswebextension CLI][tswebextensionusage] to download it.
+
+[webaccessibleresources]: https://developer.chrome.com/docs/extensions/mv3/manifest/web_accessible_resources/
+[scriptletsredirectres]: https://github.com/AdguardTeam/Scriptlets#redirect-resources
+[tswebextensionusage]: ../tswebextension/README.md#usage
 
 ## Configuration
 
 **Syntax:**
+
 ```typescript
 type Configuration = {
     filters: number[],
@@ -98,25 +99,42 @@ type Configuration = {
 
 **Properties:**
 
-- `filters` (mandatory) - An array of filters identifiers. You can look for possible filters identifiers in the [filters metadata file](https://filters.adtidy.org/extension/chromium/filters.json).
+- `filters` (mandatory) - An array of filters identifiers. You can look for
+  possible filters identifiers in the [filters metadata file][filters-metadata].
 
 - `filteringEnabled` (mandatory) - Enable/disable filtering engine.
 
 - `allowlist` (optional) - An array of domains, for which AdGuard won't work.
 
-- `blocklist` (optional) - This property completely changes AdGuard behavior. If it is defined, Adguard will work for domains from the `blocklist` only. All other domains will be ignored. If `blocklist` is defined, `allowlist` will be ignored.
+- `blocklist` (optional) - This property completely changes AdGuard behavior. If
+  it is defined, Adguard will work for domains from the `blocklist` only. All
+  other domains will be ignored. If `blocklist` is defined, `allowlist` will be
+  ignored.
 
-- `rules` (optional) - An array of custom filtering rules. Here is an [article](https://adguard.com/en/filterrules.html) describing filtering rules syntax. These custom rules might be created by a user via AdGuard Assistant UI.
+- `rules` (optional) - An array of custom filtering rules. Here is an
+  [article][filter-rules] describing filtering rules syntax. These custom rules
+  might be created by a user via AdGuard Assistant UI.
 
-- `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing filters metadata. Once started, AdGuard will periodically check filters updates by downloading this file. Example: `https://filters.adtidy.org/extension/chromium/filters.json`.
+- `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing
+  filters metadata. Once started, AdGuard will periodically check filters
+  updates by downloading this file. Example:
+  `https://filters.adtidy.org/extension/chromium/filters.json`.
 
-- `filterRulesUrl` (mandatory) - URL mask used for fetching filters rules. `{filter_id}` parameter will be replaced with an actual filter identifier. Example: `https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt` (English filter (filter id = 2) will be loaded from: `https://filters.adtidy.org/extension/chromium/2.txt`)
-  
-- `documentBlockingPageUrl` (optional) - Path to the document blocking page. If not specified, the default browser page will be shown.
+- `filterRulesUrl` (mandatory) - URL mask used for fetching filters rules.
+  `{filter_id}` parameter will be replaced with an actual filter identifier.
+  Example: `https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt`
+  (English filter (filter id = 2) will be loaded from:
+  `https://filters.adtidy.org/extension/chromium/2.txt`)
+
+- `documentBlockingPageUrl` (optional) - Path to the document blocking page. If
+  not specified, the default browser page will be shown.
+
+[filters-metadata]: https://filters.adtidy.org/extension/chromium/filters.json
+[filter-rules]: https://adguard.com/en/filterrules.html
 
 **Example:**
-```typescript
 
+```ts
 const configuration: Configuration = {
     filters: [],
     allowlist: [],
@@ -127,20 +145,26 @@ const configuration: Configuration = {
 };
 ```
 
-> **Please note, that we do not allow using `filters.adtidy.org` other than for testing purposes**. You have to use your own server for storing filters files. You can (and actually should) to use `filters.adtidy.org` for updating files on your side periodically.
-
+> ![!WARNING]
+> **Please note, that we do not allow using `filters.adtidy.org` other than for
+> testing purposes**. You have to use your own server for storing filter files.
+> You can (and actually should) use `filters.adtidy.org` for periodically
+> updating files on your side.
 
 ## Static methods
 
-Creates new `AdguardApi` instance.
+Creates a new `AdguardApi` instance.
+
 ### `AdguardApi.create`
 
 **Syntax:**
+
 ```typescript
 public static async create(): Promise<AdguardApi>
 ```
 
 **Example:**
+
 ```typescript
 const adguardApi = await AdguardApi.create();
 ```
@@ -149,18 +173,20 @@ const adguardApi = await AdguardApi.create();
 
 ### `adguardApi.getMessageHandler`
 
-Gets message handler for API content script messages.
+Gets the message handler for API content script messages.
 
-Api message handler name is a constant that can be exported as `MESSAGE_HANDLER_NAME` from `@adguard/api`.
+The API message handler name is a constant that can be exported as
+`MESSAGE_HANDLER_NAME` from `@adguard/api`.
 
 **Syntax:**
-```typescript
+
+```ts
 public getMessageHandler(): MessageHandlerMV2
 ```
 
 **Example:**
 
-```typescript
+```ts
 // get tswebextension message handler
 const handleApiMessage = adguardApi.getMessageHandler();
 
@@ -169,28 +195,31 @@ const handleAppMessage = async (message: Message) => {
 };
 
 // route message depending on handler name
-browser.runtime.onMessage.addListener(async (message, sender) => { 
+browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message?.handlerName === MESSAGE_HANDLER_NAME) {
     return Promise.resolve(handleApiMessage(message, sender));
   }
   return handleAppMessage(message);
-});    
+});
 ```
 
 **Returns:**
 
-Message handler that will listen to internal messages, for example: message for get computed css for content-script.
+A message handler that will listen to internal messages. For example: messages
+for get computed css for content-script.
 
 ### `adguardApi.start`
 
-Initializes AdGuard and starts it immediately.
+Initializes AdGuard API and starts it immediately.
 
 **Syntax:**
+
 ```typescript
 public async start(configuration: Configuration): Promise<Configuration>
 ```
 
 **Example:**
+
 ```typescript
 const appliedConfiguration = await adguardApi.start(configuration);
 ```
@@ -201,19 +230,21 @@ const appliedConfiguration = await adguardApi.start(configuration);
 
 **Returns:**
 
-Promise, resolved with applied [API Configuration](#api-configuration) when api is initialized and filtering started
+A Promise, resolved with applied [API Configuration](#api-configuration) when api is initialized and filtering started
 
 ### `adguardApi.stop`
 
-Completely stops AdGuard.
+Completely stops AdGuard API.
 
 **Syntax:**
-```typescript
+
+```ts
 public async stop(): Promise<void>
 ```
 
 **Example:**
-```typescript
+
+```ts
 await adguardApi.stop();
 ```
 
@@ -228,99 +259,115 @@ This method modifies AdGuard configuration.
 > Note, that Adguard must be already started (see [adguardApi.start](#adguardapistart)).
 
 **Syntax:**
-```typescript
+
+```ts
 public async configure(configuration: Configuration): Promise<Configuration>
 ```
 
 **Example:**
-```typescript
+
+```ts
 const updatedConfiguration = await adguardApi.configure(configuration);
 ```
 
 **Parameters:**
 
-- `configuration` - [API Configuration](#api-configuration)
+- `configuration` - [API Configuration](#configuration)
 
 **Returns:**
 
-Promise, resolved with applied [API Configuration](#api-configuration) when api config is updated.
+A `Promise` object that is getting resolved with applied
+[API Configuration](#configuration) when the API config is updated.
 
 ### `adguardApi.setFilteringEnabled`
 
 Enables or disables filtering without engine re-initialization.
 
 **Syntax:**
-```typescript
+
+```ts
 public async setFilteringEnabled(value: boolean): Promise<void>
 ```
 
 **Example:**
-```typescript
+
+```ts
 await adguardApi.setFilteringEnabled(false);
 ```
 
 **Parameters:**
 
-- `value` - boolean value, which indicates filtering engine state.
+- `value` - boolean value that indicates the filtering engine state.
 
 **Returns:**
 
-Promise, resolved when filtering engine state is updated.
+A `Promise` object that is getting resolved when filtering engine state is
+updated.
 
 ### `adguardApi.openAssistant`
 
-Opens the AdGuard Assistant UI in the specified tab. You should also subscribe on [onAssistantCreateRule](#adguardapionassistantcreaterule) event channel for applying rules, which are created by the Adguard Assistant.
+Opens the AdGuard Assistant UI in the specified tab. You must also subscribe
+on [onAssistantCreateRule](#adguardapionassistantcreaterule) event channel for
+applying rules that are created by Adguard Assistant.
 
 **Syntax:**
-```typescript
+
+```ts
 public async openAssistant(tabId: number): Promise<void>
 ```
 
 **Example:**
-```typescript
+
+```ts
 await adguardApi.openAssistant(tabId);
 ```
 
 **Parameters:**
 
-- `tabId` - `chrome.tabs.Tab` id. see: https://developer.chrome.com/docs/extensions/reference/tabs/#type-Tab
+- `tabId` - `chrome.tabs.Tab` id, see: <https://developer.chrome.com/docs/extensions/reference/tabs/#type-Tab>
 
 **Returns:**
 
-Promise, resolved when Assistant UI is opened in specified tab
+A `Promise` object that is getting resolved when the Assistant UI is opened in
+the specified tab.
 
 ### `adguardApi.closeAssistant`
 
 Closes AdGuard Assistant in the specified tab.
 
 **Syntax:**
-```typescript
+
+```ts
 public async openAssistant(tabId: number): Promise<void>
 ```
 
 **Example:**
-```typescript
+
+```ts
 await adguardApi.closeAssistant(tabId);
 ```
 
 **Parameters:**
 
-- `tabId` - `chrome.tabs.Tab` id. see: https://developer.chrome.com/docs/extensions/reference/tabs/#type-Tab
+- `tabId` - `chrome.tabs.Tab` id, see: <https://developer.chrome.com/docs/extensions/reference/tabs/#type-Tab>
 
 **Returns:**
 
-Promise, resolved when Assistant UI id closed in specified tab
+A `Promise` object that is getting resolved when Assistant UI id closed in the
+specified tab.
 
 ### `adguardApi.getRulesCount`
 
-Gets current loaded rules count.
+Gets currently loaded rules count.
 
 **Syntax:**
+
 ```typescript
 public getRulesCount(): number
 ```
 
 **Example:**
+
 ```typescript
 adguardApi.getRulesCount();
 ```
@@ -331,17 +378,18 @@ rules count number
 
 ### `adguardApi.onAssistantCreateRule`
 
-TsWebExtension Event channel, which fires event on Assistant rule creation.
+`TsWebExtension` event channel that receives events when a rule is created
+via AdGuard Assistant.
 
 **Syntax:**
 
-```typescript
+```ts
 public onAssistantCreateRule: EventChannel<string>;
 ```
 
 **Example:**
 
-```typescript
+```ts
 
 // update config on Assistant rule apply
 const applyRule = async (rule): Promise<void> => {
@@ -357,11 +405,42 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
 ```
 
+### `adguardApi.onFiltersDeletion`
+
+TsWebExtension Event channel, which fires event on obsoleted filters deletion.
+It can be fired after checking an update for filters in the FiltersUpdateService.
+
+**Syntax:**
+
+```typescript
+public onFiltersDeletion: EventChannel<number[]>;
+```
+
+**Example:**
+
+```typescript
+
+// update config on filter deletion
+const removeObsoletedFilterId = async (filterIds: number[]): Promise<void> => {
+  console.log(`Filters with ids ${filterIds} deleted because they became obsoleted.`);
+  configuration.filters = configuration.filters.filter((id) => !filterIds.includes(id));
+
+  await adguardApi.configure(configuration);
+};
+
+// add listener
+adguardApi.onFiltersDeletion.subscribe(removeObsoletedFilterId);
+
+// remove listener
+adguardApi.onFiltersDeletion.unsubscribe(removeObsoletedFilterId);
+```
+
 ### `adguardApi.onRequestBlocking`
 
 API for adding and removing listeners for request blocking events.
 
 **Syntax:**
+
 ```typescript
 export interface RequestBlockingLoggerInterface {
     addListener(listener: EventChannelListener<RequestBlockingEvent>): void;
@@ -370,6 +449,7 @@ export interface RequestBlockingLoggerInterface {
 ```
 
 **Example:**
+
 ```typescript
 // Registers an event listener
 adguardApi.onRequestBlocked.addListener(
@@ -381,17 +461,17 @@ adguardApi.onRequestBlocked.removeListener(
 )
 ```
 
-
 **Callback parameter properties:**
 
 - `tabId` - Tab identifier.
-- `requestUrl` -Blocked request URL.
-- `referrerUrl` -Referrer URL.
-- `rule` - Filtering rule, which has blocked this request.
-- `filterId` - Rule's filter identifier.
+- `requestUrl` - URL of the blocked request.
+- `referrerUrl` - Referrer URL.
+- `rule` - Filtering rule that has been applied to this request.
+- `filterId` - ID of the filter list the rule belongs to.
 - `requestType` - Request mime type. Possible values are listed below:
 
 > Request types:
+>
 > - `DOCUMENT` - top-level frame document.
 > - `SUBDOCUMENT` - document loaded in a nested frame.
 > - `SCRIPT`
@@ -408,7 +488,7 @@ adguardApi.onRequestBlocked.removeListener(
 
 See full sample app project in [examples/adguard-api](../examples/adguard-api/)
 
-```typescript
+```ts
 import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
 
 (async (): Promise<void> => {
@@ -479,10 +559,12 @@ import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
     }, 60 * 1000);
 })();
 ```
+
 ## Minimum supported browser versions
-| Browser                 	| Version 	 |
-|-------------------------	|:---------:|
-| Chromium Based Browsers 	|  79   	   |
-| Firefox                 	|  78   	   |
-| Opera                   	|  66   	   |
-| Edge                    	|  79   	   |
+
+| Browser                  | Version   |
+|------------------------- |:---------:|
+| Chromium Based Browsers  |  79       |
+| Firefox                  |  78       |
+| Opera                    |  66       |
+| Edge                     |  79       |

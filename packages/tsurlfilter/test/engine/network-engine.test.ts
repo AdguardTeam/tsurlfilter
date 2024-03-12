@@ -1,6 +1,6 @@
 import { NetworkEngine } from '../../src/engine/network-engine';
 import { Request, HTTPMethod } from '../../src';
-import { StringRuleList } from '../../src/filterlist/rule-list';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { RequestType } from '../../src/request-type';
 
@@ -11,7 +11,7 @@ import { RequestType } from '../../src/request-type';
  * @param rules
  */
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
-    const list = new StringRuleList(listId, rules.join('\n'), false);
+    const list = new BufferRuleList(listId, rules.join('\n'), false);
     return new RuleStorage([list]);
 };
 

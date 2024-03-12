@@ -211,6 +211,8 @@ const assistantInjectScriptConfig = {
     ],
 };
 
+// TODO: Remove index files from 'src/lib', 'src/lib/mv2', 'src/lib/mv3' because
+// they are not participating in the build process and not specified as entry points.
 export default [
     backgroundMv2Config,
     backgroundMv3Config,

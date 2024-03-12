@@ -1,31 +1,39 @@
 import fs from 'fs';
-import { ILineReader } from './line-reader';
-import { StringLineReader } from './string-line-reader';
+import { type ILineReader } from './line-reader';
+import { BufferLineReader } from './buffer-line-reader';
 
 /**
- * Reads file line by line
+ * FileLineReader is a class responsible for reading file contents line by line.
  */
 export class FileLineReader implements ILineReader {
     /**
-     * Temp implementation inner reader
+     * FileLineReader relies on an internal BufferLineReader to provide the line
+     * reading functionality.
      */
-    private readonly innerReader: StringLineReader;
+    private readonly innerReader: BufferLineReader;
 
     /**
-     * Constructor
-     * @param path
+     * Constructor of the FileLineReader.
      *
-     * @throws
+     * @param path - Path to the file to read.
+     * @throws Error if the file cannot be read.
      */
     constructor(path: string) {
-        const text = fs.readFileSync(path, 'utf8');
-        this.innerReader = new StringLineReader(text);
+        const buffer = fs.readFileSync(path);
+        this.innerReader = new BufferLineReader(buffer);
     }
 
     /**
-     * Reads next line
+     * Reads next line in the reader.
      */
     public readLine(): string | null {
         return this.innerReader.readLine();
+    }
+
+    /**
+     * Returns the current position of this line reader.
+     */
+    getCurrentPos(): number {
+        return this.innerReader.getCurrentPos();
     }
 }
