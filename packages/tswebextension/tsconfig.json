@@ -4,16 +4,19 @@
         "src",
         "test",
         "rollup.config.ts",
+        "jest-environment-jsdom.ts",
         "jest.config.ts",
         "setupTests.ts",
         "tasks",
         ".eslintrc.js",
-        "src/lib/mv3/.eslintrc.js",
+        "src/lib/mv3/.eslintrc.js"
     ],
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@lib/*": ["src/lib/*"]
+            "@lib/*": [
+                "src/lib/*"
+            ]
         }
     },
     "ts-node": {

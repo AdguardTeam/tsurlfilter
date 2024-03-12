@@ -480,23 +480,10 @@ export class MatchingResult {
             return [];
         }
 
-        const permissionsRules: NetworkRule[] = [];
-
-        for (const rule of this.permissionsRules) {
-            if (rule.isAllowlist()) {
-                /**
-                 * Allowlist with $permissions modifier disables
-                 * all the $permissions rules on all the pages matching the rule pattern.
-                 */
-                if (!rule.getAdvancedModifierValue()) {
-                    return [rule];
-                }
-            } else {
-                permissionsRules.push(rule);
-            }
-        }
-
-        return permissionsRules;
+        return MatchingResult.filterAdvancedModifierRules(
+            this.permissionsRules,
+            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
+        );
     }
 
     /**

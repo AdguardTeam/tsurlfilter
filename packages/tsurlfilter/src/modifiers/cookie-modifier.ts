@@ -148,4 +148,14 @@ export class CookieModifier implements IAdvancedModifier {
     isEmpty(): boolean {
         return !this.regex && !this.cookieName;
     }
+
+    /**
+     * Checks if the given modifier is an instance of CookieModifier.
+     *
+     * @param m The modifier to check.
+     * @returns True if the modifier is an instance of CookieModifier, false otherwise.
+     */
+    public static isCookieModifier = (m: IAdvancedModifier): m is CookieModifier => {
+        return m instanceof CookieModifier;
+    };
 }
