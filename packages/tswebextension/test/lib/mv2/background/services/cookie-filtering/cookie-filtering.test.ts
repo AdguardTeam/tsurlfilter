@@ -156,6 +156,30 @@ describe('Cookie filtering', () => {
 
     // TODO: Add more edge-cases
 
+    it('does not attempt to apply rules if there are no modifying ones', async () => {
+        const allowlistRule = new NetworkRule('@@||example.org^$cookie=pick', 1);
+        const rules = [allowlistRule];
+
+        const responseHeaders = createTestHeaders([{
+            name: 'set-cookie',
+            value: 'pick=updated_value',
+        }]);
+
+        await runCase(rules, [], responseHeaders);
+
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledTimes(2);
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.Cookie,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'pick',
+                rule: allowlistRule,
+                isModifyingCookieRule: false,
+                requestThirdParty: false,
+            }),
+        });
+    });
+
     it('checks cookie specific allowlist regex rule', async () => {
         const cookieRule = new NetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
         const allowlistRule = new NetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);

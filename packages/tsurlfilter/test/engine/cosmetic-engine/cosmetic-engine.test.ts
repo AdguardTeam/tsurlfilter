@@ -1,10 +1,10 @@
 import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../../src/filterlist/rule-storage';
-import { StringRuleList } from '../../../src/filterlist/rule-list';
+import { BufferRuleList } from '../../../src/filterlist/buffer-rule-list';
 import { CosmeticOption, Request, RequestType } from '../../../src';
 
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
-    const list = new StringRuleList(listId, rules.join('\n'), false);
+    const list = new BufferRuleList(listId, rules.join('\n'), false);
     return new RuleStorage([list]);
 };
 

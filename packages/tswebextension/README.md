@@ -3,6 +3,7 @@
 TypeScript library that wraps webextension api for tsurlfilter library.
 
 Table of content:
+
 - [TSWebExtension](#tswebextension)
   - [Browser support](#browser-support)
   - [Install](#install)
@@ -26,7 +27,7 @@ Table of content:
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules](#userrules)
-      - [ verbose (deprecated)](#-verbose-deprecated)
+      - [verbose (deprecated)](#-verbose-deprecated)
       - [logLevel](#loglevel)
       - [settings](#settings)
         - [allowlistInverted](#allowlistinverted)
@@ -97,23 +98,22 @@ Table of content:
       - [publishEvent()](#publishevent)
   - [Development](#development)
 
-
 ## Browser support
 
 |                |manifest v2   |manifest v3  |
 |----------------|--------------|-------------|
-| Chrome         | ✅           | 🚧
-| Firefox        | ✅           | 🚧
+| Chrome         | ✅           | 🚧           |
+| Firefox        | ✅           | 🚧           |
 
 ## Install
 
 ```sh
 yarn add @adguard/tswebextension
 ```
+
 ## Usage
 
 You can find examples in `packages/examples/tswebextension-*`
-
 
 **Note:**
 
@@ -157,7 +157,6 @@ Commands:
                   redirect rules
   help [command]  display help for command
 ```
-
 
 ## API
 
@@ -346,7 +345,7 @@ Stealth mode configuration object.
 
 type: `boolean`
 
-Should the application set a fixed lifetime from [selfDestructFirstPartyCookiesTime](#selfDestructFirstPartyCookiesTime) for first-party cookies.
+Should the application set a fixed lifetime from [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime) for first-party cookies.
 
 ###### selfDestructFirstPartyCookiesTime
 
@@ -358,7 +357,7 @@ Time in minutes to delete first-party cookies.
 
 type: `boolean`
 
-Should the application set a fixed lifetime from [selfDestructThirdPartyCookiesTime](#selfDestructThirdPartyCookiesTime) for third-party cookies.
+Should the application set a fixed lifetime from [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime) for third-party cookies.
 
 ###### selfDestructThirdPartyCookiesTime
 
@@ -390,9 +389,9 @@ type: `boolean`
 
 Includes HTTP headers 'DNT' and 'Sec-GPC' in all requests.
 
-Read more about DNT: https://en.wikipedia.org/wiki/Do_Not_Track.
+Read more about DNT: <https://en.wikipedia.org/wiki/Do_Not_Track>.
 
-Read more about GPC: https://globalprivacycontrol.org.
+Read more about GPC: <https://globalprivacycontrol.org>.
 
 ###### blockWebRTC
 
@@ -692,9 +691,11 @@ type: `EventChannel<FilteringLogEvent>`
 Event channel for [filtering log events](#filtering-log-api-mv2-only).
 
 ### methods
+
 #### addEventListener()
 
 type:
+
 ```
 <T extends FilteringEventType>(type: T, listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>) => void
 ```
@@ -704,6 +705,7 @@ Registers a listener for the specified filtering event type.
 #### publishEvent()
 
 type:
+
 ```
 <T extends FilteringLogEvent>(event: T) => void
 ```
