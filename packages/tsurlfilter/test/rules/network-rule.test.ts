@@ -1296,9 +1296,8 @@ describe('NetworkRule.isHigherPriority', () => {
                 ['||example.org$script,stylesheet,domain=~example.org', '||example.org$domain=~example.org', true],
                 ['||example.org$document', '||example.org$all', true],
                 ['||example.org$script,stylesheet,media', '||example.org$all', true],
-                // for document-requests in this case we want ot show blocking page - that's why $all should be over $popup
-                // TODO: uncomment when make priority of $all higher that $popup
-                // ['||example.org^$all', '||example.org^$popup', true],
+                // $popup has only one permitted request type, so it has higher priority that $all
+                ['||example.org^$popup', '||example.org^$all', true],
                 ['||example.org$script,stylesheet,domain=~example.org', '||example.org$all', true],
                 // 1 method -> 2 methods
                 ['||example.org$method=get', '||example.org$method=get|post', true],
