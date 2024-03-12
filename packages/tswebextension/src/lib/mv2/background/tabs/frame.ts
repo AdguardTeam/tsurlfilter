@@ -7,10 +7,6 @@ export const MAIN_FRAME_ID = 0;
 
 /**
  * Frame context data.
- * We store {@link MatchingResult} and {@link CosmeticResult} in the frame context
- * to apply rules that cannot be handled during request processing.
- * The frame data is deleted after the {@link browser.webNavigation.onCompleted} event.
- * @see {@link WebRequestApi.deleteFrameContext}
  */
 export class Frame {
     /**
@@ -25,17 +21,15 @@ export class Frame {
 
     /**
      * Frame cosmetic result.
-     * This data is saved in the frame because we need to access it for css injection
-     * after deleting request context data.
-     *
-     * @see {@link WebRequestApi.injectCosmetic}
+     * This data is saved in frame, because we need for access it
+     * after request content data delete.
      */
     public cosmeticResult?: CosmeticResult;
 
     /**
      * Frame matching result.
-     * This data is saved in frame, because we need for access it for script rules injection
-     * after deleting request context data.
+     * This data is saved in frame, because we need for access it
+     * after request content data delete.
      */
     public matchingResult?: MatchingResult | null;
 

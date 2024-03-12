@@ -2,8 +2,7 @@ import { nanoid } from 'nanoid';
 import type { WebRequest } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
 
-import { logger } from '../../../common/utils/logger';
-import type { ContentType } from '../../../common/request-type';
+import type { ContentType } from '../../../common';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../tabs/tabs-api';
 
@@ -32,7 +31,7 @@ export type RequestContext = TabFrameRequestContext & {
     eventId: string;
 
     state: RequestContextState;
-    timestamp: number; // webRequest event timestamp
+    timestamp: number; // record time in ms
     referrerUrl: string;
     contentType: ContentType;
     requestFrameId: number;
@@ -53,7 +52,7 @@ export type RequestContext = TabFrameRequestContext & {
     /**
      * Filtering data from {@link EngineApi.getCosmeticResult}.
      */
-    cosmeticResult?: CosmeticResult;
+    cosmeticResult?: CosmeticResult
 };
 
 /**
@@ -65,27 +64,6 @@ export type CreateRequestContext = Omit<RequestContext, 'eventId'>;
  * Implementation of the request context storage.
  */
 export class RequestContextStorage extends Map<string, RequestContext> {
-    /**
-     * The request storage cleanup timeout.
-     */
-    private static CLEANUP_TIMEOUT_MS = 60_000; // 1 min
-
-    /**
-     * The request context data lifetime.
-     * It is based on the default browser 5 minutes request idle timeout + 1 second.
-     *
-     * @see https://source.chromium.org/chromium/chromium/src/+/main:net/socket/client_socket_pool.cc;l=41
-     */
-    private static REQUEST_CONTEXT_LIFETIME_MS = 301_000;
-
-    private cleanupTimerId?: number;
-
-    /** @inheritdoc */
-    constructor() {
-        super();
-        this.scheduleCleanup = this.scheduleCleanup.bind(this);
-    }
-
     /**
      * Create new request context.
      *
@@ -119,50 +97,17 @@ export class RequestContextStorage extends Map<string, RequestContext> {
             return requestContext;
         }
 
-        if (!data.timestamp) {
-            // Incomplete event. Adding timestamp so that the clean up logic could work for it.
-            data.timestamp = Date.now();
-        }
-
-        // TODO: Throws error if request context not found after RequestEvents refactoring.
-        logger.error(`Request context not found for requestId: ${requestId}`);
+        /**
+         * Full context can be created in onBeforeRequest, partial context can
+         * be created on every requestContextStorage.update method call.
+         * TODO: Improve improve internal typings for correct checks these cases
+         * in request events handlers (AG-24428).
+         * TODO: Throws error if request context not found after RequestEvents
+         * refactoring. (AG-24428).
+         */
         super.set(requestId, data as RequestContext);
         return undefined;
     }
-
-    /**
-     * Some requests may not trigger the onCompleted event and therefore will not be removed from the store.
-     * This can occur, for example, with program redirects in the {@link ResourcesService}.
-     * To solve this issue, we clean up the store by checking the records timestamps every
-     * {@link CLEANUP_TIMEOUT_MS} milliseconds and deleting the expired records.
-     */
-    public scheduleCleanup(): void {
-        // If cleanup has already scheduled, clear previous timer.
-        this.clearCleanupTimer();
-
-        this.cleanupTimerId = window.setTimeout(() => {
-            const now = Date.now();
-            super.forEach(({ timestamp }, key) => {
-                if (now > timestamp + RequestContextStorage.REQUEST_CONTEXT_LIFETIME_MS) {
-                    super.delete(key);
-                }
-            });
-
-            this.scheduleCleanup();
-        }, RequestContextStorage.CLEANUP_TIMEOUT_MS);
-    }
-
-    /**
-     * Clears cleanup timer, if it exists.
-     */
-    public clearCleanupTimer(): void {
-        if (this.cleanupTimerId) {
-            window.clearTimeout(this.cleanupTimerId);
-            this.cleanupTimerId = undefined;
-        }
-    }
 }
 
-// TODO: do not create global instance of storage.
 export const requestContextStorage = new RequestContextStorage();
-requestContextStorage.scheduleCleanup();

@@ -1,7 +1,6 @@
 import browser from 'webextension-polyfill';
 import {
-    type IRuleList,
-    BufferRuleList,
+    StringRuleList,
     RuleStorage,
     Engine,
     setConfiguration,
@@ -70,7 +69,7 @@ export class EngineApi {
         private readonly allowlist: Allowlist,
         private readonly appContext: AppContext,
         private readonly stealthApi: StealthApi,
-    ) { }
+    ) {}
 
     /**
      * Starts engine.
@@ -86,12 +85,12 @@ export class EngineApi {
 
         this.allowlist.configure(configuration);
 
-        const lists: IRuleList[] = [];
+        const lists: StringRuleList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
             const { filterId, content, trusted } = filters[i];
             const convertedContent = RuleConverter.convertRules(content);
-            lists.push(new BufferRuleList(
+            lists.push(new StringRuleList(
                 filterId,
                 convertedContent,
                 false,
@@ -102,7 +101,7 @@ export class EngineApi {
 
         if (userrules.length > 0) {
             const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
-            lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
+            lists.push(new StringRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
         const allowlistRulesList = this.allowlist.getAllowlistRules();

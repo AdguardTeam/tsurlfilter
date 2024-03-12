@@ -10,7 +10,6 @@ import {
     METADATA_FILENAME,
     LAZY_METADATA_FILENAME,
 } from '../src/rules/declarative-converter';
-import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -78,13 +77,6 @@ export const convertFilters = async (
 
     for (let i = 0; i < filters.length; i += 1) {
         const filter = filters[i];
-
-        setConfiguration({
-            engine: 'extension',
-            version: '3',
-            verbose: true,
-            compatibility: CompatibilityTypes.Extension,
-        });
 
         // eslint-disable-next-line no-await-in-loop
         const converted = await converter.convertStaticRuleSet(

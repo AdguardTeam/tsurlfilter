@@ -106,6 +106,12 @@ export class RequestBlockingApi {
 
         // If the request is a document request.
         if (requestType === RequestType.Document) {
+            // First, make sure that the content-types of the matching rule include
+            // the content-type of the document.
+            if ((rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                return undefined;
+            }
+
             // Blocking rule can be with $popup modifier - in this case we need
             // to close the tab as soon as possible.
             // https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#popup-modifier
@@ -118,20 +124,9 @@ export class RequestBlockingApi {
                     browser.tabs.remove(tabId);
                     return { cancel: true };
                 }
-
-                // $popup modifier can be used as a single modifier in the rule
-                // so there should be no document type, and:
-                // 1. new tab should be handled as a popup earlier (isNewTab check)
-                // 2. tab loading on direct url navigation should not be blocked
+                // do not block the tab loading on direct url navigation
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449
-                //
-                // Note: for both rules `||example.com^$document,popup` and `||example.com^$all`
-                // there will be document type set (so we can safely return undefined here)
-                // and this function execution shall proceed to the final return statement
-                // and blocking page should be shown
-                if ((rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
-                    return undefined;
-                }
+                return undefined;
             }
 
             // For all other blocking rules, we return our dummy page with the

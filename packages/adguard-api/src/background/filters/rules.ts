@@ -50,15 +50,6 @@ export class FilterRulesApi {
     }
 
     /**
-     * Removes specified filter list from {@link storage}.
-     *
-     * @param filterId Filter id.
-     */
-    async remove(filterId: number): Promise<void> {
-        await this.storage.remove(FilterRulesApi.getFilterKey(filterId));
-    }
-
-    /**
      * Generates {@link Storage} key for specified filter rules
      *
      * @param filterId - Filter Id

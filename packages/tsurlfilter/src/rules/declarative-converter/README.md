@@ -1565,7 +1565,22 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allowAllRequests"
+		},
+		"condition": {
+			"urlFilter": "||example.com^",
+			"resourceTypes": [
+				"main_frame"
+			],
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 140101
+	}
+]
 
 ```
 example 3
@@ -2863,33 +2878,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org/page/*",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 100001
-	}
-]
+[]
 
 ```
 example 3
@@ -3429,7 +3418,19 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "||example.com^",
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 1
+	}
+]
 
 ```
 example 2
@@ -3441,7 +3442,19 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allow"
+		},
+		"condition": {
+			"urlFilter": "||example.com^",
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 100001
+	}
+]
 
 ```
 example 3
@@ -3453,7 +3466,19 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "allow"
+		},
+		"condition": {
+			"urlFilter": "||example.com/abcd.html^",
+			"isUrlFilterCaseSensitive": false
+		},
+		"priority": 100001
+	}
+]
 
 ```
 <a name="advanced_capabilities__$removeheader"></a>

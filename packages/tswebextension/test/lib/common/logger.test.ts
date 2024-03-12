@@ -1,8 +1,32 @@
 /* eslint-disable no-console */
-import { Logger, logLevelSchema, type LogLevel } from '@lib/common/utils/logger';
+import {
+    Logger,
+    LogLevelType,
+    LogLevelName,
+    logLevelNames,
+} from '../../../src/lib/common';
+import { appContext } from '../../../src/lib/mv2/background/context';
+
+jest.mock('../../../src/lib/mv2/background/context', () => ({
+    appContext: {
+        configuration: {},
+    },
+}));
+
+const setVerbose = (value: boolean | undefined): void => {
+    if (appContext.configuration) {
+        appContext.configuration.verbose = value;
+    }
+};
+
+const setLogLevel = (value: LogLevelType): void => {
+    if (appContext.configuration) {
+        appContext.configuration.logLevel = value;
+    }
+};
 
 describe('logger', () => {
-    let logger: Logger;
+    const logger = new Logger();
 
     const callLoggerMethods = (): void => {
         logger.error('message');
@@ -16,15 +40,15 @@ describe('logger', () => {
         jest.spyOn(console, 'warn').mockImplementation(jest.fn);
         jest.spyOn(console, 'info').mockImplementation(jest.fn);
         jest.spyOn(console, 'debug').mockImplementation(jest.fn);
-
-        logger = new Logger();
     });
 
     afterEach(() => {
         jest.restoreAllMocks();
+        setVerbose(undefined);
+        setLogLevel(undefined);
     });
 
-    it('logs only errors at default log level', () => {
+    it('logs  only  errors at default log level', () => {
         callLoggerMethods();
 
         expect(console.error).toHaveBeenCalled();
@@ -34,8 +58,8 @@ describe('logger', () => {
     });
 
     it('calls Logger methods when verbose is set to true', () => {
-        logger.setVerbose(true);
-        logger.setLogLevel(logLevelSchema.enum.debug);
+        setVerbose(true);
+        setLogLevel(LogLevelName.Debug);
         callLoggerMethods();
         expect(console.error).toHaveBeenCalled();
         expect(console.warn).toHaveBeenCalled();
@@ -44,7 +68,7 @@ describe('logger', () => {
     });
 
     it('does not call Logger methods when verbose is set to false', () => {
-        logger.setVerbose(false);
+        setVerbose(false);
         callLoggerMethods();
         // logger.error should be called regardless of 'verbose'
         expect(console.error).toHaveBeenCalled();
@@ -54,7 +78,7 @@ describe('logger', () => {
     });
 
     it('uses LogLevel.Error correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.error);
+        setLogLevel(LogLevelName.Error);
         callLoggerMethods();
 
         expect(console.error).toHaveBeenCalled();
@@ -64,7 +88,7 @@ describe('logger', () => {
     });
 
     it('uses LogLevel.Warn correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.warn);
+        setLogLevel(LogLevelName.Warn);
         callLoggerMethods();
 
         expect(console.error).toHaveBeenCalled();
@@ -74,7 +98,7 @@ describe('logger', () => {
     });
 
     it('uses LogLevel.Info correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.info);
+        setLogLevel(LogLevelName.Info);
         callLoggerMethods();
 
         expect(console.error).toHaveBeenCalled();
@@ -84,7 +108,7 @@ describe('logger', () => {
     });
 
     it('uses LogLevel.Debug correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.debug);
+        setLogLevel(LogLevelName.Debug);
         callLoggerMethods();
 
         expect(console.error).toHaveBeenCalled();
@@ -94,10 +118,9 @@ describe('logger', () => {
     });
 
     it('throws error on invalid log level', () => {
-        expect(() => logger.setLogLevel('invalid' as LogLevel)).toThrow();
-    });
+        setLogLevel('invalid' as LogLevelType);
 
-    it('throws error on invalid verbose', () => {
-        expect(() => logger.setVerbose('invalid' as unknown as boolean)).toThrow();
+        expect(() => logger.error('message'))
+            .toThrow(`Logger only supports following levels: ${logLevelNames.join(', ')}`);
     });
 });

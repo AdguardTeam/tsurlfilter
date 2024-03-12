@@ -7,7 +7,7 @@ jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 const trim = (str: string): string => str.replace(/\s+/g, '');
 
 const expectedScriptTemplate = (text: string): string => `(function() {\
-    if (window.scriptExecuted${timestamp} || document instanceof XMLDocument) {\
+    if (window.scriptExecuted${timestamp}) {\
         return;\
     }\
     var script = document.createElement("script");\

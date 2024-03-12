@@ -1,4 +1,4 @@
-import { NetworkRule, IRuleList, BufferRuleList } from '@adguard/tsurlfilter';
+import { NetworkRule, StringRuleList } from '@adguard/tsurlfilter';
 
 import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 import type { Configuration } from '../../common/configuration';
@@ -49,9 +49,9 @@ export class Allowlist {
      *
      * @returns List of allowlist rules or null.
      */
-    public getAllowlistRules(): IRuleList | null {
+    public getAllowlistRules(): StringRuleList | null {
         if (this.enabled && !this.inverted) {
-            return new BufferRuleList(
+            return new StringRuleList(
                 ALLOWLIST_FILTER_ID,
                 this.domains.map((domain) => {
                     return Allowlist.createAllowlistRuleString(domain);

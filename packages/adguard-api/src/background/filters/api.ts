@@ -53,17 +53,11 @@ export class FiltersApi {
     }
 
     /**
-     * Initializes linked APIs.
-     *
-     * @param filterIds IDs of filters to check for possible obsoleting.
-     *
-     * @returns List of outdated filters ids.
+     * Initializes linked APIs
      */
-    public async init(filterIds: number[]): Promise<number[]> {
+    public async init(): Promise<void> {
         await this.metadataApi.init();
         await this.versionsApi.init();
-
-        return this.removeObsoleteFilters(filterIds);
     }
 
     /**
@@ -119,10 +113,8 @@ export class FiltersApi {
      * If filter version in metadata is higher, downloads and saves new rules content
      *
      * Dispatches {@link NotifierEventType.UpdateFilters} event, if at least one filter has been updated
-     *
-     * @returns List of outdated filters ids.
      */
-    public async updateFilters(): Promise<number[]> {
+    public async updateFilters(): Promise<void> {
         this.logger.info("Update filters");
         /**
          * Reload filters metadata from backend for correct
@@ -130,10 +122,7 @@ export class FiltersApi {
          */
         await this.metadataApi.loadMetadata();
 
-        const installedFilterIds = this.versionsApi.getInstalledFilters();
-        const obsoletedFiltersIds = await this.removeObsoleteFilters(installedFilterIds);
-
-        const ids = installedFilterIds.filter((id) => !obsoletedFiltersIds.includes(id));
+        const ids = this.versionsApi.getInstalledFilters();
 
         const updateTasks = ids.map(async (id) => this.updateFilter(id));
 
@@ -142,47 +131,6 @@ export class FiltersApi {
         if (updatedFilters.some((filterData) => !!filterData?.filterId)) {
             notifier.publishEvent({ type: NotifierEventType.UpdateFilters });
         }
-
-        return obsoletedFiltersIds;
-    }
-
-    /**
-     * Remove if necessary obsolete filters.
-     *
-     * @param filterIds IDs of filters to check for possible obsoleting.
-     *
-     * @returns List of outdated filters ids.
-     */
-    private async removeObsoleteFilters(filterIds: number[]): Promise<number[]> {
-        const installedFilterIds = this.versionsApi.getInstalledFilters();
-        const metadataFiltersIds = this.metadataApi.getFiltersMetadata().map(({ filterId }) => filterId);
-
-        const obsoletedFiltersIds = filterIds.filter((id) => !metadataFiltersIds.includes(id));
-
-        const tasks = obsoletedFiltersIds.map(async (id) => {
-            if (installedFilterIds.includes(id)) {
-                await this.versionsApi.delete(id);
-                await this.filterRulesApi.remove(id);
-
-                this.logger.info(`Obsoleted filter with id: ${id} removed from the storage`);
-            }
-        });
-
-        const promises = await Promise.allSettled(tasks);
-        // Handles errors
-        promises.forEach((promise) => {
-            if (promise.status === "rejected") {
-                this.logger.error("Cannot remove obsoleted filter from storage due to: ", promise.reason);
-            }
-        });
-
-        // Notify top-level about deletion of obsoleted filters.
-        notifier.publishEvent({
-            type: NotifierEventType.DeleteFilters,
-            data: { filtersIds: obsoletedFiltersIds },
-        });
-
-        return obsoletedFiltersIds;
     }
 
     /**

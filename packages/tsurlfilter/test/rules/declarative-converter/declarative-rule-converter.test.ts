@@ -841,35 +841,17 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('ignores rules with single one modifier enabled - popup', async () => {
-        const rules = [
-            '||example.org^$popup',
-            '||test.com^$document,popup',
-        ];
         const filterId = 0;
 
         const filter = await createFilter(
             filterId,
-            rules,
+            ['||example.org^$popup', '||test.com^$document,popup'],
         );
-        const {
-            declarativeRules,
-            errors,
-        } = DeclarativeRulesConverter.convert([filter]);
-
-        const networkRule = new NetworkRule(rules[0], filterId);
-        const expectedError = new UnsupportedModifierError(
-            // eslint-disable-next-line max-len
-            `Network rule with only one enabled modifier $popup is not supported: "${networkRule.getText()}"`,
-            networkRule,
-        );
-
-        expect(errors).toHaveLength(1);
-        expect(errors[0]).toStrictEqual(expectedError);
-
+        const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
             id: 2,
-            priority: 102,
+            priority: 101,
             action: {
                 type: 'block',
             },
@@ -892,7 +874,7 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
-            priority: 56,
+            priority: 55,
             action: {
                 type: 'block',
             },
@@ -1757,31 +1739,6 @@ describe('DeclarativeRuleConverter', () => {
                     isUrlFilterCaseSensitive: false,
                 },
             });
-        });
-    });
-
-    describe('check unsupported options', () => {
-        it('returns UnsupportedModifierError for "genericblock" option', async () => {
-            const filterId = 0;
-            const ruleText = '@@||example.org^$genericblock';
-            const filter = await createFilter(filterId, [ruleText]);
-
-            const {
-                declarativeRules,
-                errors,
-            } = DeclarativeRulesConverter.convert(
-                [filter],
-            );
-            expect(declarativeRules).toHaveLength(0);
-            expect(errors).toHaveLength(1);
-
-            const networkRule = new NetworkRule(ruleText, filterId);
-
-            const err = new UnsupportedModifierError(
-                `Unsupported option "$genericblock" in the rule: "${networkRule.getText()}"`,
-                networkRule,
-            );
-            expect(errors[0]).toStrictEqual(err);
         });
     });
 });

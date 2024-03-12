@@ -1,43 +1,36 @@
 import { IRule } from '../rules/rule';
 
 /**
- * Cache of an individual filter list.
+ * Rule list's cache
  */
 export class ListCache {
     /**
-     * Cache with the rules which are stored inside this cache instance..
+     * Cache with the rules which were retrieved.
      */
     private readonly cache: Map<number, IRule>;
 
     /**
-     * ListCache constructor.
+     * Constructor
      */
     constructor() {
         this.cache = new Map();
     }
 
     /**
-     * @param key - Cache key.
-     * @return - Rule found for specified key or undefined if nothing found.
+     * @param key
+     * @return rule for specified key
      */
     public get(key: number): IRule | undefined {
         return this.cache.get(key);
     }
 
     /**
-     * Stores the rule for the specified key in the cache.
+     * Sets rule for specified key
      *
-     * @param key - Cache key.
-     * @param rule - Cached value.
+     * @param key
+     * @param rule
      */
     public set(key: number, rule: IRule): void {
         this.cache.set(key, rule);
-    }
-
-    /**
-     * @returns - The list cache size.
-     */
-    public getSize() {
-        return this.cache.size;
     }
 }

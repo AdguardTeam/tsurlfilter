@@ -64,16 +64,6 @@ export class RemoveParamModifier implements IAdvancedModifier {
     }
 
     /**
-     * Checks if the given modifier is an instance of RemoveParamModifier.
-     *
-     * @param m The modifier to check.
-     * @returns True if the modifier is an instance of RemoveParamModifier, false otherwise.
-     */
-    public static isRemoveParamModifier = (m: IAdvancedModifier): m is RemoveParamModifier => {
-        return m instanceof RemoveParamModifier;
-    };
-
-    /**
      * Removes query parameters from url
      *
      * @param url

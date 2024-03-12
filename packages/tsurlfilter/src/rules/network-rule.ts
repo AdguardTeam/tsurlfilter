@@ -40,7 +40,7 @@ import { EMPTY_STRING } from '../common/constants';
 /**
  * NetworkRuleOption is the enumeration of various rule options.
  * In order to save memory, we store some options as a flag.
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rule-modifiers
+ * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#modifiers
  */
 export enum NetworkRuleOption {
     /** No value is set. Syntax sugar to simplify code. */
@@ -118,31 +118,22 @@ export enum NetworkRuleOption {
 
     /* $header modifier */
     Header = 1 << 30,
-}
 
-/**
- * NetworkRuleOptions is the enumeration of various rule options groups
- * needed for validation.
- */
-export enum NetworkRuleGroupOptions {
+    // Groups (for validation)
+
     /** Allowlist-only modifiers */
-    AllowlistOnly = NetworkRuleOption.Elemhide
-        | NetworkRuleOption.Genericblock
-        | NetworkRuleOption.Generichide
-        | NetworkRuleOption.Specifichide
-        | NetworkRuleOption.Jsinject
-        | NetworkRuleOption.Urlblock
-        | NetworkRuleOption.Content
-        | NetworkRuleOption.Extension
-        | NetworkRuleOption.Stealth,
+    AllowlistOnly = Elemhide
+        | Genericblock
+        | Generichide
+        | Specifichide
+        | Jsinject
+        | Urlblock
+        | Content
+        | Extension
+        | Stealth,
 
     /** Options supported by host-level network rules * */
-    OptionHostLevelRules = NetworkRuleOption.Important
-        | NetworkRuleOption.Badfilter
-        | NetworkRuleOption.Client
-        | NetworkRuleOption.DnsRewrite
-        | NetworkRuleOption.DnsType
-        | NetworkRuleOption.Ctag,
+    OptionHostLevelRules = Important | Badfilter | Client | DnsRewrite | DnsType | Ctag,
 
     /**
      * Removeparam compatible modifiers
@@ -150,11 +141,7 @@ export enum NetworkRuleGroupOptions {
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
      * except $document (using by default) and this list of modifiers:
      */
-    RemoveParamCompatibleOptions = NetworkRuleOption.RemoveParam
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Badfilter,
+    RemoveParamCompatibleOptions = RemoveParam | ThirdParty | Important | MatchCase | Badfilter,
 
     /**
      * Removeheader compatible modifiers
@@ -162,32 +149,21 @@ export enum NetworkRuleGroupOptions {
      * $removeheader rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
      * except $document (using by default) and this list of modifiers:
      */
-    RemoveHeaderCompatibleOptions = NetworkRuleOption.RemoveHeader
-        | NetworkRuleOption.ThirdParty
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Header
-        | NetworkRuleOption.Badfilter,
+    RemoveHeaderCompatibleOptions = RemoveHeader | ThirdParty | Important | MatchCase | Header | Badfilter,
 
     /**
      * Permissions compatible modifiers
      *
      * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument
      */
-    PermissionsCompatibleOptions = NetworkRuleOption.Permissions
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.Badfilter,
+    PermissionsCompatibleOptions = Permissions | Important | Badfilter,
 
     /**
      * Header compatible modifiers
      *
      * $header is compatible with the limited list of modifiers: $csp and $removeheader (on response headers).
      */
-    HeaderCompatibleOptions = NetworkRuleOption.Header
-        | NetworkRuleOption.Important
-        | NetworkRuleOption.Csp
-        | NetworkRuleOption.RemoveHeader
-        | NetworkRuleOption.Badfilter,
+    HeaderCompatibleOptions = Header | Important | Csp | RemoveHeader | Badfilter,
 }
 
 /**
@@ -288,7 +264,6 @@ export class NetworkRule implements rule.IRule {
      */
     private static readonly CATEGORY_1_OPTIONS_MASK = NetworkRuleOption.ThirdParty
         | NetworkRuleOption.MatchCase
-        | NetworkRuleOption.Popup
         | NetworkRuleOption.DnsRewrite;
 
     /**
@@ -1198,9 +1173,9 @@ export class NetworkRule implements rule.IRule {
 
         if (this.enabledOptions !== NetworkRuleOption.NotSet) {
             return ((this.enabledOptions
-                    & NetworkRuleGroupOptions.OptionHostLevelRules)
+                    & NetworkRuleOption.OptionHostLevelRules)
                 | (this.enabledOptions
-                    ^ NetworkRuleGroupOptions.OptionHostLevelRules)) === NetworkRuleGroupOptions.OptionHostLevelRules;
+                    ^ NetworkRuleOption.OptionHostLevelRules)) === NetworkRuleOption.OptionHostLevelRules;
         }
 
         return true;
@@ -1218,7 +1193,7 @@ export class NetworkRule implements rule.IRule {
      */
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
         if (!skipRestrictions) {
-            if (!this.allowlist && (option & NetworkRuleGroupOptions.AllowlistOnly) === option) {
+            if (!this.allowlist && (option & NetworkRuleOption.AllowlistOnly) === option) {
                 throw new SyntaxError(
                     `Modifier ${NetworkRuleOption[option]} cannot be used in blacklist rule`,
                 );
@@ -1415,9 +1390,7 @@ export class NetworkRule implements rule.IRule {
                 break;
             // $popup
             case OPTIONS.POPUP:
-                // do not add document content-type to $popup
-                // because it may be a single modifier in rule
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
+                this.setRequestType(RequestType.Document, true);
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
             // Content type options
@@ -1782,8 +1755,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.HeaderCompatibleOptions)
-                        !== NetworkRuleGroupOptions.HeaderCompatibleOptions) {
+        if ((this.enabledOptions | NetworkRuleOption.HeaderCompatibleOptions)
+                        !== NetworkRuleOption.HeaderCompatibleOptions) {
             throw new SyntaxError('$header rules are not compatible with some other modifiers');
         }
         if (this.advancedModifier && this.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
@@ -1801,8 +1774,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validatePermissionsRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.PermissionsCompatibleOptions)
-                !== NetworkRuleGroupOptions.PermissionsCompatibleOptions) {
+        if ((this.enabledOptions | NetworkRuleOption.PermissionsCompatibleOptions)
+                !== NetworkRuleOption.PermissionsCompatibleOptions) {
             throw new SyntaxError('$permissions rules are not compatible with some other modifiers');
         }
     }
@@ -1813,8 +1786,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveParamRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.RemoveParamCompatibleOptions)
-            !== NetworkRuleGroupOptions.RemoveParamCompatibleOptions) {
+        if ((this.enabledOptions | NetworkRuleOption.RemoveParamCompatibleOptions)
+            !== NetworkRuleOption.RemoveParamCompatibleOptions) {
             throw new SyntaxError('$removeparam rules are not compatible with some other modifiers');
         }
     }
@@ -1825,8 +1798,8 @@ export class NetworkRule implements rule.IRule {
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateRemoveHeaderRule(): void {
-        if ((this.enabledOptions | NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions)
-            !== NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions) {
+        if ((this.enabledOptions | NetworkRuleOption.RemoveHeaderCompatibleOptions)
+            !== NetworkRuleOption.RemoveHeaderCompatibleOptions) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }
         if (this.headerModifier && this.isOptionEnabled(NetworkRuleOption.Header)) {
