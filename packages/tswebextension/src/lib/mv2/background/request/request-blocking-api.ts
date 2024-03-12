@@ -1,5 +1,10 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import { RequestType, NetworkRuleOption, NetworkRule } from '@adguard/tsurlfilter';
+import {
+    RequestType,
+    NetworkRuleOption,
+    NetworkRule,
+    getBitCount,
+} from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import {
@@ -13,7 +18,7 @@ import { ContentType } from '../../../common/request-type';
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
  */
-type GetBlockingResponseParams = {
+export type GetBlockingResponseParams = {
     tabId: number,
     eventId: string,
     rule: NetworkRule | null,
@@ -104,45 +109,42 @@ export class RequestBlockingApi {
             return undefined;
         }
 
-        // If the request is a document request.
-        if (requestType === RequestType.Document) {
-            // Blocking rule can be with $popup modifier - in this case we need
-            // to close the tab as soon as possible.
-            // https://adguard.com/kb/ru/general/ad-filtering/create-own-filters/#popup-modifier
-            if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
-                const isNewTab = tabsApi.isNewPopupTab(tabId);
+        // Blocking rule can be with $popup modifier - in this case we need
+        // to close the tab as soon as possible.
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
+        if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
+            const isNewTab = tabsApi.isNewPopupTab(tabId);
 
-                if (isNewTab) {
-                    // the tab is considered as a popup and should be closed
-                    RequestBlockingApi.logRuleApplying(data);
-                    browser.tabs.remove(tabId);
-                    return { cancel: true };
-                }
-
-                // $popup modifier can be used as a single modifier in the rule
-                // so there should be no document type, and:
-                // 1. new tab should be handled as a popup earlier (isNewTab check)
-                // 2. tab loading on direct url navigation should not be blocked
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449
-                //
-                // Note: for both rules `||example.com^$document,popup` and `||example.com^$all`
-                // there will be document type set (so we can safely return undefined here)
-                // and this function execution shall proceed to the final return statement
-                // and blocking page should be shown
-                if ((rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
-                    return undefined;
-                }
+            if (isNewTab) {
+                // the tab is considered as a popup and should be closed
+                RequestBlockingApi.logRuleApplying(data);
+                browser.tabs.remove(tabId);
+                return { cancel: true };
             }
 
-            // For all other blocking rules, we return our dummy page with the
-            // option to temporarily disable blocking for the specified domain.
-            return documentBlockingService.getDocumentBlockingResponse({
-                eventId,
-                requestUrl,
-                referrerUrl,
-                rule,
-                tabId,
-            });
+            // $popup modifier can be used as a single modifier in the rule
+            // so there should be no document type, and:
+            // 1. new tab should be handled as a popup earlier (isNewTab check)
+            // 2. tab loading on direct url navigation should not be blocked
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449
+            //
+            // Note: for both rules `||example.com^$document,popup` and `||example.com^$all`
+            // there will be document type set so blocking page should be shown
+            // TODO: Remove this hack which is needed to detect $all modifier.
+            const types = rule.getPermittedRequestTypes();
+            // -1 for RequestType.NotSet
+            const isOptionAllEnabled = getBitCount(types) === Object.values(RequestType).length - 1;
+            if (requestType === RequestType.Document && isOptionAllEnabled) {
+                return documentBlockingService.getDocumentBlockingResponse({
+                    eventId,
+                    requestUrl,
+                    referrerUrl,
+                    rule,
+                    tabId,
+                });
+            }
+
+            return undefined;
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
@@ -155,6 +157,25 @@ export class RequestBlockingApi {
                 tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
                 return { redirectUrl };
             }
+        }
+
+        // Basic rules for blocking requests are applied only to sub-requests
+        // so `||example.com^` will not block the main page
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
+        if (requestType === RequestType.Document) {
+            // but if the blocking rule has $document modifier, blocking page should be shown
+            // e.g. `||example.com^$document`
+            if (rule.getPermittedRequestTypes() === RequestType.Document) {
+                return documentBlockingService.getDocumentBlockingResponse({
+                    eventId,
+                    requestUrl,
+                    referrerUrl,
+                    rule,
+                    tabId,
+                });
+            }
+
+            return undefined;
         }
 
         RequestBlockingApi.logRuleApplying(data);

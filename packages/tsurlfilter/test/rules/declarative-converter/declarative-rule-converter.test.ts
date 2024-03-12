@@ -869,7 +869,7 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
             id: 2,
-            priority: 102,
+            priority: 101,
             action: {
                 type: 'block',
             },
@@ -892,7 +892,7 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
-            priority: 56,
+            priority: 55,
             action: {
                 type: 'block',
             },

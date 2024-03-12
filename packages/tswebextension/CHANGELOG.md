@@ -19,12 +19,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocked ads count leaking between websites [#2080](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080).
 - Breakage of cookie string in Firefox and unnecessary cookie serialization [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 
+## [1.0.16] - 2024-03-01
+
+### Changed
+
+- `$popup` should not disable simple blocking rule [#2728].
+
+[1.0.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.16
+[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+
+## [1.0.15] - 2024-02-22
+
+### Fixed
+
+- `$popup` modifier block other types of resources [#2723].
+
+[1.0.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.15
+[#2723]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2723
+
 ## [1.0.14] - 2024-02-13
 
 ### Changed
 
 - Filtering engine now uses the new `BufferRuleList` provided by `@adguard/tsurlfilter`
   to improve performance and memory usage.
+
+[1.0.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.14
 
 ## [1.0.13] - 2024-02-13
 

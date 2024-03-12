@@ -402,6 +402,79 @@ describe('TestEngineMatchRequest - all modifier', () => {
     });
 });
 
+describe('TestEngineMatchRequest - popup modifier', () => {
+    it('match requests against basic and popup blocking rules', () => {
+        const blockingRuleText = '||example.org^';
+        const popupBlockingRuleText = '||example.org^$popup';
+        const baseRuleList = new BufferRuleList(1, [
+            blockingRuleText,
+            popupBlockingRuleText,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        // Tests matching an XMLHttpRequest; expects to match the basic blocking rule
+        let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+
+        // Tests matching a script request; expects to match the basic blocking rule
+        request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+
+        // Tests matching an image request; expects to match the basic blocking rule
+        request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+
+        // Tests matching a document request; expects to match the popup blocking rule
+        request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(popupBlockingRuleText);
+    });
+
+    it('match requests against all and popup blocking rules', () => {
+        const blockingAllRuleText = '||example.org^$all';
+        const popupBlockingRuleText = '||example.org^$popup';
+        const baseRuleList = new BufferRuleList(1, [
+            blockingAllRuleText,
+            popupBlockingRuleText,
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([baseRuleList]));
+
+        // Tests matching an XMLHttpRequest; expects to match the all-encompassing blocking rule
+        let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
+        let result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+
+        // Tests matching a script request; expects to match the all-encompassing blocking rule
+        request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+
+        // Tests matching an image request; expects to match the all-encompassing blocking rule
+        request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+
+        // TODO: In the future it can be $all modifier, if we make it's priority higher than $popup
+        // Tests matching a document request; expects to match the popup blocking rule
+        request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
+        result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
+        expect(result.getBasicResult()!.getText()).toBe(popupBlockingRuleText);
+    });
+});
+
 describe('TestEngineCosmeticResult - elemhide', () => {
     const specificRuleContent = 'banner_specific';
     const specificRule = `example.org##${specificRuleContent}`;
