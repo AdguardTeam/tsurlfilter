@@ -173,7 +173,6 @@ export class MatchingResult {
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 && rule.getPermittedRequestTypes() === RequestType.Document) {
                 this.popupRule = rule;
-                continue;
             }
 
             // Check blocking rules against $genericblock / $urlblock

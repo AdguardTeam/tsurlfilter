@@ -126,10 +126,6 @@ export class RequestBlockingApi {
         } = data;
 
         if (!rule) {
-            if (popupRule && requestType === RequestType.Document && tabsApi.isNewPopupTab(tabId)) {
-                return RequestBlockingApi.closeTab(data, popupRule);
-            }
-
             return undefined;
         }
 

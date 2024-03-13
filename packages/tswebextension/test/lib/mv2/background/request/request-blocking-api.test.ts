@@ -327,6 +327,18 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual(undefined);
         });
 
+        it('basic rule empty, explicit popup with document, document request - bypass request', () => {
+            const data = getGetBlockingResponseParamsData(
+                '||example.com^$popup,document',
+                '||example.com^$popup,document',
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(mockedBlockingPageResponse);
+        });
+
         it('basic rule and explicit popup with document, document request - bypass request', () => {
             const data = getGetBlockingResponseParamsData(
                 '||example.com^',
