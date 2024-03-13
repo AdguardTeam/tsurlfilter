@@ -15,17 +15,23 @@ import {
 import { ContentType } from '../../../common/request-type';
 
 /**
- * Params for {@link RequestBlockingApi.getBlockingResponse}.
+ * Base params about request.
  */
-export type GetBlockingResponseParams = {
+type RequestParams = {
     tabId: number,
     eventId: string,
-    rule: NetworkRule | null,
-    popupRule: NetworkRule | null,
     referrerUrl: string,
     requestUrl: string,
     requestType: RequestType,
     contentType: ContentType,
+};
+
+/**
+ * Params for {@link RequestBlockingApi.getBlockingResponse}.
+ */
+export type GetBlockingResponseParams = RequestParams & {
+    rule: NetworkRule | null,
+    popupRule: NetworkRule | null,
 };
 
 /**
@@ -87,11 +93,15 @@ export class RequestBlockingApi {
      * Closes the tab which considered as a popup.
      *
      * @param data Needed data for logging closing of tab.
+     * @param appliedRule Network rule which was applied to request.
      *
      * @returns Response for {@link WebRequestApi.onBeforeRequest} listener.
      */
-    private static closeTab(data: GetBlockingResponseParams): WebRequest.BlockingResponse {
-        RequestBlockingApi.logRuleApplying(data);
+    private static closeTab(
+        data: RequestParams,
+        appliedRule: NetworkRule | null,
+    ): WebRequest.BlockingResponse {
+        RequestBlockingApi.logRuleApplying(data, appliedRule);
         browser.tabs.remove(data.tabId);
 
         return { cancel: true };
@@ -117,21 +127,21 @@ export class RequestBlockingApi {
 
         if (!rule) {
             if (popupRule && requestType === RequestType.Document && tabsApi.isNewPopupTab(tabId)) {
-                return RequestBlockingApi.closeTab(data);
+                return RequestBlockingApi.closeTab(data, popupRule);
             }
 
             return undefined;
         }
 
         if (rule.isAllowlist()) {
-            RequestBlockingApi.logRuleApplying(data);
+            RequestBlockingApi.logRuleApplying(data, rule);
             return undefined;
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
             const redirectUrl = redirectsService.createRedirectUrl(rule.getAdvancedModifierValue(), requestUrl);
             if (redirectUrl) {
-                RequestBlockingApi.logRuleApplying(data);
+                RequestBlockingApi.logRuleApplying(data, rule);
                 // redirects should be considered as blocked for the tab blocked request count
                 // which is displayed on the extension badge
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
@@ -139,24 +149,15 @@ export class RequestBlockingApi {
                 return { redirectUrl };
             }
         }
-
-        // Blocking rule can be with $popup modifier - in this case we need
-        // to close the tab as soon as possible.
-        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
-        if (popupRule && requestType === RequestType.Document && tabsApi.isNewPopupTab(tabId)) {
-            return RequestBlockingApi.closeTab(data);
-        }
-
         // Basic rules for blocking requests are applied only to sub-requests
         // so `||example.com^` will not block the main page
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
         if (requestType === RequestType.Document) {
-            const isNewTab = tabsApi.isNewPopupTab(tabId);
-            // $popup can be enabled inside $all. That's why if basic rule has
-            // $all modifier, and explicitly enabled $popup, and if tab is newly
-            // opened tab - we should close it.
-            if (rule.isOptionEnabled(NetworkRuleOption.Popup) && isNewTab) {
-                return RequestBlockingApi.closeTab(data);
+            // Blocking rule can be with $popup modifier - in this case we need
+            // to close the tab as soon as possible.
+            // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
+            if ((popupRule || rule.isOptionEnabled(NetworkRuleOption.Popup)) && tabsApi.isNewPopupTab(tabId)) {
+                return RequestBlockingApi.closeTab(data, popupRule || rule);
             }
 
             // but if the blocking rule has $document modifier, blocking page should be shown
@@ -174,7 +175,7 @@ export class RequestBlockingApi {
             return undefined;
         }
 
-        RequestBlockingApi.logRuleApplying(data);
+        RequestBlockingApi.logRuleApplying(data, rule);
         return { cancel: true };
     }
 
@@ -182,18 +183,21 @@ export class RequestBlockingApi {
      * Creates {@link FilteringLog} event of rule applying for processed request.
      *
      * @param data Data for request processing.
+     * @param appliedRule Network rule which was applied to request.
      */
-    private static logRuleApplying(data: GetBlockingResponseParams): void {
+    private static logRuleApplying(
+        data: RequestParams,
+        appliedRule: NetworkRule | null,
+    ): void {
         const {
             tabId,
             eventId,
-            rule,
             referrerUrl,
             requestUrl,
             contentType,
         } = data;
 
-        if (!rule) {
+        if (!appliedRule) {
             return;
         }
 
@@ -205,7 +209,7 @@ export class RequestBlockingApi {
                 requestType: contentType,
                 frameUrl: referrerUrl,
                 requestUrl,
-                rule,
+                rule: appliedRule,
             },
         });
     }

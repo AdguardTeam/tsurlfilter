@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Analysis of popup rules (in addition to the basic one) to determine
+- Analysis of $popup rules (in addition to the basic one) to determine
   the result of blocking a request [#2620], [#2728].
 
 [#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620

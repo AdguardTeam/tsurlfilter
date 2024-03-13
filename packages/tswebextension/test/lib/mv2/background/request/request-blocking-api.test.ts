@@ -154,7 +154,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             );
             const response = RequestBlockingApi.getBlockingResponse(data);
             // $all is actually a synonym for $popup,document
-            // so a new tab should be cancelled due to 'Popup' option enabled
+            // so a new tab should be cancelled due to 'popup' option enabled
             expect(response).toEqual({ cancel: true });
         });
 
@@ -303,9 +303,33 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual(mockedBlockingPageResponse);
         });
 
-        it('explicit popup with document, document request - bypass request', () => {
+        it('the all modifier and popup modifier with document, document request - blocking page', () => {
+            const data = getGetBlockingResponseParamsData(
+                '||example.com^$all',
+                '||example.com^$popup,document',
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(mockedBlockingPageResponse);
+        });
+
+        it('basic rule empty, explicit popup with document, document request - bypass request', () => {
             const data = getGetBlockingResponseParamsData(
                 '',
+                '||example.com^$popup,document',
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(undefined);
+        });
+
+        it('basic rule and explicit popup with document, document request - bypass request', () => {
+            const data = getGetBlockingResponseParamsData(
+                '||example.com^',
                 '||example.com^$popup,document',
                 'http://example.com',
                 RequestType.Document,
