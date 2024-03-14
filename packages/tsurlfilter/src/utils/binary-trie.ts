@@ -73,14 +73,15 @@ export class BinaryTrie {
 
     public static traverse(
         input: string,
+        length: number,
         start: number,
         buffer: ByteBuffer,
         offset: number,
-    ) {
+    ): number[] {
         let position = offset;
         const result: number[] = [];
 
-        for (let i = start; i < input.length; i += 1) {
+        for (let i = start; i < length; i += 1) {
             const code = input.charCodeAt(i);
             position = BinaryTrie.findChild(code, buffer, position);
 
@@ -107,7 +108,7 @@ export class BinaryTrie {
         const result: number[] = [];
 
         for (let i = 0; i <= length; i += 1) {
-            const positions = BinaryTrie.traverse(input, i, buffer, offset);
+            const positions = BinaryTrie.traverse(input, length, i, buffer, offset);
             for (let j = 0; j < positions.length; j += 1) {
                 result.push(positions[j]);
             }

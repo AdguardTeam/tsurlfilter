@@ -47,6 +47,30 @@ export class ByteBuffer {
         this.byteOffset += 4;
     }
 
+    public getFloat64(byteOffset: number) {
+        const integral = this.getUint32(byteOffset);
+        const fractional = this.getUint32(byteOffset + 4);
+
+        return fractional / 1_000_000 + integral;
+    }
+
+    public setFloat64(byteOffset: number, value: number) {
+        const integral = Math.trunc(value);
+        const fractional = Math.round((value % 1) * 1_000_000);
+
+        this.setUint32(byteOffset, integral);
+        this.setUint32(byteOffset + 4, fractional);
+    }
+
+    public addFloat64(byteOffset: number, value: number): void {
+        if (!this.hasCapacity(byteOffset + 7)) {
+            this.allocate();
+        }
+
+        this.setFloat64(byteOffset, value);
+        this.byteOffset += 8;
+    }
+
     private hasCapacity(index: number): boolean {
         return index + 1 >> 6 < this.chunks.length;
     }

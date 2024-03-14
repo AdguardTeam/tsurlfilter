@@ -6,7 +6,6 @@ import { ILookupTable } from './lookup-table';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { U32LinkedList } from '../../utils/u32-linked-list';
 import type { ByteBuffer } from '../../utils/byte-buffer';
-import { StorageIndex } from '../../utils/storage-index';
 import { BinaryTrie } from '../../utils/binary-trie';
 
 /**
@@ -74,7 +73,9 @@ export class TrieLookupTable implements ILookupTable {
             return false;
         }
 
-        const storageIndexPosition = StorageIndex.add(this.byteBuffer, storageIdx);
+        const storageIndexPosition = this.byteBuffer.byteOffset;
+        this.byteBuffer.addFloat64(storageIndexPosition, storageIdx);
+
         let storageIndexesPosition = this.trie.search(shortcut);
 
         if (storageIndexesPosition === -1) {
@@ -141,7 +142,7 @@ export class TrieLookupTable implements ILookupTable {
         for (let i = 0; i < storageIndexesPositions.length; i += 1) {
             const storageIndexesPosition = storageIndexesPositions[i];
             U32LinkedList.forEach((storageIndexPosition) => {
-                const storageIndex = StorageIndex.get(this.byteBuffer, storageIndexPosition);
+                const storageIndex = this.byteBuffer.getFloat64(storageIndexPosition);
                 result.push(storageIndex);
             }, this.byteBuffer, storageIndexesPosition);
         }

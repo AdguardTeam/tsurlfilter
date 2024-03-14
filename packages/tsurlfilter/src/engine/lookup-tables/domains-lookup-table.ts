@@ -7,7 +7,6 @@ import { NetworkRule } from '../../rules/network-rule';
 import { BinaryMap } from '../../utils/binary-map';
 import { ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
-import { StorageIndex } from '../../utils/storage-index';
 
 /**
  * Domain lookup table. Key is the domain name hash.
@@ -66,7 +65,8 @@ export class DomainsLookupTable implements ILookupTable {
             const hash = fastHash(domain);
 
             // Add the rule to the lookup table
-            const storageIndexPosition = StorageIndex.add(this.byteBuffer, storageIdx);
+            const storageIndexPosition = this.byteBuffer.byteOffset;
+            this.byteBuffer.addFloat64(storageIndexPosition, storageIdx);
             let storageIndexesPosition = this.domainsLookupTable.get(hash);
 
             if (storageIndexesPosition === undefined) {
@@ -110,7 +110,7 @@ export class DomainsLookupTable implements ILookupTable {
             const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.binaryMapPosition);
             if (storageIndexesPosition !== undefined) {
                 U32LinkedList.forEach((storageIndexPosition) => {
-                    const storageIndex = StorageIndex.get(this.byteBuffer, storageIndexPosition);
+                    const storageIndex = this.byteBuffer.getFloat64(storageIndexPosition);
 
                     const rule = this.ruleStorage.retrieveNetworkRule(storageIndex);
 
