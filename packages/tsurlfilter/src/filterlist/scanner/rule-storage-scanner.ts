@@ -86,6 +86,8 @@ export class RuleStorageScanner {
      * ruleListIdxToStorageIdx converts pair of listID and rule list index
      * to "storage index" number
      *
+     * @example listId: 2, ruleIdx: 3 -> storageIdx: 3.000002
+     *
      * @param listId
      * @param ruleIdx
      */
@@ -97,6 +99,8 @@ export class RuleStorageScanner {
      * Converts the "storage index" to two integers:
      * listID -- rule list identifier
      * ruleIdx -- index of the rule in the list
+     *
+     * @example storageIdx: 4.000005 -> [listId: 5, ruleIdx: 4]
      *
      * @param storageIdx
      * @return [listId, ruleIdx]
