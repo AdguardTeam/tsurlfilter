@@ -52,14 +52,27 @@ Test:
 
             # Run tests with Jest
             npx lerna@6 run --scope @adguard/agtree test
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
 
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+            
             # cleanup parent
             rm -rf node_modules
-
             # cleanup child packages
             npx lerna@6 clean -y
-  final-tasks:
-    - clean
+  
+            echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
     - adg-docker: 'true'
 
