@@ -168,7 +168,7 @@ export class RequestBlockingApi {
 
             // we do not want to block the main page if rule has only $popup modifier
             // FIXME consider adding a method to NetworkRule to check if it has only $popup modifier
-            if (rule.hasOnlyPopup && !tabsApi.isNewPopupTab(tabId)) {
+            if (rule.getText() === popupRule?.getText() && !tabsApi.isNewPopupTab(tabId)) {
                 return undefined;
             }
 

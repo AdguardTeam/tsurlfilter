@@ -359,7 +359,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
                 ContentType.Document,
             );
             const response = RequestBlockingApi.getBlockingResponse(data);
-            expect(response).toEqual(undefined);
+            expect(response).toEqual(mockedBlockingPageResponse);
         });
 
         it('blocking rule, document modifier, document request - blocking page', () => {
