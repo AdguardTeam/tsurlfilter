@@ -46,13 +46,6 @@ Build:
             # Pack the CSS Tokenizer package into a tarball
             cd packages/css-tokenizer/
             yarn pack --filename css-tokenizer.tgz
-            cd ../../
-
-            # Cleanup parent
-            rm -rf node_modules
-
-            # Cleanup child packages
-            npx lerna@6 clean -y
     - inject-variables:
         file: ./packages/css-tokenizer/dist/build.txt
         scope: RESULT
@@ -62,6 +55,27 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: css-tokenizer-v${bamboo.inject.version}
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+            
+            # cleanup parent
+            rm -rf node_modules
+            # cleanup child packages
+            npx lerna@6 clean -y
+  
+            echo "Size after cleanup:" && du -h | tail -n 1  
   # Store the CSS Tokenizer package tarball as an artifact
   artifacts:
     - name: css-tokenizer.tgz

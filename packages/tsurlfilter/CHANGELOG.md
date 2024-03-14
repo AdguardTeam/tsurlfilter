@@ -29,6 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
 - Extension leaking it's instance id when redirecting requests [#69](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278).
 
+## [2.2.15] - 2024-03-01
+
+### Changed
+
+- `$popup` should not disable simple blocking rule [#2728].
+
+[2.2.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.15
+[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+
+
 ## [2.2.14] - 2024-02-13
 
 ### Added
@@ -38,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as the original filter list is stored as a UTF-8 encoded byte array.
   In addition to that, it solves the problem of leaking links to the original leaking strings
   that in turn was leading to higher memory usage.
+
+[2.2.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.14
 
 ## [2.2.13] - 2024-02-13
 
