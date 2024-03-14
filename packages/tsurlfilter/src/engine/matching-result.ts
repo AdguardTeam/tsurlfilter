@@ -173,6 +173,7 @@ export class MatchingResult {
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 && rule.getPermittedRequestTypes() === RequestType.Document) {
                 this.popupRule = rule;
+                continue;
             }
 
             // Check blocking rules against $genericblock / $urlblock
@@ -238,6 +239,10 @@ export class MatchingResult {
         const redirectRule = this.getRedirectRule();
         if (redirectRule && (!basic || !basic.isHigherPriority(redirectRule))) {
             return redirectRule;
+        }
+
+        if (!basic) {
+            return this.popupRule;
         }
 
         return basic;

@@ -129,6 +129,11 @@ export class RequestBlockingApi {
             return undefined;
         }
 
+        // popup rule will be handled in the condition with requesttype === document below
+        if (popupRule?.getText() === rule.getText() && requestType !== RequestType.Document) {
+            return undefined;
+        }
+
         if (rule.isAllowlist()) {
             RequestBlockingApi.logRuleApplying(data, rule);
             return undefined;
@@ -145,6 +150,7 @@ export class RequestBlockingApi {
                 return { redirectUrl };
             }
         }
+
         // Basic rules for blocking requests are applied only to sub-requests
         // so `||example.com^` will not block the main page
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
@@ -152,8 +158,18 @@ export class RequestBlockingApi {
             // Blocking rule can be with $popup modifier - in this case we need
             // to close the tab as soon as possible.
             // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
-            if ((popupRule || rule.isOptionEnabled(NetworkRuleOption.Popup)) && tabsApi.isNewPopupTab(tabId)) {
-                return RequestBlockingApi.closeTab(data, popupRule || rule);
+            if (popupRule && tabsApi.isNewPopupTab(tabId)) {
+                return RequestBlockingApi.closeTab(data, popupRule);
+            }
+            // to handle rules with $all modifier, where popup was added implicitly
+            if (rule.isOptionEnabled(NetworkRuleOption.Popup) && tabsApi.isNewPopupTab(tabId)) {
+                return RequestBlockingApi.closeTab(data, rule);
+            }
+
+            // we do not want to block the main page if rule has only $popup modifier
+            // FIXME consider adding a method to NetworkRule to check if it has only $popup modifier
+            if (rule.hasOnlyPopup && !tabsApi.isNewPopupTab(tabId)) {
+                return undefined;
             }
 
             // but if the blocking rule has $document modifier, blocking page should be shown

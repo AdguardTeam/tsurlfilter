@@ -374,6 +374,9 @@ export class NetworkRule implements rule.IRule {
      */
     public static readonly OPTIONS = NETWORK_RULE_OPTIONS;
 
+    // FIXME consider better way
+    public hasOnlyPopup = false;
+
     /**
      * Returns the original text of the rule from which it was parsed.
      *
@@ -1013,6 +1016,11 @@ export class NetworkRule implements rule.IRule {
             }
             this.loadOption(optionName, optionValue);
         }
+
+        // FIXME consider better way
+        this.hasOnlyPopup = this.isOptionEnabled(NetworkRuleOption.Popup)
+            && optionParts.length === 1
+            && optionParts[0].includes('popup');
 
         this.validateOptions();
     }
