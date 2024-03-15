@@ -2,30 +2,48 @@ import { TrieNode } from './trie';
 import type { ByteBuffer } from './byte-buffer';
 
 /**
- * Binary representation of a trie data structure.
+ * The BinaryTrie is a read-only API that represents a {@link TrieNode}.
+ * It can be easily written to and read from a {@link ByteBuffer}.
+ * It is used to search for string shortcuts and all their substrings
+ * in constant time and map them to the position of the U32LinkedList with RuleStorage ids.
  *
+ * The binary representation of the TrieNode in the ByteBuffer is as follows:
  * |  value  | children | child key | child position |
  * |  uint32 |  uint8   |   uint8   |     uint32     |
  */
 export class BinaryTrie {
-    // Reserved position for the 'undefined' value
+    /**
+     * Reserved position for the 'undefined' value.
+     */
     private static readonly EMPTY_POSITION = 0;
 
+    /**
+     * Creates binary representation of the passed {@link root} in the {@link buffer}.
+     * @param root The root node of trie to be represented in the {@link buffer}.
+     * @param buffer The {@link ByteBuffer} to store the binary representation of trie.
+     * @returns The position of the binary trie representation in the {@link buffer}.
+     */
     public static create(root: TrieNode, buffer: ByteBuffer): number {
         const { byteOffset } = buffer;
 
         let offset = byteOffset;
 
-        const createNode = (node: TrieNode) => {
+        /**
+         * Writes node and its children to the buffer recursively.
+         * @param node The trie node to start from.
+         */
+        const createNode = (node: TrieNode): void => {
             let cursor = offset + BinaryTrie.getNodeByteSize(node);
 
+            // Sets value.
             buffer.addUint32(offset, node.data ?? BinaryTrie.EMPTY_POSITION);
-            offset += 4;
+            offset += 4; // Uint32Array.BYTES_PER_ELEMENT
 
+            // No children case.
             if (node.children === undefined) {
                 // Set children length to 0.
                 buffer.addUint8(offset, 0);
-                offset += 1;
+                offset += 1; // Uint8Array.BYTES_PER_ELEMENT
                 return;
             }
 
@@ -33,14 +51,14 @@ export class BinaryTrie {
             if (node.children instanceof TrieNode) {
                 // Set children length to 1.
                 buffer.addUint8(offset, 1);
-                offset += 1;
+                offset += 1; // Uint8Array.BYTES_PER_ELEMENT
                 // Set child key.
                 buffer.addUint8(offset, node.children.code);
-                offset += 1;
+                offset += 1; // Uint8Array.BYTES_PER_ELEMENT
 
                 // Set child position.
                 buffer.addUint32(offset, cursor);
-                offset += 4;
+                offset += 4; // Uint32Array.BYTES_PER_ELEMENT
                 cursor += BinaryTrie.getByteSize(node.children);
 
                 createNode(node.children);
@@ -49,16 +67,20 @@ export class BinaryTrie {
 
             // Many children case.
             buffer.addUint8(offset, node.children.size);
-            offset += 1;
+            offset += 1; // Uint8Array.BYTES_PER_ELEMENT
 
+            /**
+             * Writes child entry to the buffer.
+             * @param child Child node entry to write.
+             */
             const createChildEntry = (child: TrieNode) => {
                 // Set child key
                 buffer.addUint8(offset, child.code);
-                offset += 1;
+                offset += 1; // Uint8Array.BYTES_PER_ELEMENT
 
-                // Allocate space for child position to populate it later
+                // Set child position.
                 buffer.addUint32(offset, cursor);
-                offset += 4;
+                offset += 4; // Uint32Array.BYTES_PER_ELEMENT
                 cursor += BinaryTrie.getByteSize(child);
             };
 
@@ -118,20 +140,20 @@ export class BinaryTrie {
     }
 
     private static findChild(charCode: number, buffer: ByteBuffer, offset: number): number {
-        let cursor = offset + 4;
+        let cursor = offset + 4; // Uint32Array.BYTES_PER_ELEMENT
 
         let children = buffer.getUint8(cursor);
-        cursor += 1;
+        cursor += 1; // Uint8Array.BYTES_PER_ELEMENT
 
         while (children > 0) {
             const childKey = buffer.getUint8(cursor);
-            cursor += 1;
+            cursor += 1; // Uint8Array.BYTES_PER_ELEMENT
 
             if (childKey === charCode) {
                 return buffer.getUint32(cursor);
             }
 
-            cursor += 4;
+            cursor += 4; // Uint32Array.BYTES_PER_ELEMENT
             children -= 1;
         }
 
