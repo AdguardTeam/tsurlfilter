@@ -54,20 +54,17 @@ export class ByteBuffer {
         return fractional / 1_000_000 + integral;
     }
 
-    public setFloat64(byteOffset: number, value: number) {
+    public addStorageIndex(byteOffset: number, value: number): void {
+        if (!this.hasCapacity(byteOffset + 7)) {
+            this.allocate();
+        }
+
         const integral = Math.trunc(value);
         const fractional = Math.round((value % 1) * 1_000_000);
 
         this.setUint32(byteOffset, integral);
         this.setUint32(byteOffset + 4, fractional);
-    }
 
-    public addFloat64(byteOffset: number, value: number): void {
-        if (!this.hasCapacity(byteOffset + 7)) {
-            this.allocate();
-        }
-
-        this.setFloat64(byteOffset, value);
         this.byteOffset += 8;
     }
 

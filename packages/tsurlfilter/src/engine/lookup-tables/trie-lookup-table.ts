@@ -20,11 +20,11 @@ export class TrieLookupTable implements ILookupTable {
     /**
      * Storage for the network filtering rules
      */
-    private readonly ruleStorage: RuleStorage;
+    declare private readonly ruleStorage: RuleStorage;
 
-    private readonly byteBuffer: ByteBuffer;
+    declare private readonly byteBuffer: ByteBuffer;
 
-    private readonly storageIndexesListPosition: number = 0;
+    declare private readonly storageIndexesListPosition: number;
 
     declare private binaryTriePosition: number;
 
@@ -47,17 +47,6 @@ export class TrieLookupTable implements ILookupTable {
     }
 
     /**
-     * Finds all matching rules from the shortcuts lookup table
-     *
-     * @param request to check
-     * @return array of matching rules
-     */
-    public matchAll(request: Request): NetworkRule[] {
-        const rulesIndexes = this.traverse(request);
-        return this.matchRules(request, rulesIndexes);
-    }
-
-    /**
      * Tries to add the rule to the lookup table.
      * returns true if it was added
      *
@@ -74,7 +63,7 @@ export class TrieLookupTable implements ILookupTable {
         }
 
         const storageIndexPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addFloat64(storageIndexPosition, storageIdx);
+        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
 
         let storageIndexesPosition = this.trie.search(shortcut);
 
@@ -101,35 +90,11 @@ export class TrieLookupTable implements ILookupTable {
     }
 
     /**
-     * For specified request finds matching rules from rules indexes array
-     *
-     * @param request
-     * @param rulesIndexes
-     */
-    private matchRules(request: Request, rulesIndexes: number[] | undefined): NetworkRule[] {
-        if (!rulesIndexes) {
-            return [];
-        }
-
-        const result: NetworkRule[] = [];
-
-        for (let j = 0; j < rulesIndexes.length; j += 1) {
-            const idx = rulesIndexes[j];
-            const rule = this.ruleStorage.retrieveNetworkRule(idx);
-            if (rule && rule.match(request, false)) {
-                result.push(rule);
-            }
-        }
-
-        return result;
-    }
-
-    /**
      * Traverses trie
      *
      * @param request
      */
-    private traverse(request: Request): number[] {
+    public matchAll(request: Request): NetworkRule[] {
         const storageIndexesPositions = BinaryTrie.traverseAll(
             request.urlLowercase,
             request.urlLowercase.length,
@@ -137,13 +102,18 @@ export class TrieLookupTable implements ILookupTable {
             this.binaryTriePosition,
         );
 
-        const result: number[] = [];
+        const result: NetworkRule[] = [];
 
         for (let i = 0; i < storageIndexesPositions.length; i += 1) {
             const storageIndexesPosition = storageIndexesPositions[i];
             U32LinkedList.forEach((storageIndexPosition) => {
-                const storageIndex = this.byteBuffer.getFloat64(storageIndexPosition);
-                result.push(storageIndex);
+                const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
+                const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
+
+                const rule = this.ruleStorage.retrieveNetworkRule(listId, ruleId);
+                if (rule && rule.match(request, false)) {
+                    result.push(rule);
+                }
             }, this.byteBuffer, storageIndexesPosition);
         }
 

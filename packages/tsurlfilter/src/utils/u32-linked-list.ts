@@ -31,6 +31,20 @@ export class U32LinkedList {
         }
     }
 
+    public static find(callback: (value: number) => boolean, buffer: ByteBuffer, listPosition: number): number {
+        let cursor = U32LinkedList.getLastNodePosition(buffer, listPosition);
+
+        while (cursor !== U32LinkedList.EMPTY_POSITION) {
+            const [nodeValue, nextNodePosition] = U32LinkedList.get(cursor, buffer);
+            if (callback(nodeValue)) {
+                return nodeValue;
+            }
+            cursor = nextNodePosition;
+        }
+
+        return -1;
+    }
+
     public static create(buffer: ByteBuffer): number {
         const { byteOffset } = buffer;
 

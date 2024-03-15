@@ -77,12 +77,9 @@ export class RuleStorage {
     /**
      * Looks for the filtering rule in this storage
      *
-     * @param storageIdx the lookup index that you can get from the rule storage scanner
      * @param ignoreHost rules could be retrieved as host rules
      */
-    retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
-        const [listId, ruleIdx] = RuleStorageScanner.storageIdxToRuleListIdx(storageIdx);
-
+    retrieveRule(listId: number, ruleIdx: number, ignoreHost = true): IRule | null {
         const rule = this.getFromCache(listId, ruleIdx);
         if (rule) {
             return rule;
@@ -116,8 +113,8 @@ export class RuleStorage {
      * @param storageIdx
      * @return the rule or nil in any other case (not found or error)
      */
-    retrieveNetworkRule(storageIdx: number): NetworkRule | null {
-        const rule = this.retrieveRule(storageIdx);
+    retrieveNetworkRule(listId: number, ruleIdx: number): NetworkRule | null {
+        const rule = this.retrieveRule(listId, ruleIdx);
         if (!rule) {
             return null;
         }
@@ -132,11 +129,10 @@ export class RuleStorage {
     /**
      * RetrieveHostRule is a helper method that retrieves a host rule from the storage
      *
-     * @param storageIdx
      * @return the rule or nil in any other case (not found or error)
      */
-    retrieveHostRule(storageIdx: number): HostRule | null {
-        const rule = this.retrieveRule(storageIdx, false);
+    retrieveHostRule(listId: number, ruleId: number): HostRule | null {
+        const rule = this.retrieveRule(listId, ruleId, false);
         if (!rule) {
             return null;
         }

@@ -25,11 +25,11 @@ export class DomainsLookupTable implements ILookupTable {
     /**
      * Storage for the network filtering rules
      */
-    private readonly ruleStorage: RuleStorage;
+    declare private readonly ruleStorage: RuleStorage;
 
-    private readonly byteBuffer: ByteBuffer;
+    declare private readonly byteBuffer: ByteBuffer;
 
-    private readonly storageIndexesListPosition: number = 0;
+    declare private readonly storageIndexesListPosition: number;
 
     declare private binaryMapPosition: number;
 
@@ -66,7 +66,7 @@ export class DomainsLookupTable implements ILookupTable {
 
             // Add the rule to the lookup table
             const storageIndexPosition = this.byteBuffer.byteOffset;
-            this.byteBuffer.addFloat64(storageIndexPosition, storageIdx);
+            this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
             let storageIndexesPosition = this.domainsLookupTable.get(hash);
 
             if (storageIndexesPosition === undefined) {
@@ -110,9 +110,10 @@ export class DomainsLookupTable implements ILookupTable {
             const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.binaryMapPosition);
             if (storageIndexesPosition !== undefined) {
                 U32LinkedList.forEach((storageIndexPosition) => {
-                    const storageIndex = this.byteBuffer.getFloat64(storageIndexPosition);
+                    const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
+                    const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
 
-                    const rule = this.ruleStorage.retrieveNetworkRule(storageIndex);
+                    const rule = this.ruleStorage.retrieveNetworkRule(listId, ruleId);
 
                     if (rule && rule.match(request)) {
                         result.push(rule);

@@ -1,7 +1,9 @@
 import { ILookupTable } from './lookup-table';
 import { Request } from '../../request';
 import { NetworkRule } from '../../rules/network-rule';
-
+import type { RuleStorage } from '../../filterlist/rule-storage';
+import type { ByteBuffer } from '../../utils/byte-buffer';
+import { U32LinkedList } from '../../utils/u32-linked-list';
 /**
  * Sequence scan lookup table of rules for which we could not find a shortcut
  * and could not place it to the shortcuts lookup table.
@@ -13,18 +15,36 @@ export class SeqScanLookupTable implements ILookupTable {
      */
     private rulesCount = 0;
 
+    declare private readonly ruleStorage: RuleStorage;
+
+    declare private readonly byteBuffer: ByteBuffer;
+
+    declare private readonly storageIndexesPosition: number;
+
     /**
-     * Rules for which we could not find a shortcut and could not place it to the shortcuts lookup table.
+     * Creates a new instance
+     *
+     * @param storage rules storage. We store "rule indexes" in the lookup table which
+     * can be used to retrieve the full rules from the storage.
      */
-    private rules: NetworkRule[] = [];
+    constructor(storage: RuleStorage, buffer: ByteBuffer) {
+        this.ruleStorage = storage;
+        this.byteBuffer = buffer;
+        this.storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
+    }
 
     /**
      * addRule implements the ILookupTable interface for SeqScanLookupTable.
      * @param rule
      */
-    addRule(rule: NetworkRule): boolean {
-        if (!this.rules.includes(rule)) {
-            this.rules.push(rule);
+    addRule(_rule: NetworkRule, storageIdx: number): boolean {
+        const position = U32LinkedList.find(
+            (idx) => idx === storageIdx,
+            this.byteBuffer,
+            this.storageIndexesPosition,
+        );
+        if (position === -1) {
+            U32LinkedList.add(storageIdx, this.byteBuffer, this.storageIndexesPosition);
             this.rulesCount += 1;
             return true;
         }
@@ -44,14 +64,18 @@ export class SeqScanLookupTable implements ILookupTable {
      * @param request
      */
     matchAll(request: Request): NetworkRule[] {
-        const result = [];
+        const result: NetworkRule[] = [];
 
-        for (let i = 0; i < this.rules.length; i += 1) {
-            const r = this.rules[i];
-            if (r.match(request)) {
-                result.push(r);
+        U32LinkedList.forEach((storageIndexPosition) => {
+            const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
+            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
+
+            const rule = this.ruleStorage.retrieveNetworkRule(listId, ruleId);
+
+            if (rule && rule.match(request)) {
+                result.push(rule);
             }
-        }
+        }, this.byteBuffer, this.storageIndexesPosition);
 
         return result;
     }

@@ -13,6 +13,7 @@ import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { IndexedStorageRule } from '../rules/rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { RequestType } from '../request-type';
+import type { ByteBuffer } from '../utils/byte-buffer';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -45,6 +46,8 @@ export class Engine {
      */
     private readonly resultCache: LRUMap<string, MatchingResult>;
 
+    private readonly byteBuffer: ByteBuffer;
+
     /**
      * Creates an instance of an Engine
      * Parses the filtering rules and creates a filtering engine of them
@@ -53,9 +56,10 @@ export class Engine {
      * @param skipStorageScan create an instance without storage scanning
      * @throws
      */
-    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
+    constructor(ruleStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
-        this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
+        this.byteBuffer = buffer;
+        this.networkEngine = new NetworkEngine(ruleStorage, this.byteBuffer, skipStorageScan);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
         this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
     }

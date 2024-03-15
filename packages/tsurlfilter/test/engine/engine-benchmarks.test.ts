@@ -16,6 +16,7 @@ import {
     CosmeticEngine,
     setLogger,
 } from '../../src';
+import { ByteBuffer } from '../../src/utils/byte-buffer';
 
 /**
  * The comment below describes the bench test results that are achieved on
@@ -324,7 +325,7 @@ describe('Benchmarks', () => {
         const list = new listClass(1, filterText, ignoreCosmetic);
         const ruleStorage = new RuleStorage([list]);
 
-        const engine = new Engine(ruleStorage, loadAsync);
+        const engine = new Engine(ruleStorage, new ByteBuffer(), loadAsync);
 
         if (loadAsync) {
             const chunkSize = 1000;

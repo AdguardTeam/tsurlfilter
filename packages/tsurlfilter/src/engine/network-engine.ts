@@ -8,7 +8,7 @@ import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
-import { ByteBuffer } from '../utils/byte-buffer';
+import type { ByteBuffer } from '../utils/byte-buffer';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules
@@ -27,24 +27,24 @@ export class NetworkEngine {
     /**
      * Domain lookup table. Key is the domain name hash.
      */
-    private readonly domainsLookupTable: DomainsLookupTable;
+    declare private readonly domainsLookupTable: DomainsLookupTable;
 
     /**
      * Lookup table that relies on the rule shortcuts to speed up the search.
      */
-    private readonly shortcutsLookupTable: TrieLookupTable;
+    declare private readonly shortcutsLookupTable: TrieLookupTable;
 
     /**
      * Lookup table for rules like '||hostname^' or '||hostname/path'
      */
-    private readonly hostnameLookupTable: HostnameLookupTable;
+    declare private readonly hostnameLookupTable: HostnameLookupTable;
 
     /**
      * Rules for which we could not find a shortcut and could not place it to the shortcuts lookup table.
      */
-    private readonly seqScanLookupTable: ILookupTable;
+    declare private readonly seqScanLookupTable: ILookupTable;
 
-    private readonly byteBuffer = new ByteBuffer();
+    declare private readonly byteBuffer: ByteBuffer;
 
     /**
      * Builds an instance of the network engine
@@ -52,13 +52,15 @@ export class NetworkEngine {
      * @param storage an object for a rules storage.
      * @param skipStorageScan create an instance without storage scanning.
      */
-    constructor(storage: RuleStorage, skipStorageScan = false) {
+    constructor(storage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
+
+        this.byteBuffer = buffer;
         this.domainsLookupTable = new DomainsLookupTable(storage, this.byteBuffer);
         this.hostnameLookupTable = new HostnameLookupTable(storage, this.byteBuffer);
         this.shortcutsLookupTable = new TrieLookupTable(storage, this.byteBuffer);
-        this.seqScanLookupTable = new SeqScanLookupTable();
+        this.seqScanLookupTable = new SeqScanLookupTable(storage, this.byteBuffer);
 
         if (skipStorageScan) {
             return;
