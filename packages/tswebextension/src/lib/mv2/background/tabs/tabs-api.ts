@@ -208,6 +208,28 @@ export class TabsApi {
         return this.context.get(tabId);
     }
 
+    // FIXME: add description
+    public setAssistantFrameId(tabId: number, frameId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.assistantFrameId = frameId;
+    }
+
+    // FIXME: add description
+    public resetAssistantFrameId(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.assistantFrameId = null;
+    }
+
     /**
      * Checks whether the tab with the specified ID is open in incognito mode
      * or not.

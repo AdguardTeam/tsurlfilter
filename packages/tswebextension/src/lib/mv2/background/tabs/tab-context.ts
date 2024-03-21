@@ -63,6 +63,9 @@ export class TabContext {
      */
     public isDocumentRequestCached = false;
 
+    // FIXME: add description
+    public assistantFrameId?: number | null = null;
+
     /**
      * Context constructor.
      *

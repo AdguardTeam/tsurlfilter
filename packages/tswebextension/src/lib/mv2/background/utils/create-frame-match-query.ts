@@ -27,7 +27,11 @@ export function createFrameMatchQuery(
 
     const mainFrameUrl = info.url;
 
-    const isLocal = isLocalFrame(frameUrl, frameId, mainFrameUrl);
+    let isLocal = isLocalFrame(frameUrl, frameId, mainFrameUrl);
+
+    if (tabContext?.assistantFrameId === frameId) {
+        isLocal = false;
+    }
 
     const requestUrl = isLocal ? mainFrameUrl : frameUrl;
 

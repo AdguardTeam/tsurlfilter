@@ -3,6 +3,14 @@ import browser from 'webextension-polyfill';
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { MessageType, sendAppMessage } from '../../common/content-script';
 
+// FIXME: add description
+const assistantId = `data:text/html,adguard-assistant-${Math.random().toString(36).slice(2, 10)}`;
+
+// FIXME: add description
+export const isAssistantFrameUrl = (frameUrl: string): boolean => {
+    return frameUrl === assistantId;
+};
+
 /**
  * Initializes assistant object and create messages listener for assistant.
  */
@@ -22,12 +30,17 @@ export const initAssistant = (): void => {
                     window.adguardAssistant.close();
                 }
 
-                window.adguardAssistant.start(null, (rules) => {
-                    sendAppMessage({
-                        type: MessageType.AssistantCreateRule,
-                        payload: { ruleText: rules },
-                    });
-                });
+                window.adguardAssistant.start(
+                    null,
+                    (rules) => {
+                        sendAppMessage({
+                            type: MessageType.AssistantCreateRule,
+                            payload: { ruleText: rules },
+                        });
+                    },
+                    assistantId,
+                );
+
                 break;
             }
             case MessageType.CloseAssistant: {

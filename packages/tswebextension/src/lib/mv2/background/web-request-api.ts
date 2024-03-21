@@ -196,6 +196,7 @@ import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
 import { isFirefox } from './utils/browser-detector';
 import { isLocalFrame } from './utils/is-local-frame';
+import { isAssistantFrameUrl } from '../content-script/assistant';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -722,6 +723,22 @@ export class WebRequestApi {
         const tabContext = tabsApi.getTabContext(tabId);
 
         const mainFrameUrl = tabContext?.info.url;
+
+        // do not apply cosmetic rules to assistant frame
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1848
+        if (isAssistantFrameUrl(url)) {
+            tabsApi.setAssistantFrameId(tabId, frameId);
+            return;
+        }
+
+        // onDomContentLoaded fires for the first time when assistant url is the same as passed to assistant.start()
+        // but after that the 'src' attribute is pruned and onDomContentLoaded may fire again
+        // and at the second time the url is 'about:blank' so frameId should be checked.
+        // it is needed to avoid applying of cosmetic rules in the assistant frame
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1848
+        if (tabContext?.assistantFrameId === frameId) {
+            return;
+        }
 
         if (!mainFrameUrl || !isLocalFrame(url, frameId, mainFrameUrl)) {
             return;
