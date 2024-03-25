@@ -93,7 +93,10 @@ export class RequestBlockingApi {
      * Closes the tab which considered as a popup.
      *
      * @param data Needed data for logging closing of tab.
-     * @param appliedRule Network rule which was applied to request.
+     * @param appliedRule Network rule which was applied to request. This field
+     * is needed because data contains two rules: one for the request and
+     * one for the popup. And we should log only the rule which was applied
+     * to the request.
      *
      * @returns Response for {@link WebRequestApi.onBeforeRequest} listener.
      */
@@ -154,6 +157,7 @@ export class RequestBlockingApi {
         // Basic rules for blocking requests are applied only to sub-requests
         // so `||example.com^` will not block the main page
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
+        // For document requests we need to show blocking page or close tab.
         if (requestType === RequestType.Document) {
             // Blocking rule can be with $popup modifier - in this case we need
             // to close the tab as soon as possible.
@@ -167,7 +171,6 @@ export class RequestBlockingApi {
             }
 
             // we do not want to block the main page if rule has only $popup modifier
-            // FIXME consider adding a method to NetworkRule to check if it has only $popup modifier
             if (rule.getText() === popupRule?.getText() && !tabsApi.isNewPopupTab(tabId)) {
                 return undefined;
             }

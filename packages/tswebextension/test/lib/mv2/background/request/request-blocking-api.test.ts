@@ -347,7 +347,7 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual(mockedBlockingPageResponse);
         });
 
-        it('basic rule and explicit popup with document, document request - bypass request', () => {
+        it('basic rule and explicit popup with document, document request - blocking page', () => {
             const rules = [
                 '||example.com^',
                 '||example.com^$popup,document',

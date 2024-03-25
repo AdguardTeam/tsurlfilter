@@ -168,9 +168,8 @@ export class MatchingResult {
                 this.stealthRule = rule;
                 continue;
             }
-            // To split $popup from $all we should check for only one enabled
-            // request type - document, because $all enables all request types.
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
+                // This check needed to split $all rules from $popup rules
                 && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
                 this.popupRule = rule;
                 continue;
