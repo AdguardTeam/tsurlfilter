@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Build
 
@@ -48,7 +48,7 @@ Build:
 
             cd packages/css-tokenizer
             # Pack
-            pnpm pack && mv $(ls adguard-css-tokenizer-*.tgz) css-tokenizer.tgz
+            pnpm pack && mv adguard-css-tokenizer-*.tgz css-tokenizer.tgz
     - inject-variables:
         file: ./packages/css-tokenizer/dist/build.txt
         scope: RESULT

@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Build
 
@@ -43,7 +43,7 @@ Build:
             pnpm --filter @adguard/tsurlfilter build
 
             cd packages/tsurlfilter
-            pnpm pack && mv $(ls adguard-tsurlfilter-*.tgz) tsurlfilter.tgz
+            pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT

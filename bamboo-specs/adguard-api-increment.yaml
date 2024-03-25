@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Increment:
-      manual: 'true'
-      final: 'false'
+      manual: true
+      final: false
       jobs:
         - Increment
 

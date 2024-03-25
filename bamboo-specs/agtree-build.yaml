@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Build
 
@@ -46,7 +46,7 @@ Build:
 
             # Pack the AGTree package into a tarball
             cd packages/agtree
-            pnpm pack && mv $(ls adguard-agtree-*.tgz) agtree.tgz
+            pnpm pack && mv adguard-agtree-*.tgz agtree.tgz
     - inject-variables:
         file: ./packages/agtree/dist/build.txt
         scope: RESULT

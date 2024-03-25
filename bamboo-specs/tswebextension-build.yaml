@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Build
 
@@ -44,7 +44,7 @@ Build:
             pnpm --filter @adguard/tswebextension build
 
             cd packages/tswebextension
-            pnpm pack && mv $(ls adguard-tswebextension-*.tgz) tswebextension.tgz
+            pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt
         scope: RESULT

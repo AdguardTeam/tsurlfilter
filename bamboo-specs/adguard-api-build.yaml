@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Build:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Build
 
@@ -46,7 +46,7 @@ Build:
             pnpm --filter @adguard/api build
 
             cd packages/adguard-api
-            pnpm pack && mv $(ls adguard-api-*.tgz) adguard-api.tgz
+            pnpm pack && mv adguard-api-*.tgz adguard-api.tgz
     - inject-variables:
         file: ./packages/adguard-api/dist/build.txt
         scope: RESULT

@@ -2,7 +2,7 @@
   "name": "tswebextension-mv3",
   "version": "0.0.1",
   "description": "Sample extension with tswebextension on manifest V3",
-  "author": "adguard@adguard.com",
+  "author": "Adguard Software Ltd.",
   "license": "GPL-3.0",
   "scripts": {
     "build": "pnpm lint && pnpm build:precompile-rules && pnpm build:extension",

@@ -32,7 +32,7 @@
     "check-types": "tsc --project tsconfig.build.json --noemit",
     "increment": "pnpm version patch --no-git-tag-version"
   },
-  "author": "AdGuard",
+  "author": "Adguard Software Ltd.",
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/assistant": "^4.3.70",

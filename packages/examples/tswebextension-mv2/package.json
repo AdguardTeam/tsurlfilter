@@ -2,7 +2,7 @@
   "name": "tswebextension-mv2",
   "version": "0.0.1",
   "description": "Sample manifest v2 extension with tswebextension",
-  "author": "adguard@adguard.com",
+  "author": "Adguard Software Ltd.",
   "license": "GPL-3.0",
   "scripts": {
     "build": "pnpm build:chrome",

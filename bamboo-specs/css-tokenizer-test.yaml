@@ -9,8 +9,8 @@ variables:
 
 stages:
   - Test:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Test
 
