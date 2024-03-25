@@ -7,8 +7,8 @@ various rewards, see [this page][contribute] for details.
 
 Here is a guide on how to set up the development environment and how to submit your changes:
 
-- Pre-requisites: [Node.js][nodejs] (v14 or higher), [Yarn][yarn] (v2 or higher), [Git][git]. It is important to use
-  Yarn and not NPM, because the project is optimized for Yarn.
+- Pre-requisites: [Node.js][nodejs] (v14 or higher), [pnpm], [Git][git]. It is important to use
+  Pnpm and not NPM, because the project is optimized for Pnpm.
 - Fork the repository on GitHub. You will need to have a GitHub account for this. If you already have a fork, make sure
   to update it with the latest changes from the main repository.
 - Clone *your forked repository* to your local machine with `git clone <repository-url>`. It is important to clone your
@@ -19,7 +19,7 @@ Here is a guide on how to set up the development environment and how to submit y
   add `feature/` or `fix/` prefix to your branch name, and refer to the issue number if there is one. Example: `fix/42`.
 - Open the **project root** folder in your editor.
 - Make your changes and test them.
-- Check code by running `yarn check-types`, `yarn lint` and `yarn test` commands (Husky will run these commands
+- Check code by running `pnpm check-types`, `pnpm lint` and `pnpm test` commands (Husky will run these commands
   automatically before each commit).
 - If everything is OK, commit your changes and push them to your forked repository. Example:
     - Add files to commit with `git add .`
@@ -40,20 +40,20 @@ We would be happy to review your pull request and merge it if it is suitable for
 
 During development, you can use the following commands (listed in `package.json`):
 
-- `yarn build` - builds the library with [rollup][rollup] to the `dist` folder
-- `yarn build-txt` - creates a `dist/build.txt` file which contains the version of the library.
-- `yarn build-types` - build type definitions with [TypeScript][typescript] to the `dist/types` folder.
-- `yarn check-compatibility-tables` - checks if the [compatibility tables][compatibility-tables] are valid.
-- `yarn check-types` - check type definitions with [TypeScript][typescript].
-- `yarn clean` - remove the `dist` folder.
-- `yarn clean-types` - remove the `dist/types` folder.
-- `yarn coverage` - run tests with [Jest][jest] and generate a code coverage report.
-- `yarn increment` - increment the version of the library in `package.json` (patch version by default).
-- `yarn lint` - run all linters.
-- `yarn lint:md` - lint the markdown files with [markdownlint][markdownlint].
-- `yarn lint:ts` - lint the code with [ESLint][eslint].
-- `yarn precommit` - run all checks before committing.
-- `yarn test` - run tests with [Jest][jest].
+- `pnpm build` - builds the library with [rollup][rollup] to the `dist` folder
+- `pnpm build-txt` - creates a `dist/build.txt` file which contains the version of the library.
+- `pnpm build-types` - build type definitions with [TypeScript][typescript] to the `dist/types` folder.
+- `pnpm check-compatibility-tables` - checks if the [compatibility tables][compatibility-tables] are valid.
+- `pnpm check-types` - check type definitions with [TypeScript][typescript].
+- `pnpm clean` - remove the `dist` folder.
+- `pnpm clean-types` - remove the `dist/types` folder.
+- `pnpm coverage` - run tests with [Jest][jest] and generate a code coverage report.
+- `pnpm increment` - increment the version of the library in `package.json` (patch version by default).
+- `pnpm lint` - run all linters.
+- `pnpm lint:md` - lint the markdown files with [markdownlint][markdownlint].
+- `pnpm lint:ts` - lint the code with [ESLint][eslint].
+- `pnpm precommit` - run all checks before committing.
+- `pnpm test` - run tests with [Jest][jest].
 
 [compatibility-tables]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [contribute]: https://adguard.com/contribute.html
@@ -65,4 +65,4 @@ During development, you can use the following commands (listed in `package.json`
 [nodejs]: https://nodejs.org/en/
 [rollup]: https://rollupjs.org/
 [typescript]: https://www.typescriptlang.org/
-[yarn]: https://yarnpkg.com/
+[pnpm]: https://pnpm.io/

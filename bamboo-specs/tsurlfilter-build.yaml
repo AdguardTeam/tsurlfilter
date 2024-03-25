@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERBUILD
   name: tsurlfilter - build
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Build:
@@ -21,7 +21,7 @@ Build:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -37,11 +37,13 @@ Build:
 
             ls -alt
 
-            npx lerna@6 bootstrap --scope @adguard/tsurlfilter --include-dependencies
-            npx lerna@6 run --scope @adguard/tsurlfilter build
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
 
-            cd packages/tsurlfilter/
-            yarn pack --filename tsurlfilter.tgz
+            pnpm --filter @adguard/tsurlfilter build
+
+            cd packages/tsurlfilter
+            pnpm pack && mv $(ls adguard-tsurlfilter-*.tgz) tsurlfilter.tgz
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT
@@ -65,13 +67,10 @@ Build:
             ls -la
 
             echo "Size before cleanup:" && du -h | tail -n 1
-            
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
+
+            pnpm clean
   
-            echo "Size after cleanup:" && du -h | tail -n 1 
+            echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: tsurlfilter.tgz
       location: packages/tsurlfilter/

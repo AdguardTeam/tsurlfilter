@@ -15,7 +15,7 @@ The idea is to provide an operative scheme of extension and to show some cases w
 Builds an extension ready to use:
 
 ```shell
-yarn build
+pnpm build
 ```
 
 ### <a id="precompile"></a> Precompile declarative rules
@@ -23,7 +23,7 @@ yarn build
 Updates and converts rules from provided path to a set of declarative rules:
 
 ```shell
-yarn build:precompile-rules
+pnpm build:precompile-rules
 ```
 
 ### Demo example

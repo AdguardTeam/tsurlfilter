@@ -5,7 +5,7 @@ plan:
   key: TSWEBEXTENSIONTEST
   name: tswebextension - tests
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Test:
@@ -19,7 +19,7 @@ Test:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -43,18 +43,19 @@ Test:
 
             ls -alt
 
-            npx lerna@6 bootstrap --scope @adguard/tswebextension --scope @adguard/tsurlfilter --include-dependencies
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
 
+            # TODO make sure that we use monospace correctly
             # build tsurlfilter first, because it is used in tswebextension tests
-            npx lerna@6 run --scope @adguard/tsurlfilter build
-
-            npx lerna@6 run --scope @adguard/tswebextension build
+            npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
             # IMPORTANT: run lint after the build because linting requires types to be generated
-            npx lerna@6 run --scope @adguard/tswebextension lint
+            pnpm --filter @adguard/tswebextension lint
 
             # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
-            npx lerna@6 run --scope @adguard/tswebextension test:prod
+            pnpm --filter @adguard/tswebextension test:prod
   final-tasks:
     - script:
         interpreter: SHELL
@@ -69,11 +70,9 @@ Test:
             ls -la
 
             echo "Size before cleanup:" && du -h | tail -n 1
-            
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
+
+            pnpm clean
+
             # cleanup smoke test packages
             rm -rf packages/tswebextension/test/builders/rollup-ts/node_modules
   

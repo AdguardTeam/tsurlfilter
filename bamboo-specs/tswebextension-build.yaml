@@ -5,7 +5,7 @@ plan:
   key: TSWEBEXTENSIONBUILD
   name: tswebextension - build
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Build:
@@ -21,7 +21,7 @@ Build:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -37,11 +37,14 @@ Build:
 
             ls -alt
 
-            npx lerna@6 bootstrap --scope @adguard/tswebextension --include-dependencies
-            npx lerna@6 run --scope @adguard/tswebextension build
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
 
-            cd packages/tswebextension/
-            yarn pack --filename tswebextension.tgz
+            pnpm --filter @adguard/tswebextension build
+
+            cd packages/tswebextension
+            pnpm pack && mv $(ls adguard-tswebextension-*.tgz) tswebextension.tgz
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt
         scope: RESULT
@@ -65,13 +68,10 @@ Build:
             ls -la
 
             echo "Size before cleanup:" && du -h | tail -n 1
-            
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
+
+            pnpm clean
   
-            echo "Size after cleanup:" && du -h | tail -n 1 
+            echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: tswebextension.tgz
       location: packages/tswebextension/

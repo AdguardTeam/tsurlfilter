@@ -1,92 +1,103 @@
-# TSUrlFilter libraries
+# Extensions libraries
 
-This repo contains typescript packages that implement AdGuard filtering engine.
+[![badge-open-issues]][open-issues] [![badge-closed-issues]][closed-issues] [![badge-license]][license-url]
+
+This mono-repository contains a collection of TypeScript libraries which are used
+in AdGuard browser extensions and other projects.
+
+[badge-closed-issues]: https://img.shields.io/github/issues-closed/AdguardTeam/tsurlfilter
+[badge-license]: https://img.shields.io/github/license/AdguardTeam/tsurlfilter
+[badge-open-issues]: https://img.shields.io/github/issues/AdguardTeam/tsurlfilter
+[closed-issues]: https://github.com/AdguardTeam/tsurlfilter/issues?q=is%3Aissue+is%3Aclosed
+[license-url]: https://github.com/AdguardTeam/tsurlfilter/blob/master/LICENSE
+[open-issues]: https://github.com/AdguardTeam/tsurlfilter/issues
 
 ## Packages
 
-- `tsurlfilter`
-- `tswebextension`
-- `adguard-api`
-- `agtree`
-- `examples/manifest-v2`
-- `examples/manifest-v3`
-- `examples/tswebextension-example`
-- `examples/tswebextension-mv3`
+The following packages are available in this repository:
 
-See packages details in `./packages`.
+| Package Name                                   | Description                                                                          |
+|------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`css-tokenizer`][csstokenizerreadme]          | A fast, spec-compliant CSS tokenizer for standard and Extended CSS.                  |
+| [`agtree`][agtreereadme]                       | Universal adblock filter list parser which produces a detailed AST.                  |
+| [`tsurlfilter`][tsurlfilterreadme]             | A library that enforces AdGuard's blocking rules logic.                              |
+| [`tswebextension`][tswebextensionreadme]       | Wraps the web extension API for use with [`tsurlfilter`][tsurlfilterreadme].         |
+| [`adguard-api`][adguardapireadme]              | Manages filter lists and ad filtering via [`tswebextension`][tswebextensionreadme].  |
+| [`examples/manifest-v2`][manifestv2]           | Example using Manifest V2.                                                           |
+| [`examples/manifest-v3`][manifestv3]           | Example using Manifest V3.                                                           |
+| [`examples/tswebextension-example`][tswebextensionexample] | Example for [`tswebextension`][tswebextensionreadme].                    |
+| [`examples/tswebextension-mv3`][tswebextensionmv3] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V3.          |
 
-### TSUrlFilter
-
-TSUrlFilter is a TypeScript library that implements AdGuard's blocking rules
-logic. See details in [`./packages/tsurlfilter`][tsurlfilterreadme].
-
-[tsurlfilterreadme]: /packages/tsurlfilter/README.md
-
-### TSWebExtension
-
-TSWebExtension is a TypeScript library that wraps webextension api for the
-tsurlfilter library. See details in
-[`./packages/tswebextension`][tswebextensionreadme].
-
-[tswebextensionreadme]: /packages/tswebextension/README.md
-
-### AdGuard API
-
-AdGuard API is a TypeScript filtering library that provides filter list
-management, ad filtering via [@adguard/tswebextension][tswebextensionreadme].
-See details in [`./packages/adguard-api`][adguardapireadme].
+Detailed information on each package is available in the [`./packages`][packages-dir] directory.
 
 [adguardapireadme]: /packages/adguard-api/README.md
-
-### AGTree
-
-AGTree is an AST implementation for adguard filtering rules. See details in
-[`./packages/agtree`][agtreereadme].
-
 [agtreereadme]: /packages/agtree/README.md
+[csstokenizerreadme]: /packages/css-tokenizer/README.md
+[manifestv2]: /packages/examples/manifest-v2
+[manifestv3]: /packages/examples/manifest-v3
+[packages-dir]: /packages
+[tsurlfilterreadme]: /packages/tsurlfilter/README.md
+[tswebextensionexample]: /packages/examples/tswebextension-example
+[tswebextensionmv3]: /packages/examples/tswebextension-mv3
+[tswebextensionreadme]: /packages/tswebextension/README.md
 
 ## Development
 
-Prepare your local environment.
+### Prerequisites
 
-```shell
-# Install dev dependencies and lerna locally.
-yarn install
+Ensure that the following software is installed on your computer:
 
-# Prepare and build tswebextension package as they are required for
-# bootstrapping examples.
-npx lerna bootstrap --scope=@adguard/tswebextension --include-dependencies
-npx lerna run build --scope=@adguard/tswebextension
+- [Node.js][nodejs], we recommend using the latest LTS version via [nvm][nvm]
+- [pnpm][pnpm] for package management
+- [Git][git] for version control
 
-# Bootstrap all packages.
-npx lerna bootstrap
-```
+> [!NOTE]  
+> For development, our team uses macOS and Linux. It may be possible that some commands not work on Windows,
+> so if you are using Windows, we recommend using WSL or a virtual machine.
 
-Bootstraps packages in the current repo. Installs all their dependencies and
-linking any cross-dependencies.
+[git]: https://git-scm.com/
+[nodejs]: https://nodejs.org/en/download
+[nvm]: https://github.com/nvm-sh/nvm
+[pnpm]: https://pnpm.io/installation
 
-**Note**: If you want to use another linked packages in monorepo workspace, link
-it in root folder.
+### Environment Setup
 
-Runs tests in all packages:
+Install dependencies with pnpm: `pnpm install`.
 
-```shell
-npx lerna run test
-```
+> [!NOTE]  
+> pnpm currently doesn't support installing per package dev dependencies (see https://github.com/pnpm/pnpm/issues/6300).
 
-Builds the packages in the current repo:
+> [!NOTE]  
+> If you want to use another linked packages in monorepo workspace, link it in root folder.
 
-```shell
-npx lerna run build
-```
+This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packages in a single repository.
+
+[lerna]: https://lerna.js.org/
+
+### Development Commands
+
+- Runs tests in all packages: `npx lerna run test`
+- Lint all packages: `pnpm lint`
+- Remove `node_modules` from all packages and root package: `pnpm clean`
+- Builds the packages in the current repo: `npx lerna run build`
+- Builds a specific package: `npx lerna run build --scope=<package-name>`
+  - For example, to build the `tswebextension` package: `npx lerna run build --scope=@adguard/tswebextension`.
+    This command also builds `@adguard/tsurlfilter` first as it is required for `@adguard/tswebextension`.
+
+> [!NOTE]
+> You can find Lerna commands in the following link: [Lerna Commands][lernacommands].
+
+[lernacommands]: https://lerna.js.org/docs/api-reference/commands
 
 ### Sample extensions
 
-Source code of sample extensions can be found in `./packages/examples`.
+Source code of sample extensions can be found in [`./packages/examples`][examples] directory.
 
-- `npx lerna run build --scope tswebextension-mv2` - MV2 sample extension.
-- `npx lerna run build --scope tswebextension-mv3` - MV3 sample extension.
-- `npx lerna run build --scope adguard-api-example` - AdGuard API example.
+You can build them using the following commands:
+
+- MV2 sample extension: `npx lerna run build --scope tswebextension-mv2`
+- MV3 sample extension: `npx lerna run build --scope tswebextension-mv3`
+- AdGuard API example: `npx lerna run build --scope adguard-api-example`
 
 To test if this extension works correctly you can use the following test pages:
 
@@ -95,49 +106,33 @@ Test pages:
 - [Simple rules test][testcasessimplerules]
 - [Script rules test][testcasesscriptrules]
 
-[testcasessimplerules]: https://testcases.agrd.dev/Filters/simple-rules/test-simple-rules.html
+[examples]: /packages/examples
 [testcasesscriptrules]: https://testcases.agrd.dev/Filters/script-rules/test-script-rules.html
+[testcasessimplerules]: https://testcases.agrd.dev/Filters/simple-rules/test-simple-rules.html
 
-### Visual Studio Code Workspace
+### VSCode Workspace
 
-If you're using Visual Studio Code for development, it may be easier to work
-with the monorepo if you use the workspace functionality. To do this, create a
-`tsurlfilter.code-workspace` file in the monorepo root directory.
+If you're using Visual Studio Code for development, it may be easier to work with the monorepo
+if you use the workspace functionality.
+To do this, create a `tsurlfilter.code-workspace` file in the monorepo root directory.
 
-`jest.runMode` and `jest.enable` would be useful to those that use
-[Jest][jestplugin] plugin.
+`jest.runMode` and `jest.enable` would be useful to those that use [Jest][jestplugin] plugin.
 
 ```json
 {
     "folders": [
-        {
-            "path": "packages/tsurlfilter",
-        },
-        {
-            "path": "packages/tswebextension",
-        },
-        {
-            "path": "packages/agtree",
-        },
-        {
-            "path": "packages/css-tokenizer",
-        },
-        {
-            "path": "packages/adguard-api",
-        },
-        {
-            "path": "packages/examples/adguard-api",
-        },
-        {
-            "path": "packages/examples/tswebextension-mv2",
-        },
-        {
-            "path": "packages/examples/tswebextension-mv3",
-        }
+        { "path": "packages/tsurlfilter" },
+        { "path": "packages/tswebextension" },
+        { "path": "packages/agtree" },
+        { "path": "packages/css-tokenizer" },
+        { "path": "packages/adguard-api" },
+        { "path": "packages/examples/adguard-api" },
+        { "path": "packages/examples/tswebextension-mv2" },
+        { "path": "packages/examples/tswebextension-mv3" }
     ],
     "settings": {
         "jest.runMode": "on-demand",
-        "jest.enable": true,
+        "jest.enable": true
     }
 }
 ```

@@ -5,7 +5,7 @@ plan:
   key: CSSTOKENIZERBUILD
   name: CSS Tokenizer - build
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Build:
@@ -21,7 +21,7 @@ Build:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -37,15 +37,18 @@ Build:
 
             ls -alt
 
-            # Bootstrap the package with Lerna
-            npx lerna@6 bootstrap --scope @adguard/css-tokenizer --include-dependencies
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
 
-            # Build CSS Tokenizer with Rollup
-            npx lerna@6 run --scope @adguard/css-tokenizer build
+            # Install dependencies
+            pnpm install
 
-            # Pack the CSS Tokenizer package into a tarball
-            cd packages/css-tokenizer/
-            yarn pack --filename css-tokenizer.tgz
+            # Build
+            pnpm --filter @adguard/css-tokenizer build
+
+            cd packages/css-tokenizer
+            # Pack
+            pnpm pack && mv $(ls adguard-css-tokenizer-*.tgz) css-tokenizer.tgz
     - inject-variables:
         file: ./packages/css-tokenizer/dist/build.txt
         scope: RESULT
@@ -70,12 +73,9 @@ Build:
 
             echo "Size before cleanup:" && du -h | tail -n 1
             
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
+            pnpm clean
   
-            echo "Size after cleanup:" && du -h | tail -n 1  
+            echo "Size after cleanup:" && du -h | tail -n 1
   # Store the CSS Tokenizer package tarball as an artifact
   artifacts:
     - name: css-tokenizer.tgz

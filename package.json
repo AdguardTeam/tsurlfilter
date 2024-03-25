@@ -1,8 +1,7 @@
 {
-  "name": "@adguard/tsurlfilter",
-  "private": "true",
-  "version": "0.7.6",
-  "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
+  "name": "@adguard/extensions",
+  "version": "1.0.0",
+  "description": "This is a monorepo with packages developed by the extensions developers at AdGuard",
   "author": "AdGuard",
   "repository": {
     "type": "git",
@@ -17,10 +16,10 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "lerna run --parallel lint"
+    "lint": "lerna run --parallel lint",
+    "clean": "lerna clean -y && rm -rf node_modules"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.5",
-    "lerna": "^6.6.2"
+    "lerna": "^8.1.2"
   }
 }

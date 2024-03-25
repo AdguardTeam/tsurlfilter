@@ -23,14 +23,14 @@
     }
   },
   "scripts": {
-    "lint": "yarn lint:eslint && yarn check-types",
-    "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc",
-    "postbuild": "yarn types && ts-node tasks/build-txt",
-    "prepush": "yarn build",
+    "lint": "pnpm lint:eslint && pnpm check-types",
+    "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
+    "postbuild": "pnpm types && ts-node tasks/build-txt",
+    "prepush": "pnpm build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "lint:eslint": "eslint --cache 'src/**/*.ts'",
     "check-types": "tsc --project tsconfig.build.json --noemit",
-    "increment": "yarn version --patch --no-git-tag-version"
+    "increment": "pnpm version patch --no-git-tag-version"
   },
   "author": "AdGuard",
   "license": "GPL-3.0-only",

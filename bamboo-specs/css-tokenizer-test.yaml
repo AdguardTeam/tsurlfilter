@@ -5,7 +5,7 @@ plan:
   key: CSSTOKENIZERTEST
   name: CSS Tokenizer - tests
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Test:
@@ -19,7 +19,7 @@ Test:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -35,17 +35,18 @@ Test:
 
             ls -alt
 
-            # Bootstrap the package
-            npx lerna@6 bootstrap --scope @adguard/css-tokenizer --include-dependencies
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
 
             # Check TypeScript types with TSC
-            npx lerna@6 run --scope @adguard/css-tokenizer check-types
+            pnpm --filter @adguard/css-tokenizer check-types
 
             # ESLint & Markdownlint
-            npx lerna@6 run --scope @adguard/css-tokenizer lint
+            pnpm --filter @adguard/css-tokenizer lint
 
             # Run tests with Jest
-            npx lerna@6 run --scope @adguard/css-tokenizer test
+            pnpm --filter @adguard/css-tokenizer test
   final-tasks:
     - script:
         interpreter: SHELL
@@ -60,11 +61,8 @@ Test:
             ls -la
 
             echo "Size before cleanup:" && du -h | tail -n 1
-            
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
+
+            pnpm clean
   
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
