@@ -179,6 +179,7 @@ import { logger } from '../../common/utils/logger';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { FRAME_DELETION_TIMEOUT } from '../../common/constants';
 
+import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
 import { headersService } from './services/headers-service';
 import { paramsService } from './services/params-service';
@@ -717,7 +718,7 @@ export class WebRequestApi {
      * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1046
      * @param details Event details.
      */
-    private static onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): void {
+    private static async onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): Promise<void> {
         const {
             tabId,
             frameId,
@@ -729,6 +730,13 @@ export class WebRequestApi {
         const mainFrameUrl = tabContext?.info.url;
 
         if (!mainFrameUrl || !isLocalFrame(url, frameId, mainFrameUrl)) {
+            return;
+        }
+
+        const isAssistant = await Assistant.isAssistantFrame(details, tabContext);
+
+        // do not inject cosmetic rules into the assistant frame
+        if (isAssistant) {
             return;
         }
 
