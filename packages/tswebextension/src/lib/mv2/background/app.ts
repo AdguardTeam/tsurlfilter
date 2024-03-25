@@ -212,6 +212,7 @@ MessageHandlerMV2
      * @param tabId Tab id where assistant will be opened.
      */
     public async openAssistant(tabId: number): Promise<void> {
+        this.tabsApi.setAssistantInitTimestamp(tabId);
         await Assistant.openAssistant(tabId);
     }
 
@@ -221,6 +222,7 @@ MessageHandlerMV2
      * @param tabId Tab id.
      */
     public async closeAssistant(tabId: number): Promise<void> {
+        this.tabsApi.resetAssistantInitTimestamp(tabId);
         await Assistant.closeAssistant(tabId);
     }
 

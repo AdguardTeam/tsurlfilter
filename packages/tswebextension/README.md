@@ -108,7 +108,7 @@ Table of content:
 ## Install
 
 ```sh
-yarn add @adguard/tswebextension
+pnpm add @adguard/tswebextension
 ```
 
 ## Usage
@@ -708,23 +708,23 @@ Dispatch the specified filtering event.
 
 ## Development
 
-This project is part of the `tsurlfilter` monorepo.
-It is highly recommended to use both `lerna` and `nx` for commands, as it will execute scripts in the correct order and can cache dependencies.
+This project is part of the `@adguard/extensions` monorepo.
+It is highly recommended to use `lerna` for commands, as it will execute scripts in the correct order and can cache dependencies.
 
-run module tests
-
-```sh
-npx nx run @adguard/tswebextension:test
-```
-
-run build
+Run module tests
 
 ```sh
-npx nx run @adguard/tswebextension:build
+npx lerna run --scope=@adguard/tswebextension test
 ```
 
-lint source code
+Run build
+
+```sh
+npx lerna run --scope=@adguard/tswebextension build
+```
+
+Lint source code
 
 ```
-npx nx run @adguard/tswebextension:lint
+npx lerna run --scope=@adguard/tswebextension lint
 ```

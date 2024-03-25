@@ -49,6 +49,8 @@ export interface AppInterface<
 
     /**
      * Launches assistant in the current tab.
+     *
+     * @param tabId Id of the tab to launch assistant in.
      */
     openAssistant: (tabId: number) => void;
 

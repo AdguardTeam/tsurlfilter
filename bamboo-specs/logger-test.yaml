@@ -1,0 +1,94 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: LOGGERTEST
+  name: logger - tests
+variables:
+  dockerContainer: adguard/node-ssh:18.19--0
+
+stages:
+  - Test:
+      manual: false
+      final: false
+      jobs:
+        - Test
+
+Test:
+  key: TEST
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+
+            # Install deps for project
+            pnpm install
+
+            # Build the package
+            pnpm --filter @adguard/logger build
+
+            # Lint code
+            pnpm --filter @adguard/logger lint
+
+            # Run tests
+            pnpm --filter @adguard/logger test
+
+            # Run smoke tests
+            pnpm --filter @adguard/logger test:smoke
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+
+            pnpm clean
+  
+            echo "Size after cleanup:" && du -h | tail -n 1
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
+  link-to-jira: 'true'
+
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default

@@ -2,7 +2,7 @@
   "name": "adguard-api-example",
   "version": "0.0.1",
   "description": "Sample extension based on @adguard/api",
-  "author": "adguard@adguard.com",
+  "author": "Adguard Software Ltd.",
   "license": "GPL-3.0",
   "scripts": {
     "build": "node -r @swc-node/register ./scripts/build/index.ts",

@@ -9,7 +9,7 @@ The benchmark results can be found in [`benchmark/RESULTS.md`][results].
 To run the benchmark, simply execute the following command:
 
 ```sh
-yarn benchmark
+pnpm benchmark
 ```
 
 This command will build the library and initiate the benchmark. The results will be displayed on the console and saved
