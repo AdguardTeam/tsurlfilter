@@ -1,6 +1,5 @@
-import { ByteBuffer } from '../../src/utils/byte-buffer';
-import { encodeText } from '../../src/utils/text-encoder';
-import { decodeText } from '../../src/utils/text-decoder';
+import { encodeIntoPolyfill } from '../../src/utils/text-encoder-polyfill';
+import { decodeTextPolyfill } from '../../src/utils/text-decoder-polyfill';
 
 describe('Text Encoder and Decoder', () => {
     test.each([
@@ -74,10 +73,9 @@ describe('Text Encoder and Decoder', () => {
 
         // TODO: add more tests
     ])("encode and decode should work for '$actual'", ({ actual, expected }) => {
-        const byteBuffer = new ByteBuffer();
-        const bytesWritten = encodeText(actual, byteBuffer, 0);
-        const decodeResult = decodeText(byteBuffer, 0);
-        expect(decodeResult).toHaveProperty('bytesConsumed', bytesWritten);
-        expect(decodeResult).toHaveProperty('decodedText', expected);
+        // https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto#buffer_sizing
+        const buffer = new Uint8Array(actual.length * 3);
+        const { written } = encodeIntoPolyfill(actual, buffer);
+        expect(decodeTextPolyfill(buffer, 0, written)).toEqual(expected);
     });
 });

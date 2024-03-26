@@ -1,29 +1,42 @@
+/* eslint-disable max-len */
 /* eslint-disable no-plusplus */
 /* eslint-disable no-bitwise */
 /**
  * @file Input byte buffer for reading binary data.
  */
-
 import { ByteBuffer } from './byte-buffer';
 import { isArrayOfUint8Arrays } from './type-guards';
 import { type Storage } from './storage-interface';
-import { decodeText } from './text-decoder';
+import { isChromium } from './is-chromium';
+import { decodeTextPolyfill } from './text-decoder-polyfill';
 
 /**
  * Input byte buffer for reading binary data.
  *
  * @note Internally, this class uses a {@link ByteBuffer} instance, just providing a convenient API for reading data.
  */
-export class InputByteBuffer {
-    /**
-     * ByteBuffer instance.
-     */
-    private byteBuffer: ByteBuffer;
-
+export class InputByteBuffer extends ByteBuffer {
     /**
      * Current offset in the buffer for reading.
      */
     private offset: number;
+
+    /**
+     * Shared buffer for decoding strings.
+     */
+    private readonly sharedBuffer: Uint8Array;
+
+    /**
+     * Shared native decoder for decoding strings.
+     */
+    private readonly sharedNativeDecoder: TextDecoder;
+
+    /**
+     * Flag indicating if the current environment is Chromium.
+     * This is used for performance optimizations, because Chromium's TextEncoder/TextDecoder has a relatively
+     * large marshalling overhead for small strings.
+     */
+    private readonly isChromium: boolean;
 
     /**
      * Constructs a new InputByteBuffer instance.
@@ -32,8 +45,12 @@ export class InputByteBuffer {
      * @note If you provide chunks, for performance reasons, they are passed by reference and not copied.
      */
     constructor(chunks: Uint8Array[]) {
-        this.byteBuffer = new ByteBuffer(chunks);
+        super(chunks);
+
         this.offset = 0;
+        this.sharedBuffer = new Uint8Array(ByteBuffer.CHUNK_SIZE * 2);
+        this.sharedNativeDecoder = new TextDecoder();
+        this.isChromium = isChromium();
     }
 
     /**
@@ -60,7 +77,7 @@ export class InputByteBuffer {
      * @returns 8-bit unsigned integer from the buffer.
      */
     public readUint8(): number {
-        const result = this.byteBuffer.readByte(this.offset++) ?? 0;
+        const result = this.readByte(this.offset++) ?? 0;
         return result;
     }
 
@@ -70,8 +87,8 @@ export class InputByteBuffer {
      * @returns 16-bit unsigned integer from the buffer.
      */
     public readUint16(): number {
-        const result = (((this.byteBuffer.readByte(this.offset++) ?? 0) << 8)
-            | ((this.byteBuffer.readByte(this.offset++) ?? 0))) >>> 0;
+        const result = (((this.readByte(this.offset++) ?? 0) << 8)
+            | ((this.readByte(this.offset++) ?? 0))) >>> 0;
         return result;
     }
 
@@ -81,10 +98,10 @@ export class InputByteBuffer {
      * @returns 32-bit unsigned integer from the buffer.
      */
     public readUint32(): number {
-        const result = (((this.byteBuffer.readByte(this.offset++) ?? 0) << 24)
-            | ((this.byteBuffer.readByte(this.offset++) ?? 0) << 16)
-            | ((this.byteBuffer.readByte(this.offset++) ?? 0) << 8)
-            | ((this.byteBuffer.readByte(this.offset++) ?? 0))) >>> 0;
+        const result = (((this.readByte(this.offset++) ?? 0) << 24)
+            | ((this.readByte(this.offset++) ?? 0) << 16)
+            | ((this.readByte(this.offset++) ?? 0) << 8)
+            | ((this.readByte(this.offset++) ?? 0))) >>> 0;
         return result;
     }
 
@@ -99,14 +116,96 @@ export class InputByteBuffer {
     }
 
     /**
+     * Reads an optimized unsigned integer from the buffer.
+     * 'Optimized' means that the integer is stored in a variable number of bytes, depending on its value,
+     * so that smaller numbers occupy less space.
+     *
+     * @returns Decoded unsigned integer from the buffer.
+     */
+    public readOptimizedUint(): number {
+        let result = 0;
+        let shift = 0;
+
+        while (shift <= 28) {
+            const byteValue = this.readByte(this.offset++) ?? 0;
+            result |= (byteValue & 0x7F) << shift;
+            shift += 7;
+
+            if ((byteValue & 0x80) === 0) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Reads a string from the buffer.
      *
      * @returns Decoded string from the buffer.
      */
     public readString(): string {
-        const result = decodeText(this.byteBuffer, this.offset);
-        this.offset += result.bytesConsumed;
-        return result.decodedText;
+        const length = this.readOptimizedUint();
+
+        let chunkIndex = this.offset >>> 0x000F;
+        const chunkOffset = this.offset & 0x7FFF; // offset is only relevant for the first chunk
+        const endOffset = chunkOffset + length;
+
+        // In 99% of cases string is:
+        //  1. stored in the current chunk, or
+        //  2. stored in the end of the current chunk and the beginning of the next chunk
+        // We should decode these cases without using decoder's stream option
+
+        // Case 1:
+        if (endOffset < ByteBuffer.CHUNK_SIZE) {
+            this.offset += length;
+            if (this.isChromium) {
+                return decodeTextPolyfill(this.chunks[chunkIndex], chunkOffset, endOffset);
+            }
+            return this.sharedNativeDecoder.decode(this.chunks[chunkIndex].subarray(chunkOffset, endOffset));
+        }
+
+        // Case 2:
+        if (endOffset < ByteBuffer.CHUNK_SIZE * 2 - chunkOffset) {
+            this.sharedBuffer.set(this.chunks[chunkIndex].subarray(chunkOffset), 0);
+            this.sharedBuffer.set(
+                this.chunks[chunkIndex + 1].subarray(0, length - (ByteBuffer.CHUNK_SIZE - chunkOffset)),
+                ByteBuffer.CHUNK_SIZE - chunkOffset,
+            );
+            this.offset += length;
+            if (this.isChromium) {
+                return decodeTextPolyfill(this.sharedBuffer, 0, length);
+            }
+            return this.sharedNativeDecoder.decode(this.sharedBuffer.subarray(0, length));
+        }
+
+        // If we are still in the function, we should decode the string using the stream option,
+        // because it is large
+        const result = [];
+
+        // Add first 2 chunks to the result
+        result.push(this.sharedNativeDecoder.decode(this.chunks[chunkIndex++].subarray(chunkOffset), { stream: true }));
+        result.push(this.sharedNativeDecoder.decode(this.chunks[chunkIndex++], { stream: true }));
+
+        let remaining = length - (ByteBuffer.CHUNK_SIZE * 2 - chunkOffset);
+
+        while (remaining) {
+            const chunk = this.chunks[chunkIndex];
+            if (!chunk) {
+                break;
+            }
+            const toRead = Math.min(remaining, ByteBuffer.CHUNK_SIZE);
+            result.push(this.sharedNativeDecoder.decode(chunk.subarray(0, toRead), { stream: true }));
+            remaining -= toRead;
+            chunkIndex += 1;
+        }
+
+        // Finish decoding, if something is left
+        result.push(this.sharedNativeDecoder.decode());
+
+        this.offset += length;
+
+        return result.join('');
     }
 
     /**
@@ -115,7 +214,7 @@ export class InputByteBuffer {
      * @returns 8-bit unsigned integer from the buffer.
      */
     public peekUint8(): number {
-        return this.byteBuffer.readByte(this.offset) ?? 0;
+        return this.readByte(this.offset) ?? 0;
     }
 
     /**

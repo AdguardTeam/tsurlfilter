@@ -1,34 +1,24 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-bitwise */
 /**
- * @file Utility for decoding strings from byte sequences.
+ * @file Optimized utility for decoding strings from byte sequences.
  */
 
-import { type ByteBuffer } from './byte-buffer';
 import { EMPTY } from './constants';
 
 const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
 
 /**
- * Result of a decoder operation.
- */
-export interface DecoderResult {
-    decodedText: string;
-    bytesConsumed: number;
-}
-
-/**
  * Decodes a byte sequence into an UTF-8 string according to the WHATWG spec.
+ * Optimized for performance.
  *
- * @param buffer Buffer to read the bytes from. See {@link ByteBuffer}.
- * @param start Start index of the byte sequence within the buffer.
+ * @param buffer Buffer to read the bytes from.
+ * @param start Start offset in the buffer.
+ * @param end End offset in the buffer.
  * @returns Decoded string.
  * @see {@link https://encoding.spec.whatwg.org/#utf-8-decoder}
- * @note Bytes written maybe larger than the string length, but never smaller.
- * For example, the string '你好' has a length of 2, but its byte representation has a length of 6.
  */
-export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => {
-    let result = EMPTY;
-
+export const decodeTextPolyfill = (buffer: Uint8Array, start = 0, end = -1): string => {
     let codePoint = 0;
     let bytesSeen = 0;
     let bytesNeeded = 0;
@@ -36,9 +26,14 @@ export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => 
     let upperBoundary = 0x00BF;
 
     let i = start;
+    const { length } = buffer;
+    const realEnd = end === -1 ? length : Math.min(end, length);
 
-    for (let byte = buffer.readByte(i); byte; byte = buffer.readByte(i)) {
-        i += 1;
+    const result = new Array<string>(realEnd - start);
+    let resIdx = 0;
+
+    for (; i < realEnd; i += 1) {
+        const byte = buffer[i];
         if (bytesNeeded === 0) {
             if (byte <= 0x007F) {
                 codePoint = byte & 0x00FF;
@@ -67,7 +62,7 @@ export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => 
                 }
             } else {
                 // For bytes that are not valid initial bytes of UTF-8 sequences, add replacement character
-                result += REPLACEMENT_CHAR;
+                result[resIdx++] = REPLACEMENT_CHAR;
                 continue;
             }
         } else {
@@ -78,7 +73,7 @@ export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => 
                 bytesSeen = 0;
                 lowerBoundary = 0x0080;
                 upperBoundary = 0x00BF;
-                result += REPLACEMENT_CHAR;
+                result[resIdx++] = REPLACEMENT_CHAR;
                 // Decrement `i` to re-evaluate this byte as the start of a new sequence
                 i -= 1;
                 continue;
@@ -92,7 +87,7 @@ export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => 
 
         if (bytesSeen === bytesNeeded) {
             // Complete the code point assembly and add it to the result
-            result += String.fromCodePoint(codePoint);
+            result[resIdx++] = String.fromCodePoint(codePoint);
             // Reset for the next character
             bytesNeeded = 0;
             bytesSeen = 0;
@@ -100,11 +95,5 @@ export const decodeText = (buffer: ByteBuffer, start: number): DecoderResult => 
         }
     }
 
-    // Null terminator
-    i += 1;
-
-    return {
-        decodedText: result,
-        bytesConsumed: i - start,
-    };
+    return result.join(EMPTY);
 };

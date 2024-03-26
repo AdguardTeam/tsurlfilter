@@ -39,7 +39,7 @@
         "dist"
     ],
     "engines": {
-        "node": ">=14"
+        "node": ">=17"
     },
     "scripts": {
         "build": "yarn clean && yarn build-types && yarn build-txt && yarn rollup --config rollup.config.ts --configPlugin typescript && yarn clean-types",
