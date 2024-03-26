@@ -1,0 +1,67 @@
+{
+    "name": "@adguard/logger",
+    "version": "1.0.0",
+    "scripts": {
+        "prebuild": "rimraf dist",
+        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types && pnpm build:txt",
+        "build:txt": "ts-node scripts/build-txt",
+        "build:types": "tsc --project tsconfig.base.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "test": "jest",
+        "lint": "eslint --cache . && tsc --noEmit",
+        "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",
+        "increment": "pnpm version patch --no-git-tag-version"
+    },
+    "engines": {
+        "node": ">=18.19.0"
+    },
+    "main": "./dist/index.js",
+    "module": "./dist/es/index.mjs",
+    "types": "./dist/types/index.d.ts",
+    "files": [
+        "dist",
+        "src"
+    ],
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "import": "./dist/es/index.mjs",
+            "types": "./dist/types/index.d.ts"
+        }
+    },
+    "license": "MIT",
+    "author": "Adguard Software Ltd.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/logger"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/logger#readme",
+    "keywords": [
+        "log",
+        "logger"
+    ],
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^25.0.7",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "@rollup/plugin-typescript": "^11.1.6",
+        "@types/jest": "^29.5.12",
+        "@types/node": "^20.11.30",
+        "@typescript-eslint/eslint-plugin": "^7.0.0",
+        "@typescript-eslint/parser": "^7.0.0",
+        "eslint": "^8.56.0",
+        "eslint-config-airbnb-base": "15.0.0",
+        "eslint-config-airbnb-typescript": "18.0.0",
+        "eslint-plugin-import": "^2.25.2",
+        "eslint-plugin-jsdoc": "^48.2.1",
+        "jest": "^29.7.0",
+        "rimraf": "^5.0.5",
+        "rollup": "^4.13.0",
+        "ts-jest": "^29.1.2",
+        "ts-node": "^10.9.2",
+        "tslib": "^2.6.2",
+        "typescript": "^5.4.2"
+    }
+}

@@ -3,12 +3,13 @@
 echo "Testing bundling with rollup-ts"
 
 # install other deps
-yarn install
+pnpm install
 
 # pack @adguard/tswebextension
 curr_path="test/builders/rollup-ts"
 tswebextension="tswebextension.tgz"
-(cd ../../.. && yarn pack --filename $curr_path/$tswebextension)
+
+(cd ../../.. && pnpm pack && mv adguard-tswebextension-*.tgz "$curr_path/$tswebextension")
 
 # unzip to @adguard/tswebextension to node_modules
 tswebextension_nm="node_modules/@adguard/tswebextension"
@@ -18,7 +19,7 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 {
     # try
     # bundle with rollup
-    yarn build &&
+    pnpm build &&
     echo "Test successfully built."
 } || {
     # catch

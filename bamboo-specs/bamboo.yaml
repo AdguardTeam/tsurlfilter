@@ -69,3 +69,18 @@
 
 ---
 !include 'css-tokenizer-permissions.yaml'
+
+---
+!include 'logger-build.yaml'
+
+---
+!include 'logger-deploy.yaml'
+
+---
+!include 'logger-increment.yaml'
+
+---
+!include 'logger-permissions.yaml'
+
+---
+!include 'logger-test.yaml'

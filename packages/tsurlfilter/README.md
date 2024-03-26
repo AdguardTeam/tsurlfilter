@@ -398,16 +398,15 @@ Works   ||testcases.adguard.com$removeparam=p2case6
 
 ## Development
 
-This project is part of the `tsurlfilter` monorepo.
-It is highly recommended to use both `lerna` and `nx` for commands, as it will execute scripts in the correct order and can cache dependencies.
+This project is part of the `@adguard/extensions` monorepo.
+It is highly recommended to use `lerna` for commands as it will execute scripts in the correct order and can cache dependencies.
 
 ```sh
-npx nx run @adguard/tsurlfilter:<script>
+npx lerna run --scope=@adguard/tsurlfilter:<script>
 ```
 
 ### <a id="npm-scripts"></a> NPM scripts
 
-- `t`: Run test suite
 - `start`: Run `build` in watch mode
 - `test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
 - `test:prod`: Run linting and generate coverage

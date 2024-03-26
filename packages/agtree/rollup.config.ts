@@ -1,7 +1,7 @@
 /**
  * @file Rollup configurations for generating AGTree builds.
  *
- * ! Please ALWAYS use the "yarn build" command for building!
+ * ! Please ALWAYS use the "pnpm build" command for building!
  */
 
 import typescript from '@rollup/plugin-typescript';

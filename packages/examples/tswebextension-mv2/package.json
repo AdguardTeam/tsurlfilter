@@ -2,10 +2,10 @@
   "name": "tswebextension-mv2",
   "version": "0.0.1",
   "description": "Sample manifest v2 extension with tswebextension",
-  "author": "adguard@adguard.com",
+  "author": "Adguard Software Ltd.",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "yarn build:chrome",
+    "build": "pnpm build:chrome",
     "build:chrome": "node -r @swc-node/register ./scripts/build/index.ts",
     "build:ff": "BROWSER=firefox node -r @swc-node/register ./scripts/build/index.ts",
     "run:ff": "node -r @swc-node/register ./scripts/launchFirefoxExtension.ts",

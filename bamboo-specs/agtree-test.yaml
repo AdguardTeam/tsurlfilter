@@ -5,12 +5,12 @@ plan:
   key: AGTREETEST
   name: AGTree - tests
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Test:
-      manual: 'false'
-      final: 'false'
+      manual: false
+      final: false
       jobs:
         - Test
 
@@ -19,7 +19,7 @@ Test:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -35,23 +35,24 @@ Test:
 
             ls -alt
 
-            # Bootstrap the packages
-            npx lerna@6 bootstrap --scope @adguard/agtree --include-dependencies
+            # Set cache directorys
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
 
             # Build CSS Tokenizer because it is used in AGTree tests
-            npx lerna@6 run --scope @adguard/css-tokenizer build
+            pnpm --filter @adguard/css-tokenizer build
 
             # Check TypeScript types with TSC
-            npx lerna@6 run --scope @adguard/agtree check-types
+            pnpm --filter @adguard/agtree check-types
 
             # Validate compatibility tables
-            npx lerna@6 run --scope @adguard/agtree check-compatibility-tables
+            pnpm --filter @adguard/agtree check-compatibility-tables
 
             # Check code with ESLint
-            npx lerna@6 run --scope @adguard/agtree lint
+            pnpm --filter @adguard/agtree lint
 
             # Run tests with Jest
-            npx lerna@6 run --scope @adguard/agtree test
+            pnpm --filter @adguard/agtree test
   final-tasks:
     - script:
         interpreter: SHELL
@@ -66,11 +67,8 @@ Test:
             ls -la
 
             echo "Size before cleanup:" && du -h | tail -n 1
-            
-            # cleanup parent
-            rm -rf node_modules
-            # cleanup child packages
-            npx lerna@6 clean -y
+
+            pnpm clean
   
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
