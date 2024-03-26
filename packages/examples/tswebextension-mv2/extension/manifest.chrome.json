@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "TSWebExtension on Manifest-v2",
-    "author": "AdGuard Software Ltd.",
+    "author": "Adguard Software Ltd.",
     "version": "0.0.1",
     "description": "An example of extension built with TSUrlFilter on Manifest-v2",
     "permissions": [

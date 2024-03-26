@@ -19,6 +19,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocked ads count leaking between websites [#2080](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080).
 - Breakage of cookie string in Firefox and unnecessary cookie serialization [#2549](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549).
 
+## [1.0.18] - 2024-03-25
+
+### Fixed
+
+- Improved assistant iframe checking for cosmetic rules injection [AdguardBrowserExtension#1848].
+
+[1.0.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.18
+
+
+## [1.0.17] - 2024-03-25
+
+### Fixed
+
+- Assistant iframe styles are affected by cosmetic rules specific for websites [AdguardBrowserExtension#1848].
+
+[1.0.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.17
+[AdguardBrowserExtension#1848]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1848
+
+
 ## [1.0.16] - 2024-03-01
 
 ### Changed
