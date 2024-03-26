@@ -39,7 +39,14 @@ Test:
             pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
-            pnpm --filter @adguard/agtree build
+            # Before running tests we need to build the dependencies
+            # TODO: Find a better solution, like jq
+            DEPS=$(pnpm ls --json --only-projects -r --depth -1 --filter @adguard/tsurlfilter^... | grep -oP '"name": "\K[^"]+')
+
+            for DEP in $DEPS; do
+                echo "Building dependency: $DEP"
+                pnpm --filter $DEP build
+            done
 
             pnpm --filter @adguard/tsurlfilter lint
             pnpm --filter @adguard/tsurlfilter build
