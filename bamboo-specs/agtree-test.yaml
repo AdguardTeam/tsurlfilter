@@ -18,6 +18,8 @@ Test:
   key: TEST
   docker:
     image: "${bamboo.dockerContainer}"
+    volumes:
+      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -69,8 +71,6 @@ Test:
             rm -rf node_modules
             # cleanup child packages
             npx lerna@6 clean -y
-            # clear yarn cache
-            yarn cache clean
   
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
