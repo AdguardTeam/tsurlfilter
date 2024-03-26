@@ -187,7 +187,7 @@ This project is licensed under the MIT license. See the [LICENSE][license-url] f
 [npm-badge]: https://img.shields.io/npm/v/@adguard/css-tokenizer
 [npm-pkg-manager-url]: https://www.npmjs.com/get-npm
 [npm-url]: https://www.npmjs.com/package/@adguard/css-tokenizer
-[pnpm-pkg-manager-url]: https://pnpm.js.org/
+[pnpm-pkg-manager-url]: https://pnpm.io/
 [ubo-procedural]: https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters
 [xpath-mdn]: https://developer.mozilla.org/en-US/docs/Web/XPath
 [yarn-pkg-manager-url]: https://yarnpkg.com/en/docs/install

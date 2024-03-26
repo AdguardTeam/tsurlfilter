@@ -5,12 +5,12 @@ plan:
   key: AGTREEINCR
   name: AGTree - increment
 variables:
-  dockerContainer: adguard/node-ssh:18.13--1
+  dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
   - Increment:
-      manual: 'true'
-      final: 'false'
+      manual: true
+      final: false
       jobs:
         - Increment
 
@@ -19,7 +19,7 @@ Increment:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-      "${system.YARN_DIR}": "${bamboo.cacheYarn}"
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -45,7 +45,7 @@ Increment:
 
             ls -alt
 
-            npx lerna@6 run --scope @adguard/agtree increment
+            pnpm --filter @adguard/tree increment
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

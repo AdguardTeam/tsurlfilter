@@ -1,7 +1,7 @@
 /**
  * @file Rollup configurations for generating AGTree builds.
  *
- * ! Please ALWAYS use the "yarn build" command for building!
+ * ! Please ALWAYS use the "pnpm build" command for building!
  */
 import { fileURLToPath } from 'node:url';
 import typescript from '@rollup/plugin-typescript';
@@ -96,11 +96,25 @@ export const nodePlugins = (esm = false) => [
                 '@babel/preset-env',
                 {
                     modules: esm ? false : 'auto',
+                    // at least Node.js 17
+                    targets: {
+                        node: '17',
+                    },
                 },
             ],
         ],
         allowAllFormats: true,
         compact: false,
+    }),
+    // Minify the output with Terser
+    terser({
+        output: {
+            // Keep the banner in the minified output
+            preamble: banner,
+        },
+        compress: {
+            passes: 3,
+        },
     }),
 ];
 
@@ -115,12 +129,12 @@ export const browserPlugins = [
                 '@babel/preset-env',
                 {
                     targets: {
-                        // Simply use the recommended practice
-                        // https://github.com/browserslist/browserslist#best-practices
                         browsers: [
-                            'last 2 versions',
-                            'not dead',
-                            '> 0.2%',
+                            'chrome >= 88',
+                            'firefox >= 84',
+                            'edge >= 88',
+                            'opera >= 80',
+                            'safari >= 14',
                         ],
                     },
                 },
@@ -134,6 +148,9 @@ export const browserPlugins = [
         output: {
             // Keep the banner in the minified output
             preamble: banner,
+        },
+        compress: {
+            passes: 3,
         },
     }),
 ];

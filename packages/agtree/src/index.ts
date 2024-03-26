@@ -121,8 +121,8 @@ export { type Position, PositionProvider } from './utils/position-provider';
 export { OutputByteBuffer } from './utils/output-byte-buffer';
 export { InputByteBuffer } from './utils/input-byte-buffer';
 export { ByteBuffer } from './utils/byte-buffer';
-export { encodeText } from './utils/text-encoder';
-export { decodeText, type DecoderResult } from './utils/text-decoder';
+export { encodeIntoPolyfill, type TextEncoderPolyfillResult } from './utils/text-encoder-polyfill';
+export { decodeTextPolyfill } from './utils/text-decoder-polyfill';
 
 // Constants
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';

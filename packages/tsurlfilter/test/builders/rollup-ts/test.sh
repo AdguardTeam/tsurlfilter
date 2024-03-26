@@ -3,13 +3,13 @@
 echo "Staring to test a bundling with rollup-ts "
 
 # install other deps
-yarn install
+pnpm install
 
 # pack @adguard/tsurlfilter
 curr_path="test/builders/rollup-ts"
 tsurlfilter="tsurlfilter.tgz"
 
-(cd ../../.. && yarn pack --filename $curr_path/$tsurlfilter)
+(cd ../../.. && pnpm pack && mv adguard-tsurlfilter-*.tgz "$curr_path/$tsurlfilter")
 
 # unzip to @adguard/tsurlfilter to node_modules
 tsurlfilter_nm="node_modules/@adguard/tsurlfilter"
@@ -22,7 +22,7 @@ tar -xzf $tsurlfilter --strip-components=1 -C $tsurlfilter_nm
 {
     # try
     # bundle with rollup
-    yarn build &&
+    pnpm build &&
     echo "Test successfully built."
 } || {
     # catch

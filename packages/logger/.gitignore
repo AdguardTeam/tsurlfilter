@@ -1,0 +1,11 @@
+*.log
+.DS_Store
+.swc
+.vscode
+coverage
+dist
+node_modules
+.eslintcache
+
+# Release file for npm
+*.tgz

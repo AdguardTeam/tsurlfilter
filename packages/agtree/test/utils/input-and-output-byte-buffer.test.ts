@@ -4,7 +4,7 @@ import { SimpleStorage } from '../helpers/simple-storage';
 import { ByteBuffer } from '../../src/utils/byte-buffer';
 
 type DataPoolItem =
-    | { type: 'Uint8' | 'Uint16' | 'Uint32' | 'Int32', value: number }
+    | { type: 'Uint8' | 'Uint16' | 'Uint32' | 'Int32' | 'OptimizedUint', value: number }
     | { type: 'String', value: string };
 
 describe('ByteBuffer', () => {
@@ -20,6 +20,7 @@ describe('ByteBuffer', () => {
             { type: 'Uint32', value: 2 ** 31 - 1 },
 
             { type: 'String', value: 'Hello, 世界! 👋' },
+            { type: 'String', value: 'Hello, 世界! 👋'.repeat(5000) },
             { type: 'String', value: 'a'.repeat(2 ** 16 - 1) },
 
             { type: 'Uint32', value: 2 ** 32 - 1 },
@@ -29,6 +30,12 @@ describe('ByteBuffer', () => {
             { type: 'Int32', value: 1 },
             { type: 'Int32', value: 2 ** 31 - 1 },
             { type: 'Int32', value: -(2 ** 31) },
+
+            { type: 'OptimizedUint', value: 0 },
+            { type: 'OptimizedUint', value: 1 },
+            { type: 'OptimizedUint', value: 2 ** 8 - 1 },
+            { type: 'OptimizedUint', value: 2 ** 16 - 1 },
+            { type: 'OptimizedUint', value: OutputByteBuffer.MAX_OPTIMIZED_UINT },
         ];
 
         const output = new OutputByteBuffer();
@@ -59,6 +66,51 @@ describe('ByteBuffer', () => {
                 }
             }
         }
+    });
+
+    describe('text encoder / decoder polyfill should work in chrome', () => {
+        const testWithString = async (testString: string) => {
+            const output = new OutputByteBuffer();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (output as any).isChromium = true;
+            output.writeString(testString);
+
+            const storage = new SimpleStorage();
+            output.writeChunksToStorage(storage, 'test');
+            const input = await InputByteBuffer.createFromStorage(storage, 'test');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (input as any).isChromium = true;
+
+            expect(input.readString()).toBe(testString);
+        };
+
+        test('should work for short strings', async () => {
+            await testWithString('Hello, 世界! 👋');
+        });
+
+        test('should work for long strings', async () => {
+            await testWithString('Hello, 世界! 👋'.repeat(2500));
+        });
+    });
+
+    test('should expand the buffer if needed', async () => {
+        // output and input byte buffers extends the base byte buffer class,
+        // but we don't test the base class directly
+        // here, we test the correct chunking behavior if we write more data than a single chunk can hold
+        const output = new OutputByteBuffer();
+        for (let i = 0; i < ByteBuffer.CHUNK_SIZE + 1; i += 1) {
+            output.writeUint8(1);
+        }
+        const testString = 'a'.repeat(ByteBuffer.CHUNK_SIZE + 1);
+        output.writeString(testString);
+
+        const storage = new SimpleStorage();
+        output.writeChunksToStorage(storage, 'test');
+        const input = await InputByteBuffer.createFromStorage(storage, 'test');
+        for (let i = 0; i < ByteBuffer.CHUNK_SIZE + 1; i += 1) {
+            input.assertUint8(1);
+        }
+        expect(input.readString()).toBe(testString);
     });
 
     describe('InputByteBuffer.createFromStorage', () => {

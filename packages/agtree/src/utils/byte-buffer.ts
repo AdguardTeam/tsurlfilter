@@ -3,8 +3,6 @@
  * @file Core ByteBuffer implementation for handling binary data in chunks.
  */
 
-import { type Storage } from './storage-interface';
-
 /**
  * Core ByteBuffer implementation for handling binary data in chunks.
  * This class allows for efficient byte storage and manipulation by organizing data into chunks
@@ -20,12 +18,12 @@ export class ByteBuffer {
     /**
      * An array of Uint8Array chunks that make up the buffer.
      */
-    private chunks: Uint8Array[];
+    protected chunks: Uint8Array[];
 
     /**
      * The total number of chunks in the buffer.
      */
-    private chunksLength: number;
+    protected chunksLength: number;
 
     /**
      * Constructs a new ByteBuffer instance.
@@ -44,7 +42,7 @@ export class ByteBuffer {
      *
      * @param position The position to ensure capacity for.
      */
-    private ensureCapacity(position: number) {
+    protected ensureCapacity(position: number) {
         // same as Math.floor(position / chunk size), just optimized for the 32 KB chunk size
         const requiredChunkIndex = position >>> 0x000F;
         for (let i = this.chunksLength; i <= requiredChunkIndex; i += 1) {
@@ -60,7 +58,7 @@ export class ByteBuffer {
      * @param position The position at which to write the byte.
      * @param value The byte value to write (0-255).
      */
-    public writeByte(position: number, value: number): void {
+    protected writeByte(position: number, value: number): void {
         // same as Math.floor(position / chunk size), just optimized for the 32 KB chunk size
         const chunkIndex = position >>> 0x000F;
         // same as position % chunk size, just optimized for the 32 KB chunk size
@@ -80,7 +78,7 @@ export class ByteBuffer {
      * @param position The position from which to read the byte.
      * @returns The read byte value, or `undefined` if the position is out of bounds.
      */
-    public readByte(position: number): number | undefined {
+    protected readByte(position: number): number | undefined {
         const chunkIndex = position >>> 0x000F;
         const chunkOffset = position & 0x7FFF;
 
@@ -89,17 +87,5 @@ export class ByteBuffer {
         }
 
         return this.chunks[chunkIndex][chunkOffset];
-    }
-
-    /**
-     * Writes chunks to the storage.
-     *
-     * @param storage Storage to write the chunks to.
-     * @param key Key to write the chunks to.
-     * @note For performance reasons, chunks are passed by reference and not copied.
-     * @throws If the storage write operation throws.
-     */
-    public async writeChunksToStorage(storage: Storage, key: string): Promise<void> {
-        await storage.set(key, this.chunks);
     }
 }
