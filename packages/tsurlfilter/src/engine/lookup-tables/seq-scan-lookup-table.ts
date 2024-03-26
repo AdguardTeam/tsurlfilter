@@ -1,9 +1,10 @@
 import { ILookupTable } from './lookup-table';
 import { Request } from '../../request';
 import { NetworkRule } from '../../rules/network-rule';
-import type { RuleStorage } from '../../filterlist/rule-storage';
+import { RuleStorage } from '../../filterlist/rule-storage';
 import type { ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
+import { RuleStorageScanner } from '../../filterlist/scanner/rule-storage-scanner';
 /**
  * Sequence scan lookup table of rules for which we could not find a shortcut
  * and could not place it to the shortcuts lookup table.
@@ -38,18 +39,25 @@ export class SeqScanLookupTable implements ILookupTable {
      * @param rule
      */
     addRule(_rule: NetworkRule, storageIdx: number): boolean {
-        const position = U32LinkedList.find(
-            (idx) => idx === storageIdx,
-            this.byteBuffer,
-            this.storageIndexesPosition,
-        );
-        if (position === -1) {
-            U32LinkedList.add(storageIdx, this.byteBuffer, this.storageIndexesPosition);
-            this.rulesCount += 1;
-            return true;
+        // Check if storageIdx has already indexed
+        const [listId, ruleIdx] = RuleStorageScanner.storageIdxToRuleListIdx(storageIdx);
+
+        const position = U32LinkedList.find((storageIndexPosition) => {
+            return (this.byteBuffer.getUint32(storageIndexPosition) === ruleIdx
+                && this.byteBuffer.getUint32(storageIndexPosition + 4) === listId);
+        }, this.byteBuffer, this.storageIndexesPosition);
+
+        if (position !== -1) {
+            return false;
         }
 
-        return false;
+        // Add storage index to the byte buffer
+        const storageIndexPosition = this.byteBuffer.byteOffset;
+        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
+
+        U32LinkedList.add(storageIndexPosition, this.byteBuffer, this.storageIndexesPosition);
+        this.rulesCount += 1;
+        return true;
     }
 
     /**

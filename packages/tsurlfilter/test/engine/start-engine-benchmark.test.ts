@@ -6,6 +6,7 @@ import {
     setLogger,
     StringRuleList,
 } from '../../src';
+import { ByteBuffer } from '../../src/utils/byte-buffer';
 
 describe('Start Engine Benchmark', () => {
     beforeAll(() => {
@@ -43,7 +44,7 @@ describe('Start Engine Benchmark', () => {
             const list = new StringRuleList(1, ruleText, false);
             const ruleStorage = new RuleStorage([list]);
 
-            const engine = new Engine(ruleStorage, false);
+            const engine = new Engine(ruleStorage, new ByteBuffer(), false);
             expect(engine).toBeTruthy();
             expect(engine.getRulesCount()).toEqual(91694);
         }

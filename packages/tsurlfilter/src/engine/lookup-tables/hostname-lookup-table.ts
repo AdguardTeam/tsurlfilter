@@ -28,10 +28,19 @@ export class HostnameLookupTable implements ILookupTable {
      */
     declare private readonly ruleStorage: RuleStorage;
 
+    /**
+     * ByteBuffer to store the binary data.
+     */
     declare private readonly byteBuffer: ByteBuffer;
 
+    /**
+     * Position of the storage indexes list in the byte buffer.
+     */
     declare private readonly storageIndexesListPosition: number;
 
+    /**
+     * Position of the binary map in the byte buffer.
+     */
     declare private binaryMapPosition: number;
 
     /**
@@ -75,18 +84,24 @@ export class HostnameLookupTable implements ILookupTable {
 
         const hash = fastHash(hostname);
 
-        // Add the rule to the lookup table
+        // Add storage index to the byte buffer
         const storageIndexPosition = this.byteBuffer.byteOffset;
         this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
 
+        // Get the position of the storage indexes for the hash
         let storageIndexesPosition = this.hostnameLookupTable.get(hash);
 
+        /**
+         * If the hash is not in the lookup table, create a new {@link U32LinkedList},
+         * and adds the list position to the {@link storageIndexesListPosition}
+         */
         if (storageIndexesPosition === undefined) {
             storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
             U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
             this.hostnameLookupTable.set(hash, storageIndexesPosition);
         }
 
+        // Add the position of the storage index to the related U32LinkedList
         U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
 
         this.rulesCount += 1;
@@ -109,8 +124,10 @@ export class HostnameLookupTable implements ILookupTable {
         const domains = request.subdomains;
         for (let i = 0; i < domains.length; i += 1) {
             const hash = fastHash(domains[i]);
+            // Get the position of the storage indexes for the hash
             const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.binaryMapPosition);
             if (storageIndexesPosition !== undefined) {
+                // Iterate over the storage indexes and retrieve the rules
                 U32LinkedList.forEach((storageIndexPosition) => {
                     const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
                     const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);

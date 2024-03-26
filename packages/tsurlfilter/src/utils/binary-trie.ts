@@ -93,9 +93,18 @@ export class BinaryTrie {
         return byteOffset;
     }
 
+    /**
+     * Sequentially traverses the nodes with passed {@link input} and collects values of each node.
+     * @param input The input string to traverse the trie with.
+     * @param depth The depth of traverse.
+     * @param start The char to start from.
+     * @param buffer The {@link ByteBuffer} to read the trie from.
+     * @param offset The position of the trie in the {@link buffer}.
+     * @returns An array of values of the nodes traversed.
+     */
     public static traverse(
         input: string,
-        length: number,
+        depth: number,
         start: number,
         buffer: ByteBuffer,
         offset: number,
@@ -103,7 +112,7 @@ export class BinaryTrie {
         let position = offset;
         const result: number[] = [];
 
-        for (let i = start; i < length; i += 1) {
+        for (let i = start; i < depth; i += 1) {
             const code = input.charCodeAt(i);
             position = BinaryTrie.findChild(code, buffer, position);
 
@@ -121,16 +130,25 @@ export class BinaryTrie {
         return result;
     }
 
+    /**
+     * Traverses the trie with the passed {@link input} and all its substrings
+     * and collects values of each node.
+     * @param input The input string to traverse the trie with.
+     * @param depth The depth of traverse.
+     * @param buffer The {@link ByteBuffer} to read the trie from.
+     * @param offset The position of the trie in the {@link buffer}.
+     * @returns Array of values of the nodes traversed.
+     */
     public static traverseAll(
         input: string,
-        length: number,
+        depth: number,
         buffer: ByteBuffer,
         offset: number,
     ): number[] {
         const result: number[] = [];
 
-        for (let i = 0; i <= length; i += 1) {
-            const positions = BinaryTrie.traverse(input, length, i, buffer, offset);
+        for (let i = 0; i <= depth; i += 1) {
+            const positions = BinaryTrie.traverse(input, depth, i, buffer, offset);
             for (let j = 0; j < positions.length; j += 1) {
                 result.push(positions[j]);
             }
@@ -139,6 +157,14 @@ export class BinaryTrie {
         return result;
     }
 
+    /**
+     * Finds the position of the child of the trie node.
+     *
+     * @param charCode The char code of the child to find.
+     * @param buffer The {@link ByteBuffer} to read the data from.
+     * @param offset The position of the node in the {@link buffer}.
+     * @returns The position of the child in the {@link buffer}.
+     */
     private static findChild(charCode: number, buffer: ByteBuffer, offset: number): number {
         let cursor = offset + 4; // Uint32Array.BYTES_PER_ELEMENT
 
@@ -160,6 +186,11 @@ export class BinaryTrie {
         return -1;
     }
 
+    /**
+     * Gets the estimated byte size of the trie node and its children recursively.
+     * @param root The root node of the trie.
+     * @returns The estimated byte size of the trie node.
+     */
     private static getByteSize(root: TrieNode): number {
         let estimated = BinaryTrie.getNodeByteSize(root);
 
@@ -167,6 +198,10 @@ export class BinaryTrie {
             return estimated;
         }
 
+        /**
+         * Adds the byte size of the node and its children to the estimated size.
+         * @param node The trie node to get the byte size of.
+         */
         const getNodeSize = (node: TrieNode): void => {
             estimated += BinaryTrie.getByteSize(node);
         };
@@ -180,6 +215,11 @@ export class BinaryTrie {
         return estimated;
     }
 
+    /**
+     * Gets the estimated byte size of the trie node.
+     * @param node The trie node to get the byte size of.
+     * @returns The estimated byte size of the trie node.
+     */
     private static getNodeByteSize(node: TrieNode): number {
         if (node.children === undefined) {
             // 4 bytes for value + 1 byte for children length.

@@ -5,6 +5,7 @@ import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
 import { RequestType } from '../../src/request-type';
 import { Request } from '../../src/request';
+import { ByteBuffer } from '../../src/utils/byte-buffer';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
@@ -12,7 +13,8 @@ describe('Engine Tests', () => {
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
         const list = new BufferRuleList(1, rules.join('\n'), false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         expect(engine.getRulesCount()).toBe(1);
 
@@ -41,7 +43,8 @@ describe('Engine Tests', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];
         const list = new BufferRuleList(1, rules.join('\n'), false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         expect(engine.getRulesCount()).toBe(1);
 
@@ -67,7 +70,8 @@ describe('TestEngine - postponed load rules', () => {
     const ruleStorage = new RuleStorage([list]);
 
     it('works rules are loaded', () => {
-        const engine = new Engine(ruleStorage, true);
+        const engine = new Engine(ruleStorage, new ByteBuffer(), true);
+        engine.finalize();
 
         expect(engine.getRulesCount()).toBe(0);
 
@@ -77,7 +81,8 @@ describe('TestEngine - postponed load rules', () => {
     });
 
     it('works rules are loaded async', async () => {
-        const engine = new Engine(ruleStorage, true);
+        const engine = new Engine(ruleStorage, new ByteBuffer(), true);
+        engine.finalize();
 
         expect(engine.getRulesCount()).toBe(0);
 
@@ -96,7 +101,7 @@ describe('TestEngine - configuration', () => {
         verbose: true,
     });
 
-    new Engine(new RuleStorage([list]));
+    new Engine(new RuleStorage([list]), new ByteBuffer());
 
     expect(config.engine).toBe('test-engine');
     expect(config.version).toBe('test-version');
@@ -112,7 +117,8 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const rules = [cspRule, replaceRule, cookieRule, removeParamRule];
 
         const list = new BufferRuleList(1, rules.join('\n'), false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         const request = new Request('https://example.org', '', RequestType.Document);
         const result = engine.matchRequest(request);
@@ -142,7 +148,8 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
             badfilterRule,
             allowlistBadfilterRule,
         ].join('\n'), false, false);
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         const request = new Request(
             'https://example.org/fuckadblock.min.js',
@@ -163,7 +170,8 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect=1x1-transparent.gif',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         const request = new Request(
             'http://ya.ru/',
@@ -181,7 +189,8 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect=1x1-transparent.gif,image',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request(
             'http://ya.ru/',
@@ -204,7 +213,8 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect=2x2-transparent.png',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         const request = new Request(
             'http://ya.ru/',
@@ -224,7 +234,8 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request(
             'http://ya.ru/',
@@ -249,7 +260,8 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect,image',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request(
             'http://ya.ru/',
@@ -274,7 +286,8 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             '||example.org^$redirect-rule=noopjs',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request(
             'https://example.org/script.js',
@@ -301,7 +314,8 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             '@@||example.org/script.js?unblock$redirect',
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request(
             'https://example.org/script.js',
@@ -338,7 +352,8 @@ describe('TestEngineMatchRequest - document modifier', () => {
             documentBlockingRuleText,
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
@@ -360,7 +375,8 @@ describe('TestEngineMatchRequest - document modifier', () => {
             documentBlockingRuleText,
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
@@ -385,7 +401,8 @@ describe('TestEngineMatchRequest - all modifier', () => {
             allBlockingRuleText,
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
@@ -411,7 +428,8 @@ describe('TestEngineMatchRequest - popup modifier', () => {
             popupBlockingRuleText,
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         // Tests matching an XMLHttpRequest; expects to match the basic blocking rule
         let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
@@ -446,7 +464,8 @@ describe('TestEngineMatchRequest - popup modifier', () => {
             popupBlockingRuleText,
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine(new RuleStorage([baseRuleList]), new ByteBuffer());
+        engine.finalize();
 
         // Tests matching an XMLHttpRequest; expects to match the all-encompassing blocking rule
         let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
@@ -501,7 +520,8 @@ describe('TestEngineCosmeticResult - elemhide', () => {
     ];
 
     const list = new BufferRuleList(1, rules.join('\n'), false);
-    const engine = new Engine(new RuleStorage([list]));
+    const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+    engine.finalize();
 
     it('works if returns correct cosmetic elemhide result', () => {
         let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
@@ -557,7 +577,8 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
     ];
 
     const list = new BufferRuleList(1, rules.join('\n'), false);
-    const engine = new Engine(new RuleStorage([list]));
+    const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+    engine.finalize();
 
     it('works if returns correct cosmetic css result', () => {
         let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
@@ -616,7 +637,8 @@ describe('TestEngineCosmeticResult - js', () => {
             false,
             false,
         );
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
         const result = engine.getCosmeticResult(
             createRequest('https://flightradar24.com.ru/faq/'),
             CosmeticOption.CosmeticOptionAll,
@@ -627,7 +649,8 @@ describe('TestEngineCosmeticResult - js', () => {
 
     it('works if returns correct cosmetic js result', () => {
         const list = new BufferRuleList(1, rules.join('\n'), false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
@@ -647,7 +670,8 @@ describe('TestEngineCosmeticResult - js', () => {
 
     it('works javascript rules are ignored with filter list setting', () => {
         const list = new BufferRuleList(1, rules.join('\n'), false, true);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
@@ -672,7 +696,8 @@ describe('$urlblock modifier', () => {
         const urlblock = '@@||example.org$urlblock';
 
         const list = new BufferRuleList(1, [important, urlblock].join('\n'));
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         const frameRule = engine.matchFrame('http://example.org');
         expect(frameRule).not.toBeNull();
@@ -692,7 +717,8 @@ describe('$badfilter modifier', () => {
             '$script,domain=example.com,badfilter',
         ];
         const list = new BufferRuleList(1, rules.join('\n'), false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         expect(engine.getRulesCount()).toBe(2);
 
@@ -718,7 +744,8 @@ describe('$genericblock modifier', () => {
             genericblockRule,
         ].join('\n'));
 
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         const frameRule = engine.matchFrame('https://domain.com');
         expect(frameRule).not.toBeNull();
@@ -744,7 +771,8 @@ describe('Match subdomains', () => {
             specificHidingRuleSubdomain,
         ];
         const list = new BufferRuleList(1, rules.join('\n'), false, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         let res = engine.getCosmeticResult(createRequest('www.example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res).toBeDefined();
@@ -767,7 +795,8 @@ describe('Match subdomains', () => {
             specificHidingRuleWithoutWww,
         ];
         const list = new BufferRuleList(1, rules.join('\n'), false, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
@@ -792,7 +821,8 @@ describe('Match subdomains', () => {
         ];
 
         const list = new BufferRuleList(1, rules.join('\n'), false, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         const resOne = engine.getCosmeticResult(
             createRequest('https://example.org/test'),
@@ -817,7 +847,8 @@ describe('Match subdomains', () => {
         const hidingRule = 'org##body';
         const rules = [hidingRule];
         const list = new BufferRuleList(1, rules.join('\n'), false, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
 
         let res = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
@@ -843,7 +874,8 @@ describe('$specifichide modifier', () => {
             genericCssRuleWithExclusion,
             specifichideRule,
         ].join('\n'));
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
         const request = new Request('http://example.org', '', RequestType.Document);
         const result = engine.matchRequest(request);
         const cosmeticResult = engine.getCosmeticResult(createRequest('example.org'), result.getCosmeticOption());
@@ -866,7 +898,8 @@ describe('Stealth cookie rules', () => {
         let list = new BufferRuleList(1, [
             stealthCookieRule,
         ].join('\n'));
-        let engine = new Engine(new RuleStorage([list]));
+        let engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
         let request = new Request('http://example.org', '', RequestType.Document);
         let result = engine.matchRequest(request);
         let cookieRules = result.getCookieRules();
@@ -877,7 +910,8 @@ describe('Stealth cookie rules', () => {
             stealthCookieRule,
             allowlistRule,
         ].join('\n'));
-        engine = new Engine(new RuleStorage([list]));
+        engine = new Engine(new RuleStorage([list]), new ByteBuffer());
+        engine.finalize();
         request = new Request('http://example.org', '', RequestType.Document);
         result = engine.matchRequest(request);
         cookieRules = result.getCookieRules();

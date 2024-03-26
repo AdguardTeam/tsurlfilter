@@ -7,6 +7,9 @@ import { Request } from '../request';
 import { DnsResult } from './dns-result';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { RequestType } from '../request-type';
+import { BinaryMap } from '../utils/binary-map';
+import { U32LinkedList } from '../utils/u32-linked-list';
+import type { ByteBuffer } from '../utils/byte-buffer';
 
 /**
  * DNSEngine combines host rules and network rules and is supposed to quickly find
@@ -28,24 +31,41 @@ export class DnsEngine {
     /**
      * Lookup table. Key is the hostname hash.
      */
-    private readonly lookupTable: Map<number, number[]>;
+    private readonly lookupTable: Map<number, number>;
 
     /**
      * Network engine instance
      */
-    private readonly networkEngine: NetworkEngine;
+    declare private readonly networkEngine: NetworkEngine;
+
+    /**
+     * ByteBuffer to store the binary data.
+     */
+    declare private readonly byteBuffer: ByteBuffer;
+
+    /**
+     * Position of the storage indexes list in the byte buffer.
+     */
+    declare private readonly storageIndexesListPosition: number;
+
+    /**
+     * Position of the binary map in the byte buffer.
+     */
+    declare private binaryMapPosition: number;
 
     /**
      * Builds an instance of dns engine
      *
      * @param storage
      */
-    constructor(storage: RuleStorage) {
+    constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
-        this.lookupTable = new Map<number, number[]>();
+        this.lookupTable = new Map<number, number>();
 
-        this.networkEngine = new NetworkEngine(storage, true);
+        this.byteBuffer = buffer;
+        this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
+        this.networkEngine = new NetworkEngine(storage, this.byteBuffer, true);
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
 
@@ -55,7 +75,7 @@ export class DnsEngine {
                 if (indexedRule.rule instanceof HostRule) {
                     this.addRule(indexedRule.rule, indexedRule.index);
                 } else if (indexedRule.rule instanceof NetworkRule
-                && indexedRule.rule.isHostLevelNetworkRule()) {
+                    && indexedRule.rule.isHostLevelNetworkRule()) {
                     this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
                 }
             }
@@ -86,17 +106,29 @@ export class DnsEngine {
         }
 
         const hash = fastHash(hostname);
-        const rulesIndexes = this.lookupTable.get(hash);
-        if (rulesIndexes) {
-            for (let j = 0; j < rulesIndexes.length; j += 1) {
-                const rule = this.ruleStorage.retrieveHostRule(rulesIndexes[j]);
+        // Get the position of the storage indexes for the hash
+        const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.binaryMapPosition);
+
+        if (storageIndexesPosition !== undefined) {
+            // Iterate over the storage indexes and retrieve the rules
+            U32LinkedList.forEach((storageIndexPosition) => {
+                const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
+                const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
+
+                const rule = this.ruleStorage.retrieveHostRule(listId, ruleId);
+
                 if (rule && rule.match(hostname)) {
                     result.hostRules.push(rule);
                 }
-            }
+            }, this.byteBuffer, storageIndexesPosition);
         }
 
         return result;
+    }
+
+    public finalize(): void {
+        this.networkEngine.finalize();
+        this.binaryMapPosition = BinaryMap.create(this.lookupTable, this.byteBuffer);
     }
 
     /**
@@ -109,14 +141,25 @@ export class DnsEngine {
         rule.getHostnames().forEach((hostname) => {
             const hash = fastHash(hostname);
 
-            // Add the rule to the lookup table
-            let rulesIndexes = this.lookupTable.get(hash);
-            if (!rulesIndexes) {
-                rulesIndexes = [];
-            }
-            rulesIndexes.push(storageIdx);
+            // Add storage index to the byte buffer
+            const storageIndexPosition = this.byteBuffer.byteOffset;
+            this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
 
-            this.lookupTable.set(hash, rulesIndexes);
+            // Get the position of the storage indexes for the hash
+            let storageIndexesPosition = this.lookupTable.get(hash);
+
+            /**
+             * If the hash is not in the lookup table, create a new {@link U32LinkedList},
+             * and adds the list position to the {@link storageIndexesListPosition}
+             */
+            if (storageIndexesPosition === undefined) {
+                storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
+                U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
+                this.lookupTable.set(hash, storageIndexesPosition);
+            }
+
+            // Add the position of the storage index to the related U32LinkedList
+            U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
         });
 
         this.rulesCount += 1;

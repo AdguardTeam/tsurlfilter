@@ -403,7 +403,8 @@ describe('Benchmarks', () => {
         const hostsList = new listClass(2, hostsText, true);
         const ruleStorage = new RuleStorage([ruleList, hostsList]);
 
-        const engine = new DnsEngine(ruleStorage);
+        const engine = new DnsEngine(ruleStorage, new ByteBuffer());
+        engine.finalize();
         expect(engine).toBeTruthy();
 
         console.log(`Loaded rules: ${engine.rulesCount}`);

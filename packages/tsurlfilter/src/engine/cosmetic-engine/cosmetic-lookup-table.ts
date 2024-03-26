@@ -4,6 +4,7 @@ import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { RuleStorage } from '../../filterlist/rule-storage';
 import { Request } from '../../request';
+import { RuleStorageScanner } from '../../filterlist/scanner/rule-storage-scanner';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -109,7 +110,9 @@ export class CosmeticLookupTable {
                 // Filtering out duplicates
                 rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
-                    const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
+                    // TODO: remove
+                    const [listId, ruleIdx] = RuleStorageScanner.storageIdxToRuleListIdx(rulesIndexes[j]);
+                    const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
                     if (rule && rule.match(request)) {
                         result.push(rule);
                     }
@@ -134,7 +137,9 @@ export class CosmeticLookupTable {
         }
 
         for (let j = 0; j < rulesIndexes.length; j += 1) {
-            const r = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
+            // TODO: remove
+            const [listId, ruleIdx] = RuleStorageScanner.storageIdxToRuleListIdx(rulesIndexes[j]);
+            const r = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
             if (r && r.match(request)) {
                 return true;
             }

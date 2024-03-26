@@ -1,7 +1,6 @@
 import { LIST_ID_MAX_VALUE } from '../../src/filterlist/rule-list';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { NetworkRule } from '../../src';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 
 describe('Test RuleStorage', () => {
@@ -97,55 +96,39 @@ describe('Test RuleStorage', () => {
     // Time to retrieve!
     it('retrieves rules by index', () => {
         // Rule 1 from the list 1
-        let rule = storage.retrieveRule(0.000001);
+        let rule = storage.retrieveRule(1, 0);
 
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('||example.org');
         expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 2 from the list 1
-        rule = storage.retrieveRule(21 + 1 / LIST_ID_MAX_VALUE);
+        rule = storage.retrieveRule(1, 21);
 
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('##banner');
         expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 1 from the list 2
-        rule = storage.retrieveRule(2 / LIST_ID_MAX_VALUE);
+        rule = storage.retrieveRule(2, 0);
 
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('||example.com');
         expect(rule!.getFilterListId()).toBe(2);
 
         // Rule 2 from the list 2
-        rule = storage.retrieveRule(21 + 2 / LIST_ID_MAX_VALUE);
+        rule = storage.retrieveRule(2, 21);
 
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('##advert');
         expect(rule!.getFilterListId()).toBe(2);
 
         // Check cache
-        rule = storage.retrieveRule(21 + 2 / LIST_ID_MAX_VALUE);
+        rule = storage.retrieveRule(2, 21);
         expect(rule).toBeTruthy();
 
         // Incorrect index
-        rule = storage.retrieveRule(21 + 4 / LIST_ID_MAX_VALUE);
-        expect(rule).toBeNull();
-    });
-
-    it('retrieves rules by index', () => {
-        // Rule 1 from the list 1
-        let rule = storage.retrieveNetworkRule(1 / LIST_ID_MAX_VALUE);
-
-        expect(rule).toBeTruthy();
-        expect(rule instanceof NetworkRule).toBeTruthy();
-        expect(rule!.getText()).toBe('||example.org');
-        expect(rule!.getFilterListId()).toBe(1);
-
-        rule = storage.retrieveNetworkRule(21 + 1 / LIST_ID_MAX_VALUE);
-        expect(rule).toBeNull();
-
-        rule = storage.retrieveNetworkRule(21 + 4 / LIST_ID_MAX_VALUE);
+        rule = storage.retrieveRule(4, 21);
         expect(rule).toBeNull();
     });
 });
