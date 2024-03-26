@@ -97,11 +97,8 @@ importers:
   packages/agtree:
     dependencies:
       '@adguard/css-tokenizer':
-        specifier: ^0.0.1
+        specifier: ^0.0.2
         version: link:../css-tokenizer
-      '@adguard/ecss-tree':
-        specifier: ^1.0.8
-        version: 1.0.8
       '@adguard/scriptlets':
         specifier: ^1.9.61
         version: 1.10.1
@@ -712,6 +709,12 @@ importers:
 
   packages/tsurlfilter:
     dependencies:
+      '@adguard/agtree':
+        specifier: ^2.0.0
+        version: link:../agtree
+      '@adguard/css-tokenizer':
+        specifier: ^0.0.2
+        version: link:../css-tokenizer
       '@adguard/scriptlets':
         specifier: ^1.10.1
         version: 1.10.1
@@ -1018,12 +1021,6 @@ packages:
 
   /@adguard/assistant@4.3.70:
     resolution: {integrity: sha512-q5o4ejQgRQMFbtV49X1ark0Ytb+MP/3vC9XErHqAcvh6wHpN/Hm2Q1+jbhiHHIs/H2rCU20TyVwZlGs0xtQ60w==}
-    dev: false
-
-  /@adguard/ecss-tree@1.0.8:
-    resolution: {integrity: sha512-Y5dfzWH5nnzEH9URuzOQ1RXl0bzmLiGO7Nt9Wc/na7uD5UHqoz4PlzVllFpO1bLA+Cqq5ebNrz+uWRKN3BxSTg==}
-    dependencies:
-      css-tree: 2.3.1
     dev: false
 
   /@adguard/extended-css@2.0.56:
@@ -7627,6 +7624,7 @@ packages:
     dependencies:
       mdn-data: 2.0.30
       source-map-js: 1.2.0
+    dev: true
 
   /css-what@6.1.0:
     resolution: {integrity: sha512-HTUrgRJ7r4dsZKU6GjmpfRK1O76h97Z8MfS1G0FozR+oF2kG6Vfe8JE6zwrkbxigziPHinCJ+gCPjA9EaBDtRw==}
@@ -13310,6 +13308,7 @@ packages:
 
   /mdn-data@2.0.30:
     resolution: {integrity: sha512-GaqWWShW4kv/G9IEucWScBx9G1/vsFZZJUO+tD26M8J8z3Kw5RDQjaoZe03YAClgeS/SWPOcb4nkFBTEi5DUEA==}
+    dev: true
 
   /mdurl@1.0.1:
     resolution: {integrity: sha512-/sKlQJCBYVY9Ers9hqzKou4H6V5UWc/M59TH2dvkt+84itfnq7uFOMLpOiOS4ujvHP4etln18fmIxA5R5fll0g==}
@@ -16025,6 +16024,7 @@ packages:
   /source-map-js@1.2.0:
     resolution: {integrity: sha512-itJW8lvSA0TXEphiRoawsCksnlf8SyvmFzIhltqAHluXd88pkCd+cXJVHTDwdCr0IzwptSm035IHQktUu1QUMg==}
     engines: {node: '>=0.10.0'}
+    dev: true
 
   /source-map-support@0.5.13:
     resolution: {integrity: sha512-SHSKFHadjVA5oR4PPqhtAVdcBWwRYVd6g6cAXnIbRiIwc2EhPrTuKUBdSLvlEKyIP3GCf89fltvcZiP9MMFA1w==}
