@@ -39,17 +39,10 @@ Test:
             pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
-            # Before running tests we need to build the dependencies
-            # TODO: Find a better solution, like jq
-            DEPS=$(pnpm ls --json --only-projects -r --depth -1 --filter @adguard/tsurlfilter^... | grep -oP '"name": "\K[^"]+')
-
-            for DEP in $DEPS; do
-                echo "Building dependency: $DEP"
-                pnpm --filter $DEP build
-            done
+            # Build tsurlfilter and its dependencies from the monorepo
+            npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
 
             pnpm --filter @adguard/tsurlfilter lint
-            pnpm --filter @adguard/tsurlfilter build
 
             # IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
             pnpm --filter @adguard/tsurlfilter test:prod
