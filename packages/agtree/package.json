@@ -9,7 +9,7 @@
         "parser",
         "ast"
     ],
-    "author": "AdGuard Software Ltd.",
+    "author": "Adguard Software Ltd.",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -42,7 +42,7 @@
         "node": ">=14"
     },
     "scripts": {
-        "build": "yarn clean && yarn build-types && yarn build-txt && yarn rollup --config rollup.config.ts --configPlugin typescript && yarn clean-types",
+        "build": "pnpm clean && pnpm build-types && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm clean-types",
         "build-txt": "node --no-warnings=ExperimentalWarning --loader ts-node/esm scripts/build-txt.ts",
         "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
         "check-compatibility-tables": "node --no-warnings=ExperimentalWarning --loader ts-node/esm scripts/check-compatibility-tables.ts",
@@ -50,11 +50,11 @@
         "clean": "rimraf dist",
         "clean-types": "rimraf dist/types",
         "coverage": "jest --runInBand --coverage",
-        "increment": "yarn version --patch --no-git-tag-version",
-        "lint": "yarn lint:ts && yarn lint:md",
+        "increment": "pnpm version patch --no-git-tag-version",
+        "lint": "pnpm lint:ts && pnpm lint:md",
         "lint:md": "markdownlint .",
         "lint:ts": "eslint . --cache --ext .ts",
-        "precommit": "yarn check-types && yarn lint && yarn test",
+        "precommit": "pnpm check-types && pnpm lint && pnpm test",
         "test": "jest --runInBand"
     },
     "devDependencies": {
