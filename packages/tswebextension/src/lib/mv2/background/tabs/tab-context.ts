@@ -64,6 +64,15 @@ export class TabContext {
     public isDocumentRequestCached = false;
 
     /**
+     * Timestamp of the assistant initialization.
+     *
+     * Needed to avoid cosmetic rules injection into the assistant frame.
+     *
+     * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1848}
+     */
+    public assistantInitTimestamp?: number | null = null;
+
+    /**
      * Context constructor.
      *
      * @param info Webextension API tab data.

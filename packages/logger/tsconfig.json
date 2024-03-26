@@ -1,0 +1,13 @@
+{
+    "extends": "./tsconfig.base.json",
+    "include": [
+        "tests",
+        "scripts",
+        "rollup.config.ts",
+        ".eslintrc.js",
+        "jest.config.ts",
+    ],
+    "exclude": [
+        "tests/smoke/typescript"
+    ]
+}

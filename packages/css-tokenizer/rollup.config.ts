@@ -1,7 +1,7 @@
 /**
  * @file Rollup configurations for generating CSSTokenizer builds.
  *
- * ! Please ALWAYS use the "yarn build" command for building! Running Rollup directly will not enough, the build script
+ * ! Please ALWAYS use the "pnpm build" command for building! Running Rollup directly will not enough, the build script
  * ! does some additional work before and after running Rollup.
  */
 
@@ -53,7 +53,7 @@ const BANNER = `/*
 // Pre-configured TypeScript plugin
 const typeScriptPlugin = typescript({
     compilerOptions: {
-        // Don't emit declarations, we will do it in a separate command "yarn build-types"
+        // Don't emit declarations, we will do it in a separate command "pnpm build-types"
         declaration: false,
     },
 });

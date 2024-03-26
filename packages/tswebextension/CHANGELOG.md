@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.18] - 2024-03-25
+
+### Fixed
+
+- Improved assistant iframe checking for cosmetic rules injection [AdguardBrowserExtension#1848].
+
+[1.0.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.18
+
+
+## [1.0.17] - 2024-03-25
+
+### Fixed
+
+- Assistant iframe styles are affected by cosmetic rules specific for websites [AdguardBrowserExtension#1848].
+
+[1.0.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.17
+[AdguardBrowserExtension#1848]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1848
+
+
+## [1.0.16] - 2024-03-01
+
+### Changed
+
+- `$popup` should not disable simple blocking rule [#2728].
+
+[1.0.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.16
+[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+
 ## [1.0.15] - 2024-02-22
 
 ### Fixed
