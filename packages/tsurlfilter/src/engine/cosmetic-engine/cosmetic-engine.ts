@@ -180,12 +180,12 @@ export class CosmeticEngine {
         lookupTable: CosmeticLookupTable,
         request: Request,
     ): void {
-        for (const genericRule of lookupTable.genericRules) {
+        lookupTable.forEachGenericRule((genericRule) => {
             if (!lookupTable.isAllowlisted(request, genericRule)
-                && genericRule.match(request)) {
+                    && genericRule.match(request)) {
                 cosmeticResult.append(genericRule, request);
             }
-        }
+        });
     }
 
     /**

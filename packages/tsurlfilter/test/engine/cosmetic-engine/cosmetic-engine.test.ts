@@ -2,6 +2,7 @@ import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-eng
 import { RuleStorage } from '../../../src/filterlist/rule-storage';
 import { BufferRuleList } from '../../../src/filterlist/buffer-rule-list';
 import { CosmeticOption, Request, RequestType } from '../../../src';
+import { ByteBuffer } from '../../../src/utils/byte-buffer';
 
 const createTestRuleStorage = (listId: number, rules: string[]): RuleStorage => {
     const list = new BufferRuleList(listId, rules.join('\n'), false);
@@ -34,7 +35,8 @@ describe('Test cosmetic engine', () => {
             specificDisablingRule,
             genericRule,
             genericDisabledRule,
-        ]));
+        ]), new ByteBuffer());
+        cosmeticEngine.finalize();
 
         const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
         expect(result).toBeDefined();

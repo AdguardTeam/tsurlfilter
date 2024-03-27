@@ -24,11 +24,12 @@ export class CosmeticLookupTable {
      */
     public wildcardRules: CosmeticRule[];
 
-    /**
-     * Collection of generic rules.
-     * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
-     */
-    public genericRules: CosmeticRule[];
+    // FIXME remove
+    // /**
+    //  * Collection of generic rules.
+    //  * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
+    //  */
+    // public genericRules: CosmeticRule[];
 
     /**
      * Map with allowlist rules indices. Key is the rule content.
@@ -71,7 +72,8 @@ export class CosmeticLookupTable {
         this.byteBuffer = byteBuffer;
         this.byHostname = new Map();
         this.wildcardRules = [] as CosmeticRule[];
-        this.genericRules = [] as CosmeticRule[];
+        this.wildcardRulesPosition = U32LinkedList.create(this.byteBuffer);
+        this.genericRulesPosition = U32LinkedList.create(this.byteBuffer);
         this.allowlist = new Map();
         this.ruleStorage = storage;
     }
@@ -119,11 +121,14 @@ export class CosmeticLookupTable {
             const subdomain = subdomains[i];
 
             const hash = fastHash(subdomain);
-            const storageIndexesPosition = BinaryMap.get(
-                hash,
-                this.byteBuffer,
-                this.hostnameMapPosition,
-            );
+            // FIXME conside remove
+            // const storageIndexesPosition = BinaryMap.get(
+            //     hash,
+            //     this.byteBuffer,
+            //     this.hostnameMapPosition,
+            // );
+
+            const storageIndexesPosition = this.byHostname.get(hash);
 
             if (storageIndexesPosition) {
                 // FIXME: delete dups
@@ -132,7 +137,15 @@ export class CosmeticLookupTable {
             }
         }
 
-        result.push(...this.wildcardRules.filter((r) => r.match(request)));
+        U32LinkedList.forEach((storageIndexPosition) => {
+            const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
+            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
+
+            const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
+            if (rule && rule.match(request)) {
+                result.push(rule);
+            }
+        }, this.byteBuffer, this.wildcardRulesPosition);
 
         return result.filter((rule) => !rule.isAllowlist());
     }
@@ -144,7 +157,9 @@ export class CosmeticLookupTable {
      */
     public isAllowlisted(request: Request, rule: CosmeticRule): boolean {
         const hash = fastHash(rule.getContent());
-        const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.allowlistMapPosition);
+        // FIXME consider remove
+        // const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.allowlistMapPosition);
+        const storageIndexesPosition = this.allowlist.get(hash);
 
         if (!storageIndexesPosition) {
             return false;
@@ -194,6 +209,18 @@ export class CosmeticLookupTable {
         this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
 
         U32LinkedList.add(storageIndexPosition, this.byteBuffer, this.genericRulesPosition);
+    }
+
+    public forEachGenericRule(callback: (rule: CosmeticRule) => void): void {
+        U32LinkedList.forEach((storageIndexPosition) => {
+            const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
+            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
+
+            const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
+            if (rule) {
+                callback(rule);
+            }
+        }, this.byteBuffer, this.genericRulesPosition);
     }
 
     private addHostnameRule(rule: CosmeticRule, storageIdx: number): void {
