@@ -755,6 +755,9 @@ importers:
       '@types/jest':
         specifier: 29.5.3
         version: 29.5.3
+      '@types/lodash':
+        specifier: ^4.17.0
+        version: 4.17.0
       '@types/netmask':
         specifier: 1.0.30
         version: 1.0.30
@@ -8978,7 +8981,7 @@ packages:
     dependencies:
       '@typescript-eslint/parser': 5.62.0(eslint@8.54.0)(typescript@5.4.2)
       array-includes: 3.1.7
-      array.prototype.findlastindex: 1.2.5
+      array.prototype.findlastindex: 1.2.4
       array.prototype.flat: 1.3.2
       array.prototype.flatmap: 1.3.2
       debug: 3.2.7
@@ -9013,7 +9016,7 @@ packages:
     dependencies:
       '@typescript-eslint/parser': 6.13.1(eslint@8.25.0)(typescript@4.7.4)
       array-includes: 3.1.7
-      array.prototype.findlastindex: 1.2.5
+      array.prototype.findlastindex: 1.2.4
       array.prototype.flat: 1.3.2
       array.prototype.flatmap: 1.3.2
       debug: 3.2.7
@@ -11875,7 +11878,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.4.2)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.7.1)(typescript@4.7.4)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color

@@ -41,7 +41,7 @@ Build:
             pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
-            pnpm --filter @adguard/tswebextension build
+            npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
             cd packages/tswebextension
             pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
