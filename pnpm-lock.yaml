@@ -755,6 +755,9 @@ importers:
       '@types/jest':
         specifier: 29.5.3
         version: 29.5.3
+      '@types/lodash':
+        specifier: ^4.17.0
+        version: 4.17.0
       '@types/netmask':
         specifier: 1.0.30
         version: 1.0.30
@@ -11875,7 +11878,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.4.2)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.7.1)(typescript@4.7.4)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color

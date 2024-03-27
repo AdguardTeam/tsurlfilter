@@ -1,24 +1,13 @@
 {
-  "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es5",
-    "module":"es2015",
-    "lib": ["esnext", "dom"],
-    "strict": true,
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "typeRoots": [
-      "./types",
-      "node_modules/@types",
-      "../../node_modules/@types"
-    ]
-  },
+  "extends": "./tsconfig.base.json",
   "include": [
-    "src",
-    "cli"
+    "src/**/*.ts",
+    "cli/**/*.ts",
+    "test/**/*.ts",
+    ".eslintrc.js",
+    "rollup.config.ts",
+    "jest.config.ts",
+    "tasks/generate-examples.ts"
   ],
   "ts-node": {
     "swc": true,

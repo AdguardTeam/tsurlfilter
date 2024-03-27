@@ -24,7 +24,9 @@ const commonConfig = {
         json(),
 
         // Compile TypeScript files
-        typescript(),
+        typescript({
+            tsconfig: 'tsconfig.build.json',
+        }),
 
         // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
         commonjs({
@@ -135,7 +137,9 @@ const cliConfig = {
         json(),
 
         // Compile TypeScript files
-        typescript(),
+        typescript({
+            tsconfig: 'tsconfig.build.json',
+        }),
 
         // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
         commonjs({
