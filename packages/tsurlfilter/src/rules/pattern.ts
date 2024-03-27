@@ -68,27 +68,43 @@ export class Pattern {
     /**
      * Checks if this rule pattern matches the specified request.
      *
-     * @param request - request to check
-     * @param shortcutMatched if true, it means that the request already matches
+     * @param request Request to check.
+     * @param shortcutMatched If true, it means that the request already matches
      * this pattern's shortcut and we don't need to match it again.
-     * @returns true if pattern matches
+     * @param shouldMatchSource If true, matches source URL instead of the main URL.
+     *
+     * @returns True if pattern matches.
      */
-    public matchPattern(request: Request, shortcutMatched: boolean): boolean {
+    public matchPattern(request: Request, shortcutMatched: boolean, shouldMatchSource: boolean = false): boolean {
         this.prepare();
 
+        let { url, hostname, urlLowercase } = request;
+        const { isHostnameRequest } = request;
+
+        // We don't change isHostnameRequest because it's used only for DNS requests.
+        if (shouldMatchSource) {
+            if (request.sourceUrl) {
+                url = request.sourceUrl;
+                urlLowercase = request.sourceUrl.toLowerCase();
+            }
+            if (request.sourceHostname) {
+                hostname = request.sourceHostname;
+            }
+        }
+
         if (this.patternShortcut) {
-            return shortcutMatched || this.matchShortcut(request.urlLowercase);
+            return shortcutMatched || this.matchShortcut(urlLowercase);
         }
 
         if (this.hostname) {
             // If we have a `||example.org^` rule, it's easier to match
             // against the request's hostname only without matching
             // a regular expression.
-            return request.hostname === this.hostname
+            return hostname === this.hostname
                 || (// First light check without new string memory allocation
-                    request.hostname.endsWith(this.hostname)
+                    hostname.endsWith(this.hostname)
                     // Strict check
-                    && request.hostname.endsWith(`.${this.hostname}`));
+                    && hostname.endsWith(`.${this.hostname}`));
         }
 
         // If the regular expression is invalid, just return false right away.
@@ -97,11 +113,11 @@ export class Pattern {
         }
 
         // This is needed for DNS filtering only, not used in browser blocking.
-        if (this.shouldMatchHostname(request)) {
+        if (this.shouldMatchHostname(isHostnameRequest)) {
             return this.regex.test(request.hostname);
         }
 
-        return this.regex.test(request.url);
+        return this.regex.test(url);
     }
 
     /**
@@ -201,10 +217,12 @@ export class Pattern {
      * this is important for the cases when we use urlfilter for DNS-level blocking
      * Note, that even though we may work on a DNS-level, we should still sometimes match full URL instead
      *
-     * @param request
+     * @param isHostnameRequest If the request is for a given Hostname, and not
+     * for a URL, and we don't really know what protocol it is.
+     * This can be true for DNS requests, or for HTTP CONNECT, or SNI matching.
      */
-    private shouldMatchHostname(request: Request): boolean {
-        if (!request.isHostnameRequest) {
+    private shouldMatchHostname(isHostnameRequest: boolean): boolean {
+        if (!isHostnameRequest) {
             return false;
         }
 

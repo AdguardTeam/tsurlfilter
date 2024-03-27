@@ -613,6 +613,20 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
+        // For $generhicide and $specifichide we should check rule against
+        // source url, but not against requested url, because $generichide and
+        // $specichide applied to document and subdocument request and we should
+        // apply them only for requests from the frame with source url.
+        if ((this.isOptionEnabled(NetworkRuleOption.Generichide)
+            || this.isOptionEnabled(NetworkRuleOption.Specifichide))
+            && request.sourceUrl
+            && request.sourceHostname
+            && !request.hostname.includes(request.sourceHostname)
+            // Match request against source url
+            && !this.pattern.matchPattern(request, true, true)) {
+            return false;
+        }
+
         if (this.isOptionEnabled(NetworkRuleOption.Method) && !this.matchMethod(request.method)) {
             return false;
         }
