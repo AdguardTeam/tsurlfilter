@@ -60,7 +60,7 @@ export class Engine {
         this.ruleStorage = ruleStorage;
         this.byteBuffer = buffer;
         this.networkEngine = new NetworkEngine(ruleStorage, this.byteBuffer, skipStorageScan);
-        this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
+        this.cosmeticEngine = new CosmeticEngine(ruleStorage, this.byteBuffer, skipStorageScan);
         this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
     }
 
@@ -180,6 +180,7 @@ export class Engine {
 
     finalize(): void {
         this.networkEngine.finalize();
+        this.cosmeticEngine.finalize();
     }
 
     /**

@@ -106,34 +106,35 @@ export class CosmeticLookupTable {
         const result = [] as CosmeticRule[];
         const { subdomains } = request;
 
-        const matchStorageIndex = (storageIndexPosition: number): void => {
-            const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
-            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-            const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
-            if (rule && rule.match(request)) {
-                result.push(rule);
-            }
-        };
-
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
 
             const hash = fastHash(subdomain);
-            // FIXME conside remove
-            // const storageIndexesPosition = BinaryMap.get(
-            //     hash,
-            //     this.byteBuffer,
-            //     this.hostnameMapPosition,
-            // );
+            const storageIndexesPosition = BinaryMap.get(
+                hash,
+                this.byteBuffer,
+                this.hostnameMapPosition,
+            );
 
-            const storageIndexesPosition = this.byHostname.get(hash);
+            const uniqueIds: [number, number][] = [];
 
             if (storageIndexesPosition) {
-                // FIXME: delete dups
+                U32LinkedList.forEach((storageIndexPosition: number): void => {
+                    const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
+                    const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
 
-                U32LinkedList.forEach(matchStorageIndex, this.byteBuffer, storageIndexesPosition);
+                    if (uniqueIds.some(([l, r]) => l === listId && r === ruleIdx)) {
+                        return;
+                    }
+
+                    uniqueIds.push([listId, ruleIdx]);
+
+                    const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
+                    if (rule && rule.match(request)) {
+                        result.push(rule);
+                    }
+                }, this.byteBuffer, storageIndexesPosition);
             }
         }
 
@@ -157,9 +158,11 @@ export class CosmeticLookupTable {
      */
     public isAllowlisted(request: Request, rule: CosmeticRule): boolean {
         const hash = fastHash(rule.getContent());
-        // FIXME consider remove
-        // const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.allowlistMapPosition);
-        const storageIndexesPosition = this.allowlist.get(hash);
+        const storageIndexesPosition = BinaryMap.get(
+            hash,
+            this.byteBuffer,
+            this.allowlistMapPosition,
+        );
 
         if (!storageIndexesPosition) {
             return false;
