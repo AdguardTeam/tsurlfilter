@@ -34,11 +34,6 @@ export class HostnameLookupTable implements ILookupTable {
     declare private readonly byteBuffer: ByteBuffer;
 
     /**
-     * Position of the storage indexes list in the byte buffer.
-     */
-    declare private readonly storageIndexesListPosition: number;
-
-    /**
      * Position of the binary map in the byte buffer.
      */
     declare private binaryMapPosition: number;
@@ -52,7 +47,6 @@ export class HostnameLookupTable implements ILookupTable {
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
-        this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
     }
 
     /**
@@ -93,11 +87,9 @@ export class HostnameLookupTable implements ILookupTable {
 
         /**
          * If the hash is not in the lookup table, create a new {@link U32LinkedList},
-         * and adds the list position to the {@link storageIndexesListPosition}
          */
         if (storageIndexesPosition === undefined) {
             storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
-            U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
             this.hostnameLookupTable.set(hash, storageIndexesPosition);
         }
 

@@ -24,14 +24,12 @@ export class TrieLookupTable implements ILookupTable {
 
     declare private readonly byteBuffer: ByteBuffer;
 
-    declare private readonly storageIndexesListPosition: number;
-
     declare private binaryTriePosition: number;
 
     /**
      * Trie that stores rules' shortcuts.
      */
-    private readonly trie: TrieNode;
+    private trie: TrieNode;
 
     /**
      * Creates a new instance of the TrieLookupTable.
@@ -42,7 +40,6 @@ export class TrieLookupTable implements ILookupTable {
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
-        this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
         this.trie = new TrieNode(0);
     }
 
@@ -69,7 +66,6 @@ export class TrieLookupTable implements ILookupTable {
 
         if (storageIndexesPosition === -1) {
             storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
-            U32LinkedList.add(storageIndexesPosition, this.byteBuffer, this.storageIndexesListPosition);
             this.trie.add(shortcut, storageIndexesPosition);
         }
 
