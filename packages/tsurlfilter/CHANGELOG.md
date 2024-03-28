@@ -17,12 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.2.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.17
 
 
-## [2.2.16] - 2024-03-26
+## [2.2.16] - 2024-03-28
 
 ### Fixed
 
-- Correct work `$all` and `$popup` when they both selected for request [#2620],
-  [#2728].
+- Correct work `$all` and `$popup` when they both selected for request [#2620], [#2728].
 
 [2.2.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.16
 [#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620

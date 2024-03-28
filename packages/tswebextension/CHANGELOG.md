@@ -12,22 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Analysis of $popup rules (in addition to the basic one) to determine
+  the result of blocking a request [AdguardBrowserExtension#2620], [AdguardBrowserExtension#2728].
 - Updated `@adguard/tsurlfilter` to `v2.2.17`.
 - Updated `@adguard/scriptlets` to `v1.10.25`.
 
 [1.0.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.20
-
-
-## [1.0.19] - 2024-03-26
-
-### Changed
-
-- Analysis of $popup rules (in addition to the basic one) to determine
-  the result of blocking a request [#2620], [#2728].
-
-[1.0.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.19
-[#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
-[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+[AdguardBrowserExtension#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
+[AdguardBrowserExtension#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
 
 
 ## [1.0.18] - 2024-03-25
