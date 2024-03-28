@@ -1,11 +1,11 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import globals from 'rollup-plugin-node-globals';
+import nodePolyfills from 'rollup-plugin-polyfill-node';
 import camelCase from 'lodash/camelCase';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
@@ -24,13 +24,15 @@ const commonConfig = {
         json(),
 
         // Compile TypeScript files
-        typescript(),
+        typescript({
+            tsconfig: 'tsconfig.build.json',
+        }),
 
         // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
         commonjs({
             sourceMap: false,
         }),
-        globals(),
+        nodePolyfills(),
 
         // Allow node_modules resolution, so you can use 'external' to control
         // which external modules to include in the bundle
@@ -135,7 +137,9 @@ const cliConfig = {
         json(),
 
         // Compile TypeScript files
-        typescript(),
+        typescript({
+            tsconfig: 'tsconfig.build.json',
+        }),
 
         // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
         commonjs({
