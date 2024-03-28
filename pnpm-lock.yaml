@@ -704,8 +704,8 @@ importers:
   packages/tsurlfilter:
     dependencies:
       '@adguard/scriptlets':
-        specifier: ^1.10.1
-        version: 1.10.1
+        specifier: ^1.10.25
+        version: 1.10.25
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -864,10 +864,10 @@ importers:
         specifier: ^2.0.56
         version: 2.0.56
       '@adguard/scriptlets':
-        specifier: ^1.10.1
-        version: 1.10.1
+        specifier: ^1.10.25
+        version: 1.10.25
       '@adguard/tsurlfilter':
-        specifier: ^2.2.14
+        specifier: ^2.2.17
         version: link:../tsurlfilter
       bowser:
         specifier: 2.11.0
@@ -1041,12 +1041,19 @@ packages:
       js-yaml: 3.14.1
     dev: false
 
+  /@adguard/scriptlets@1.10.25:
+    resolution: {integrity: sha512-q5s7PZ0oIizmcYQa/UI++MxQ7Cb3pdy1K9VY7yj+wtJ/xevEo/nxSLhnU/ijhSMvlAdFlGEkY898munZNfCUYA==}
+    dependencies:
+      '@babel/runtime': 7.24.1
+      js-yaml: 3.14.1
+    dev: false
+
   /@adguard/tsurlfilter@2.2.15:
     resolution: {integrity: sha512-3AojTw/+5rYs4t04FyxC/U9ngDIMk7i/+yan2/aOhC+SUxvZ9FXEIl4PuVsY/pAjkhgtU85MtMHSQZlyxbLEWQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@adguard/scriptlets': 1.10.1
+      '@adguard/scriptlets': 1.10.25
       cidr-tools: 6.4.2
       commander: 9.4.1
       is-cidr: 4.0.2
@@ -11909,7 +11916,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.7.1)(typescript@4.7.4)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.4.2)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
