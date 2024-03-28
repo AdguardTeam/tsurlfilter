@@ -43,7 +43,7 @@ Build:
             # Install dependencies
             pnpm install
 
-            pnpm --filter @adguard/api build
+            npx lerna run build --scope @adguard/api --include-dependencies
 
             cd packages/adguard-api
             pnpm pack && mv adguard-api-*.tgz adguard-api.tgz
