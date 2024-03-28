@@ -123,9 +123,9 @@ export class Engine {
         }
 
         const res = this.resultCache.get(cacheKey);
-        if (res) {
-            return res;
-        }
+        // if (res) {
+        //     return res;
+        // }
 
         const networkRules = this.networkEngine.matchAll(request);
         const result = new MatchingResult(networkRules, frameRule);

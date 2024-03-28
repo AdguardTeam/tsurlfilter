@@ -112,6 +112,13 @@ export class MatchingResult {
 
         // Iterate through the list of rules and fill the MatchingResult
         for (const rule of rules) {
+            if (rule.isOptionEnabled(NetworkRuleOption.Generichide)) {
+                // eslint-disable-next-line max-len
+                if (!this.documentRule) { // OR priority is higher than documentRule FIXME decide what to do with priority
+                    this.documentRule = rule; // FIXME compare priorities with other generichide rules
+                    continue;
+                }
+            }
             if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
                 if (!this.cookieRules) {
                     this.cookieRules = [];
