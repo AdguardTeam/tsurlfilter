@@ -51,6 +51,10 @@ export {
     type ScriptletInjectionRule,
     type ScriptletInjectionRuleBody,
     type Value,
+    type NetworkRuleType,
+    type HostnameList,
+    type HostRule,
+    type AnyNetworkRule,
 } from './parser/common';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentRuleParser } from './parser/comment/agent-rule';
@@ -72,6 +76,7 @@ export { ModifierParser } from './parser/misc/modifier';
 export { NetworkRuleParser } from './parser/network';
 export { NotImplementedError } from './errors/not-implemented-error';
 export { ParameterListParser } from './parser/misc/parameter-list';
+export { HostRuleParser } from './parser/network/host';
 export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
 export { RuleConversionError } from './errors/rule-conversion-error';
 

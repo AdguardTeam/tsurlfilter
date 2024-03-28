@@ -14,6 +14,8 @@ import {
     type AnyCommentRule,
     type AnyCosmeticRule,
     type NetworkRule,
+    NetworkRuleType,
+    type HostRule,
 } from './common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { defaultParserOptions } from './options';
@@ -21,6 +23,7 @@ import { ParserBase } from './interface';
 import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
+import { HostRuleParser } from './network/host';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
@@ -267,7 +270,14 @@ export class RuleParser extends ParserBase {
 
             // Network / basic rules
             case RuleCategory.Network:
-                return NetworkRuleParser.generate(ast);
+                switch (ast.type) {
+                    case NetworkRuleType.HostRule:
+                        return HostRuleParser.generate(ast);
+                    case NetworkRuleType.NetworkRule:
+                        return NetworkRuleParser.generate(ast);
+                    default:
+                        throw new Error('Unknown network rule type');
+                }
 
             default:
                 throw new Error('Unknown rule category');
@@ -470,7 +480,16 @@ export class RuleParser extends ParserBase {
                 break;
 
             case RuleCategory.Network:
-                NetworkRuleParser.serialize(node, buffer);
+                switch (node.type) {
+                    case NetworkRuleType.HostRule:
+                        HostRuleParser.serialize(node, buffer);
+                        break;
+                    case NetworkRuleType.NetworkRule:
+                        NetworkRuleParser.serialize(node, buffer);
+                        break;
+                    default:
+                        throw new Error('Unknown network rule type');
+                }
                 break;
 
             case RuleCategory.Empty:
@@ -515,6 +534,10 @@ export class RuleParser extends ParserBase {
 
             case BinaryTypeMap.NetworkRuleNode:
                 NetworkRuleParser.deserialize(buffer, node as NetworkRule);
+                break;
+
+            case BinaryTypeMap.HostRuleNode:
+                HostRuleParser.deserialize(buffer, node as HostRule);
                 break;
 
             case BinaryTypeMap.EmptyRule:

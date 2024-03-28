@@ -19,6 +19,7 @@ import {
     SYNTAX_SERIALIZATION_MAP,
     SYNTAX_DESERIALIZATION_MAP,
     type Value,
+    NetworkRuleType,
 } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
@@ -123,7 +124,7 @@ export class NetworkRuleParser extends ParserBase {
         }
 
         const result: NetworkRule = {
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception,
@@ -238,7 +239,7 @@ export class NetworkRuleParser extends ParserBase {
     public static deserialize(buffer: InputByteBuffer, node: Partial<NetworkRule>): void {
         buffer.assertUint8(BinaryTypeMap.NetworkRuleNode);
 
-        node.type = 'NetworkRule';
+        node.type = NetworkRuleType.NetworkRule;
         node.category = RuleCategory.Network;
         node.modifiers = undefined;
 

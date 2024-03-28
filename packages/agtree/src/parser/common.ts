@@ -26,7 +26,7 @@ export type AnyRule =
     | EmptyRule
     | AnyCommentRule
     | AnyCosmeticRule
-    | NetworkRule
+    | AnyNetworkRule
     | InvalidRule;
 
 /**
@@ -49,6 +49,11 @@ export type AnyCosmeticRule =
     | ScriptletInjectionRule
     | HtmlFilteringRule
     | JsInjectionRule;
+
+/**
+ * Represents any network adblock rule.
+ */
+export type AnyNetworkRule = NetworkRule | HostRule;
 
 /**
  * Represents the different comment markers that can be used in an adblock rule.
@@ -254,6 +259,7 @@ export const enum BinaryTypeMap {
     ConfigNode,
 
     NetworkRuleNode,
+    HostRuleNode,
 
     ElementHidingRule,
     CssInjectionRule,
@@ -280,6 +286,7 @@ export const enum BinaryTypeMap {
     StealthOptionNode,
     AppListNode,
     AppNode,
+    HostnameListNode,
 
     InvalidRuleErrorNode,
 
@@ -1277,12 +1284,42 @@ export interface JsInjectionRule extends CosmeticRule {
 }
 
 /**
+ * Represents the different types of network rules.
+ */
+export const enum NetworkRuleType {
+    NetworkRule = 'NetworkRule',
+    HostRule = 'HostRule',
+}
+
+/**
  * Represents the common properties of network rules
  */
-export interface NetworkRule extends RuleBase {
+export interface NetworkRuleBase extends RuleBase {
+    /**
+     * Category of the adblock rule.
+     */
     category: RuleCategory.Network;
-    type: 'NetworkRule';
+
+    /**
+     * Type of the network rule.
+     */
+    type: NetworkRuleType;
+
+    /**
+     * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
+     * we should use `AdblockSyntax.Common` as the value.
+     */
     syntax: AdblockSyntax;
+}
+
+/**
+ * Represents the common properties of network rules
+ */
+export interface NetworkRule extends NetworkRuleBase {
+    /**
+     * Type of the node.
+     */
+    type: NetworkRuleType.NetworkRule;
 
     /**
      * If the rule is an exception rule. If the rule begins with `@@`, it means that it is an exception rule.
@@ -1330,4 +1367,65 @@ export interface NetworkRule extends RuleBase {
      *   then the modifiers of this rule are `["third-party"]`.
      */
     modifiers?: ModifierList;
+}
+
+/**
+ * Represents a list of hostnames.
+ */
+export interface HostnameList extends Node {
+    /**
+     * Type of the node.
+     */
+    type: 'HostnameList';
+
+    /**
+     * List of hostnames.
+     */
+    children: Value[];
+}
+
+/**
+ * Represents the common properties of host rules.
+ *
+ * @see https://adguard-dns.io/kb/general/dns-filtering-syntax/#etc-hosts-syntax
+ */
+export interface HostRule extends NetworkRuleBase {
+    /**
+     * Type of the node.
+     */
+    type: NetworkRuleType.HostRule;
+
+    /**
+     * IP address. It can be an IPv4 or IPv6 address.
+     *
+     * @example
+     * ```text
+     * 127.0.0.1 example.com example.org
+     * ↑↑↑↑↑↑↑↑↑
+     * ```
+     * @note If IP is not specified in the rule, it parsed as null IP: `0.0.0.0`.
+     */
+    ip: Value;
+
+    /**
+     * Hostnames.
+     *
+     * @example
+     * ```text
+     * 127.0.0.1 example.com example.org
+     *           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * ```
+     */
+    hostnames: HostnameList;
+
+    /**
+     * Comment (optional).
+     *
+     * @example
+     * ```text
+     * 127.0.0.1 localhost # This is just a comment
+     *                     ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * ```
+     */
+    comment?: Value;
 }
