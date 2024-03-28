@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.19] - 2024-03-26
+
+### Changed
+
+- Analysis of $popup rules (in addition to the basic one) to determine
+  the result of blocking a request [#2620], [#2728].
+
+[1.0.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.19
+[#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
+[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+
+
 ## [1.0.18] - 2024-03-25
 
 ### Fixed

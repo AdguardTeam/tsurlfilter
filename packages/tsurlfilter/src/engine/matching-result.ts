@@ -2,6 +2,7 @@ import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
 import { CosmeticOption } from './cosmetic-option';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { RequestType } from '../request-type';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
@@ -72,6 +73,15 @@ export class MatchingResult {
     public stealthRule: NetworkRule | null;
 
     /**
+     * PopupRule - this is a rule that specified which way should be used
+     * to blocking document request: close the tab or open dummy blocking page.
+     * We should store it separately from other blocking rules, because $popup
+     * has an intersection by use cases with $all.
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#popup-modifier
+     */
+    public popupRule: NetworkRule | null;
+
+    /**
      * Creates an instance of the MatchingResult struct and fills it with the rules.
      *
      * @param rules A list of network rules that match the request.
@@ -88,6 +98,7 @@ export class MatchingResult {
         this.removeHeaderRules = null;
         this.redirectRules = null;
         this.stealthRule = null;
+        this.popupRule = null;
 
         // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
@@ -102,10 +113,9 @@ export class MatchingResult {
         // basic blocking rules are allowed by default
         let basicAllowed = true;
         if (this.documentRule) {
-            const documentRule = this.documentRule as NetworkRule;
-            if (documentRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
+            if (this.documentRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
                 basicAllowed = false;
-            } else if (documentRule.isOptionEnabled(NetworkRuleOption.Genericblock)) {
+            } else if (this.documentRule.isOptionEnabled(NetworkRuleOption.Genericblock)) {
                 genericAllowed = false;
             }
         }
@@ -156,6 +166,12 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Stealth)) {
                 this.stealthRule = rule;
+                continue;
+            }
+            if (rule.isOptionEnabled(NetworkRuleOption.Popup)
+                // This check needed to split $all rules from $popup rules
+                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                this.popupRule = rule;
                 continue;
             }
 
@@ -222,6 +238,10 @@ export class MatchingResult {
         const redirectRule = this.getRedirectRule();
         if (redirectRule && (!basic || !basic.isHigherPriority(redirectRule))) {
             return redirectRule;
+        }
+
+        if (!basic) {
+            return this.popupRule;
         }
 
         return basic;

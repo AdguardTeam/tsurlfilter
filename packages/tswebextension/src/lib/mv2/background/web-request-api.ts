@@ -359,6 +359,7 @@ export class WebRequestApi {
         // the response in order to actually apply $replace rules to it.
         const response = RequestBlockingApi.getBlockingResponse({
             rule: basicResult,
+            popupRule: result.popupRule,
             eventId,
             requestUrl,
             referrerUrl,
