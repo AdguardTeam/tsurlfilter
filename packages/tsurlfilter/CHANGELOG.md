@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [2.2.18] - 2024-03-29
+
+### Fixed
+
+- Do not block "Should collapse" mechanism with `$popup` rules
+
 ## [2.2.17] - 2024-03-28
 
 ### Changed

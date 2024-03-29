@@ -36,7 +36,7 @@ const getGetBlockingResponseParamsData = (
         tabId: 1,
         eventId: '1',
         rule: result.getBasicResult(),
-        popupRule: result.popupRule,
+        popupRule: result.getPopupRule(),
         referrerUrl: '',
         requestUrl,
         requestType,
@@ -62,6 +62,14 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
         expect(
             RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(true);
+    });
+
+    it('iframe should not be collapsed by popup rule', () => {
+        mockMatchingResult('$popup,third-party,domain=example.org');
+
+        expect(
+            RequestBlockingApi.shouldCollapseElement(1, 'https://example.com', 'https://example.org', RequestType.SubDocument),
+        ).toBe(false);
     });
 
     it('element without rule match shouldn`t be collapsed', () => {

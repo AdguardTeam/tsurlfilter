@@ -79,7 +79,7 @@ export class MatchingResult {
      * has an intersection by use cases with $all.
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#popup-modifier
      */
-    public popupRule: NetworkRule | null;
+    private popupRule: NetworkRule | null;
 
     /**
      * Creates an instance of the MatchingResult struct and fills it with the rules.
@@ -189,6 +189,13 @@ export class MatchingResult {
                 this.basicRule = rule;
             }
         }
+    }
+
+    /**
+     * Returns popup rule
+     */
+    public getPopupRule(): NetworkRule | null {
+        return this.popupRule;
     }
 
     /**

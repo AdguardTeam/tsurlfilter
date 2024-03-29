@@ -73,6 +73,14 @@ export class RequestBlockingApi {
             return false;
         }
 
+        const basicRule = result.getBasicResult();
+        const popupRule = result.getPopupRule();
+
+        // we do not want to block the main page if the rule has only $popup modifier
+        if (basicRule === popupRule) {
+            return false;
+        }
+
         return RequestBlockingApi.isRequestBlockedByRule(result.getBasicResult());
     }
 
@@ -133,7 +141,7 @@ export class RequestBlockingApi {
         }
 
         // popup rule will be handled in the condition with requesttype === document below
-        if (popupRule?.getText() === rule.getText() && requestType !== RequestType.Document) {
+        if (popupRule === rule && requestType !== RequestType.Document) {
             return undefined;
         }
 
@@ -171,7 +179,7 @@ export class RequestBlockingApi {
             }
 
             // we do not want to block the main page if rule has only $popup modifier
-            if (rule.getText() === popupRule?.getText() && !tabsApi.isNewPopupTab(tabId)) {
+            if (rule === popupRule && !tabsApi.isNewPopupTab(tabId)) {
                 return undefined;
             }
 
