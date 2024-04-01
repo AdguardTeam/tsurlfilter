@@ -867,7 +867,7 @@ importers:
         specifier: ^1.10.25
         version: 1.10.25
       '@adguard/tsurlfilter':
-        specifier: ^2.2.17
+        specifier: ^2.2.18
         version: link:../tsurlfilter
       bowser:
         specifier: 2.11.0
@@ -1048,8 +1048,8 @@ packages:
       js-yaml: 3.14.1
     dev: false
 
-  /@adguard/tsurlfilter@2.2.15:
-    resolution: {integrity: sha512-3AojTw/+5rYs4t04FyxC/U9ngDIMk7i/+yan2/aOhC+SUxvZ9FXEIl4PuVsY/pAjkhgtU85MtMHSQZlyxbLEWQ==}
+  /@adguard/tsurlfilter@2.2.18:
+    resolution: {integrity: sha512-QZM3YOi+3kEW6OxGILJB9xcE99PZY+mPocME/wtKpDITEcQ/wOOV+9Qn5LBCSCEbu19gkKlLNSzBCi4FKAgv8g==}
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
@@ -1072,7 +1072,7 @@ packages:
       '@adguard/assistant': 4.3.70
       '@adguard/extended-css': 2.0.56
       '@adguard/scriptlets': 1.10.1
-      '@adguard/tsurlfilter': 2.2.15
+      '@adguard/tsurlfilter': 2.2.18
       bowser: 2.11.0
       commander: 11.0.0
       fs-extra: 11.1.1
