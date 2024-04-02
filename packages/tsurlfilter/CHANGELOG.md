@@ -8,26 +8,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## [Unreleased]
+## Unreleased
 
-## Added
-- Support of pipe separator in `$permissions` modifier values [#116](https://github.com/AdguardTeam/tsurlfilter/issues/116).
-- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100](https://github.com/AdguardTeam/tsurlfilter/issues/100).
-- Support for regexp values in $domain modifier of network and cosmetic rules [#41](https://github.com/AdguardTeam/tsurlfilter/issues/41).
-- New `$permissions` modifier to set Permissions-Policy response header.
-- New `$header` modifier to match requests by response headers.
+### Added
+
+- Support of pipe separator in `$permissions` modifier values [#116].
+- Support for disabling specific `$stealth` options:
+  `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
+- Support for regexp values in $domain modifier of network and cosmetic rules [#41].
+- New `$permissions` modifier to set Permissions-Policy response header [#66].
+- New `$header` modifier to match requests by response headers [#63].
 - Support conversion to DNR for `$permissions` modifier.
 - Support conversion to DNR for `$cookie` modifier.
-- `$url` modifier support for non-basic rules.
+- `$url` modifier support for non-basic rules [#64].
 
 ### Changed
-- How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#100](https://github.com/AdguardTeam/tsurlfilter/issues/110).
+
+- How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#110].
 
 ### Fixed
-- Scriptlets not being logged when filtering log is open [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481).
-- Filtering log clearing on `$removeparam` rule application [#2442](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442).
-- Shortcut extraction from regexp patterns with zero-length alternative [#69](https://github.com/AdguardTeam/tsurlfilter/issues/69).
-- Extension leaking it's instance id when redirecting requests [#69](https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278).
+
+- Shortcut extraction from regexp patterns with zero-length alternative [#69].
+- Scriptlets not being logged when filtering log is open [AdguardBrowserExtension#2481].
+- Filtering log clearing on `$removeparam` rule application [AdguardBrowserExtension#2442].
+- Extension leaking it's instance id when redirecting requests [AdguardBrowserExtension#2278].
+
+[#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
+[#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
+[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
+[#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
+[#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
+[#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
+[#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
+[#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
+[AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
+[AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
+[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+
+
+## [2.2.18] - 2024-03-29
+
+### Fixed
+
+- Do not block "Should collapse" mechanism with `$popup` rules
+
+[2.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.18
+
+
+## [2.2.17] - 2024-03-28
+
+### Changed
+
+- Updated `@adguard/scriptlets` to `v1.10.25`.
+
+[2.2.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.17
+
+
+## [2.2.16] - 2024-03-28
+
+### Fixed
+
+- Correct work `$all` and `$popup` when they both selected for request [#2620], [#2728].
+
+[2.2.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.16
+[#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
+[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+
 
 ## [2.2.15] - 2024-03-01
 

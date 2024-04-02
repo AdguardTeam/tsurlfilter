@@ -1407,7 +1407,6 @@ export class NetworkRule implements rule.IRule {
                 break;
             // $popup
             case OPTIONS.POPUP:
-                this.setRequestType(RequestType.Document, true);
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
             // Content type options

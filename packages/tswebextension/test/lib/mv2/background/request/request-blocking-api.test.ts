@@ -14,7 +14,7 @@ jest.mock('@lib/mv2/background/api');
  *
  * Other parameters are passed as arguments.
  *
- * @param ruleText Rule text.
+ * @param rules Rules.
  * @param requestUrl Request url.
  * @param requestType Request type.
  * @param contentType Content type.
@@ -22,15 +22,21 @@ jest.mock('@lib/mv2/background/api');
  * @returns Data for getBlockingResponse() method.
  */
 const getGetBlockingResponseParamsData = (
-    ruleText: string,
+    rules: string[],
     requestUrl: string,
     requestType: RequestType,
     contentType: ContentType,
 ): GetBlockingResponseParams => {
+    const result = new MatchingResult(
+        rules.map((rule) => new NetworkRule(rule, 0)),
+        null,
+    );
+
     return {
         tabId: 1,
         eventId: '1',
-        rule: new NetworkRule(ruleText, 0),
+        rule: result.getBasicResult(),
+        popupRule: result.getPopupRule(),
         referrerUrl: '',
         requestUrl,
         requestType,
@@ -56,6 +62,14 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
         expect(
             RequestBlockingApi.shouldCollapseElement(1, 'example.org', 'example.org', RequestType.Document),
         ).toBe(true);
+    });
+
+    it('iframe should not be collapsed by popup rule', () => {
+        mockMatchingResult('$popup,third-party,domain=example.org');
+
+        expect(
+            RequestBlockingApi.shouldCollapseElement(1, 'https://example.com', 'https://example.org', RequestType.SubDocument),
+        ).toBe(false);
     });
 
     it('element without rule match shouldn`t be collapsed', () => {
@@ -117,32 +131,28 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the popup modifier, document request - close tab', () => {
-            const data = getGetBlockingResponseParamsData(
+            const rules = [
+                '||example.com^',
                 '||example.com^$popup',
-                'http://example.com',
-                RequestType.Document,
-                ContentType.Document,
-            );
-            const response = RequestBlockingApi.getBlockingResponse(data);
-            expect(response).toEqual({ cancel: true });
-        });
-
-        it('the all modifier, document request - close tab', () => {
+            ];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$all',
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
             );
             const response = RequestBlockingApi.getBlockingResponse(data);
-            // $all is actually a synonym for $popup,document
-            // so a new tab should be cancelled due to 'Popup' option enabled
             expect(response).toEqual({ cancel: true });
         });
 
         it('explicit modifiers popup and document, document request - close tab', () => {
-            const data = getGetBlockingResponseParamsData(
+            const rules = [
                 '||example.com^$popup,document',
+                '||example.com^',
+            ];
+
+            const data = getGetBlockingResponseParamsData(
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -152,9 +162,39 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual({ cancel: true });
         });
 
-        it('blocking rule, document modifier, document request - blocking page', () => {
+        it('the all modifier, document request - close tab', () => {
+            const rules = ['||example.com^$all'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$document',
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            // $all is actually a synonym for $popup,document
+            // so a new tab should be cancelled due to 'popup' option enabled
+            expect(response).toEqual({ cancel: true });
+        });
+
+        it('the all modifier and popup modifier document request - close tab', () => {
+            const rules = [
+                '||example.com^$all',
+                '||example.com^$popup',
+            ];
+            const data = getGetBlockingResponseParamsData(
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual({ cancel: true });
+        });
+
+        it('blocking rule, document modifier, document request - blocking page', () => {
+            const rules = ['||example.com^$document'];
+            const data = getGetBlockingResponseParamsData(
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -163,34 +203,37 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual(mockedBlockingPageResponse);
         });
 
-        it('the popup modifier, image request - cancel request', () => {
+        it('the popup modifier, image request - bypass request', () => {
+            const rules = ['||example.com^$popup'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$popup',
+                rules,
                 'http://example.com/image.png',
                 RequestType.Image,
                 ContentType.Image,
             );
             const response = RequestBlockingApi.getBlockingResponse(data);
-            expect(response).toEqual({ cancel: true });
+            expect(response).toEqual(undefined);
         });
 
-        it('wide popup modifier rule, image request - close tab', () => {
+        it('wide popup modifier rule, image request - bypass request', () => {
+            const rules = ['|http*://$popup'];
             const data = getGetBlockingResponseParamsData(
-                '|http*://$popup',
+                rules,
                 'http://example.com/image.png',
                 RequestType.Image,
                 ContentType.Image,
             );
             const response = RequestBlockingApi.getBlockingResponse(data);
-            expect(response).toEqual({ cancel: true });
+            expect(response).toEqual(undefined);
         });
 
         it('basic rule, main document request - should NOT be cancelled', () => {
             // Basic rules for blocking requests are applied only to sub-requests,
             // not to main frame which is loaded as document request type.
             // https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
+            const rules = ['||example.com^'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^',
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -200,8 +243,10 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('basic rule, subdocument - should be cancelled', () => {
+            const rules = ['||example.com^'];
+
             const data = getGetBlockingResponseParamsData(
-                '||example.com^',
+                rules,
                 'http://example.com',
                 RequestType.SubDocument,
                 ContentType.Subdocument,
@@ -211,8 +256,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('basic rule, subrequest - should be cancelled', () => {
+            const rules = ['||example.com^'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^',
+                rules,
                 'http://example.com',
                 RequestType.XmlHttpRequest,
                 ContentType.XmlHttpRequest,
@@ -222,8 +268,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('basic rule, script request - should be cancelled', () => {
+            const rules = ['||example.com/script.js'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com/script.js',
+                rules,
                 'http://example.com/script.js',
                 RequestType.Script,
                 ContentType.Script,
@@ -243,8 +290,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('just popup modifier, document request - do not close tab, undefined is returned', () => {
+            const rules = ['||example.com^$popup'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$popup',
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -254,8 +302,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the all modifier, document request - blocking page', () => {
+            const rules = ['||example.com^$all'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$all',
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -264,21 +313,67 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             expect(response).toEqual(mockedBlockingPageResponse);
         });
 
-        // TODO: Uncomment this case
-        // it('explicit popup with document, document request - blocking page', () => {
-        //     const data = getGetBlockingResponseParamsData(
-        //         '||example.com^$popup,document',
-        //         'http://example.com',
-        //         RequestType.Document,
-        //         ContentType.Document,
-        //     );
-        //     const response = RequestBlockingApi.getBlockingResponse(data);
-        //     expect(response).toEqual(mockedBlockingPageResponse);
-        // });
+        it('the all modifier and popup modifier, document request - blocking page', () => {
+            const rules = [
+                '||example.com^$all',
+                '||example.com^$popup',
+            ];
+            const data = getGetBlockingResponseParamsData(
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(mockedBlockingPageResponse);
+        });
+
+        it('the all modifier and popup modifier with document, document request - blocking page', () => {
+            const rules = [
+                '||example.com^$all',
+                '||example.com^$popup,document',
+            ];
+            const data = getGetBlockingResponseParamsData(
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(mockedBlockingPageResponse);
+        });
+
+        it('show blocking page if tab is not new', () => {
+            const rules = ['||example.com^$popup,document'];
+            const data = getGetBlockingResponseParamsData(
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(mockedBlockingPageResponse);
+        });
+
+        it('basic rule and explicit popup with document, document request - blocking page', () => {
+            const rules = [
+                '||example.com^',
+                '||example.com^$popup,document',
+            ];
+            const data = getGetBlockingResponseParamsData(
+                rules,
+                'http://example.com',
+                RequestType.Document,
+                ContentType.Document,
+            );
+            const response = RequestBlockingApi.getBlockingResponse(data);
+            expect(response).toEqual(mockedBlockingPageResponse);
+        });
 
         it('blocking rule, document modifier, document request - blocking page', () => {
+            const rules = ['||example.com^$document'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$document',
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -288,8 +383,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('the popup modifier, image request - do nothing', () => {
+            const rules = ['||example.com^$popup'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^$popup',
+                rules,
                 'http://example.com/image.png',
                 RequestType.Image,
                 ContentType.Image,
@@ -299,8 +395,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('wide popup modifier rule, image request - do nothing', () => {
+            const rules = ['|http*://$popup'];
             const data = getGetBlockingResponseParamsData(
-                '|http*://$popup',
+                rules,
                 'http://example.com/image.png',
                 RequestType.Image,
                 ContentType.Image,
@@ -313,8 +410,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
             // Basic rules for blocking requests are applied only to sub-requests,
             // not to main frame which is loaded as document request type.
             // https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rules
+            const rules = ['||example.com^'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^',
+                rules,
                 'http://example.com',
                 RequestType.Document,
                 ContentType.Document,
@@ -324,8 +422,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('basic rule, subdocument - should be cancelled', () => {
+            const rules = ['||example.com^'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^',
+                rules,
                 'http://example.com',
                 RequestType.SubDocument,
                 ContentType.Subdocument,
@@ -335,8 +434,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('basic rule, subrequest - should be cancelled', () => {
+            const rules = ['||example.com^'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com^',
+                rules,
                 'http://example.com',
                 RequestType.XmlHttpRequest,
                 ContentType.XmlHttpRequest,
@@ -346,8 +446,9 @@ describe('Request Blocking Api - getBlockingResponse', () => {
         });
 
         it('simple basic rule, script request - should be cancelled', () => {
+            const rules = ['||example.com/script.js'];
             const data = getGetBlockingResponseParamsData(
-                '||example.com/script.js',
+                rules,
                 'http://example.com/script.js',
                 RequestType.Script,
                 ContentType.Script,
