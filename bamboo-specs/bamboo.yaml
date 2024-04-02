@@ -84,3 +84,6 @@
 
 ---
 !include 'logger-test.yaml'
+
+---
+!include 'adguard-api-example-tests.yaml'

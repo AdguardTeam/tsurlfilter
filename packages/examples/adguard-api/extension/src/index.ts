@@ -1,6 +1,11 @@
 /* eslint-disable no-console */
-import browser from "webextension-polyfill";
-import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME } from "@adguard/api";
+import browser from 'webextension-polyfill';
+import {
+    AdguardApi,
+    type Configuration,
+    type RequestBlockingEvent,
+    MESSAGE_HANDLER_NAME,
+} from '@adguard/api';
 
 (async (): Promise<void> => {
     // create new AdguardApi instance
@@ -12,10 +17,10 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
             215, // example of obsoleted filter.
         ],
         filteringEnabled: true,
-        allowlist: ["www.example.com"],
-        rules: ["example.org##h1"],
-        filterRulesUrl: "https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt",
-        filtersMetadataUrl: "https://filters.adtidy.org/extension/chromium/filters.json",
+        allowlist: ['www.example.com'],
+        rules: ['example.org##h1'],
+        filterRulesUrl: 'https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt',
+        filtersMetadataUrl: 'https://filters.adtidy.org/extension/chromium/filters.json',
     };
 
     // console log event on request blocking
@@ -25,22 +30,22 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
 
     // console log current rules count, loaded in engine
     const logTotalCount = (): void => {
-        console.log("Total rules count:", adguardApi.getRulesCount());
+        console.log('Total rules count:', adguardApi.getRulesCount());
     };
 
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     configuration = await adguardApi.start(configuration);
 
-    console.log("Finished Adguard API initialization.");
-    console.log("Applied configuration: ", JSON.stringify(configuration));
+    console.log('Finished Adguard API initialization.');
+    console.log('Applied configuration: ', JSON.stringify(configuration));
     logTotalCount();
 
-    configuration.allowlist!.push("www.google.com");
+    configuration.allowlist!.push('www.google.com');
 
     await adguardApi.configure(configuration);
 
-    console.log("Finished Adguard API re-configuration");
+    console.log('Finished Adguard API re-configuration');
     logTotalCount();
 
     const onAssistantCreateRule = async (rule: string) => {
@@ -48,7 +53,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
         await adguardApi.configure(configuration);
-        console.log("Finished Adguard API re-configuration");
+        console.log('Finished Adguard API re-configuration');
         logTotalCount();
     };
 
@@ -60,7 +65,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
 
         await adguardApi.configure(configuration);
 
-        console.log("Finished Adguard API re-configuration");
+        console.log('Finished Adguard API re-configuration');
         logTotalCount();
     };
 
@@ -73,7 +78,7 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
     // define custom message handler
     const handleAppMessage = async (message: any) => {
         switch (message.type) {
-            case "OPEN_ASSISTANT": {
+            case 'OPEN_ASSISTANT': {
                 const active = await browser.tabs.query({ active: true });
                 if (active[0]?.id) {
                     await adguardApi.openAssistant(active[0].id);
@@ -99,6 +104,6 @@ import { AdguardApi, Configuration, RequestBlockingEvent, MESSAGE_HANDLER_NAME }
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
         adguardApi.onFiltersDeletion.unsubscribe(onFiltersDeletion);
         await adguardApi.stop();
-        console.log("Adguard API has been disabled.");
+        console.log('Adguard API has been disabled.');
     }, 60 * 1000);
 })();

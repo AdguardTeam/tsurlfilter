@@ -19,10 +19,10 @@
 // Schemas entry point
 
 // Api Configuration schema entry point
-export * from "./configuration";
+export * from './configuration';
 
 // Metadata schema entry point
-export * from "./metadata";
+export * from './metadata';
 
 // Filter version data entry point
-export * from "./filter-version";
+export * from './filter-version';

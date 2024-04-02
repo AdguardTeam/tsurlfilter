@@ -16,15 +16,15 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-export { MESSAGE_HANDLER_NAME } from "@adguard/tswebextension";
+export { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 
 // API entry point
 
 // API Configuration type
-export type { Configuration } from "./schemas";
+export type { Configuration } from './schemas';
 
 // Request blocking event type
-export type { RequestBlockingEvent } from "./request-blocking-logger";
+export type { RequestBlockingEvent } from './request-blocking-logger';
 
 // Public interface
-export { AdguardApi } from "./main";
+export { AdguardApi } from './main';

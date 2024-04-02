@@ -19,4 +19,4 @@
 // Configuration schema entry point
 
 // AdguardApi configuration type and runtime validator
-export * from "./configuration";
+export * from './configuration';
