@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import browser from "webextension-polyfill";
+import browser from 'webextension-polyfill';
 
 /**
  * Dev-friendly API for key-value extension storage

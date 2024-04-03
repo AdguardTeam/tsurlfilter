@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import zod from "zod";
+import zod from 'zod';
 
 /**
  * In some cases we want to preprocessing input before validation
@@ -42,7 +42,7 @@ export class SchemaPreprocessor {
      * @returns number value, if string passed, else returns original value
      */
     private static castStringToNumber(value: unknown): number | unknown {
-        if (typeof value === "string") {
+        if (typeof value === 'string') {
             return Number(value);
         }
 
@@ -56,7 +56,7 @@ export class SchemaPreprocessor {
      * @returns boolean value, if string passed, else returns original value
      */
     private static castStringToBoolean(value: unknown): boolean | unknown {
-        if (typeof value === "string") {
+        if (typeof value === 'string') {
             try {
                 return Boolean(JSON.parse(value));
             } catch (e) {

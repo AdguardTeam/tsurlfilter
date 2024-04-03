@@ -71,39 +71,39 @@ type BrowserData = {
 export class UserAgent {
     private static browserDataMap: Record<string, BrowserData> = {
         Chrome: {
-            brand: "Google Chrome",
-            uaStringName: "Chrome",
+            brand: 'Google Chrome',
+            uaStringName: 'Chrome',
         },
         Firefox: {
-            uaStringName: "Firefox",
+            uaStringName: 'Firefox',
         },
         Safari: {
-            uaStringName: "Safari",
+            uaStringName: 'Safari',
         },
         Opera: {
-            brand: "Opera",
-            uaStringName: "OPR",
+            brand: 'Opera',
+            uaStringName: 'OPR',
         },
         YaBrowser: {
-            brand: "Yandex",
-            uaStringName: "YaBrowser",
+            brand: 'Yandex',
+            uaStringName: 'YaBrowser',
         },
         Edge: {
-            uaStringName: "edge",
+            uaStringName: 'edge',
         },
         EdgeChromium: {
-            brand: "Microsoft Edge",
-            uaStringName: "edg",
+            brand: 'Microsoft Edge',
+            uaStringName: 'edg',
         },
     };
 
-    public static isChrome = UserAgent.isTargetBrowser("Chrome");
+    public static isChrome = UserAgent.isTargetBrowser('Chrome');
 
-    public static isFirefox = UserAgent.isTargetBrowser("Firefox");
+    public static isFirefox = UserAgent.isTargetBrowser('Firefox');
 
-    public static isOpera = UserAgent.isTargetBrowser("Opera");
+    public static isOpera = UserAgent.isTargetBrowser('Opera');
 
-    public static isEdge = UserAgent.isTargetBrowser("Edge");
+    public static isEdge = UserAgent.isTargetBrowser('Edge');
 
     /**
      * Check if current browser is as given

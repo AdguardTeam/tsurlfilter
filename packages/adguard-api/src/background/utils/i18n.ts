@@ -28,13 +28,13 @@ export class I18n {
      * @returns matched locale or null, if locale is not found
      */
     public static find(locales: string[], locale: string): string | null {
-        const lang = locale.replace("-", "_");
+        const lang = locale.replace('-', '_');
 
         if (locales.includes(lang)) {
             return lang;
         }
 
-        const [localePart] = lang.split("_");
+        const [localePart] = lang.split('_');
 
         if (localePart && locales.includes(localePart)) {
             return localePart;

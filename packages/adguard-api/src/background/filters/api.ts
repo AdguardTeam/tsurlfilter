@@ -15,15 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Network } from "../network";
-import { Storage } from "../storage";
-import { MetadataApi } from "./metadata";
-import { VersionsApi } from "./versions";
-import { FilterRulesApi } from "./rules";
-import { BrowserUtils, I18n } from "../utils";
-import { FilterMetadata } from "../schemas";
-import { notifier, NotifierEventType } from "../notifier";
-import { Logger } from "../logger";
+import { Network } from '../network';
+import { Storage } from '../storage';
+import { MetadataApi } from './metadata';
+import { VersionsApi } from './versions';
+import { FilterRulesApi } from './rules';
+import { BrowserUtils, I18n } from '../utils';
+import { FilterMetadata } from '../schemas';
+import { notifier, NotifierEventType } from '../notifier';
+import { Logger } from '../logger';
 
 /**
  * Filter Api provides methods for managing filters data
@@ -72,13 +72,11 @@ export class FiltersApi {
      * @param filterIds - list of filter ids
      * @returns filters data for {@link TsWebExtension} configuration
      */
-    public async getFilters(filterIds: number[]): Promise<
-        {
-            content: string;
-            filterId: number;
-            trusted: boolean;
-        }[]
-    > {
+    public async getFilters(filterIds: number[]): Promise<{
+        content: string;
+        filterId: number;
+        trusted: boolean;
+    }[]> {
         const tasks = filterIds.map((id) => this.getFilter(id));
 
         return Promise.all(tasks);
@@ -106,7 +104,7 @@ export class FiltersApi {
 
         return {
             filterId,
-            content: (rules || []).join("\n"),
+            content: (rules || []).join('\n'),
             trusted: true,
         };
     }
@@ -123,7 +121,7 @@ export class FiltersApi {
      * @returns List of outdated filters ids.
      */
     public async updateFilters(): Promise<number[]> {
-        this.logger.info("Update filters");
+        this.logger.info('Update filters');
         /**
          * Reload filters metadata from backend for correct
          * version matching on update check.
@@ -171,8 +169,8 @@ export class FiltersApi {
         const promises = await Promise.allSettled(tasks);
         // Handles errors
         promises.forEach((promise) => {
-            if (promise.status === "rejected") {
-                this.logger.error("Cannot remove obsoleted filter from storage due to: ", promise.reason);
+            if (promise.status === 'rejected') {
+                this.logger.error('Cannot remove obsoleted filter from storage due to: ', promise.reason);
             }
         });
 

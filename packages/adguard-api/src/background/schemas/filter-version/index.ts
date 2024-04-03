@@ -19,4 +19,4 @@
 // Filter version schema entry point
 
 // Filter version validators and types
-export * from "./filter-version";
+export * from './filter-version';

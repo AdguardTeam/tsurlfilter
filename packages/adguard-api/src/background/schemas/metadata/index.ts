@@ -19,13 +19,13 @@
 // Metadata schema entry point
 
 // Metadata runtime validator and types
-export * from "./metadata";
+export * from './metadata';
 
 // Filter metadata item runtime validator and types
-export * from "./filter";
+export * from './filter';
 
 // Filter tag metadata item runtime validator and types
-export * from "./tag";
+export * from './tag';
 
 // Filter group metadata item runtime validator and types
-export * from "./group";
+export * from './group';

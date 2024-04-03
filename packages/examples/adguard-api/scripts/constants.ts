@@ -1,13 +1,15 @@
-import path from "path";
+import path from 'path';
 
-export const BUILD_PATH = path.join(__dirname, "../build");
+export const BUILD_PATH = path.join(__dirname, '../build/extension');
 
-export const WEB_ACCESSIBLE_RESOURCES_PATH = path.join(__dirname, "../build/adguard");
+export const BUILD_ZIP_FILE_NAME = 'extension.zip';
 
-export const BACKGROUND_PATH = path.join(__dirname, "../extension/pages/background");
+export const WEB_ACCESSIBLE_RESOURCES_PATH = path.join(__dirname, '../build/extension/adguard');
 
-export const CONTENT_SCRIPT = path.join(__dirname, "../extension/pages/content-script");
+export const BACKGROUND_PATH = path.join(__dirname, '../extension/pages/background');
 
-export const ASSISTANT_INJECT = path.join(__dirname, "../extension/pages/assistant-inject");
+export const CONTENT_SCRIPT = path.join(__dirname, '../extension/pages/content-script');
 
-export const POPUP_PATH = path.join(__dirname, "../extension/pages/popup");
+export const ASSISTANT_INJECT = path.join(__dirname, '../extension/pages/assistant-inject');
+
+export const POPUP_PATH = path.join(__dirname, '../extension/pages/popup');

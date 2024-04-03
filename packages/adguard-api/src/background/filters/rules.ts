@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Storage } from "../storage";
+import { Storage } from '../storage';
 
 /**
  * Api for write and read filters rules from extension storage
