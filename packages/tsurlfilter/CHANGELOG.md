@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased
+
+### Added
+- Ability to allowlist scriptlets by name [#377].
+
+[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+
 ## [2.2.19] - 2024-04-03
 
 ### Added
@@ -15,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simple support of `$header` modifier — just for compiler validation.
 
 [2.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.19
-
 
 ## [2.2.18] - 2024-03-29
 

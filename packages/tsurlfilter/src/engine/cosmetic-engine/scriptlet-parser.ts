@@ -1,8 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-classes-per-file */
+/**
+ * Represents scriptlet properties parsed from the rule content.
+ */
+export type ScriptletsProps = {
+    name: string;
+    args: string[],
+};
+
 /**
  * Scriptlets helper class
  */
-// eslint-disable-next-line max-classes-per-file
 export class ScriptletParser {
     /**
      * Helper class to accumulate an array of strings char by char
@@ -130,11 +137,20 @@ export class ScriptletParser {
     };
 
     /**
-     * Parse and validate scriptlet rule
-     * @param {*} ruleContent
-     * @returns {{name: string, args: Array<string>}}
+     * Parses and validates scriptlet rule content
+     * @param scriptletContent scriptlet rule content, all after "//scriptlet"
+     *
+     * @returns parsed name and args
+     * @throws Error if the scriptlet is invalid
      */
-    public static parseRule(ruleContent: string): { name: string; args: string[] } {
+    public static parseRule(scriptletContent: string): ScriptletsProps {
+        // Special case for allowlist scriptlets
+        if (scriptletContent === '()') {
+            return {
+                name: '',
+                args: [],
+            };
+        }
         const transitions = {
             [ScriptletParser.TRANSITION.OPENED]: ScriptletParser.opened,
             [ScriptletParser.TRANSITION.PARAM]: ScriptletParser.param,
@@ -145,20 +161,26 @@ export class ScriptletParser {
         const saver = new ScriptletParser.WordSaver();
 
         const state = ScriptletParser.iterateWithTransitions(
-            ruleContent,
+            scriptletContent,
             transitions,
             ScriptletParser.TRANSITION.OPENED,
             { sep, saver },
         );
 
         if (state !== 'closed') {
-            throw new Error(`Invalid scriptlet ${ruleContent}`);
+            throw new Error(`Invalid scriptlet ${scriptletContent}`);
         }
 
-        const args = saver.getAll();
+        const [name, ...args] = saver.getAll();
+
+        // If there is no name, it means that the scriptlet is invalid
+        if (!name) {
+            throw new Error(`Invalid scriptlet ${scriptletContent}`);
+        }
+
         return {
-            name: args[0],
-            args: args.slice(1),
+            name,
+            args,
         };
     }
 }

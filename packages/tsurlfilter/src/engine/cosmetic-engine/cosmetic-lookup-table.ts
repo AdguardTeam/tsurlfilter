@@ -54,16 +54,39 @@ export class CosmeticLookupTable {
     }
 
     /**
+     * Adds rule to the allowlist map
+     * @param key Can be used any string, but here we use ruleContent, scriptlet content, or scriptlet name.
+     * @param storageIdx Index of the rule.
+     */
+    addAllowlistRule(key: string, storageIdx: number): void {
+        const existingRules = this.allowlist.get(key);
+        if (!existingRules) {
+            this.allowlist.set(key, [storageIdx]);
+            return;
+        }
+        existingRules.push(storageIdx);
+    }
+
+    /**
      * Adds rule to the appropriate collection
      * @param rule
      * @param storageIdx
      */
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
-            const key = rule.getContent();
-            const existingRules = this.allowlist.get(key) || [] as number[];
-            existingRules.push(storageIdx);
-            this.allowlist.set(key, existingRules);
+            if (rule.isScriptlet) {
+                // Store scriptlet rules by name to enable the possibility of allowlisting them.
+                // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
+                if (rule.scriptletParams.name !== undefined) {
+                    this.addAllowlistRule(rule.scriptletParams.name, storageIdx);
+                }
+                // Use normalized scriptlet content for better matching.
+                // For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
+                this.addAllowlistRule(rule.scriptletParams.toString(), storageIdx);
+            } else {
+                // Store all other rules by their content.
+                this.addAllowlistRule(rule.getContent(), storageIdx);
+            }
             return;
         }
 
@@ -96,7 +119,6 @@ export class CosmeticLookupTable {
     /**
      * Finds rules by hostname
      * @param request
-     * @param subdomains
      */
     findByHostname(request: Request): CosmeticRule[] {
         const result = [] as CosmeticRule[];
@@ -123,11 +145,60 @@ export class CosmeticLookupTable {
     }
 
     /**
+     * Checks if a scriptlet is allowlisted for a request. It looks up the scriptlet by name in the
+     * allowlistScriptlets map and evaluates two conditions:
+     * 1. If there's a generic allowlist rule applicable to all sites.
+     * 2. If there's a specific allowlist rule that matches the request.
+     *
+     * @param name Name of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
+     * @param request Request details to match against allowlist rules.
+     * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
+     */
+    isScriptletAllowlistedByName = (name: string, request: Request) => {
+        // check for rules with names
+        const allowlistScriptletRulesIndexes = this.allowlist.get(name);
+        if (allowlistScriptletRulesIndexes) {
+            const rules = allowlistScriptletRulesIndexes
+                .map((i) => {
+                    return this.ruleStorage.retrieveRule(i) as CosmeticRule;
+                })
+                .filter((r) => r);
+            // here we check if there is at least one generic allowlist rule
+            const hasAllowlistGenericScriptlet = rules.some((r) => {
+                return r.isGeneric();
+            });
+            if (hasAllowlistGenericScriptlet) {
+                return true;
+            }
+            // here we check if there is at least one allowlist rule that matches the request
+            const hasRuleMatchingRequest = rules.some((r) => r.match(request));
+            if (hasRuleMatchingRequest) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
      * Checks if the rule is disabled on the specified hostname.
      * @param request
      * @param rule
      */
     isAllowlisted(request: Request, rule: CosmeticRule): boolean {
+        if (rule.isScriptlet) {
+            // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
+            // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();
+            const EMPTY_SCRIPTLET_NAME = '';
+            if (this.isScriptletAllowlistedByName(EMPTY_SCRIPTLET_NAME, request)) {
+                return true;
+            }
+
+            if (rule.scriptletParams.name !== undefined
+                && this.isScriptletAllowlistedByName(rule.scriptletParams.name, request)) {
+                return true;
+            }
+        }
+
         const rulesIndexes = this.allowlist.get(rule.getContent());
         if (!rulesIndexes) {
             return false;
