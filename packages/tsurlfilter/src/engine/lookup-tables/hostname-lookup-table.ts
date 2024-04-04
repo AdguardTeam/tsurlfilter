@@ -14,11 +14,6 @@ import { U32LinkedList } from '../../utils/u32-linked-list';
  */
 export class HostnameLookupTable implements ILookupTable {
     /**
-     * Count of rules added to this lookup table.
-     */
-    private rulesCount = 0;
-
-    /**
      * Domain lookup table. Key is the domain name hash.
      */
     private hostnameLookupTable = new Map<number, number>();
@@ -38,6 +33,16 @@ export class HostnameLookupTable implements ILookupTable {
      */
     declare private binaryMapPosition: number;
 
+    declare private ruleCountPosition: number;
+
+    private get rulesCount(): number {
+        return this.byteBuffer.getUint32(this.ruleCountPosition);
+    }
+
+    private set rulesCount(value: number) {
+        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+    }
+
     /**
      * Creates a new instance
      *
@@ -47,6 +52,7 @@ export class HostnameLookupTable implements ILookupTable {
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
+        this.pushRulesCountToBuffer();
     }
 
     /**
@@ -100,9 +106,7 @@ export class HostnameLookupTable implements ILookupTable {
         return true;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     */
+    /** @inheritdoc */
     getRulesCount(): number {
         return this.rulesCount;
     }
@@ -158,5 +162,10 @@ export class HostnameLookupTable implements ILookupTable {
 
     finalize() {
         this.binaryMapPosition = BinaryMap.create(this.hostnameLookupTable, this.byteBuffer);
+    }
+
+    private pushRulesCountToBuffer() {
+        this.ruleCountPosition = this.byteBuffer.byteOffset;
+        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
     }
 }

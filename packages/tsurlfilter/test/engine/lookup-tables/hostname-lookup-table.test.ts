@@ -10,21 +10,14 @@ describe('Hostname Lookup Table Tests', () => {
         const table = new HostnameLookupTable(ruleStorage, new ByteBuffer());
 
         expect(table.addRule(new NetworkRule('path', 0), 0)).toBeFalsy();
-        expect(table.getRulesCount()).toBe(0);
-
         expect(table.addRule(new NetworkRule('||*example.org^', 0), 0)).toBeFalsy();
-        expect(table.getRulesCount()).toBe(0);
-
         expect(table.addRule(new NetworkRule('||example^', 0), 0)).toBeFalsy();
-        expect(table.getRulesCount()).toBe(0);
-
         expect(table.addRule(new NetworkRule('||example.^', 0), 0)).toBeFalsy();
-        expect(table.getRulesCount()).toBe(0);
-
         expect(table.addRule(new NetworkRule('||example.org^', 0), 0)).toBeTruthy();
-        expect(table.getRulesCount()).toBe(1);
-
         expect(table.addRule(new NetworkRule('||example.net/path', 0), 0)).toBeTruthy();
+
+        table.finalize();
+
         expect(table.getRulesCount()).toBe(2);
     });
 

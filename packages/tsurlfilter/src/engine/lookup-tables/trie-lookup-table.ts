@@ -13,11 +13,6 @@ import { BinaryTrie } from '../../utils/binary-trie';
  */
 export class TrieLookupTable implements ILookupTable {
     /**
-     * Count of rules added to this lookup table.
-     */
-    private rulesCount = 0;
-
-    /**
      * Storage for the network filtering rules
      */
     declare private readonly ruleStorage: RuleStorage;
@@ -31,6 +26,16 @@ export class TrieLookupTable implements ILookupTable {
      */
     private trie: TrieNode;
 
+    declare private ruleCountPosition: number;
+
+    private get rulesCount(): number {
+        return this.byteBuffer.getUint32(this.ruleCountPosition);
+    }
+
+    private set rulesCount(value: number) {
+        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+    }
+
     /**
      * Creates a new instance of the TrieLookupTable.
      *
@@ -41,6 +46,7 @@ export class TrieLookupTable implements ILookupTable {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
         this.trie = new TrieNode(0);
+        this.pushRulesCountToBuffer();
     }
 
     /**
@@ -74,9 +80,7 @@ export class TrieLookupTable implements ILookupTable {
         return true;
     }
 
-    /**
-     * @return total rules count
-     */
+    /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount;
     }
@@ -114,6 +118,11 @@ export class TrieLookupTable implements ILookupTable {
         }
 
         return result;
+    }
+
+    private pushRulesCountToBuffer() {
+        this.ruleCountPosition = this.byteBuffer.byteOffset;
+        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
     }
 
     /**

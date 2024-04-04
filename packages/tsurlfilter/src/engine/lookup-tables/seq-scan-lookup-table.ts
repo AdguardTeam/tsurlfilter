@@ -11,16 +11,21 @@ import { RuleStorageScanner } from '../../filterlist/scanner/rule-storage-scanne
  * In common case of rule there is always a way to just check a rule.match().
  */
 export class SeqScanLookupTable implements ILookupTable {
-    /**
-     * Count of rules added to this lookup table.
-     */
-    private rulesCount = 0;
-
     declare private readonly ruleStorage: RuleStorage;
 
     declare private readonly byteBuffer: ByteBuffer;
 
     declare private readonly storageIndexesPosition: number;
+
+    declare private ruleCountPosition: number;
+
+    private get rulesCount(): number {
+        return this.byteBuffer.getUint32(this.ruleCountPosition);
+    }
+
+    private set rulesCount(value: number) {
+        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+    }
 
     /**
      * Creates a new instance
@@ -31,6 +36,7 @@ export class SeqScanLookupTable implements ILookupTable {
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
+        this.pushRulesCountToBuffer();
         this.storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
     }
 
@@ -60,9 +66,7 @@ export class SeqScanLookupTable implements ILookupTable {
         return true;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     */
+    /** @inheritdoc */
     getRulesCount(): number {
         return this.rulesCount;
     }
@@ -86,5 +90,10 @@ export class SeqScanLookupTable implements ILookupTable {
         }, this.byteBuffer, this.storageIndexesPosition);
 
         return result;
+    }
+
+    private pushRulesCountToBuffer() {
+        this.ruleCountPosition = this.byteBuffer.byteOffset;
+        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
     }
 }

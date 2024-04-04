@@ -17,7 +17,12 @@ export class NetworkEngine {
     /**
      * Count of rules added to the engine
      */
-    public rulesCount: number;
+    public get rulesCount(): number {
+        return this.domainsLookupTable.getRulesCount()
+        + this.hostnameLookupTable.getRulesCount()
+        + this.shortcutsLookupTable.getRulesCount()
+        + this.seqScanLookupTable.getRulesCount();
+    }
 
     /**
      * Storage for the network filtering rules
@@ -54,7 +59,6 @@ export class NetworkEngine {
      */
     constructor(storage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
         this.ruleStorage = storage;
-        this.rulesCount = 0;
 
         this.byteBuffer = buffer;
         this.domainsLookupTable = new DomainsLookupTable(storage, this.byteBuffer);
@@ -126,8 +130,6 @@ export class NetworkEngine {
                 }
             }
         }
-
-        this.rulesCount += 1;
     }
 
     public finalize(): void {

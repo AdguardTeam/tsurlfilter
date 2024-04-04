@@ -24,6 +24,7 @@ export interface ILookupTable {
     addRule(rule: NetworkRule, storageIdx: number): boolean;
 
     /**
+     * Count of rules added to this lookup table.
      * @return total rules count
      */
     getRulesCount(): number;
