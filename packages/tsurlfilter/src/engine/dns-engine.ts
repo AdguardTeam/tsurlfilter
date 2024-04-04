@@ -18,10 +18,15 @@ import type { ByteBuffer } from '../utils/byte-buffer';
  * Then, if nothing found, it looks up the host rules.
  */
 export class DnsEngine {
-    /**
-     * Count of rules added to the engine
-     */
-    public rulesCount: number;
+    declare private ruleCountPosition: number;
+
+    private get rulesCount(): number {
+        return this.byteBuffer.getUint32(this.ruleCountPosition);
+    }
+
+    private set rulesCount(value: number) {
+        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+    }
 
     /**
      * Storage
@@ -57,13 +62,14 @@ export class DnsEngine {
      * Builds an instance of dns engine
      *
      * @param storage
+     * @param buffer
      */
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
-        this.rulesCount = 0;
         this.lookupTable = new Map<number, number>();
 
         this.byteBuffer = buffer;
+        this.pushRulesCountToBuffer();
         this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
         this.networkEngine = new NetworkEngine(storage, this.byteBuffer, true);
 
@@ -129,6 +135,11 @@ export class DnsEngine {
     public finalize(): void {
         this.networkEngine.finalize();
         this.binaryMapPosition = BinaryMap.create(this.lookupTable, this.byteBuffer);
+    }
+
+    private pushRulesCountToBuffer() {
+        this.ruleCountPosition = this.byteBuffer.byteOffset;
+        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
     }
 
     /**
