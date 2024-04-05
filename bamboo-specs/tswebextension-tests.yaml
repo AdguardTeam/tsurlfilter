@@ -48,12 +48,12 @@ Test:
 
             # Run NX CLI to find projects changed since the master branch and check if the specified project is affected.
             # And store grep exit status to determine if the project was found (0) or not (1).
-            is_affected=$(pnpm dlx nx show projects --affected --select=projects --base=master --head=HEAD | grep -q "@adguard/tswebextension"; echo $?)
+            is_affected=$(pnpm dlx nx show projects --affected --select=projects --base=master --head=HEAD | grep -q "@adguard/tswebextension" && echo true || echo false)
 
             branch="${bamboo.planRepository.branchName}"
 
             # If not on 'master' and the project is not affected, skip tests for it.
-            if [ "$branch" != "master" ] && [ "$is_affected" -ne 0 ]; then
+            if [ "$branch" != "master" ] && [ "$is_affected" = false ]; then
               echo "No changes in project, skipping tests"
               exit 0;
             fi
