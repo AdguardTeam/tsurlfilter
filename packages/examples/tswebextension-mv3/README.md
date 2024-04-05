@@ -20,7 +20,7 @@ pnpm build
 
 ### <a id="precompile"></a> Precompile declarative rules
 
-Updates and converts rules from provided path to a set of declarative rules:
+Updates and converts rules from the provided path to a set of declarative rules:
 
 ```shell
 pnpm build:precompile-rules
