@@ -16,8 +16,8 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import zod from "zod";
-import { SchemaPreprocessor } from "../preprocessor";
+import zod from 'zod';
+import { SchemaPreprocessor } from '../preprocessor';
 
 /**
  * Runtime validator for persistent filter version data

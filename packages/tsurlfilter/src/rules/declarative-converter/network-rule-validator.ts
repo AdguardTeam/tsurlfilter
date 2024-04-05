@@ -296,6 +296,8 @@ export class NetworkRuleDeclarativeValidator {
         Header: { name: '$cookie', notSupported: true },
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },
+        Permissions: { name: '$permissions', notSupported: true },
+        Header: { name: '$header', notSupported: true },
         // Will not be supported.
         Replace: { name: '$replace', notSupported: true },
         JsonPrune: { name: '$jsonprune', notSupported: true },

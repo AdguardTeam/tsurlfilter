@@ -1,18 +1,21 @@
 import browser, { Events } from 'webextension-polyfill';
-import { TsWebExtension, ConfigurationMV2, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
+import {
+    type ConfigurationMV2,
+    MESSAGE_HANDLER_NAME,
+    createTsWebExtension,
+} from '@adguard/tswebextension';
 
 import { MessageTypes } from '../common/message-types';
 import { BuildOutput } from '../../../constants';
 
-const tsWebExtension = new TsWebExtension('war');
+const tsWebExtension = createTsWebExtension('war');
 
 /*
  * Need for access tsWebExtension instance form browser auto test tool
  */
-
 declare global {
     interface Window {
-        tsWebExtension: TsWebExtension;
+        tsWebExtension: typeof tsWebExtension;
     }
 }
 
@@ -47,6 +50,8 @@ const defaultConfig: ConfigurationMV2 = {
     },
 };
 
+tsWebExtension.initStorage();
+
 tsWebExtension.start(defaultConfig);
 
 tsWebExtension.onFilteringLogEvent.subscribe(console.log);
@@ -55,7 +60,9 @@ tsWebExtension.onAssistantCreateRule.subscribe((rule) => console.log(`assistant 
 
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (browser.runtime.onMessage as Events.Event<(...args: any[]) => void>).addListener((message, sender, sendResponse) => {
+
     if (message.handlerName === MESSAGE_HANDLER_NAME) {
         return tsWebExtensionMessageHandler(message, sender);
     }

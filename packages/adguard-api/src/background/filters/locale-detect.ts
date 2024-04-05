@@ -16,13 +16,13 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import browser, { Tabs } from "webextension-polyfill";
-import { isHttpRequest, getDomain } from "@adguard/tswebextension";
+import browser, { Tabs } from 'webextension-polyfill';
+import { isHttpRequest, getDomain } from '@adguard/tswebextension';
 
-import { UserAgent } from "../utils";
-import { Configuration } from "../schemas";
-import { FiltersApi } from "./api";
-import { notifier, NotifierEventType } from "../notifier";
+import { UserAgent } from '../utils';
+import { Configuration } from '../schemas';
+import { FiltersApi } from './api';
+import { notifier, NotifierEventType } from '../notifier';
 
 export type BrowsingLanguage = {
     language: string;
@@ -48,67 +48,67 @@ export class LocaleDetectService {
     // Page locale to filter language data mapping
     private static domainToLanguagesMap: Record<string, string> = {
         // Russian
-        ru: "ru",
-        ua: "ru",
-        by: "ru",
-        kz: "ru",
+        ru: 'ru',
+        ua: 'ru',
+        by: 'ru',
+        kz: 'ru',
         // English
-        com: "en",
-        au: "en",
-        uk: "en",
-        nz: "en",
+        com: 'en',
+        au: 'en',
+        uk: 'en',
+        nz: 'en',
         // German
-        de: "de",
-        at: "de",
+        de: 'de',
+        at: 'de',
         // Japanese
-        jp: "ja",
+        jp: 'ja',
         // Dutch
-        nl: "nl",
+        nl: 'nl',
         // French
-        fr: "fr",
+        fr: 'fr',
         // Spanish
-        es: "es",
+        es: 'es',
         // Italian
-        it: "it",
+        it: 'it',
         // Portuguese
-        pt: "pt",
+        pt: 'pt',
         // Polish
-        pl: "pl",
+        pl: 'pl',
         // Czech
-        cz: "cs",
+        cz: 'cs',
         // Bulgarian
-        bg: "bg",
+        bg: 'bg',
         // Lithuanian
-        lt: "lt",
+        lt: 'lt',
         // Latvian
-        lv: "lv",
+        lv: 'lv',
         // Arabic
-        eg: "ar",
-        dz: "ar",
-        kw: "ar",
-        ae: "ar",
+        eg: 'ar',
+        dz: 'ar',
+        kw: 'ar',
+        ae: 'ar',
         // Slovakian
-        sk: "sk",
+        sk: 'sk',
         // Romanian
-        ro: "ro",
+        ro: 'ro',
         // Suomi
-        fi: "fi",
+        fi: 'fi',
         // Icelandic
-        is: "is",
+        is: 'is',
         // Norwegian
-        no: "no",
+        no: 'no',
         // Greek
-        gr: "el",
+        gr: 'el',
         // Hungarian
-        hu: "hu",
+        hu: 'hu',
         // Hebrew
-        il: "he",
+        il: 'he',
         // Chinese
-        cn: "zh",
+        cn: 'zh',
         // Indonesian
-        id: "id",
+        id: 'id',
         // Turkish
-        tr: "tr",
+        tr: 'tr',
     };
 
     // Memory storage for language hits
@@ -156,7 +156,7 @@ export class LocaleDetectService {
      * @param tab - Tab details record
      */
     private onTabUpdated(_tabId: number, _changeInfo: Tabs.OnUpdatedChangeInfoType, tab: Tabs.Tab): void {
-        if (tab.status === "complete") {
+        if (tab.status === 'complete') {
             this.detectTabLanguage(tab);
         }
     }
@@ -168,9 +168,9 @@ export class LocaleDetectService {
      */
     private async detectTabLanguage(tab: Tabs.Tab): Promise<void> {
         if (
-            !tab.url ||
+            !tab.url
             // Check language only for http://... tabs
-            !isHttpRequest(tab.url)
+            || !isHttpRequest(tab.url)
         ) {
             return;
         }
@@ -195,7 +195,7 @@ export class LocaleDetectService {
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1354
         const host = getDomain(tab.url);
         if (host && host.length > 8) {
-            const parts = host.split(".");
+            const parts = host.split('.');
             const tld = parts.at(-1);
 
             if (!tld) {
@@ -224,7 +224,7 @@ export class LocaleDetectService {
          * For an unknown language "und" will be returned
          * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/tabs/detectLanguage
          */
-        if (!language || language === "und") {
+        if (!language || language === 'und') {
             return;
         }
 

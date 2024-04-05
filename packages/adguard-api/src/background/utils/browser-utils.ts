@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Version } from "./version";
+import { Version } from './version';
 
 /**
  * Helper class for working with browser extension context

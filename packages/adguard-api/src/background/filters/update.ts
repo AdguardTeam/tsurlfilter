@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { FiltersApi } from "./api";
+import { FiltersApi } from './api';
 
 /**
  *  Service for scheduling filters rules updates

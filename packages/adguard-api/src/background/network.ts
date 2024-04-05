@@ -16,10 +16,10 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import FiltersDownloader, { type DefinedExpressions } from "@adguard/filters-downloader/browser";
+import { FiltersDownloader, type DefinedExpressions } from '@adguard/filters-downloader/browser';
 
-import { UserAgent } from "./utils";
-import { metadataValidator, Metadata, Configuration } from "./schemas";
+import { UserAgent } from './utils';
+import { metadataValidator, Metadata, Configuration } from './schemas';
 
 /**
  * Network requests API
@@ -64,10 +64,10 @@ export class Network {
      */
     public async downloadFilterRules(filterId: number): Promise<string[]> {
         if (!this.filterRulesUrl) {
-            throw new Error("filterRulesUrl option is not set");
+            throw new Error('filterRulesUrl option is not set');
         }
 
-        const url = this.filterRulesUrl.replace("{filter_id}", String(filterId));
+        const url = this.filterRulesUrl.replace('{filter_id}', String(filterId));
 
         return FiltersDownloader.download(url, this.filterCompilerConditionsConstants);
     }
@@ -80,7 +80,7 @@ export class Network {
      */
     public async downloadFiltersMetadata(): Promise<Metadata> {
         if (!this.filtersMetadataUrl) {
-            throw new Error("filtersMetadataUrl option is not set");
+            throw new Error('filtersMetadataUrl option is not set');
         }
 
         const response = await fetch(this.filtersMetadataUrl);
