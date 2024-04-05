@@ -69,9 +69,9 @@ AdGuard API is a filtering library that provides the following features:
   import '@adguard/api/assistant';
   ```
 
-### Required web accessible resources
+### Required web-accessible resources
 
-AdGuard API requires [web accessible resources][webaccessibleresources] from the
+AdGuard API requires [web-accessible resources][webaccessibleresources] from the
 [AdGuard Scriptlets library][scriptletsredirectres] to be able to redirect web
 requests to a local "resource" using the `$redirect` rule modifier. You can use
 [@adguard/tswebextension CLI][tswebextensionusage] to download it.
