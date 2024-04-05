@@ -84,9 +84,15 @@ Test:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
-            pnpm clean
-  
-            echo "Size after cleanup:" && du -h | tail -n 1
+            # Assign a boolean-like value based on whether 'pnpm list' outputs something
+            packages_installed=$(pnpm list | grep -q '.' && echo "true" || echo "false")
+
+            if [ "$packages_installed" = "true" ]; then
+              pnpm clean
+              echo "Size after cleanup:" && du -h | tail -n 1
+            else
+              echo "node_modules not installed, skipping cleanup."
+            fi
   requirements:
     - adg-docker: 'true'
 
