@@ -4,7 +4,7 @@ This is a sample extension, presenting common usages of TSWebExtension library i
 
 ## <a id="idea"></a> Idea
 
-The idea is to provide an operative scheme of extension and to show some cases with manifest v3 limitations:
+The idea is to provide an operative scheme of the extension and to show some cases with manifest v3 limitations:
 
 - Precompile rules to json [See more](#precompile)
 
