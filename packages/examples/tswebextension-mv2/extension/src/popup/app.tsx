@@ -1,37 +1,37 @@
-import React, { useEffect, useState } from 'react'
-import { Formik } from 'formik'
+import React, { useEffect, useState } from 'react';
+import { Formik } from 'formik';
 
-import { MessageTypes } from '../common/message-types'
+import { MessageTypes } from '../common/message-types';
 
-import './app.css'
+import './app.css';
 
-const rulesArrayToText = (arr: string[]): string => arr.join('\n')
-const rulesTextToArray = (text: string): string[] => text.trim().split('\n').filter(el => el !== '')
+const rulesArrayToText = (arr: string[]): string => arr.join('\n');
+const rulesTextToArray = (text: string): string[] => text.trim().split('\n').filter(el => el !== '');
 
 export function App() {
     const [formValue, setFormValue] = useState({
-        userrules: "",
-        allowlist: "",
-    })
+        userrules: '',
+        allowlist: '',
+    });
 
     useEffect(() => {
         chrome.runtime.sendMessage({
             type: MessageTypes.GET_CONFIG,
         }, (response) => {
-            if(response?.payload){
-                const { userrules, allowlist } = response.payload
+            if (response?.payload) {
+                const { userrules, allowlist } = response.payload;
 
                 setFormValue({
                     userrules: rulesArrayToText(userrules),
                     allowlist: rulesArrayToText(allowlist),
-                })
+                });
             }
-        })
+        });
     }, []);
 
     const handleOpenAssistant = () => {
         chrome.runtime.sendMessage({
-            type: MessageTypes.OPEN_ASSISTANT
+            type: MessageTypes.OPEN_ASSISTANT,
         });
 
         return false;
@@ -39,7 +39,7 @@ export function App() {
 
     const handleCloseAssistant = () => {
         chrome.runtime.sendMessage({
-            type: MessageTypes.CLOSE_ASSISTANT
+            type: MessageTypes.CLOSE_ASSISTANT,
         });
 
         return false;
@@ -53,15 +53,15 @@ export function App() {
                 const payload = {
                     userrules: rulesTextToArray(values.userrules),
                     allowlist: rulesTextToArray(values.allowlist),
-                }
+                };
                 chrome.runtime.sendMessage({
                     type: MessageTypes.SET_CONFIG,
                     payload,
                 }, (response) => {
                     if (response?.type === MessageTypes.SET_CONFIG_FAIL) {
-                        alert(response?.payload)
+                        alert(response?.payload);
                     }
-                })
+                });
             }}
         >
             {({
@@ -98,5 +98,5 @@ export function App() {
                 </form>
             )}
         </Formik>
-    )
+    );
 }

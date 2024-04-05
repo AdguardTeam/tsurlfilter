@@ -3,7 +3,7 @@ version: 2
 plan:
   project-key: AJL
   key: AGAPIEXTEST
-  name: adguard-api-example - tests
+  name: examples-adguard-api - tests
 variables:
   dockerContainer: adguard/node-ssh:18.19--0
 
