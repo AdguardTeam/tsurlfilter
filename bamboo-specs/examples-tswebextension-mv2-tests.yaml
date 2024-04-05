@@ -41,11 +41,11 @@ Test:
             # Install deps
             pnpm install
 
+            # First build since we need dependencies
+            npx lerna run build --scope tswebextension-mv2 --include-dependencies
+
             # Lint
             pnpm --filter tswebextension-mv2 lint
-
-            # Build, and after that test
-            npx lerna run build --scope tswebextension-mv2 --include-dependencies
 
 #            # Test
 #            # TODO: fail if tests are not passing
