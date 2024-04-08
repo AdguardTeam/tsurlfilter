@@ -1,14 +1,39 @@
-import { type AnyRule, type FilterList, type NewLine } from './common';
+/* eslint-disable no-param-reassign */
+import {
+    BinaryTypeMap,
+    type AnyRule,
+    type FilterList,
+    type NewLine,
+} from './common';
 import { RuleParser } from './rule';
 import {
     CR,
     CRLF,
     EMPTY,
     LF,
+    NULL,
 } from '../utils/constants';
 import { StringUtils } from '../utils/string';
 import { defaultParserOptions } from './options';
 import { ParserBase } from './interface';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { isUndefined } from '../utils/type-guards';
+import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum FilterListNodeSerializationMap {
+    Children = 1,
+    Start,
+    End,
+}
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
@@ -149,5 +174,72 @@ export class FilterListParser extends ParserBase {
         }
 
         return result;
+    }
+
+    /**
+     * Serializes a filter list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.FilterListNode);
+
+        buffer.writeUint8(FilterListNodeSerializationMap.Children);
+        const count = node.children.length;
+        buffer.writeUint32(count);
+        for (let i = 0; i < count; i += 1) {
+            RuleParser.serialize(node.children[i], buffer);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(FilterListNodeSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(FilterListNodeSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a filter list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<FilterList>): void {
+        buffer.assertUint8(BinaryTypeMap.FilterListNode);
+
+        node.type = 'FilterList';
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case FilterListNodeSerializationMap.Children:
+                    node.children = new Array(buffer.readUint32());
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        RuleParser.deserialize(buffer, node.children[i] = {} as AnyRule);
+                    }
+                    break;
+
+                case FilterListNodeSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case FilterListNodeSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+
+            prop = buffer.readUint8();
+        }
     }
 }

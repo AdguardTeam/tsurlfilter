@@ -17,6 +17,10 @@ import { ParameterListParser } from '../../misc/parameter-list';
 import { type ScriptletInjectionRuleBody } from '../../common';
 import { defaultParserOptions } from '../../options';
 import { ParserBase } from '../../interface';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
+import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
 
 /**
  * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
@@ -43,6 +47,72 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
         WHITESPACE_AFTER_MASK: 'Invalid ADG scriptlet call, whitespace is not allowed after the scriptlet call mask',
         NO_MULTIPLE_SCRIPTLET_CALLS: 'ADG syntaxes does not support multiple scriptlet calls within one single rule',
     };
+
+    /**
+     * Value map for binary serialization. This helps to reduce the size of the serialized data,
+     * as it allows us to use a single byte to represent frequently used values.
+     *
+     * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+     *
+     * @note Only 256 values can be represented this way.
+     */
+    private static readonly FREQUENT_ARGS_SERIALIZATION_MAP = new Map<string, number>([
+        ['abort-current-inline-script', 0],
+        ['abort-on-property-read', 1],
+        ['abort-on-property-write', 2],
+        ['abort-on-stack-trace', 3],
+        ['adjust-setInterval', 4],
+        ['adjust-setTimeout', 5],
+        ['close-window', 6],
+        ['debug-current-inline-script', 7],
+        ['debug-on-property-read', 8],
+        ['debug-on-property-write', 9],
+        ['dir-string', 10],
+        ['disable-newtab-links', 11],
+        ['evaldata-prune', 12],
+        ['json-prune', 13],
+        ['log', 14],
+        ['log-addEventListener', 15],
+        ['log-eval', 16],
+        ['log-on-stack-trace', 17],
+        ['m3u-prune', 18],
+        ['noeval', 19],
+        ['nowebrtc', 20],
+        ['no-topics', 21],
+        ['prevent-addEventListener', 22],
+        ['prevent-adfly', 23],
+        ['prevent-bab', 24],
+        ['prevent-eval-if', 25],
+        ['prevent-fab-3.2.0', 26],
+        ['prevent-fetch', 27],
+        ['prevent-xhr', 28],
+        ['prevent-popads-net', 29],
+        ['prevent-refresh', 30],
+        ['prevent-requestAnimationFrame', 31],
+        ['prevent-setInterval', 32],
+        ['prevent-setTimeout', 33],
+        ['prevent-window-open', 34],
+        ['remove-attr', 35],
+        ['remove-class', 36],
+        ['remove-cookie', 37],
+        ['remove-node-text', 38],
+        ['set-attr', 39],
+        ['set-constant', 40],
+        ['set-cookie', 41],
+        ['set-cookie-reload', 42],
+        ['set-local-storage-item', 43],
+        ['set-popads-dummy', 44],
+        ['set-session-storage-item', 45],
+        ['xml-prune', 46],
+    ]);
+
+    /**
+     * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+     * as it allows us to use a single byte to represent frequently used values.
+     */
+    private static readonly FREQUENT_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+        Array.from(this.FREQUENT_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+    );
 
     /**
      * Parses the body of an AdGuard-style scriptlet rule.
@@ -120,7 +190,7 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
 
         // Allow empty scriptlet call: //scriptlet(),
         // but not allow parameters without scriptlet: //scriptlet(, arg0, arg1)
-        if (params.children.length > 0 && params.children[0].value.trim() === EMPTY) {
+        if (params.children.length > 0 && params.children[0] === null) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
                 baseOffset + offset,
@@ -166,5 +236,26 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
         result.push(CLOSE_PARENTHESIS);
 
         return result.join(EMPTY);
+    }
+
+    /**
+     * Serializes a scriptlet call body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void {
+        serializeScriptletBody(node, buffer, this.FREQUENT_ARGS_SERIALIZATION_MAP);
+    }
+
+    /**
+     * Deserializes a scriptlet call body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
+        deserializeScriptletBody(buffer, node, this.FREQUENT_ARGS_DESERIALIZATION_MAP);
     }
 }

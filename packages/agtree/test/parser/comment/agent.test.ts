@@ -1,6 +1,7 @@
 import { AgentCommentRuleParser } from '../../../src/parser/comment/agent-rule';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('AgentCommentRuleParser', () => {
     test('isAgent', () => {
@@ -51,7 +52,6 @@ describe('AgentCommentRuleParser', () => {
                         end: 8,
                         value: 'AdBlock',
                     },
-                    version: null,
                     syntax: AdblockSyntax.Abp,
                 },
             ],
@@ -74,7 +74,6 @@ describe('AgentCommentRuleParser', () => {
                         end: 8,
                         value: 'AdGuard',
                     },
-                    version: null,
                     syntax: AdblockSyntax.Adg,
                 },
             ],
@@ -97,7 +96,6 @@ describe('AgentCommentRuleParser', () => {
                         end: 7,
                         value: 'uBlock',
                     },
-                    version: null,
                     syntax: AdblockSyntax.Ubo,
                 },
             ],
@@ -121,7 +119,6 @@ describe('AgentCommentRuleParser', () => {
                             end: 14,
                             value: 'uBlock Origin',
                         },
-                        version: null,
                         syntax: AdblockSyntax.Ubo,
                     },
                 ],
@@ -221,7 +218,6 @@ describe('AgentCommentRuleParser', () => {
                         end: 26,
                         value: 'AdGuard',
                     },
-                    version: null,
                     syntax: AdblockSyntax.Adg,
                 },
             ],
@@ -455,14 +451,15 @@ describe('AgentCommentRuleParser', () => {
                                 type: 'Value',
                                 value: 'AdGuard',
                             },
-                            version: null,
                             syntax: AdblockSyntax.Adg,
                         },
                     ],
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(AgentCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                AgentCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -483,5 +480,22 @@ describe('AgentCommentRuleParser', () => {
         expect(parseAndGenerate('[Adblock Plus 2.0]')).toEqual('[Adblock Plus 2.0]');
         expect(parseAndGenerate('[Adblock Plus 2.0; AdGuard]')).toEqual('[Adblock Plus 2.0; AdGuard]');
         expect(parseAndGenerate('[  Adblock Plus 2.0  ; AdGuard  ]')).toEqual('[Adblock Plus 2.0; AdGuard]');
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '[Adblock Plus 2.0]',
+            '[AdGuard]',
+            '[AdGuard 1.0]',
+            '[Adblock Plus 3.1; AdGuard]',
+
+            // shorthands
+            ['[abp]', '[ABP]'],
+            ['[adg]', '[ADG]'],
+            ['[abp 2.0]', '[ABP 2.0]'],
+            ['[abp 3.1; adguard]', '[ABP 3.1; AdGuard]'],
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(AgentCommentRuleParser);
+        });
     });
 });

@@ -9,6 +9,7 @@ import {
     type Modifier,
     type ModifierList,
 } from '../parser/common';
+import { isNull } from '../utils/type-guards';
 
 /**
  * Clones a scriptlet rule node.
@@ -19,7 +20,7 @@ import {
 export function cloneScriptletRuleNode(node: ParameterList): ParameterList {
     return {
         type: node.type,
-        children: node.children.map((child) => ({ ...child })),
+        children: node.children.map((child) => (isNull(child) ? null : { ...child })),
     };
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
@@ -11,6 +12,7 @@ import {
     COLON,
     DOLLAR_SIGN,
     EMPTY,
+    NULL,
     OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
     SPACE,
@@ -32,6 +34,11 @@ import {
     type ScriptletInjectionRule,
     type JsInjectionRule,
     type HtmlFilteringRule,
+    BinaryTypeMap,
+    SYNTAX_SERIALIZATION_MAP,
+    SYNTAX_DESERIALIZATION_MAP,
+    type ScriptletInjectionRuleBody,
+    type DomainList,
 } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { StringUtils } from '../../utils/string';
@@ -43,6 +50,108 @@ import { AbpSnippetInjectionBodyParser } from './body/abp-snippet';
 import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet';
 import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet';
 import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { ValueParser } from '../misc/value';
+import { isUndefined } from '../../utils/type-guards';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
+    ['##', 0],
+    ['#@#', 1],
+
+    ['#?#', 2],
+    ['#@?#', 3],
+
+    ['#$#', 4],
+    ['#$?#', 5],
+    ['#@$#', 6],
+    ['#@$?#', 7],
+
+    ['#%#', 8],
+    ['#@%#', 9],
+
+    ['$$', 10],
+    ['$@$', 11],
+]);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMap, CosmeticRuleType>([
+    [BinaryTypeMap.ElementHidingRule, CosmeticRuleType.ElementHidingRule],
+    [BinaryTypeMap.CssInjectionRule, CosmeticRuleType.CssInjectionRule],
+    [BinaryTypeMap.ScriptletInjectionRule, CosmeticRuleType.ScriptletInjectionRule],
+    [BinaryTypeMap.JsInjectionRule, CosmeticRuleType.JsInjectionRule],
+    [BinaryTypeMap.HtmlFilteringRule, CosmeticRuleType.HtmlFilteringRule],
+]);
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum ElementHidingRuleSerializationMap {
+    SelectorList = 1,
+    Start,
+    End,
+}
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum CssInjectionRuleSerializationMap {
+    SelectorList = 1,
+    DeclarationList,
+    MediaQueryList,
+    Remove,
+    Start,
+    End,
+}
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum CosmeticRuleSerializationMap {
+    Syntax = 1,
+    Exception,
+    Separator,
+    Modifiers,
+    Domains,
+    Body,
+    Start,
+    End,
+}
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -294,19 +403,21 @@ export class CosmeticRuleParser extends ParserBase {
         //  - If syntax is uBO, but the rule is an AdGuard rule (or vice versa), we need to throw an error
         type RestProps = 'syntax' | 'type' | 'body';
 
-        // TODO: make toggleable
         const raws = {
             text: raw,
         };
 
         const baseRule: Omit<CosmeticRule, RestProps> = {
             category: RuleCategory.Cosmetic,
-            raws,
             exception,
             modifiers,
             domains,
             separator,
         };
+
+        if (options.includeRaws) {
+            baseRule.raws = raws;
+        }
 
         if (options.isLocIncluded) {
             baseRule.start = baseOffset;
@@ -763,5 +874,350 @@ export class CosmeticRuleParser extends ParserBase {
         result += CosmeticRuleParser.generateBody(node);
 
         return result;
+    }
+
+    /**
+     * Serializes an element hiding rule body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    private static serializeElementHidingBody(node: ElementHidingRuleBody, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.ElementHidingRuleBody);
+
+        buffer.writeUint8(ElementHidingRuleSerializationMap.SelectorList);
+        ValueParser.serialize(node.selectorList, buffer);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(ElementHidingRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(ElementHidingRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes an element hiding rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    private static deserializeElementHidingBody(buffer: InputByteBuffer, node: Partial<ElementHidingRuleBody>): void {
+        buffer.assertUint8(BinaryTypeMap.ElementHidingRuleBody);
+
+        node.type = 'ElementHidingRuleBody';
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case ElementHidingRuleSerializationMap.SelectorList:
+                    ValueParser.deserialize(buffer, node.selectorList = {} as Value);
+                    break;
+
+                case ElementHidingRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case ElementHidingRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Unknown property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Serializes a CSS injection rule body node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    private static serializeCssInjectionBody(node: CssInjectionRuleBody, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.CssInjectionRuleBody);
+
+        if (node.mediaQueryList) {
+            buffer.writeUint8(CssInjectionRuleSerializationMap.MediaQueryList);
+            ValueParser.serialize(node.mediaQueryList, buffer);
+        }
+
+        buffer.writeUint8(CssInjectionRuleSerializationMap.SelectorList);
+        ValueParser.serialize(node.selectorList, buffer);
+
+        if (node.declarationList) {
+            buffer.writeUint8(CssInjectionRuleSerializationMap.DeclarationList);
+            ValueParser.serialize(node.declarationList, buffer);
+        }
+
+        if (node.remove) {
+            buffer.writeUint8(CssInjectionRuleSerializationMap.Remove);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(CssInjectionRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(CssInjectionRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes CSS injection rule body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    private static deserializeCssInjectionBody(buffer: InputByteBuffer, node: CssInjectionRuleBody): void {
+        buffer.assertUint8(BinaryTypeMap.CssInjectionRuleBody);
+
+        node.type = 'CssInjectionRuleBody';
+        node.remove = false;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case CssInjectionRuleSerializationMap.MediaQueryList:
+                    ValueParser.deserialize(buffer, node.mediaQueryList = {} as Value);
+                    break;
+
+                case CssInjectionRuleSerializationMap.SelectorList:
+                    ValueParser.deserialize(buffer, node.selectorList = {} as Value);
+                    break;
+
+                case CssInjectionRuleSerializationMap.DeclarationList:
+                    ValueParser.deserialize(buffer, node.declarationList = {} as Value);
+                    break;
+
+                case CssInjectionRuleSerializationMap.Remove:
+                    node.remove = true;
+                    break;
+
+                case CssInjectionRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case CssInjectionRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Unknown property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Serializes a cosmetic rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: AnyCosmeticRule, buffer: OutputByteBuffer): void {
+        // specific properties
+        switch (node.type) {
+            case CosmeticRuleType.ElementHidingRule:
+                // rule type
+                buffer.writeUint8(BinaryTypeMap.ElementHidingRule);
+                // syntax
+                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                // rule body
+                CosmeticRuleParser.serializeElementHidingBody(node.body, buffer);
+                break;
+
+            case CosmeticRuleType.CssInjectionRule:
+                // rule type
+                buffer.writeUint8(BinaryTypeMap.CssInjectionRule);
+                // syntax
+                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                // rule body
+                CosmeticRuleParser.serializeCssInjectionBody(node.body, buffer);
+                break;
+
+            case CosmeticRuleType.JsInjectionRule:
+                // rule type
+                buffer.writeUint8(BinaryTypeMap.JsInjectionRule);
+                // syntax
+                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                // rule body
+                ValueParser.serialize(node.body, buffer);
+                break;
+
+            case CosmeticRuleType.HtmlFilteringRule:
+                // rule type
+                buffer.writeUint8(BinaryTypeMap.HtmlFilteringRule);
+                // syntax
+                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                // rule body
+                ValueParser.serialize(node.body, buffer);
+                break;
+
+            case CosmeticRuleType.ScriptletInjectionRule:
+                // rule type
+                buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRule);
+                // syntax
+                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                // rule body
+                switch (node.syntax) {
+                    case AdblockSyntax.Adg:
+                        AdgScriptletInjectionBodyParser.serialize(node.body, buffer);
+                        break;
+
+                    case AdblockSyntax.Abp:
+                        AbpSnippetInjectionBodyParser.serialize(node.body, buffer);
+                        break;
+
+                    case AdblockSyntax.Ubo:
+                        UboScriptletInjectionBodyParser.serialize(node.body, buffer);
+                        break;
+
+                    default:
+                        throw new Error('Scriptlet rule should have an explicit syntax');
+                }
+                break;
+
+            default:
+                throw new Error('Unknown cosmetic rule type');
+        }
+
+        // common properties
+        buffer.writeUint8(CosmeticRuleSerializationMap.Exception);
+        buffer.writeUint8(node.exception ? 1 : 0);
+
+        buffer.writeUint8(CosmeticRuleSerializationMap.Separator);
+        ValueParser.serialize(node.separator, buffer, SEPARATOR_SERIALIZATION_MAP);
+
+        if (node.modifiers) {
+            buffer.writeUint8(CosmeticRuleSerializationMap.Modifiers);
+            ModifierListParser.serialize(node.modifiers, buffer);
+        }
+
+        buffer.writeUint8(CosmeticRuleSerializationMap.Domains);
+        DomainListParser.serialize(node.domains, buffer);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(CosmeticRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(CosmeticRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a cosmetic rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyCosmeticRule>): void {
+        const type = COSMETIC_RULE_TYPE_DESERIALIZATION_MAP.get(buffer.readUint8());
+        if (isUndefined(type)) {
+            throw new Error(`Unknown rule type: ${type}`);
+        }
+        node.type = type;
+
+        node.category = RuleCategory.Cosmetic;
+
+        const syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+        node.syntax = syntax;
+
+        node.modifiers = undefined;
+
+        switch (type) {
+            case CosmeticRuleType.ElementHidingRule:
+                CosmeticRuleParser.deserializeElementHidingBody(buffer, node.body = {} as ElementHidingRuleBody);
+                break;
+
+            case CosmeticRuleType.CssInjectionRule:
+                CosmeticRuleParser.deserializeCssInjectionBody(buffer, node.body = {} as CssInjectionRuleBody);
+                break;
+
+            case CosmeticRuleType.JsInjectionRule:
+                ValueParser.deserialize(buffer, node.body = {} as Value);
+                break;
+
+            case CosmeticRuleType.HtmlFilteringRule:
+                ValueParser.deserialize(buffer, node.body = {} as Value);
+                break;
+
+            case CosmeticRuleType.ScriptletInjectionRule:
+                switch (syntax) {
+                    case AdblockSyntax.Adg:
+                        // eslint-disable-next-line max-len
+                        AdgScriptletInjectionBodyParser.deserialize(buffer, node.body = {} as ScriptletInjectionRuleBody);
+                        break;
+
+                    case AdblockSyntax.Abp:
+                        AbpSnippetInjectionBodyParser.deserialize(buffer, node.body = {} as ScriptletInjectionRuleBody);
+                        break;
+
+                    case AdblockSyntax.Ubo:
+                        // eslint-disable-next-line max-len
+                        UboScriptletInjectionBodyParser.deserialize(buffer, node.body = {} as ScriptletInjectionRuleBody);
+                        break;
+
+                    default:
+                        throw new Error('Scriptlet rule should have an explicit syntax');
+                }
+                break;
+
+            default:
+                throw new Error('Unknown cosmetic rule type');
+        }
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case CosmeticRuleSerializationMap.Exception:
+                    node.exception = buffer.readUint8() === 1;
+                    break;
+
+                case CosmeticRuleSerializationMap.Separator:
+                    ValueParser.deserialize(buffer, node.separator = {} as Value, SEPARATOR_DESERIALIZATION_MAP);
+                    break;
+
+                case CosmeticRuleSerializationMap.Modifiers:
+                    node.modifiers = {} as ModifierList;
+                    ModifierListParser.deserialize(buffer, node.modifiers);
+                    break;
+
+                case CosmeticRuleSerializationMap.Domains:
+                    DomainListParser.deserialize(buffer, node.domains = {} as DomainList);
+                    break;
+
+                case CosmeticRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case CosmeticRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Unknown property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
     }
 }

@@ -747,4 +747,31 @@ describe('ModifierListParser', () => {
             ),
         ).toEqual('~path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i');
     });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            // single modifier
+            'foo',
+            '~foo',
+            'foo=bar',
+            '~foo=bar',
+
+            // multiple modifiers
+            'foo,bar',
+            'foo,~bar',
+            '~foo,bar',
+            '~foo,~bar',
+
+            'foo=bar,bar=foo',
+            '~foo=bar,~bar=foo',
+            'foo=bar,~bar=foo',
+            '~foo=bar,bar=foo',
+
+            // complicated
+            'path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
+            'foo=你好,bar=世界',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(ModifierListParser);
+        });
+    });
 });

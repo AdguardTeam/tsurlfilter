@@ -10,6 +10,7 @@ import {
     DomainUtils,
     PIPE_MODIFIER_SEPARATOR,
     QuoteUtils,
+    defaultParserOptions,
 } from '@adguard/agtree';
 
 import * as rule from './rule';
@@ -359,6 +360,7 @@ export class CosmeticRule implements rule.IRule {
     private static getRuleNodeAndRaws(ruleText: string): RuleWithRaws {
         // Parse the rule - this will throw an error if the rule is syntactically invalid
         const ruleNode = CosmeticRuleParser.parse(ruleText, {
+            ...defaultParserOptions,
             isLocIncluded: false,
             parseAbpSpecificRules: false,
             parseUboSpecificRules: false,
@@ -548,7 +550,8 @@ export class CosmeticRule implements rule.IRule {
 
                 case CosmeticRuleType.ScriptletInjectionRule:
                     // Scriptlet name is the first child of the parameter list
-                    scriptletName = QuoteUtils.removeQuotes(ruleNode.body.children[0]?.children[0]?.value);
+                    // eslint-disable-next-line max-len
+                    scriptletName = QuoteUtils.removeQuotes(ruleNode.body.children[0]?.children[0]?.value ?? EMPTY_STRING);
 
                     if (!scriptletName) {
                         throw new Error('Scriptlet name should be specified');
@@ -639,7 +642,7 @@ export class CosmeticRule implements rule.IRule {
 
             // Transform complex node into a simple array of strings
             this.scriptletParams = ruleNode.body.children[0].children.map(
-                ({ value }) => QuoteUtils.removeQuotes(value),
+                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotes(param.value)),
             );
         }
 

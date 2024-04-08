@@ -1,8 +1,10 @@
+/* eslint-disable no-param-reassign */
 import {
     BACKSLASH,
     CLOSE_PARENTHESIS,
     HINT_MARKER,
     HINT_MARKER_LEN,
+    NULL,
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
@@ -12,12 +14,34 @@ import {
     type Hint,
     type HintCommentRule,
     RuleCategory,
+    BinaryTypeMap,
+    SYNTAX_SERIALIZATION_MAP,
+    SYNTAX_DESERIALIZATION_MAP,
 } from '../common';
 import { HintParser } from './hint';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum HintRuleSerializationMap {
+    Syntax = 1,
+    Children,
+    Start,
+    End,
+}
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.
@@ -131,13 +155,16 @@ export class HintCommentRuleParser extends ParserBase {
 
         const result: HintCommentRule = {
             type: CommentRuleType.HintCommentRule,
-            raws: {
-                text: raw,
-            },
             category: RuleCategory.Comment,
             syntax: AdblockSyntax.Adg,
             children: hints,
         };
+
+        if (options.includeRaws) {
+            result.raws = {
+                text: raw,
+            };
+        }
 
         if (options.isLocIncluded) {
             result.start = baseOffset;
@@ -148,16 +175,100 @@ export class HintCommentRuleParser extends ParserBase {
     }
 
     /**
-     * Converts a hint rule AST to a raw string.
+     * Converts a hint rule node to a raw string.
      *
-     * @param ast Hint rule AST
+     * @param node Hint rule node
      * @returns Raw string
      */
-    public static generate(ast: HintCommentRule): string {
+    public static generate(node: HintCommentRule): string {
         let result = HINT_MARKER + SPACE;
 
-        result += ast.children.map(HintParser.generate).join(SPACE);
+        result += node.children.map(HintParser.generate).join(SPACE);
 
         return result;
+    }
+
+    /**
+     * Serializes a hint rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: HintCommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.HintRuleNode);
+
+        if (node.syntax === AdblockSyntax.Adg) {
+            buffer.writeUint8(HintRuleSerializationMap.Syntax);
+            buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(AdblockSyntax.Adg) ?? 0);
+        }
+
+        const count = node.children.length;
+        if (count) {
+            buffer.writeUint8(HintRuleSerializationMap.Children);
+            // note: we store the count, because re-construction of the array is faster if we know the length
+            buffer.writeUint8(count);
+
+            for (let i = 0; i < count; i += 1) {
+                HintParser.serialize(node.children[i], buffer);
+            }
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(HintRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(HintRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a hint rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<HintCommentRule>): void {
+        buffer.assertUint8(BinaryTypeMap.HintRuleNode);
+
+        node.category = RuleCategory.Comment;
+        node.type = CommentRuleType.HintCommentRule;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case HintRuleSerializationMap.Syntax:
+                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    break;
+
+                case HintRuleSerializationMap.Children:
+                    node.children = new Array(buffer.readUint8());
+
+                    // read children
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        HintParser.deserialize(buffer, node.children[i] = {} as Hint);
+                    }
+                    break;
+
+                case HintRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case HintRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
     }
 }

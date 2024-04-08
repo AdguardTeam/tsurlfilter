@@ -21,6 +21,12 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Performance benchmarking.
 - `PositionProvider` to convert offsets to line/column pairs.
 - Protected Audience API directives to `$permissions` modifier validator.
+- `OutputByteBuffer` and `InputByteBuffer` utility classes.
+- Binary serialization / deserialization for AST nodes. Practically, this means adding `serialize` and `deserialize`
+  methods to AGTree classes.
+- `decodeTextPolyfill` and `encodeIntoPolyfill` utility functions.
+- `includeRaws` parser option.
+- `HostRuleParser` parser class to make it possible to parse host-like rules to `HostRule` node.
 
 ### Changed
 
@@ -33,6 +39,9 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
   and `AbpSnippetInjectionBodyParser`.
 - Locations (`offset`, `line`, `column`) are changed to only one `offset` value.
 - Parser functions signature to `parse(source, options, baseOffset, ...additionalArgs)`.
+- Removed `Parameter` node from the AST and replaced it with `Value` node.
+- If a parameter is empty, it parsed as `null` instead of empty string.
+- `SimpleCommentParser` now has a separate class.
 
 ### Fixed
 

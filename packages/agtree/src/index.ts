@@ -44,7 +44,6 @@ export {
     type ModifierList,
     type NetworkRule,
     type Node,
-    type Parameter,
     type ParameterList,
     type PreProcessorCommentRule,
     type RuleBase,
@@ -52,6 +51,10 @@ export {
     type ScriptletInjectionRule,
     type ScriptletInjectionRuleBody,
     type Value,
+    type NetworkRuleType,
+    type HostnameList,
+    type HostRule,
+    type AnyNetworkRule,
 } from './parser/common';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentRuleParser } from './parser/comment/agent-rule';
@@ -67,14 +70,16 @@ export { FilterListParser } from './parser/filterlist';
 export { HintCommentRuleParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
 export { LogicalExpressionParser } from './parser/misc/logical-expression';
-export { MetadataCommentRuleParser } from './parser/comment/metadata';
+export { MetadataCommentRuleParser, KNOWN_METADATA_HEADERS } from './parser/comment/metadata';
 export { ModifierListParser } from './parser/misc/modifier-list';
 export { ModifierParser } from './parser/misc/modifier';
 export { NetworkRuleParser } from './parser/network';
 export { NotImplementedError } from './errors/not-implemented-error';
 export { ParameterListParser } from './parser/misc/parameter-list';
+export { HostRuleParser } from './parser/network/host';
 export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
 export { RuleConversionError } from './errors/rule-conversion-error';
+export { BinarySchemaMismatchError } from './errors/binary-schema-mismatch-error';
 
 // Validator
 export { modifierValidator } from './validator';
@@ -100,6 +105,7 @@ export {
     SAFARI_CB_AFFINITY,
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
+export { BINARY_SCHEMA_VERSION } from './utils/binary-schema-version';
 export { AdblockSyntax } from './utils/adblockers';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
@@ -119,9 +125,13 @@ export {
     QuoteUtils,
 } from './utils/quotes';
 export { type Position, PositionProvider } from './utils/position-provider';
+export { OutputByteBuffer } from './utils/output-byte-buffer';
+export { InputByteBuffer } from './utils/input-byte-buffer';
+export { ByteBuffer } from './utils/byte-buffer';
+export { encodeIntoPolyfill, type TextEncoderPolyfillResult } from './utils/text-encoder-polyfill';
+export { decodeTextPolyfill } from './utils/text-decoder-polyfill';
 
 // Constants
-export { METADATA_HEADERS } from './converter/data/metadata';
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
 
 export { defaultParserOptions } from './parser/options';

@@ -1,5 +1,6 @@
+/* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../utils/adblockers';
-import { EMPTY } from '../utils/constants';
+import { EMPTY, NULL } from '../utils/constants';
 import { CommentRuleParser } from './comment';
 import { CosmeticRuleParser } from './cosmetic';
 import { NetworkRuleParser } from './network';
@@ -8,10 +9,64 @@ import {
     type InvalidRule,
     RuleCategory,
     type EmptyRule,
+    BinaryTypeMap,
+    type InvalidRuleError,
+    type AnyCommentRule,
+    type AnyCosmeticRule,
+    type NetworkRule,
+    NetworkRuleType,
+    type HostRule,
 } from './common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { defaultParserOptions } from './options';
 import { ParserBase } from './interface';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { isUndefined } from '../utils/type-guards';
+import { HostRuleParser } from './network/host';
+import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum EmptyRuleSerializationMap {
+    Start = 1,
+    End,
+}
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum InvalidRuleErrorNodeSerializationMap {
+    Name = 1,
+    Message,
+    Start,
+    End,
+}
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the binary schema version.!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum InvalidRuleSerializationMap {
+    Error = 1,
+    Start,
+    End,
+}
 
 /**
  * `RuleParser` is responsible for parsing the rules.
@@ -83,12 +138,15 @@ export class RuleParser extends ParserBase {
             if (raw.trim().length === 0) {
                 const result: EmptyRule = {
                     type: 'EmptyRule',
-                    raws: {
-                        text: raw,
-                    },
                     category: RuleCategory.Empty,
                     syntax: AdblockSyntax.Common,
                 };
+
+                if (options.includeRaws) {
+                    result.raws = {
+                        text: raw,
+                    };
+                }
 
                 if (options.isLocIncluded) {
                     result.start = baseOffset;
@@ -108,12 +166,15 @@ export class RuleParser extends ParserBase {
                 if (CommentRuleParser.isCommentRule(raw)) {
                     const result: EmptyRule = {
                         type: 'EmptyRule',
-                        raws: {
-                            text: raw,
-                        },
                         category: RuleCategory.Empty,
                         syntax: AdblockSyntax.Common,
                     };
+
+                    if (options.includeRaws) {
+                        result.raws = {
+                            text: raw,
+                        };
+                    }
 
                     if (options.isLocIncluded) {
                         result.start = baseOffset;
@@ -137,26 +198,32 @@ export class RuleParser extends ParserBase {
                 throw error;
             }
 
-            // Otherwise, return an invalid rule (tolerant mode)
-            const result: InvalidRule = {
-                type: 'InvalidRule',
-                raws: {
-                    text: raw,
-                },
-                category: RuleCategory.Invalid,
-                syntax: AdblockSyntax.Common,
-                raw,
-                error: {
-                    name: error.name,
-                    message: error.message,
-                },
+            const errorNode: InvalidRuleError = {
+                type: 'InvalidRuleError',
+                name: error.name,
+                message: error.message,
             };
 
             // If the error is an AdblockSyntaxError, then we can add the
             // location of the error to the result
             if (error instanceof AdblockSyntaxError) {
-                result.error.start = error.start;
-                result.error.end = error.end;
+                errorNode.start = error.start;
+                errorNode.end = error.end;
+            }
+
+            // Otherwise, return an invalid rule (tolerant mode)
+            const result: InvalidRule = {
+                type: 'InvalidRule',
+                category: RuleCategory.Invalid,
+                syntax: AdblockSyntax.Common,
+                raw,
+                error: errorNode,
+            };
+
+            if (options.includeRaws) {
+                result.raws = {
+                    text: raw,
+                };
             }
 
             if (options.isLocIncluded) {
@@ -204,7 +271,283 @@ export class RuleParser extends ParserBase {
 
             // Network / basic rules
             case RuleCategory.Network:
-                return NetworkRuleParser.generate(ast);
+                switch (ast.type) {
+                    case NetworkRuleType.HostRule:
+                        return HostRuleParser.generate(ast);
+                    case NetworkRuleType.NetworkRule:
+                        return NetworkRuleParser.generate(ast);
+                    default:
+                        throw new Error('Unknown network rule type');
+                }
+
+            default:
+                throw new Error('Unknown rule category');
+        }
+    }
+
+    /**
+     * Serializes an empty rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serializeEmptyRule(node: EmptyRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.EmptyRule);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(EmptyRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(EmptyRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes an empty rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserializeEmptyRule(buffer: InputByteBuffer, node: EmptyRule): void {
+        buffer.assertUint8(BinaryTypeMap.EmptyRule);
+
+        node.type = 'EmptyRule';
+        node.category = RuleCategory.Empty;
+        node.syntax = AdblockSyntax.Common;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case EmptyRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case EmptyRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Serializes an invalid rule error node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serializeInvalidRuleErrorNode(node: InvalidRuleError, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.InvalidRuleErrorNode);
+
+        buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.Name);
+        buffer.writeString(node.name);
+
+        buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.Message);
+        buffer.writeString(node.message);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes an invalid rule error node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserializeInvalidRuleErrorNode(buffer: InputByteBuffer, node: Partial<InvalidRuleError>): void {
+        buffer.assertUint8(BinaryTypeMap.InvalidRuleErrorNode);
+
+        node.type = 'InvalidRuleError';
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case InvalidRuleErrorNodeSerializationMap.Name:
+                    node.name = buffer.readString();
+                    break;
+
+                case InvalidRuleErrorNodeSerializationMap.Message:
+                    node.message = buffer.readString();
+                    break;
+
+                case InvalidRuleErrorNodeSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case InvalidRuleErrorNodeSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Serializes an invalid rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serializeInvalidRule(node: InvalidRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.InvalidRule);
+
+        buffer.writeUint8(InvalidRuleSerializationMap.Error);
+        RuleParser.serializeInvalidRuleErrorNode(node.error, buffer);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(InvalidRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(InvalidRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes an invalid rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserializeInvalidRule(buffer: InputByteBuffer, node: InvalidRule): void {
+        buffer.assertUint8(BinaryTypeMap.InvalidRule);
+
+        node.type = 'InvalidRule';
+        node.category = RuleCategory.Invalid;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case InvalidRuleSerializationMap.Error:
+                    RuleParser.deserializeInvalidRuleErrorNode(buffer, node.error = {} as InvalidRuleError);
+                    break;
+
+                case InvalidRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case InvalidRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Serializes a rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: AnyRule, buffer: OutputByteBuffer): void {
+        switch (node.category) {
+            case RuleCategory.Comment:
+                CommentRuleParser.serialize(node, buffer);
+                break;
+
+            case RuleCategory.Cosmetic:
+                CosmeticRuleParser.serialize(node, buffer);
+                break;
+
+            case RuleCategory.Network:
+                switch (node.type) {
+                    case NetworkRuleType.HostRule:
+                        HostRuleParser.serialize(node, buffer);
+                        break;
+                    case NetworkRuleType.NetworkRule:
+                        NetworkRuleParser.serialize(node, buffer);
+                        break;
+                    default:
+                        throw new Error('Unknown network rule type');
+                }
+                break;
+
+            case RuleCategory.Empty:
+                RuleParser.serializeEmptyRule(node, buffer);
+                break;
+
+            case RuleCategory.Invalid:
+                RuleParser.serializeInvalidRule(node, buffer);
+                break;
+
+            default:
+                throw new Error('Unknown rule category');
+        }
+    }
+
+    /**
+     * Deserializes a rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyRule>): void {
+        // lookup instead of storing +1 byte
+        const type = buffer.peekUint8();
+        switch (type) {
+            case BinaryTypeMap.AgentRuleNode:
+            case BinaryTypeMap.HintRuleNode:
+            case BinaryTypeMap.PreProcessorCommentRuleNode:
+            case BinaryTypeMap.MetadataCommentRuleNode:
+            case BinaryTypeMap.ConfigCommentRuleNode:
+            case BinaryTypeMap.CommentRuleNode:
+                CommentRuleParser.deserialize(buffer, node as AnyCommentRule);
+                break;
+
+            case BinaryTypeMap.ElementHidingRule:
+            case BinaryTypeMap.CssInjectionRule:
+            case BinaryTypeMap.ScriptletInjectionRule:
+            case BinaryTypeMap.HtmlFilteringRule:
+            case BinaryTypeMap.JsInjectionRule:
+                CosmeticRuleParser.deserialize(buffer, node as AnyCosmeticRule);
+                break;
+
+            case BinaryTypeMap.NetworkRuleNode:
+                NetworkRuleParser.deserialize(buffer, node as NetworkRule);
+                break;
+
+            case BinaryTypeMap.HostRuleNode:
+                HostRuleParser.deserialize(buffer, node as HostRule);
+                break;
+
+            case BinaryTypeMap.EmptyRule:
+                RuleParser.deserializeEmptyRule(buffer, node as EmptyRule);
+                break;
+
+            case BinaryTypeMap.InvalidRule:
+                RuleParser.deserializeInvalidRule(buffer, node as InvalidRule);
+                break;
 
             default:
                 throw new Error('Unknown rule category');

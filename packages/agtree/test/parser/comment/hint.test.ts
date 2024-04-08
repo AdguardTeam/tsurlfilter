@@ -1,5 +1,6 @@
 import { HintCommentRuleParser } from '../../../src/parser/comment/hint-rule';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('HintCommentRuleParser', () => {
     test('isHintRule', () => {
@@ -144,12 +145,7 @@ describe('HintCommentRuleParser', () => {
                         start: 14,
                         end: 19,
                         children: [
-                            {
-                                type: 'Parameter',
-                                start: 14,
-                                end: 19,
-                                value: '',
-                            },
+                            null,
                         ],
                     },
                 },
@@ -224,13 +220,13 @@ describe('HintCommentRuleParser', () => {
                         end: 28,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 14,
                                 end: 20,
                                 value: 'param0',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 22,
                                 end: 28,
                                 value: 'param1',
@@ -282,13 +278,13 @@ describe('HintCommentRuleParser', () => {
                             end: 28,
                             children: [
                                 {
-                                    type: 'Parameter',
+                                    type: 'Value',
                                     start: 14,
                                     end: 20,
                                     value: 'param0',
                                 },
                                 {
-                                    type: 'Parameter',
+                                    type: 'Value',
                                     start: 22,
                                     end: 28,
                                     value: 'param1',
@@ -312,7 +308,7 @@ describe('HintCommentRuleParser', () => {
                             end: 47,
                             children: [
                                 {
-                                    type: 'Parameter',
+                                    type: 'Value',
                                     start: 41,
                                     end: 47,
                                     value: 'param0',
@@ -348,19 +344,14 @@ describe('HintCommentRuleParser', () => {
                         end: 29,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 13,
                                 end: 19,
                                 value: 'param0',
                             },
+                            null,
                             {
-                                type: 'Parameter',
-                                start: 20,
-                                end: 21,
-                                value: '',
-                            },
-                            {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 23,
                                 end: 29,
                                 value: 'param1',
@@ -394,19 +385,14 @@ describe('HintCommentRuleParser', () => {
                         end: 32,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 13,
                                 end: 19,
                                 value: 'param0',
                             },
+                            null,
                             {
-                                type: 'Parameter',
-                                start: 20,
-                                end: 24,
-                                value: '',
-                            },
-                            {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 26,
                                 end: 32,
                                 value: 'param1',
@@ -441,29 +427,14 @@ describe('HintCommentRuleParser', () => {
                             end: 25,
                             children: [
                                 {
-                                    type: 'Parameter',
+                                    type: 'Value',
                                     start: 13,
                                     end: 19,
                                     value: 'param0',
                                 },
-                                {
-                                    type: 'Parameter',
-                                    start: 20,
-                                    end: 21,
-                                    value: '',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    start: 22,
-                                    end: 23,
-                                    value: '',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    start: 24,
-                                    end: 25,
-                                    value: '',
-                                },
+                                null,
+                                null,
+                                null,
                             ],
                         },
                     },
@@ -494,30 +465,10 @@ describe('HintCommentRuleParser', () => {
                             start: 13,
                             end: 20,
                             children: [
-                                {
-                                    type: 'Parameter',
-                                    start: 13,
-                                    end: 14,
-                                    value: '',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    start: 15,
-                                    end: 16,
-                                    value: '',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    start: 17,
-                                    end: 18,
-                                    value: '',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    start: 19,
-                                    end: 20,
-                                    value: '',
-                                },
+                                null,
+                                null,
+                                null,
+                                null,
                             ],
                         },
                     },
@@ -547,24 +498,9 @@ describe('HintCommentRuleParser', () => {
                         start: 13,
                         end: 16,
                         children: [
-                            {
-                                type: 'Parameter',
-                                start: 13,
-                                end: 13,
-                                value: '',
-                            },
-                            {
-                                type: 'Parameter',
-                                start: 14,
-                                end: 14,
-                                value: '',
-                            },
-                            {
-                                type: 'Parameter',
-                                start: 15,
-                                end: 15,
-                                value: '',
-                            },
+                            null,
+                            null,
+                            null,
                         ],
                     },
                 },
@@ -595,25 +531,25 @@ describe('HintCommentRuleParser', () => {
                         end: 43,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 17,
                                 end: 19,
                                 value: 'p0',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 25,
                                 end: 27,
                                 value: 'p1',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 32,
                                 end: 34,
                                 value: 'p2',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 41,
                                 end: 43,
                                 value: 'p3',
@@ -647,13 +583,13 @@ describe('HintCommentRuleParser', () => {
                         end: 39,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 13,
                                 end: 24,
                                 value: 'hello world',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 26,
                                 end: 39,
                                 value: 'hello   world',
@@ -687,13 +623,13 @@ describe('HintCommentRuleParser', () => {
                         end: 39,
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 13,
                                 end: 24,
                                 value: 'hello world',
                             },
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 start: 26,
                                 end: 39,
                                 value: 'hello   world',
@@ -752,11 +688,11 @@ describe('HintCommentRuleParser', () => {
                                 type: 'ParameterList',
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         value: 'param0',
                                     },
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         value: 'param1',
                                     },
                                 ],
@@ -772,7 +708,7 @@ describe('HintCommentRuleParser', () => {
                                 type: 'ParameterList',
                                 children: [
                                     {
-                                        type: 'Parameter',
+                                        type: 'Value',
                                         value: 'param0',
                                     },
                                 ],
@@ -782,7 +718,9 @@ describe('HintCommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(HintCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                HintCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -803,6 +741,9 @@ describe('HintCommentRuleParser', () => {
         expect(parseAndGenerate('!+ NOT_OPTIMIZED()')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+    NOT_OPTIMIZED   ')).toEqual('!+ NOT_OPTIMIZED');
 
+        expect(parseAndGenerate('!+ PLATFORM(,,windows,,)')).toEqual('!+ PLATFORM(, , windows, ,)');
+        expect(parseAndGenerate('!+ PLATFORM(,,,)')).toEqual('!+ PLATFORM(, , ,)');
+
         expect(parseAndGenerate('!+ NOT_OPTIMIZED PLATFORM(windows)')).toEqual('!+ NOT_OPTIMIZED PLATFORM(windows)');
 
         expect(parseAndGenerate('!+      NOT_OPTIMIZED     PLATFORM(     windows   )    ')).toEqual(
@@ -820,5 +761,16 @@ describe('HintCommentRuleParser', () => {
         expect(parseAndGenerate('!+  NOT_OPTIMIZED  PLATFORM( windows     ,  mac  )  NOT_PLATFORM( mac )')).toEqual(
             '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(mac)',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '!+ NOT_OPTIMIZED',
+            '!+ NOT_OPTIMIZED PLATFORM(windows)',
+            '!+ NOT_OPTIMIZED PLATFORM(, , ,)',
+            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac, ios)',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(HintCommentRuleParser);
+        });
     });
 });

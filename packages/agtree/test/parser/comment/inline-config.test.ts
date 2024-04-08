@@ -1,5 +1,6 @@
 import { ConfigCommentRuleParser } from '../../../src/parser/comment/inline-config';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('ConfigCommentRuleParser', () => {
     test('isConfigComment', () => {
@@ -209,7 +210,7 @@ describe('ConfigCommentRuleParser', () => {
                 end: 21,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
@@ -242,13 +243,13 @@ describe('ConfigCommentRuleParser', () => {
                 end: 27,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 22,
                         end: 27,
                         value: 'rule2',
@@ -281,13 +282,13 @@ describe('ConfigCommentRuleParser', () => {
                 end: 28,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 23,
                         end: 28,
                         value: 'rule2',
@@ -321,13 +322,13 @@ describe('ConfigCommentRuleParser', () => {
                 end: 28,
                 children: [
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 16,
                         end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
+                        type: 'Value',
                         start: 23,
                         end: 28,
                         value: 'rule2',
@@ -361,7 +362,7 @@ describe('ConfigCommentRuleParser', () => {
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
+                type: 'ConfigNode',
                 start: 9,
                 end: 21,
                 value: {
@@ -389,7 +390,7 @@ describe('ConfigCommentRuleParser', () => {
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
+                type: 'ConfigNode',
                 start: 9,
                 end: 17,
                 value: {
@@ -417,7 +418,7 @@ describe('ConfigCommentRuleParser', () => {
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
+                type: 'ConfigNode',
                 start: 9,
                 end: 35,
                 value: {
@@ -454,7 +455,7 @@ describe('ConfigCommentRuleParser', () => {
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
+                type: 'ConfigNode',
                 start: 9,
                 end: 70,
                 value: {
@@ -515,7 +516,7 @@ describe('ConfigCommentRuleParser', () => {
                         value: 'aglint',
                     },
                     params: {
-                        type: 'Value',
+                        type: 'ConfigNode',
                         value: {
                             rule1: 'off',
                             rule2: [
@@ -537,7 +538,9 @@ describe('ConfigCommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(ConfigCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                ConfigCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -562,5 +565,21 @@ describe('ConfigCommentRuleParser', () => {
         expect(parseAndGenerate('! aglint-disable rule1, rule2 -- comment')).toEqual(
             '! aglint-disable rule1, rule2 -- comment',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '! aglint-disable-next-line',
+            '! aglint-disable-next-line -- comment',
+            '! aglint-disable-next-line rule1',
+            '! aglint-disable-next-line rule1 -- comment',
+            '! aglint-disable-next-line rule1, rule2',
+            '! aglint-disable-next-line rule1, rule2 -- comment',
+            // complex case
+            // eslint-disable-next-line max-len
+            '! aglint rule1: "off", rule2: [1, 2], rule3: ["error", { "max": 100 }] -- this is a comment -- this doesn\'t matter',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(ConfigCommentRuleParser);
+        });
     });
 });

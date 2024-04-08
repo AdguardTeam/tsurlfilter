@@ -1,12 +1,13 @@
 import { NetworkRuleParser } from '../../../src/parser/network';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type NetworkRule, RuleCategory } from '../../../src/parser/common';
+import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/parser/common';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
         // TODO: Refactor to test.each
         expect(NetworkRuleParser.parse('||example.com')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 13,
             category: RuleCategory.Network,
@@ -21,7 +22,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('@@||example.com')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 15,
             category: RuleCategory.Network,
@@ -36,7 +37,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('@@||example.com$m1,m2=v2')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 24,
             category: RuleCategory.Network,
@@ -88,7 +89,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('/example/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 9,
             category: RuleCategory.Network,
@@ -103,7 +104,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('@@/example/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 11,
             category: RuleCategory.Network,
@@ -118,7 +119,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('@@/example/$m1,m2=v2')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 20,
             category: RuleCategory.Network,
@@ -171,7 +172,7 @@ describe('NetworkRuleParser', () => {
 
         // Last $ in regex pattern
         expect(NetworkRuleParser.parse('@@/example/$m1,m2=v2,m3=/^r3$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 30,
             category: RuleCategory.Network,
@@ -242,7 +243,7 @@ describe('NetworkRuleParser', () => {
 
         // Escaped $ in regex
         expect(NetworkRuleParser.parse('@@/example/$m1,m2=v2,m3=/^r3\\$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 31,
             category: RuleCategory.Network,
@@ -313,7 +314,7 @@ describe('NetworkRuleParser', () => {
 
         // Escaped separator
         expect(NetworkRuleParser.parse('example.com\\$m1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 15,
             category: RuleCategory.Network,
@@ -329,7 +330,7 @@ describe('NetworkRuleParser', () => {
 
         // Multiple separators
         expect(NetworkRuleParser.parse('example.com$m1$m2$m3$m4$m5')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 26,
             category: RuleCategory.Network,
@@ -363,7 +364,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('example.com$m1=v1$m2$m3=v3$m4$m5=v5')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 35,
             category: RuleCategory.Network,
@@ -404,7 +405,7 @@ describe('NetworkRuleParser', () => {
 
         // Starts with "/"
         expect(NetworkRuleParser.parse('/ad.js$m1=v1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 12,
             category: RuleCategory.Network,
@@ -445,7 +446,7 @@ describe('NetworkRuleParser', () => {
 
         // Pattern starts with / like regex patterns
         expect(NetworkRuleParser.parse('/ad.js^$m1=v1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 13,
             category: RuleCategory.Network,
@@ -485,7 +486,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('/ad.js^$m1=/^v1$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 17,
             category: RuleCategory.Network,
@@ -526,7 +527,7 @@ describe('NetworkRuleParser', () => {
 
         // Pattern contains an odd number of "/" characters
         expect(NetworkRuleParser.parse('example.com/a/b/c$m1=v1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 23,
             category: RuleCategory.Network,
@@ -566,7 +567,7 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('example.com$m1,m2=/^regex$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 27,
             category: RuleCategory.Network,
@@ -619,7 +620,7 @@ describe('NetworkRuleParser', () => {
 
         // https://github.com/AdguardTeam/AGLint/issues/60
         expect(NetworkRuleParser.parse('||example.com/$aa/bb^$m1,m2=/^regex$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 37,
             category: RuleCategory.Network,
@@ -674,7 +675,7 @@ describe('NetworkRuleParser', () => {
         expect(
             NetworkRuleParser.parse('@@/example/scripts/ad.js$m1,m2=v2,m3=/^r3\\$/,m4=/r4\\/r4$/,m5=/^r5\\$/'),
         ).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 68,
             category: RuleCategory.Network,
@@ -782,7 +783,7 @@ describe('NetworkRuleParser', () => {
         expect(
             NetworkRuleParser.parse('@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i'),
         ).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
+            type: NetworkRuleType.NetworkRule,
             start: 0,
             end: 72,
             category: RuleCategory.Network,
@@ -825,7 +826,7 @@ describe('NetworkRuleParser', () => {
             NetworkRuleParser.parse('@@||example.org^$removeheader=request:header-name'),
         ).toMatchObject<NetworkRule>(
             {
-                type: 'NetworkRule',
+                type: NetworkRuleType.NetworkRule,
                 start: 0,
                 end: 49,
                 category: RuleCategory.Network,
@@ -877,7 +878,7 @@ describe('NetworkRuleParser', () => {
             {
                 actual: '@@||example.com$m1,m2=v2',
                 expected: {
-                    type: 'NetworkRule',
+                    type: NetworkRuleType.NetworkRule,
                     category: RuleCategory.Network,
                     syntax: AdblockSyntax.Common,
                     raws: {
@@ -916,7 +917,9 @@ describe('NetworkRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(NetworkRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                NetworkRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -953,5 +956,18 @@ describe('NetworkRuleParser', () => {
         expect(parseAndGenerate('@@||example.org^$removeheader=header-name')).toEqual(
             '@@||example.org^$removeheader=header-name',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'example.com',
+            '$script,redirect-rule=noopjs,domain=aternos.org',
+            '@@||example.com',
+            '@@||example.com^$script,third-party',
+            '/ads.js^$script',
+            '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser);
+        });
     });
 });
