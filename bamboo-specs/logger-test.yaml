@@ -38,8 +38,8 @@ Test:
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
 
-            # Install deps for project
-            pnpm install
+            # Install deps only for root dependencies
+            pnpm install -w
 
             # Default to 'master' if the variable is not set or is empty
             targetBranch="${bamboo.repository.pr.targetBranch:-master}"
@@ -55,6 +55,9 @@ Test:
               echo "No changes in project, skipping tests"
               exit 0;
             fi
+
+            # Install remained dependencies
+            pnpm install
 
             # Build the package
             pnpm --filter @adguard/logger build

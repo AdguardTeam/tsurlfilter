@@ -38,8 +38,8 @@ Test:
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
 
-            # Install deps
-            pnpm install
+            # Install deps only for root dependencies
+            pnpm install -w
 
             # Default to 'master' if the variable is not set or is empty
             targetBranch="${bamboo.repository.pr.targetBranch:-master}"
@@ -55,6 +55,9 @@ Test:
               echo "No changes in project, skipping tests"
               exit 0;
             fi
+
+            # Install remained dependencies
+            pnpm install
 
             # First build since we need dependencies
             npx lerna run build --scope tswebextension-mv3 --include-dependencies
