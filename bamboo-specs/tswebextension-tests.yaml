@@ -27,14 +27,6 @@ Test:
         interpreter: SHELL
         scripts:
           - |-
-            # Ignore testing if pr target branch is "v1".
-            # Because @adguard/tswebextension is not implemented on this branch.
-            if [ ! -z bamboo.repository.pr.targetBranch && bamboo.repository.pr.targetBranch == "v1" ]
-            then
-              echo "ignore tests on branch v1"
-              exit 0;
-            fi
-
             set -e
             set -x
 
@@ -49,19 +41,12 @@ Test:
             # Install deps only for root dependencies
             pnpm install -w
 
-            branch="${bamboo.planRepository.branchName}"
+            branch="${bamboo_planRepository_branchName}"
 
             # Default to 'master' if the variable is not set or is empty
-            if [ -z "$bamboo_repository_pr_targetBranch" ]; then
-              targetBranch="master"
-            else
-              targetBranch="$bamboo_repository_pr_targetBranch"
-            fi
+            targetBranch="${bamboo_repository_pr_targetBranch:-master}"
 
-            echo "bamboo.repository.pr.targetBranch: $bamboo.repository.pr.targetBranch"
-            echo "bamboo_repository_pr_targetBranch: $bamboo_repository_pr_targetBranch"
             echo "targetBranch: $targetBranch"
-            echo "bamboo.planRepository.branchName: $bamboo.planRepository.branchName"
             echo "branch: $branch"
 
             # Run NX CLI to find projects changed since the master branch and check if the specified project is affected.
