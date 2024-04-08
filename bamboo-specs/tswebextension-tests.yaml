@@ -20,10 +20,6 @@ Test:
     image: "${bamboo.dockerContainer}"
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-      # This is needed to see the diff between the current and the target branch
-      # using the NX CLI
-      ${bamboo.git.cache.directory}: ${bamboo.git.cache.directory}
-      ${system.HOME}/.ssh: /root/.ssh
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -49,13 +45,6 @@ Test:
 
             # Default to 'master' if the variable is not set or is empty
             targetBranch="${bamboo_repository_pr_targetBranch:-master}"
-
-            echo "bamboo_repository_pr_targetBranch: $bamboo_repository_pr_targetBranch"
-            echo "bamboo_planRepository_branchName: $bamboo_planRepository_branchName"
-            echo "targetBranch: $targetBranch"
-            echo "branch: $branch"
-
-            git branch -a
 
             # Run NX CLI to find projects changed since the master branch and check if the specified project is affected.
             # And store grep exit status to determine if the project was found (0) or not (1).
