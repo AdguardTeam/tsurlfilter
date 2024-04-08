@@ -19,7 +19,10 @@ Test:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      # This is needed to see the diff between the current and the target branch
+      # using the NX CLI
+      ${bamboo.git.cache.directory}: ${bamboo.git.cache.directory}
   tasks:
     - checkout:
         force-clean-build: 'true'
