@@ -52,15 +52,16 @@ Test:
             branch="${bamboo.planRepository.branchName}"
 
             # Default to 'master' if the variable is not set or is empty
-            if [ -z bamboo.repository.pr.targetBranch ]; then
+            if [ -z "$bamboo_repository_pr_targetBranch" ]; then
               targetBranch="master"
             else
-              targetBranch=bamboo.repository.pr.targetBranch
+              targetBranch="$bamboo_repository_pr_targetBranch"
             fi
 
             echo "bamboo.repository.pr.targetBranch: $bamboo.repository.pr.targetBranch"
+            echo "bamboo_repository_pr_targetBranch: $bamboo_repository_pr_targetBranch"
             echo "targetBranch: $targetBranch"
-            echo "headBranch: $bamboo.planRepository.branchName"
+            echo "bamboo.planRepository.branchName: $bamboo.planRepository.branchName"
             echo "branch: $branch"
 
             # Run NX CLI to find projects changed since the master branch and check if the specified project is affected.
