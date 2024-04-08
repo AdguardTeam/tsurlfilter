@@ -418,24 +418,28 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a script request; expects to match the basic blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching an image request; expects to match the basic blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(popupBlockingRuleText);
+        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
+        expect(result.getPopupRule()!.getText()).toBe(popupBlockingRuleText);
     });
 
     it('match requests against all and popup blocking rules', () => {
@@ -453,25 +457,28 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a script request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching an image request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
-        // TODO: In the future it can be $all modifier, if we make it's priority higher than $popup
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(popupBlockingRuleText);
+        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
+        expect(result.getPopupRule()!.getText()).toBe(popupBlockingRuleText);
     });
 });
 

@@ -1,10 +1,12 @@
-import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { CookieModifier } from '../modifiers/cookie-modifier';
-import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
-import { CosmeticOption } from './cosmetic-option';
-import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { HttpHeadersItem } from '../modifiers/header-modifier';
+import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
+import { RequestType } from '../request-type';
+import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { logger } from '../utils/logger';
+
+import { CosmeticOption } from './cosmetic-option';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
@@ -88,6 +90,15 @@ export class MatchingResult {
     public readonly stealthRules: NetworkRule[] | null;
 
     /**
+     * PopupRule - this is a rule that specified which way should be used
+     * to blocking document request: close the tab or open dummy blocking page.
+     * We should store it separately from other blocking rules, because $popup
+     * has an intersection by use cases with $all.
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#popup-modifier
+     */
+    private popupRule: NetworkRule | null;
+
+    /**
      * Creates an instance of the MatchingResult struct and fills it with the rules.
      *
      * @param rules A list of network rules that match the request.
@@ -106,6 +117,7 @@ export class MatchingResult {
         this.stealthRules = null;
         this.permissionsRules = null;
         this.headerRules = null;
+        this.popupRule = null;
 
         // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
@@ -120,10 +132,9 @@ export class MatchingResult {
         // basic blocking rules are allowed by default
         let basicAllowed = true;
         if (this.documentRule) {
-            const documentRule = this.documentRule as NetworkRule;
-            if (documentRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
+            if (this.documentRule.isOptionEnabled(NetworkRuleOption.Urlblock)) {
                 basicAllowed = false;
-            } else if (documentRule.isOptionEnabled(NetworkRuleOption.Genericblock)) {
+            } else if (this.documentRule.isOptionEnabled(NetworkRuleOption.Genericblock)) {
                 genericAllowed = false;
             }
         }
@@ -168,6 +179,12 @@ export class MatchingResult {
                 (this.headerRules ??= []).push(rule);
                 continue;
             }
+            if (rule.isOptionEnabled(NetworkRuleOption.Popup)
+                // This check needed to split $all rules from $popup rules
+                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                this.popupRule = rule;
+                continue;
+            }
 
             // Check blocking rules against $genericblock / $urlblock
             if (!rule.isAllowlist() && this.documentRule?.isHigherPriority(rule)) {
@@ -186,6 +203,13 @@ export class MatchingResult {
     }
 
     /**
+     * Returns popup rule
+     */
+    public getPopupRule(): NetworkRule | null {
+        return this.popupRule;
+    }
+
+    /**
      * GetBasicResult returns a rule that should be applied to the web request.
      * Possible outcomes are:
      * returns nil -- allow the request.
@@ -199,7 +223,7 @@ export class MatchingResult {
         let basic = this.basicRule;
         if (!basic) {
             // Only document-level frame rule would be returned as a basic result,
-            // cause only those rules could block or modify page subrequests.
+            // cause only those rules could block or modify page sub-requests.
             // Other frame rules (generichide, elemhide etc) will be used in getCosmeticOption function.
             if (this.documentRule && this.documentRule.isDocumentLevelAllowlistRule()) {
                 basic = this.documentRule;
@@ -232,6 +256,10 @@ export class MatchingResult {
         const redirectRule = this.getRedirectRule();
         if (redirectRule && (!basic || !basic.isHigherPriority(redirectRule))) {
             return redirectRule;
+        }
+
+        if (!basic) {
+            return this.popupRule;
         }
 
         return basic;

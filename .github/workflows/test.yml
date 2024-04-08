@@ -2,7 +2,7 @@
 name: test
 
 env:
-  NODE_VERSION: 18
+  NODE_VERSION: 20
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Number of commits to fetch. 0 indicates all history.
           fetch-depth: 0
@@ -26,10 +26,10 @@ jobs:
         with:
           version: 8
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: pnpm
       - name: Run bash commands
         shell: bash
         run: |
@@ -38,18 +38,18 @@ jobs:
           # install deps
           pnpm install
 
+          # css-tokenizer
+          npx lerna run --scope @adguard/css-tokenizer check-types
+          npx lerna run --scope @adguard/css-tokenizer lint
+          npx lerna run --scope @adguard/css-tokenizer test
+          npx lerna run --scope @adguard/css-tokenizer build
+
           # agtree
           npx lerna run --scope @adguard/agtree check-types
           npx lerna run --scope @adguard/agtree check-compatibility-tables
           npx lerna run --scope @adguard/agtree lint
           npx lerna run --scope @adguard/agtree test
           npx lerna run --scope @adguard/agtree build
-
-          # css-tokenizer
-          npx lerna run --scope @adguard/css-tokenizer check-types
-          npx lerna run --scope @adguard/css-tokenizer lint
-          npx lerna run --scope @adguard/css-tokenizer test
-          npx lerna run --scope @adguard/css-tokenizer build
 
           # tsurlfilter
           npx lerna run --scope @adguard/tsurlfilter lint
@@ -67,19 +67,27 @@ jobs:
           npx lerna run --scope @adguard/api lint
           npx lerna run --scope @adguard/api build
   notify:
-    needs: [ test ]
-    # Secrets are not passed to workflows that are triggered by a pull request from a fork
-    # always() we use in order to send notification even if the test step failed
-    if: ${{ always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs: test
+    # Run this job only if the previous job failed and the event was triggered by the 'AdguardTeam/tsurlfilter' repository
+    # Note: 'always()' is needed to run the notify job even if the test job was failed
+    if:
+      ${{
+        always() &&
+        needs.test.result == 'failure' &&
+        github.repository == 'AdguardTeam/tsurlfilter' &&
+        (
+          github.event_name == 'push' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        )
+      }}
     runs-on: ubuntu-latest
     steps:
-      - name: Conclusion
-        uses: technote-space/workflow-conclusion-action@v3
       - name: Send Slack notif
         uses: 8398a7/action-slack@v3
         with:
-          status: ${{ env.WORKFLOW_CONCLUSION }}
-          fields: workflow, repo, message, commit, author, eventName, ref
+          status: failure
+          fields: workflow, repo, message, commit, author, eventName, ref, job
+          job_name: test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
