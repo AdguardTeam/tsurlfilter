@@ -120,7 +120,11 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                                 eventId: nanoid(),
                                 element: element.innerHTML,
                                 frameUrl: requestUrl,
-                                rule,
+                                // FIXME: v2.3
+                                // Added FIXME here because we need to fix it before v2.3 is merged to master
+                                // Cosmetic rules should have filterId and ruleIndex as well
+                                filterId: 1, // FIXME v2.3
+                                ruleIndex: 1, // FIXME: v2.3
                                 frameDomain: getDomain(requestUrl) as string,
                                 requestType: contentType,
                                 timestamp,

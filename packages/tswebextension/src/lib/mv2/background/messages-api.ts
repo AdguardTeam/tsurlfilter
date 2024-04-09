@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { nanoid } from 'nanoid';
 import browser, { Runtime } from 'webextension-polyfill';
-import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
+import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import type { CookieRule } from '../../common/content-script/cookie-controller';
 import { RequestBlockingApi } from './request';
@@ -325,14 +325,14 @@ export class MessagesApi implements MessagesApiInterface {
 
         for (let i = 0; i < payload.length; i += 1) {
             const stat = payload[i];
-            const rule = new CosmeticRule(stat.ruleText, stat.filterId);
 
             this.filteringLog.publishEvent({
                 type: FilteringEventType.ApplyCosmeticRule,
                 data: {
                     tabId,
                     eventId: nanoid(),
-                    rule,
+                    filterId: stat.filterId,
+                    ruleIndex: stat.ruleIndex,
                     element: stat.element,
                     frameUrl: url,
                     frameDomain: getDomain(url) as string,
