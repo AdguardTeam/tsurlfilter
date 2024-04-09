@@ -38,20 +38,19 @@ Test:
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
 
-            # Install deps only for root dependencies
-            pnpm install -w
-
             branch="${bamboo_planRepository_branchName}"
+            target_branch="${bamboo_repository_pr_targetBranch:-master}"
 
-            # Default to 'master' if the variable is not set or is empty
-            targetBranch="${bamboo_repository_pr_targetBranch:-master}"
+            is_root_affected() {
+              git diff --name-only "${target_branch}"...HEAD | grep -v '^packages/' > /dev/null
+            }
 
-            # Run NX CLI to find projects changed since the master branch and check if the specified project is affected.
-            # And store grep exit status to determine if the project was found (0) or not (1).
-            is_affected=$(npx nx show projects --affected --select=projects --base=${targetBranch} --head=HEAD | grep -q "@adguard/tsurlfilter" && echo true || echo false)
+            is_project_affected() {
+              local project_name="$1"
+              pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
+            }
 
-            # If not on 'master' and the project is not affected, skip tests for it.
-            if [ "$branch" != "master" ] && [ "$is_affected" = false ]; then
+            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tsurlfilter"; then
               echo "No changes in project, skipping tests"
               exit 0;
             fi
