@@ -881,6 +881,37 @@ describe('Javascript rules', () => {
             new CosmeticRule(jsRule, 0);
         }).toThrow(new SyntaxError('Invalid scriptlet'));
     });
+
+    it('returns scriptlet name', () => {
+        const getScriptletName = (ruleText: string): string | null => {
+            return (new CosmeticRule(ruleText, 0)).scriptletParams?.name || null;
+        };
+        expect(getScriptletName("example.org#%#//scriptlet('log', 'arg')")).toBe('log');
+        expect(getScriptletName("#%#//scriptlet('log', 'arg')")).toBe('log');
+        expect(getScriptletName('example.org#%#//scriptlet()')).toBe(null);
+        expect(getScriptletName('#@%#//scriptlet()')).toBe(null);
+        expect(getScriptletName("#@%#//scriptlet('set-cookie')")).toBe('set-cookie');
+        expect(getScriptletName('#@%#//scriptlet("set-cookie")')).toBe('set-cookie');
+    });
+
+    it('normalizes scriptlet rule content', () => {
+        const getScriptletContent = (ruleText: string): string | null => {
+            return (new CosmeticRule(ruleText, 0)).scriptletParams.toString();
+        };
+        expect(getScriptletContent("example.org#%#//scriptlet('log', 'arg')")).toBe("//scriptlet('log', 'arg')");
+        expect(getScriptletContent('example.org#@%#//scriptlet()')).toBe('//scriptlet()');
+        expect(getScriptletContent('example.org#@%#//scriptlet("set-cookie")')).toBe("//scriptlet('set-cookie')");
+        expect(getScriptletContent('example.org#@%#//scriptlet("set-cookie")')).toBe("//scriptlet('set-cookie')");
+
+        // single quotes are escaped
+        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet("set-cookie", "some'escaped")`)).toBe(String.raw`//scriptlet('set-cookie', 'some\'escaped')`);
+
+        // no need to have escaped double quotes in the arguments
+        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet("set-cookie", "some\"escaped")`)).toBe(String.raw`//scriptlet('set-cookie', 'some"escaped')`);
+
+        // no need to escape single quotes if they were already escaped
+        expect(getScriptletContent(String.raw`example.org#@%#//scriptlet('set-cookie', 'some\'escaped')`)).toBe(String.raw`//scriptlet('set-cookie', 'some\'escaped')`);
+    });
 });
 
 describe('HTML filtering rules (content rules)', () => {

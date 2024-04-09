@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$permissions` modifier.
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules [#64].
+- Ability to allowlist scriptlets by name [#377].
 
 ### Changed
 
@@ -44,13 +45,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
 [AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
+## [2.2.19] - 2024-04-03
+
+### Added
+
+- Simple support of `$header` modifier — just for compiler validation.
+
+[2.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.19
 
 ## [2.2.18] - 2024-03-29
 
 ### Fixed
 
-- Do not block "Should collapse" mechanism with `$popup` rules
+- Do not block "Should collapse" mechanism with `$popup` rules.
 
 [2.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.18
 

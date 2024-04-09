@@ -37,6 +37,25 @@ Test:
 
             # Set cache directorys
             pnpm config set store-dir ${bamboo.cachePnpm}
+
+            branch="${bamboo_planRepository_branchName}"
+            target_branch="${bamboo_repository_pr_targetBranch:-master}"
+
+            is_root_affected() {
+              git diff --name-only "${target_branch}"...HEAD | grep -v '^packages/' > /dev/null
+            }
+
+            is_project_affected() {
+              local project_name="$1"
+              pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
+            }
+
+            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/agtree"; then
+              echo "No changes in project, skipping tests"
+              exit 0;
+            fi
+
+            # Install dependencies
             pnpm install
 
             # Build CSS Tokenizer because it is used in AGTree tests
@@ -68,8 +87,13 @@ Test:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
-            pnpm clean
-  
+            # Check if node_modules directory exists
+            if [ -d "node_modules" ]; then
+              pnpm clean
+            else
+              echo "node_modules directory does not exist, skipping pnpm clean"
+            fi
+
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
     - adg-docker: 'true'

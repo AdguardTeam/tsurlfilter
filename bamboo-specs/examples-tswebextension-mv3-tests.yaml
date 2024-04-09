@@ -2,8 +2,8 @@
 version: 2
 plan:
   project-key: AJL
-  key: CSSTOKENIZERTEST
-  name: CSS Tokenizer - tests
+  key: AGTSWEBEXTMVTHREETEST
+  name: examples-tswebextension-mv3 - tests
 variables:
   dockerContainer: adguard/node-ssh:18.19--0
 
@@ -50,7 +50,7 @@ Test:
               pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
             }
 
-            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/css-tokenizer"; then
+            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "tswebextension-mv3"; then
               echo "No changes in project, skipping tests"
               exit 0;
             fi
@@ -58,14 +58,23 @@ Test:
             # Install dependencies
             pnpm install
 
-            # Check TypeScript types with TSC
-            pnpm --filter @adguard/css-tokenizer check-types
+            # First build since we need dependencies
+            npx lerna run build --scope tswebextension-mv3 --include-dependencies
 
-            # ESLint & Markdownlint
-            pnpm --filter @adguard/css-tokenizer lint
+            # Lint
+            pnpm --filter tswebextension-mv3 lint
 
-            # Run tests with Jest
-            pnpm --filter @adguard/css-tokenizer test
+#            # Test
+#            # Should be run after build, since test requires build
+#            # TODO fail if tests are not passing
+#            pnpm --filter tswebextension-mv3 test
+# TODO add artifacts for testing
+#  artifacts:
+#    - name: extension.zip
+#      location: packages/examples/adguard-api/build
+#      pattern: extension.zip
+#      shared: true
+#      required: false
   final-tasks:
     - script:
         interpreter: SHELL

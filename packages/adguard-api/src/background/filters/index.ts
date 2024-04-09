@@ -19,10 +19,10 @@
 // Entry point for filter management modules
 
 // Filters data management API
-export { FiltersApi } from "./api";
+export { FiltersApi } from './api';
 
 // Service for scheduling filters rules updates
-export { FiltersUpdateService } from "./update";
+export { FiltersUpdateService } from './update';
 
 // Service for auto-enabling language filters
-export { LocaleDetectService } from "./locale-detect";
+export { LocaleDetectService } from './locale-detect';

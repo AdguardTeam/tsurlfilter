@@ -19,10 +19,10 @@
 // Entry point for API helper classes
 
 // Helper class for working with browser extension context
-export { BrowserUtils } from "./browser-utils";
+export { BrowserUtils } from './browser-utils';
 
 // Helper class for user agent data
-export { UserAgent } from "./user-agent";
+export { UserAgent } from './user-agent';
 
 // Helper class for working with i18n locales
-export { I18n } from "./i18n";
+export { I18n } from './i18n';

@@ -17,9 +17,9 @@
  */
 
 export enum NotifierEventType {
-    DetectFilters = "DetectFilters",
-    UpdateFilters = "UpdateFilters",
-    DeleteFilters = "DeleteFilters",
+    DetectFilters = 'DetectFilters',
+    UpdateFilters = 'UpdateFilters',
+    DeleteFilters = 'DeleteFilters',
 }
 
 export type DetectFiltersEvent = {
