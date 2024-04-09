@@ -11,9 +11,6 @@ importers:
       lerna:
         specifier: ^8.1.2
         version: 8.1.2
-      nx:
-        specifier: ^18.2.2
-        version: 18.2.2
 
   packages/adguard-api:
     dependencies:
