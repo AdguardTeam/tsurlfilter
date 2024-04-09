@@ -35,6 +35,13 @@ export type GetBlockingResponseParams = RequestParams & {
 };
 
 /**
+ * Params for {@link RequestBlockingApi.getResponseOnHeadersReceived}.
+ */
+export type GetHeadersResponseParams = RequestParams & {
+    rule: NetworkRule | null,
+};
+
+/**
  * Api for processing request filtering.
  *
  * Method {@link getBlockingResponse} processes rule applying for request and computes response
@@ -212,13 +219,13 @@ export class RequestBlockingApi {
      */
     public static getResponseOnHeadersReceived(
         responseHeaders: WebRequest.HttpHeaders | undefined,
-        data: GetBlockingResponseParams,
+        data: GetHeadersResponseParams,
     ): WebRequest.BlockingResponse | undefined {
         if (!data.rule || !responseHeaders) {
             return undefined;
         }
 
-        RequestBlockingApi.logRuleApplying(data);
+        RequestBlockingApi.logRuleApplying(data, data.rule);
         return data.rule.isAllowlist() ? undefined : { cancel: true };
     }
 

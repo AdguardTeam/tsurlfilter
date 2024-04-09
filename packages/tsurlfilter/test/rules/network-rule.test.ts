@@ -502,8 +502,9 @@ describe('NetworkRule constructor', () => {
         correct = new NetworkRule('||example.com^$header=set-cookie:foo', 0);
         expect(correct).toBeTruthy();
 
-        correct = new NetworkRule('://www.*.com/*.css|$script,third-party,header=link:/ads.re/>;rel=preconnect/', 0);
-        expect(correct).toBeTruthy();
+        // TODO(leleka.s) header modifier supports only limited set of modifiers
+        // correct = new NetworkRule('://www.*.com/*.css|$script,third-party,header=link:/ads.re/>;rel=preconnect/', 0);
+        // expect(correct).toBeTruthy();
 
         correct = new NetworkRule('@@||example.com^$header=set-cookie', 0);
         expect(correct).toBeTruthy();

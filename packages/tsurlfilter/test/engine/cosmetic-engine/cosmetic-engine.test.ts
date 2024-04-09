@@ -328,7 +328,7 @@ describe('Test cosmetic engine - JS rules', () => {
             ]));
 
             const result = cosmeticEngine.match(
-                createRequest('testcases.adguard.com'),
+                createRequest('https://testcases.adguard.com'),
                 CosmeticOption.CosmeticOptionAll,
             );
 
@@ -346,7 +346,7 @@ describe('Test cosmetic engine - JS rules', () => {
             ]));
 
             const result = cosmeticEngine.match(
-                createRequest('testcases.adguard.com'),
+                createRequest('https://testcases.adguard.com'),
                 CosmeticOption.CosmeticOptionAll,
             );
 
@@ -364,7 +364,7 @@ describe('Test cosmetic engine - JS rules', () => {
                 genericScriptletRule,
             ]));
 
-            const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+            const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
 
             expect(result.JS.specific.length).toBe(0);
             expect(result.JS.generic.length).toBe(0);
@@ -382,11 +382,11 @@ describe('Test cosmetic engine - JS rules', () => {
                 specificScriptletRule2,
             ]));
 
-            const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+            const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
             expect(result.JS.specific.length).toBe(0);
             expect(result.JS.generic.length).toBe(0);
 
-            const result2 = cosmeticEngine.match(createRequest('example.com'), CosmeticOption.CosmeticOptionAll);
+            const result2 = cosmeticEngine.match(createRequest('https://example.com'), CosmeticOption.CosmeticOptionAll);
             expect(result2.JS.specific.map((r) => r.getText())).toEqual([specificScriptletRule2]);
             expect(result2.JS.generic.map((r) => r.getText())).toEqual([genericScriptletRule]);
         });
@@ -404,7 +404,7 @@ describe('Test cosmetic engine - JS rules', () => {
                 specificSetStorageScriptletRule,
                 genericSetStorageScriptletRule,
             ]));
-            const result = cosmeticEngine.match(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
+            const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
             expect(result.JS.specific.map((r) => r.getText())).toEqual([specificSetStorageScriptletRule]);
             expect(result.JS.generic.map((r) => r.getText())).toEqual([genericSetStorageScriptletRule]);
         });
