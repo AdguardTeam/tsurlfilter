@@ -90,7 +90,12 @@ Test:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
-            pnpm clean
+            # Check if node_modules directory exists
+            if [ -d "node_modules" ]; then
+              pnpm clean
+            else
+              echo "node_modules directory does not exist, skipping pnpm clean"
+            fi
 
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
