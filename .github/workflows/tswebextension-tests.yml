@@ -1,0 +1,39 @@
+# Tests build
+name: tswebextension-tests
+
+env:
+  NODE_VERSION: 20
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Number of commits to fetch. 0 indicates all history.
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Run bash commands
+        shell: bash
+        run: |
+          ls -alt
+
+          # install deps
+          pnpm install
+
+          # tswebextension
+          npx lerna run --scope @adguard/tswebextension build --include-dependencies
+          npx lerna run --scope @adguard/tswebextension lint
+          npx lerna run --scope @adguard/tswebextension test:prod
