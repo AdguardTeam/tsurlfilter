@@ -46,7 +46,7 @@ Test:
             # Default to 'master' if the variable is not set or is empty
             targetBranch="${bamboo_repository_pr_targetBranch:-master}"
 
-            # Run NX CLI to find projects changed since the master branch and check if the specified project is affected.
+            # Run NX CLI to find projects changed since the target branch and check if the specified project is affected.
             # And store grep exit status to determine if the project was found (0) or not (1).
             is_affected=$(npx nx show projects --affected --select=projects --base=${targetBranch} --head=HEAD | grep -q "@adguard/logger" && echo true || echo false)
 
