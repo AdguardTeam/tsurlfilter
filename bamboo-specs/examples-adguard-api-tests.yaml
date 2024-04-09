@@ -55,7 +55,7 @@ Test:
               exit 0;
             fi
 
-            # Install remained dependencies
+            # Install dependencies
             pnpm install
 
             # Lint
