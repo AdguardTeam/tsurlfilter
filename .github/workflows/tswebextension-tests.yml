@@ -12,7 +12,7 @@ on:
         required: true
         description: 'Unique identifier for the workflow run'
 
-run-name: ${{github.workflow}} [ID:${{ inputs.id }}]
+run-name: ${{workflow}} [ID:${{ inputs.id }}]
 
 jobs:
   test:
