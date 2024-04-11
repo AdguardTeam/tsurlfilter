@@ -6,6 +6,11 @@ env:
 
 on:
   workflow_dispatch:
+    inputs:
+      id:
+        description: 'Unique identifier for the workflow run'
+
+run-name: ${{github.workflow}} [ID:${{ inputs.id }}]
 
 jobs:
   test:
