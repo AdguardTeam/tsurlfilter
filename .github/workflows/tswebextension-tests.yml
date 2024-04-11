@@ -12,7 +12,8 @@ on:
         required: true
         description: 'Unique identifier for the workflow run'
 
-run-name: ${{github.workflow}} [ID:${{ github.inputs.id }}]
+# FIXME describe this in the README.md, variable names cant be changed
+run-name: ${{github.workflow}} [ID:${{ inputs.id }}]
 
 jobs:
   test:
