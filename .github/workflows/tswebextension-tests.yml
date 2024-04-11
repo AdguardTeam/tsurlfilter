@@ -9,6 +9,7 @@ on:
     inputs:
       id:
         type: 'string'
+        required: true
         description: 'Unique identifier for the workflow run'
 
 run-name: ${{github.workflow}} [ID:${{ inputs.id }}]
