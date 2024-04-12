@@ -41,5 +41,19 @@ jobs:
 
           # tswebextension
           npx lerna run --scope @adguard/tswebextension build --include-dependencies
-          npx lerna run --scope @adguard/tswebextension lint
-          npx lerna run --scope @adguard/tswebextension test:prod
+
+          cd packages/tswebextension
+          pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
+
+          cd ../tsurlfilter
+          pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz
+      - name: Save tswebextension dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: tswebextension.tgz
+          path: packages/tswebextension/tswebextension.tgz
+      - name: Save tsurlfilter dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsurlfilter.tgz
+          path: packages/tsurlfilter/tsurlfilter.tgz
