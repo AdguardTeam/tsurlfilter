@@ -1,0 +1,14 @@
+# AdGuard Content Blocker does not support redirects
+adg_any_not_cb:
+  name: amazon-apstag
+  aliases:
+    - amazon-apstag
+    - ubo-amazon_apstag.js
+    - amazon_apstag.js
+  description: Mocks Amazon's apstag.js
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-redirects.md#amazon-apstag
+
+ubo_any:
+  name: amazon_apstag.js
+  description: Mocks Amazon's apstag.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#amazon_apstagjs-
