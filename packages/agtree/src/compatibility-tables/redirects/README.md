@@ -10,6 +10,7 @@ Each file contains an object, where the key is the [actual adblocker ID](../READ
 | --- | --- | --- | --- |
 | `name`\* | Name of the actual redirect. | `string` | |
 | `aliases` | List of aliases for the redirect (if any). | `string[]` | `[]` (no aliases) |
+| `is_blocking` | Whether the redirect is blocking. | `boolean` | `false` |
 | `description` | Short description of the actual redirect. If not specified or it's value is `null`, then the description is not available. | `string\|null` | `null` |
 | `docs` | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available. | `string\|null` | `null` |
 | `version_added` | The version of the adblocker when the redirect was added. | `string\|null` | `null` |
