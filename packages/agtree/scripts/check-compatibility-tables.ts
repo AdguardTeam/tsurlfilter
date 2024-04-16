@@ -155,6 +155,21 @@ const SCHEMA_MAP = {
             return true;
         },
     )),
+
+    // https://github.com/AdguardTeam/AGLint/tree/master/src/compatibility-tables/redirects#file-structure
+    'src/compatibility-tables/redirects/**.yml': ss.record(
+        platforms,
+        ss.object({
+            name: ss.nonempty(ss.string()),
+            aliases: ss.defaulted(ss.array(ss.nonempty(ss.string())), []),
+            description: ss.defaulted(ss.nullable(ss.string()), null),
+            docs: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+            version_added: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+            version_removed: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+            deprecated: ss.defaulted(ss.boolean(), false),
+            deprecation_message: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+        }),
+    ),
 };
 
 /**
