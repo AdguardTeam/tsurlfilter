@@ -89,6 +89,23 @@ This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packa
 
 [lernacommands]: https://lerna.js.org/docs/api-reference/commands
 
+### Linking packages from this monorepo to another projects
+
+pnpm has a nested structure for packages, which is not compatible with the classic package managers, like npm or yarn,
+because they are using a flat structure. You can force pnpm to use a flat structure with the `--shamefully-hoist` flag.
+
+For example, if you want to link the `tswebextension` package from this monorepo to the
+[browser extension project][browser-extension], you can follow these steps:
+
+1. Install packages in this monorepo with `pnpm install --shamefully-hoist`.
+1. Go to the tswebextension package directory: `cd packages/tswebextension`, and run `yarn link`.
+1. Go to the browser extension project directory: `cd /path/to/browser-extension`,
+   and run `yarn link @adguard/tswebextension`.
+   This way, the browser extension project will use the linked package from this monorepo, instead of the published one
+   from the npm registry.
+
+[browser-extension]: https://github.com/AdguardTeam/AdguardBrowserExtension
+
 ### Sample extensions
 
 Source code of sample extensions can be found in [`./packages/examples`][examples] directory.
