@@ -91,20 +91,24 @@ This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packa
 
 ### Linking packages from this monorepo to another projects
 
-pnpm has a nested structure for packages, which is not compatible with the classic package managers, like npm or yarn,
-because they are using a flat structure. You can force pnpm to use a flat structure with the `--shamefully-hoist` flag.
+`pnpm` has a nested structure for packages, which is not compatible with the classic `yarn`, because it using a flat
+structure, but you can force `pnpm` to use a flat structure by setting the `--shamefully-hoist` flag.
 
 For example, if you want to link the `tswebextension` package from this monorepo to the
-[browser extension project][browser-extension], you can follow these steps:
+[browser extension project][browser-extension] which are using `yarn`, you can follow these steps:
 
 1. Install packages in this monorepo with `pnpm install --shamefully-hoist`.
-1. Go to the tswebextension package directory: `cd packages/tswebextension`, and run `yarn link`.
-1. Go to the browser extension project directory: `cd /path/to/browser-extension`,
+1. Go to the *tswebextension* package directory: `cd packages/tswebextension`, and run `yarn link`.
+1. Go to the *browser extension* project directory: `cd /path/to/browser-extension`,
    and run `yarn link @adguard/tswebextension`.
    This way, the browser extension project will use the linked package from this monorepo, instead of the published one
    from the npm registry.
 
+If the other project are using `pnpm`, you can use [`pnpm link`][pnpm-link] to connect the packages locally.
+For more details, please check the pnpm documentation.
+
 [browser-extension]: https://github.com/AdguardTeam/AdguardBrowserExtension
+[pnpm-link]: https://pnpm.io/cli/link
 
 ### Sample extensions
 
