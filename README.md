@@ -91,8 +91,8 @@ This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packa
 
 ### Linking packages from this monorepo to another projects
 
-`pnpm` has a nested structure for packages, which is not compatible with the classic `yarn`, because it using a flat
-structure, but you can force `pnpm` to use a flat structure by setting the `--shamefully-hoist` flag.
+`pnpm` has a nested structure for packages, which is not compatible with the classic `yarn`, because `yarn` using a flat
+structure, but you can force `pnpm` to use a flat structure too by setting the `--shamefully-hoist` flag.
 
 For example, if you want to link the `tswebextension` package from this monorepo to the
 [browser extension project][browser-extension] which are using `yarn`, you can follow these steps:
