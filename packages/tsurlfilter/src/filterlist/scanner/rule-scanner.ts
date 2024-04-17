@@ -149,6 +149,24 @@ export class RuleScanner {
     }
 
     /**
+     * Get filter list id.
+     *
+     * @returns List id.
+     */
+    public getListId(): number {
+        return this.listId;
+    }
+
+    /**
+     * Get the length of the data read by the scanner.
+     *
+     * @returns Data length.
+     */
+    public getDataLength(): number {
+        return this.reader.getDataLength();
+    }
+
+    /**
      * Reads the next line and returns it.
      *
      * @return - Next line string or null.

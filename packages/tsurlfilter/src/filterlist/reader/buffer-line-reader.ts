@@ -71,4 +71,9 @@ export class BufferLineReader implements ILineReader {
     public getCurrentPos(): number {
         return this.currentIndex;
     }
+
+    /** @inheritdoc */
+    public getDataLength(): number {
+        return this.buffer.length;
+    }
 }

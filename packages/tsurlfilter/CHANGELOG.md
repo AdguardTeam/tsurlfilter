@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Ability to allowlist scriptlets by name [#377].
+- New rule indexing algorithm. The storage index is now an integer representing 
+  the rule position in the concatenated filter list text. 
+  The list id is determined by the pre-stored filter list offset during the scan.
 
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
