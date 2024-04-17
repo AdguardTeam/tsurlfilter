@@ -11,8 +11,17 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
         return;\
     }\
     var script = document.createElement("script");\
-    script.setAttribute("type", "text/javascript");\
-    script.textContent ="${text}";\
+    var preparedScriptText = "${text}";\
+    var blob;\
+        var url;\
+        try {\
+            blob = new Blob([preparedScriptText], { type: "text/javascript; charset=utf-8" });\
+            url = URL.createObjectURL(blob);\
+            script.src = url;\
+        } catch (e) {\
+            script.setAttribute("type", "text/javascript");\
+            script.textContent = preparedScriptText;\
+        }\
     var FRAME_REQUESTS_LIMIT = 500;\
     var frameRequests = 0;\
     function waitParent () {\
@@ -21,6 +30,9 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
         if (parent) {\
             try {\
                 parent.appendChild(script);\
+                if (url) {\
+                    URL.revokeObjectURL(url);\
+                }\
                 parent.removeChild(script);\
             } catch (e) {\
             } finally {\

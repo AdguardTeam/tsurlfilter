@@ -60,14 +60,27 @@ export const buildScriptText = (scriptText: string): string => {
      *
      * Injecting content-script, which appends a script tag, breaks Firefox's pretty printer for xml documents.
      * Description of the issue: @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194}.
+     *
+     * CSP may prevent script execution in Firefox if script.textContent is used.
+     * That's why script.src is used as a primary way, and script.textContent is used as a fallback.
+     * Description of the issue: @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1733}.
      */
     return `(function() {\
                 if (window.${variableName} || document instanceof XMLDocument) {\
                     return;\
                 }\
                 var script = document.createElement("script");\
-                script.setAttribute("type", "text/javascript");\
-                script.textContent = "${scriptText.replace(reJsEscape, escapeJs)}";\
+                var preparedScriptText = "${scriptText.replace(reJsEscape, escapeJs)}";\
+                var blob;\
+                var url;\
+                try {\
+                    blob = new Blob([preparedScriptText], { type: "text/javascript; charset=utf-8" });\
+                    url = URL.createObjectURL(blob);\
+                    script.src = url;\
+                } catch (e) {\
+                    script.setAttribute("type", "text/javascript");\
+                    script.textContent = preparedScriptText;\
+                }\
                 var FRAME_REQUESTS_LIMIT = 500;\
                 var frameRequests = 0;\
                 function waitParent () {\
@@ -76,6 +89,9 @@ export const buildScriptText = (scriptText: string): string => {
                     if (parent) {\
                         try {\
                             parent.appendChild(script);\
+                            if (url) {\
+                                URL.revokeObjectURL(url);\
+                            }\
                             parent.removeChild(script);\
                         } catch (e) {\
                         } finally {\
