@@ -24,7 +24,7 @@ export * from './modifiers/remove-header-modifier';
 export * from './modifiers/remove-param-modifier';
 export * from './modifiers/cookie-modifier';
 export * from './modifiers/replace-modifier';
-export * from './utils/logger';
+export * from './common/logger';
 export * from './utils/rule-validator';
 export * from './utils/url';
 export * from './utils/string-utils';

@@ -1,7 +1,6 @@
 import { ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
 import { ScriptletParser, type ScriptletsProps } from '../engine/cosmetic-engine/scriptlet-parser';
-import { logger } from '../utils/logger';
-import { getErrorMessage } from '../common/error';
+import { logger } from '../common/logger';
 
 /**
  * Represents scriptlet parameters parsed from the rule content.
@@ -73,7 +72,7 @@ export class ScriptletsParams {
             try {
                 this.parsedProps = ScriptletParser.parseRule(scriptletContent);
             } catch (e) {
-                logger.error(getErrorMessage(e));
+                logger.error(e);
             }
         }
         return this.parsedProps;

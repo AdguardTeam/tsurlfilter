@@ -1,7 +1,7 @@
 import { z as zod } from 'zod';
 
 import type { NetworkRule } from '../network-rule';
-import { getErrorMessage } from '../../common/error';
+import { getErrorMessage } from '../../common/logger';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';

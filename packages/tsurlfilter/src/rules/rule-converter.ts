@@ -1,6 +1,6 @@
 import scriptlets from '@adguard/scriptlets';
 
-import { logger } from '../utils/logger';
+import { logger } from '../common/logger';
 import { EXT_CSS_PSEUDO_INDICATORS } from './cosmetic-rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { SimpleRegex } from './simple-regex';
@@ -84,7 +84,7 @@ export class RuleConverter {
             try {
                 result.push(...RuleConverter.convertRule(line));
             } catch (e) {
-                logger.warn((e as Error).message);
+                logger.warn(e);
             }
         }
 

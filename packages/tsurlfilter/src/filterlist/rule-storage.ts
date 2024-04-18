@@ -6,7 +6,7 @@ import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { ScannerType } from './scanner/scanner-type';
 import { RuleFactory } from '../rules/rule-factory';
-import { logger } from '../utils/logger';
+import { logger } from '../common/logger';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists

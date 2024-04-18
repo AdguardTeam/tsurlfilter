@@ -5,7 +5,8 @@ import { formatTime } from './format-time';
  * Number presentation of log levels. Order is important. Higher number, more messages to be visible.
  */
 export const enum LogLevelNumeric {
-    Error = 1,
+    Mute = 0,
+    Error,
     Warn,
     Info,
     Debug,
@@ -15,6 +16,7 @@ export const enum LogLevelNumeric {
  * String presentation of log levels, for convenient users usage.
  */
 export enum LogLevel {
+    Mute = 'mute',
     Error = 'error',
     Warn = 'warn',
     Info = 'info',
@@ -25,6 +27,7 @@ export enum LogLevel {
  * Log levels map, which maps number level to string level.
  */
 const levelMapNumToString = {
+    [LogLevelNumeric.Mute]: LogLevel.Mute,
     [LogLevelNumeric.Error]: LogLevel.Error,
     [LogLevelNumeric.Warn]: LogLevel.Warn,
     [LogLevelNumeric.Info]: LogLevel.Info,

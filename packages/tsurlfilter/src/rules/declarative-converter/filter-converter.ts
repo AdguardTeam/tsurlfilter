@@ -88,7 +88,7 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
-import { getErrorMessage } from '../../common/error';
+import { getErrorMessage } from '../../common/logger';
 import type { NetworkRule } from '../network-rule';
 
 import {

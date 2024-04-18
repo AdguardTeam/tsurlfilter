@@ -1,25 +1,15 @@
+/* eslint-disable no-console */
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { RuleConverter, setLogger } from '../../src';
-
-const logger = global.console;
+import { RuleConverter, logger, LogLevel } from '../../src';
 
 beforeAll(() => {
-    global.console = {
-        ...console,
-        // ignore all except error
-        log: jest.fn(),
-        debug: jest.fn(),
-        info: jest.fn(),
-        warn: jest.fn(),
-    };
-
-    setLogger(global.console);
+    // ignore all except error
+    logger.logLevel = LogLevel.Error;
 });
 
 afterAll(() => {
-    global.console = console;
-    setLogger(console);
+    logger.logLevel = LogLevel.Info;
 });
 
 describe('rule converter performance benchmark', () => {
@@ -31,9 +21,9 @@ describe('rule converter performance benchmark', () => {
         const end = performance.now();
         const time = end - start;
         const lines = rules.split(/\r?\n/);
-        logger.log('rules length:', lines.length);
-        logger.log('conversion took', time, 'ms');
-        logger.log('for one rule', time / lines.length, 'ms per rule');
+        console.log('rules length:', lines.length);
+        console.log('conversion took', time, 'ms');
+        console.log('for one rule', time / lines.length, 'ms per rule');
 
         // this was put to 3sec to make sure that the test will not fail on CI
         expect(time).toBeLessThanOrEqual(3000);
@@ -47,9 +37,9 @@ describe('rule converter performance benchmark', () => {
         const end = performance.now();
         const time = end - start;
         const lines = rules.split(/\r?\n/);
-        logger.log('rules length:', lines.length);
-        logger.log('conversion took', time, 'ms');
-        logger.log('for one rule', time / lines.length, 'ms per rule');
+        console.log('rules length:', lines.length);
+        console.log('conversion took', time, 'ms');
+        console.log('for one rule', time / lines.length, 'ms per rule');
 
         // this was put to 3sec to make sure that the test will not fail on CI
         expect(time).toBeLessThanOrEqual(3000);

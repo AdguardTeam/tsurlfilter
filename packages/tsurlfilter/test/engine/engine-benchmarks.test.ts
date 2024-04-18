@@ -14,7 +14,8 @@ import {
     RuleStorage,
     DnsEngine,
     CosmeticEngine,
-    setLogger,
+    logger,
+    LogLevel,
 } from '../../src';
 
 /**
@@ -236,16 +237,7 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
 describe('Benchmarks', () => {
     beforeAll(() => {
         /* eslint-disable @typescript-eslint/no-unused-vars */
-        setLogger({
-            error(message?: string): void {
-            },
-            info(message?: string): void {
-            },
-            debug(message?: string): void {
-            },
-            warn(message?: string): void {
-            },
-        });
+        logger.logLevel = LogLevel.Mute;
         /* eslint-disable @typescript-eslint/no-unused-vars */
     });
 
@@ -258,7 +250,7 @@ describe('Benchmarks', () => {
     });
 
     afterAll(() => {
-        setLogger(console);
+        logger.logLevel = LogLevel.Info;
     });
 
     /**

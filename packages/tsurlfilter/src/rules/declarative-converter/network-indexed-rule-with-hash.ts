@@ -1,4 +1,4 @@
-import { getErrorMessage } from '../../common/error';
+import { getErrorMessage } from '../../common/logger';
 import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';

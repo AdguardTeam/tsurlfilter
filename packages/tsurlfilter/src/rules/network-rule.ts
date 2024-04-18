@@ -24,7 +24,7 @@ import {
     NOT_MARK,
     OPTIONS_DELIMITER,
 } from './network-rule-options';
-import { getErrorMessage } from '../common/error';
+import { getErrorMessage } from '../common/logger';
 import { RequestType } from '../request-type';
 import { ClientModifier } from '../modifiers/dns/client-modifier';
 import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';

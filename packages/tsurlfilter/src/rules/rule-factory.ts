@@ -3,8 +3,8 @@ import { NetworkRule } from './network-rule';
 import { IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
-import { logger } from '../utils/logger';
-import { getErrorMessage } from '../common/error';
+import { logger } from '../common/logger';
+import { getErrorMessage } from '../common/logger';
 
 /**
  * Rule builder class

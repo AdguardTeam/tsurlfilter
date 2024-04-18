@@ -718,6 +718,9 @@ importers:
 
   packages/tsurlfilter:
     dependencies:
+      '@adguard/logger':
+        specifier: ^1.0.0
+        version: link:../logger
       '@adguard/scriptlets':
         specifier: ^1.10.25
         version: 1.10.25

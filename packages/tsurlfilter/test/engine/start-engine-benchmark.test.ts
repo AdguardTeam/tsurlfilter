@@ -3,26 +3,18 @@ import fs from 'fs';
 import {
     Engine,
     RuleStorage,
-    setLogger,
     StringRuleList,
+    logger,
+    LogLevel,
 } from '../../src';
 
 describe('Start Engine Benchmark', () => {
     beforeAll(() => {
-        setLogger({
-            error(): void {
-            },
-            info(): void {
-            },
-            debug(): void {
-            },
-            warn(): void {
-            },
-        });
+        logger.logLevel = LogLevel.Mute;
     });
 
     afterAll(() => {
-        setLogger(console);
+        logger.logLevel = LogLevel.Info;
     });
 
     it('starts network-engine', async () => {
