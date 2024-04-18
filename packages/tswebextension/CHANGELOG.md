@@ -8,11 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [1.0.24] - 2024-04-15
+
+### Fixed
+
+- Script rules are not applied in Firefox due to CSP [AdguardBrowserExtension#1733].
+
+[1.0.24]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.24
+[AdguardBrowserExtension#1733]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1733
+
+## [1.0.23] - 2024-04-15
+
+### Changed
+
+- Error logging level on setting cookie with mismatched domain and request URL [AdguardBrowserExtension#2683].
+
+[1.0.23]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.23
+[AdguardBrowserExtension#2683]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2683
+
 ## [1.0.21] - 2024-03-29
 
 ### Fixed
 
 - Do not block "Should collapse" mechanism with `$popup` rules
+
+[1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
 
 ## [1.0.20] - 2024-03-28
 
@@ -27,7 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
 [AdguardBrowserExtension#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
 
-
 ## [1.0.18] - 2024-03-25
 
 ### Fixed
@@ -35,7 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved assistant iframe checking for cosmetic rules injection [AdguardBrowserExtension#1848].
 
 [1.0.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.18
-
 
 ## [1.0.17] - 2024-03-25
 
@@ -45,7 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.17
 [AdguardBrowserExtension#1848]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1848
-
 
 ## [1.0.16] - 2024-03-01
 

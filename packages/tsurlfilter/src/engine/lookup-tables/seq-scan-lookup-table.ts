@@ -4,7 +4,6 @@ import { NetworkRule } from '../../rules/network-rule';
 import { RuleStorage } from '../../filterlist/rule-storage';
 import type { ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
-import { RuleStorageScanner } from '../../filterlist/scanner/rule-storage-scanner';
 /**
  * Sequence scan lookup table of rules for which we could not find a shortcut
  * and could not place it to the shortcuts lookup table.
@@ -46,22 +45,15 @@ export class SeqScanLookupTable implements ILookupTable {
      */
     addRule(_rule: NetworkRule, storageIdx: number): boolean {
         // Check if storageIdx has already indexed
-        const [listId, ruleIdx] = RuleStorageScanner.storageIdxToRuleListIdx(storageIdx);
-
-        const position = U32LinkedList.find((storageIndexPosition) => {
-            return (this.byteBuffer.getUint32(storageIndexPosition) === ruleIdx
-                && this.byteBuffer.getUint32(storageIndexPosition + 4) === listId);
+        const position = U32LinkedList.find((storageIndex) => {
+            return storageIndex === storageIdx;
         }, this.byteBuffer, this.storageIndexesPosition);
 
         if (position !== -1) {
             return false;
         }
 
-        // Add storage index to the byte buffer
-        const storageIndexPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
-        U32LinkedList.add(storageIndexPosition, this.byteBuffer, this.storageIndexesPosition);
+        U32LinkedList.add(storageIdx, this.byteBuffer, this.storageIndexesPosition);
         this.rulesCount += 1;
         return true;
     }
@@ -78,11 +70,8 @@ export class SeqScanLookupTable implements ILookupTable {
     matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
 
-        U32LinkedList.forEach((storageIndexPosition) => {
-            const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
-            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-            const rule = this.ruleStorage.retrieveNetworkRule(listId, ruleId);
+        U32LinkedList.forEach((storageIdx) => {
+            const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
 
             if (rule && rule.match(request)) {
                 result.push(rule);

@@ -4,7 +4,7 @@ This is a sample extension, presenting common usages of TSWebExtension library i
 
 ## <a id="idea"></a> Idea
 
-The idea is to provide an operative scheme of extension and to show some cases with manifest v3 limitations:
+The idea is to provide an operative scheme of the extension and to show some cases with manifest v3 limitations:
 
 - Precompile rules to json [See more](#precompile)
 
@@ -20,7 +20,7 @@ pnpm build
 
 ### <a id="precompile"></a> Precompile declarative rules
 
-Updates and converts rules from provided path to a set of declarative rules:
+Updates and converts rules from the provided path to a set of declarative rules:
 
 ```shell
 pnpm build:precompile-rules

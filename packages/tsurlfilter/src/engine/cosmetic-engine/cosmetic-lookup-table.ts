@@ -4,9 +4,6 @@ import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { RuleStorage } from '../../filterlist/rule-storage';
 import { Request } from '../../request';
-import { U32LinkedList } from '../../utils/u32-linked-list';
-import { BinaryMap } from '../../utils/binary-map';
-import type { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -16,7 +13,7 @@ export class CosmeticLookupTable {
     /**
      * Map with rules indices grouped by the permitted domains names
      */
-    private byHostname: Map<number, number>;
+    private byHostname: Map<number, number[]>;
 
     /**
      * Collection of domain specific rules, those could not be grouped by domain name
@@ -24,43 +21,23 @@ export class CosmeticLookupTable {
      */
     public wildcardRules: CosmeticRule[];
 
-    // FIXME remove
-    // /**
-    //  * Collection of generic rules.
-    //  * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
-    //  */
-    // public genericRules: CosmeticRule[];
+    /**
+     * Collection of generic rules.
+     * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
+     */
+    public genericRules: CosmeticRule[];
 
     /**
      * Map with allowlist rules indices. Key is the rule content.
      * More information about allowlist here:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
      */
-    private allowlist: Map<number, number>;
+    private allowlist: Map<string, number[]>;
 
     /**
      * Storage for the filtering rules
      */
-    declare private readonly ruleStorage: RuleStorage;
-
-    /**
-     * ByteBuffer to store the binary data.
-     */
-    declare private readonly byteBuffer: ByteBuffer;
-
-    /**
-     * Position of the allowlist binary map in the byte buffer.
-     */
-    declare private allowlistMapPosition: number;
-
-    /**
-     * Position of the hostname binary map in the byte buffer.
-     */
-    declare private hostnameMapPosition: number;
-
-    declare private genericRulesPosition: number;
-
-    declare private wildcardRulesPosition: number;
+    private readonly ruleStorage: RuleStorage;
 
     /**
      * Creates a new instance
@@ -68,14 +45,26 @@ export class CosmeticLookupTable {
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
-    constructor(storage: RuleStorage, byteBuffer: ByteBuffer) {
-        this.byteBuffer = byteBuffer;
+    constructor(storage: RuleStorage) {
         this.byHostname = new Map();
         this.wildcardRules = [] as CosmeticRule[];
-        this.wildcardRulesPosition = U32LinkedList.create(this.byteBuffer);
-        this.genericRulesPosition = U32LinkedList.create(this.byteBuffer);
+        this.genericRules = [] as CosmeticRule[];
         this.allowlist = new Map();
         this.ruleStorage = storage;
+    }
+
+    /**
+     * Adds rule to the allowlist map
+     * @param key Can be used any string, but here we use ruleContent, scriptlet content, or scriptlet name.
+     * @param storageIdx Index of the rule.
+     */
+    addAllowlistRule(key: string, storageIdx: number): void {
+        const existingRules = this.allowlist.get(key);
+        if (!existingRules) {
+            this.allowlist.set(key, [storageIdx]);
+            return;
+        }
+        existingRules.push(storageIdx);
     }
 
     /**
@@ -83,186 +72,145 @@ export class CosmeticLookupTable {
      * @param rule
      * @param storageIdx
      */
-    public addRule(rule: CosmeticRule, storageIdx: number): void {
+    addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
-            this.addAllowlistRule(rule, storageIdx);
+            if (rule.isScriptlet) {
+                // Store scriptlet rules by name to enable the possibility of allowlisting them.
+                // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
+                if (rule.scriptletParams.name !== undefined) {
+                    this.addAllowlistRule(rule.scriptletParams.name, storageIdx);
+                }
+                // Use normalized scriptlet content for better matching.
+                // For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
+                this.addAllowlistRule(rule.scriptletParams.toString(), storageIdx);
+            } else {
+                // Store all other rules by their content.
+                this.addAllowlistRule(rule.getContent(), storageIdx);
+            }
             return;
         }
 
         if (rule.isGeneric()) {
-            this.addGenericRule(storageIdx);
+            this.genericRules.push(rule);
             return;
         }
 
-        this.addHostnameRule(rule, storageIdx);
+        const domains = rule.getPermittedDomains();
+        if (domains) {
+            const hasWildcardDomain = domains.some((d) => DomainModifier.isWildcardDomain(d));
+            if (hasWildcardDomain) {
+                this.wildcardRules.push(rule);
+                return;
+            }
+
+            for (const domain of domains) {
+                const tldResult = parse(domain);
+                // tldResult.domain equals to eTLD domain,
+                // e.g. sub.example.uk.org would result in example.uk.org
+                const parsedDomain = tldResult.domain || domain;
+                const key = fastHash(parsedDomain);
+                const rules = this.byHostname.get(key) || [] as number[];
+                rules.push(storageIdx);
+                this.byHostname.set(key, rules);
+            }
+        }
     }
 
     /**
      * Finds rules by hostname
      * @param request
-     * @param subdomains
      */
-    public findByHostname(request: Request): CosmeticRule[] {
+    findByHostname(request: Request): CosmeticRule[] {
         const result = [] as CosmeticRule[];
         const { subdomains } = request;
-
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-
-            const hash = fastHash(subdomain);
-            const storageIndexesPosition = BinaryMap.get(
-                hash,
-                this.byteBuffer,
-                this.hostnameMapPosition,
-            );
-
-            const uniqueIds: [number, number][] = [];
-
-            if (storageIndexesPosition) {
-                U32LinkedList.forEach((storageIndexPosition: number): void => {
-                    const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
-                    const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-                    if (uniqueIds.some(([l, r]) => l === listId && r === ruleIdx)) {
-                        return;
-                    }
-
-                    uniqueIds.push([listId, ruleIdx]);
-
-                    const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
+            let rulesIndexes = this.byHostname.get(fastHash(subdomain));
+            if (rulesIndexes) {
+                // Filtering out duplicates
+                rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);
+                for (let j = 0; j < rulesIndexes.length; j += 1) {
+                    const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
                     if (rule && rule.match(request)) {
                         result.push(rule);
                     }
-                }, this.byteBuffer, storageIndexesPosition);
+                }
             }
         }
 
-        U32LinkedList.forEach((storageIndexPosition) => {
-            const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
-            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-            const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
-            if (rule && rule.match(request)) {
-                result.push(rule);
-            }
-        }, this.byteBuffer, this.wildcardRulesPosition);
+        result.push(...this.wildcardRules.filter((r) => r.match(request)));
 
         return result.filter((rule) => !rule.isAllowlist());
     }
+
+    /**
+     * Checks if a scriptlet is allowlisted for a request. It looks up the scriptlet by name in the
+     * allowlistScriptlets map and evaluates two conditions:
+     * 1. If there's a generic allowlist rule applicable to all sites.
+     * 2. If there's a specific allowlist rule that matches the request.
+     *
+     * @param name Name of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
+     * @param request Request details to match against allowlist rules.
+     * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
+     */
+    isScriptletAllowlistedByName = (name: string, request: Request) => {
+        // check for rules with names
+        const allowlistScriptletRulesIndexes = this.allowlist.get(name);
+        if (allowlistScriptletRulesIndexes) {
+            const rules = allowlistScriptletRulesIndexes
+                .map((i) => {
+                    return this.ruleStorage.retrieveRule(i) as CosmeticRule;
+                })
+                .filter((r) => r);
+            // here we check if there is at least one generic allowlist rule
+            const hasAllowlistGenericScriptlet = rules.some((r) => {
+                return r.isGeneric();
+            });
+            if (hasAllowlistGenericScriptlet) {
+                return true;
+            }
+            // here we check if there is at least one allowlist rule that matches the request
+            const hasRuleMatchingRequest = rules.some((r) => r.match(request));
+            if (hasRuleMatchingRequest) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     /**
      * Checks if the rule is disabled on the specified hostname.
      * @param request
      * @param rule
      */
-    public isAllowlisted(request: Request, rule: CosmeticRule): boolean {
-        const hash = fastHash(rule.getContent());
-        const storageIndexesPosition = BinaryMap.get(
-            hash,
-            this.byteBuffer,
-            this.allowlistMapPosition,
-        );
+    isAllowlisted(request: Request, rule: CosmeticRule): boolean {
+        if (rule.isScriptlet) {
+            // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
+            // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();
+            const EMPTY_SCRIPTLET_NAME = '';
+            if (this.isScriptletAllowlistedByName(EMPTY_SCRIPTLET_NAME, request)) {
+                return true;
+            }
 
-        if (!storageIndexesPosition) {
+            if (rule.scriptletParams.name !== undefined
+                && this.isScriptletAllowlistedByName(rule.scriptletParams.name, request)) {
+                return true;
+            }
+        }
+
+        const rulesIndexes = this.allowlist.get(rule.getContent());
+        if (!rulesIndexes) {
             return false;
         }
 
-        const res = U32LinkedList.find((storageIndexPosition) => {
-            const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
-            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-            const r = this.ruleStorage.retrieveRule(listId, ruleId) as CosmeticRule;
-
-            return r && r.match(request);
-        }, this.byteBuffer, storageIndexesPosition);
-
-        return res !== -1;
-    }
-
-    public finalize(): void {
-        this.allowlistMapPosition = BinaryMap.create(this.allowlist, this.byteBuffer);
-        this.hostnameMapPosition = BinaryMap.create(this.byHostname, this.byteBuffer);
-    }
-
-    private addAllowlistRule(rule: CosmeticRule, storageIdx: number): void {
-        const key = rule.getContent();
-        const hash = fastHash(key);
-
-        const storageIndexPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
-        // Get the position of the storage indexes for the hash
-        let storageIndexesPosition = this.allowlist.get(hash);
-
-        /**
-          * If the hash is not in the lookup table, create a new {@link U32LinkedList},
-          */
-        if (storageIndexesPosition === undefined) {
-            storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
-            this.allowlist.set(hash, storageIndexesPosition);
-        }
-
-        // Add the position of the storage index to the related U32LinkedList
-        U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
-    }
-
-    private addGenericRule(storageIdx: number): void {
-        const storageIndexPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
-        U32LinkedList.add(storageIndexPosition, this.byteBuffer, this.genericRulesPosition);
-    }
-
-    public forEachGenericRule(callback: (rule: CosmeticRule) => void): void {
-        U32LinkedList.forEach((storageIndexPosition) => {
-            const ruleIdx = this.byteBuffer.getUint32(storageIndexPosition);
-            const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-            const rule = this.ruleStorage.retrieveRule(listId, ruleIdx) as CosmeticRule;
-            if (rule) {
-                callback(rule);
+        for (let j = 0; j < rulesIndexes.length; j += 1) {
+            const r = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
+            if (r && r.match(request)) {
+                return true;
             }
-        }, this.byteBuffer, this.genericRulesPosition);
-    }
-
-    private addHostnameRule(rule: CosmeticRule, storageIdx: number): void {
-        const domains = rule.getPermittedDomains();
-
-        if (!domains) {
-            return;
         }
 
-        const storageIndexPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
-        const hasWildcardDomain = domains.some((d) => DomainModifier.isWildcardDomain(d));
-
-        if (hasWildcardDomain) {
-            U32LinkedList.add(storageIndexPosition, this.byteBuffer, this.wildcardRulesPosition);
-            return;
-        }
-
-        for (const domain of domains) {
-            const tldResult = parse(domain);
-            // tldResult.domain equals to eTLD domain,
-            // e.g. sub.example.uk.org would result in example.uk.org
-            const parsedDomain = tldResult.domain || domain;
-            const hash = fastHash(parsedDomain);
-
-            // Get the position of the storage indexes for the hash
-            let storageIndexesPosition = this.byHostname.get(hash);
-
-            /**
-             * If the hash is not in the lookup table, create a new {@link U32LinkedList},
-             */
-            if (storageIndexesPosition === undefined) {
-                storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
-                this.byHostname.set(hash, storageIndexesPosition);
-            }
-
-            // Add the position of the storage index to the related U32LinkedList
-            U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
-        }
+        return false;
     }
 }

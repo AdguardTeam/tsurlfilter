@@ -8,11 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased
+
+### Added
+- Ability to allowlist scriptlets by name [#377].
+- New rule indexing algorithm. The storage index is now an integer representing 
+  the rule position in the concatenated filter list text. 
+  The list id is determined by the pre-stored filter list offset during the scan.
+
+[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+
+## [2.2.19] - 2024-04-03
+
+### Added
+
+- Simple support of `$header` modifier — just for compiler validation.
+
+[2.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.19
+
 ## [2.2.18] - 2024-03-29
 
 ### Fixed
 
-- Do not block "Should collapse" mechanism with `$popup` rules
+- Do not block "Should collapse" mechanism with `$popup` rules.
+
+[2.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.18
+
 
 ## [2.2.17] - 2024-03-28
 

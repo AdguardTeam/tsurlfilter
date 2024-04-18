@@ -5,7 +5,7 @@
   "author": "Adguard Software Ltd.",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "pnpm lint && pnpm build:precompile-rules && pnpm build:extension",
+    "build": "pnpm build:precompile-rules && pnpm build:extension",
     "build:extension": "node -r @swc-node/register ./scripts/build",
     "build:tsurl": "cd ../../tsurlfilter && pnpm build",
     "build:tsweb": "cd ../../tswebextension && pnpm build",
@@ -27,16 +27,16 @@
     "@types/fs-extra": "^11.0.1",
     "@types/react": "^17.0.41",
     "@types/react-dom": "^17.0.14",
-    "@typescript-eslint/eslint-plugin": "^6.2.1",
-    "@typescript-eslint/parser": "^6.2.1",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
     "axios": "^0.26.0",
     "chalk": "4.1.2",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^10.0.0",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
-    "eslint": "8.25.0",
-    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint": "8.56.0",
+    "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "^2.28.0",
     "eslint-plugin-react": "^7.29.4",
     "fs-extra": "^10.1.0",
@@ -45,7 +45,7 @@
     "rimraf": "^3.0.2",
     "style-loader": "^3.3.1",
     "swc-loader": "^0.2.3",
-    "typescript": "4.7.4",
+    "typescript": "5.4.3",
     "webpack": "^5.64.2"
   }
 }

@@ -24,7 +24,7 @@ const TESTS_TIMEOUT_CODE = 'tests_timeout';
 const CSP_TEST_ID = 12;
 
 (async () => {
-    // Launch browser with installed extension
+    // Launch browser with the installed extension
     const browserContext = await chromium.launchPersistentContext(USER_DATA_PATH, {
         headless: false,
         args: [
@@ -33,7 +33,10 @@ const CSP_TEST_ID = 12;
         ],
     });
 
-    const backgroundPage = await browserContext.waitForEvent('backgroundpage');
+    let [backgroundPage] = browserContext.backgroundPages();
+    if (!backgroundPage) {
+        backgroundPage = await browserContext.waitForEvent('backgroundpage');
+    }
 
     // Wait for tsWebExtension start
     await backgroundPage.waitForFunction(() => window.tsWebExtension?.isStarted, null, { polling: 100 });

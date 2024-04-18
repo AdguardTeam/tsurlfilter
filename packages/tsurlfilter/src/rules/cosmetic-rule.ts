@@ -8,8 +8,8 @@ import { SimpleRegex } from './simple-regex';
 import { CosmeticRuleParser } from './cosmetic-rule-parser';
 import { Request } from '../request';
 import { Pattern } from './pattern';
-import { ScriptletParser } from '../engine/cosmetic-engine/scriptlet-parser';
 import { config } from '../configuration';
+import { ScriptletsParams } from './scriptlets-params';
 
 /**
  * Init script params
@@ -178,6 +178,11 @@ export class CosmeticRule implements rule.IRule {
      * If the rule contains scriptlet content
      */
     public isScriptlet = false;
+
+    /**
+     * Scriptlet parameters. This property is used to store parsed scriptlet parameters in a lazy way.
+     */
+    public scriptletParams: ScriptletsParams;
 
     /**
      * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
@@ -415,6 +420,8 @@ export class CosmeticRule implements rule.IRule {
 
         this.allowlist = CosmeticRule.parseAllowlist(marker);
         this.isScriptlet = this.content.startsWith(ADG_SCRIPTLET_MASK);
+
+        this.scriptletParams = new ScriptletsParams(this.content);
     }
 
     /**
@@ -662,7 +669,7 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Updates this.scriptData and if scriptlet this.scriptletData with js ready to execute
+     * Updates this.scriptData and this.scriptletData when it is necessary in a lazy way.
      *
      * @param options
      */
@@ -676,13 +683,18 @@ export class CosmeticRule implements rule.IRule {
             return;
         }
 
-        const scriptletContent = ruleContent.substring(ADG_SCRIPTLET_MASK.length);
-        const scriptletParams = ScriptletParser.parseRule(scriptletContent);
+        // A scriptlet without a name can only be an allowlist scriptlet
+        // https://github.com/AdguardTeam/Scriptlets/issues/377
+        // or it is considered invalid if the scriptlet was invalid.
+        // This does not require finding scriptData and scriptletData.
+        if (!this.scriptletParams.name) {
+            return;
+        }
 
         const params: scriptlets.IConfiguration = {
-            args: scriptletParams.args,
+            args: this.scriptletParams.args,
             engine: config.engine || '',
-            name: scriptletParams.name,
+            name: this.scriptletParams.name,
             ruleText: this.getText(),
             verbose: debug,
             domainName: frameUrl,

@@ -6,7 +6,6 @@ import { CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { Request } from '../../request';
-import { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -44,27 +43,20 @@ export class CosmeticEngine {
      */
     private htmlLookupTable: CosmeticLookupTable;
 
-    declare private readonly byteBuffer: ByteBuffer;
-
     /**
      * Builds instance of cosmetic engine
      *
      * @param ruleStorage
      * @param skipStorageScan create an instance without storage scanning
      */
-    constructor(
-        ruleStorage: RuleStorage,
-        byteBuffer: ByteBuffer,
-        skipStorageScan = false,
-    ) {
+    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.rulesCount = 0;
-        this.byteBuffer = byteBuffer;
 
-        this.elementHidingLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
-        this.cssLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
-        this.jsLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
-        this.htmlLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
+        this.elementHidingLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.cssLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.jsLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.htmlLookupTable = new CosmeticLookupTable(ruleStorage);
 
         if (skipStorageScan) {
             return;
@@ -128,7 +120,7 @@ export class CosmeticEngine {
      * @param option mask of enabled cosmetic types
      * @return CosmeticResult
      */
-    public match(request: Request, option: CosmeticOption): CosmeticResult {
+    match(request: Request, option: CosmeticOption): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 
@@ -162,13 +154,6 @@ export class CosmeticEngine {
         return cosmeticResult;
     }
 
-    public finalize(): void {
-        this.elementHidingLookupTable.finalize();
-        this.cssLookupTable.finalize();
-        this.jsLookupTable.finalize();
-        this.htmlLookupTable.finalize();
-    }
-
     /**
      * Selects generic rules and appends rules content to cosmetic result
      * @param cosmeticResult
@@ -180,12 +165,12 @@ export class CosmeticEngine {
         lookupTable: CosmeticLookupTable,
         request: Request,
     ): void {
-        lookupTable.forEachGenericRule((genericRule) => {
+        for (const genericRule of lookupTable.genericRules) {
             if (!lookupTable.isAllowlisted(request, genericRule)
-                    && genericRule.match(request)) {
+                && genericRule.match(request)) {
                 cosmeticResult.append(genericRule, request);
             }
-        });
+        }
     }
 
     /**

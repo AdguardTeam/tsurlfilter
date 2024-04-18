@@ -20,7 +20,7 @@ import type { ByteBuffer } from '../utils/byte-buffer';
 export class DnsEngine {
     declare private ruleCountPosition: number;
 
-    private get rulesCount(): number {
+    public get rulesCount(): number {
         return this.byteBuffer.getUint32(this.ruleCountPosition);
     }
 
@@ -117,11 +117,8 @@ export class DnsEngine {
 
         if (storageIndexesPosition !== undefined) {
             // Iterate over the storage indexes and retrieve the rules
-            U32LinkedList.forEach((storageIndexPosition) => {
-                const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
-                const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-                const rule = this.ruleStorage.retrieveHostRule(listId, ruleId);
+            U32LinkedList.forEach((storageIdx) => {
+                const rule = this.ruleStorage.retrieveHostRule(storageIdx);
 
                 if (rule && rule.match(hostname)) {
                     result.hostRules.push(rule);
@@ -152,10 +149,6 @@ export class DnsEngine {
         rule.getHostnames().forEach((hostname) => {
             const hash = fastHash(hostname);
 
-            // Add storage index to the byte buffer
-            const storageIndexPosition = this.byteBuffer.byteOffset;
-            this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
             // Get the position of the storage indexes for the hash
             let storageIndexesPosition = this.lookupTable.get(hash);
 
@@ -169,8 +162,8 @@ export class DnsEngine {
                 this.lookupTable.set(hash, storageIndexesPosition);
             }
 
-            // Add the position of the storage index to the related U32LinkedList
-            U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
+            // Add the storage index to the related U32LinkedList
+            U32LinkedList.add(storageIdx, this.byteBuffer, storageIndexesPosition);
         });
 
         this.rulesCount += 1;

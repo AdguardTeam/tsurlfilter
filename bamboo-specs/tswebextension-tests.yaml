@@ -19,7 +19,7 @@ Test:
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -27,14 +27,6 @@ Test:
         interpreter: SHELL
         scripts:
           - |-
-            # Ignore testing if pr target branch is "v1".
-            # Because @adguard/tswebextension is not implemented on this branch.
-            if [ ! -z bamboo.repository.pr.targetBranch && bamboo.repository.pr.targetBranch == "v1" ]
-            then
-              echo "ignore tests on branch v1"
-              exit 0;
-            fi
-
             set -e
             set -x
 
@@ -45,6 +37,25 @@ Test:
 
             # Set cache directory
             pnpm config set store-dir ${bamboo.cachePnpm}
+
+            branch="${bamboo_planRepository_branchName}"
+            target_branch="${bamboo_repository_pr_targetBranch:-master}"
+
+            is_root_affected() {
+              git diff --name-only "${target_branch}"...HEAD | grep -v '^packages/' > /dev/null
+            }
+
+            is_project_affected() {
+              local project_name="$1"
+              pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
+            }
+
+            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tswebextension"; then
+              echo "No changes in project, skipping tests"
+              exit 0;
+            fi
+
+            # Install dependencies
             pnpm install
 
             # TODO make sure that we use monospace correctly
@@ -71,11 +82,13 @@ Test:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
-            pnpm clean
+            # Check if node_modules directory exists
+            if [ -d "node_modules" ]; then
+              pnpm clean
+            else
+              echo "node_modules directory does not exist, skipping pnpm clean"
+            fi
 
-            # cleanup smoke test packages
-            rm -rf packages/tswebextension/test/builders/rollup-ts/node_modules
-  
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
     - adg-docker: 'true'

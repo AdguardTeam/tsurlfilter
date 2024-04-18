@@ -65,9 +65,6 @@ export class TrieLookupTable implements ILookupTable {
             return false;
         }
 
-        const storageIndexPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
         let storageIndexesPosition = this.trie.search(shortcut);
 
         if (storageIndexesPosition === -1) {
@@ -75,7 +72,7 @@ export class TrieLookupTable implements ILookupTable {
             this.trie.add(shortcut, storageIndexesPosition);
         }
 
-        U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
+        U32LinkedList.add(storageIdx, this.byteBuffer, storageIndexesPosition);
         this.rulesCount += 1;
         return true;
     }
@@ -106,11 +103,8 @@ export class TrieLookupTable implements ILookupTable {
 
         for (let i = 0; i < storageIndexesPositions.length; i += 1) {
             const storageIndexesPosition = storageIndexesPositions[i];
-            U32LinkedList.forEach((storageIndexPosition) => {
-                const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
-                const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-                const rule = this.ruleStorage.retrieveNetworkRule(listId, ruleId);
+            U32LinkedList.forEach((storageIdx) => {
+                const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
                 if (rule && rule.match(request, false)) {
                     result.push(rule);
                 }

@@ -99,29 +99,6 @@ export class ByteBuffer {
     }
 
     /**
-     * Adds storage index to the buffer.
-     * Storage index is a positive float64 number where integral part is rule id
-     * and fractional part is list id.
-     * We split this value in two uint32 values and read ids directly
-     * to avoid double conversion while retrieving rule for specified request from storage.
-     * @param byteOffset The byte offset of the value.
-     * @param value float64 representation of storage index.
-     */
-    public addStorageIndex(byteOffset: number, value: number): void {
-        if (!this.hasCapacity(byteOffset + 7 /** Uint32Array.BYTES_PER_ELEMENT * 2 - 1 */)) {
-            this.allocate();
-        }
-
-        const integral = Math.trunc(value);
-        const fractional = Math.round((value % 1) * 1_000_000 /* Max list id value */);
-
-        this.setUint32(byteOffset, integral);
-        this.setUint32(byteOffset + 4 /** Uint32Array.BYTES_PER_ELEMENT */, fractional);
-
-        this.byteOffset += 8; // Uint32Array.BYTES_PER_ELEMENT * 2
-    }
-
-    /**
      * Checks if the buffer has enough capacity for the specified index.
      * @param index The buffer byte index.
      * @returns True if the buffer has enough capacity, otherwise false.

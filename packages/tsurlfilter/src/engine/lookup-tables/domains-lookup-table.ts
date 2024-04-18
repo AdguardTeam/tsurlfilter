@@ -74,10 +74,6 @@ export class DomainsLookupTable implements ILookupTable {
         permittedDomains.forEach((domain) => {
             const hash = fastHash(domain);
 
-            // Add storage index to the byte buffer
-            const storageIndexPosition = this.byteBuffer.byteOffset;
-            this.byteBuffer.addStorageIndex(storageIndexPosition, storageIdx);
-
             // Get the position of the storage indexes for the hash
             let storageIndexesPosition = this.domainsLookupTable.get(hash);
 
@@ -89,8 +85,8 @@ export class DomainsLookupTable implements ILookupTable {
                 this.domainsLookupTable.set(hash, storageIndexesPosition);
             }
 
-            // Add the position of the storage index to the related U32LinkedList
-            U32LinkedList.add(storageIndexPosition, this.byteBuffer, storageIndexesPosition);
+            // Add the storage index to the related U32LinkedList
+            U32LinkedList.add(storageIdx, this.byteBuffer, storageIndexesPosition);
         });
 
         this.rulesCount += 1;
@@ -124,11 +120,8 @@ export class DomainsLookupTable implements ILookupTable {
             const storageIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.binaryMapPosition);
             if (storageIndexesPosition !== undefined) {
                 // Iterate over the storage indexes and retrieve the rules
-                U32LinkedList.forEach((storageIndexPosition) => {
-                    const ruleId = this.byteBuffer.getUint32(storageIndexPosition);
-                    const listId = this.byteBuffer.getUint32(storageIndexPosition + 4);
-
-                    const rule = this.ruleStorage.retrieveNetworkRule(listId, ruleId);
+                U32LinkedList.forEach((storageIdx) => {
+                    const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
 
                     if (rule && rule.match(request)) {
                         result.push(rule);

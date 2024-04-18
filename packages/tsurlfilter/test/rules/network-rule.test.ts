@@ -355,6 +355,19 @@ describe('NetworkRule constructor', () => {
         // https://github.com/AdguardTeam/tsurlfilter/issues/72
     });
 
+    it('checks header modifier compatibility', () => {
+        let correct;
+
+        correct = new NetworkRule('||example.com^$header=set-cookie:foo', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('://www.*.com/*.css|$script,third-party,header=link:/ads.re/>;rel=preconnect/', 0);
+        expect(correct).toBeTruthy();
+
+        correct = new NetworkRule('@@||example.com^$header=set-cookie', 0);
+        expect(correct).toBeTruthy();
+    });
+
     it('checks to modifier compatibility', () => {
         expect(() => {
             new NetworkRule('/ads$to=good.org,denyallow=good.com', 0);

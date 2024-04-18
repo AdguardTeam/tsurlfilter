@@ -111,6 +111,9 @@ export enum NetworkRuleOption {
 
     /* $permissions modifier */
     Permissions = 1 << 29,
+
+    /* $header modifier */
+    Header = 1 << 30,
 }
 
 /**
@@ -1274,6 +1277,15 @@ export class NetworkRule implements rule.IRule {
                 this.methodModifier = new MethodModifier(optionValue);
                 break;
             }
+            // $header modifier
+            case OPTIONS.HEADER:
+                // simple validation of $header rules for compiler.
+                // should be fully supported in tsurlfilter v2.3 and the browser extension v4.4. AG-16357
+                if (isCompatibleWith(CompatibilityTypes.Extension)) {
+                    throw new SyntaxError('Extension does not support $header modifier yet');
+                }
+                this.setOptionEnabled(NetworkRuleOption.Header, true);
+                break;
             // $to modifier
             case OPTIONS.TO: {
                 this.setOptionEnabled(NetworkRuleOption.To, true);
