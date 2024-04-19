@@ -471,7 +471,8 @@ describe('Benchmarks', () => {
         const list = new listClass(1, rulesText, false);
         const ruleStorage = new RuleStorage([list]);
 
-        const engine = new CosmeticEngine(ruleStorage);
+        const engine = new CosmeticEngine(ruleStorage, new ByteBuffer());
+        engine.finalize();
         expect(engine).toBeTruthy();
 
         console.log(`Loaded rules: ${engine.rulesCount}`);

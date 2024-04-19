@@ -85,6 +85,27 @@ export class U32LinkedList {
     }
 
     /**
+     * FIXME
+     * @param callback The function to apply to each node.
+     * @param buffer The buffer to iterate through.
+     * @param listPosition The list position in the buffer.
+     * @returns FIXME
+     */
+    public static some(callback: (value: number) => boolean, buffer: ByteBuffer, listPosition: number): boolean {
+        let cursor = U32LinkedList.getLastNodePosition(buffer, listPosition);
+
+        while (cursor !== U32LinkedList.EMPTY_POSITION) {
+            const [nodeValue, nextNodePosition] = U32LinkedList.get(cursor, buffer);
+            if (callback(nodeValue)) {
+                return true;
+            }
+            cursor = nextNodePosition;
+        }
+
+        return false;
+    }
+
+    /**
      * Writes initial list properties to the buffer.
      * @param buffer The buffer to write the initial list data.
      * @returns The position of the list in the buffer.

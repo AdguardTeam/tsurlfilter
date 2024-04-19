@@ -6,11 +6,12 @@ import { CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { Request } from '../../request';
+import { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
  * find all rules matching this or that hostname
- * It is primarily used by the {@see Engine}
+ * It is primarily used by the {@link Engine}
  */
 export class CosmeticEngine {
     /**
@@ -43,20 +44,28 @@ export class CosmeticEngine {
      */
     private htmlLookupTable: CosmeticLookupTable;
 
+    declare private byteBuffer: ByteBuffer;
+
     /**
      * Builds instance of cosmetic engine
      *
      * @param ruleStorage
+     * @param byteBuffer The shared linear memory for indexed structures.
      * @param skipStorageScan create an instance without storage scanning
      */
-    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
+    constructor(
+        ruleStorage: RuleStorage,
+        byteBuffer: ByteBuffer,
+        skipStorageScan = false,
+    ) {
+        this.byteBuffer = byteBuffer;
         this.ruleStorage = ruleStorage;
         this.rulesCount = 0;
 
-        this.elementHidingLookupTable = new CosmeticLookupTable(ruleStorage);
-        this.cssLookupTable = new CosmeticLookupTable(ruleStorage);
-        this.jsLookupTable = new CosmeticLookupTable(ruleStorage);
-        this.htmlLookupTable = new CosmeticLookupTable(ruleStorage);
+        this.elementHidingLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
+        this.cssLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
+        this.jsLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
+        this.htmlLookupTable = new CosmeticLookupTable(ruleStorage, this.byteBuffer);
 
         if (skipStorageScan) {
             return;
@@ -105,22 +114,13 @@ export class CosmeticEngine {
     }
 
     /**
-     * Checks if bitwise mask matches option
-     * @param option
-     * @param targetOption
-     */
-    static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
-        return (option & targetOption) === targetOption;
-    }
-
-    /**
      * Prepares cosmetic result by request
      *
      * @param request - request to match
      * @param option mask of enabled cosmetic types
      * @return CosmeticResult
      */
-    match(request: Request, option: CosmeticOption): CosmeticResult {
+    public match(request: Request, option: CosmeticOption): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 
@@ -152,6 +152,25 @@ export class CosmeticEngine {
         }
 
         return cosmeticResult;
+    }
+
+    /**
+     * FIXME
+     */
+    public finalize() {
+        this.elementHidingLookupTable.finalize();
+        this.cssLookupTable.finalize();
+        this.jsLookupTable.finalize();
+        this.htmlLookupTable.finalize();
+    }
+
+    /**
+     * Checks if bitwise mask matches option
+     * @param option
+     * @param targetOption
+     */
+    public static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
+        return (option & targetOption) === targetOption;
     }
 
     /**
