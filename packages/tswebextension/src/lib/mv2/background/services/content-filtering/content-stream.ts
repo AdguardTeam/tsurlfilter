@@ -232,7 +232,7 @@ export class ContentStream {
                     this.disconnect(event.data);
                 }
             } catch (e) {
-                logger.warn((e as Error).message);
+                logger.warn(e);
                 // on error we disconnect the filter from the request
                 this.disconnect(event.data);
             }

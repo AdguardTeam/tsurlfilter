@@ -147,8 +147,8 @@ MessageHandlerMV2
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
-        logger.setVerbose(configuration.verbose);
-        logger.setLogLevel(configuration.logLevel);
+        logger.setVerbose(!!configuration.verbose);
+        logger.currentLevel = configuration.logLevel;
 
         RequestEvents.init();
         await this.redirectsService.start();
@@ -193,8 +193,8 @@ MessageHandlerMV2
 
         configurationMV2Validator.parse(configuration);
 
-        logger.setVerbose(configuration.verbose);
-        logger.setLogLevel(configuration.logLevel);
+        logger.setVerbose(!!configuration.verbose);
+        logger.logLevel = configuration.logLevel;
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 

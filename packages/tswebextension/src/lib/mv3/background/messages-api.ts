@@ -2,7 +2,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { getAssistantCreateRulePayloadValidator, getCssPayloadValidator } from '../../common';
 import { isHttpOrWsRequest } from '../../common/utils';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { CosmeticRules, engineApi } from './engine-api';
 import { TsWebExtension } from './app';

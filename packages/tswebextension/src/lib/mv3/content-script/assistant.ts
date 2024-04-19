@@ -2,7 +2,7 @@ import { adguardAssistant, Assistant } from '@adguard/assistant';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 /**
  * Initializes assistant object.

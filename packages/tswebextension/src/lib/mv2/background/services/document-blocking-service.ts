@@ -3,7 +3,7 @@ import { getHostname } from 'tldts';
 import type { NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { logger } from '../../../common/utils/logger';
+import { logger, getErrorMessage } from '../../../common/utils/logger';
 import { isChromium } from '../utils/browser-detector';
 import type { ConfigurationMV2 } from '../configuration';
 import { ContentType } from '..';
@@ -117,7 +117,7 @@ export class DocumentBlockingService {
                     browser.tabs.remove(tabId);
                 })
                 .catch((e) => {
-                    logger.warn(`Can't open info page about blocked domain. Err: ${e}`);
+                    logger.warn(`Can't open info page about blocked domain. Err: ${getErrorMessage(e)}`);
                 });
         } else {
             // Browser doesn't allow redirects to extension pages which are not listed in web

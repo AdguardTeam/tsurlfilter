@@ -3,7 +3,7 @@ import { ExtendedCss } from '@adguard/extended-css';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import type { GetCssPayload } from '../background/messages';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { initAssistant } from './assistant';
 

@@ -88,9 +88,7 @@ export class CookieFiltering {
         // called before method that change headers, since that method will
         // remove or change headers in context.
         this.applyRules(context)
-            .catch((e) => {
-                logger.error((e as Error).message);
-            });
+            .catch(logger.error);
 
         // Removes cookie from headers and updates context.
         // Note: this method won't work in the extension build with manifest v3.
@@ -289,9 +287,7 @@ export class CookieFiltering {
         // called before method that change headers, since that method will
         // remove or change headers in context.
         this.applyRules(context)
-            .catch((e) => {
-                logger.error((e as Error).message);
-            });
+            .catch(logger.error);
 
         // Remove cookie headers.
         // This method won't work in the extension build with manifest v3.

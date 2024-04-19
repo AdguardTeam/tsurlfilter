@@ -269,9 +269,7 @@ export class WebRequestApi {
         try {
             await browser.webRequest.handlerBehaviorChanged();
         } catch (e) {
-            // TODO: use getErrorMessage instead
-            const message = e instanceof Error ? e.message : String(e);
-            logger.error(message);
+            logger.error(e);
         }
     }
 

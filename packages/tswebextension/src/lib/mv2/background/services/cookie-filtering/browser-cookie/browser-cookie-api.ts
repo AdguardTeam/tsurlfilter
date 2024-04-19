@@ -24,7 +24,7 @@ export default class BrowserCookieApi {
             await browser.cookies.remove({ name, url });
             return true;
         } catch (e) {
-            logger.error((e as Error).message);
+            logger.error(e);
         }
 
         return false;
@@ -50,9 +50,9 @@ export default class BrowserCookieApi {
                 // if url is not matched with domain, cookie cannot be set
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2683
                 || (cookie.domain && !BrowserCookieApi.doesDomainMatchUrl(cookie.domain, cookie.url))) {
-                logger.info((e as Error).message);
+                logger.info(e);
             } else {
-                logger.error((e as Error).message);
+                logger.error(e);
             }
         }
 
@@ -72,7 +72,7 @@ export default class BrowserCookieApi {
 
             return found;
         } catch (e) {
-            logger.error((e as Error).message);
+            logger.error(e);
         }
 
         return [];

@@ -9,6 +9,7 @@ const REDIRECTS_RESOURCES_DEST_PATH = 'redirects';
 const src = path.resolve(require.resolve('@adguard/scriptlets'), '../..');
 
 // TODO: use logger from lib after import fix
+// fixme: ??
 export const copyWar = async (dest: string): Promise<void> => {
     dest = path.resolve(process.cwd(), dest);
 

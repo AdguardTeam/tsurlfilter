@@ -12,7 +12,6 @@ import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { engineApi, tabsApi } from './api';
 import { createFrameMatchQuery } from './utils/create-frame-match-query';
-import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
@@ -417,7 +416,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     CosmeticApi.applyFrameCosmeticRules(frameId, tabId, injector, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug(getErrorMessage(e));
+                logger.debug(e);
             }
         }
     }

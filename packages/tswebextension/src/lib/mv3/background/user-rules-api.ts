@@ -6,8 +6,7 @@ import {
     IRuleSet,
     UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { logger } from '../utils/logger';
-import { getErrorMessage } from '../../common/error';
+import { logger, getErrorMessage } from '../../common/utils/logger';
 
 export { ConversionResult };
 

@@ -102,7 +102,7 @@ export class StealthApi {
                 await this.handleBlockWebRTC();
             }
         } catch (e) {
-            logger.error(getErrorMessage(e));
+            logger.error(e);
         }
     }
 

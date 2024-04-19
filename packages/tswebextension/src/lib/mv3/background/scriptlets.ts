@@ -1,7 +1,7 @@
 import { CosmeticOption, ScriptletData } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from './tabs-api';
