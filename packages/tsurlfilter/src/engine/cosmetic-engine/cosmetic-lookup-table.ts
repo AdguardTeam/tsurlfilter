@@ -10,7 +10,7 @@ import { ByteBuffer } from '../../utils/byte-buffer';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
- * It is primarily used by the {@link CosmeticEngine}.
+ * It is primarily used by the {@see CosmeticEngine}.
  */
 export class CosmeticLookupTable {
     // FIXME make binary
@@ -23,7 +23,7 @@ export class CosmeticLookupTable {
      * Fixme description
      * @private
      */
-    // private hostnameMapPosition: number;
+    private hostnameMapPosition: number;
 
     /**
      * Collection of domain specific rules, those could not be grouped by domain name
@@ -90,8 +90,7 @@ export class CosmeticLookupTable {
      */
     addAllowlistRule(key: string, storageIdx: number): void {
         const hash = fastHash(key);
-        let existingRulesPosition = this.allowlist.get(hash);
-
+        let existingRulesPosition = BinaryMap.get(hash, this.byteBuffer, this.allowlistPosition);
         if (!existingRulesPosition) {
             existingRulesPosition = U32LinkedList.create(this.byteBuffer);
             this.allowlist.set(hash, existingRulesPosition);
@@ -191,12 +190,23 @@ export class CosmeticLookupTable {
         // check for rules with names
         const allowlistIndexesPosition = BinaryMap.get(hash, this.byteBuffer, this.allowlistPosition);
         if (allowlistIndexesPosition) {
-            return U32LinkedList.some((ruleIdx) => {
-                const rule = this.ruleStorage.retrieveRule(ruleIdx) as CosmeticRule | null;
-                return Boolean(rule && (rule.isGeneric() || rule.match(request)));
-            }, this.byteBuffer, allowlistIndexesPosition);
-        }
+            // read data with offset 4 bytes to get the last node position
+            let cursor = this.byteBuffer.getUint32(allowlistIndexesPosition + 4);
 
+            // TODO implement some method for U32LinkedList to iterate over the list and exit early
+            while (cursor !== U32LinkedList.EMPTY_POSITION) {
+                const [ruleIndex, nextNodePosition] = U32LinkedList.get(cursor, this.byteBuffer);
+                const rule = this.ruleStorage.retrieveRule(ruleIndex) as CosmeticRule;
+                if (rule) {
+                    // here we check if there is at least one generic allowlist rule
+                    //  or if there is at least one allowlist rule that matches the request
+                    if (rule.isGeneric() || rule.match(request)) {
+                        return true;
+                    }
+                }
+                cursor = nextNodePosition;
+            }
+        }
         return false;
     };
 
@@ -226,9 +236,19 @@ export class CosmeticLookupTable {
             return false;
         }
 
-        return U32LinkedList.some((ruleIdx: number) => {
-            const r = this.ruleStorage.retrieveRule(ruleIdx) as CosmeticRule | null;
-            return Boolean(r && r.match(request));
-        }, this.byteBuffer, allowlistIndexesPosition);
+        // read data with offset 4 bytes to get the last node position
+        let cursor = this.byteBuffer.getUint32(allowlistIndexesPosition + 4);
+
+        // TODO implement some method for U32LinkedList to iterate over the list and exit early
+        while (cursor !== U32LinkedList.EMPTY_POSITION) {
+            const [ruleIndex, nextNodePosition] = U32LinkedList.get(cursor, this.byteBuffer);
+            const r = this.ruleStorage.retrieveRule(ruleIndex) as CosmeticRule | null;
+            if (r && r.match(request)) {
+                return true;
+            }
+            cursor = nextNodePosition;
+        }
+
+        return false;
     }
 }
