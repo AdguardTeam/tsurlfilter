@@ -114,9 +114,9 @@ export class BinaryMap {
         const chainLength = buffer.getUint32(chainPosition);
 
         // Get the position of the first entry in the chain.
-        let cursor = chainPosition + Uint32Array.BYTES_PER_ELEMENT;
+        let cursor = chainPosition + 4; // Uint32Array.BYTES_PER_ELEMENT
         // Calculate the end of the chain.
-        const endOfChain = cursor + (chainLength * Uint32Array.BYTES_PER_ELEMENT);
+        const endOfChain = cursor + (chainLength * 4/** Uint32Array.BYTES_PER_ELEMENT */);
 
         // Iterate over the chain and find the key.
         while (cursor < endOfChain) {
@@ -125,7 +125,7 @@ export class BinaryMap {
 
             if (key === input) {
                 // If the key is found, return the value.
-                return buffer.getUint32(keyPosition + Uint32Array.BYTES_PER_ELEMENT);
+                return buffer.getUint32(keyPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT */);
             }
 
             cursor += 4; // Uint32Array.BYTES_PER_ELEMENT
