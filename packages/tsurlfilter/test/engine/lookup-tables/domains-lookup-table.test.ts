@@ -72,4 +72,43 @@ describe('Domains Lookup Table Tests', () => {
             table.matchAll(new Request('http://base.com/path', 'http://base.com/', RequestType.Document)),
         ).toHaveLength(1);
     });
+
+    it('deserializes from buffer', () => {
+        const rules = [
+            'path',
+            '||example.net^',
+            'path$domain=~example.net',
+            'path$domain=test.*',
+            'path$domain=example.com',
+            'path$domain=example.org',
+        ];
+
+        const ruleStorage = createRuleStorage(rules);
+        const buffer = new ByteBuffer();
+        const domainsLookupTable = new DomainsLookupTable(ruleStorage, buffer);
+        fillLookupTable(domainsLookupTable, ruleStorage);
+        domainsLookupTable.finalize();
+        const position = domainsLookupTable.serialize();
+        expect(
+            domainsLookupTable.matchAll(
+                new Request(
+                    'http://test.com/path',
+                    'http://sub.example.org',
+                    RequestType.Document,
+                ),
+            ),
+        ).toHaveLength(1);
+
+        const buffer2 = new ByteBuffer(buffer.chunks);
+        const domainsLookupTable2 = DomainsLookupTable.deserialize(ruleStorage, buffer2, position);
+        expect(
+            domainsLookupTable2.matchAll(
+                new Request(
+                    'http://test.com/path',
+                    'http://sub.example.org',
+                    RequestType.Document,
+                ),
+            ),
+        ).toHaveLength(1);
+    });
 });

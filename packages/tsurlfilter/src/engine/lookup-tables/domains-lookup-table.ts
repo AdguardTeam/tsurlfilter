@@ -141,4 +141,34 @@ export class DomainsLookupTable implements ILookupTable {
         this.ruleCountPosition = this.byteBuffer.byteOffset;
         this.byteBuffer.addUint32(this.ruleCountPosition, 0);
     }
+
+    /**
+     * R
+     * @private
+     */
+    public serialize(): number {
+        const position = this.byteBuffer.byteOffset;
+        this.byteBuffer.addUint32(position, this.ruleCountPosition);
+        this.byteBuffer.addUint32(position + 4, this.binaryMapPosition);
+        return position;
+    }
+
+    /**
+     * FIXME description
+     * @param ruleStorage
+     * @param buffer
+     * @param position
+     */
+    public static deserialize(
+        ruleStorage: RuleStorage,
+        buffer: ByteBuffer,
+        position: number,
+    ): DomainsLookupTable {
+        const domainsLookupTable = new DomainsLookupTable(ruleStorage, buffer);
+        const rulesCountPosition = buffer.getUint32(position);
+        const binaryMapPosition = buffer.getUint32(position + 4);
+        domainsLookupTable.ruleCountPosition = rulesCountPosition;
+        domainsLookupTable.binaryMapPosition = binaryMapPosition;
+        return domainsLookupTable;
+    }
 }

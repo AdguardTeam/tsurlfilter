@@ -31,6 +31,7 @@ export class SeqScanLookupTable implements ILookupTable {
      *
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
+     * @param buffer
      */
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
@@ -41,7 +42,8 @@ export class SeqScanLookupTable implements ILookupTable {
 
     /**
      * addRule implements the ILookupTable interface for SeqScanLookupTable.
-     * @param rule
+     * @param _rule
+     * @param storageIdx
      */
     addRule(_rule: NetworkRule, storageIdx: number): boolean {
         // Check if storageIdx has already indexed

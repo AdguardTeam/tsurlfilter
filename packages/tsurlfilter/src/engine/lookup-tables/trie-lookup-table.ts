@@ -41,6 +41,7 @@ export class TrieLookupTable implements ILookupTable {
      *
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
+     * @param buffer
      */
     constructor(storage: RuleStorage, buffer: ByteBuffer) {
         this.ruleStorage = storage;
