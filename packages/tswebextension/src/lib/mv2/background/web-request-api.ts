@@ -171,7 +171,7 @@
 import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { tabsApi, engineApi } from './api';
+import { tabsApi, engineApi, documentApi } from './api';
 import { Frame, MAIN_FRAME_ID } from './tabs/frame';
 import { findHeaderByName } from '../../common/utils/find-header-by-name';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
@@ -326,11 +326,18 @@ export class WebRequestApi {
             },
         });
 
+        let frameRule = null;
+        if (requestType === RequestType.SubDocument) {
+            frameRule = documentApi.matchFrame(referrerUrl);
+        } else {
+            frameRule = tabsApi.getTabFrameRule(tabId);
+        }
+
         const result = engineApi.matchRequest({
             requestUrl,
             frameUrl: referrerUrl,
             requestType,
-            frameRule: tabsApi.getTabFrameRule(tabId),
+            frameRule,
             method,
         });
 

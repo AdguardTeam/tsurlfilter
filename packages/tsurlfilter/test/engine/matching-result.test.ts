@@ -5,7 +5,7 @@ import {
     StealthOptionName,
 } from '../../src';
 
-describe('TestNewMatchingResult', () => {
+describe('MatchingResult constructor', () => {
     it('works if basic rule is found', () => {
         const ruleText = '||example.org^';
         const rules = [new NetworkRule(ruleText, 0)];
@@ -85,6 +85,7 @@ describe('TestNewMatchingResult', () => {
 
         expect(result).toBeTruthy();
         expect(result.basicRule).toBeNull();
+        expect(result.cosmeticExceptionRule).toBeNull();
         expect(result.documentRule).toBeTruthy();
 
         const basicResult = result.getBasicResult();
@@ -253,7 +254,7 @@ describe('TestGetCosmeticOption', () => {
     });
 });
 
-describe('TestNewMatchingResult - badfilter modifier', () => {
+describe('MatchingResult constructor handling badfilter modifier', () => {
     it('works if badfilter is ok', () => {
         const rules = [
             new NetworkRule('||example.org^', 0),
@@ -321,7 +322,7 @@ describe('TestNewMatchingResult - badfilter modifier', () => {
     });
 });
 
-describe('TestNewMatchingResult - csp rules', () => {
+describe('MatchingResult constructor handling csp rules', () => {
     const cspRule = '||example.org^$third-party,csp=connect-src \'none\',domain=~example.com|test.com';
     const directiveAllowlistRule = '@@||example.org^$csp=connect-src \'none\'';
     const globalAllowlistRule = '@@||example.org^$csp';
@@ -378,7 +379,7 @@ describe('TestNewMatchingResult - csp rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - $permissions rules', () => {
+describe('MatchingResult constructor handling $permissions rules', () => {
     const makeMatchingResult = (ruleTexts: string[]) => {
         const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
         return {
@@ -427,7 +428,7 @@ describe('TestNewMatchingResult - $permissions rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - replace rules', () => {
+describe('MatchingResult constructor handling replace rules', () => {
     it('works if replace rules are found', () => {
         const rules = [
             new NetworkRule('||example.org^$replace=/test/test1/g', 0),
@@ -519,6 +520,7 @@ describe('TestNewMatchingResult - replace rules', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult!.getText()).toEqual('@@||example.org^$document');
+        expect(result.cosmeticExceptionRule!.getText()).toEqual('@@||example.org^$document');
     });
 
     it('checks only $document and $content rules disable $replace', () => {
@@ -536,7 +538,7 @@ describe('TestNewMatchingResult - replace rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - cookie rules', () => {
+describe('MatchingResult constructor handling cookie rules', () => {
     const cookieRuleTextOne = '$cookie=/__utm[a-z]/';
     const cookieRuleTextTwo = '$cookie=__cfduid';
     const cookieRuleAllowlistTextOne = '@@$cookie=/__utm[a-z]/';
@@ -700,7 +702,7 @@ describe('TestNewMatchingResult - cookie rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - stealth modifier', () => {
+describe('MatchingResult constructor handling stealth modifier', () => {
     it('works if stealth rule is found', () => {
         const ruleText = '@@||example.org^$stealth';
         const rule = new NetworkRule(ruleText, 0);
@@ -762,7 +764,7 @@ describe('TestNewMatchingResult - stealth modifier', () => {
     });
 });
 
-describe('TestNewMatchingResult - redirect rules', () => {
+describe('MatchingResult constructor handling redirect rules', () => {
     it('works if redirect rules are found', () => {
         const rules = [
             new NetworkRule('||8s8.eu^*fa.js$script,redirect=noopjs', 0),
@@ -937,7 +939,7 @@ describe('TestNewMatchingResult - redirect rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - redirect-rule rules', () => {
+describe('MatchingResult constructor handling redirect-rule rules', () => {
     it('works if redirect-rule rule is found', () => {
         const rules = [
             new NetworkRule('*$script,redirect-rule=noopjs,domain=example.org', 0),
@@ -1015,7 +1017,7 @@ describe('TestNewMatchingResult - redirect-rule rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - removeparam rules', () => {
+describe('MatchingResult constructor handling removeparam rules', () => {
     it('works if removeparam rules are found', () => {
         const rules = [
             new NetworkRule('||example.org^$removeparam=/p1|p2/', 0),
@@ -1096,7 +1098,7 @@ describe('TestNewMatchingResult - removeparam rules', () => {
     });
 });
 
-describe('TestNewMatchingResult - removeheader rules', () => {
+describe('MatchingResult constructor handling removeheader rules', () => {
     it('works if removeheader rules are found', () => {
         const rules = [
             new NetworkRule('||example.org^$removeheader=header-name', 0),
@@ -1173,6 +1175,78 @@ describe('TestNewMatchingResult - removeheader rules', () => {
 
         const found = result.getRemoveHeaderRules();
         expect(found.length).toBe(1);
+    });
+});
+
+describe('MatchingResult constructor handling cosmetic exception rules', () => {
+    it('correctly saves cosmetic exception rule', () => {
+        // $generichide
+        let basicRuleText = '||platform.twitter.com/widgets/tweet_button$third-party';
+        let cosmeticExceptionRuleText = '@@||twitter.com^$generichide';
+        let rules = [new NetworkRule(basicRuleText, 0), new NetworkRule(cosmeticExceptionRuleText, 0)];
+        let result = new MatchingResult(rules, null);
+
+        expect(result.basicRule?.getText()).toBe(basicRuleText);
+
+        expect(result.cosmeticExceptionRule?.getText()).toBe(cosmeticExceptionRuleText);
+        expect(result.getCosmeticOption()).toEqual(
+            CosmeticOption.CosmeticOptionSpecificCSS
+            | CosmeticOption.CosmeticOptionJS
+            | CosmeticOption.CosmeticOptionHtml,
+        );
+
+        // $specific hide
+        basicRuleText = '||safeframe.googlesyndication.com$subdocument,domain=clien.net';
+        cosmeticExceptionRuleText = '@@||clien.net$specifichide';
+        rules = [new NetworkRule(basicRuleText, 0), new NetworkRule(cosmeticExceptionRuleText, 0)];
+        result = new MatchingResult(rules, null);
+
+        expect(result.basicRule?.getText()).toBe(basicRuleText);
+        expect(result.cosmeticExceptionRule?.getText()).toBe(cosmeticExceptionRuleText);
+        expect(result.getCosmeticOption()).toEqual(
+            CosmeticOption.CosmeticOptionGenericCSS
+            | CosmeticOption.CosmeticOptionJS
+            | CosmeticOption.CosmeticOptionHtml,
+        );
+
+        // $important should not matter, as cosmetic option modifier must be used separately
+        basicRuleText = '||facebook.com/plugins/$domain=~facebook.com';
+        cosmeticExceptionRuleText = '@@||facebook.com^$elemhide,important';
+        rules = [new NetworkRule(basicRuleText, 0), new NetworkRule(cosmeticExceptionRuleText, 0)];
+        result = new MatchingResult(rules, null);
+
+        expect(result.basicRule?.getText()).toBe(basicRuleText);
+        expect(result.cosmeticExceptionRule?.getText()).toBe(cosmeticExceptionRuleText);
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS | CosmeticOption.CosmeticOptionHtml);
+    });
+
+    it('correctly picks from multiple cosmetic option rules', () => {
+        const basicRuleText = '||platform.twitter.com/widgets/tweet_button$third-party';
+        const genericHideRule = '@@||twitter.com^$generichide';
+        const mixedRule = '@@||twitter.com^$elemhide,jsinject';
+
+        const rules = [
+            new NetworkRule(basicRuleText, 0),
+            new NetworkRule(genericHideRule, 0),
+            new NetworkRule(mixedRule, 0),
+        ];
+        const result = new MatchingResult(rules, null);
+
+        expect(result.basicRule?.getText()).toBe(basicRuleText);
+
+        expect(result.cosmeticExceptionRule?.getText()).toBe(mixedRule);
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionHtml);
+    });
+
+    it('places allowlist $document rule in both .cosmeticExceptionRule and .basicRule slots', () => {
+        const rule = '@@||example.org$document';
+
+        const result = new MatchingResult([new NetworkRule(rule, 0)], null);
+
+        expect(result.basicRule?.getText()).toBe(rule);
+
+        expect(result.cosmeticExceptionRule?.getText()).toBe(rule);
+        expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
     });
 });
 

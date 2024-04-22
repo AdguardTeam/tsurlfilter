@@ -144,6 +144,15 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Ctag,
 
     /**
+     * Cosmetic option modifiers
+     */
+    CosmeticOption = NetworkRuleOption.Elemhide
+    | NetworkRuleOption.Generichide
+    | NetworkRuleOption.Specifichide
+    | NetworkRuleOption.Jsinject
+    | NetworkRuleOption.Content,
+
+    /**
      * Removeparam compatible modifiers
      *
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
@@ -1080,6 +1089,13 @@ export class NetworkRule implements rule.IRule {
      */
     hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
+    }
+
+    /**
+     * Returns true if rule has at least one cosmetic option enabled.
+     */
+    hasCosmeticOption(): boolean {
+        return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
     }
 
     /**
