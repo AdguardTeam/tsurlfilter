@@ -1,10 +1,15 @@
-import { Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
+import type { Request } from '../../request';
+import type { NetworkRule } from '../../rules/network-rule';
 
 /**
  * Lookup table interface
  */
 export interface ILookupTable {
+    /**
+     * Position of the lookup table in the byte buffer.
+     */
+    readonly offset: number
+
     /**
      * Finds all matching rules from the shortcuts lookup table
      *

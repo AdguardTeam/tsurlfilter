@@ -7,7 +7,7 @@ import { ByteBuffer } from '../../../src/utils/byte-buffer';
 describe('Trie Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const ruleStorage = createRuleStorage([]);
-        const table = new TrieLookupTable(ruleStorage, new ByteBuffer());
+        const table = TrieLookupTable.create(ruleStorage, new ByteBuffer());
 
         expect(table.addRule(new NetworkRule('http://p', 0), 0)).toBeFalsy();
         expect(table.addRule(new NetworkRule('shortcut', 0), 0)).toBeTruthy();
@@ -30,7 +30,7 @@ describe('Trie Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new TrieLookupTable(ruleStorage, new ByteBuffer());
+        const table = TrieLookupTable.create(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
         table.finalize();
@@ -45,5 +45,32 @@ describe('Trie Lookup Table Tests', () => {
         expect(
             table.matchAll(new Request('http://example.com/path/three/one', '', RequestType.Document)),
         ).toHaveLength(2);
+    });
+
+    it('deserializes from buffer', () => {
+        const rules = [
+            'path/one',
+            'path/two',
+            'path/three',
+            'path/three/one',
+        ];
+
+        const ruleStorage = createRuleStorage(rules);
+        const buffer = new ByteBuffer();
+        const table = TrieLookupTable.create(ruleStorage, buffer);
+        fillLookupTable(table, ruleStorage);
+        table.finalize();
+
+        const request = new Request(
+            'http://example.com/path/three/one',
+            'http://example.com',
+            RequestType.Document,
+        );
+
+        expect(table.matchAll(request)).toHaveLength(2);
+
+        const restoredBuffer = new ByteBuffer(buffer.chunks);
+        const restoredTable = new TrieLookupTable(ruleStorage, restoredBuffer, table.offset);
+        expect(restoredTable.matchAll(request)).toHaveLength(2);
     });
 });

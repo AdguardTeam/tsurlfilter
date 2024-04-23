@@ -1,11 +1,11 @@
-import { ILookupTable } from './lookup-table';
-import { RuleStorage } from '../../filterlist/rule-storage';
-import { Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
+import type { ILookupTable } from './lookup-table';
+import type { RuleStorage } from '../../filterlist/rule-storage';
+import type { Request } from '../../request';
+import type { NetworkRule } from '../../rules/network-rule';
+import type { ByteBuffer } from '../../utils/byte-buffer';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { BinaryMap } from '../../utils/binary-map';
-import { ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
 
 /**
@@ -13,6 +13,9 @@ import { U32LinkedList } from '../../utils/u32-linked-list';
  * For specific kind of rules like '||hostname^' and '||hostname/path' more simple algorithm with hashes is faster.
  */
 export class HostnameLookupTable implements ILookupTable {
+    /** @inheritdoc */
+    declare public readonly offset: number;
+
     /**
      * Domain lookup table. Key is the domain name hash.
      */
@@ -29,18 +32,25 @@ export class HostnameLookupTable implements ILookupTable {
     declare private readonly byteBuffer: ByteBuffer;
 
     /**
-     * Position of the binary map in the byte buffer.
+     * Count of loaded rules
      */
-    declare private binaryMapPosition: number;
-
-    declare private ruleCountPosition: number;
-
     private get rulesCount(): number {
-        return this.byteBuffer.getUint32(this.ruleCountPosition);
+        return this.byteBuffer.getUint32(this.offset);
     }
 
     private set rulesCount(value: number) {
-        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+        this.byteBuffer.setUint32(this.offset, value);
+    }
+
+    /**
+     * Binary map offset position in the {@link byteBuffer}
+     */
+    private get binaryMapPosition(): number {
+        return this.byteBuffer.getUint32(this.offset + 4);
+    }
+
+    private set binaryMapPosition(value: number) {
+        this.byteBuffer.setUint32(this.offset + 4, value);
     }
 
     /**
@@ -49,10 +59,14 @@ export class HostnameLookupTable implements ILookupTable {
      * @param storage rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
-    constructor(storage: RuleStorage, buffer: ByteBuffer) {
+    constructor(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+        offset: number,
+    ) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
-        this.pushRulesCountToBuffer();
+        this.offset = offset;
     }
 
     /**
@@ -153,12 +167,26 @@ export class HostnameLookupTable implements ILookupTable {
         return true;
     }
 
-    finalize() {
+    /**
+     * FIXME: description
+     */
+    public finalize() {
         this.binaryMapPosition = BinaryMap.create(this.hostnameLookupTable, this.byteBuffer);
     }
 
-    private pushRulesCountToBuffer() {
-        this.ruleCountPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
+    /**
+     * FIXME: description
+     * @param storage
+     * @param buffer
+     * @returns
+     */
+    public static create(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+    ): HostnameLookupTable {
+        const offset = buffer.byteOffset;
+        buffer.addUint32(offset, 0);
+        buffer.addUint32(offset + Uint32Array.BYTES_PER_ELEMENT, 0);
+        return new HostnameLookupTable(storage, buffer, offset);
     }
 }

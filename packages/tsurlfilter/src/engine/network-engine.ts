@@ -61,10 +61,10 @@ export class NetworkEngine {
         this.ruleStorage = storage;
 
         this.byteBuffer = buffer;
-        this.domainsLookupTable = new DomainsLookupTable(storage, this.byteBuffer);
-        this.hostnameLookupTable = new HostnameLookupTable(storage, this.byteBuffer);
-        this.shortcutsLookupTable = new TrieLookupTable(storage, this.byteBuffer);
-        this.seqScanLookupTable = new SeqScanLookupTable(storage, this.byteBuffer);
+        this.domainsLookupTable = DomainsLookupTable.create(storage, this.byteBuffer);
+        this.hostnameLookupTable = HostnameLookupTable.create(storage, this.byteBuffer);
+        this.shortcutsLookupTable = TrieLookupTable.create(storage, this.byteBuffer);
+        this.seqScanLookupTable = SeqScanLookupTable.create(storage, this.byteBuffer);
 
         if (skipStorageScan) {
             return;

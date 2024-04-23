@@ -7,7 +7,7 @@ import { ByteBuffer } from '../../../src/utils/byte-buffer';
 describe('Domains Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const ruleStorage = createRuleStorage([]);
-        const table = new DomainsLookupTable(ruleStorage, new ByteBuffer());
+        const table = DomainsLookupTable.create(ruleStorage, new ByteBuffer());
 
         expect(table.addRule(new NetworkRule('path', 0), 0)).toBeFalsy();
         expect(table.addRule(new NetworkRule('||example.org^', 0), 0)).toBeFalsy();
@@ -31,7 +31,7 @@ describe('Domains Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new DomainsLookupTable(ruleStorage, new ByteBuffer());
+        const table = DomainsLookupTable.create(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
         table.finalize();
@@ -62,7 +62,7 @@ describe('Domains Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new DomainsLookupTable(ruleStorage, new ByteBuffer());
+        const table = DomainsLookupTable.create(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
         table.finalize();
@@ -85,30 +85,21 @@ describe('Domains Lookup Table Tests', () => {
 
         const ruleStorage = createRuleStorage(rules);
         const buffer = new ByteBuffer();
-        const domainsLookupTable = new DomainsLookupTable(ruleStorage, buffer);
-        fillLookupTable(domainsLookupTable, ruleStorage);
-        domainsLookupTable.finalize();
-        const position = domainsLookupTable.serialize();
-        expect(
-            domainsLookupTable.matchAll(
-                new Request(
-                    'http://test.com/path',
-                    'http://sub.example.org',
-                    RequestType.Document,
-                ),
-            ),
-        ).toHaveLength(1);
+        const table = DomainsLookupTable.create(ruleStorage, buffer);
+        fillLookupTable(table, ruleStorage);
+        table.finalize();
 
-        const buffer2 = new ByteBuffer(buffer.chunks);
-        const domainsLookupTable2 = DomainsLookupTable.deserialize(ruleStorage, buffer2, position);
-        expect(
-            domainsLookupTable2.matchAll(
-                new Request(
-                    'http://test.com/path',
-                    'http://sub.example.org',
-                    RequestType.Document,
-                ),
-            ),
-        ).toHaveLength(1);
+        const request = new Request(
+            'http://test.com/path',
+            'http://sub.example.org',
+            RequestType.Document,
+        );
+
+        expect(table.matchAll(request)).toHaveLength(1);
+
+        const restoredBuffer = new ByteBuffer(buffer.chunks);
+        const restoredTable = new DomainsLookupTable(ruleStorage, restoredBuffer, table.offset);
+
+        expect(restoredTable.matchAll(request)).toHaveLength(1);
     });
 });

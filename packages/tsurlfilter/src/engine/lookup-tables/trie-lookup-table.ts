@@ -1,4 +1,4 @@
-import { RuleStorage } from '../../filterlist/rule-storage';
+import type { RuleStorage } from '../../filterlist/rule-storage';
 import { Request } from '../../request';
 import { NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
@@ -12,6 +12,9 @@ import { BinaryTrie } from '../../utils/binary-trie';
  * Look up table with underlying prefix tree
  */
 export class TrieLookupTable implements ILookupTable {
+    /** @inheritdoc */
+    declare public readonly offset: number;
+
     /**
      * Storage for the network filtering rules
      */
@@ -19,14 +22,18 @@ export class TrieLookupTable implements ILookupTable {
 
     declare private readonly byteBuffer: ByteBuffer;
 
-    declare private binaryTriePosition: number;
-
     /**
      * Trie that stores rules' shortcuts.
      */
     private trie: TrieNode;
 
-    declare private ruleCountPosition: number;
+    private get ruleCountPosition(): number {
+        return this.offset;
+    }
+
+    private get binaryTriePosition(): number {
+        return this.offset + 4; // Uint32Array.BYTES_PER_ELEMENT
+    }
 
     private get rulesCount(): number {
         return this.byteBuffer.getUint32(this.ruleCountPosition);
@@ -36,6 +43,14 @@ export class TrieLookupTable implements ILookupTable {
         this.byteBuffer.setUint32(this.ruleCountPosition, value);
     }
 
+    private get binaryTrie(): number {
+        return this.byteBuffer.getUint32(this.binaryTriePosition);
+    }
+
+    private set binaryTrie(value: number) {
+        this.byteBuffer.setUint32(this.binaryTriePosition, value);
+    }
+
     /**
      * Creates a new instance of the TrieLookupTable.
      *
@@ -43,11 +58,15 @@ export class TrieLookupTable implements ILookupTable {
      * can be used to retrieve the full rules from the storage.
      * @param buffer
      */
-    constructor(storage: RuleStorage, buffer: ByteBuffer) {
+    constructor(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+        offset: number,
+    ) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
+        this.offset = offset;
         this.trie = new TrieNode(0);
-        this.pushRulesCountToBuffer();
     }
 
     /**
@@ -83,8 +102,11 @@ export class TrieLookupTable implements ILookupTable {
         return this.rulesCount;
     }
 
+    /**
+     * FIXME: description
+     */
     public finalize() {
-        this.binaryTriePosition = BinaryTrie.create(this.trie, this.byteBuffer);
+        this.binaryTrie = BinaryTrie.create(this.trie, this.byteBuffer);
     }
 
     /**
@@ -97,7 +119,7 @@ export class TrieLookupTable implements ILookupTable {
             request.urlLowercase,
             request.urlLowercase.length,
             this.byteBuffer,
-            this.binaryTriePosition,
+            this.binaryTrie,
         );
 
         const result: NetworkRule[] = [];
@@ -115,9 +137,23 @@ export class TrieLookupTable implements ILookupTable {
         return result;
     }
 
-    private pushRulesCountToBuffer() {
-        this.ruleCountPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
+    /**
+     * FIXME: description
+     * @param storage
+     * @param buffer
+     * @returns
+     */
+    public static create(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+    ) {
+        const offset = buffer.byteOffset;
+        // allocate memory for counter
+        buffer.addUint32(offset, 0);
+        // allocate memory for binary trie position;
+        buffer.addUint32(offset + 4, 0);
+
+        return new TrieLookupTable(storage, buffer, offset);
     }
 
     /**

@@ -6,7 +6,7 @@ import { ByteBuffer } from '../../../src/utils/byte-buffer';
 
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
-        const table = new SeqScanLookupTable(createRuleStorage([]), new ByteBuffer());
+        const table = SeqScanLookupTable.create(createRuleStorage([]), new ByteBuffer());
 
         expect(table.addRule(new NetworkRule('path', 1), 0.000001)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
@@ -30,7 +30,7 @@ describe('Sequence-scan Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new SeqScanLookupTable(ruleStorage, new ByteBuffer());
+        const table = SeqScanLookupTable.create(ruleStorage, new ByteBuffer());
 
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(4);
@@ -52,5 +52,31 @@ describe('Sequence-scan Lookup Table Tests', () => {
         expect(
             table.matchAll(new Request('http://test.com/path', 'http://sub.example.org', RequestType.Document)),
         ).toHaveLength(1);
+    });
+
+    it('deserializes from buffer', () => {
+        const rules = [
+            'path',
+            '||*example.net^',
+            '||example.org^',
+            '||example.com/path',
+        ];
+
+        const ruleStorage = createRuleStorage(rules);
+        const buffer = new ByteBuffer();
+        const table = SeqScanLookupTable.create(ruleStorage, buffer);
+        fillLookupTable(table, ruleStorage);
+
+        const request = new Request(
+            'http://test.com/path',
+            'http://sub.example.org',
+            RequestType.Document,
+        );
+
+        expect(table.matchAll(request)).toHaveLength(1);
+
+        const restoredBuffer = new ByteBuffer(buffer.chunks);
+        const restoredTable = new SeqScanLookupTable(ruleStorage, restoredBuffer, table.offset);
+        expect(restoredTable.matchAll(request)).toHaveLength(1);
     });
 });

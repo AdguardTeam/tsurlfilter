@@ -10,20 +10,42 @@ import { U32LinkedList } from '../../utils/u32-linked-list';
  * In common case of rule there is always a way to just check a rule.match().
  */
 export class SeqScanLookupTable implements ILookupTable {
+    /** @inheritdoc */
+    declare public readonly offset: number;
+
+    /**
+     * Storage for the network filtering rules
+     */
     declare private readonly ruleStorage: RuleStorage;
 
+    /**
+     * ByteBuffer to store the binary data.
+     */
     declare private readonly byteBuffer: ByteBuffer;
 
-    declare private readonly storageIndexesPosition: number;
+    /**
+     * Rules counter offset position in the {@link byteBuffer}
+     */
+    private get rulesCountPosition(): number {
+        return this.offset;
+    }
 
-    declare private ruleCountPosition: number;
+    /**
+     * Storage indexes linked list offset position in the {@link byteBuffer}
+     */
+    private get storageIndexesPosition(): number {
+        return this.offset + 4; // Uint32Array.BYTES_PER_ELEMENT
+    }
 
+    /**
+     * Count of loaded rules
+     */
     private get rulesCount(): number {
-        return this.byteBuffer.getUint32(this.ruleCountPosition);
+        return this.byteBuffer.getUint32(this.rulesCountPosition);
     }
 
     private set rulesCount(value: number) {
-        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+        this.byteBuffer.setUint32(this.rulesCountPosition, value);
     }
 
     /**
@@ -33,11 +55,14 @@ export class SeqScanLookupTable implements ILookupTable {
      * can be used to retrieve the full rules from the storage.
      * @param buffer
      */
-    constructor(storage: RuleStorage, buffer: ByteBuffer) {
+    constructor(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+        offset: number,
+    ) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
-        this.pushRulesCountToBuffer();
-        this.storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
+        this.offset = offset;
     }
 
     /**
@@ -83,8 +108,22 @@ export class SeqScanLookupTable implements ILookupTable {
         return result;
     }
 
-    private pushRulesCountToBuffer() {
-        this.ruleCountPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
+    /**
+     * FIXME: description
+     * @param storage
+     * @param buffer
+     * @returns
+     */
+    public static create(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+    ) {
+        const offset = buffer.byteOffset;
+        // allocate memory for counter
+        buffer.addUint32(offset, 0);
+        // allocate memory for linked list
+        U32LinkedList.create(buffer);
+
+        return new SeqScanLookupTable(storage, buffer, offset);
     }
 }

@@ -1,17 +1,20 @@
-import { ILookupTable } from './lookup-table';
-import { RuleStorage } from '../../filterlist/rule-storage';
-import { Request } from '../../request';
+import type { ILookupTable } from './lookup-table';
+import type { RuleStorage } from '../../filterlist/rule-storage';
+import type { Request } from '../../request';
+import type { NetworkRule } from '../../rules/network-rule';
+import type { ByteBuffer } from '../../utils/byte-buffer';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
-import { NetworkRule } from '../../rules/network-rule';
 import { BinaryMap } from '../../utils/binary-map';
-import { ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
 
 /**
  * Domain lookup table. Key is the domain name hash.
  */
 export class DomainsLookupTable implements ILookupTable {
+    /** @inheritdoc */
+    declare public readonly offset: number;
+
     /**
      * Domain lookup table. Key is the domain name hash.
      */
@@ -28,18 +31,25 @@ export class DomainsLookupTable implements ILookupTable {
     declare private readonly byteBuffer: ByteBuffer;
 
     /**
-     * Position of the binary map in the byte buffer.
+     * Count of loaded rules
      */
-    declare private binaryMapPosition: number;
-
-    declare private ruleCountPosition: number;
-
     private get rulesCount(): number {
-        return this.byteBuffer.getUint32(this.ruleCountPosition);
+        return this.byteBuffer.getUint32(this.offset);
     }
 
     private set rulesCount(value: number) {
-        this.byteBuffer.setUint32(this.ruleCountPosition, value);
+        this.byteBuffer.setUint32(this.offset, value);
+    }
+
+    /**
+     * Binary map offset position in the {@link byteBuffer}
+     */
+    private get binaryMapPosition(): number {
+        return this.byteBuffer.getUint32(this.offset + 4);
+    }
+
+    private set binaryMapPosition(value: number) {
+        this.byteBuffer.setUint32(this.offset + 4, value);
     }
 
     /**
@@ -49,10 +59,14 @@ export class DomainsLookupTable implements ILookupTable {
      * @param buffer byte buffer to store the binary data.
      * can be used to retrieve the full rules from the storage.
      */
-    constructor(storage: RuleStorage, buffer: ByteBuffer) {
+    constructor(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+        offset: number,
+    ) {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
-        this.pushRulesCountToBuffer();
+        this.offset = offset;
     }
 
     /**
@@ -109,7 +123,7 @@ export class DomainsLookupTable implements ILookupTable {
             return result;
         }
 
-        const domains = request.subdomains;
+        const domains = [...request.subdomains];
         if (request.hostname !== request.sourceHostname) {
             domains.push(...request.sourceSubdomains);
         }
@@ -129,46 +143,29 @@ export class DomainsLookupTable implements ILookupTable {
                 }, this.byteBuffer, storageIndexesPosition);
             }
         }
-
         return result;
     }
 
-    finalize(): void {
+    /**
+     * FIXME: description
+     */
+    public finalize(): void {
         this.binaryMapPosition = BinaryMap.create(this.domainsLookupTable, this.byteBuffer);
     }
 
-    private pushRulesCountToBuffer() {
-        this.ruleCountPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
-    }
-
     /**
-     * R
-     * @private
-     */
-    public serialize(): number {
-        const position = this.byteBuffer.byteOffset;
-        this.byteBuffer.addUint32(position, this.ruleCountPosition);
-        this.byteBuffer.addUint32(position + 4, this.binaryMapPosition);
-        return position;
-    }
-
-    /**
-     * FIXME description
-     * @param ruleStorage
+     * FIXME: description
+     * @param storage
      * @param buffer
-     * @param position
+     * @returns
      */
-    public static deserialize(
-        ruleStorage: RuleStorage,
+    public static create(
+        storage: RuleStorage,
         buffer: ByteBuffer,
-        position: number,
     ): DomainsLookupTable {
-        const domainsLookupTable = new DomainsLookupTable(ruleStorage, buffer);
-        const rulesCountPosition = buffer.getUint32(position);
-        const binaryMapPosition = buffer.getUint32(position + 4);
-        domainsLookupTable.ruleCountPosition = rulesCountPosition;
-        domainsLookupTable.binaryMapPosition = binaryMapPosition;
-        return domainsLookupTable;
+        const offset = buffer.byteOffset;
+        buffer.addUint32(offset, 0);
+        buffer.addUint32(offset + Uint32Array.BYTES_PER_ELEMENT, 0);
+        return new DomainsLookupTable(storage, buffer, offset);
     }
 }
