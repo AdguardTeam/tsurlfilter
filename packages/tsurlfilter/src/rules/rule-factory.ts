@@ -1,6 +1,6 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
-import { IRule } from './rule';
+import { DEFAULT_RULE_INDEX, IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
 import { logger } from '../utils/logger';
@@ -31,20 +31,21 @@ export class RuleFactory {
     public static createRule(
         text: string,
         filterListId: number,
+        ruleIndex = DEFAULT_RULE_INDEX,
         ignoreNetwork = false,
         ignoreCosmetic = false,
         ignoreHost = true,
         silent = true,
     ): IRule | null {
-        if (!text || RuleFactory.isComment(text)) {
+        const line = text.trim();
+
+        if (!line || RuleFactory.isComment(line)) {
             return null;
         }
 
-        if (RuleFactory.isShort(text)) {
-            logger.info(`The rule is too short: ${text}`);
+        if (RuleFactory.isShort(line)) {
+            logger.info(`The rule is too short: ${line}`);
         }
-
-        const line = text.trim();
 
         try {
             if (RuleFactory.isCosmetic(line)) {
@@ -52,18 +53,18 @@ export class RuleFactory {
                     return null;
                 }
 
-                return new CosmeticRule(line, filterListId);
+                return new CosmeticRule(line, filterListId, ruleIndex);
             }
 
             if (!ignoreHost) {
-                const hostRule = RuleFactory.createHostRule(line, filterListId);
+                const hostRule = RuleFactory.createHostRule(line, filterListId, ruleIndex);
                 if (hostRule) {
                     return hostRule;
                 }
             }
 
             if (!ignoreNetwork) {
-                return new NetworkRule(line, filterListId);
+                return new NetworkRule(line, filterListId, ruleIndex);
             }
         } catch (e) {
             const msg = `"${getErrorMessage(e)}" in the rule: "${line}"`;
@@ -83,8 +84,8 @@ export class RuleFactory {
      * @param ruleText
      * @param filterListId
      */
-    private static createHostRule(ruleText: string, filterListId: number): HostRule | null {
-        const rule = new HostRule(ruleText, filterListId);
+    private static createHostRule(ruleText: string, filterListId: number, ruleIndex: number): HostRule | null {
+        const rule = new HostRule(ruleText, filterListId, ruleIndex);
         return rule.isInvalid() ? null : rule;
     }
 
@@ -113,10 +114,19 @@ export class RuleFactory {
      * @param text
      */
     public static isComment(text: string): boolean {
-        if (text.charAt(0) === '!') {
+        const trimmed = text.trim();
+
+        if (trimmed.charAt(0) === '!') {
             return true;
         }
 
+        // adblock agent
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            // avoid this case: [$adg=modifier]##[css-attribute=selector]
+            return !RuleFactory.isCosmetic(text);
+        }
+
+        // host-like / uBO-like comment
         if (text.charAt(0) === '#') {
             if (text.length === 1) {
                 return true;

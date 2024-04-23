@@ -227,6 +227,8 @@ class BasicRuleParts {
 export class NetworkRule implements rule.IRule {
     private readonly ruleText: string;
 
+    private readonly ruleIndex: number;
+
     private readonly filterListId: number;
 
     private readonly allowlist: boolean;
@@ -435,6 +437,10 @@ export class NetworkRule implements rule.IRule {
      */
     getText(): string {
         return this.ruleText;
+    }
+
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     /**
@@ -1023,8 +1029,9 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = rule.DEFAULT_RULE_INDEX) {
         this.ruleText = ruleText;
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
         const ruleParts = NetworkRule.parseRuleText(ruleText);

@@ -138,6 +138,8 @@ export const EXT_CSS_PSEUDO_INDICATORS = [
 export class CosmeticRule implements rule.IRule {
     private readonly ruleText: string;
 
+    private readonly ruleIndex: number;
+
     private readonly filterListId: number;
 
     private readonly type: CosmeticRuleType;
@@ -278,6 +280,10 @@ export class CosmeticRule implements rule.IRule {
         return this.ruleText;
     }
 
+    getIndex(): number {
+        return this.ruleIndex;
+    }
+
     getFilterListId(): number {
         return this.filterListId;
     }
@@ -383,8 +389,9 @@ export class CosmeticRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex: number = rule.DEFAULT_RULE_INDEX) {
         this.ruleText = ruleText;
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
         const {
