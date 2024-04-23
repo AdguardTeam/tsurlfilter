@@ -53,13 +53,14 @@ export class Engine {
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
+     * @param buffer byte buffer to store the binary data
      * @param skipStorageScan create an instance without storage scanning
      * @throws
      */
     constructor(ruleStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.byteBuffer = buffer;
-        this.networkEngine = new NetworkEngine(ruleStorage, this.byteBuffer, skipStorageScan);
+        this.networkEngine = NetworkEngine.create(ruleStorage, this.byteBuffer, skipStorageScan);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
         this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
     }

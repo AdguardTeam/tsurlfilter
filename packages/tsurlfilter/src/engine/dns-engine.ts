@@ -71,7 +71,7 @@ export class DnsEngine {
         this.byteBuffer = buffer;
         this.pushRulesCountToBuffer();
         this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
-        this.networkEngine = new NetworkEngine(storage, this.byteBuffer, true);
+        this.networkEngine = NetworkEngine.create(storage, this.byteBuffer, true);
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
 

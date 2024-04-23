@@ -51,21 +51,89 @@ export class NetworkEngine {
 
     declare private readonly byteBuffer: ByteBuffer;
 
+    declare private readonly offset: number;
+
+    private get domainsLookupTablePosition(): number {
+        return this.byteBuffer.getUint32(this.offset);
+    }
+
+    private get hostnameLookupTablePosition(): number {
+        return this.byteBuffer.getUint32(this.offset + 4);
+    }
+
+    private get shortcutsLookupTablePosition(): number {
+        return this.byteBuffer.getUint32(this.offset + 8);
+    }
+
+    private get seqScanLookupTablePosition(): number {
+        return this.byteBuffer.getUint32(this.offset + 12);
+    }
+
     /**
      * Builds an instance of the network engine
      *
-     * @param storage an object for a rules storage.
-     * @param skipStorageScan create an instance without storage scanning.
+     * @param storage an object for a rules' storage.
+     * @param buffer byte buffer to store the binary data.
+     * @param offset offset in the buffer where the data starts
      */
-    constructor(storage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+    constructor(storage: RuleStorage, buffer: ByteBuffer, offset: number) {
         this.ruleStorage = storage;
-
         this.byteBuffer = buffer;
-        this.domainsLookupTable = DomainsLookupTable.create(storage, this.byteBuffer);
-        this.hostnameLookupTable = HostnameLookupTable.create(storage, this.byteBuffer);
-        this.shortcutsLookupTable = TrieLookupTable.create(storage, this.byteBuffer);
-        this.seqScanLookupTable = SeqScanLookupTable.create(storage, this.byteBuffer);
+        this.offset = offset;
+        
+        this.domainsLookupTable = new DomainsLookupTable(
+            storage,
+            this.byteBuffer,
+            this.domainsLookupTablePosition,
+        );
+        this.hostnameLookupTable = new HostnameLookupTable(
+            storage,
+            this.byteBuffer,
+            this.hostnameLookupTablePosition,
+        );
+        this.shortcutsLookupTable = new TrieLookupTable(
+            storage,
+            this.byteBuffer,
+            this.shortcutsLookupTablePosition,
+        );
+        this.seqScanLookupTable = new SeqScanLookupTable(
+            storage,
+            this.byteBuffer,
+            this.seqScanLookupTablePosition,
+        );
+    }
 
+    static create(storage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+        const offset = buffer.byteOffset;
+
+        const domainsLookupTablePosition = offset;
+        const hostnameLookupTablePosition = offset + 4;
+        const shortcutsLookupTablePosition = offset + 8;
+        const seqScanLookupTablePosition = offset + 12;
+
+        buffer.addUint32(domainsLookupTablePosition, 0);
+        buffer.addUint32(hostnameLookupTablePosition, 0);
+        buffer.addUint32(shortcutsLookupTablePosition, 0);
+        buffer.addUint32(seqScanLookupTablePosition, 0);
+
+        const domainsLookupTable = DomainsLookupTable.create(storage, buffer);
+        const hostnameLookupTable = HostnameLookupTable.create(storage, buffer);
+        const shortcutsLookupTable = TrieLookupTable.create(storage, buffer);
+        const seqScanLookupTable = SeqScanLookupTable.create(storage, buffer);
+
+        buffer.setUint32(domainsLookupTablePosition, domainsLookupTable.offset);
+        buffer.setUint32(hostnameLookupTablePosition, hostnameLookupTable.offset);
+        buffer.setUint32(shortcutsLookupTablePosition, shortcutsLookupTable.offset);
+        buffer.setUint32(seqScanLookupTablePosition, seqScanLookupTable.offset);
+
+        const engine = new NetworkEngine(storage, buffer, offset);
+
+        engine.scanRules(skipStorageScan);
+
+        return engine;
+    }
+
+    scanRules(skipStorageScan: boolean): void {
         if (skipStorageScan) {
             return;
         }
