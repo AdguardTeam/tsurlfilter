@@ -51,7 +51,7 @@ export class NetworkEngine {
 
     declare private readonly byteBuffer: ByteBuffer;
 
-    declare private readonly offset: number;
+    declare public readonly offset: number;
 
     private get domainsLookupTablePosition(): number {
         return this.byteBuffer.getUint32(this.offset);
@@ -80,7 +80,7 @@ export class NetworkEngine {
         this.ruleStorage = storage;
         this.byteBuffer = buffer;
         this.offset = offset;
-        
+
         this.domainsLookupTable = new DomainsLookupTable(
             storage,
             this.byteBuffer,

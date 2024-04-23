@@ -327,4 +327,23 @@ describe('NetworkEngine', () => {
             ))).toBeNull();
         });
     });
+
+    describe('Network engine deserialization', () => {
+        it('should deserialize', () => {
+            const rule = 'example.org';
+            const buffer = new ByteBuffer();
+            const ruleStorage = createTestRuleStorage(1, [rule]);
+            const engine = NetworkEngine.create(ruleStorage, buffer);
+            engine.finalize();
+            const request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+            const result = engine.match(request);
+
+            expect(result?.getText()).toBe(rule);
+
+            const restoredBuffer = new ByteBuffer(buffer.chunks);
+            const restoredEngine = new NetworkEngine(ruleStorage, restoredBuffer, engine.offset);
+            const resultOfRestored = restoredEngine.match(request);
+            expect(resultOfRestored?.getText()).toBe(rule);
+        });
+    });
 });
