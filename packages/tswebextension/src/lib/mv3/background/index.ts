@@ -19,6 +19,8 @@ import {
 export * from './app';
 
 export { USER_FILTER_ID } from './user-rules-api';
+export { tabsApi } from '../tabs/tabs-api';
+export { TabContext } from '../tabs/tab-context';
 export { ConfigurationMV3 as Configuration } from './configuration';
 export { CommonMessageType, ExtendedMV3MessageType } from './messages';
 export { RULE_SET_NAME_PREFIX } from './filters-api';

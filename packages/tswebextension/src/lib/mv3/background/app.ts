@@ -20,7 +20,8 @@ import {
     configurationMV3Validator,
 } from './configuration';
 import { RequestEvents } from './request/events/request-events';
-import { TabsApi, tabsApi } from './tabs-api';
+import { TabsApi, tabsApi } from '../tabs/tabs-api';
+import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
@@ -126,6 +127,10 @@ MessagesHandlerMV3
             RequestEvents.init();
             // Start handle request events.
             WebRequestApi.start();
+
+            // TODO: Inject cosmetic rules into tabs, opened before app initialization.
+            // Compute and save matching result for tabs, opened before app initialization.
+            await TabsCosmeticInjector.processOpenTabs();
 
             this.isStarted = true;
             this.startPromise = undefined;
@@ -355,6 +360,8 @@ MessagesHandlerMV3
     /**
      * Executes scriptlets for the currently active tab and adds a listener to
      * the {@link chrome.webNavigation.onCommitted} hook to execute scriptlets.
+     *
+     * FIXME: Move to RequestEvents.
      */
     public async executeScriptlets(): Promise<void> {
         const activeTab = await TabsApi.getActiveTab();
@@ -366,6 +373,7 @@ MessagesHandlerMV3
             await getAndExecuteScripts(id, url, verbose);
         }
 
+        // FIXME: Move to RequestEvents.
         chrome.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
