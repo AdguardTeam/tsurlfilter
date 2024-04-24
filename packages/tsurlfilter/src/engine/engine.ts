@@ -49,20 +49,39 @@ export class Engine {
     private readonly byteBuffer: ByteBuffer;
 
     /**
+     * Offset in the byte buffer
+     * @private
+     */
+    private offset: number;
+
+    private get networkEnginePosition(): number {
+        return this.byteBuffer.getUint32(this.offset);
+    }
+
+    /**
      * Creates an instance of an Engine
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
      * @param buffer byte buffer to store the binary data
+     * @param offset
      * @param skipStorageScan create an instance without storage scanning
      * @throws
      */
-    constructor(ruleStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+    constructor(ruleStorage: RuleStorage, buffer: ByteBuffer, networkEngine: NetworkEngine, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.byteBuffer = buffer;
-        this.networkEngine = NetworkEngine.create(ruleStorage, this.byteBuffer, skipStorageScan);
+
+        this.networkEngine = networkEngine;
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
         this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
+    }
+
+    static create(rulesStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+        buffer.addUint32(0, 0);
+
+        const networkEngine = NetworkEngine.create(rulesStorage, buffer, skipStorageScan);
+        return new Engine(rulesStorage, buffer, networkEngine, skipStorageScan);
     }
 
     /**

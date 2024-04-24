@@ -325,7 +325,7 @@ describe('Benchmarks', () => {
         const list = new listClass(1, filterText, ignoreCosmetic);
         const ruleStorage = new RuleStorage([list]);
 
-        const engine = new Engine(ruleStorage, new ByteBuffer(), loadAsync);
+        const engine = Engine.create(ruleStorage, new ByteBuffer(), loadAsync);
 
         if (loadAsync) {
             const chunkSize = 1000;
