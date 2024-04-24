@@ -44,7 +44,7 @@ describe('Start Engine Benchmark', () => {
             const list = new StringRuleList(1, ruleText, false);
             const ruleStorage = new RuleStorage([list]);
 
-            const engine = new Engine(ruleStorage, new ByteBuffer(), false);
+            const engine = Engine.create(ruleStorage, new ByteBuffer(), false);
             expect(engine).toBeTruthy();
             expect(engine.getRulesCount()).toEqual(91694);
         }

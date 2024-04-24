@@ -532,7 +532,10 @@ describe('Engine', () => {
         engine.finalize();
 
         it('works if returns correct cosmetic elemhide result', () => {
-            let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+            let result = engine.getCosmeticResult(
+                createRequest('an-other-domain.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
 
             expect(result.elementHiding.generic.length).toEqual(2);
             expect(result.elementHiding.specific.length).toEqual(0);
@@ -589,7 +592,10 @@ describe('Engine', () => {
         engine.finalize();
 
         it('works if returns correct cosmetic css result', () => {
-            let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+            let result = engine.getCosmeticResult(
+                createRequest('an-other-domain.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
 
             expect(result.CSS.generic.length).toEqual(1);
             expect(result.CSS.specific.length).toEqual(0);
@@ -660,7 +666,10 @@ describe('Engine', () => {
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
             engine.finalize();
 
-            let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+            let result = engine.getCosmeticResult(
+                createRequest('an-other-domain.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
 
             expect(result.JS.generic.length).toEqual(1);
             expect(result.JS.specific.length).toEqual(0);
@@ -681,7 +690,10 @@ describe('Engine', () => {
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
             engine.finalize();
 
-            let result = engine.getCosmeticResult(createRequest('an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
+            let result = engine.getCosmeticResult(
+                createRequest('an-other-domain.org'),
+                CosmeticOption.CosmeticOptionAll,
+            );
 
             expect(result.JS.generic.length).toEqual(0);
             expect(result.JS.specific.length).toEqual(0);
@@ -820,6 +832,7 @@ describe('Engine', () => {
         it('should find js rules for subdomains', () => {
             const scriptletRule = 'example.org#%#//scriptlet("abort-on-property-read", "alert")';
             const subDomainScriptletRule = 'sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
+            // eslint-disable-next-line max-len
             const otherSubDomainScriptletRule = 'other-sub.example.org#%#//scriptlet("abort-on-property-read", "alert")';
 
             const rules = [
@@ -926,6 +939,28 @@ describe('Engine', () => {
             expect(cookieRules[0].getText()).toBe(allowlistRule);
         });
     });
+
+    describe('Deserialization', () => {
+        it('should restore engine from the buffer', () => {
+            const buffer = new ByteBuffer();
+            const list = new BufferRuleList(1, '@@||example.org', false);
+            const storage = new RuleStorage([list]);
+            const engine = Engine.create(storage, buffer);
+            engine.finalize();
+
+            expect(engine.getRulesCount()).toBe(1);
+
+            const request = new Request('https://example.org/path', 'https://example.org', RequestType.Document);
+            const result = engine.matchRequest(request);
+
+            expect(result.basicRule).not.toBeNull();
+
+            const restoredBuffer = new ByteBuffer(buffer.chunks);
+            const restoredEngine = Engine.from(storage, restoredBuffer);
+
+            expect(restoredEngine.getRulesCount()).toBe(1);
+
+            expect(restoredEngine.matchRequest(request).basicRule).not.toBeNull();
+        });
+    });
 });
-
-
