@@ -357,6 +357,7 @@ describe('ModifierValidator', () => {
                         "csp=script-src 'self' * 'unsafe-inline'",
                         "csp=script-src 'self' 'unsafe-inline' http: https: blob:",
                         "csp=script-src 'self' * 'sha256-0McqMM66/wAVZmxF6zXpjNsb1UMbTl4LXBXdhqPKxws='",
+                        "csp=script-src-attr 'none'",
                         'header=set-cookie',
                         'header=set-cookie:foo',
                         'header=set-cookie:/foo\\, bar\\$/',
@@ -737,6 +738,14 @@ describe('ModifierValidator', () => {
                         "csp=script-src 'self' * 'sha256-0McqMM16/wAVZmxF6zXpjNsb1UM6Tl4LXBxdhqPKxws='",
                         // few directives
                         "csp=child-src 'none'; frame-src 'self' *; worker-src 'none'",
+                        'csp=fenced-frame-src https://example.com/',
+                        'csp=referrer "none"',
+                        "csp=require-trusted-types-for 'script'",
+                        "csp=script-src-attr 'none'",
+                        'csp=script-src-elem https://example.com/',
+                        "csp=style-src-attr 'none'",
+                        'csp=style-src-elem https://example.com/',
+                        "csp=trusted-types foo bar 'allow-duplicates'",
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
                         const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);

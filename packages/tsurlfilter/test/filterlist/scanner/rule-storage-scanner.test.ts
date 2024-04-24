@@ -2,7 +2,6 @@ import { StringLineReader } from '../../../src/filterlist/reader/string-line-rea
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
-import { LIST_ID_MAX_VALUE } from '../../../src/filterlist/rule-list';
 
 describe('Empty Scanners Test', () => {
     const storageScanner = new RuleStorageScanner([]);
@@ -40,7 +39,7 @@ describe('RuleStorageScanner Test', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.rule.getText()).toBe('||example.org');
         expect(indexedRule!.rule.getFilterListId()).toBe(1);
-        expect(indexedRule!.index).toBe(1 / LIST_ID_MAX_VALUE);
+        expect(indexedRule!.index).toBe(0);
     });
 
     it('scans rule 2 from list 1', () => {
@@ -51,7 +50,7 @@ describe('RuleStorageScanner Test', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.rule.getText()).toBe('##banner');
         expect(indexedRule!.rule.getFilterListId()).toBe(1);
-        expect(indexedRule!.index).toBe(21 + 1 / LIST_ID_MAX_VALUE);
+        expect(indexedRule!.index).toBe(21);
     });
 
     it('scans rule 1 from list 2', () => {
@@ -62,7 +61,7 @@ describe('RuleStorageScanner Test', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.rule.getText()).toBe('||example.com');
         expect(indexedRule!.rule.getFilterListId()).toBe(2);
-        expect(indexedRule!.index).toBe(2 / LIST_ID_MAX_VALUE);
+        expect(indexedRule!.index).toBe(29);
     });
 
     it('scans rule 2 from list 2', () => {
@@ -73,7 +72,7 @@ describe('RuleStorageScanner Test', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.rule.getText()).toBe('##advert');
         expect(indexedRule!.rule.getFilterListId()).toBe(2);
-        expect(indexedRule!.index).toBe(21 + 2 / LIST_ID_MAX_VALUE);
+        expect(indexedRule!.index).toBe(50);
     });
 
     it('checks that there\'s nothing more to read', () => {

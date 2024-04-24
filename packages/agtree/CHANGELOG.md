@@ -4,11 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
 
-## [Unreleased]
+[keepachangelog]: https://keepachangelog.com/en/1.0.0/
+[semver]: https://semver.org/spec/v2.0.0.html
+
+## Unreleased
 
 ### Added
 
 - Export path for type declarations.
+- Support for `fenced-frame-src`, `referrer`, `require-trusted-types-for`, `script-src-attr`, `script-src-elem`,
+  `style-src-attr`, `style-src-elem`, `trusted-types` CSP directives for `$csp` modifier validation: [#126].
+
+[#126]: https://github.com/AdguardTeam/tsurlfilter/issues/126
 
 
 ## Unreleased
@@ -45,7 +52,9 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
-- Support of `referrerpolicy` modifier [#98](https://github.com/AdguardTeam/tsurlfilter/issues/98)
+- Support of `referrerpolicy` modifier [#98].
+
+[#98]: https://github.com/AdguardTeam/tsurlfilter/issues/98
 
 
 ## 1.1.6 - 2023-09-22
@@ -64,6 +73,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 - Improved converter's performance
 
+
 ## 1.1.5 - 2023-09-05
 
 ### Changed
@@ -74,6 +84,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 ### Added
 
 - Exports to `package.json`
+
 
 ## 1.1.4 - 2023-08-30
 
@@ -100,11 +111,13 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Compatibility tables validation of ABP syntax `$rewrite`
 - Detecting closing parenthesis in ADG/uBO scriptlets while parsing
 
+
 ## 1.1.1 - 2023-08-11
 
 ### Fixed
 
 - Validation of assignable modifiers which may be used without a value
+
 
 ## 1.1.0 - 2023-08-10
 
@@ -132,11 +145,9 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Scriptlet parsing
 - Metadata parsing
 
+
 ## 1.0.1 - 2023-05-24
 
 ### Added
 
 - Migrated parser from AGLint to a separate package.
-
-[keepachangelog]: https://keepachangelog.com/en/1.0.0/
-[semver]: https://semver.org/spec/v2.0.0.html
