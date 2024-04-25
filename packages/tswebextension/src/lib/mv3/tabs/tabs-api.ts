@@ -412,6 +412,24 @@ export class TabsApi {
     }
 
     /**
+     * Checks whether the tab with the specified ID is open in incognito mode
+     * or not.
+     *
+     * @param tabId Tab ID.
+     * @returns True if the tab is open in incognito mode, and false
+     * if otherwise.
+     */
+    public isIncognitoTab(tabId: number): boolean {
+        const tabContext = this.getTabContext(tabId);
+
+        if (!tabContext) {
+            return false;
+        }
+
+        return tabContext.info.incognito;
+    }
+
+    /**
      * Returns current active tab.
      *
      * @returns Current active tab.
