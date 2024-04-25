@@ -22,7 +22,7 @@ export class HostnameLookupTable implements ILookupTable {
     private hostnameLookupTable = new Map<number, number>();
 
     /**
-     * Storage for the network filtering rules
+     * Storage for the network filtering rules.
      */
     declare private readonly ruleStorage: RuleStorage;
 
@@ -32,34 +32,48 @@ export class HostnameLookupTable implements ILookupTable {
     declare private readonly byteBuffer: ByteBuffer;
 
     /**
-     * Count of loaded rules
+     * Count of loaded rules.
+     *
+     * @returns Count of loaded rules.
      */
     private get rulesCount(): number {
         return this.byteBuffer.getUint32(this.offset);
     }
 
+    /**
+     * Count of loaded rules.
+     *
+     * @param value Value to set.
+     */
     private set rulesCount(value: number) {
         this.byteBuffer.setUint32(this.offset, value);
     }
 
     /**
-     * Binary map offset position in the {@link byteBuffer}
+     * Binary map offset position in the {@link byteBuffer}.
+     *
+     * @returns The map offset in the {@link byteBuffer}.
      */
     private get binaryMapPosition(): number {
         return this.byteBuffer.getUint32(this.offset + 4);
     }
 
+    /**
+     * Binary map offset position in the {@link byteBuffer}.
+     *
+     * @param value Value to set.
+     */
     private set binaryMapPosition(value: number) {
         this.byteBuffer.setUint32(this.offset + 4, value);
     }
 
     /**
-     * Creates a new instance
+     * Creates a new instance.
      *
-     * @param storage rules storage. We store "rule indexes" in the lookup table which
-     * can be used to retrieve the full rules from the storage.
-     * @param buffer
-     * @param offset
+     * @param storage Rules storage. We store "rule indexes" in the lookup table which can be used
+     * to retrieve the full rules from the storage.
+     * @param buffer Byte buffer to store the binary data.
+     * @param offset Byte offset of the lookup table in the {@link buffer}.
      */
     constructor(
         storage: RuleStorage,
@@ -72,9 +86,11 @@ export class HostnameLookupTable implements ILookupTable {
     }
 
     /**
-     * addRule implements the ILookupTable interface for DomainsLookupTable.
-     * @param rule
-     * @param storageIdx
+     * Implements the ILookupTable interface for DomainsLookupTable.
+     *
+     * @param rule Rule to add.
+     * @param storageIdx Rule storage index.
+     * @returns True if rule is added to lookup table, otherwise false.
      */
     addRule(rule: NetworkRule, storageIdx: number): boolean {
         const pattern = rule.getPattern();
@@ -104,7 +120,7 @@ export class HostnameLookupTable implements ILookupTable {
         let storageIndexesPosition = this.hostnameLookupTable.get(hash);
 
         /**
-         * If the hash is not in the lookup table, create a new {@link U32LinkedList},
+         * If the hash is not in the lookup table, create a new {@link U32LinkedList}.
          */
         if (storageIndexesPosition === undefined) {
             storageIndexesPosition = U32LinkedList.create(this.byteBuffer);
@@ -123,10 +139,7 @@ export class HostnameLookupTable implements ILookupTable {
         return this.rulesCount;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     * @param request
-     */
+    /** @inheritdoc */
     matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
         const domains = request.subdomains;
@@ -149,9 +162,10 @@ export class HostnameLookupTable implements ILookupTable {
     }
 
     /**
-     * Checks if this hostname string is valid
+     * Checks if this hostname string is valid.
      *
-     * @param hostname
+     * @param hostname Hostname string.
+     * @returns True if hostname is valid, otherwise false.
      */
     private static isValidHostname(hostname: string): boolean {
         if (!hostname) {
@@ -170,17 +184,18 @@ export class HostnameLookupTable implements ILookupTable {
     }
 
     /**
-     * FIXME: description
+     * Build readonly index structure and write it in the {@link byteBuffer}.
      */
     public finalize() {
         this.binaryMapPosition = BinaryMap.create(this.hostnameLookupTable, this.byteBuffer);
     }
 
     /**
-     * FIXME: description
-     * @param storage
-     * @param buffer
-     * @returns
+     * Allocate memory for the lookup table in the {@link byteBuffer} and return linked instance.
+     *
+     * @param storage Rule storage connected to lookup table.
+     * @param buffer Shared linear memory buffer, which used for writing rule indexes data.
+     * @returns Instance of {@link HostnameLookupTable}.
      */
     public static create(
         storage: RuleStorage,

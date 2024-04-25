@@ -14,7 +14,7 @@ export class SeqScanLookupTable implements ILookupTable {
     declare public readonly offset: number;
 
     /**
-     * Storage for the network filtering rules
+     * Storage for the network filtering rules.
      */
     declare private readonly ruleStorage: RuleStorage;
 
@@ -24,37 +24,48 @@ export class SeqScanLookupTable implements ILookupTable {
     declare private readonly byteBuffer: ByteBuffer;
 
     /**
-     * Rules counter offset position in the {@link byteBuffer}
+     * Rules counter offset position in the {@link byteBuffer}.
+     *
+     * @returns Buffer offset.
      */
     private get rulesCountPosition(): number {
         return this.offset;
     }
 
     /**
-     * Storage indexes linked list offset position in the {@link byteBuffer}
+     * Storage indexes linked list offset position in the {@link byteBuffer}.
+     *
+     * @returns Buffer offset.
      */
     private get storageIndexesPosition(): number {
         return this.offset + 4; // Uint32Array.BYTES_PER_ELEMENT
     }
 
     /**
-     * Count of loaded rules
+     * Count of loaded rules.
+     *
+     * @returns Count of loaded rules.
      */
     private get rulesCount(): number {
         return this.byteBuffer.getUint32(this.rulesCountPosition);
     }
 
+    /**
+     * Count of loaded rules.
+     *
+     * @param value Value to set.
+     */
     private set rulesCount(value: number) {
         this.byteBuffer.setUint32(this.rulesCountPosition, value);
     }
 
     /**
-     * Creates a new instance
+     * Creates a new instance.
      *
-     * @param storage rules storage. We store "rule indexes" in the lookup table which
-     * can be used to retrieve the full rules from the storage.
-     * @param buffer
-     * @param offset
+     * @param storage Rules storage. We store "rule indexes" in the lookup table which can be used
+     * to retrieve the full rules from the storage.
+     * @param buffer Byte buffer to store the binary data.
+     * @param offset Byte offset of the lookup table in the {@link buffer}.
      */
     constructor(
         storage: RuleStorage,
@@ -66,11 +77,7 @@ export class SeqScanLookupTable implements ILookupTable {
         this.offset = offset;
     }
 
-    /**
-     * addRule implements the ILookupTable interface for SeqScanLookupTable.
-     * @param _rule
-     * @param storageIdx
-     */
+    /** @inheritdoc */
     addRule(_rule: NetworkRule, storageIdx: number): boolean {
         // Check if storageIdx has already indexed
         const position = U32LinkedList.find((storageIndex) => {
@@ -91,10 +98,7 @@ export class SeqScanLookupTable implements ILookupTable {
         return this.rulesCount;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     * @param request
-     */
+    /** @inheritdoc */
     matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
 
@@ -110,10 +114,11 @@ export class SeqScanLookupTable implements ILookupTable {
     }
 
     /**
-     * FIXME: description
-     * @param storage
-     * @param buffer
-     * @returns
+     * Allocate memory for the lookup table in the {@link byteBuffer} and return linked instance.
+     *
+     * @param storage Rule storage connected to lookup table.
+     * @param buffer Shared linear memory buffer, which used for writing rule indexes data.
+     * @returns Instance of {@link SeqScanLookupTable}.
      */
     public static create(
         storage: RuleStorage,

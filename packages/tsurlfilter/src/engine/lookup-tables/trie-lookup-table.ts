@@ -9,17 +9,20 @@ import type { ByteBuffer } from '../../utils/byte-buffer';
 import { BinaryTrie } from '../../utils/binary-trie';
 
 /**
- * Look up table with underlying prefix tree
+ * Look up table with underlying prefix tree.
  */
 export class TrieLookupTable implements ILookupTable {
     /** @inheritdoc */
     declare public readonly offset: number;
 
     /**
-     * Storage for the network filtering rules
+     * Storage for the network filtering rules.
      */
     declare private readonly ruleStorage: RuleStorage;
 
+    /**
+     * ByteBuffer to store the binary data.
+     */
     declare private readonly byteBuffer: ByteBuffer;
 
     /**
@@ -27,37 +30,67 @@ export class TrieLookupTable implements ILookupTable {
      */
     private trie: TrieNode;
 
-    private get ruleCountPosition(): number {
+    /**
+     * Rules counter offset position in the {@link byteBuffer}.
+     *
+     * @returns Buffer offset.
+     */
+    private get rulesCountPosition(): number {
         return this.offset;
     }
 
-    private get binaryTriePosition(): number {
+    /**
+     * Pointer to binary trie position in the {@link byteBuffer}.
+     *
+     * @returns Buffer offset.
+     */
+    private get binaryTriePositionPtr(): number {
         return this.offset + 4; // Uint32Array.BYTES_PER_ELEMENT
     }
 
+    /**
+     * Count of loaded rules.
+     *
+     * @returns Count of loaded rules.
+     */
     private get rulesCount(): number {
-        return this.byteBuffer.getUint32(this.ruleCountPosition);
-    }
-
-    private set rulesCount(value: number) {
-        this.byteBuffer.setUint32(this.ruleCountPosition, value);
-    }
-
-    private get binaryTrie(): number {
-        return this.byteBuffer.getUint32(this.binaryTriePosition);
-    }
-
-    private set binaryTrie(value: number) {
-        this.byteBuffer.setUint32(this.binaryTriePosition, value);
+        return this.byteBuffer.getUint32(this.rulesCountPosition);
     }
 
     /**
-     * Creates a new instance of the TrieLookupTable.
+     * Count of loaded rules.
      *
-     * @param storage rules storage. We store "rule indexes" in the lookup table which
-     * can be used to retrieve the full rules from the storage.
-     * @param buffer
-     * @param offset
+     * @param value Value to set.
+     */
+    private set rulesCount(value: number) {
+        this.byteBuffer.setUint32(this.rulesCountPosition, value);
+    }
+
+    /**
+     * Binary trie offset position in the {@link byteBuffer}.
+     *
+     * @returns The trie offset in the {@link byteBuffer}.
+     */
+    private get binaryTriePosition(): number {
+        return this.byteBuffer.getUint32(this.binaryTriePositionPtr);
+    }
+
+    /**
+     * Binary trie offset position in the {@link byteBuffer}.
+     *
+     * @param value Value to set.
+     */
+    private set binaryTriePosition(value: number) {
+        this.byteBuffer.setUint32(this.binaryTriePositionPtr, value);
+    }
+
+    /**
+     * Creates a new instance.
+     *
+     * @param storage Rules storage. We store "rule indexes" in the lookup table which can be used
+     * to retrieve the full rules from the storage.
+     * @param buffer Byte buffer to store the binary data.
+     * @param offset Byte offset of the lookup table in the {@link buffer}.
      */
     constructor(
         storage: RuleStorage,
@@ -70,14 +103,7 @@ export class TrieLookupTable implements ILookupTable {
         this.trie = new TrieNode(0);
     }
 
-    /**
-     * Tries to add the rule to the lookup table.
-     * returns true if it was added
-     *
-     * @param rule to add
-     * @param storageIdx index
-     * @return {boolean} true if the rule been added
-     */
+    /** @inheritdoc */
     public addRule(rule: NetworkRule, storageIdx: number): boolean {
         const shortcut = rule.getShortcut();
 
@@ -104,23 +130,19 @@ export class TrieLookupTable implements ILookupTable {
     }
 
     /**
-     * FIXME: description
+     * Build readonly index structure and write it in the {@link byteBuffer}.
      */
     public finalize() {
-        this.binaryTrie = BinaryTrie.create(this.trie, this.byteBuffer);
+        this.binaryTriePosition = BinaryTrie.create(this.trie, this.byteBuffer);
     }
 
-    /**
-     * Traverses trie
-     *
-     * @param request
-     */
+    /** @inheritdoc */
     public matchAll(request: Request): NetworkRule[] {
         const storageIndexesPositions = BinaryTrie.traverseAll(
             request.urlLowercase,
             request.urlLowercase.length,
             this.byteBuffer,
-            this.binaryTrie,
+            this.binaryTriePosition,
         );
 
         const result: NetworkRule[] = [];
@@ -139,10 +161,11 @@ export class TrieLookupTable implements ILookupTable {
     }
 
     /**
-     * FIXME: description
-     * @param storage
-     * @param buffer
-     * @returns
+     * Allocate memory for the lookup table in the {@link byteBuffer} and return linked instance.
+     *
+     * @param storage Rule storage connected to lookup table.
+     * @param buffer Shared linear memory buffer, which used for writing rule indexes data.
+     * @returns Instance of {@link TrieLookupTable}.
      */
     public static create(
         storage: RuleStorage,
@@ -161,8 +184,8 @@ export class TrieLookupTable implements ILookupTable {
      * Checks if the rule potentially matches too many URLs.
      * We'd better use another type of lookup table for this kind of rules.
      *
-     * @param shortcut to check
-     * @return check result
+     * @param shortcut To check.
+     * @returns Check result.
      */
     private static isAnyURLShortcut(shortcut: string): boolean {
         // The numbers are basically ("PROTO://".length + 1)

@@ -2,7 +2,7 @@ import type { Request } from '../../request';
 import type { NetworkRule } from '../../rules/network-rule';
 
 /**
- * Lookup table interface
+ * Lookup table interface.
  */
 export interface ILookupTable {
     /**
@@ -11,26 +11,26 @@ export interface ILookupTable {
     readonly offset: number
 
     /**
-     * Finds all matching rules from the shortcuts lookup table
+     * Finds all matching rules from the shortcuts lookup table.
      *
-     * @param request to check
-     * @return array of matching rules
+     * @param request To check.
+     * @returns Array of matching rules.
      */
     matchAll(request: Request): NetworkRule[];
 
     /**
      * Tries to add the rule to the lookup table.
-     * returns true if it was added
      *
-     * @param rule to add
-     * @param storageIdx index
-     * @return true if the rule been added
+     * @param rule To add.
+     * @param storageIdx Index.
+     * @returns True if the rule been added.
      */
     addRule(rule: NetworkRule, storageIdx: number): boolean;
 
     /**
      * Count of rules added to this lookup table.
-     * @return total rules count
+     *
+     * @returns Total rules count.
      */
     getRulesCount(): number;
 }
