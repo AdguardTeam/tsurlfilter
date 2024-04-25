@@ -1,8 +1,12 @@
 import { IFilter, IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
-import { AppInterface, defaultFilteringLog, getErrorMessage } from '../../common';
-import { logger } from '../utils/logger';
+import {
+    AppInterface,
+    defaultFilteringLog,
+    logger,
+    getErrorMessage,
+} from '../../common';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { UpdateStaticFiltersResult } from './filters-api';

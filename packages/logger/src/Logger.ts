@@ -85,12 +85,6 @@ export interface Writer {
  * Simple logger with log levels.
  */
 export class Logger {
-    /**
-     * Verbose mode. If false, messages won't be printed.
-     * @deprecated  Will be removed, use {@link LogLevel.Mute} instead.
-     */
-    private verbose = true;
-
     private currentLevelValue = LogLevelNumeric.Info;
 
     private readonly writer: Writer;
@@ -154,28 +148,11 @@ export class Logger {
      * @throws Error if log level is not supported.
      */
     public set currentLevel(logLevel: LogLevel) {
-        if (!logLevel) { // fixme: cause tswebextension forwards optionals from configuration
-            return;
-        }
         const level = levelMapStringToNum[logLevel];
         if (level === undefined) {
             throw new Error(`Logger supports only the following levels: ${[Object.values(LogLevel).join(', ')]}`);
         }
         this.currentLevelValue = level;
-    }
-
-    /**
-     * Sets verbose option.
-     *
-     * @param verboseValue Verbose boolean flag.
-     * @deprecated Verbose option will be removed, use {@link LogLevel.Mute} instead.
-     * @throws Error if verbose flag is not a boolean.
-     */
-    public setVerbose(verboseValue?: boolean): void {
-        if (typeof verboseValue !== 'boolean') {  // fixme: cause tswebextension forwards optionals from configuration
-            throw new Error('Verbose flag should be a boolean');
-        }
-        this.verbose = verboseValue;
     }
 
     /**
@@ -204,7 +181,7 @@ export class Logger {
         args: any[],
     ): void {
         // skip writing if the basic conditions are not met
-        if (!this.verbose || this.currentLevelValue < level) {
+        if (this.currentLevelValue < level) {
             return;
         }
         if (!args || args.length === 0 || !args[0]) {

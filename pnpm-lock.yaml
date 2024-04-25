@@ -881,6 +881,9 @@ importers:
       '@adguard/extended-css':
         specifier: ^2.0.56
         version: 2.0.56
+      '@adguard/logger':
+        specifier: ^1.0.0
+        version: link:../logger
       '@adguard/scriptlets':
         specifier: ^1.10.25
         version: 1.10.25
