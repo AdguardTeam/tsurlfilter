@@ -80,6 +80,7 @@ export class RuleStorage {
     /**
      * Looks for the filtering rule in this storage
      *
+     * @param storageIdx the lookup index that you can get from the rule storage scanner
      * @param ignoreHost rules could be retrieved as host rules
      */
     retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
@@ -116,7 +117,7 @@ export class RuleStorage {
     /**
      * RetrieveNetworkRule is a helper method that retrieves a network rule from the storage
      *
-     * @param storageIdx
+     * @param storageIdx the lookup index that you can get from the rule storage scanner
      * @return the rule or nil in any other case (not found or error)
      */
     retrieveNetworkRule(storageIdx: number): NetworkRule | null {

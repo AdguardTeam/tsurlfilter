@@ -51,14 +51,12 @@ export class Engine {
      * Parses the filtering rules and creates a filtering engine of them
      *
      * @param ruleStorage storage
-     * @param buffer byte buffer to store the binary data
-     * @param offset
+     * @param networkEngine network engine
      * @param skipStorageScan create an instance without storage scanning
      * @throws
      */
     constructor(ruleStorage: RuleStorage, networkEngine: NetworkEngine, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
-        // this.byteBuffer = buffer;
 
         this.networkEngine = networkEngine;
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
