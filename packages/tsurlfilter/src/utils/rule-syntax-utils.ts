@@ -7,15 +7,17 @@ import { CosmeticRule } from '../rules/cosmetic-rule';
 type RulesUnion = NetworkRule | CosmeticRule;
 
 /**
- * Module with miscellaneous syntax utils exposed in API
+ * Module with miscellaneous syntax utils exposed in API.
  */
 export class RuleSyntaxUtils {
     private static DUMMY_FILTER_ID = 0;
 
     /**
-     * Checks if rule can be matched by domain
-     * @param ruleText
-     * @param domain
+     * Checks if rule can be matched by domain.
+     *
+     * @param ruleText Rule text.
+     * @param domain Domain.
+     * @returns True if rule can be matched by domain.
      */
     public static isRuleForDomain(ruleText: string, domain: string): boolean {
         const rule = RuleFactory.createRule(ruleText, this.DUMMY_FILTER_ID) as RulesUnion | null;
@@ -26,9 +28,11 @@ export class RuleSyntaxUtils {
     }
 
     /**
-     * Checks if rule can be matched by url
-     * @param ruleText
-     * @param url
+     * Checks if rule can be matched by url.
+     *
+     * @param ruleText Rule text.
+     * @param url Url.
+     * @returns True if rule can be matched by url.
      */
     public static isRuleForUrl(ruleText: string, url: string): boolean {
         const domain = getHostname(url);

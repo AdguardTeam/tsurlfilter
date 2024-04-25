@@ -8,8 +8,10 @@ import type { ByteBuffer } from './byte-buffer';
  * in constant time and map them to the position of the U32LinkedList with RuleStorage ids.
  *
  * The binary representation of the TrieNode in the ByteBuffer is as follows:
+ *
  * |  value  | children | child key | child position |
  * |  uint32 |  uint8   |   uint8   |     uint32     |
+ *
  */
 export class BinaryTrie {
     /**
@@ -19,6 +21,7 @@ export class BinaryTrie {
 
     /**
      * Creates binary representation of the passed {@link root} in the {@link buffer}.
+     *
      * @param root The root node of trie to be represented in the {@link buffer}.
      * @param buffer The {@link ByteBuffer} to store the binary representation of trie.
      * @returns The position of the binary trie representation in the {@link buffer}.
@@ -30,6 +33,7 @@ export class BinaryTrie {
 
         /**
          * Writes node and its children to the buffer recursively.
+         *
          * @param node The trie node to start from.
          */
         const createNode = (node: TrieNode): void => {
@@ -71,6 +75,7 @@ export class BinaryTrie {
 
             /**
              * Writes child entry to the buffer.
+             *
              * @param child Child node entry to write.
              */
             const createChildEntry = (child: TrieNode) => {
@@ -95,6 +100,7 @@ export class BinaryTrie {
 
     /**
      * Sequentially traverses the nodes with passed {@link input} and collects values of each node.
+     *
      * @param input The input string to traverse the trie with.
      * @param depth The depth of traverse.
      * @param start The char to start from.
@@ -133,6 +139,7 @@ export class BinaryTrie {
     /**
      * Traverses the trie with the passed {@link input} and all its substrings
      * and collects values of each node.
+     *
      * @param input The input string to traverse the trie with.
      * @param depth The depth of traverse.
      * @param buffer The {@link ByteBuffer} to read the trie from.
@@ -188,6 +195,7 @@ export class BinaryTrie {
 
     /**
      * Gets the estimated byte size of the trie node and its children recursively.
+     *
      * @param root The root node of the trie.
      * @returns The estimated byte size of the trie node.
      */
@@ -200,6 +208,7 @@ export class BinaryTrie {
 
         /**
          * Adds the byte size of the node and its children to the estimated size.
+         *
          * @param node The trie node to get the byte size of.
          */
         const getNodeSize = (node: TrieNode): void => {
@@ -217,6 +226,7 @@ export class BinaryTrie {
 
     /**
      * Gets the estimated byte size of the trie node.
+     *
      * @param node The trie node to get the byte size of.
      * @returns The estimated byte size of the trie node.
      */

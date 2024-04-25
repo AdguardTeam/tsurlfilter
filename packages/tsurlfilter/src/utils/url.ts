@@ -1,7 +1,8 @@
 /**
- * Splits url into parts
+ * Splits url into parts.
  *
- * @param url
+ * @param url Url to split.
+ * @returns Object with path, query and hash parts.
  */
 function splitUrl(url: string): { path: string; query: string; hash: string } {
     let strippedUrl = url;
@@ -28,9 +29,10 @@ function splitUrl(url: string): { path: string; query: string; hash: string } {
 }
 
 /**
- * Normalizes url query parameters
+ * Normalizes url query parameters.
  *
- * @param query
+ * @param query Query string.
+ * @returns Normalized query string.
  */
 function normalizeQuery(query: string): string {
     // Cleanup empty params (p0=0&=2&=3)
@@ -49,11 +51,12 @@ function normalizeQuery(query: string): string {
 }
 
 /**
- * Removes query params from url by regexp
+ * Removes query params from url by regexp.
  *
- * @param url
- * @param regExp
- * @param invert remove every parameter in url except the ones matched regexp
+ * @param url Url to modify.
+ * @param regExp Regexp to match.
+ * @param invert Remove every parameter in url except the ones matched regexp.
+ * @returns Modified url.
  */
 export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = false): string {
     const searchIndex = url.indexOf('?');
@@ -99,9 +102,10 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
 const DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
 
 /**
- * Check if the string could be a domain name
+ * Check if the string could be a domain name.
  *
- * @param text
+ * @param text String to check.
+ * @returns True if the string could be a domain name.
  */
 export const isDomainName = (text: string): boolean => {
     if (text.indexOf('.') < 0 || text.endsWith('.')) {
@@ -112,8 +116,10 @@ export const isDomainName = (text: string): boolean => {
 };
 
 /**
- * Extract relative part from hierarchical structured URL
- * @param url
+ * Extract relative part from hierarchical structured URL.
+ *
+ * @param url URL to extract relative part from.
+ * @returns Relative part of the URL or null if the URL is not hierarchical.
  */
 export const getRelativeUrl = (url: string): string | null => {
     const i = url.indexOf('/', url.indexOf('://') + 3);

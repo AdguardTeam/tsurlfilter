@@ -27,6 +27,7 @@ export class ByteBuffer {
     /**
      * Sets uint8 value to buffer. This method is used for overwriting value.
      * NOTE: This method does not allocate memory.
+     *
      * @param byteOffset The byte offset of the value.
      * @param value The uint8 value to set.
      */
@@ -36,6 +37,7 @@ export class ByteBuffer {
 
     /**
      * Gets uint8 value from buffer.
+     *
      * @param byteOffset The byte offset of the value.
      * @returns The uint8 value.
      */
@@ -46,6 +48,7 @@ export class ByteBuffer {
     /**
      * Adds uint8 to the buffer.
      * If the buffer does not have enough capacity, new chunks will be allocated.
+     *
      * @param byteOffset The byte offset of the value.
      * @param value The uint8 value to set.
      */
@@ -61,6 +64,7 @@ export class ByteBuffer {
     /**
      * Sets uint32 value to buffer. This method is used for overwriting value.
      * NOTE: This method does not allocate memory.
+     *
      * @param byteOffset The byte offset of the value.
      * @param value The uint32 value to set.
      */
@@ -73,8 +77,9 @@ export class ByteBuffer {
 
     /**
      * Gets uint32 value from buffer.
+     *
      * @param byteOffset The byte offset of the value.
-     * @returns uint32 value.
+     * @returns Uint32 value.
      */
     public getUint32(byteOffset: number) {
         return ((this.getUint8(byteOffset + 3) << 0)
@@ -86,11 +91,12 @@ export class ByteBuffer {
     /**
      * Adds uint32 to the buffer.
      * If the buffer does not have enough capacity, new chunks will be allocated.
+     *
      * @param byteOffset The byte offset of the value.
-     * @param value uint32 value to set.
+     * @param value Uint32 value to set.
      */
     public addUint32(byteOffset: number, value: number): void {
-        if (!this.hasCapacity(byteOffset + 3 /** Uint32Array.BYTES_PER_ELEMENT - 1 */)) {
+        if (!this.hasCapacity(byteOffset + 3 /** Uint32Array.BYTES_PER_ELEMENT - 1. */)) {
             this.allocate();
         }
 
@@ -100,6 +106,7 @@ export class ByteBuffer {
 
     /**
      * Checks if the buffer has enough capacity for the specified index.
+     *
      * @param index The buffer byte index.
      * @returns True if the buffer has enough capacity, otherwise false.
      */

@@ -9,14 +9,15 @@ interface ValidationResult {
 }
 
 /**
- * Module, which can be used to validate filter rules in other libraries
+ * Module, which can be used to validate filter rules in other libraries.
  */
 export class RuleValidator {
     /**
-     * Creates validation result
-     * @param valid
-     * @param error
-     * @private
+     * Creates validation result.
+     *
+     * @param valid Is rule valid.
+     * @param error Error message.
+     * @returns Validation result.
      */
     private static createValidationResult(valid: boolean, error?: string): ValidationResult {
         if (error) {
@@ -26,6 +27,13 @@ export class RuleValidator {
         return { valid, error: null };
     }
 
+    /**
+     * Validates regexp pattern.
+     *
+     * @param pattern Pattern to validate.
+     * @param ruleText Rule text.
+     * @throws SyntaxError if pattern is invalid.
+     */
     private static validateRegexp(pattern: string, ruleText: string): void {
         if (pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)
             && pattern.endsWith(SimpleRegex.MASK_REGEX_RULE)) {
@@ -38,8 +46,10 @@ export class RuleValidator {
     }
 
     /**
-     * Validates raw rule string
-     * @param rawRule
+     * Validates raw rule string.
+     *
+     * @param rawRule Rule string.
+     * @returns Validation result.
      */
     public static validate(rawRule: string): ValidationResult {
         const ruleText = rawRule.trim();

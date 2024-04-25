@@ -4,12 +4,12 @@
  * Works for plain strings that don't include string representation of
  * complex entities, e.g $replace modifier values.
  *
- * @param string - string to split
- * @param delimiter - delimiter
- * @param escapeCharacter - escape character
- * @param preserveEmptyTokens - if true, preserve empty parts
- * @param shouldUnescape - if true, unescape characters
- * @return array of string parts
+ * @param string String to split.
+ * @param delimiter Delimiter.
+ * @param escapeCharacter Escape character.
+ * @param preserveEmptyTokens If true, preserve empty parts.
+ * @param shouldUnescape If true, unescape characters.
+ * @returns Array of string parts.
  */
 export function splitByDelimiterWithEscapeCharacter(
     string: string,
@@ -80,10 +80,10 @@ export function splitByDelimiterWithEscapeCharacter(
 /**
  * Checks if the specified string starts with a substr at the specified index.
  *
- * @param str - String to check
- * @param startIndex - Index to start checking from
- * @param substr - Substring to check
- * @return boolean true if it does start
+ * @param str String to check.
+ * @param startIndex Index to start checking from.
+ * @param substr Substring to check.
+ * @returns Boolean true if it does start.
  */
 export function startsAtIndexWith(str: string, startIndex: number, substr: string): boolean {
     if (str.length - startIndex < substr.length) {
@@ -100,10 +100,11 @@ export function startsAtIndexWith(str: string, startIndex: number, substr: strin
 }
 
 /**
- * Checks if str has unquoted substr
+ * Checks if str has unquoted substr.
  *
- * @param str
- * @param substr
+ * @param str String to check.
+ * @param substr Substring to check.
+ * @returns Boolean true if it does.
  */
 export function hasUnquotedSubstring(str: string, substr: string): boolean {
     const quotes = ['"', "'", '/'];
@@ -143,15 +144,15 @@ export function hasUnquotedSubstring(str: string, substr: string): boolean {
 }
 
 /**
- * djb2 hash algorithm
+ * Uses djb2 hash algorithm.
  *
  * NOTE: This version uses some bit operands to exclude overflow MAX_SAFE_INTEGER
  * (and moreover, exclude overflow 2^32).
  *
  * @see {@link https://gist.github.com/eplawless/52813b1d8ad9af510d85?permalink_comment_id=3367765#gistcomment-3367765}
  *
- * @param str string to get hash
- * @return {number} hash
+ * @param str String to get hash.
+ * @returns Hash.
  */
 export function fastHash(str: string): number {
     if (str.length === 0) {
@@ -167,12 +168,12 @@ export function fastHash(str: string): number {
 }
 
 /**
- * Look for any symbol from "chars" array starting at "start" index or from the start of the string
+ * Look for any symbol from "chars" array starting at "start" index or from the start of the string.
  *
- * @param str   String to search
- * @param chars Chars to search for
- * @param start Start index (optional, inclusive)
- * @return int Index of the element found or -1 if not
+ * @param str String to search.
+ * @param chars Chars to search for.
+ * @param start Start index (optional, inclusive).
+ * @returns Index of the element found or -1 if not.
  */
 export function indexOfAny(str: string, chars: string[], start = 0): number {
     if (str.length <= start) {
@@ -190,11 +191,12 @@ export function indexOfAny(str: string, chars: string[], start = 0): number {
 }
 
 /**
- * Replaces all occurences of find with replace in str
+ * Replaces all occurrences of find with replacement in str.
  *
- * @param str
- * @param find
- * @param replace
+ * @param str String to replace in.
+ * @param find String to find.
+ * @param replace String to replace with.
+ * @returns String with replaced values.
  */
 export function replaceAll(str: string, find: string, replace: string): string {
     if (!str) {
@@ -204,11 +206,11 @@ export function replaceAll(str: string, find: string, replace: string): string {
 }
 
 /**
- * Checks if arrays are equal
+ * Checks if arrays are equal.
  *
- * @param left array
- * @param right array
- * @return {boolean} true on equality
+ * @param left First array.
+ * @param right Second array.
+ * @returns True on equality.
  */
 export function stringArraysEquals(left: string[] | null, right: string[] | null): boolean {
     if (!left || !right) {
@@ -229,11 +231,11 @@ export function stringArraysEquals(left: string[] | null, right: string[] | null
 }
 
 /**
- * Checks if arrays have an intersection
+ * Checks if arrays have an intersection.
  *
- * @param left array
- * @param right array
- * @return {boolean} true on equality
+ * @param left First array.
+ * @param right Second array.
+ * @returns True on equality.
  */
 export function stringArraysHaveIntersection(left: string[] | null, right: string[] | null): boolean {
     if (!left || !right) {

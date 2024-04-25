@@ -7,12 +7,13 @@ import type { ByteBuffer } from './byte-buffer';
  */
 export class BinaryMap {
     /**
-     * Reserved position for the 'undefined' value
+     * Reserved position for the 'undefined' value.
      */
     private static readonly EMPTY_POSITION = 0;
 
     /**
      * Creates binary representation of the passed {@link map} in the {@link buffer}.
+     *
      * @param map The Map<uint32, uint32> to be represented in the {@link buffer}.
      * @param buffer The {@link ByteBuffer} to store the binary representation.
      * @returns The position of the binary Map representation in the {@link buffer}.
@@ -86,13 +87,14 @@ export class BinaryMap {
 
     /**
      * Gets the value from the {@link BinaryMap} in the {@link buffer}.
+     *
      * @param input The hash key.
      * @param buffer The {@link ByteBuffer} where {@link BinaryMap} stored.
      * @param offset The position of the {@link BinaryMap} in the {@link buffer}.
      * @returns The matched value or undefined if the key is not found.
      */
     public static get(input: number, buffer: ByteBuffer, offset: number): number | undefined {
-        // Get size of the hashmap.
+        // Get the size of the hashmap.
         const size = buffer.getUint32(offset);
 
         // Re-calculate the hash, depending on the size of the hashmap.
@@ -116,7 +118,7 @@ export class BinaryMap {
         // Get the position of the first entry in the chain.
         let cursor = chainPosition + 4; // Uint32Array.BYTES_PER_ELEMENT
         // Calculate the end of the chain.
-        const endOfChain = cursor + (chainLength * 4/** Uint32Array.BYTES_PER_ELEMENT */);
+        const endOfChain = cursor + (chainLength * 4/** Uint32Array.BYTES_PER_ELEMENT. */);
 
         // Iterate over the chain and find the key.
         while (cursor < endOfChain) {
@@ -125,7 +127,7 @@ export class BinaryMap {
 
             if (key === input) {
                 // If the key is found, return the value.
-                return buffer.getUint32(keyPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT */);
+                return buffer.getUint32(keyPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT. */);
             }
 
             cursor += 4; // Uint32Array.BYTES_PER_ELEMENT

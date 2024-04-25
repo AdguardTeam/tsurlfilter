@@ -15,7 +15,7 @@ type ProcessedToken = Token<Exclude<TokenType, TokenType.Raw>>;
 
 /**
  * Modifiers that have some stringified entity as a part of their value,
- * e.g regexp, require custom parsing logic
+ * e.g., regexp, require custom parsing logic.
  */
 const enum SpecialModifier {
     Replace = 'replace',
@@ -26,7 +26,7 @@ const enum SpecialModifier {
 /**
  * Array of special modifiers allow to check for modifier name more efficient
  * by avoiding Object.values(SpecialModifier) calls in custom type-guard while
- * allowing the usage of 'const enum' for SpecialModifier
+ * allowing the usage of 'const enum' for SpecialModifier.
  */
 const SpecialModifiers = [
     SpecialModifier.Replace,
@@ -45,7 +45,7 @@ const enum ModifierValueType {
 
 /**
  * Phase is a part of modifier pattern and
- * affects how parser process certain characters
+ * affects how parser process certain characters.
  */
 const enum Phase {
     Regexp = 'regexp',
@@ -55,12 +55,12 @@ const enum Phase {
 
 /**
  * Pattern describes modifier structure,
- * e.g replace = "/" regexp "/" replacement "/" flags
+ * e.g replace = "/" regexp "/" replacement "/" flags.
  */
 type Pattern = readonly Phase[];
 
 /**
- * Characters, that are specific to rule options strings
+ * Characters, that are specific to rule options strings.
  */
 const enum SpecialCharacter {
     OptionDelimiter = ',',
@@ -71,13 +71,13 @@ const enum SpecialCharacter {
 
 /**
  * Parser helper that implements custom logic of extracting
- * modifier values for specific patterns
+ * modifier values for specific patterns.
  *
- * @param string options string
- * @param startIndex index of value's first character in an options string
- * @pattern pattern to follow
+ * @param string Options string.
+ * @param startIndex Index of value's first character in an options string.
+ * @param pattern To follow.
  *
- * @returns ModifierValueData
+ * @returns ModifierValueData object.
  */
 type ModifierValueParser = (
     string: string,
@@ -89,7 +89,7 @@ type ModifierValueParser = (
  * Modifier value data, which consists of modifier value and index
  * of value's last character. End index allows parser to fast-forward
  * after value has been extracted.
-*/
+ */
 type ModifierValueData = {
     modifierValue: string,
     modifierEndIndex: number,
@@ -101,7 +101,7 @@ type ModifierPatterns = {
 
 /**
  * TODO (s.atroschenko) git rid of necessity of adding modifier names for simple regexp values (removaparam, hls):
- * use unified 'simple-regexp' pattern instead
+ * use unified 'simple-regexp' pattern instead.
  */
 const modifiersPatterns: ModifierPatterns = {
     [SpecialModifier.Replace]: [Phase.Regexp, Phase.Replacement, Phase.Flags],
@@ -110,7 +110,11 @@ const modifiersPatterns: ModifierPatterns = {
 } as const;
 
 /**
- * Extracts modifier's plain value
+ * Extracts modifier's plain value.
+ *
+ * @param string Options string.
+ * @param startIndex Index of value's first character in an options string.
+ * @returns ModifierValueData object.
  */
 const parsePlainValue: ModifierValueParser = (string, startIndex) => {
     let modifierValue = '';
@@ -142,9 +146,13 @@ const parsePlainValue: ModifierValueParser = (string, startIndex) => {
 };
 
 /**
- * Extract modifier's regexp(-like) value
+ * Extract modifier's regexp(-like) value.
  *
- * @throws on invalid special modifier value
+ * @param string Options string.
+ * @param startIndex Index of value's first character in an options string.
+ * @param pattern To follow.
+ * @returns ModifierValueData object.
+ * @throws Error on invalid special modifier value.
  */
 const parseRegexpValue: ModifierValueParser = (string, startIndex, pattern) => {
     let currentPhase: Phase | void;
@@ -214,13 +222,13 @@ const modifierValueParsers = {
 } as const;
 
 /**
- * Processes raw tokens by splitting token values by delimiter
+ * Processes raw tokens by splitting token values by delimiter.
  *
- * @param preprocessedTokens array of preprocessed tokens (of TokenType.SpecialModifier | TokenType.Raw type)
- * @param delimiter - delimiter
- * @param escapeCharacter - escape character
- * @param unescape if true, remove escape characters from string
- * @returns array of processed tokens
+ * @param preprocessedTokens Array of preprocessed tokens (of TokenType.SpecialModifier | TokenType.Raw type).
+ * @param delimiter Delimiter.
+ * @param escapeCharacter Escape character.
+ * @param unescape I true, remove escape characters from string.
+ * @returns Array of processed tokens.
  */
 const tokenize = (
     preprocessedTokens: PreprocessedToken[],
@@ -293,10 +301,10 @@ const tokenize = (
 };
 
 /**
- * Converts arrays of tokens into array of their values
+ * Converts arrays of tokens into array of their values.
  *
- * @param tokens array of arbitrary tokens
- * @returns array of tokens' values
+ * @param tokens Array of arbitrary tokens.
+ * @returns Array of tokens' values.
  */
 const makeWords = (
     tokens: Token[],
@@ -312,11 +320,12 @@ const makeWords = (
 };
 
 /**
- * Parses special modifier value
+ * Parses special modifier value.
  *
- * @param modifierName name of modifier to be parsed
- * @param string options string
- * @returns object with Modifier token value and next index to keep iterating from
+ * @param modifierName Name of modifier to be parsed.
+ * @param string Options string.
+ * @returns Object with Modifier token value and next index to keep iterating from.
+ * @throws Error on invalid special modifier value.
  */
 function parseSpecialModifier(modifierName: SpecialModifier, string: string) {
     let tokenValue = `${modifierName}${SpecialCharacter.ModifierValueMarker}`;
@@ -353,10 +362,10 @@ function parseSpecialModifier(modifierName: SpecialModifier, string: string) {
 }
 
 /**
- * Converts options string into array of Raw and Modifier tokens
+ * Converts options string into array of Raw and Modifier tokens.
  *
- * @param string options string
- * @returns array of preprocessed tokens
+ * @param string Options string.
+ * @returns Array of preprocessed tokens.
  */
 function splitBySpecialModifierTokens(string: string): PreprocessedToken[] {
     const tokens: PreprocessedToken[] = [];
@@ -422,12 +431,12 @@ function splitBySpecialModifierTokens(string: string): PreprocessedToken[] {
 }
 
 /**
- * Splits options string into array of modifier=value pairs
+ * Splits options string into array of modifier=value pairs.
  *
- * @param string - string to split
- * @param unescape - if true, remove escape characters from string
- * @return array of string parts
- * @throws on invalid special modifier value
+ * @param string String to split.
+ * @param unescape If true, remove escape characters from string.
+ * @returns Array of string parts.
+ * @throws An error invalid special modifier value.
  */
 export function parseOptionsString(string: string, unescape = true): string[] {
     if (!string) {
@@ -441,12 +450,12 @@ export function parseOptionsString(string: string, unescape = true): string[] {
 
     /**
      * Extract modifier tokens for modifiers that require custom parsing
-     * https://github.com/AdguardTeam/tsurlfilter/issues/79
+     * https://github.com/AdguardTeam/tsurlfilter/issues/79.
      */
     const preprocessedTokens = splitBySpecialModifierTokens(string);
 
     /**
-     * Split raw tokens by delimiter
+     * Split raw tokens by delimiter.
      */
     const tokens = tokenize(
         preprocessedTokens,
@@ -456,7 +465,7 @@ export function parseOptionsString(string: string, unescape = true): string[] {
     );
 
     /**
-     * Join tokens into words
+     * Join tokens into words.
      */
     return makeWords(tokens);
 }

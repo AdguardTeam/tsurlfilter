@@ -18,6 +18,7 @@ export class U32LinkedList {
 
     /**
      * Adds a new value to the list.
+     *
      * @param value The uint32 value to add.
      * @param buffer The buffer to add the value to.
      * @param listPosition The position of the list in the buffer.
@@ -27,7 +28,7 @@ export class U32LinkedList {
 
         buffer.addUint32(position, value);
         const lastNodePosition = U32LinkedList.getLastNodePosition(buffer, listPosition);
-        buffer.addUint32(position + 4 /** Uint32Array.BYTES_PER_ELEMENT */, lastNodePosition);
+        buffer.addUint32(position + 4 /** Uint32Array.BYTES_PER_ELEMENT. */, lastNodePosition);
         U32LinkedList.setLastNodePosition(buffer, listPosition, position);
         const size = U32LinkedList.getSize(buffer, listPosition);
         U32LinkedList.setSize(buffer, listPosition, size + 1);
@@ -35,19 +36,21 @@ export class U32LinkedList {
 
     /**
      * Gets the specified list node from the buffer.
+     *
      * @param position The list node position in the buffer.
      * @param buffer The buffer to get the value from.
-     * @returns tuple of the node value and the next node position.
+     * @returns Tuple of the node value and the next node position.
      */
     public static get(position: number, buffer: ByteBuffer): [value: number, next: number] {
         return [
             buffer.getUint32(position),
-            buffer.getUint32(position + 4 /** Uint32Array.BYTES_PER_ELEMENT */),
+            buffer.getUint32(position + 4 /** Uint32Array.BYTES_PER_ELEMENT. */),
         ];
     }
 
     /**
      * Iterates through the list and applies the callback to each node.
+     *
      * @param callback The function to apply to each node.
      * @param buffer The buffer to iterate through.
      * @param listPosition The list position in the buffer.
@@ -64,6 +67,7 @@ export class U32LinkedList {
 
     /**
      * Finds the first node in the list that satisfies the callback.
+     *
      * @param callback The function to apply to each node.
      * @param buffer The buffer to iterate through.
      * @param listPosition The list position in the buffer.
@@ -86,6 +90,7 @@ export class U32LinkedList {
 
     /**
      * Writes initial list properties to the buffer.
+     *
      * @param buffer The buffer to write the initial list data.
      * @returns The position of the list in the buffer.
      */
@@ -96,7 +101,7 @@ export class U32LinkedList {
         buffer.addUint32(byteOffset, 0);
         // Add last node position
         buffer.addUint32(
-            byteOffset + 4 /** Uint32Array.BYTES_PER_ELEMENT */,
+            byteOffset + 4 /** Uint32Array.BYTES_PER_ELEMENT. */,
             U32LinkedList.EMPTY_POSITION,
         );
 
@@ -105,6 +110,7 @@ export class U32LinkedList {
 
     /**
      * Gets the size of the list.
+     *
      * @param buffer The buffer to get the size from.
      * @param listPosition The list position in the buffer.
      * @returns The size of list.
@@ -115,6 +121,7 @@ export class U32LinkedList {
 
     /**
      * Sets the size of the list.
+     *
      * @param buffer The buffer to set the size to.
      * @param listPosition The list position in the buffer.
      * @param value The size of the list.
@@ -125,21 +132,23 @@ export class U32LinkedList {
 
     /**
      * Gets the last node position in the list.
+     *
      * @param buffer The buffer to get the last node position from.
      * @param listPosition The list position in the buffer.
      * @returns The last node position in the list.
      */
     private static getLastNodePosition(buffer: ByteBuffer, listPosition: number): number {
-        return buffer.getUint32(listPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT */);
+        return buffer.getUint32(listPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT. */);
     }
 
     /**
      * Sets the last node position in the list.
+     *
      * @param buffer The buffer to set the last node position to.
      * @param listPosition The list position in the buffer.
      * @param value The last node position in the list.
      */
     private static setLastNodePosition(buffer: ByteBuffer, listPosition: number, value: number) {
-        buffer.setUint32(listPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT */, value);
+        buffer.setUint32(listPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT. */, value);
     }
 }
