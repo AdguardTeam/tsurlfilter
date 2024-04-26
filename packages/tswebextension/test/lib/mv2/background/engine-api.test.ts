@@ -1,12 +1,16 @@
 import browser from 'sinon-chrome';
-import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
+import {
+    type CosmeticOption,
+    RequestType,
+    Engine,
+    CosmeticResult,
+} from '@adguard/tsurlfilter';
 import { Allowlist } from '@lib/mv2/background/allowlist';
 import { appContext } from '@lib/mv2/background/context';
 import { EngineApi, MatchQuery } from '@lib/mv2/background/engine-api';
 import { stealthApi } from '@lib/mv2/background/stealth-api';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
-jest.mock('@adguard/tsurlfilter');
 jest.mock('@lib/mv2/background/allowlist');
 jest.mock('@lib/mv2/background/context');
 jest.mock('@lib/mv2/background/stealth-api');
@@ -16,6 +20,11 @@ describe('Engine Api', () => {
 
     beforeAll(() => {
         browser.runtime.getManifest.returns({ version: '2' });
+        jest.spyOn(Engine.prototype, 'matchFrame').mockImplementation(jest.fn());
+        jest.spyOn(Engine.prototype, 'matchRequest').mockImplementation(jest.fn());
+        jest.spyOn(Engine.prototype, 'getCosmeticResult').mockImplementation(jest.fn());
+        jest.spyOn(Engine.prototype, 'getRulesCount').mockImplementation(jest.fn());
+        jest.spyOn(Engine.prototype, 'loadRulesAsync').mockImplementation(jest.fn());
     });
 
     beforeEach(() => {
@@ -45,6 +54,7 @@ describe('Engine Api', () => {
         it('should run tsurlfilter engine', () => {
             const configuration = getConfigurationMv2Fixture();
 
+            jest.spyOn(Engine.prototype, 'loadRulesAsync').mockImplementationOnce(jest.fn());
             engineApi.startEngine(configuration);
 
             expect(Engine.prototype.loadRulesAsync).toHaveBeenCalled();
@@ -56,7 +66,12 @@ describe('Engine Api', () => {
             await startEngine();
             setFilteringEnabled(true);
 
-            engineApi.matchRequest({} as MatchQuery);
+            engineApi.matchRequest({
+                requestUrl: 'https://example.com',
+                frameUrl: '',
+                requestType: RequestType.Document,
+                frameRule: null,
+            } as MatchQuery);
 
             expect(Engine.prototype.matchRequest).toHaveBeenCalled();
         });
