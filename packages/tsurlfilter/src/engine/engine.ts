@@ -68,14 +68,26 @@ export class Engine {
      * @param rulesStorage Rules storage API.
      * @param buffer {@link ByteBuffer} instance.
      * @param skipStorageScan whether to skip storage scan
+     * @param skipFinalize whether to skip finalizing the engine
      * @returns New {@link Engine} instance.
      */
-    static create(rulesStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+    static create(
+        rulesStorage: RuleStorage,
+        buffer: ByteBuffer,
+        skipStorageScan = false,
+        skipFinalize = false,
+    ) {
         // reserve space for undefined value
         buffer.addUint32(0, 0);
 
         const networkEngine = NetworkEngine.create(rulesStorage, buffer, skipStorageScan);
-        return new Engine(rulesStorage, networkEngine, skipStorageScan);
+        const engine = new Engine(rulesStorage, networkEngine, skipStorageScan);
+
+        if (!skipFinalize) {
+            engine.finalize();
+        }
+
+        return engine;
     }
 
     /**
@@ -99,6 +111,8 @@ export class Engine {
         while (scanner.scan()) {
             this.addRule(scanner.getRule());
         }
+
+        this.finalize();
     }
 
     /**
@@ -127,6 +141,8 @@ export class Engine {
 
             this.addRule(scanner.getRule());
         }
+
+        this.finalize();
     }
 
     /**

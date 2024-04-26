@@ -17,7 +17,7 @@ describe('General DNS engine tests', () => {
 
     it('works if empty engine is ok', () => {
         const engine = DnsEngine.create(createTestRuleStorage(1, []), new ByteBuffer());
-        engine.finalize();
+
         const result = engine.match('example.org');
 
         expect(result).not.toBeNull();
@@ -38,7 +38,6 @@ describe('General DNS engine tests', () => {
             '::1 v4and6.com',
             '::2 v4and6.com',
         ]), new ByteBuffer());
-        engine.finalize();
 
         let result;
 
@@ -85,7 +84,6 @@ describe('General DNS engine tests', () => {
         const engine = DnsEngine.create(createTestRuleStorage(1, [
             '://example.org',
         ]), new ByteBuffer());
-        engine.finalize();
 
         const result = engine.match('example.org');
         expect(result.basicRule).not.toBeNull();
@@ -96,7 +94,6 @@ describe('General DNS engine tests', () => {
         const engine = DnsEngine.create(createTestRuleStorage(1, [
             '/^stats?\\./',
         ]), new ByteBuffer());
-        engine.finalize();
 
         const result = engine.match('stats.test.com');
         expect(result.basicRule).not.toBeNull();
@@ -108,7 +105,6 @@ describe('General DNS engine tests', () => {
             '||stats.test.com^',
             '@@/stats?\\./',
         ]), new ByteBuffer());
-        engine.finalize();
 
         const result = engine.match('stats.test.com');
         expect(result.basicRule).not.toBeNull();
@@ -121,7 +117,6 @@ describe('General DNS engine tests', () => {
             '||example.org^',
             '||example.org^$badfilter',
         ]), new ByteBuffer());
-        engine.finalize();
 
         const result = engine.match('example.org');
         expect(result.basicRule).toBeNull();
@@ -133,7 +128,6 @@ describe('General DNS engine tests', () => {
             '||example.org^',
             '||example.org^$dnsrewrite=1.2.3.4',
         ]), new ByteBuffer());
-        engine.finalize();
 
         const result = engine.match('example.org');
         expect(result.basicRule).not.toBeNull();
@@ -149,7 +143,6 @@ describe('General DNS engine tests', () => {
         ]);
 
         const engine = DnsEngine.create(ruleStorage, buffer);
-        engine.finalize();
 
         const result = engine.match('example.org');
         expect(result.basicRule).not.toBeNull();

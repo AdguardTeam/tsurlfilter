@@ -15,7 +15,6 @@ describe('Engine', () => {
             const rules = ['||example.org^$third-party'];
             const list = new BufferRuleList(1, rules.join('\n'), false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             expect(engine.getRulesCount()).toBe(1);
 
@@ -45,7 +44,6 @@ describe('Engine', () => {
             const rules = [ruleText];
             const list = new BufferRuleList(1, rules.join('\n'), false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             expect(engine.getRulesCount()).toBe(1);
 
@@ -71,8 +69,7 @@ describe('Engine', () => {
         const ruleStorage = new RuleStorage([list]);
 
         it('works rules are loaded', () => {
-            const engine = Engine.create(ruleStorage, new ByteBuffer(), true);
-            engine.finalize();
+            const engine = Engine.create(ruleStorage, new ByteBuffer(), true, true);
 
             expect(engine.getRulesCount()).toBe(0);
 
@@ -82,8 +79,7 @@ describe('Engine', () => {
         });
 
         it('works rules are loaded async', async () => {
-            const engine = Engine.create(ruleStorage, new ByteBuffer(), true);
-            engine.finalize();
+            const engine = Engine.create(ruleStorage, new ByteBuffer(), true, true);
 
             expect(engine.getRulesCount()).toBe(0);
 
@@ -119,7 +115,6 @@ describe('Engine', () => {
 
             const list = new BufferRuleList(1, rules.join('\n'), false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             const request = new Request('https://example.org', '', RequestType.Document);
             const result = engine.matchRequest(request);
@@ -150,7 +145,6 @@ describe('Engine', () => {
                 allowlistBadfilterRule,
             ].join('\n'), false, false);
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             const request = new Request(
                 'https://example.org/fuckadblock.min.js',
@@ -172,7 +166,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             const request = new Request(
                 'http://ya.ru/',
@@ -191,7 +184,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request(
                 'http://ya.ru/',
@@ -215,7 +207,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             const request = new Request(
                 'http://ya.ru/',
@@ -236,7 +227,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request(
                 'http://ya.ru/',
@@ -262,7 +252,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request(
                 'http://ya.ru/',
@@ -288,7 +277,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request(
                 'https://example.org/script.js',
@@ -316,7 +304,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request(
                 'https://example.org/script.js',
@@ -354,7 +341,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request('http://example.org/', null, RequestType.Document);
             let result = engine.matchRequest(request);
@@ -377,7 +363,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request('http://example.org/', null, RequestType.Document);
             let result = engine.matchRequest(request);
@@ -403,7 +388,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             let request = new Request('http://example.org/', null, RequestType.Document);
             let result = engine.matchRequest(request);
@@ -430,7 +414,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             // Tests matching an XMLHttpRequest; expects to match the basic blocking rule
             let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
@@ -470,7 +453,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([baseRuleList]), new ByteBuffer());
-            engine.finalize();
 
             // Tests matching an XMLHttpRequest; expects to match the all-encompassing blocking rule
             let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
@@ -529,7 +511,6 @@ describe('Engine', () => {
 
         const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-        engine.finalize();
 
         it('works if returns correct cosmetic elemhide result', () => {
             let result = engine.getCosmeticResult(
@@ -589,7 +570,6 @@ describe('Engine', () => {
 
         const list = new BufferRuleList(1, rules.join('\n'), false);
         const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-        engine.finalize();
 
         it('works if returns correct cosmetic css result', () => {
             let result = engine.getCosmeticResult(
@@ -652,7 +632,7 @@ describe('Engine', () => {
                 false,
             );
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
+
             const result = engine.getCosmeticResult(
                 createRequest('https://flightradar24.com.ru/faq/'),
                 CosmeticOption.CosmeticOptionAll,
@@ -664,7 +644,6 @@ describe('Engine', () => {
         it('works if returns correct cosmetic js result', () => {
             const list = new BufferRuleList(1, rules.join('\n'), false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             let result = engine.getCosmeticResult(
                 createRequest('an-other-domain.org'),
@@ -688,7 +667,6 @@ describe('Engine', () => {
         it('works javascript rules are ignored with filter list setting', () => {
             const list = new BufferRuleList(1, rules.join('\n'), false, true);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             let result = engine.getCosmeticResult(
                 createRequest('an-other-domain.org'),
@@ -717,7 +695,6 @@ describe('Engine', () => {
 
             const list = new BufferRuleList(1, [important, urlblock].join('\n'));
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             const frameRule = engine.matchFrame('http://example.org');
             expect(frameRule).not.toBeNull();
@@ -738,7 +715,6 @@ describe('Engine', () => {
             ];
             const list = new BufferRuleList(1, rules.join('\n'), false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             expect(engine.getRulesCount()).toBe(2);
 
@@ -765,7 +741,6 @@ describe('Engine', () => {
             ].join('\n'));
 
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             const frameRule = engine.matchFrame('https://domain.com');
             expect(frameRule).not.toBeNull();
@@ -792,7 +767,6 @@ describe('Engine', () => {
             ];
             const list = new BufferRuleList(1, rules.join('\n'), false, false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             let res = engine.getCosmeticResult(createRequest('www.example.org'), CosmeticOption.CosmeticOptionAll);
             expect(res).toBeDefined();
@@ -816,7 +790,6 @@ describe('Engine', () => {
             ];
             const list = new BufferRuleList(1, rules.join('\n'), false, false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             let res = engine.getCosmeticResult(createRequest('i.ua'), CosmeticOption.CosmeticOptionAll);
             expect(res.elementHiding.specific[0].getText()).toBe(specificHidingRuleWithoutWww);
@@ -843,7 +816,6 @@ describe('Engine', () => {
 
             const list = new BufferRuleList(1, rules.join('\n'), false, false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             const resOne = engine.getCosmeticResult(
                 createRequest('https://example.org/test'),
@@ -869,7 +841,6 @@ describe('Engine', () => {
             const rules = [hidingRule];
             const list = new BufferRuleList(1, rules.join('\n'), false, false);
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
 
             let res = engine.getCosmeticResult(createRequest('example.org'), CosmeticOption.CosmeticOptionAll);
             expect(res.elementHiding.specific[0].getText()).toBe(hidingRule);
@@ -896,7 +867,7 @@ describe('Engine', () => {
                 specifichideRule,
             ].join('\n'));
             const engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
+
             const request = new Request('http://example.org', '', RequestType.Document);
             const result = engine.matchRequest(request);
             const cosmeticResult = engine.getCosmeticResult(createRequest('example.org'), result.getCosmeticOption());
@@ -920,7 +891,7 @@ describe('Engine', () => {
                 stealthCookieRule,
             ].join('\n'));
             let engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
+
             let request = new Request('http://example.org', '', RequestType.Document);
             let result = engine.matchRequest(request);
             let cookieRules = result.getCookieRules();
@@ -932,7 +903,7 @@ describe('Engine', () => {
                 allowlistRule,
             ].join('\n'));
             engine = Engine.create(new RuleStorage([list]), new ByteBuffer());
-            engine.finalize();
+
             request = new Request('http://example.org', '', RequestType.Document);
             result = engine.matchRequest(request);
             cookieRules = result.getCookieRules();
@@ -946,7 +917,6 @@ describe('Engine', () => {
             const list = new BufferRuleList(1, '@@||example.org', false);
             const storage = new RuleStorage([list]);
             const engine = Engine.create(storage, buffer);
-            engine.finalize();
 
             expect(engine.getRulesCount()).toBe(1);
 

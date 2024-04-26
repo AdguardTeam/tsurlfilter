@@ -105,15 +105,26 @@ export class DnsEngine {
      * @param rulesStorage Rules storage API.
      * @param buffer {@link ByteBuffer} instance.
      * @param skipStorageScan whether to skip storage scan
+     * @param skipFinalize whether to skip finalizing the engine
      * @returns New {@link DnsEngine} instance.
      */
-    static create(rulesStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+    static create(
+        rulesStorage: RuleStorage,
+        buffer: ByteBuffer,
+        skipStorageScan = false,
+        skipFinalize = false,
+    ) {
         // reserve space for undefined value
         buffer.addUint32(0, 0);
 
         const networkEngine = NetworkEngine.create(rulesStorage, buffer, true);
+        const engine = new DnsEngine(rulesStorage, buffer, networkEngine, skipStorageScan);
 
-        return new DnsEngine(rulesStorage, buffer, networkEngine, skipStorageScan);
+        if (!skipFinalize) {
+            engine.finalize();
+        }
+
+        return engine;
     }
 
     /**
