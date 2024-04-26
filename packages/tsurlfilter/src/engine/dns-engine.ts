@@ -59,21 +59,32 @@ export class DnsEngine {
     declare private binaryMapPosition: number;
 
     /**
-     * Builds an instance of dns engine
+     * Creates an instance of an DnsEngine
      *
-     * @param storage
-     * @param buffer
+     * @param ruleStorage {@link RuleStorage} instance
+     * @param buffer Byte buffer to store the binary data.
+     * @param offset Byte buffer offset of the engine.
+     * @param skipStorageScan Create an instance without storage scanning.
      */
-    constructor(storage: RuleStorage, buffer: ByteBuffer) {
+    constructor(
+        storage: RuleStorage,
+        buffer: ByteBuffer,
+        networkEngine: NetworkEngine,
+        skipStorageScan = false,
+    ) {
         this.ruleStorage = storage;
         this.lookupTable = new Map<number, number>();
 
         this.byteBuffer = buffer;
         this.pushRulesCountToBuffer();
         this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
-        this.networkEngine = NetworkEngine.create(storage, this.byteBuffer, true);
+        this.networkEngine = networkEngine;
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
+
+        if (skipStorageScan) {
+            return;
+        }
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
@@ -86,6 +97,35 @@ export class DnsEngine {
                 }
             }
         }
+    }
+
+    /**
+     * Initializes the DNS engine with new index structures.
+     *
+     * @param rulesStorage Rules storage API.
+     * @param buffer {@link ByteBuffer} instance.
+     * @param skipStorageScan whether to skip storage scan
+     * @returns New {@link DnsEngine} instance.
+     */
+    static create(rulesStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+        // reserve space for undefined value
+        buffer.addUint32(0, 0);
+
+        const networkEngine = NetworkEngine.create(rulesStorage, buffer, true);
+
+        return new DnsEngine(rulesStorage, buffer, networkEngine, skipStorageScan);
+    }
+
+    /**
+     * Restores the engine from persisted buffer data.
+     * @param rulesStorage Rules storage API.
+     * @param buffer {@link ByteBuffer} instance.
+     * @returns New {@link Engine} instance.
+     */
+    static from(rulesStorage: RuleStorage, buffer: ByteBuffer) {
+        // first 4 bytes are reserved for undefined value
+        const networkEngine = new NetworkEngine(rulesStorage, buffer, Uint32Array.BYTES_PER_ELEMENT);
+        return new DnsEngine(rulesStorage, buffer, networkEngine, true);
     }
 
     /**

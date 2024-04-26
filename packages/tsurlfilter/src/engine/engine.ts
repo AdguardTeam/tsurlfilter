@@ -47,13 +47,12 @@ export class Engine {
     private readonly resultCache: LRUMap<string, MatchingResult>;
 
     /**
-     * Creates an instance of an Engine
-     * Parses the filtering rules and creates a filtering engine of them
+     * Creates an instance of an Engine.
+     * Parses the filtering rules and creates a filtering engine of them.
      *
-     * @param ruleStorage storage
-     * @param networkEngine network engine
-     * @param skipStorageScan create an instance without storage scanning
-     * @throws
+     * @param ruleStorage {@link RuleStorage} instance.
+     * @param networkEngine Network engine.
+     * @param skipStorageScan Create an instance without storage scanning.
      */
     constructor(ruleStorage: RuleStorage, networkEngine: NetworkEngine, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
@@ -63,15 +62,31 @@ export class Engine {
         this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
     }
 
+    /**
+     * Initializes the engine with new index structures.
+     *
+     * @param rulesStorage Rules storage API.
+     * @param buffer {@link ByteBuffer} instance.
+     * @param skipStorageScan whether to skip storage scan
+     * @returns New {@link Engine} instance.
+     */
     static create(rulesStorage: RuleStorage, buffer: ByteBuffer, skipStorageScan = false) {
+        // reserve space for undefined value
         buffer.addUint32(0, 0);
 
         const networkEngine = NetworkEngine.create(rulesStorage, buffer, skipStorageScan);
         return new Engine(rulesStorage, networkEngine, skipStorageScan);
     }
 
+    /**
+     * Restores the engine from persisted buffer data.
+     * @param rulesStorage Rules storage API.
+     * @param buffer {@link ByteBuffer} instance.
+     * @returns New {@link Engine} instance.
+     */
     static from(rulesStorage: RuleStorage, buffer: ByteBuffer) {
-        const networkEngine = new NetworkEngine(rulesStorage, buffer, 4);
+        // first 4 bytes are reserved for undefined value
+        const networkEngine = new NetworkEngine(rulesStorage, buffer, Uint32Array.BYTES_PER_ELEMENT);
         return new Engine(rulesStorage, networkEngine);
     }
 

@@ -16,7 +16,7 @@ describe('General DNS engine tests', () => {
     };
 
     it('works if empty engine is ok', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, []), new ByteBuffer());
+        const engine = DnsEngine.create(createTestRuleStorage(1, []), new ByteBuffer());
         engine.finalize();
         const result = engine.match('example.org');
 
@@ -26,7 +26,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks engine match', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, [
+        const engine = DnsEngine.create(createTestRuleStorage(1, [
             '||example.org^',
             '||example2.org/*',
             '@@||example3.org^',
@@ -82,7 +82,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for host level network rule - protocol', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, [
+        const engine = DnsEngine.create(createTestRuleStorage(1, [
             '://example.org',
         ]), new ByteBuffer());
         engine.finalize();
@@ -93,7 +93,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for host level network rule - regex', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, [
+        const engine = DnsEngine.create(createTestRuleStorage(1, [
             '/^stats?\\./',
         ]), new ByteBuffer());
         engine.finalize();
@@ -104,7 +104,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for host level network rule - regex allowlist', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, [
+        const engine = DnsEngine.create(createTestRuleStorage(1, [
             '||stats.test.com^',
             '@@/stats?\\./',
         ]), new ByteBuffer());
@@ -117,7 +117,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for badfilter rules', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, [
+        const engine = DnsEngine.create(createTestRuleStorage(1, [
             '||example.org^',
             '||example.org^$badfilter',
         ]), new ByteBuffer());
@@ -129,7 +129,7 @@ describe('General DNS engine tests', () => {
     });
 
     it('checks match for dnsrewrite rules', () => {
-        const engine = new DnsEngine(createTestRuleStorage(1, [
+        const engine = DnsEngine.create(createTestRuleStorage(1, [
             '||example.org^',
             '||example.org^$dnsrewrite=1.2.3.4',
         ]), new ByteBuffer());
@@ -139,5 +139,30 @@ describe('General DNS engine tests', () => {
         expect(result.basicRule).not.toBeNull();
         expect(result.basicRule!.getAdvancedModifier()).not.toBeNull();
         expect(result.hostRules).toHaveLength(0);
+    });
+
+    it('should deserialized correctly', () => {
+        const buffer = new ByteBuffer();
+        const ruleStorage = createTestRuleStorage(1, [
+            '||example.org^',
+            '||example.org^$dnsrewrite=1.2.3.4',
+        ]);
+
+        const engine = DnsEngine.create(ruleStorage, buffer);
+        engine.finalize();
+
+        const result = engine.match('example.org');
+        expect(result.basicRule).not.toBeNull();
+        expect(result.basicRule!.getAdvancedModifier()).not.toBeNull();
+        expect(result.hostRules).toHaveLength(0);
+
+        const restoredBuffer = new ByteBuffer(buffer.chunks);
+
+        const restoredEngine = DnsEngine.from(ruleStorage, restoredBuffer);
+
+        const restoredEngineResult = restoredEngine.match('example.org');
+        expect(restoredEngineResult.basicRule).not.toBeNull();
+        expect(restoredEngineResult.basicRule!.getAdvancedModifier()).not.toBeNull();
+        expect(restoredEngineResult.hostRules).toHaveLength(0);
     });
 });

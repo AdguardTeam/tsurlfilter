@@ -99,44 +99,6 @@ export class BinaryTrie {
     }
 
     /**
-     * Sequentially traverses the nodes with passed {@link input} and collects values of each node.
-     *
-     * @param input The input string to traverse the trie with.
-     * @param depth The depth of traverse.
-     * @param start The char to start from.
-     * @param buffer The {@link ByteBuffer} to read the trie from.
-     * @param offset The position of the trie in the {@link buffer}.
-     * @returns An array of values of the nodes traversed.
-     */
-    public static traverse(
-        input: string,
-        depth: number,
-        start: number,
-        buffer: ByteBuffer,
-        offset: number,
-    ): number[] {
-        let position = offset;
-        const result: number[] = [];
-
-        for (let i = start; i < depth; i += 1) {
-            const code = input.charCodeAt(i);
-            position = BinaryTrie.findChild(code, buffer, position);
-
-            if (position === -1) {
-                break;
-            }
-
-            const value = buffer.getUint32(position);
-
-            if (value !== BinaryTrie.EMPTY_POSITION) {
-                result.push(value);
-            }
-        }
-
-        return result;
-    }
-
-    /**
      * Traverses the trie with the passed {@link input} and all its substrings
      * and collects values of each node.
      *
@@ -155,9 +117,21 @@ export class BinaryTrie {
         const result: number[] = [];
 
         for (let i = 0; i <= depth; i += 1) {
-            const positions = BinaryTrie.traverse(input, depth, i, buffer, offset);
-            for (let j = 0; j < positions.length; j += 1) {
-                result.push(positions[j]);
+            let position = offset;
+
+            for (let j = i; j < depth; j += 1) {
+                const code = input.charCodeAt(j);
+                position = BinaryTrie.findChild(code, buffer, position);
+
+                if (position === -1) {
+                    break;
+                }
+
+                const value = buffer.getUint32(position);
+
+                if (value !== BinaryTrie.EMPTY_POSITION) {
+                    result.push(value);
+                }
             }
         }
 
