@@ -1,5 +1,6 @@
 import { BinaryMap } from '../../src/utils/binary-map';
 import { ByteBuffer } from '../../src/utils/byte-buffer';
+import { getAverageValue, getRandomNumber } from './helpers';
 
 /**
  * Last benchmark result:
@@ -20,26 +21,6 @@ describe('Performance benchmark', () => {
 
     const MIN_SIZE_EXPONENT = 2;
     const MAX_SIZE_EXPONENT = 5;
-
-    /**
-     * Generates a random number between 0 and the specified maximum value.
-     * @param max The maximum value for the random number.
-     * @returns A random number between 0 and the specified maximum value.
-     */
-    function getRandomNumber(max: number): number {
-        // `| 0` is more compact and faster than `Math.floor()`.
-        return (Math.random() * max) | 0;
-    }
-
-    /**
-     * Gets the average value for the specified array of numbers.
-     *
-     * @param array - The array of numbers for which to calculate the average value.
-     * @returns The average value of the numbers in the array.
-     */
-    function getAverageValue(array: number[]): number {
-        return Number((array.reduce((a, b) => a + b, 0) / array.length).toFixed(6));
-    }
 
     it('should be fast', () => {
         const res: { [size: number]: { [structure: string]: number } } = {};
