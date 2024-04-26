@@ -152,9 +152,77 @@ const SCHEMA_MAP = {
                 return 'deprecation_message is only allowed for deprecated modifiers';
             }
 
+            if (config.aliases.length !== new Set(config.aliases).size) {
+                return 'Aliases must be unique';
+            }
+
             return true;
         },
     )),
+
+    /**
+     * Check [## File structure](../src/compatibility-tables/redirects/README.md)
+     */
+    'src/compatibility-tables/redirects/**.yml': ss.record(
+        platforms,
+        ss.refine(
+            ss.object({
+                name: ss.nonempty(ss.string()),
+                aliases: ss.defaulted(ss.array(ss.nonempty(ss.string())), []),
+                is_blocking: ss.defaulted(ss.boolean(), false),
+                description: ss.defaulted(ss.nullable(ss.string()), null),
+                docs: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                version_added: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                version_removed: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                deprecated: ss.defaulted(ss.boolean(), false),
+                deprecation_message: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+            }),
+            'redirects',
+            (config) => {
+                if (config.aliases.length !== new Set(config.aliases).size) {
+                    return 'Aliases must be unique';
+                }
+
+                return true;
+            },
+        ),
+    ),
+
+    /**
+     * Check [## File structure](../src/compatibility-tables/scriptlets/README.md)
+     */
+    'src/compatibility-tables/scriptlets/**.yml': ss.record(
+        platforms,
+        ss.refine(
+            ss.object({
+                name: ss.nonempty(ss.string()),
+                aliases: ss.defaulted(ss.array(ss.nonempty(ss.string())), []),
+                description: ss.defaulted(ss.nullable(ss.string()), null),
+                docs: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                version_added: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                version_removed: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                debug: ss.defaulted(ss.boolean(), false),
+                deprecated: ss.defaulted(ss.boolean(), false),
+                deprecation_message: ss.defaulted(ss.nullable(ss.nonempty(ss.string())), null),
+                parameters: ss.defaulted(ss.array(ss.object({
+                    name: ss.nonempty(ss.string()),
+                    required: ss.boolean(),
+                    description: ss.defaulted(ss.nullable(ss.string()), null),
+                    pattern: ss.defaulted(ss.nullable(ss.string()), null),
+                    default: ss.defaulted(ss.nullable(ss.string()), null),
+                    debug: ss.defaulted(ss.boolean(), false),
+                })), []),
+            }),
+            'scriptlets',
+            (config) => {
+                if (config.aliases.length !== new Set(config.aliases).size) {
+                    return 'Aliases must be unique';
+                }
+
+                return true;
+            },
+        ),
+    ),
 };
 
 /**

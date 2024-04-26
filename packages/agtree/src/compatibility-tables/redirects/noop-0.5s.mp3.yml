@@ -1,0 +1,4 @@
+# TODO: add description and documentation reference
+ubo_any:
+  name: noop-0.5s.mp3
+  description: Redirects to an empty MP3 file with a duration of 0.5 seconds.

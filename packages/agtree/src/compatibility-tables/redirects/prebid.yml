@@ -1,0 +1,5 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: prebid
+  description: Mocks the prebid.js header bidding suit.
