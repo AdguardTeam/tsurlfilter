@@ -1,7 +1,7 @@
 # AdGuard API
 
 > [!NOTE]
-> Version: **v2.1.0**
+> Version: **v2.1.4**
 
 AdGuard API is a filtering library that provides the following features:
 
@@ -12,7 +12,7 @@ AdGuard API is a filtering library that provides the following features:
 - Auto-detecting language filters.
 - Logging request processing.
 
-[tswebextensionreadme]: ../tswebextension/README.md
+[tswebextensionreadme]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md
 
 ## Table of contents
 
@@ -78,7 +78,7 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 
 [webaccessibleresources]: https://developer.chrome.com/docs/extensions/mv3/manifest/web_accessible_resources/
 [scriptletsredirectres]: https://github.com/AdguardTeam/Scriptlets#redirect-resources
-[tswebextensionusage]: ../tswebextension/README.md#usage
+[tswebextensionusage]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md#cli
 
 ## Configuration
 
@@ -486,7 +486,7 @@ adguardApi.onRequestBlocked.removeListener(
 
 ## Usage
 
-See full sample app project in [examples/adguard-api](../examples/adguard-api/)
+See full sample app project in [examples/adguard-api](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/examples/adguard-api)
 
 ```ts
 import { AdguardApi, Configuration, RequestBlockingEvent } from "@adguard/api";
