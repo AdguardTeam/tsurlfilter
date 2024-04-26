@@ -12,6 +12,7 @@ import {
     CosmeticRule,
     NetworkRule,
     MatchingResult,
+    ByteBuffer,
 } from '@adguard/tsurlfilter';
 
 import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -108,7 +109,7 @@ class EngineApi {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        const engine = new Engine(ruleStorage, true);
+        const engine = Engine.create(ruleStorage, new ByteBuffer(), true, true);
         await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
         this.engine = engine;
     }

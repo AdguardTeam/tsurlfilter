@@ -14,6 +14,7 @@ import {
     CosmeticOption,
     RuleConverter,
     HTTPMethod,
+    ByteBuffer,
 } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
@@ -130,7 +131,7 @@ export class EngineApi {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        const engine = new Engine(ruleStorage, true);
+        const engine = Engine.create(ruleStorage, new ByteBuffer(), true, true);
 
         await engine.loadRulesAsync(EngineApi.ASYNC_LOAD_CHINK_SIZE);
 
