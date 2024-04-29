@@ -3,7 +3,7 @@
 
 This table is generated from the compatibility data.
 
-| AdGuard                                                                                                                                                         | uBlock Origin                     | AdBlock Plus / AdBlock |
+| AdGuard                                                                                                                                                         | uBlock Origin                     | Adblock Plus / AdBlock |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ---------------------- |
 | 1x1-transparent.gif (1x1.gif, 1x1-transparent-gif)                                                                                                              | 1x1.gif                           | 1x1-transparent-gif    |
 | 2x2-transparent.png (2x2.png, 2x2-transparent-png)                                                                                                              | 2x2.png                           | 2x2-transparent-png    |

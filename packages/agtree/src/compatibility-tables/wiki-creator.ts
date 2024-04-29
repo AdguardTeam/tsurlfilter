@@ -5,7 +5,7 @@ import { writeFile } from 'fs/promises';
 import { redirectsCompatibilityTable } from './redirects';
 import { type RedirectDataSchema } from './extractors/schemas';
 
-const tableHead = ['AdGuard', 'uBlock Origin', 'AdBlock Plus / AdBlock'];
+const tableHead = ['AdGuard', 'uBlock Origin', 'Adblock Plus / AdBlock'];
 const tableBody: string[][] = [];
 
 const getRedirectNames = (data: Pick<RedirectDataSchema, 'name' | 'aliases'>) => {
