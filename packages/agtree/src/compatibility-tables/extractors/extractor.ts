@@ -6,6 +6,7 @@ import { parseRawPlatforms } from '../platforms';
 import { type baseFileSchema, type BaseCompatibilityDataSchema } from './schemas';
 
 // this is a helper structure to avoid storing the same data multiple times
+// note: we never plan to export this, only use it internally
 export interface MapWithSharedStorage<K extends string | number | symbol, V> {
     shared: V[];
     map: Record<K, number>;

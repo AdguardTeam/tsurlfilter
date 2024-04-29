@@ -1,8 +1,10 @@
 /* eslint-disable no-bitwise */
 import { type BaseCompatibilityDataSchema } from './extractors/schemas';
 import { type CompatibilityTableRow, type CompatibilityTable } from './extractors';
-import { type GenericPlatform, type SpecificPlatform, isGenericPlatform } from './platforms';
+import { GenericPlatform, type SpecificPlatform, isGenericPlatform } from './platforms';
 import { isUndefined } from '../utils/common';
+
+type Rows<T> = { adguard: T[]; ublock: T[]; adblock: T[] }[];
 
 export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSchema> {
     private data: CompatibilityTable<T>;
@@ -78,6 +80,37 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         }
 
         return data.shared;
+    }
+
+    // FIXME: ugly
+    public getRows(): Rows<T> {
+        const result: Rows<T> = [];
+
+        for (let i = 0; i < this.data.shared.length; i += 1) {
+            const data = this.data.shared[i];
+            const keys = Object.keys(data.map);
+
+            const row = {
+                adguard: [] as T[],
+                ublock: [] as T[],
+                adblock: [] as T[],
+            };
+
+            for (let j = 0; j < keys.length; j += 1) {
+                const key = Number(keys[j]);
+                if (key & GenericPlatform.AdgAny) {
+                    row.adguard.push(data.shared[data.map[key]]);
+                } else if (key & GenericPlatform.UboAny) {
+                    row.ublock.push(data.shared[data.map[key]]);
+                } else if (key & GenericPlatform.AbpAny) {
+                    row.adblock.push(data.shared[data.map[key]]);
+                }
+            }
+
+            result.push(row);
+        }
+
+        return result;
     }
 
     public getAll(platform: SpecificPlatform | GenericPlatform): T[] {
