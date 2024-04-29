@@ -12,8 +12,12 @@ const tableHead = ['AdGuard', 'uBlock Origin', 'Adblock Plus / AdBlock'];
 const redirectsTableBody: string[][] = [];
 const modifiersTableBody: string[][] = [];
 
-const getNameWithAliases = <T extends BaseCompatibilityDataSchema>(data: Pick<T, 'name' | 'aliases'>) => {
+const getNameWithAliases = <T extends BaseCompatibilityDataSchema>(data: Pick<T, 'name' | 'aliases' | 'docs'>) => {
     let { name } = data;
+
+    if (data.docs) {
+        name = `[${name}](${data.docs})`;
+    }
 
     if (data.aliases) {
         name += ` (${data.aliases.join(', ')})`;
@@ -27,7 +31,6 @@ redirectsCompatibilityTable.getRows().forEach((row) => {
     const uboAliases = new Set<string>(row.ublock.map(getNameWithAliases));
     const abAliases = new Set<string>(row.adblock.map(getNameWithAliases));
 
-    // TODO: add links to docs
     redirectsTableBody.push([
         [...adgAliases].join(', '),
         [...uboAliases].join(', '),
@@ -40,7 +43,6 @@ modifiersCompatibilityTable.getRows().forEach((row) => {
     const uboAliases = new Set<string>(row.ublock.map(getNameWithAliases));
     const abAliases = new Set<string>(row.adblock.map(getNameWithAliases));
 
-    // TODO: add links to docs
     modifiersTableBody.push([
         [...adgAliases].join(', '),
         [...uboAliases].join(', '),
