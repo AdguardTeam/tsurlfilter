@@ -1,0 +1,8 @@
+<!-- markdownlint-disable MD013 -->
+# Scriptlets Compatibility Table
+
+This table is generated from the compatibility data.
+
+| AdGuard                                                                                                                                                                                                                                                                            | uBlock Origin                                                                                                                         | Adblock Plus / AdBlock                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [abort-on-property-read](https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#abort-on-property-read) (abort-on-property-read.js, ubo-abort-on-property-read.js, aopr.js, ubo-aopr.js, ubo-abort-on-property-read, ubo-aopr, abp-abort-on-property-read) | [aopr](https://github.com/gorhill/uBlock/wiki/Resources-Library#aoprjs-) (aopr.js, abort-on-property-read.js, abort-on-property-read) | [abort-on-property-read](https://help.adblockplus.org/hc/en-us/articles/1500002338501#snippets-ref) |

@@ -5,12 +5,14 @@ import { writeFile } from 'fs/promises';
 import { redirectsCompatibilityTable } from '../redirects';
 import { type BaseCompatibilityDataSchema } from '../extractors/schemas';
 import { modifiersCompatibilityTable } from '../modifiers';
+import { scriptletsCompatibilityTable } from '../scriptlets';
 
 // FIXME: dirty code, needs refactoring
 
 const tableHead = ['AdGuard', 'uBlock Origin', 'Adblock Plus / AdBlock'];
 const redirectsTableBody: string[][] = [];
 const modifiersTableBody: string[][] = [];
+const scriptletsTableBody: string[][] = [];
 
 const getNameWithAliases = <T extends BaseCompatibilityDataSchema>(data: Pick<T, 'name' | 'aliases' | 'docs'>) => {
     let { name } = data;
@@ -50,6 +52,18 @@ modifiersCompatibilityTable.getRows().forEach((row) => {
     ]);
 });
 
+scriptletsCompatibilityTable.getRows().forEach((row) => {
+    const adgAliases = new Set<string>(row.adguard.map(getNameWithAliases));
+    const uboAliases = new Set<string>(row.ublock.map(getNameWithAliases));
+    const abAliases = new Set<string>(row.adblock.map(getNameWithAliases));
+
+    scriptletsTableBody.push([
+        [...adgAliases].join(', '),
+        [...uboAliases].join(', '),
+        [...abAliases].join(', '),
+    ]);
+});
+
 // order table by AdGuard (first column) - move empty cells to the end, and sort the rest
 const sortFn = (a: string[], b: string[]) => {
     if (!a[0] && !b[0]) return 0;
@@ -60,6 +74,7 @@ const sortFn = (a: string[], b: string[]) => {
 
 redirectsTableBody.sort(sortFn);
 modifiersTableBody.sort(sortFn);
+scriptletsTableBody.sort(sortFn);
 
 const redirectsContent = [
     '<!-- markdownlint-disable MD013 -->',
@@ -84,3 +99,15 @@ const modifiersContent = [
 ].join('\n');
 
 await writeFile('modifiers-compatibility-table.md', modifiersContent, 'utf8');
+
+const scriptletsContent = [
+    '<!-- markdownlint-disable MD013 -->',
+    '# Scriptlets Compatibility Table',
+    '',
+    'This table is generated from the compatibility data.',
+    '',
+    markdownTable([tableHead, ...scriptletsTableBody]),
+    '',
+].join('\n');
+
+await writeFile('scriptlets-compatibility-table.md', scriptletsContent, 'utf8');

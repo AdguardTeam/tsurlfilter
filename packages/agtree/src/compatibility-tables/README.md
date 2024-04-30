@@ -8,7 +8,7 @@ Currently, the following categories are supported. Each category has its own com
 
 - [Rule modifiers][modifiers-table]
 - [Redirect resources][redirects-table]
-- Scriptlet resources :construction:
+- [Scriptlet resources][scriptlets-table] :construction:
 - (Extended) CSS pseudo-classes :construction:
 
 Please note that certain things, such as syntax or rule categories, cannot be handled by the compatibility table.
@@ -19,6 +19,7 @@ modifiers or CSS selectors are used by all adblockers, but with different functi
 
 [modifiers-table]: ./wiki/modifiers-compatibility-table.md
 [redirects-table]: ./wiki/redirects-compatibility-table.md
+[scriptlets-table]: ./wiki/scriptlets-compatibility-table.md
 
 ## Supported adblockers and platforms
 
