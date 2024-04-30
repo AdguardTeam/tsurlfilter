@@ -46,7 +46,6 @@
         "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
         "build-compatibility-tables": "tsx scripts/build-compatibility-tables.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
-        "check-compatibility-tables": "tsx scripts/check-compatibility-tables.ts",
         "check-types": "tsc --noEmit",
         "clean": "rimraf dist",
         "clean-types": "rimraf dist/types",

@@ -43,7 +43,7 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm build` - builds the library with [rollup][rollup] to the `dist` folder
 - `pnpm build-txt` - creates a `dist/build.txt` file which contains the version of the library.
 - `pnpm build-types` - build type definitions with [TypeScript][typescript] to the `dist/types` folder.
-- `pnpm check-compatibility-tables` - checks if the [compatibility tables][compatibility-tables] are valid.
+<!-- FIXME: add new commands -->
 - `pnpm check-types` - check type definitions with [TypeScript][typescript].
 - `pnpm clean` - remove the `dist` folder.
 - `pnpm clean-types` - remove the `dist/types` folder.

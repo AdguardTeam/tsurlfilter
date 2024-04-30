@@ -61,9 +61,6 @@ Test:
             # Check TypeScript types with TSC
             pnpm --filter @adguard/agtree check-types
 
-            # Validate compatibility tables
-            pnpm --filter @adguard/agtree check-compatibility-tables
-
             # Check code with ESLint
             pnpm --filter @adguard/agtree lint
 
