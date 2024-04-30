@@ -2,7 +2,6 @@ import yaml from 'js-yaml';
 import { readFile } from 'fs/promises';
 
 import { getActiveBitSlots, getYmlFilesFromDir } from './helpers';
-import { parseRawPlatforms } from '../platforms';
 import { type baseFileSchema, type BaseCompatibilityDataSchema } from './schemas';
 
 // this is a helper structure to avoid storing the same data multiple times
@@ -44,7 +43,7 @@ export const getCompatibilityTableData = async <T extends BaseCompatibilityDataS
             map: {},
         };
 
-        Object.entries(file).forEach(([rawPlatforms, value]) => {
+        Object.entries(file).forEach(([platforms, value]) => {
             aliases.add(value.name);
 
             const fileAliases = value.aliases;
@@ -53,8 +52,7 @@ export const getCompatibilityTableData = async <T extends BaseCompatibilityDataS
                 fileAliases.forEach((alias: string) => aliases.add(alias));
             }
 
-            const platforms = parseRawPlatforms(rawPlatforms);
-            const activeBits = getActiveBitSlots(platforms);
+            const activeBits = getActiveBitSlots(Number(platforms));
 
             fileData.shared.push(value as T);
 

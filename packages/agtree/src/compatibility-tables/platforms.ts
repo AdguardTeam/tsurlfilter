@@ -1,9 +1,4 @@
 /* eslint-disable no-bitwise */
-import zod from 'zod';
-
-import { isUndefined } from '../utils/common';
-import { getErrorMessage } from '../utils/error';
-
 export enum SpecificPlatform {
     AdgOsWindows = 1,
     AdgOsMac = 1 << 1,
@@ -92,46 +87,7 @@ export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
     ['any', GenericPlatform.Any],
 ]);
 
-export const parseRawPlatforms = (rawPlatforms: string): number => {
-    // e.g. 'adg_cb_any|adg_os_any'
-    const rawPlatformList = rawPlatforms
-        .split('|')
-        .map((rawPlatform) => rawPlatform.trim());
-
-    let result = 0;
-
-    // FIXME: add support for negation, like:
-    // instead of 'adg_any_not_cb', use 'adg_any|~adg_cb_any'
-
-    for (const rawPlatform of rawPlatformList) {
-        const platform = SPECIFIC_PLATFORM_MAP.get(rawPlatform) ?? GENERIC_PLATFORM_MAP.get(rawPlatform);
-
-        if (isUndefined(platform)) {
-            throw new Error(`Unknown platform: ${rawPlatform}`);
-        }
-
-        result |= platform;
-    }
-
-    if (result === 0) {
-        throw new Error('No platforms specified');
-    }
-
-    return result;
-};
-
 export const isGenericPlatform = (platform: number): boolean => {
     // if more than one bit is set, it's a generic platform
     return !!(platform & (platform - 1));
 };
-
-export const platformSchema = zod.string().min(1).superRefine((value, ctx) => {
-    try {
-        parseRawPlatforms(value);
-    } catch (error) {
-        ctx.addIssue({
-            code: zod.ZodIssueCode.custom,
-            message: getErrorMessage(error),
-        });
-    }
-});

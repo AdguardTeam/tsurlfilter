@@ -1,7 +1,7 @@
 /* eslint-disable no-bitwise */
 import { type BaseCompatibilityDataSchema } from './extractors/schemas';
 import { type CompatibilityTableRow, type CompatibilityTable } from './extractors';
-import { GenericPlatform, type SpecificPlatform, isGenericPlatform } from './platforms';
+import { GenericPlatform, isGenericPlatform, type SpecificPlatform } from './platforms';
 import { isUndefined } from '../utils/common';
 
 type Rows<T> = { adguard: T[]; ublock: T[]; adblock: T[] }[];
