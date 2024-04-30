@@ -6,9 +6,10 @@ This directory contains compatibility tables for various adblock rule features.
 
 Currently, the following categories are supported. Each category has its own compatibility table:
 
-- Modifiers
-- Scriptlets
-- (Extended) CSS selectors
+- Rule modifiers
+- Redirect resources
+- Scriptlet resources :construction:
+- (Extended) CSS pseudo-classes :construction:
 
 Please note that certain things, such as syntax or rule categories, cannot be handled by the compatibility table.
 This is simply because they rarely change, and would also require a high level of abstraction, so it is much easier
@@ -39,7 +40,7 @@ supported:
 <!-- markdownlint-disable MD013 -->
 | Platform (ID) | Brand | Category |
 | --- | --- | --- |
- `adg_os_windows` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard for Windows](https://adguard.com/adguard-windows/overview.html) | System-wide ad blocker |
+`adg_os_windows` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard for Windows](https://adguard.com/adguard-windows/overview.html) | System-wide ad blocker |
 `adg_os_mac` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard for Mac](https://adguard.com/adguard-mac/overview.html) | System-wide ad blocker |
 `adg_os_android` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard for Android](https://adguard.com/adguard-android/overview.html) | System-wide ad blocker |
 `adg_ext_chrome` | <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard extension for Chrome](https://adguard.com/adguard-browser-extension/chrome/overview.html) | Browser extension |

@@ -13,7 +13,7 @@ and the value is the object with the following fields:
 | Field | Description | Type | Default value |
 | --- | --- | --- | --- |
 | `name`\* | Name of the actual scriptlet. | `string` | |
-| `aliases` | List of aliases for the scriptlet (if any). | `string[]` | `[]` (no aliases) |
+| `aliases` | List of aliases for the scriptlet (if any). | `string[]\|null` | `null` (no aliases) |
 | `description` | Short description of the actual scriptlet. If not specified or it's value is `null`, then the description is not available. | `string\|null` | `null` |
 | `docs` | Link to the documentation. If not specified or it's value is `null`, then the documentation is not available. | `string\|null` | `null` |
 | `version_added` | The version of the adblocker when the scriptlet was added. | `string\|null` | `null` |
@@ -21,6 +21,8 @@ and the value is the object with the following fields:
 | `debug` | Describes whether the scriptlet is used only for debugging purposes. | `boolean` | `false` |
 | `deprecated` | Describes whether the scriptlet is deprecated. | `boolean` | `false` |
 | `deprecation_message` | Message that describes why the scriptlet is deprecated. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
+| `removed` | Describes whether the scriptlet is removed; for *already removed* features. | `boolean` | `false` |
+| `removal_message` | Message that describes why the scriptlet is removed. If not specified or it's value is `null`, then the message is not available. It's value is omitted if the scriptlet is not marked as deprecated. | `string\|null` | `null` |
 | `parameters` | List of parameters that the scriptlet accepts. **Every** parameter should be listed here, because we check that the scriptlet is used correctly (e.g. that the number of parameters is correct). | `Parameter[]` | `[]` (no parameters) |
 | `parameters[].name`\* | Name of the actual parameter. | `string` | |
 | `parameters[].required`\* | Describes whether the parameter is required. Empty parameters are not allowed. | `boolean` | |
