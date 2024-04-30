@@ -13,6 +13,7 @@ export const parseRawPlatforms = (rawPlatforms: string): number => {
     let result = 0;
 
     for (let rawPlatform of rawPlatformList) {
+        // negation, e.g. 'adg_any|~adg_cb_any' means any AdGuard platform except content blockers
         let negated = false;
 
         if (rawPlatform.startsWith('~')) {
