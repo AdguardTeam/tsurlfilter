@@ -27,7 +27,11 @@ export const parseRawPlatforms = (rawPlatforms: string): number => {
             throw new Error(`Unknown platform: ${rawPlatform}`);
         }
 
-        result |= negated ? ~platform : platform;
+        if (negated) {
+            result &= ~platform;
+        } else {
+            result |= platform;
+        }
     }
 
     if (result === 0) {
