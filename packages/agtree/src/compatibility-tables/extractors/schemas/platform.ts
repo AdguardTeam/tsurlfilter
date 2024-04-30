@@ -12,17 +12,21 @@ export const parseRawPlatforms = (rawPlatforms: string): number => {
 
     let result = 0;
 
-    // FIXME: add support for negation, like:
-    // instead of 'adg_any_not_cb', use 'adg_any|~adg_cb_any'
+    for (let rawPlatform of rawPlatformList) {
+        let negated = false;
 
-    for (const rawPlatform of rawPlatformList) {
+        if (rawPlatform.startsWith('~')) {
+            negated = true;
+            rawPlatform = rawPlatform.slice(1).trim();
+        }
+
         const platform = SPECIFIC_PLATFORM_MAP.get(rawPlatform) ?? GENERIC_PLATFORM_MAP.get(rawPlatform);
 
         if (isUndefined(platform)) {
             throw new Error(`Unknown platform: ${rawPlatform}`);
         }
 
-        result |= platform;
+        result |= negated ? ~platform : platform;
     }
 
     if (result === 0) {
