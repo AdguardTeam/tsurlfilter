@@ -17,6 +17,8 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
 
         return super.exists(name, platform);
     }
+
+    // FIXME: handle noop modifier for get
 }
 
 export const modifiersCompatibilityTable = new ModifiersCompatibilityTable(modifiersCompatibilityTableData);
