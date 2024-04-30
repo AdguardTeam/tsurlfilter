@@ -7,7 +7,7 @@ import { isUndefined } from '../utils/common';
 type Rows<T> = { adguard: T[]; ublock: T[]; adblock: T[] }[];
 
 export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSchema> {
-    private data: CompatibilityTable<T>;
+    protected data: CompatibilityTable<T>;
 
     constructor(data: CompatibilityTable<T>) {
         this.data = data;
@@ -39,7 +39,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
                 if (platform & key) {
                     const idx = data.map[key];
                     if (
-                        idx
+                        !isUndefined(idx)
                         && (
                             data.shared[idx].name === name
                             || data.shared[idx].aliases?.includes(name)
@@ -53,7 +53,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
 
         const idx = data.map[platform];
         return !!(
-            idx
+            !isUndefined(idx)
             && (
                 data.shared[idx].name === name
                 || data.shared[idx].aliases?.includes(name)
@@ -69,7 +69,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         }
 
         const idx = data.map[platform];
-        return idx ? data.shared[idx] : null;
+        return isUndefined(idx) ? null : data.shared[idx];
     }
 
     public getRow(name: string): T[] {
@@ -130,7 +130,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
                 }
             } else {
                 const idx = data.map[platform];
-                if (idx) {
+                if (!isUndefined(idx)) {
                     result.push(data.shared[idx]);
                 }
             }

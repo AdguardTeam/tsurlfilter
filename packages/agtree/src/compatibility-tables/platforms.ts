@@ -26,7 +26,7 @@ export enum SpecificPlatform {
 
 export enum GenericPlatform {
     AdgOsAny = SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac | SpecificPlatform.AdgOsAndroid,
-    AdgCbAny = SpecificPlatform.AdgCbAndroid | SpecificPlatform.AdgCbSafari,
+    AdgCbAny = SpecificPlatform.AdgCbAndroid | SpecificPlatform.AdgCbSafari | SpecificPlatform.AdgCbIos,
     AdgExtChromium = SpecificPlatform.AdgExtChrome | SpecificPlatform.AdgExtOpera | SpecificPlatform.AdgExtEdge,
     AdgExtAny = AdgExtChromium | SpecificPlatform.AdgExtFirefox,
     AdgAnyNotCb = AdgExtAny | AdgOsAny,
