@@ -1,5 +1,5 @@
 # Note: content blocking products do not support redirects
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: 3x2-transparent.png
   aliases:
     - 3x2.png

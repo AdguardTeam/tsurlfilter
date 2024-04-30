@@ -40,7 +40,6 @@ const platforms = ss.enums([
     'adg_ext_any',
     'adg_ext_chromium',
     'adg_cb_any',
-    'adg_any_not_cb',
     'ubo_any',
     'ubo_ext_any',
     'ubo_ext_chromium',

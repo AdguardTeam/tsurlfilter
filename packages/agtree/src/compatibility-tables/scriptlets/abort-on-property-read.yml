@@ -1,5 +1,5 @@
 # AdGuard Content Blocker does not support scriptlets
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: abort-on-property-read
   aliases:
     - abort-on-property-read.js

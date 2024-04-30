@@ -1,6 +1,7 @@
 // https://github.com/colinhacks/zod/issues/486#issuecomment-1501097361
 
 import type zod from 'zod';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import camelCaseKeys from 'camelcase-keys';
 import { type CamelCasedPropertiesDeep } from 'type-fest';
 

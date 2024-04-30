@@ -29,7 +29,6 @@ export enum GenericPlatform {
     AdgCbAny = SpecificPlatform.AdgCbAndroid | SpecificPlatform.AdgCbSafari | SpecificPlatform.AdgCbIos,
     AdgExtChromium = SpecificPlatform.AdgExtChrome | SpecificPlatform.AdgExtOpera | SpecificPlatform.AdgExtEdge,
     AdgExtAny = AdgExtChromium | SpecificPlatform.AdgExtFirefox,
-    AdgAnyNotCb = AdgExtAny | AdgOsAny,
     AdgAny = AdgExtAny | AdgOsAny | AdgCbAny,
 
     UboExtChromium = SpecificPlatform.UboExtChrome | SpecificPlatform.UboExtOpera | SpecificPlatform.UboExtEdge,
@@ -73,7 +72,6 @@ export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
     ['adg_cb_any', GenericPlatform.AdgCbAny],
     ['adg_ext_chromium', GenericPlatform.AdgExtChromium],
     ['adg_ext_any', GenericPlatform.AdgExtAny],
-    ['adg_any_not_cb', GenericPlatform.AdgAnyNotCb],
     ['adg_any', GenericPlatform.AdgAny],
 
     ['ubo_ext_chromium', GenericPlatform.UboExtChromium],

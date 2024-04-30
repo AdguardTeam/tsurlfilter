@@ -34,7 +34,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
     }
 
     public existsAny(name: string): boolean {
-        return !!this.data.map[name];
+        return !isUndefined(this.data.map[name]);
     }
 
     public exists(name: string, platform: SpecificPlatform | GenericPlatform): boolean {
