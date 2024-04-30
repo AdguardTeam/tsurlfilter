@@ -28,10 +28,10 @@ const getNameWithAliases = <T extends BaseCompatibilityDataSchema>(data: Pick<T,
     return name;
 };
 
-redirectsCompatibilityTable.getRows().forEach((row) => {
-    const adgAliases = new Set<string>(row.adguard.map(getNameWithAliases));
-    const uboAliases = new Set<string>(row.ublock.map(getNameWithAliases));
-    const abAliases = new Set<string>(row.adblock.map(getNameWithAliases));
+redirectsCompatibilityTable.getRowsByProduct().forEach((row) => {
+    const adgAliases = new Set<string>(Object.values(row.adg).map(getNameWithAliases));
+    const uboAliases = new Set<string>(Object.values(row.ubo).map(getNameWithAliases));
+    const abAliases = new Set<string>(Object.values(row.abp).map(getNameWithAliases));
 
     redirectsTableBody.push([
         [...adgAliases].join(', '),
@@ -40,10 +40,10 @@ redirectsCompatibilityTable.getRows().forEach((row) => {
     ]);
 });
 
-modifiersCompatibilityTable.getRows().forEach((row) => {
-    const adgAliases = new Set<string>(row.adguard.map(getNameWithAliases));
-    const uboAliases = new Set<string>(row.ublock.map(getNameWithAliases));
-    const abAliases = new Set<string>(row.adblock.map(getNameWithAliases));
+modifiersCompatibilityTable.getRowsByProduct().forEach((row) => {
+    const adgAliases = new Set<string>(Object.values(row.adg).map(getNameWithAliases));
+    const uboAliases = new Set<string>(Object.values(row.ubo).map(getNameWithAliases));
+    const abAliases = new Set<string>(Object.values(row.abp).map(getNameWithAliases));
 
     modifiersTableBody.push([
         [...adgAliases].join(', '),
@@ -52,10 +52,10 @@ modifiersCompatibilityTable.getRows().forEach((row) => {
     ]);
 });
 
-scriptletsCompatibilityTable.getRows().forEach((row) => {
-    const adgAliases = new Set<string>(row.adguard.map(getNameWithAliases));
-    const uboAliases = new Set<string>(row.ublock.map(getNameWithAliases));
-    const abAliases = new Set<string>(row.adblock.map(getNameWithAliases));
+scriptletsCompatibilityTable.getRowsByProduct().forEach((row) => {
+    const adgAliases = new Set<string>(Object.values(row.adg).map(getNameWithAliases));
+    const uboAliases = new Set<string>(Object.values(row.ubo).map(getNameWithAliases));
+    const abAliases = new Set<string>(Object.values(row.abp).map(getNameWithAliases));
 
     scriptletsTableBody.push([
         [...adgAliases].join(', '),
