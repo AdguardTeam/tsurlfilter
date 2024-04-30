@@ -1,6 +1,5 @@
 /* eslint-disable no-bitwise */
 import path from 'path';
-import * as url from 'url';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
 import { readFileSync, readdirSync } from 'fs';
@@ -16,9 +15,6 @@ import {
     type RedirectDataSchema,
     type ScriptletDataSchema,
 } from './schemas';
-
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const getYmlFilesFromDir = (dir: string): string[] => {
     const dirEntries = readdirSync(dir, { withFileTypes: true });

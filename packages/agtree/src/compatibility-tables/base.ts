@@ -33,6 +33,10 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         return this.data.shared[idx];
     }
 
+    public existsAny(name: string): boolean {
+        return !!this.data.map[name];
+    }
+
     public exists(name: string, platform: SpecificPlatform | GenericPlatform): boolean {
         const data = this.getRowStorage(name);
 
@@ -80,6 +84,34 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
 
         const idx = data.map[platform];
         return isUndefined(idx) ? null : data.shared[idx];
+    }
+
+    public getEx(name: string, platform: SpecificPlatform | GenericPlatform): T[] {
+        const data = this.getRowStorage(name);
+
+        if (!data) {
+            return [];
+        }
+
+        if (isGenericPlatform(platform)) {
+            const result: T[] = [];
+            const keys = Object.keys(data.map);
+
+            for (let i = 0; i < keys.length; i += 1) {
+                const key = Number(keys[i]);
+                if (platform & key) {
+                    const idx = data.map[key];
+                    if (!isUndefined(idx)) {
+                        result.push(data.shared[idx]);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        const idx = data.map[platform];
+        return isUndefined(idx) ? [] : [data.shared[idx]];
     }
 
     public getRow(name: string): T[] {

@@ -19,7 +19,7 @@
         "rootDir": "./"
     },
     "include": [
-        "./src"
+        "./src",
     ],
     "exclude": [
         "./node_modules",
@@ -27,7 +27,6 @@
     ],
     "ts-node": {
         "swc": true,
-        "esm": true,
         "compilerOptions": {
             "module": "ESNext"
         }

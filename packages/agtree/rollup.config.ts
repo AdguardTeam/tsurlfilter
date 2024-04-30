@@ -14,7 +14,6 @@ import alias from '@rollup/plugin-alias';
 import { getBabelOutputPlugin } from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
-import yaml from '@rollup/plugin-yaml';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
 
@@ -72,7 +71,6 @@ const commonPlugins = [
         ],
     }),
     json({ preferConst: true }),
-    yaml(),
     commonjs({ sourceMap: false }),
     resolve({ preferBuiltins: false }),
     typeScriptPlugin,
