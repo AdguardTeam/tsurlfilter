@@ -2,9 +2,9 @@
 import { markdownTable } from 'markdown-table';
 import { writeFile } from 'fs/promises';
 
-import { redirectsCompatibilityTable } from './redirects';
-import { type BaseCompatibilityDataSchema } from './extractors/schemas';
-import { modifiersCompatibilityTable } from './modifiers';
+import { redirectsCompatibilityTable } from '../redirects';
+import { type BaseCompatibilityDataSchema } from '../extractors/schemas';
+import { modifiersCompatibilityTable } from '../modifiers';
 
 // FIXME: dirty code, needs refactoring
 

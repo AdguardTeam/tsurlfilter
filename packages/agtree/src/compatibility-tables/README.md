@@ -6,8 +6,8 @@ This directory contains compatibility tables for various adblock rule features.
 
 Currently, the following categories are supported. Each category has its own compatibility table:
 
-- Rule modifiers
-- Redirect resources
+- [Rule modifiers][modifiers-table]
+- [Redirect resources][redirects-table]
 - Scriptlet resources :construction:
 - (Extended) CSS pseudo-classes :construction:
 
@@ -16,6 +16,9 @@ This is simply because they rarely change, and would also require a high level o
 to manage them at a low level, at the parser / converter level. The compatibility table mainly covers features that
 are well abstracted and common to several adblockers, just with different implementations. For example, network rule
 modifiers or CSS selectors are used by all adblockers, but with different functionality.
+
+[modifiers-table]: ./wiki/modifiers-compatibility-table.md
+[redirects-table]: ./wiki/redirects-compatibility-table.md
 
 ## Supported adblockers and platforms
 
