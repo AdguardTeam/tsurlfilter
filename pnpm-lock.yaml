@@ -90,9 +90,6 @@ importers:
       '@adguard/ecss-tree':
         specifier: ^1.0.8
         version: 1.0.8
-      '@adguard/scriptlets':
-        specifier: ^1.9.61
-        version: 1.10.25
       clone-deep:
         specifier: ^4.0.1
         version: 4.0.1

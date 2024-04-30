@@ -105,7 +105,6 @@
     },
     "dependencies": {
         "@adguard/ecss-tree": "^1.0.8",
-        "@adguard/scriptlets": "^1.9.61",
         "clone-deep": "^4.0.1",
         "json5": "^2.2.3",
         "semver": "^7.5.3",
