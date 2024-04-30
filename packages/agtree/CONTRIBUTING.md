@@ -55,7 +55,6 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm precommit` - run all checks before committing.
 - `pnpm test` - run tests with [Jest][jest].
 
-[compatibility-tables]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [contribute]: https://adguard.com/contribute.html
 [eslint]: https://eslint.org/
 [git]: https://git-scm.com/
