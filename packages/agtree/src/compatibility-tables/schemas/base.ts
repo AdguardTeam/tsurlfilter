@@ -1,7 +1,7 @@
 import zod from 'zod';
 
 import { platformSchema } from './platform';
-import { zodToCamelCase } from '../../utils/zod-camelcase';
+import { zodToCamelCase } from '../utils/zod-camelcase';
 
 export const baseCompatibilityDataSchema = zod.object({
     name: zod.string().min(1),

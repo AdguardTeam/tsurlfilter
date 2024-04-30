@@ -1,9 +1,9 @@
 import zod from 'zod';
 import XRegExp from 'xregexp';
 
-import { zodToCamelCase } from '../../utils/zod-camelcase';
+import { zodToCamelCase } from '../utils/zod-camelcase';
 import { baseCompatibilityDataSchema, baseRefineLogic } from './base';
-import { getErrorMessage } from '../../../utils/error';
+import { getErrorMessage } from '../../utils/error';
 
 const KNOWN_VALIDATORS = new Set([
     'domain',

@@ -15,8 +15,8 @@ import { getBabelOutputPlugin } from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import yaml from '@rollup/plugin-yaml';
-import path from 'path';
-import { readFileSync } from 'fs';
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const ROOT_DIR = './';
 const BASE_FILE_NAME = 'agtree';
@@ -62,6 +62,15 @@ const typeScriptPlugin = typescript({
 
 // Common plugins for all types of builds
 const commonPlugins = [
+    alias({
+        entries: [
+            // replace dynamic compatibility table data builder with the pre-built data file
+            {
+                find: './compatibility-table-data',
+                replacement: path.resolve(ROOT_DIR, 'dist', 'compatibility-tables.json'),
+            },
+        ],
+    }),
     json({ preferConst: true }),
     yaml(),
     commonjs({ sourceMap: false }),
@@ -97,7 +106,7 @@ const browserPlugins = [
         entries: [
             {
                 find: '@adguard/ecss-tree',
-                replacement: path.join(
+                replacement: path.resolve(
                     'node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
                 ),
             },

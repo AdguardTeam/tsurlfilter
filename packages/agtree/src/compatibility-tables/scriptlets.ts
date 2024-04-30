@@ -1,9 +1,7 @@
 import { CompatibilityTableBase } from './base';
-import { type ScriptletDataSchema } from './extractors/schemas';
-import { getScriptletsCompatibilityTableData } from './extractors';
+import { type ScriptletDataSchema } from './schemas';
+import { scriptletsCompatibilityTableData } from './compatibility-table-data';
 
 class ScriptletsCompatibilityTable extends CompatibilityTableBase<ScriptletDataSchema> { }
 
-const data = await getScriptletsCompatibilityTableData('./scriptlets');
-
-export const scriptletsCompatibilityTable = new ScriptletsCompatibilityTable(data);
+export const scriptletsCompatibilityTable = new ScriptletsCompatibilityTable(scriptletsCompatibilityTableData);

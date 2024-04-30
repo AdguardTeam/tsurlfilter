@@ -42,9 +42,11 @@
         "node": ">=14"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-types && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm clean-types",
+        "build": "pnpm clean && pnpm build-types && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm clean-types",
         "build-txt": "node --no-warnings=ExperimentalWarning --loader ts-node/esm scripts/build-txt.ts",
         "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
+        "build-compatibility-tables": "tsx scripts/build-compatibility-tables.ts",
+        "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
         "check-compatibility-tables": "node --no-warnings=ExperimentalWarning --loader ts-node/esm scripts/check-compatibility-tables.ts",
         "check-types": "tsc --noEmit",
         "clean": "rimraf dist",
@@ -100,6 +102,7 @@
         "rollup-plugin-polyfill-node": "^0.12.0",
         "superstruct": "^1.0.3",
         "ts-node": "^10.9.2",
+        "tsx": "^4.7.3",
         "type-fest": "^4.18.0",
         "typescript": "^5.0.4",
         "yaml-jest-transform": "^2.0.2"

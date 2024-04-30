@@ -1,6 +1,6 @@
 import { CompatibilityTableBase } from './base';
-import { type ModifierDataSchema } from './extractors/schemas';
-import { getModifiersCompatibilityTableData } from './extractors';
+import { type ModifierDataSchema } from './schemas';
+import { modifiersCompatibilityTableData } from './compatibility-table-data';
 import { type SpecificPlatform, type GenericPlatform } from './platforms';
 import { EMPTY, UNDERSCORE } from '../utils/constants';
 
@@ -19,6 +19,4 @@ class ModifiersCompatibilityTable extends CompatibilityTableBase<ModifierDataSch
     }
 }
 
-const data = await getModifiersCompatibilityTableData('./modifiers');
-
-export const modifiersCompatibilityTable = new ModifiersCompatibilityTable(data);
+export const modifiersCompatibilityTable = new ModifiersCompatibilityTable(modifiersCompatibilityTableData);

@@ -1,8 +1,8 @@
 /* eslint-disable no-bitwise */
 import zod from 'zod';
 
-import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../../platforms';
-import { isUndefined } from '../../../utils/common';
+import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../platforms';
+import { isUndefined } from '../../utils/common';
 
 export const parseRawPlatforms = (rawPlatforms: string): number => {
     // e.g. 'adg_cb_any|adg_os_any'

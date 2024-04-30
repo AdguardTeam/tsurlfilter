@@ -1,8 +1,8 @@
 /* eslint-disable no-bitwise */
-import { type BaseCompatibilityDataSchema } from './extractors/schemas';
-import { type CompatibilityTableRow, type CompatibilityTable } from './extractors';
+import { type BaseCompatibilityDataSchema } from './schemas';
 import { GenericPlatform, isGenericPlatform, type SpecificPlatform } from './platforms';
 import { isUndefined } from '../utils/common';
+import { type CompatibilityTable, type CompatibilityTableRow } from './types';
 
 type ProductRecords<T> = {
     [key: string]: T

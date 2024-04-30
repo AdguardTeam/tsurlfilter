@@ -1,9 +1,7 @@
 import { CompatibilityTableBase } from './base';
-import { type RedirectDataSchema } from './extractors/schemas';
-import { getRedirectsCompatibilityTableData } from './extractors';
+import { type RedirectDataSchema } from './schemas';
+import { redirectsCompatibilityTableData } from './compatibility-table-data';
 
 class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSchema> { }
 
-const data = await getRedirectsCompatibilityTableData('./redirects');
-
-export const redirectsCompatibilityTable = new RedirectsCompatibilityTable(data);
+export const redirectsCompatibilityTable = new RedirectsCompatibilityTable(redirectsCompatibilityTableData);

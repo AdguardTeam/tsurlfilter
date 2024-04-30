@@ -1,11 +1,19 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { markdownTable } from 'markdown-table';
 import { writeFile } from 'fs/promises';
+import { ensureDirSync } from 'fs-extra';
+import path from 'path';
+import * as url from 'url';
 
-import { redirectsCompatibilityTable } from '../redirects';
-import { type BaseCompatibilityDataSchema } from '../extractors/schemas';
-import { modifiersCompatibilityTable } from '../modifiers';
-import { scriptletsCompatibilityTable } from '../scriptlets';
+import { redirectsCompatibilityTable } from '../src/compatibility-tables/redirects';
+import { type BaseCompatibilityDataSchema } from '../src/compatibility-tables/schemas';
+import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
+import { scriptletsCompatibilityTable } from '../src/compatibility-tables/scriptlets';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+
+ensureDirSync(path.join(__dirname, '../src/compatibility-tables/wiki'));
 
 // FIXME: dirty code, needs refactoring
 
@@ -86,7 +94,9 @@ const redirectsContent = [
     '',
 ].join('\n');
 
-await writeFile('redirects-compatibility-table.md', redirectsContent, 'utf8');
+const redirectsWikiPath = path.join(__dirname, '../src/compatibility-tables/wiki/redirects-compatibility-table.md');
+await writeFile(redirectsWikiPath, redirectsContent, 'utf8');
+console.log(`Redirects compatibility table has been saved to ${redirectsWikiPath}`);
 
 const modifiersContent = [
     '<!-- markdownlint-disable MD013 -->',
@@ -98,7 +108,9 @@ const modifiersContent = [
     '',
 ].join('\n');
 
-await writeFile('modifiers-compatibility-table.md', modifiersContent, 'utf8');
+const modifiersWikiPath = path.join(__dirname, '../src/compatibility-tables/wiki/modifiers-compatibility-table.md');
+await writeFile(modifiersWikiPath, modifiersContent, 'utf8');
+console.log(`Modifiers compatibility table has been saved to ${modifiersWikiPath}`);
 
 const scriptletsContent = [
     '<!-- markdownlint-disable MD013 -->',
@@ -110,4 +122,6 @@ const scriptletsContent = [
     '',
 ].join('\n');
 
-await writeFile('scriptlets-compatibility-table.md', scriptletsContent, 'utf8');
+const scriptletsWikiPath = path.join(__dirname, '../src/compatibility-tables/wiki/scriptlets-compatibility-table.md');
+await writeFile(scriptletsWikiPath, scriptletsContent, 'utf8');
+console.log(`Scriptlets compatibility table has been saved to ${scriptletsWikiPath}`);
