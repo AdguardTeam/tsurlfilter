@@ -126,8 +126,15 @@ export {
 export { METADATA_HEADERS } from './converter/data/metadata';
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
 
-// FIXME: configure index.ts in compatibility-tables
-export { modifiersCompatibilityTable } from './compatibility-tables/modifiers';
+export {
+    GenericPlatform,
+    SpecificPlatform,
+    modifiersCompatibilityTable,
+    redirectsCompatibilityTable,
+    scriptletsCompatibilityTable,
+    type CompatibilityTable,
+    type CompatibilityTableRow,
+} from './compatibility-tables';
 
 // Re-export everything from ECSSTree
 export * as ECSSTree from '@adguard/ecss-tree';

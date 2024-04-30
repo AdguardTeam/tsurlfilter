@@ -1,8 +1,9 @@
 /* eslint-disable no-bitwise */
 import { type BaseCompatibilityDataSchema } from './schemas';
-import { GenericPlatform, isGenericPlatform, type SpecificPlatform } from './platforms';
+import { GenericPlatform, type SpecificPlatform } from './platforms';
 import { isUndefined } from '../utils/common';
 import { type CompatibilityTable, type CompatibilityTableRow } from './types';
+import { isGenericPlatform } from './utils/platform-helpers';
 
 type ProductRecords<T> = {
     [key: string]: T
