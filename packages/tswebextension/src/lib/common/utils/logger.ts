@@ -23,7 +23,7 @@ export class ExtendedLogger extends Logger {
 }
 
 const logger = new ExtendedLogger();
-logger.currentLevel = LogLevel.Error; // fixme use env to set log level
+logger.currentLevel = LogLevel.Error;
 
 export {
     logger,

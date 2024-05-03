@@ -1,17 +1,7 @@
 /* eslint-disable no-console */
 import type { Writer } from '@adguard/logger/dist/types/Logger';
 import { ExtendedLogger, LogLevel } from '@lib/common/utils/';
-
-/**
- * Log writer mock.
- */
-class LogWriterMock implements Writer { // fixme move to mocks
-    log = jest.fn();
-
-    info = jest.fn();
-
-    error = jest.fn();
-}
+import { LogWriterMock } from './mocks';
 
 describe('logger', () => {
     let logWriter: Writer;

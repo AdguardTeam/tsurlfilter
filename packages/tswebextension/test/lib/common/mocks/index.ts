@@ -1,2 +1,2 @@
 export * from './mock-filtering-log';
-export * from './mock-logger';
+export * from './mock-log-writer';
