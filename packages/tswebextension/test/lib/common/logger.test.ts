@@ -1,8 +1,21 @@
 /* eslint-disable no-console */
-import { Logger, logLevelSchema, type LogLevel } from '@lib/common/utils/logger';
+import type { Writer } from '@adguard/logger/dist/types/Logger';
+import { ExtendedLogger, LogLevel } from '@lib/common/utils/';
+
+/**
+ * Log writer mock.
+ */
+class LogWriterMock implements Writer { // fixme move to mocks
+    log = jest.fn();
+
+    info = jest.fn();
+
+    error = jest.fn();
+}
 
 describe('logger', () => {
-    let logger: Logger;
+    let logWriter: Writer;
+    let logger: ExtendedLogger;
 
     const callLoggerMethods = (): void => {
         logger.error('message');
@@ -12,12 +25,9 @@ describe('logger', () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(console, 'error').mockImplementation(jest.fn);
-        jest.spyOn(console, 'warn').mockImplementation(jest.fn);
-        jest.spyOn(console, 'info').mockImplementation(jest.fn);
-        jest.spyOn(console, 'debug').mockImplementation(jest.fn);
-
-        logger = new Logger();
+        logWriter = new LogWriterMock();
+        logger = new ExtendedLogger(logWriter);
+        logger.currentLevel = LogLevel.Error;
     });
 
     afterEach(() => {
@@ -27,74 +37,69 @@ describe('logger', () => {
     it('logs only errors at default log level', () => {
         callLoggerMethods();
 
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).not.toHaveBeenCalled();
-        expect(console.info).not.toHaveBeenCalled();
-        expect(console.debug).not.toHaveBeenCalled();
+        expect(logWriter.log).not.toHaveBeenCalled();
+        expect(logWriter.info).not.toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('calls Logger methods when verbose is set to true', () => {
         logger.setVerbose(true);
-        logger.setLogLevel(logLevelSchema.enum.debug);
+        logger.currentLevel = LogLevel.Debug;
         callLoggerMethods();
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).toHaveBeenCalled();
-        expect(console.info).toHaveBeenCalled();
-        expect(console.debug).toHaveBeenCalled();
+        expect(logWriter.log).toHaveBeenCalled();
+        expect(logWriter.info).toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('does not call Logger methods when verbose is set to false', () => {
         logger.setVerbose(false);
         callLoggerMethods();
+        expect(logWriter.log).not.toHaveBeenCalled();
+        expect(logWriter.info).not.toHaveBeenCalled();
         // logger.error should be called regardless of 'verbose'
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).not.toHaveBeenCalled();
-        expect(console.info).not.toHaveBeenCalled();
-        expect(console.debug).not.toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('uses LogLevel.Error correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.error);
+        logger.currentLevel = LogLevel.Error;
         callLoggerMethods();
 
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).not.toHaveBeenCalled();
-        expect(console.info).not.toHaveBeenCalled();
-        expect(console.debug).not.toHaveBeenCalled();
+        expect(logWriter.log).not.toHaveBeenCalled();
+        expect(logWriter.info).not.toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('uses LogLevel.Warn correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.warn);
+        logger.currentLevel = LogLevel.Warn;
         callLoggerMethods();
 
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).toHaveBeenCalled();
-        expect(console.info).not.toHaveBeenCalled();
-        expect(console.debug).not.toHaveBeenCalled();
+        expect(logWriter.log).not.toHaveBeenCalled();
+        expect(logWriter.info).toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('uses LogLevel.Info correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.info);
+        logger.currentLevel = LogLevel.Info;
         callLoggerMethods();
 
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).toHaveBeenCalled();
-        expect(console.info).toHaveBeenCalled();
-        expect(console.debug).not.toHaveBeenCalled();
+        expect(logWriter.log).not.toHaveBeenCalled();
+        expect(logWriter.info).toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('uses LogLevel.Debug correctly', () => {
-        logger.setLogLevel(logLevelSchema.enum.debug);
+        logger.currentLevel = LogLevel.Debug;
         callLoggerMethods();
 
-        expect(console.error).toHaveBeenCalled();
-        expect(console.warn).toHaveBeenCalled();
-        expect(console.info).toHaveBeenCalled();
-        expect(console.debug).toHaveBeenCalled();
+        expect(logWriter.log).toHaveBeenCalled();
+        expect(logWriter.info).toHaveBeenCalled();
+        expect(logWriter.error).toHaveBeenCalled();
     });
 
     it('throws error on invalid log level', () => {
-        expect(() => logger.setLogLevel('invalid' as LogLevel)).toThrow();
+        expect(() => {
+            logger.currentLevel = 'invalid' as LogLevel;
+        }).toThrow();
     });
 
     it('throws error on invalid verbose', () => {

@@ -2,12 +2,12 @@ import { LogLevel, Logger, getErrorMessage } from '@adguard/logger';
 import { z as zod } from 'zod';
 
 const logLevelSchema = zod.nativeEnum(LogLevel);
-const verboseSchema = zod.boolean();
+const verboseSchema = zod.boolean().optional();
 
 /**
  * Extended logger with verbose option.
  */
-class ExtendedLogger extends Logger {
+export class ExtendedLogger extends Logger {
     /**
      * Sets verbose option.
      *
@@ -16,15 +16,14 @@ class ExtendedLogger extends Logger {
      * @throws Error if verbose flag is not a boolean.
      */
     public setVerbose(verbose?: boolean): void {
-        if (verbose) {
-            this.currentLevel = LogLevel.Debug;
-        } else {
-            this.currentLevel = LogLevel.Info;
-        }
+        this.currentLevel = verboseSchema.parse(verbose)
+            ? LogLevel.Debug
+            : LogLevel.Error;
     }
 }
 
 const logger = new ExtendedLogger();
+logger.currentLevel = LogLevel.Error; // fixme use env to set log level
 
 export {
     logger,
