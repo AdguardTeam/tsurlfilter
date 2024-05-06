@@ -1,0 +1,16 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: noopmp4-1s
+  aliases:
+    - noop-1s.mp4
+    - blank-mp4
+  description: Redirects to an empty MP4 file with a duration of 1 second.
+
+ubo_any:
+  name: noop-1s.mp4
+  description: Redirects to an empty MP4 file with a duration of 1 second.
+
+abp_any:
+  name: blank-mp4
+  description: Redirects to an empty MP4 file with a duration of 1 second.

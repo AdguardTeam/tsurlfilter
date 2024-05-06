@@ -1,0 +1,5 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: noopvast-3.0
+  description: Redirects to an empty VAST 3.0 XML file.

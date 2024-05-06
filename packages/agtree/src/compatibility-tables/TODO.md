@@ -8,6 +8,11 @@
       need to optimize it before using it in the API.
 - [ ] Create API endpoints for the tables.
 - [ ] Wiki generation (`.md` files from the tables / gh-pages).
+- [ ] Review redirects' aliases in compatibility table:
+    - [ ] check if `ubo-` and `abp-` prefixes should be deprecated,
+    <!-- markdownlint-disable MD013 -->
+    - [ ] make compatibility table does not miss any [ubo aliases](https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-resources.js).
+    <!-- markdownlint-enable MD013 -->
 
 ## Linter rules
 

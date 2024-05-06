@@ -1,0 +1,11 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: prevent-bab2
+  aliases:
+    - nobab2.js
+  description: Prevents BlockAdblock script from detecting an ad blocker.
+
+ubo_any:
+  name: nobab2.js
+  description: Prevents BlockAdblock script from detecting an ad blocker.
