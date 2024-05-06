@@ -71,7 +71,7 @@ describe('Hostname Lookup Table Tests', () => {
 
         expect(table.matchAll(request)).toHaveLength(1);
 
-        const restoredBuffer = new ByteBuffer(buffer.chunks);
+        const restoredBuffer = new ByteBuffer(buffer.data);
         const restoredTable = new HostnameLookupTable(ruleStorage, restoredBuffer, table.offset);
         expect(restoredTable.matchAll(request)).toHaveLength(1);
     });

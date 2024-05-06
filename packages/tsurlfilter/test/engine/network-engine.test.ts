@@ -340,7 +340,7 @@ describe('NetworkEngine', () => {
 
             expect(result?.getText()).toBe(rule);
 
-            const restoredBuffer = new ByteBuffer(buffer.chunks);
+            const restoredBuffer = new ByteBuffer(buffer.data);
             const restoredEngine = new NetworkEngine(ruleStorage, restoredBuffer, engine.offset);
             const resultOfRestored = restoredEngine.match(request);
             expect(resultOfRestored?.getText()).toBe(rule);

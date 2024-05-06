@@ -149,7 +149,7 @@ describe('General DNS engine tests', () => {
         expect(result.basicRule!.getAdvancedModifier()).not.toBeNull();
         expect(result.hostRules).toHaveLength(0);
 
-        const restoredBuffer = new ByteBuffer(buffer.chunks);
+        const restoredBuffer = new ByteBuffer(buffer.data);
 
         const restoredEngine = DnsEngine.from(ruleStorage, restoredBuffer);
 

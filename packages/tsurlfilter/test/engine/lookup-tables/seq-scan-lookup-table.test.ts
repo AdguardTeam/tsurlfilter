@@ -75,7 +75,7 @@ describe('Sequence-scan Lookup Table Tests', () => {
 
         expect(table.matchAll(request)).toHaveLength(1);
 
-        const restoredBuffer = new ByteBuffer(buffer.chunks);
+        const restoredBuffer = new ByteBuffer(buffer.data);
         const restoredTable = new SeqScanLookupTable(ruleStorage, restoredBuffer, table.offset);
         expect(restoredTable.matchAll(request)).toHaveLength(1);
     });

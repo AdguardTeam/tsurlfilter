@@ -7,9 +7,33 @@
  */
 export class ByteBuffer {
     /**
-     * Buffer data.
+     * The initial number of memory pages to allocate.
+     * Each page is 64KB in size.
      */
-    public chunks: Uint8Array[] = [];
+    private static INITIAL_MEMORY_PAGES_SIZE = 1;
+
+    /**
+     * The number of memory pages to allocate when the buffer is full.
+     */
+    private static MEMORY_PAGES_DELTA = 1;
+
+    /**
+     * Buffer memory represented as WebAssembly.Memory.
+     * We use this API to support dynamic memory allocation with compatibility for older browsers.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface/Memory
+     *
+     * On buffer initialization, the memory is set to {@link ByteBuffer.INITIAL_MEMORY_PAGES_SIZE} and
+     * grows with the number of pages specified in {@link ByteBuffer.MEMORY_PAGES_DELTA}.
+     *
+     * @see {@link allocate}
+     */
+    declare public memory: WebAssembly.Memory;
+
+    /**
+     * Buffer data represented as DataView.
+     */
+    declare public data: DataView;
 
     /**
      * Global byte offset.
@@ -18,10 +42,26 @@ export class ByteBuffer {
 
     /**
      * @inheritdoc
-     * @param chunks The initial data.
+     * @param data The initial data.
+     *
+     * NOTE: If the existed data it provided, the new memory will not be allocated.
      */
-    constructor(chunks: Uint8Array[] = []) {
-        this.chunks = chunks;
+    constructor(data?: DataView) {
+        if (data) {
+            /**
+             * If the data view is provided, we just assign it to the byte buffer
+             * without creating a new memory instance to avoid extra copying.
+             */
+            this.data = data;
+        } else {
+            /**
+             * Otherwise, we create a new memory instance with the initial page size and connect it to the data view.
+             */
+            this.memory = new WebAssembly.Memory({
+                initial: ByteBuffer.INITIAL_MEMORY_PAGES_SIZE,
+            });
+            this.data = new DataView(this.memory.buffer);
+        }
     }
 
     /**
@@ -32,7 +72,7 @@ export class ByteBuffer {
      * @param value The uint8 value to set.
      */
     public setUint8(byteOffset: number, value: number): void {
-        this.chunks[byteOffset >> 6][byteOffset & 63] = value;
+        this.data.setUint8(byteOffset, value);
     }
 
     /**
@@ -42,7 +82,7 @@ export class ByteBuffer {
      * @returns The uint8 value.
      */
     public getUint8(byteOffset: number): number {
-        return this.chunks[byteOffset >> 6][byteOffset & 63];
+        return this.data.getUint8(byteOffset);
     }
 
     /**
@@ -57,7 +97,7 @@ export class ByteBuffer {
             this.allocate();
         }
 
-        this.setUint8(byteOffset, value);
+        this.data.setUint8(byteOffset, value);
         this.byteOffset += 1; // Uint8Array.BYTES_PER_ELEMENT
     }
 
@@ -69,10 +109,7 @@ export class ByteBuffer {
      * @param value The uint32 value to set.
      */
     public setUint32(byteOffset: number, value: number): void {
-        this.setUint8(byteOffset, value >> 24);
-        this.setUint8(byteOffset + 1, value >> 16);
-        this.setUint8(byteOffset + 2, value >> 8);
-        this.setUint8(byteOffset + 3, value);
+        this.data.setUint32(byteOffset, value);
     }
 
     /**
@@ -82,10 +119,7 @@ export class ByteBuffer {
      * @returns Uint32 value.
      */
     public getUint32(byteOffset: number) {
-        return ((this.getUint8(byteOffset + 3) << 0)
-            | (this.getUint8(byteOffset + 2) << 8)
-            | (this.getUint8(byteOffset + 1) << 16)
-            | (this.getUint8(byteOffset + 0) << 24)) >>> 0;
+        return this.data.getUint32(byteOffset);
     }
 
     /**
@@ -100,7 +134,7 @@ export class ByteBuffer {
             this.allocate();
         }
 
-        this.setUint32(byteOffset, value);
+        this.data.setUint32(byteOffset, value);
         this.byteOffset += 4; // Uint32Array.BYTES_PER_ELEMENT
     }
 
@@ -111,13 +145,18 @@ export class ByteBuffer {
      * @returns True if the buffer has enough capacity, otherwise false.
      */
     private hasCapacity(index: number): boolean {
-        return index + 1 >> 6 < this.chunks.length;
+        return index < this.data.byteLength;
     }
 
     /**
      * Allocates new chunk of 64 bytes.
      */
     private allocate(): void {
-        this.chunks.push(new Uint8Array(64));
+        this.memory.grow(ByteBuffer.MEMORY_PAGES_DELTA);
+        /**
+         * Every call to grow will detach any references to the old buffer.
+         * So we need to reassign the buffer to the data view.
+         */
+        this.data = new DataView(this.memory.buffer);
     }
 }

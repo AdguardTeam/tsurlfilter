@@ -68,7 +68,7 @@ describe('Start Engine Benchmark', () => {
             expect(engine).toBeTruthy();
             expect(engine.getRulesCount()).toEqual(91694);
 
-            const newBuffer = new ByteBuffer(buffer.chunks); // copy buffer
+            const newBuffer = new ByteBuffer(buffer.data); // copy buffer
 
             const hotStart = performance.now();
             const engineFromBuffer = Engine.from(ruleStorage, newBuffer);
@@ -127,7 +127,7 @@ describe('Start Engine Benchmark', () => {
             expect(networkEngine).toBeTruthy();
             expect(networkEngine.rulesCount).toEqual(44613);
 
-            const newBuffer = new ByteBuffer(buffer.chunks); // copy buffer
+            const newBuffer = new ByteBuffer(buffer.data); // copy buffer
 
             const hotStart = performance.now();
             const networkEngineFromBuffer = new NetworkEngine(ruleStorage, newBuffer, 0);

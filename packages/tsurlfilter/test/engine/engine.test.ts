@@ -925,7 +925,7 @@ describe('Engine', () => {
 
             expect(result.basicRule).not.toBeNull();
 
-            const restoredBuffer = new ByteBuffer(buffer.chunks);
+            const restoredBuffer = new ByteBuffer(buffer.data);
             const restoredEngine = Engine.from(storage, restoredBuffer);
 
             expect(restoredEngine.getRulesCount()).toBe(1);
