@@ -3,6 +3,11 @@ import zod from 'zod';
 import { platformSchema } from './platform';
 import { zodToCamelCase } from '../utils/zod-camelcase';
 
+export const booleanSchema = zod.union([
+    zod.string().transform((val) => val.trim().toLowerCase() === 'true'),
+    zod.boolean(),
+]);
+
 export const baseCompatibilityDataSchema = zod.object({
     name: zod.string().min(1),
     aliases: zod.array(zod.string().min(1)).nullable().default(null),
@@ -10,9 +15,9 @@ export const baseCompatibilityDataSchema = zod.object({
     docs: zod.string().min(1).nullable().default(null),
     version_added: zod.string().min(1).nullable().default(null),
     version_removed: zod.string().min(1).nullable().default(null),
-    deprecated: zod.boolean().default(false),
+    deprecated: booleanSchema.default(false),
     deprecation_message: zod.string().min(1).nullable().default(null),
-    removed: zod.boolean().default(false),
+    removed: booleanSchema.default(false),
     removal_message: zod.string().min(1).nullable().default(null),
 });
 
