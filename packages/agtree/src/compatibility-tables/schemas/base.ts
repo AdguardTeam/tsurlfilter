@@ -8,17 +8,22 @@ export const booleanSchema = zod.union([
     zod.boolean(),
 ]);
 
+export const nonEmptyStringSchema = zod
+    .string()
+    .transform((val) => val.trim())
+    .pipe(zod.string().min(1));
+
 export const baseCompatibilityDataSchema = zod.object({
-    name: zod.string().min(1),
-    aliases: zod.array(zod.string().min(1)).nullable().default(null),
-    description: zod.string().min(1).nullable().default(null),
-    docs: zod.string().min(1).nullable().default(null),
-    version_added: zod.string().min(1).nullable().default(null),
-    version_removed: zod.string().min(1).nullable().default(null),
+    name: nonEmptyStringSchema,
+    aliases: zod.array(nonEmptyStringSchema).nullable().default(null),
+    description: nonEmptyStringSchema.nullable().default(null),
+    docs: nonEmptyStringSchema.nullable().default(null),
+    version_added: nonEmptyStringSchema.nullable().default(null),
+    version_removed: nonEmptyStringSchema.nullable().default(null),
     deprecated: booleanSchema.default(false),
-    deprecation_message: zod.string().min(1).nullable().default(null),
+    deprecation_message: nonEmptyStringSchema.nullable().default(null),
     removed: booleanSchema.default(false),
-    removal_message: zod.string().min(1).nullable().default(null),
+    removal_message: nonEmptyStringSchema.nullable().default(null),
 });
 
 export const baseCompatibilityDataSchemaCamelCase = zodToCamelCase(baseCompatibilityDataSchema);
@@ -50,7 +55,18 @@ export const baseRefineLogic = (data: zod.infer<typeof baseCompatibilityDataSche
 
 // generic schema for compatibility data files
 export const baseFileSchema = <T extends BaseCompatibilityDataSchema>(dataSchema: zod.ZodType<T>) => {
-    return zod.record(platformSchema, dataSchema);
+    return zod.record(zod.any(), zod.any()).transform((val) => {
+        const result = val;
+
+        // note: js-yaml will leave `define` key in the object, but we don't need it
+        if ('define' in result) {
+            delete result.define;
+        }
+
+        return result;
+    }).pipe(
+        zod.record(platformSchema, dataSchema),
+    );
 };
 
 export type BaseFileSchema<T extends BaseCompatibilityDataSchema> = zod.infer<ReturnType<typeof baseFileSchema<T>>>;

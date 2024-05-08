@@ -1,14 +1,19 @@
 import zod from 'zod';
 
 import { zodToCamelCase } from '../utils/zod-camelcase';
-import { baseCompatibilityDataSchema, baseRefineLogic, booleanSchema } from './base';
+import {
+    baseCompatibilityDataSchema,
+    baseRefineLogic,
+    booleanSchema,
+    nonEmptyStringSchema,
+} from './base';
 
 const scriptletParameterSchema = zod.object({
-    name: zod.string().min(1),
+    name: nonEmptyStringSchema,
     required: booleanSchema,
-    description: zod.string().min(1).nullable().default(null),
-    pattern: zod.string().min(1).nullable().default(null),
-    default: zod.string().min(1).nullable().default(null),
+    description: nonEmptyStringSchema.nullable().default(null),
+    pattern: nonEmptyStringSchema.nullable().default(null),
+    default: nonEmptyStringSchema.nullable().default(null),
     debug: booleanSchema.default(false),
 });
 

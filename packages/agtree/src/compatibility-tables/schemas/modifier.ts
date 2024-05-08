@@ -2,7 +2,12 @@ import zod from 'zod';
 import XRegExp from 'xregexp';
 
 import { zodToCamelCase } from '../utils/zod-camelcase';
-import { baseCompatibilityDataSchema, baseRefineLogic, booleanSchema } from './base';
+import {
+    baseCompatibilityDataSchema,
+    baseRefineLogic,
+    booleanSchema,
+    nonEmptyStringSchema,
+} from './base';
 import { getErrorMessage } from '../../utils/error';
 
 const KNOWN_VALIDATORS = new Set([
@@ -13,14 +18,14 @@ const KNOWN_VALIDATORS = new Set([
 ]);
 
 export const modifierDataSchema = zodToCamelCase(baseCompatibilityDataSchema.extend({
-    conflicts: zod.array(zod.string().min(1)).nullable().default(null),
+    conflicts: zod.array(nonEmptyStringSchema).nullable().default(null),
     inverse_conflicts: booleanSchema.default(false),
     assignable: booleanSchema.default(false),
     negatable: booleanSchema.default(true),
     block_only: booleanSchema.default(false),
     exception_only: booleanSchema.default(false),
     value_optional: booleanSchema.default(false),
-    value_format: zod.string().min(1).nullable().default(null),
+    value_format: nonEmptyStringSchema.nullable().default(null),
 }).superRefine((data, ctx) => {
     // TODO: find something better, for now we can't add refine logic to the base schema:
     // https://github.com/colinhacks/zod/issues/454#issuecomment-848370721
