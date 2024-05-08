@@ -192,10 +192,10 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                     redirectResourceToCheck = redirectResource.slice(ABP_RESOURCE_PREFIX_LENGTH);
                 }
 
-                const convertedRedirectResource = redirectsCompatibilityTable.getEx(
+                const convertedRedirectResource = redirectsCompatibilityTable.getFirst(
                     redirectResourceToCheck,
                     GenericPlatform.AdgAny,
-                ).pop()?.name;
+                )?.name;
 
                 // Check if the modifier name or the redirect resource name is different from the original modifier.
                 // If so, add the converted modifier to the list

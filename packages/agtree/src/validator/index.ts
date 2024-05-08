@@ -59,10 +59,10 @@ const validateForSpecificSyntax = (
     }
 
     // needed for validation of negation, assignment, etc.
-    const specificBlockerData = modifiersCompatibilityTable.getEx(
+    const specificBlockerData = modifiersCompatibilityTable.getFirst(
         modifierName,
         convertSyntaxToGenericPlatform(syntax),
-    ).pop();
+    );
 
     // if no specific blocker data is found
     if (!specificBlockerData) {

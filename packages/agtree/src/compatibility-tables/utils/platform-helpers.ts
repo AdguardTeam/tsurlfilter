@@ -1,6 +1,9 @@
 /* eslint-disable no-bitwise */
 import { GenericPlatform, SpecificPlatform } from '../platforms';
 
+/**
+ * Map of specific platforms string names to their corresponding enum values.
+ */
 export const SPECIFIC_PLATFORM_MAP: Map<string, SpecificPlatform> = new Map([
     ['adg_os_windows', SpecificPlatform.AdgOsWindows],
     ['adg_os_mac', SpecificPlatform.AdgOsMac],
@@ -26,6 +29,18 @@ export const SPECIFIC_PLATFORM_MAP: Map<string, SpecificPlatform> = new Map([
     ['abp_ext_firefox', SpecificPlatform.AbpExtFirefox],
 ]);
 
+/**
+ * Map of specific platforms enum values to their corresponding string names.
+ *
+ * @note Reverse of {@link SPECIFIC_PLATFORM_MAP}.
+ */
+export const SPECIFIC_PLATFORM_MAP_REVERSE: Map<SpecificPlatform, string> = new Map(
+    [...SPECIFIC_PLATFORM_MAP].map(([key, value]) => [value, key]),
+);
+
+/**
+ * Map of generic platforms string names to their corresponding enum values.
+ */
 export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
     ['adg_os_any', GenericPlatform.AdgOsAny],
     ['adg_cb_any', GenericPlatform.AdgCbAny],
@@ -44,7 +59,56 @@ export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
     ['any', GenericPlatform.Any],
 ]);
 
+/**
+ * Check if the platform is a generic platform.
+ *
+ * @param platform Platform to check.
+ *
+ * @returns True if the platform is a generic platform, false otherwise.
+ */
 export const isGenericPlatform = (platform: number): boolean => {
     // if more than one bit is set, it's a generic platform
     return !!(platform & (platform - 1));
+};
+
+/**
+ * Returns the platform enum value for the given platform string name.
+ *
+ * @param platform Platform string name, e.g., 'adg_os_windows'.
+ *
+ * @returns Specific or generic platform enum value.
+ * @throws Error if the platform is unknown.
+ */
+export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatform => {
+    const specificPlatform = SPECIFIC_PLATFORM_MAP.get(platform);
+
+    if (specificPlatform) {
+        return specificPlatform;
+    }
+
+    const genericPlatform = GENERIC_PLATFORM_MAP.get(platform);
+
+    if (genericPlatform) {
+        return genericPlatform;
+    }
+
+    throw new Error(`Unknown platform: ${platform}`);
+};
+
+/**
+ * Returns the specific platform string name for the given platform enum value.
+ *
+ * @param platform Specific platform enum value.
+ *
+ * @returns Specific platform string name, e.g., 'adg_os_windows'.
+ * @throws Error if the platform is unknown.
+ */
+export const getSpecificPlatformName = (platform: SpecificPlatform): string => {
+    const specificPlatform = SPECIFIC_PLATFORM_MAP_REVERSE.get(platform);
+
+    if (!specificPlatform) {
+        throw new Error(`Unknown platform: ${platform}`);
+    }
+
+    return specificPlatform;
 };
