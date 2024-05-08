@@ -4,7 +4,14 @@ import zod from 'zod';
 import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../utils/platform-helpers';
 import { isUndefined } from '../../utils/common';
 
+/**
+ * Platform separator, e.g. 'adg_cb_any|adg_os_any' means AdGuard content blockers and AdGuard for Safari.
+ */
 const PLATFORM_SEPARATOR = '|';
+
+/**
+ * Platform negation character, e.g. 'adg_any|~adg_cb_any' means any AdGuard platform except content blockers.
+ */
 const PLATFORM_NEGATION = '~';
 
 export const parseRawPlatforms = (rawPlatforms: string): number => {
