@@ -4,10 +4,13 @@ import zod from 'zod';
 import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../utils/platform-helpers';
 import { isUndefined } from '../../utils/common';
 
+const PLATFORM_SEPARATOR = '|';
+const PLATFORM_NEGATION = '~';
+
 export const parseRawPlatforms = (rawPlatforms: string): number => {
     // e.g. 'adg_cb_any|adg_os_any'
     const rawPlatformList = rawPlatforms
-        .split('|')
+        .split(PLATFORM_SEPARATOR)
         .map((rawPlatform) => rawPlatform.trim());
 
     let result = 0;
@@ -16,7 +19,7 @@ export const parseRawPlatforms = (rawPlatforms: string): number => {
         // negation, e.g. 'adg_any|~adg_cb_any' means any AdGuard platform except content blockers
         let negated = false;
 
-        if (rawPlatform.startsWith('~')) {
+        if (rawPlatform.startsWith(PLATFORM_NEGATION)) {
             negated = true;
             rawPlatform = rawPlatform.slice(1).trim();
         }
