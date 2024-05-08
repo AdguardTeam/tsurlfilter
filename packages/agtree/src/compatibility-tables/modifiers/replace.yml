@@ -1,9 +1,7 @@
-adg_os_any:
-  name: replace
+define: &common_props
   description: |-
     This modifier completely changes the rule behavior.
     If it is applied, the rule will not block the request. The response is going to be modified instead.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
   conflicts:
     - app
     - domain
@@ -35,38 +33,17 @@ adg_os_any:
           ([gimuy]*)?
       $
 
+adg_os_any:
+  name: replace
+  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
+  <<: *common_props
+
 adg_ext_firefox:
   name: replace
-  description: |-
-    This modifier completely changes the rule behavior.
-    If it is applied, the rule will not block the request. The response is going to be modified instead.
   docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#replace-modifier
-  conflicts:
-    - domain
-    - document
-    - subdocument
-    - script
-    - stylesheet
-    - other
-    - xmlhttprequest
-    - first-party
-    - third-party
-    - important
-    - badfilter
-  inverse_conflicts: true
-  assignable: true
-  negatable: false
-  value_format: |-
-    (?xi)
-      ^
-        \/
-          # the regexp to match by
-          (.+)
-        # separator
-        \/
-          # replacement
-          (.+)?
-        \/
-          # flags
-          ([gimuy]*)?
-      $
+  <<: *common_props
+
+ubo_ext_firefox:
+  name: replace
+  docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#replace
+  <<: *common_props

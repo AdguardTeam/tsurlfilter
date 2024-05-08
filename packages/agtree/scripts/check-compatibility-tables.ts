@@ -250,6 +250,9 @@ for (const [globPattern, schema] of Object.entries(SCHEMA_MAP)) {
             // In order to avoid type errors, we need to cast the schema to 'Struct<unknown>'.
             // It is safe to do so because we don't use create()'s return value.
             // TODO: Better way to do this? Is it necessary?
+            if (typeof data === 'object' && data !== null && 'define' in data) {
+                delete data.define;
+            }
             ss.create(data, schema as ss.Struct<unknown>);
         } catch (error: unknown) {
             if (error instanceof Error) {
