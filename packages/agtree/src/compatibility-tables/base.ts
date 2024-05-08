@@ -87,6 +87,7 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         return isUndefined(idx) ? null : data.shared[idx];
     }
 
+    // FIXME: make clear platform for returned elements
     public getEx(name: string, platform: SpecificPlatform | GenericPlatform): T[] {
         const data = this.getRowStorage(name);
 
