@@ -105,6 +105,8 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
                     }
                 }
             }
+
+            return false;
         }
 
         const idx = data.map[platform];
