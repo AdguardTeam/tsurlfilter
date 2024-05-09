@@ -92,8 +92,9 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
         };
 
         if (isGenericPlatform(platform)) {
-            // in this case, we can't index the platform directly,
-            // instead, we need to iterate over the keys and check if the platform is supported
+            // Since indexes are specific platforms in the compatibility table data,
+            // we can't index them directly if the platform is generic (union of specific platforms).
+            // In this case, we need to iterate over the keys and return true on the first match.
             const keys = Object.keys(data.map);
             for (let i = 0; i < keys.length; i += 1) {
                 const key = Number(keys[i]);

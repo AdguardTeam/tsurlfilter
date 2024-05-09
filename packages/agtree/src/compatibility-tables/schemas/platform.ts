@@ -5,12 +5,12 @@ import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../utils/platform-h
 import { isUndefined } from '../../utils/common';
 
 /**
- * Platform separator, e.g. 'adg_cb_any|adg_os_any' means AdGuard content blockers and AdGuard for Safari.
+ * Platform separator, e.g. 'adg_os_any|adg_cb_any' means any AdGuard OS platform and any AdGuard content blocker.
  */
 const PLATFORM_SEPARATOR = '|';
 
 /**
- * Platform negation character, e.g. 'adg_any|~adg_cb_any' means any AdGuard platform except content blockers.
+ * Platform negation character, e.g. 'adg_any|~adg_cb_any' means any AdGuard product except content blockers.
  */
 const PLATFORM_NEGATION = '~';
 
@@ -23,7 +23,7 @@ export const parseRawPlatforms = (rawPlatforms: string): number => {
     let result = 0;
 
     for (let rawPlatform of rawPlatformList) {
-        // negation, e.g. 'adg_any|~adg_cb_any' means any AdGuard platform except content blockers
+        // negation, e.g. 'adg_any|~adg_cb_any' means any AdGuard product except content blockers
         let negated = false;
 
         if (rawPlatform.startsWith(PLATFORM_NEGATION)) {
