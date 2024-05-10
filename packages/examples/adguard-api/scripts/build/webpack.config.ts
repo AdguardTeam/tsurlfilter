@@ -1,24 +1,35 @@
-import path from "path";
-import { Configuration } from "webpack";
-import CopyWebpackPlugin from "copy-webpack-plugin";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import { CleanWebpackPlugin } from "clean-webpack-plugin";
-import { BACKGROUND_PATH, CONTENT_SCRIPT, POPUP_PATH, BUILD_PATH, ASSISTANT_INJECT } from "../constants";
+import path from 'path';
+import { Configuration } from 'webpack';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import {
+    BACKGROUND_PATH,
+    CONTENT_SCRIPT,
+    POPUP_PATH,
+    BUILD_PATH,
+    ASSISTANT_INJECT,
+} from '../constants';
 
 export const config: Configuration = {
-    mode: "production",
+    mode: 'production',
     entry: {
         background: BACKGROUND_PATH,
-        "content-script": CONTENT_SCRIPT,
-        "adguard-assistant": ASSISTANT_INJECT,
+        'content-script': CONTENT_SCRIPT,
+        'adguard-assistant': ASSISTANT_INJECT,
         popup: POPUP_PATH,
     },
     output: {
         path: BUILD_PATH,
-        filename: "[name].js",
+        filename: '[name].js',
     },
     resolve: {
-        extensions: ["*", ".ts", ".js"],
+        extensions: ['*', '.ts', '.js'],
+        fallback: {
+            crypto: require.resolve('crypto-browserify'),
+            stream: require.resolve('stream-browserify'),
+            vm: require.resolve('vm-browserify'),
+        },
     },
     module: {
         rules: [
@@ -27,7 +38,7 @@ export const config: Configuration = {
                 exclude: /node_modules/,
                 use: [
                     {
-                        loader: "swc-loader",
+                        loader: 'swc-loader',
                         options: {
                             env: {
                                 targets: {
@@ -48,23 +59,23 @@ export const config: Configuration = {
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            template: path.join(BACKGROUND_PATH, "index.html"),
-            filename: "background.html",
-            chunks: ["background"],
+            template: path.join(BACKGROUND_PATH, 'index.html'),
+            filename: 'background.html',
+            chunks: ['background'],
             cache: false,
         }),
         new HtmlWebpackPlugin({
-            template: path.join(POPUP_PATH, "index.html"),
-            filename: "popup.html",
-            chunks: ["popup"],
+            template: path.join(POPUP_PATH, 'index.html'),
+            filename: 'popup.html',
+            chunks: ['popup'],
             cache: false,
         }),
         new CopyWebpackPlugin({
             patterns: [
                 {
-                    context: "extension",
-                    from: "manifest.json",
-                    to: "manifest.json",
+                    context: 'extension',
+                    from: 'manifest.json',
+                    to: 'manifest.json',
                 },
             ],
         }),

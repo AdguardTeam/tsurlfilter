@@ -84,3 +84,12 @@
 
 ---
 !include 'logger-test.yaml'
+
+---
+!include 'examples-adguard-api-tests.yaml'
+
+---
+!include 'examples-tswebextension-mv2-tests.yaml'
+
+---
+!include 'examples-tswebextension-mv3-tests.yaml'

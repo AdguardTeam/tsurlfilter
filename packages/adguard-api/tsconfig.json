@@ -8,12 +8,13 @@
         "tasks/**/*.ts",
         "constants.ts",
         "rollup.config.ts",
+        ".eslintrc.js"
     ],
     "ts-node": {
         "swc": true,
         "compilerOptions": {
             "module": "nodenext",
-            "moduleResolution": "nodenext",
+            "moduleResolution": "nodenext"
         }
     }
 }

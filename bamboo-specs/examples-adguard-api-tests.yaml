@@ -2,8 +2,8 @@
 version: 2
 plan:
   project-key: AJL
-  key: CSSTOKENIZERTEST
-  name: CSS Tokenizer - tests
+  key: AGAPIEXTEST
+  name: examples-adguard-api - tests
 variables:
   dockerContainer: adguard/node-ssh:18.19--0
 
@@ -50,7 +50,7 @@ Test:
               pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
             }
 
-            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/css-tokenizer"; then
+            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "adguard-api-example"; then
               echo "No changes in project, skipping tests"
               exit 0;
             fi
@@ -58,14 +58,17 @@ Test:
             # Install dependencies
             pnpm install
 
-            # Check TypeScript types with TSC
-            pnpm --filter @adguard/css-tokenizer check-types
+            # Lint
+            pnpm --filter adguard-api-example lint
 
-            # ESLint & Markdownlint
-            pnpm --filter @adguard/css-tokenizer lint
-
-            # Run tests with Jest
-            pnpm --filter @adguard/css-tokenizer test
+            # Build
+            npx lerna run build --scope adguard-api-example --include-dependencies
+  artifacts:
+    - name: extension.zip
+      location: packages/examples/adguard-api/build
+      pattern: extension.zip
+      shared: true
+      required: false
   final-tasks:
     - script:
         interpreter: SHELL

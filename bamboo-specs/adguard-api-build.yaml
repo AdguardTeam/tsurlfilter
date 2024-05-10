@@ -43,7 +43,11 @@ Build:
             # Install dependencies
             pnpm install
 
+            # Build api
             npx lerna run build --scope @adguard/api --include-dependencies
+
+            # Build extension with api, for manual testing
+            npx lerna run build --scope adguard-api-example --include-dependencies
 
             cd packages/adguard-api
             pnpm pack && mv adguard-api-*.tgz adguard-api.tgz
@@ -78,6 +82,11 @@ Build:
     - name: adguard-api.tgz
       location: packages/adguard-api/
       pattern: adguard-api.tgz
+      shared: true
+      required: true
+    - name: extension.zip
+      location: packages/examples/adguard-api/build
+      pattern: extension.zip
       shared: true
       required: true
   requirements:

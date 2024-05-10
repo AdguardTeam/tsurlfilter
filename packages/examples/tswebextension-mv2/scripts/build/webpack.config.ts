@@ -39,7 +39,7 @@ export const config: Configuration = {
                 exclude: /node_modules/,
                 use: [
                     {
-                        loader: "swc-loader",
+                        loader: 'swc-loader',
                         options: {
                             env: {
                                 targets: {

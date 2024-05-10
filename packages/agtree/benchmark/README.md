@@ -9,13 +9,13 @@ The benchmark results can be found in [`benchmark/RESULTS.md`][results].
 Build AGTree in the parent directory:
 
 ```sh
-yarn build
+pnpm build
 ```
 
 Then run the benchmark, simply execute the following command in this directory:
 
 ```sh
-yarn start
+pnpm start
 ```
 
 The results will be displayed on the console and saved in [`benchmark/RESULTS.md`][results].

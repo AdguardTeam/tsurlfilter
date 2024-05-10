@@ -16,7 +16,7 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import zod from "zod";
+import zod from 'zod';
 
 /**
  * Filter group metadata item runtime validator

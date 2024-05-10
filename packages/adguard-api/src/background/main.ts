@@ -22,15 +22,20 @@ import {
     type MessageHandlerMV2,
     EventChannel,
     createTsWebExtension,
-} from "@adguard/tswebextension";
+} from '@adguard/tswebextension';
 
-import { Network } from "./network";
-import { Storage } from "./storage";
-import { FiltersApi, FiltersUpdateService, LocaleDetectService } from "./filters";
-import { Configuration, configurationValidator } from "./schemas";
-import { DeleteFiltersEvent, DetectFiltersEvent, notifier, NotifierEventType } from "./notifier";
-import { RequestBlockingLogger } from "./request-blocking-logger";
-import { Logger } from "./logger";
+import { Network } from './network';
+import { Storage } from './storage';
+import { FiltersApi, FiltersUpdateService, LocaleDetectService } from './filters';
+import { Configuration, configurationValidator } from './schemas';
+import {
+    DeleteFiltersEvent,
+    DetectFiltersEvent,
+    notifier,
+    NotifierEventType,
+} from './notifier';
+import { RequestBlockingLogger } from './request-blocking-logger';
+import { Logger } from './logger';
 
 /**
  * By the rules of Firefox AMO we cannot use remote scripts (and our JS rules can be counted as such).
@@ -42,9 +47,9 @@ import { Logger } from "./logger";
  * 3. We also allow "User rules" to work since those rules are added manually by the user.
  *  This way filters maintainers can test new rules before including them in the filters.
  */
-import localScriptRules from "../local_script_rules.json";
+import localScriptRules from '../local_script_rules.json';
 
-export const WEB_ACCESSIBLE_RESOURCES_PATH = "adguard";
+export const WEB_ACCESSIBLE_RESOURCES_PATH = 'adguard';
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -226,7 +231,7 @@ export class AdguardApi {
      */
     private async createTsWebExtensionConfiguration(): Promise<TsWebExtensionConfiguration> {
         if (!this.configuration) {
-            throw new Error("Api configuration is not set");
+            throw new Error('Api configuration is not set');
         }
 
         let allowlistInverted = false;
@@ -250,7 +255,7 @@ export class AdguardApi {
             userrules,
             settings: {
                 documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
-                assistantUrl: "adguard-assistant.js",
+                assistantUrl: 'adguard-assistant.js',
                 filteringEnabled: this.configuration.filteringEnabled,
                 debugScriptlets: false,
                 stealthModeEnabled: true,
@@ -280,7 +285,7 @@ export class AdguardApi {
 
         await this.tswebextension.configure(tsWebExtensionConfig);
 
-        this.logger.info("Reload engine with updated filter ids list");
+        this.logger.info('Reload engine with updated filter ids list');
     }
 
     /**
@@ -307,7 +312,7 @@ export class AdguardApi {
      */
     private async handleDetectFilters(event: DetectFiltersEvent): Promise<void> {
         if (!this.configuration) {
-            throw new Error("Api configuration is not set");
+            throw new Error('Api configuration is not set');
         }
 
         const { filters: currentFilters } = this.configuration;

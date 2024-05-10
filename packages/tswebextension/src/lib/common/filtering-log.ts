@@ -131,7 +131,8 @@ export type ApplyPermissionsRuleEvent = {
 export type ApplyCosmeticRuleEventData = {
     tabId: number,
     eventId: string,
-    rule: CosmeticRule,
+    ruleIndex: number,
+    filterId: number,
     element: string,
     frameUrl: string,
     frameDomain: string,

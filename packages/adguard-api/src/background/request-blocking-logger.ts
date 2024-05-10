@@ -23,7 +23,7 @@ import {
     EventChannel,
     EventChannelListener,
     FilteringEventType,
-} from "@adguard/tswebextension";
+} from '@adguard/tswebextension';
 
 export type RequestBlockingEvent = {
     // Tab identifier.
@@ -75,7 +75,13 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      * @param event - {@link ApplyBasicRuleEvent}
      */
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
-        const { rule, tabId, requestUrl, requestType, frameUrl } = event.data;
+        const {
+            rule,
+            tabId,
+            requestUrl,
+            requestType,
+            frameUrl,
+        } = event.data;
 
         // exclude allowlist rules
         if (rule.isAllowlist()) {

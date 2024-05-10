@@ -16,13 +16,13 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Network } from "../network";
-import { Storage } from "../storage";
-import { metadataValidator, Metadata, FilterMetadata } from "../schemas";
-import { Logger } from "../logger";
+import { Network } from '../network';
+import { Storage } from '../storage';
+import { metadataValidator, Metadata, FilterMetadata } from '../schemas';
+import { Logger } from '../logger';
 
 // Metadata storage key for browser.storage.local
-export const METADATA_STORAGE_KEY = "metadata";
+export const METADATA_STORAGE_KEY = 'metadata';
 
 /**
  * Metadata Api provides methods for managing app {@link Metadata}
@@ -54,7 +54,7 @@ export class MetadataApi {
     public async init(): Promise<void> {
         const storageData = await this.storage.get(METADATA_STORAGE_KEY);
 
-        if (typeof storageData !== "string") {
+        if (typeof storageData !== 'string') {
             await this.loadMetadata();
             return;
         }
@@ -63,7 +63,7 @@ export class MetadataApi {
             const metadata = JSON.parse(storageData);
             this.metadata = metadataValidator.parse(metadata);
         } catch (e) {
-            this.logger.warn("Can`t parse data from metadata storage, load it from backend", e);
+            this.logger.warn('Can`t parse data from metadata storage, load it from backend', e);
             await this.loadMetadata();
         }
     }
@@ -77,7 +77,7 @@ export class MetadataApi {
             await this.storage.set(METADATA_STORAGE_KEY, JSON.stringify(metadata));
             this.metadata = metadata;
         } catch (e) {
-            this.logger.error("Can`t download metadata", e);
+            this.logger.error('Can`t download metadata', e);
         }
     }
 
@@ -89,7 +89,7 @@ export class MetadataApi {
      */
     public getFiltersMetadata(): FilterMetadata[] {
         if (!this.metadata) {
-            throw new Error("Metadata is not loaded!");
+            throw new Error('Metadata is not loaded!');
         }
         return this.metadata.filters;
     }

@@ -145,6 +145,15 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Ctag,
 
     /**
+     * Cosmetic option modifiers
+     */
+    CosmeticOption = NetworkRuleOption.Elemhide
+    | NetworkRuleOption.Generichide
+    | NetworkRuleOption.Specifichide
+    | NetworkRuleOption.Jsinject
+    | NetworkRuleOption.Content,
+
+    /**
      * Removeparam compatible modifiers
      *
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
@@ -196,6 +205,8 @@ export enum NetworkRuleGroupOptions {
  */
 export class NetworkRule implements rule.IRule {
     private readonly ruleText: string;
+
+    private readonly ruleIndex: number;
 
     private readonly filterListId: number;
 
@@ -439,6 +450,10 @@ export class NetworkRule implements rule.IRule {
      */
     getText(): string {
         return this.ruleText;
+    }
+
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     /**
@@ -1027,11 +1042,12 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = rule.DEFAULT_RULE_INDEX) {
         const node = NetworkRuleParser.parse(ruleText.trim(), { ...defaultParserOptions, isLocIncluded: false });
         // Raw rule text definitely present here
         this.ruleText = node.raws!.text!;
 
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
         this.allowlist = node.exception;
 
@@ -1085,6 +1101,13 @@ export class NetworkRule implements rule.IRule {
      */
     hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
+    }
+
+    /**
+     * Returns true if rule has at least one cosmetic option enabled.
+     */
+    hasCosmeticOption(): boolean {
+        return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
     }
 
     /**

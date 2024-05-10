@@ -35,14 +35,14 @@ export class Version {
     public data: number[] = [];
 
     constructor(version: string) {
-        const parts = String(version || "").split(".", Version.MAX_LENGTH);
+        const parts = String(version || '').split('.', Version.MAX_LENGTH);
 
         for (let i = 0; i < Version.MAX_LENGTH; i += 1) {
-            if (parts[i] === "") {
+            if (parts[i] === '') {
                 throw new Error(`Found empty part in string '${version}'`);
             }
 
-            const part = parts[i] || "0";
+            const part = parts[i] || '0';
 
             if (Number.isNaN(Number.parseInt(part, 10))) {
                 throw new Error(`Can not parse '${version}' string`);
@@ -64,8 +64,8 @@ export class Version {
             const leftPart = this.data[i];
             const rightPart = version?.data?.[i];
 
-            if (typeof leftPart !== "number" || typeof rightPart !== "number") {
-                throw new Error("Can not compare versions");
+            if (typeof leftPart !== 'number' || typeof rightPart !== 'number') {
+                throw new Error('Can not compare versions');
             }
 
             if (leftPart > rightPart) {

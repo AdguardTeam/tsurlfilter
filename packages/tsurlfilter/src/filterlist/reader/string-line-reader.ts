@@ -58,4 +58,9 @@ export class StringLineReader implements ILineReader {
     public getCurrentPos(): number {
         return this.currentIndex;
     }
+
+    /** @inheritdoc */
+    public getDataLength(): number {
+        return this.text.length;
+    }
 }

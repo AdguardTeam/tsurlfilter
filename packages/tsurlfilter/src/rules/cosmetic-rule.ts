@@ -165,6 +165,8 @@ interface ProcessedModifiers {
 export class CosmeticRule implements rule.IRule {
     private readonly ruleText: string;
 
+    private readonly ruleIndex: number;
+
     private readonly filterListId: number;
 
     private readonly type: CosmeticRuleType;
@@ -222,6 +224,10 @@ export class CosmeticRule implements rule.IRule {
 
     getText(): string {
         return this.ruleText;
+    }
+
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     getFilterListId(): number {
@@ -619,10 +625,11 @@ export class CosmeticRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex: number = rule.DEFAULT_RULE_INDEX) {
         // Parse the rule and get the raws
         const { ruleNode, ruleRaws } = CosmeticRule.getRuleNodeAndRaws(ruleText.trim());
 
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
         this.ruleText = ruleRaws.ruleText;
@@ -735,7 +742,7 @@ export class CosmeticRule implements rule.IRule {
     }
 
     /**
-     * Updates this.scriptData and if scriptlet this.scriptletData with js ready to execute
+     * Updates this.scriptData and this.scriptletData when it is necessary in a lazy way.
      *
      * @param options
      */
@@ -749,8 +756,12 @@ export class CosmeticRule implements rule.IRule {
             return;
         }
 
-        if (!this.scriptletParams || this.scriptletParams.length < 1) {
-            throw new Error('At least the scriptlet name should be specified');
+        // A scriptlet without a name can only be an allowlist scriptlet
+        // https://github.com/AdguardTeam/Scriptlets/issues/377
+        // or it is considered invalid if the scriptlet was invalid.
+        // This does not require finding scriptData and scriptletData.
+        if (!this.scriptletParams.length) {
+            return;
         }
 
         const params: scriptlets.IConfiguration = {

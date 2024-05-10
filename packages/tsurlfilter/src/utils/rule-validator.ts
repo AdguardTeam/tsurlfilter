@@ -61,7 +61,8 @@ export class RuleValidator {
 
             // Validate network rules
             const rule = new NetworkRule(ruleText, 0);
-            RuleValidator.validateRegexp(rule.getPattern(), rule.getText());
+            const trimmed = ruleText.trim();
+            RuleValidator.validateRegexp(rule.getPattern(), trimmed);
         } catch (e) {
             const errorMessage = `Error: "${(e as Error).message}" in the rule: "${ruleText}"`;
             return RuleValidator.createValidationResult(false, errorMessage);

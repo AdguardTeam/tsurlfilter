@@ -22,6 +22,7 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
         allowlistInverted: false,
         stealthModeEnabled: true,
         filteringEnabled: true,
+        debugScriptlets: true,
         stealth: {
             blockChromeClientData: true,
             hideReferrer: true,

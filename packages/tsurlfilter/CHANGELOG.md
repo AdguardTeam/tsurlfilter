@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$permissions` modifier.
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules [#64].
+- Ability to allowlist scriptlets by name [#377].
+- New rule indexing algorithm. The storage index is now an integer representing 
+  the rule position in the concatenated filter list text. 
+  The list id is determined by the pre-stored filter list offset during the scan.
 
 ### Changed
 
@@ -32,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scriptlets not being logged when filtering log is open [AdguardBrowserExtension#2481].
 - Filtering log clearing on `$removeparam` rule application [AdguardBrowserExtension#2442].
 - Extension leaking it's instance id when redirecting requests [AdguardBrowserExtension#2278].
+- Cosmetic option allowlist rules interfering with basic blocking rules [AdguardBrowserExtension#2690].
 
 [#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
 [#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
@@ -41,16 +46,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
 [#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
 [#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
+[AdguardBrowserExtension#2690]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2690
 [AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
 [AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
+## [2.2.19] - 2024-04-03
+
+### Added
+
+- Simple support of `$header` modifier — just for compiler validation.
+
+[2.2.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.19
 
 ## [2.2.18] - 2024-03-29
 
 ### Fixed
 
-- Do not block "Should collapse" mechanism with `$popup` rules
+- Do not block "Should collapse" mechanism with `$popup` rules.
 
 [2.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.18
 

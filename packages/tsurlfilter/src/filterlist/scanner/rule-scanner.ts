@@ -1,6 +1,6 @@
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { IndexedRule, type IRule } from '../../rules/rule';
+import { DEFAULT_RULE_INDEX, IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
 import { type ILineReader } from '../reader/line-reader';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
@@ -124,6 +124,7 @@ export class RuleScanner {
                 const rule = RuleFactory.createRule(
                     line,
                     this.listId,
+                    DEFAULT_RULE_INDEX, // FIXME(David, v2.3): rule index
                     this.ignoreNetwork,
                     this.ignoreCosmetic,
                     this.ignoreHost,
@@ -148,6 +149,24 @@ export class RuleScanner {
         }
 
         return null;
+    }
+
+    /**
+     * Get filter list id.
+     *
+     * @returns List id.
+     */
+    public getListId(): number {
+        return this.listId;
+    }
+
+    /**
+     * Get the length of the data read by the scanner.
+     *
+     * @returns Data length.
+     */
+    public getDataLength(): number {
+        return this.reader.getDataLength();
     }
 
     /**

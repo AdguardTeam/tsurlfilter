@@ -16,12 +16,12 @@
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Storage } from "../storage";
-import { filterVersionStorageDataValidator, FilterVersionData, FilterVersionStorageData } from "../schemas";
-import { Logger } from "../logger";
+import { Storage } from '../storage';
+import { filterVersionStorageDataValidator, FilterVersionData, FilterVersionStorageData } from '../schemas';
+import { Logger } from '../logger';
 
 // Filters versions data storage key for browser.storage.local
-export const FILTERS_VERSIONS_KEY = "versions";
+export const FILTERS_VERSIONS_KEY = 'versions';
 
 /**
  * Api for managing filter version data
@@ -49,7 +49,7 @@ export class VersionsApi {
     public async init(): Promise<void> {
         const storageData = await this.storage.get(FILTERS_VERSIONS_KEY);
 
-        if (typeof storageData !== "string") {
+        if (typeof storageData !== 'string') {
             this.loadDefaultData();
             return;
         }
@@ -58,7 +58,7 @@ export class VersionsApi {
             const versions = JSON.parse(storageData);
             this.versions = filterVersionStorageDataValidator.parse(versions);
         } catch (e) {
-            this.logger.warn("Can`t parse data from versions storage, load default data", e);
+            this.logger.warn('Can`t parse data from versions storage, load default data', e);
             this.loadDefaultData();
         }
     }
@@ -73,7 +73,7 @@ export class VersionsApi {
      */
     public getInstalledFilters(): number[] {
         if (!this.versions) {
-            throw new Error("Filter versions are not initialized");
+            throw new Error('Filter versions are not initialized');
         }
         return Object.keys(this.versions).map((id) => Number(id));
     }
@@ -87,7 +87,7 @@ export class VersionsApi {
      */
     public get(filterId: number): FilterVersionData | undefined {
         if (!this.versions) {
-            throw new Error("Filter versions are not initialized");
+            throw new Error('Filter versions are not initialized');
         }
 
         return this.versions[filterId];
@@ -102,7 +102,7 @@ export class VersionsApi {
      */
     public async set(filterId: number, data: FilterVersionData): Promise<void> {
         if (!this.versions) {
-            throw new Error("Filter versions are not initialized");
+            throw new Error('Filter versions are not initialized');
         }
 
         this.versions[filterId] = data;
@@ -117,7 +117,7 @@ export class VersionsApi {
      */
     public async delete(filterId: number): Promise<void> {
         if (!this.versions) {
-            throw new Error("Filter versions are not initialized");
+            throw new Error('Filter versions are not initialized');
         }
 
         delete this.versions[filterId];

@@ -1,13 +1,8 @@
-import { ConfigurationMV2, TsWebExtension } from '@adguard/tswebextension';
+import { ConfigurationMV2 } from '@adguard/tswebextension';
 import { LogDetails } from './logger';
 
-declare global {
-    interface Window {
-        tsWebExtension: TsWebExtension;
-    }
-}
-
 export const addQunitListeners = (logResultFnName: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let qUnit: any;
 
     Object.defineProperty(window, 'QUnit', {
@@ -19,8 +14,10 @@ export const addQunitListeners = (logResultFnName: string) => {
             qUnit.on('runEnd', (details: LogDetails) => {
                 const name = document.getElementById('qunit-header')?.textContent;
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (<any>window)[logResultFnName](Object.assign(details, { name }));
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (<any>window).testsCompleted = true;
             });
         },
@@ -43,5 +40,6 @@ export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) 
 };
 
 export const waitUntilTestsCompleted = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (<any>window).testsCompleted;
 };

@@ -14,15 +14,15 @@ describe('Element utils - parsing', () => {
         result = ElementUtils.parseInfo('\'adguard-;ruleText\'', 'adguard');
         expect(result).toBeNull();
 
-        result = ElementUtils.parseInfo('\'adguard1;ruleText\'', 'adguard');
+        result = ElementUtils.parseInfo('\'adguard1;1\'', 'adguard');
         expect(result).not.toBeNull();
         expect(result?.filterId).toBe(1);
-        expect(result?.ruleText).toBe('ruleText');
+        expect(result?.ruleIndex).toBe(1);
 
-        result = ElementUtils.parseInfo('\'adguard0;adguardRule;\'', 'adguard');
+        result = ElementUtils.parseInfo('\'adguard0;1;\'', 'adguard');
         expect(result).not.toBeNull();
         expect(result?.filterId).toBe(0);
-        expect(result?.ruleText).toBe('adguardRule;');
+        expect(result?.ruleIndex).toBe(1);
     });
 
     it('checks parseExtendedStyleInfo', () => {
@@ -35,14 +35,14 @@ describe('Element utils - parsing', () => {
         result = ElementUtils.parseExtendedStyleInfo('marker:1', 'marker');
         expect(result).toBeNull();
 
-        result = ElementUtils.parseExtendedStyleInfo('\'adguard1;ruleText\'', 'adguard');
+        result = ElementUtils.parseExtendedStyleInfo('\'adguard1;1\'', 'adguard');
         expect(result).not.toBeNull();
         expect(result?.filterId).toBe(1);
-        expect(result?.ruleText).toBe('ruleText');
+        expect(result?.ruleIndex).toBe(1);
 
-        result = ElementUtils.parseExtendedStyleInfo('\'adguard1;ruleText\' !important', 'adguard');
+        result = ElementUtils.parseExtendedStyleInfo('\'adguard1;1\' !important', 'adguard');
         expect(result).not.toBeNull();
         expect(result?.filterId).toBe(1);
-        expect(result?.ruleText).toBe('ruleText');
+        expect(result?.ruleIndex).toBe(1);
     });
 });
