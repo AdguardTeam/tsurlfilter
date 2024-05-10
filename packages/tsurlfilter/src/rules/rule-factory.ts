@@ -43,31 +43,31 @@ export class RuleFactory {
             return null;
         }
 
-        if (RuleFactory.isShort(line)) {
-            logger.info(`The rule is too short: ${line}`);
+        if (RuleFactory.isShort(text)) {
+            logger.info(`The rule is too short: ${text}`);
         }
 
         try {
-            if (RuleFactory.isCosmetic(line)) {
+            if (RuleFactory.isCosmetic(text)) {
                 if (ignoreCosmetic) {
                     return null;
                 }
 
-                return new CosmeticRule(line, filterListId, ruleIndex);
+                return new CosmeticRule(text, filterListId, ruleIndex);
             }
 
             if (!ignoreHost) {
-                const hostRule = RuleFactory.createHostRule(line, filterListId, ruleIndex);
+                const hostRule = RuleFactory.createHostRule(text, filterListId, ruleIndex);
                 if (hostRule) {
                     return hostRule;
                 }
             }
 
             if (!ignoreNetwork) {
-                return new NetworkRule(line, filterListId, ruleIndex);
+                return new NetworkRule(text, filterListId, ruleIndex);
             }
         } catch (e) {
-            const msg = `"${getErrorMessage(e)}" in the rule: "${line}"`;
+            const msg = `"${getErrorMessage(e)}" in the rule: "${text}"`;
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {

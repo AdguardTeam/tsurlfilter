@@ -788,7 +788,7 @@ describe('Javascript rules', () => {
         expect(scriptletData.params).toMatchObject({
             ruleText: jsRule,
             name: 'prevent-setTimeout',
-            args: ['/location\\.href=\\"https:\\/\\/www\\.example\\.com\\//'],
+            args: ['/location\\.href="https:\\/\\/www\\.example\\.com\\//'],
         });
     });
 

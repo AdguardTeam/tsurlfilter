@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import scriptlets, { IConfiguration } from '@adguard/scriptlets';
 import {
     AnyCosmeticRule,
@@ -11,6 +12,8 @@ import {
     PIPE_MODIFIER_SEPARATOR,
     QuoteUtils,
     defaultParserOptions,
+    ADG_SCRIPTLET_MASK,
+    QuoteType,
 } from '@adguard/agtree';
 
 import * as rule from './rule';
@@ -53,6 +56,55 @@ type ScriptData = {
     debug?: boolean,
     frameUrl?: string
 };
+
+/**
+ * Represents scriptlet properties parsed from the rule content.
+ */
+export type ScriptletsProps = {
+    name: string;
+    args: string[],
+};
+
+class ScriptletParams {
+    private props: ScriptletsProps | null = null;
+
+    constructor(name?: string, args?: string[]) {
+        if (typeof name !== 'undefined') {
+            this.props = {
+                name,
+                args: args || [],
+            };
+        }
+    }
+
+    get name(): string | undefined {
+        return this.props?.name;
+    }
+
+    get args(): string[] {
+        return this.props?.args ?? [];
+    }
+
+    public toString(): string {
+        const result: string[] = [];
+
+        result.push(ADG_SCRIPTLET_MASK);
+        result.push('(');
+
+        if (this.name) {
+            result.push(QuoteUtils.setStringQuoteType(this.name, QuoteType.Single));
+        }
+
+        if (this.args.length) {
+            result.push(', ');
+            result.push(this.args.map((arg) => QuoteUtils.setStringQuoteType(arg, QuoteType.Single)).join(', '));
+        }
+
+        result.push(')');
+
+        return result.join(EMPTY_STRING);
+    }
+}
 
 /**
  * Represents possible modifiers for cosmetic rules.
@@ -215,7 +267,7 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Scriptlet parameters
      */
-    private scriptletParams: string[] | null = null;
+    public scriptletParams: ScriptletParams;
 
     /**
      * If the rule contains scriptlet content
@@ -559,8 +611,9 @@ export class CosmeticRule implements rule.IRule {
                     // eslint-disable-next-line max-len
                     scriptletName = QuoteUtils.removeQuotes(ruleNode.body.children[0]?.children[0]?.value ?? EMPTY_STRING);
 
-                    if (!scriptletName) {
-                        throw new Error('Scriptlet name should be specified');
+                    // Special case: scriptlet name is empty, e.g. '#%#//scriptlet()'
+                    if (scriptletName.length === 0) {
+                        break;
                     }
 
                     // Check if the scriptlet name is valid
@@ -642,15 +695,14 @@ export class CosmeticRule implements rule.IRule {
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
         if (ruleNode.type === CosmeticRuleType.ScriptletInjectionRule) {
-            // Perform some quick checks just in case
-            if (ruleNode.body.children.length !== 1 || ruleNode.body.children[0].children.length < 1) {
-                throw new SyntaxError('Scriptlet rule should have at least one parameter');
-            }
-
             // Transform complex node into a simple array of strings
-            this.scriptletParams = ruleNode.body.children[0].children.map(
-                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotes(param.value)),
+            const params = ruleNode.body.children[0].children.map(
+                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
             );
+
+            this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
+        } else {
+            this.scriptletParams = new ScriptletParams();
         }
 
         const validationResult = CosmeticRule.validate(ruleNode);
@@ -760,14 +812,14 @@ export class CosmeticRule implements rule.IRule {
         // https://github.com/AdguardTeam/Scriptlets/issues/377
         // or it is considered invalid if the scriptlet was invalid.
         // This does not require finding scriptData and scriptletData.
-        if (!this.scriptletParams.length) {
+        if (!this.scriptletParams?.name) {
             return;
         }
 
         const params: scriptlets.IConfiguration = {
-            args: this.scriptletParams.slice(1),
+            args: this.scriptletParams.args,
             engine: config.engine || EMPTY_STRING,
-            name: this.scriptletParams[0],
+            name: this.scriptletParams.name,
             ruleText: this.getText(),
             verbose: debug,
             domainName: frameUrl,
