@@ -1,0 +1,11 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: scorecardresearch-beacon
+  aliases:
+    - scorecardresearch_beacon.js
+  description: Mocks Scorecard Research API.
+
+ubo_any:
+  name: scorecardresearch_beacon.js
+  description: Mocks Scorecard Research API.

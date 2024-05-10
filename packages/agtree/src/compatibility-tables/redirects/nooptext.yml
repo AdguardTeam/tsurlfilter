@@ -1,0 +1,16 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: nooptext
+  aliases:
+    - noop.txt
+    - blank-text
+  description: Redirects to an empty text file.
+
+ubo_any:
+  name: noop.txt
+  description: Redirects to an empty text file.
+
+abp_any:
+  name: blank-text
+  description: Redirects to an empty text file.

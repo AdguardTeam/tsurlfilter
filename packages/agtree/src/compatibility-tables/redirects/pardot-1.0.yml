@@ -1,0 +1,5 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: pardot-1.0
+  description: Mocks the pd.js file of Salesforce.

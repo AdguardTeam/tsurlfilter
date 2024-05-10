@@ -1,0 +1,5 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: no-protected-audience
+  description: Prevents using the Protected Audience API.

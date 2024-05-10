@@ -1,0 +1,16 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: noopmp3-0.1s
+  aliases:
+    - noop-0.1s.mp3
+    - blank-mp3
+  description: Redirects to an empty MP3 file with a duration of 0.1 seconds.
+
+ubo_any:
+  name: noop-0.1s.mp3
+  description: Redirects to an empty MP3 file with a duration of 0.1 seconds.
+
+abp_any:
+  name: blank-mp3
+  description: Redirects to an empty MP3 file with a duration of 0.1 seconds.
