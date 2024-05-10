@@ -318,7 +318,7 @@ describe('Quote utils', () => {
             actual: "'",
             expected: "'",
         },
-    ]
+    ];
 
     describe('removeQuotes', () => {
         test.each(

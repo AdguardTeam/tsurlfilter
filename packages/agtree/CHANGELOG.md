@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD024 -->
 # AGTree Changelog
 
 All notable changes to this project will be documented in this file.
