@@ -18,14 +18,29 @@ import type { ByteBuffer } from '../utils/byte-buffer';
  * Then, if nothing found, it looks up the host rules.
  */
 export class DnsEngine {
+    /**
+     * Reserved pointer value for undefined values.
+     */
     private static readonly UNDEFINED_POINTER = 0;
 
+    /**
+     * Pointer to the rule counter in the byte buffer.
+     */
     private static readonly RULE_COUNTER_POINTER = 4;
 
+    /**
+     * Pointer to the storage indexes list position in the byte buffer.
+     */
     private static readonly STORAGE_INDEXES_POSITION_POINTER = 8;
 
+    /**
+     * Pointer to the binary map position in the byte buffer.
+     */
     private static readonly BINARY_MAP_POSITION_POINTER = 12;
 
+    /**
+     * Pointer to the network engine position in the byte buffer.
+     */
     private static readonly NETWORK_ENGINE_POSITION_POINTER = 16;
 
     /**
@@ -48,10 +63,14 @@ export class DnsEngine {
      */
     declare private readonly byteBuffer: ByteBuffer;
 
+    /**
+     * Total number of rules in the engine.
+     */
     public get rulesCount(): number {
         return this.byteBuffer.getUint32(DnsEngine.RULE_COUNTER_POINTER);
     }
 
+    /** @inheritdoc */
     private set rulesCount(value: number) {
         this.byteBuffer.setUint32(DnsEngine.RULE_COUNTER_POINTER, value);
     }
@@ -68,6 +87,9 @@ export class DnsEngine {
         this.byteBuffer.setUint32(DnsEngine.BINARY_MAP_POSITION_POINTER, value);
     }
 
+    /**
+     * Position of the storage indexes list in the byte buffer.
+     */
     private get storageIndexesListPosition(): number {
         return this.byteBuffer.getUint32(DnsEngine.STORAGE_INDEXES_POSITION_POINTER);
     }
@@ -125,19 +147,26 @@ export class DnsEngine {
         skipStorageScan = false,
         skipFinalize = false,
     ) {
+        // reserve space for pointers
         buffer.addUint32(DnsEngine.UNDEFINED_POINTER, 0);
         buffer.addUint32(DnsEngine.RULE_COUNTER_POINTER, 0);
         buffer.addUint32(DnsEngine.STORAGE_INDEXES_POSITION_POINTER, 0);
         buffer.addUint32(DnsEngine.BINARY_MAP_POSITION_POINTER, 0);
         buffer.addUint32(DnsEngine.NETWORK_ENGINE_POSITION_POINTER, 0);
 
+        // Create storage indexes list and set its position
         const storageIndexesListPosition = U32LinkedList.create(buffer);
         buffer.setUint32(DnsEngine.STORAGE_INDEXES_POSITION_POINTER, storageIndexesListPosition);
+
+        // Create network engine and set its position
         const networkEngine = NetworkEngine.create(rulesStorage, buffer, true);
         buffer.setUint32(DnsEngine.NETWORK_ENGINE_POSITION_POINTER, networkEngine.offset);
 
+        // Create a new instance of the dns engine
         const engine = new DnsEngine(rulesStorage, buffer, networkEngine, skipStorageScan);
 
+        // We skip building index structures on async initialization
+        // and call `finalaze` manually when rules are loaded.
         if (!skipFinalize) {
             engine.finalize();
         }
