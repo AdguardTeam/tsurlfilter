@@ -18,25 +18,25 @@ import type { ByteBuffer } from '../utils/byte-buffer';
  * Then, if nothing found, it looks up the host rules.
  */
 export class DnsEngine {
-    declare private ruleCountPosition: number;
+    private static readonly UNDEFINED_POINTER = 0;
 
-    public get rulesCount(): number {
-        return this.byteBuffer.getUint32(this.ruleCountPosition);
-    }
+    private static readonly RULE_COUNTER_POINTER = 4;
 
-    private set rulesCount(value: number) {
-        this.byteBuffer.setUint32(this.ruleCountPosition, value);
-    }
+    private static readonly STORAGE_INDEXES_POSITION_POINTER = 8;
+
+    private static readonly BINARY_MAP_POSITION_POINTER = 12;
+
+    private static readonly NETWORK_ENGINE_POSITION_POINTER = 16;
 
     /**
      * Storage
      */
-    private ruleStorage: RuleStorage;
+    declare private readonly ruleStorage: RuleStorage;
 
     /**
      * Lookup table. Key is the hostname hash.
      */
-    private readonly lookupTable: Map<number, number>;
+    declare private readonly lookupTable: Map<number, number>;
 
     /**
      * Network engine instance
@@ -48,22 +48,36 @@ export class DnsEngine {
      */
     declare private readonly byteBuffer: ByteBuffer;
 
-    /**
-     * Position of the storage indexes list in the byte buffer.
-     */
-    declare private readonly storageIndexesListPosition: number;
+    public get rulesCount(): number {
+        return this.byteBuffer.getUint32(DnsEngine.RULE_COUNTER_POINTER);
+    }
+
+    private set rulesCount(value: number) {
+        this.byteBuffer.setUint32(DnsEngine.RULE_COUNTER_POINTER, value);
+    }
 
     /**
      * Position of the binary map in the byte buffer.
      */
-    declare private binaryMapPosition: number;
+    private get binaryMapPosition(): number {
+        return this.byteBuffer.getUint32(DnsEngine.BINARY_MAP_POSITION_POINTER);
+    }
+
+    /** @inheritdoc */
+    private set binaryMapPosition(value: number) {
+        this.byteBuffer.setUint32(DnsEngine.BINARY_MAP_POSITION_POINTER, value);
+    }
+
+    private get storageIndexesListPosition(): number {
+        return this.byteBuffer.getUint32(DnsEngine.STORAGE_INDEXES_POSITION_POINTER);
+    }
 
     /**
      * Creates an instance of an DnsEngine
      *
      * @param ruleStorage {@link RuleStorage} instance
      * @param buffer Byte buffer to store the binary data.
-     * @param offset Byte buffer offset of the engine.
+     * @param networkEngine Network engine.
      * @param skipStorageScan Create an instance without storage scanning.
      */
     constructor(
@@ -74,10 +88,7 @@ export class DnsEngine {
     ) {
         this.ruleStorage = storage;
         this.lookupTable = new Map<number, number>();
-
         this.byteBuffer = buffer;
-        this.pushRulesCountToBuffer();
-        this.storageIndexesListPosition = U32LinkedList.create(this.byteBuffer);
         this.networkEngine = networkEngine;
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
@@ -114,10 +125,17 @@ export class DnsEngine {
         skipStorageScan = false,
         skipFinalize = false,
     ) {
-        // reserve space for undefined value
-        buffer.addUint32(0, 0);
+        buffer.addUint32(DnsEngine.UNDEFINED_POINTER, 0);
+        buffer.addUint32(DnsEngine.RULE_COUNTER_POINTER, 0);
+        buffer.addUint32(DnsEngine.STORAGE_INDEXES_POSITION_POINTER, 0);
+        buffer.addUint32(DnsEngine.BINARY_MAP_POSITION_POINTER, 0);
+        buffer.addUint32(DnsEngine.NETWORK_ENGINE_POSITION_POINTER, 0);
 
+        const storageIndexesListPosition = U32LinkedList.create(buffer);
+        buffer.setUint32(DnsEngine.STORAGE_INDEXES_POSITION_POINTER, storageIndexesListPosition);
         const networkEngine = NetworkEngine.create(rulesStorage, buffer, true);
+        buffer.setUint32(DnsEngine.NETWORK_ENGINE_POSITION_POINTER, networkEngine.offset);
+
         const engine = new DnsEngine(rulesStorage, buffer, networkEngine, skipStorageScan);
 
         if (!skipFinalize) {
@@ -134,8 +152,8 @@ export class DnsEngine {
      * @returns New {@link Engine} instance.
      */
     static from(rulesStorage: RuleStorage, buffer: ByteBuffer) {
-        // first 4 bytes are reserved for undefined value
-        const networkEngine = new NetworkEngine(rulesStorage, buffer, Uint32Array.BYTES_PER_ELEMENT);
+        const networkEnginePosition = buffer.getUint32(DnsEngine.NETWORK_ENGINE_POSITION_POINTER);
+        const networkEngine = new NetworkEngine(rulesStorage, buffer, networkEnginePosition);
         return new DnsEngine(rulesStorage, buffer, networkEngine, true);
     }
 
@@ -183,11 +201,6 @@ export class DnsEngine {
     public finalize(): void {
         this.networkEngine.finalize();
         this.binaryMapPosition = BinaryMap.create(this.lookupTable, this.byteBuffer);
-    }
-
-    private pushRulesCountToBuffer() {
-        this.ruleCountPosition = this.byteBuffer.byteOffset;
-        this.byteBuffer.addUint32(this.ruleCountPosition, 0);
     }
 
     /**
