@@ -1,0 +1,13 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: log-addEventListener
+  version_added: 1.0.4
+  aliases:
+    - addEventListener-logger.js
+    - ubo-addEventListener-logger.js
+    - aell.js
+    - ubo-aell.js
+    - ubo-addEventListener-logger
+    - ubo-aell
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#log-addEventListener

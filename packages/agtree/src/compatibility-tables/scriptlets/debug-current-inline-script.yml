@@ -1,0 +1,11 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: debug-current-inline-script
+  version_added: 1.0.4
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#debug-current-inline-script
+  parameters:
+    - name: property
+      required: true
+    - name: search
+      required: false

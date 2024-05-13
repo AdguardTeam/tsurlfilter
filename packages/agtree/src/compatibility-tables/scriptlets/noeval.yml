@@ -1,0 +1,13 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: noeval
+  version_added: 1.0.4
+  aliases:
+    - noeval.js
+    - silent-noeval.js
+    - ubo-noeval.js
+    - ubo-silent-noeval.js
+    - ubo-noeval
+    - ubo-silent-noeval
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#noeval

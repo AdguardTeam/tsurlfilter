@@ -1,0 +1,9 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: log-on-stack-trace
+  version_added: 1.5.0
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#log-on-stack-trace
+  parameters:
+    - name: property
+      required: true

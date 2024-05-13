@@ -1,0 +1,14 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: trusted-replace-node-text
+  version_added: 1.9.37
+  parameters:
+    - name: nodeName
+      required: true
+    - name: textMatch
+      required: true
+    - name: pattern
+      required: true
+    - name: replacement
+      required: true
