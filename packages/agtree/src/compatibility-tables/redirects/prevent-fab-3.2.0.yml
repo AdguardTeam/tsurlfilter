@@ -1,0 +1,11 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: prevent-fab-3.2.0
+  aliases:
+    - nofab.js
+  description: Mocks FAB script v3.2.0.
+
+ubo_any:
+  name: nofab.js
+  description: Mocks FAB script v3.2.0.
