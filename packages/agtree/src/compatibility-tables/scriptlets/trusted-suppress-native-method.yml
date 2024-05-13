@@ -1,0 +1,14 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: trusted-suppress-native-method
+  version_added: 1.10.25
+  parameters:
+    - name: methodPath
+      required: true
+    - name: signatureStr
+      required: true
+    - name: how
+      required: false
+    - name: stack
+      required: false

@@ -1,0 +1,26 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: close-window
+  version_added: 1.5.0
+  aliases:
+    - window-close-if.js
+    - ubo-window-close-if.js
+    - ubo-window-close-if
+    - close-window.js
+    - ubo-close-window.js
+    - ubo-close-window
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#close-window
+  parameters:
+    - name: path
+      required: false
+
+ubo_any:
+  name: close-window.js
+  version_added: 1.39.3b10
+  aliases:
+    - window-close-if.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#close-windowjs-
+  parameters:
+    - name: path
+      required: false

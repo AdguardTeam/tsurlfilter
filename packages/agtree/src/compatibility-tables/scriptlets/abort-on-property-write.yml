@@ -1,33 +1,33 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
 adg_any_not_cb:
-  name: abort-on-property-read
+  name: abort-on-property-write
   version_added: 1.0.4
   aliases:
-    - abort-on-property-read.js
-    - ubo-abort-on-property-read.js
-    - aopr.js
-    - ubo-aopr.js
-    - ubo-abort-on-property-read
-    - ubo-aopr
-    - abp-abort-on-property-read
-  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#abort-on-property-read
+    - abort-on-property-write.js
+    - ubo-abort-on-property-write.js
+    - aopw.js
+    - ubo-aopw.js
+    - ubo-abort-on-property-write
+    - ubo-aopw
+    - abp-abort-on-property-write
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#abort-on-property-write
   parameters:
     - name: property
       required: true
 
 ubo_any:
-  name: abort-on-property-read.js
+  name: abort-on-property-write.js
   aliases:
-    - aopr.js
-  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-readjs-
+    - aopw.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-on-property-writejs-
   parameters:
     - name: property
       required: true
 
 abp_any:  
-  name: abort-on-property-read
-  version_added: 3.4.1
+  name: abort-on-property-write
+  version_added: 3.4.3
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
   parameters:
     - name: property

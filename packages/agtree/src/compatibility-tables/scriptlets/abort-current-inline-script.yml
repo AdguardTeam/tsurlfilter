@@ -1,0 +1,49 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: abort-current-inline-script
+  version_added: 1.0.4
+  aliases:
+    - abort-current-script.js
+    - ubo-abort-current-script.js
+    - acs.js
+    - ubo-acs.js
+    - ubo-abort-current-script
+    - ubo-acs
+    - abort-current-inline-script.js
+    - ubo-abort-current-inline-script.js
+    - acis.js
+    - ubo-acis.js
+    - ubo-abort-current-inline-script
+    - ubo-acis
+    - abp-abort-current-inline-script
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#abort-current-inline-script
+  parameters:
+    - name: property
+      required: true
+    - name: search
+      required: false
+
+ubo_any:
+  name: abort-current-script.js
+  version_added: 1.37.0
+  aliases:
+    - acs.js
+    - abort-current-inline-script.js
+    - acis.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#abort-current-scriptjs-
+  parameters:
+    - name: property
+      required: true
+    - name: search
+      required: false
+
+abp_any:  
+  name: abort-current-inline-script
+  version_added: 3.4.3
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: api
+      required: true
+    - name: search
+      required: false

@@ -1,0 +1,11 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: log
+  version_added: 1.0.4
+  aliases:
+    - abp-log
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#log
+  parameters:
+    - name: arguments
+      required: false
