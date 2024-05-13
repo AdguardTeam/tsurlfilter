@@ -42,8 +42,6 @@ export class TabContext {
      * Each frame context is deleted after navigation is complete.
      * Storage is cleared on tab reload.
      * Do not use it as a data source out of request or navigation processing.
-     *
-     * FIXME: Use persistent storage due to recreation of service worker.
      */
     public frames = new Map<number, Frame>();
 

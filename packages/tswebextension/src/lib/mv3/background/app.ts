@@ -128,6 +128,9 @@ MessagesHandlerMV3
             // Start handle request events.
             WebRequestApi.start();
 
+            // Add tabs listeners
+            await tabsApi.start();
+
             // TODO: Inject cosmetic rules into tabs, opened before app initialization.
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
@@ -177,9 +180,6 @@ MessagesHandlerMV3
      */
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[START]: is started ', this.isStarted);
-
-        // Add tabs listeners
-        await tabsApi.start();
 
         if (this.isStarted) {
             throw new Error('Already started');
@@ -284,6 +284,8 @@ MessagesHandlerMV3
         });
         await engineApi.waitingForEngine;
 
+        await tabsApi.updateCurrentTabsMainFrameRules();
+
         // TODO: Recreate only dynamic rule set, because static cannot be changed
         const ruleSets = [
             ...staticRuleSets,
@@ -361,7 +363,7 @@ MessagesHandlerMV3
      * Executes scriptlets for the currently active tab and adds a listener to
      * the {@link chrome.webNavigation.onCommitted} hook to execute scriptlets.
      *
-     * FIXME: Move to RequestEvents.
+     * TODO: Move to RequestEvents.
      */
     public async executeScriptlets(): Promise<void> {
         const activeTab = await TabsApi.getActiveTab();
@@ -373,7 +375,7 @@ MessagesHandlerMV3
             await getAndExecuteScripts(id, url, verbose);
         }
 
-        // FIXME: Move to RequestEvents.
+        // TODO: Move to RequestEvents.
         chrome.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 

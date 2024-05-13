@@ -1,9 +1,11 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
-import { EventChannel, getDomain, isHttpRequest } from '../../common';
+import { getDomain, isHttpRequest } from '../../common/utils/url';
+import { EventChannel } from '../../common/utils/channels';
 import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
+import { engineApi } from '../background/engine-api';
 
 /**
  * Request context data related to the tab's frame.
@@ -15,11 +17,8 @@ export type TabFrameRequestContext = FrameRequestContext & {
 /**
  * TabsApi works with {@link browser.tabs} to record tabs URL's - they needed
  * for work domain-specific blocking/allowing cosmetic rules.
- *
- * FIXME: Do not forget about tests.
  */
 export class TabsApi {
-    // FIXME: Use persistent storage due to recreation of service worker.
     public context = new Map<number, TabContext>();
 
     public onCreate = new EventChannel<TabContext>();
@@ -58,9 +57,6 @@ export class TabsApi {
      * Starts recording the main frame URL's for the tabs.
      */
     public async start(): Promise<void> {
-        // FIXME: Check usage
-        // await this.createCurrentTabsContext();
-
         browser.tabs.onCreated.addListener(this.handleTabCreate);
         browser.tabs.onRemoved.addListener(this.handleTabDelete);
         browser.tabs.onUpdated.addListener(this.handleTabUpdate);
@@ -105,14 +101,6 @@ export class TabsApi {
             return null;
         }
 
-        // FIXME: Problem with creating url
-        // Error in event handler: TypeError: Invalid request url: chrome://newtab/
-        //     at new Request (chrome-extension://ijilocolkkdcgpgcbbmcinaenmmpinmk/pages/background.js:40027:19)
-        //     at Engine.matchFrame (chrome-extension://ijilocolkkdcgpgcbbmcinaenmmpinmk/pages/background.js:40337:29)
-        //     at EngineApi.matchFrame (chrome-extension://ijilocolkkdcgpgcbbmcinaenmmpinmk/pages/background.js:164339:28)
-        //     at TabContext.createNewTabContext (chrome-extension://ijilocolkkdcgpgcbbmcinaenmmpinmk/pages/background.js:165005:50)
-        //     at TabsApi.handleTabCreate (chrome-extension://ijilocolkkdcgpgcbbmcinaenmmpinmk/pages/background.js:165110:39)
-        // 21:18:46.292 background.js:115200
         const tabContext = TabContext.createNewTabContext(tab);
         this.context.set(tab.id, tabContext);
         this.onCreate.dispatch(tabContext);
@@ -143,6 +131,7 @@ export class TabsApi {
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
         if (tabContext && TabContext.isBrowserTab(tabInfo)) {
+            // Skip updates for non-http requests.
             if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
                 return;
             }
@@ -197,6 +186,11 @@ export class TabsApi {
     public handleTabNavigation(tabId: number, url: string): void {
         const tabContext = this.context.get(tabId);
         if (!tabContext) {
+            return;
+        }
+
+        // Skip updates for non-http requests.
+        if (!isHttpRequest(url)) {
             return;
         }
 
@@ -298,6 +292,38 @@ export class TabsApi {
         }
 
         return tabContext.mainFrameRule;
+    }
+
+    /**
+     * Updates tab's main frame rule.
+     *
+     * @param tabId Tab ID.
+     */
+    public updateTabMainFrameRule(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext?.info.url) {
+            return;
+        }
+
+        tabContext.mainFrameRule = engineApi.matchFrame(tabContext.info.url);
+    }
+
+    /**
+     * Updates tab context data after filter engine load.
+     */
+    public async updateCurrentTabsMainFrameRules(): Promise<void> {
+        const currentTabs = await browser.tabs.query({});
+
+        if (!Array.isArray(currentTabs)) {
+            return;
+        }
+
+        for (const tab of currentTabs) {
+            if (typeof tab.id === 'number') {
+                this.updateTabMainFrameRule(tab.id);
+            }
+        }
     }
 
     /**

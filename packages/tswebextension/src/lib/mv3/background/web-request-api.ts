@@ -239,7 +239,6 @@ export class WebRequestApi {
         if (requestType === RequestType.SubDocument) {
             frameRule = engineApi.matchFrame(referrerUrl);
         } else {
-            // FIXME: Check that rule is not null
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
@@ -290,7 +289,7 @@ export class WebRequestApi {
         if (response?.cancel || response?.redirectUrl !== undefined) {
             tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
 
-            // FIXME: Should we add collapsing?
+            // TODO: Check, if we need collapse elements, we should uncomment this code.
             // const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
             // hideRequestInitiatorElement(
             //     tabId,
@@ -371,12 +370,6 @@ export class WebRequestApi {
      */
     private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
         const { frameId, tabId, url } = details;
-
-        // FIXME: Tmp solution
-        const isBrowserInternalTab = url.startsWith('chrome://') || url.startsWith('about:');
-        if (isBrowserInternalTab) {
-            return;
-        }
 
         if (frameId === MAIN_FRAME_ID) {
             tabsApi.handleTabNavigation(tabId, url);
