@@ -17,7 +17,7 @@ import {
 } from '@adguard/agtree';
 
 import * as rule from './rule';
-import { type DomainModifier } from '../modifiers/domain-modifier';
+import { DomainModifier } from '../modifiers/domain-modifier';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
 import { type Request } from '../request';
