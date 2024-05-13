@@ -5,7 +5,7 @@ import {
     HTTPMethod,
 } from '@adguard/tsurlfilter';
 import { RemoveHeadersService } from '@lib/mv2/background/services/remove-headers-service';
-import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
+import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
 import { FilteringEventType, ContentType } from '@lib/common';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 

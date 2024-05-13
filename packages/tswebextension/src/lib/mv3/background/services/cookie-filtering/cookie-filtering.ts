@@ -1,11 +1,11 @@
-import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, type CookieModifier } from '@adguard/tsurlfilter';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { logger } from '../../../../common';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { CookieUtils } from '../../../../common/cookie-filtering/utils';
-import { RequestContext, requestContextStorage } from '../../request';
+import { type RequestContext, requestContextStorage } from '../../request';
 
 /**
  * Cookie filtering.
