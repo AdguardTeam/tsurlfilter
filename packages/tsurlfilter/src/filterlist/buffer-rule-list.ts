@@ -1,7 +1,7 @@
 import { BufferLineReader } from './reader/buffer-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
-import { ScannerType } from './scanner/scanner-type';
+import { type ScannerType } from './scanner/scanner-type';
 
 /**
  * BufferRuleList represents a string-based rule list. It keeps the original

@@ -1,4 +1,4 @@
-import { NetworkRule } from '../../../network-rule';
+import { type NetworkRule } from '../../../network-rule';
 
 /**
  * Describes an error when a source network rule contains some of

@@ -1,12 +1,12 @@
-import scriptlets, { IConfiguration } from '@adguard/scriptlets';
+import scriptlets, { type IConfiguration } from '@adguard/scriptlets';
 import * as rule from './rule';
 import { CosmeticRuleMarker, isExtCssMarker, ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
-import { DomainModifier } from '../modifiers/domain-modifier';
+import { type DomainModifier } from '../modifiers/domain-modifier';
 import { hasUnquotedSubstring, indexOfAny } from '../utils/string-utils';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
 import { CosmeticRuleParser, isUrlPatternResult } from './cosmetic-rule-parser';
-import { Request } from '../request';
+import { type Request } from '../request';
 import { Pattern } from './pattern';
 import { config } from '../configuration';
 import { ScriptletsParams } from './scriptlets-params';

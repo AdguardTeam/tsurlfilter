@@ -1,8 +1,8 @@
-import { RuleStorage } from '../../filterlist/rule-storage';
-import { Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
+import { type RuleStorage } from '../../filterlist/rule-storage';
+import { type Request } from '../../request';
+import { type NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
-import { ILookupTable } from './lookup-table';
+import { type ILookupTable } from './lookup-table';
 import { SimpleRegex } from '../../rules/simple-regex';
 
 /**

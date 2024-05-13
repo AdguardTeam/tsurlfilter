@@ -1,12 +1,12 @@
 // eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
-import { Request } from '../request';
+import { type Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { parseOptionsString } from '../utils/parse-options-string';
 import { stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
-import { IAdvancedModifier } from '../modifiers/advanced-modifier';
-import { IValueListModifier } from '../modifiers/value-list-modifier';
+import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
+import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
@@ -14,8 +14,8 @@ import { StealthModifier } from '../modifiers/stealth-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
-import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
-import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { AppModifier, type IAppModifier } from '../modifiers/app-modifier';
+import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
 import { HeaderModifier, type HttpHeadersItem, type HttpHeaderMatcher } from '../modifiers/header-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
 import { PermissionsModifier } from '../modifiers/permissions-modifier';
