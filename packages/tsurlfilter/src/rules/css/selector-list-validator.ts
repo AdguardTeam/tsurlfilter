@@ -10,7 +10,7 @@ import {
     SUPPORTED_EXT_CSS_PSEUDO_CLASSES,
 } from './known-elements';
 import { getErrorMessage } from '../../common/error';
-import { CssValidationResult } from './css-validation-result';
+import { type CssValidationResult } from './css-validation-result';
 
 /**
  * Does a basic validation of a selector list.

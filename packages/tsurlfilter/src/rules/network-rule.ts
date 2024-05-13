@@ -1,5 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
-import { ModifierList, NetworkRuleParser, defaultParserOptions } from '@adguard/agtree';
+import { type ModifierList, NetworkRuleParser, defaultParserOptions } from '@adguard/agtree';
 
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';

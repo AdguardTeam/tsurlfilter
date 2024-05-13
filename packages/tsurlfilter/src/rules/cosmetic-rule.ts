@@ -1,13 +1,13 @@
 /* eslint-disable max-classes-per-file */
 import scriptlets, { type IConfiguration } from '@adguard/scriptlets';
 import {
-    AnyCosmeticRule,
+    type AnyCosmeticRule,
     COMMA_DOMAIN_LIST_SEPARATOR,
     CosmeticRuleParser,
-    CosmeticRuleSeparator,
+    type CosmeticRuleSeparator,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
-    DomainList,
+    type DomainList,
     DomainUtils,
     PIPE_MODIFIER_SEPARATOR,
     QuoteUtils,

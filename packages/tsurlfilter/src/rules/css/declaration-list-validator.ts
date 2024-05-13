@@ -5,7 +5,7 @@
 import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 import { FORBIDDEN_CSS_FUNCTIONS } from './known-elements';
 import { getErrorMessage } from '../../common/error';
-import { CssValidationResult } from './css-validation-result';
+import { type CssValidationResult } from './css-validation-result';
 
 const REMOVE_PROPERTY = 'remove';
 const REMOVE_LENGTH = REMOVE_PROPERTY.length;

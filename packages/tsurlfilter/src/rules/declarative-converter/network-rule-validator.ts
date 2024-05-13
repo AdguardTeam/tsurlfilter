@@ -2,7 +2,7 @@ import { CookieModifier } from '../../modifiers/cookie-modifier';
 import { HTTPMethod } from '../../modifiers/method-modifier';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
-import { NetworkRule, NetworkRuleOption } from '../network-rule';
+import { type NetworkRule, NetworkRuleOption } from '../network-rule';
 import { OPTIONS_DELIMITER } from '../network-rule-options';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
