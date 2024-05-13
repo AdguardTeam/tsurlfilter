@@ -29,7 +29,35 @@ export {
     getDomain,
     isHttpRequest,
     isHttpOrWsRequest,
+    isExtensionUrl,
 } from '../../common/utils/url';
+export {
+    defaultFilteringLog,
+    FilteringEventType,
+    SendRequestEvent,
+    ReceiveResponseEvent,
+    TabReloadEvent,
+    RemoveParamEvent,
+    RemoveHeaderEvent,
+    ApplyCosmeticRuleEvent,
+    ApplyBasicRuleEvent,
+    ApplyCspRuleEvent,
+    CookieEvent,
+    JsInjectEvent,
+    ReplaceRuleApplyEvent,
+    StealthActionEvent,
+    CspReportBlockedEvent,
+} from '../../common/filtering-log';
+export { BACKGROUND_TAB_ID } from '../../common/constants';
+export { ContentType } from '../../common/request-type';
+
+// re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
+export {
+    NetworkRule,
+    CosmeticRule,
+    CosmeticRuleType,
+    NetworkRuleOption,
+} from '@adguard/tsurlfilter';
 
 // IMPORTANT! Re-exporting errors is necessary to correctly work on instanceof.
 export {

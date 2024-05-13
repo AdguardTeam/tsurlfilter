@@ -278,9 +278,10 @@ export class WebRequestApi {
         const response = RequestBlockingApi.getBlockingResponse({
             rule: basicResult,
             popupRule: result.getPopupRule(),
+            requestUrl,
+            referrerUrl,
             requestType,
             tabId,
-            referrerUrl,
         });
 
         // redirects should be considered as blocked for the tab blocked request count

@@ -6,16 +6,32 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../../tabs/tabs-api';
+import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
+import { ContentType } from '..';
+
+/**
+ * Base params about request.
+ */
+type RequestParams = {
+    tabId: number,
+    referrerUrl: string,
+    requestUrl: string,
+    requestType: RequestType,
+};
 
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
  */
-type GetBlockingResponseParams = {
-    tabId: number,
-    referrerUrl: string,
-    requestType: RequestType,
+export type GetBlockingResponseParams = RequestParams & {
     rule: NetworkRule | null,
     popupRule: NetworkRule | null,
+};
+
+/**
+ * Params for {@link RequestBlockingApi.getResponseOnHeadersReceived}.
+ */
+export type GetHeadersResponseParams = RequestParams & {
+    rule: NetworkRule | null,
 };
 
 /**
@@ -33,12 +49,19 @@ export class RequestBlockingApi {
      * Closes the tab which considered as a popup.
      *
      * @param data Needed data for logging closing of tab.
-     * @param data.tabId Tab id.
+     * @param appliedRule Network rule which was applied to request. This field
+     * is needed because data contains two rules: one for the request and
+     * one for the popup. And we should log only the rule which was applied
+     * to the request.
      *
-     * @returns Response for {@link WebRequestApi.onBeforeRequest} listener.
+     * @returns Response for {@link RequestApi.onBeforeRequest} listener.
      */
-    private static closeTab({ tabId }: GetBlockingResponseParams): WebRequest.BlockingResponse {
-        browser.tabs.remove(tabId);
+    private static closeTab(
+        data: RequestParams,
+        appliedRule: NetworkRule | null,
+    ): WebRequest.BlockingResponse {
+        RequestBlockingApi.logRuleApplying(data, appliedRule);
+        browser.tabs.remove(data.tabId);
 
         return { cancel: true };
     }
@@ -68,11 +91,12 @@ export class RequestBlockingApi {
         }
 
         if (rule.isAllowlist()) {
+            RequestBlockingApi.logRuleApplying(data, rule);
             return undefined;
         }
 
-        // TODO: Check that redirected url is exists in our resources.
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            // TODO: Check that redirected url is exists in our resources as in mv2.
             return { redirectUrl: '' };
         }
 
@@ -85,11 +109,11 @@ export class RequestBlockingApi {
             // to close the tab as soon as possible.
             // https://adguard.com/kb/general/ad-filtering/create-own-filters/#popup-modifier
             if (popupRule && tabsApi.isNewPopupTab(tabId)) {
-                return RequestBlockingApi.closeTab(data);
+                return RequestBlockingApi.closeTab(data, popupRule);
             }
             // to handle rules with $all modifier, where popup was added implicitly
             if (rule.isOptionEnabled(NetworkRuleOption.Popup) && tabsApi.isNewPopupTab(tabId)) {
-                return RequestBlockingApi.closeTab(data);
+                return RequestBlockingApi.closeTab(data, rule);
             }
 
             // we do not want to block the main page if rule has only $popup modifier
@@ -100,12 +124,52 @@ export class RequestBlockingApi {
             // but if the blocking rule has $document modifier, blocking page should be shown
             // e.g. `||example.com^$document`
             if ((rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document) {
+                RequestBlockingApi.logRuleApplying(data, rule);
                 return { cancel: true };
             }
 
             return undefined;
         }
 
+        RequestBlockingApi.logRuleApplying(data, rule);
         return { cancel: true };
+    }
+
+    /**
+     * Creates {@link FilteringLog} event of rule applying for processed request.
+     *
+     * @param data Data for request processing.
+     * @param appliedRule Network rule which was applied to request.
+     */
+    private static logRuleApplying(
+        data: RequestParams,
+        appliedRule: NetworkRule | null,
+    ): void {
+        const {
+            tabId,
+            referrerUrl,
+            requestUrl,
+            requestType,
+        } = data;
+
+        if (!appliedRule || requestType === 0) {
+            return;
+        }
+
+        // We need this only for count total blocked requests,
+        // so we can skip contentType.
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.ApplyBasicRule,
+            data: {
+                tabId,
+                // TODO: Check if eventId is needed in mv3.
+                eventId: '1',
+                // TODO: Fix this.
+                requestType: ContentType.Document,
+                frameUrl: referrerUrl,
+                requestUrl,
+                rule: appliedRule,
+            },
+        });
     }
 }
