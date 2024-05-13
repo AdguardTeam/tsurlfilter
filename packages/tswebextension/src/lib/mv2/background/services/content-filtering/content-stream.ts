@@ -1,5 +1,5 @@
 import { TextEncoder, TextDecoder } from 'text-encoding';
-import { WebRequest } from 'webextension-polyfill';
+import { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
 import {
@@ -11,9 +11,9 @@ import {
     parseCharsetFromCss,
     parseCharsetFromHeader,
 } from './charsets';
-import { RequestContext } from '../../request';
-import { FilteringEventType, FilteringLogInterface, logger } from '../../../../common';
-import { ContentStringFilterInterface } from './content-string-filter';
+import { type RequestContext } from '../../request';
+import { FilteringEventType, type FilteringLogInterface, logger } from '../../../../common';
+import { type ContentStringFilterInterface } from './content-string-filter';
 
 /**
  * Content Stream Filter class.

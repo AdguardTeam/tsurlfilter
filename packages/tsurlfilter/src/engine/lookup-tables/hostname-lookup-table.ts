@@ -1,7 +1,7 @@
-import { ILookupTable } from './lookup-table';
-import { RuleStorage } from '../../filterlist/rule-storage';
-import { Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
+import { type ILookupTable } from './lookup-table';
+import { type RuleStorage } from '../../filterlist/rule-storage';
+import { type Request } from '../../request';
+import { type NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
 

@@ -1,5 +1,5 @@
-import { RuleScanner } from './scanner/rule-scanner';
-import { ScannerType } from './scanner/scanner-type';
+import { type RuleScanner } from './scanner/rule-scanner';
+import { type ScannerType } from './scanner/scanner-type';
 
 /**
  * List identifier max value.

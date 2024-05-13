@@ -1,4 +1,4 @@
-import { HtmlRuleAttributes } from './html-rule-attributes';
+import { type HtmlRuleAttributes } from './html-rule-attributes';
 
 /**
  * Encapsulates document element matching.

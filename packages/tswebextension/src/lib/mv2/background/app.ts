@@ -1,12 +1,12 @@
 /* eslint-disable class-methods-use-this */
 import { WebRequestApi } from './web-request-api';
 import {
-    ConfigurationMV2,
-    ConfigurationMV2Context,
+    type ConfigurationMV2,
+    type ConfigurationMV2Context,
     configurationMV2Validator,
 } from './configuration';
 import { Assistant } from './assistant';
-import { LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
+import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
 import { logger } from '../../common/utils/logger';
 import type { AppContext } from './context';

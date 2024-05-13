@@ -1,6 +1,6 @@
 import { DocumentBlockingService } from '@lib/mv2/background/services/document-blocking-service';
 import { NetworkRule } from '@adguard/tsurlfilter';
-import { ConfigurationMV2, tabsApi } from '@lib/mv2';
+import { type ConfigurationMV2, tabsApi } from '@lib/mv2';
 import { getConfigurationMv2Fixture } from '../fixtures/configuration';
 
 jest.mock('@lib/mv2/background/api');

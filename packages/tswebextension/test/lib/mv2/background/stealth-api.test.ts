@@ -1,7 +1,7 @@
 import { MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
 import { AppContext } from '@lib/mv2/background/context';
-import { ConfigurationMV2Context } from '@lib/mv2/background/configuration';
+import { type ConfigurationMV2Context } from '@lib/mv2/background/configuration';
 import { defaultFilteringLog } from '@lib/common';
 import { StealthApi } from '@lib/mv2/background/stealth-api';
 import { StealthService } from '@lib/mv2/background/services/stealth-service';

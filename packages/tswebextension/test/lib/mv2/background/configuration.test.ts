@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { ConfigurationMV2, configurationMV2Validator } from '@lib/mv2';
+import { type ConfigurationMV2, configurationMV2Validator } from '@lib/mv2';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {

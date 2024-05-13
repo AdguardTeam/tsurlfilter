@@ -1,4 +1,4 @@
-import { IAdvancedModifier } from './advanced-modifier';
+import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
  * Headers filtering modifier class.

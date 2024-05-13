@@ -1,4 +1,4 @@
-import { CosmeticOption, ScriptletData } from '@adguard/tsurlfilter';
+import { CosmeticOption, type ScriptletData } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils';
 import { logger } from '../utils/logger';

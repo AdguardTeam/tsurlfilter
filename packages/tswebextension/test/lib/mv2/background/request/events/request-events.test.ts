@@ -1,9 +1,9 @@
 import browser from 'sinon-chrome';
-import { WebRequest } from 'webextension-polyfill';
+import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
 import { RequestEvents } from '@lib/mv2/background/request/events/request-events';
-import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
+import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
 
 import { ContentType } from '@lib/common';
 

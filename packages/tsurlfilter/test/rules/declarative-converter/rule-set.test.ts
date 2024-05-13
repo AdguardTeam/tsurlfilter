@@ -2,7 +2,7 @@ import {
     Filter,
     IndexedNetworkRuleWithHash,
     RuleSet,
-    RuleSetContentProvider,
+    type RuleSetContentProvider,
     RulesHashMap,
     SourceMap,
 } from '../../../src/rules/declarative-converter';

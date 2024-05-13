@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import scriptlets, { IConfiguration } from '@adguard/scriptlets';
+import scriptlets, { type IConfiguration } from '@adguard/scriptlets';
 import {
     AnyCosmeticRule,
     COMMA_DOMAIN_LIST_SEPARATOR,
@@ -17,10 +17,10 @@ import {
 } from '@adguard/agtree';
 
 import * as rule from './rule';
-import { DomainModifier } from '../modifiers/domain-modifier';
+import { type DomainModifier } from '../modifiers/domain-modifier';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
-import { Request } from '../request';
+import { type Request } from '../request';
 import { Pattern } from './pattern';
 import { config } from '../configuration';
 import { EMPTY_STRING, SPACE, WILDCARD } from '../common/constants';

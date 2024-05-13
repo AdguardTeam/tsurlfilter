@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { IConfiguration } from '@adguard/scriptlets';
+import { type IConfiguration } from '@adguard/scriptlets';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';

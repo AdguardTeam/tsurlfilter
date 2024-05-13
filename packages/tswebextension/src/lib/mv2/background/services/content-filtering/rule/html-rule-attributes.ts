@@ -1,4 +1,4 @@
-import { Wildcard } from './wildcard';
+import { type Wildcard } from './wildcard';
 
 /**
  * Html rule attributes.

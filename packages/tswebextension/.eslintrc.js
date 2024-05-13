@@ -40,6 +40,20 @@ module.exports = {
         'import/no-cycle': 'off',
         'import/export': 'off',
 
+        // Force proper import and export of types
+        '@typescript-eslint/consistent-type-imports': [
+            'error',
+            {
+                fixStyle: 'inline-type-imports',
+            },
+        ],
+        '@typescript-eslint/consistent-type-exports': [
+            'error',
+            {
+                fixMixedExportsWithInlineTypeSpecifier: true,
+            },
+        ],
+
         // types described in ts
         'jsdoc/require-param-type': 'off',
         'jsdoc/no-undefined-types': 'off',

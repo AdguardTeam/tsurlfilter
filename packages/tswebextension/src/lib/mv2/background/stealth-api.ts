@@ -1,18 +1,18 @@
 import browser from 'webextension-polyfill';
 import {
-    IRuleList,
+    type IRuleList,
     BufferRuleList,
     STEALTH_MODE_FILTER_ID,
     StealthOptionName,
+    type NetworkRule, type MatchingResult,
 } from '@adguard/tsurlfilter';
-import type { NetworkRule, MatchingResult } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
-import { RequestContext } from './request';
+import { type RequestContext } from './request';
 import {
-    FilteringLogInterface,
+    type FilteringLogInterface,
     defaultFilteringLog,
-    StealthConfig,
+    type StealthConfig,
     logger,
     getErrorMessage,
 } from '../../common';

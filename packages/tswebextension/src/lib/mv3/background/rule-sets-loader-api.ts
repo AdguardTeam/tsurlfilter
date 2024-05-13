@@ -1,6 +1,6 @@
 import {
-    IFilter,
-    IRuleSet,
+    type IFilter,
+    type IRuleSet,
     RuleSet,
     METADATA_FILENAME,
     LAZY_METADATA_FILENAME,

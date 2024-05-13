@@ -6,11 +6,11 @@ import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
 import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
-import { RuleStorage } from '../filterlist/rule-storage';
-import { CosmeticResult } from './cosmetic-engine/cosmetic-result';
-import { CosmeticOption } from './cosmetic-option';
+import { type RuleStorage } from '../filterlist/rule-storage';
+import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
+import { type CosmeticOption } from './cosmetic-option';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
-import { IndexedStorageRule } from '../rules/rule';
+import { type IndexedStorageRule } from '../rules/rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { RequestType } from '../request-type';
 

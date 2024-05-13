@@ -5,8 +5,8 @@ import type {
     MatchingResult,
     NetworkRule,
 } from '@adguard/tsurlfilter';
-import { TabFrameRequestContext, TabsApi } from '@lib/mv2/background/tabs/tabs-api';
-import { TabContext, TabInfo } from '@lib/mv2/background/tabs/tab-context';
+import { type TabFrameRequestContext, TabsApi } from '@lib/mv2/background/tabs/tabs-api';
+import { TabContext, type TabInfo } from '@lib/mv2/background/tabs/tab-context';
 import { Frame, MAIN_FRAME_ID } from '@lib/mv2/background/tabs/frame';
 import { Allowlist } from '@lib/mv2/background/allowlist';
 import { EngineApi } from '@lib/mv2/background/engine-api';

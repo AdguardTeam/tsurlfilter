@@ -1,5 +1,5 @@
 /* eslint-disable class-methods-use-this */
-import { WebRequest } from 'webextension-polyfill';
+import { type WebRequest } from 'webextension-polyfill';
 
 /**
  * Mock filter implementation.

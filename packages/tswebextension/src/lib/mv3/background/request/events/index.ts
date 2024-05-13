@@ -1,9 +1,9 @@
 export { RequestEvents } from './request-events';
 export {
-    RequestData,
-    DetailsHandler,
-    EventCallback,
-    BrowserEventListener,
-    BrowserRequestEvent,
+    type RequestData,
+    type DetailsHandler,
+    type EventCallback,
+    type BrowserEventListener,
+    type BrowserRequestEvent,
     RequestEvent,
 } from './request-event';

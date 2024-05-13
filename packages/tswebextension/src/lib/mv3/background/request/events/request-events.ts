@@ -1,4 +1,4 @@
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser, { type WebRequest } from 'webextension-polyfill';
 import type { HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';

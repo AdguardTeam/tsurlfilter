@@ -81,7 +81,7 @@
  *                                       │                             │
  *                                       └─────────────────────────────┘.
  */
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser, { type WebRequest } from 'webextension-polyfill';
 
 import { isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import {

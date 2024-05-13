@@ -1,15 +1,15 @@
 import {
-    ConversionError,
+    type ConversionError,
     EmptyResourcesError,
     TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
-    ConverterOptionsError,
+    type ConverterOptionsError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRegexpRulesError,
     ResourcesPathError,
-    LimitationError,
+    type LimitationError,
     TooManyRegexpRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,
@@ -19,23 +19,23 @@ import {
 export * from './app';
 
 export { USER_FILTER_ID } from './user-rules-api';
-export { ConfigurationMV3 as Configuration } from './configuration';
+export type { ConfigurationMV3 as Configuration } from './configuration';
 export { CommonMessageType, ExtendedMV3MessageType } from './messages';
 export { RULE_SET_NAME_PREFIX } from './filters-api';
 
 // IMPORTANT! Re-exporting errors is necessary to correctly work on instanceof.
 export {
-    ConversionError,
+    type ConversionError,
     EmptyResourcesError,
     TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
-    ConverterOptionsError,
+    type ConverterOptionsError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRegexpRulesError,
     ResourcesPathError,
-    LimitationError,
+    type LimitationError,
     TooManyRegexpRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,

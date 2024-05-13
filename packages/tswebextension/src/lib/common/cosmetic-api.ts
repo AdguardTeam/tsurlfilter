@@ -1,4 +1,4 @@
-import { CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticRule } from '@adguard/tsurlfilter';
 
 /**
  * CosmeticApiCommon contains common logic about building css for hiding elements.

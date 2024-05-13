@@ -1,4 +1,4 @@
-import browser, { Tabs } from 'webextension-polyfill';
+import browser, { type Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';

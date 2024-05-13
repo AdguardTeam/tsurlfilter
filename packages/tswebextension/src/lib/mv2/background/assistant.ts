@@ -1,7 +1,7 @@
-import browser, { WebNavigation } from 'webextension-polyfill';
+import browser, { type WebNavigation } from 'webextension-polyfill';
 import { EventChannel, MessageType } from '../../common';
 import { messagesApi } from './api';
-import { MAIN_FRAME_ID, TabContext } from './tabs';
+import { MAIN_FRAME_ID, type TabContext } from './tabs';
 
 /**
  * Event channel wrapper for sending messages to the assistant.

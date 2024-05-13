@@ -1,5 +1,5 @@
-import { NetworkRule } from '../rules/network-rule';
-import { HostRule } from '../rules/host-rule';
+import { type NetworkRule } from '../rules/network-rule';
+import { type HostRule } from '../rules/host-rule';
 
 /**
  * DnsResult contains a network rule and host rules matching request

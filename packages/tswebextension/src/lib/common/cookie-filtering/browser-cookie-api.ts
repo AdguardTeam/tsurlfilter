@@ -3,7 +3,7 @@ import browser, { Cookies } from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
 import { logger } from '../utils/logger';
-import { ParsedCookie } from './parsed-cookie';
+import { type ParsedCookie } from './parsed-cookie';
 
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;

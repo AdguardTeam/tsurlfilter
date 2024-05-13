@@ -1,5 +1,5 @@
-import { NetworkRule } from '../../../network-rule';
-import { DeclarativeRule } from '../../declarative-rule';
+import { type NetworkRule } from '../../../network-rule';
+import { type DeclarativeRule } from '../../declarative-rule';
 
 import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
 

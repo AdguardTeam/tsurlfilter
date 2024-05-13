@@ -1,8 +1,8 @@
 import browser from 'webextension-polyfill';
 import {
     RequestType,
-    CosmeticRule,
-    NetworkRule,
+    type CosmeticRule,
+    type NetworkRule,
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 

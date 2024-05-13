@@ -1,6 +1,6 @@
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
-import { DeclarativeRule } from '../declarative-rule';
-import { ConvertedRules } from '../converted-result';
+import { type DeclarativeRule } from '../declarative-rule';
+import { type ConvertedRules } from '../converted-result';
 
 import { DeclarativeRuleConverter } from './abstract-rule-converter';
 

@@ -1,5 +1,5 @@
-import { CosmeticRule } from '../../rules/cosmetic-rule';
-import { CosmeticContentResult } from './cosmetic-content-result';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
+import { type CosmeticContentResult } from './cosmetic-content-result';
 
 /**
  * This class stores found script rules content in the appropriate collections

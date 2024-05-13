@@ -4,11 +4,11 @@ import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
-import { DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
-import { IFilter } from './filter';
+import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
+import { type IFilter } from './filter';
 import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-errors/unavailable-rule-set-source-error';
-import { ISourceMap, SourceMap, SourceRuleIdxAndFilterId } from './source-map';
-import { IRulesHashMap } from './rules-hash-map';
+import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
+import { type IRulesHashMap } from './rules-hash-map';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter

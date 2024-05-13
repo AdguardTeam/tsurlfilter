@@ -1,11 +1,11 @@
 import { nanoid } from 'nanoid';
-import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, type CookieModifier } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
 import {
     ContentType,
     defaultFilteringLog,
     FilteringEventType,
-    FilteringLogInterface,
+    type FilteringLogInterface,
     logger,
 } from '../../../../common';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
@@ -13,7 +13,7 @@ import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import CookieUtils from './utils';
-import { RequestContext, requestContextStorage } from '../../request';
+import { type RequestContext, requestContextStorage } from '../../request';
 import { engineApi, tabsApi } from '../../api';
 import { createFrameMatchQuery } from '../../utils/create-frame-match-query';
 

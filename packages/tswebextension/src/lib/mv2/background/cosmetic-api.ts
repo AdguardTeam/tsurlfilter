@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/require-returns */
 import { nanoid } from 'nanoid';
-import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { appContext } from './context';
 import { getDomain } from '../../common/utils/url';

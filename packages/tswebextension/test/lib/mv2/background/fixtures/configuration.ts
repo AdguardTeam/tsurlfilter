@@ -1,4 +1,4 @@
-import { ConfigurationMV2 } from '@lib/mv2/background/configuration';
+import { type ConfigurationMV2 } from '@lib/mv2/background/configuration';
 
 export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     filters: [

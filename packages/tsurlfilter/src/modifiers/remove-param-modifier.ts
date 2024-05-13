@@ -1,5 +1,5 @@
 import * as utils from '../utils/url';
-import { IAdvancedModifier } from './advanced-modifier';
+import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
 /**

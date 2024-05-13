@@ -1,13 +1,13 @@
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { RuleStorage } from '../../filterlist/rule-storage';
+import { type RuleStorage } from '../../filterlist/rule-storage';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
-import { CosmeticContentResult } from './cosmetic-content-result';
+import { type CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
-import { Request } from '../../request';
+import { type Request } from '../../request';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly

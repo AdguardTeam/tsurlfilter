@@ -1,15 +1,15 @@
 import {
     DeclarativeFilterConverter,
     Filter,
-    ConversionResult,
-    IFilter,
-    IRuleSet,
-    UpdateStaticRulesOptions,
+    type ConversionResult,
+    type IFilter,
+    type IRuleSet,
+    type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../../common/error';
 
-export { ConversionResult };
+export type { ConversionResult };
 
 export const USER_FILTER_ID = 0;
 

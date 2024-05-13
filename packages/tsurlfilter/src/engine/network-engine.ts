@@ -1,9 +1,9 @@
-import { Request } from '../request';
+import { type Request } from '../request';
 import { NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from './matching-result';
-import { RuleStorage } from '../filterlist/rule-storage';
+import { type RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
-import { ILookupTable } from './lookup-tables/lookup-table';
+import { type ILookupTable } from './lookup-tables/lookup-table';
 import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';

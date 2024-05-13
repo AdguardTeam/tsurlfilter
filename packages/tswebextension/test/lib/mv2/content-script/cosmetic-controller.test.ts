@@ -3,7 +3,7 @@
  */
 
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
-import { ContentScriptCosmeticData, CosmeticApi } from '@lib/mv2/background/cosmetic-api';
+import { type ContentScriptCosmeticData, CosmeticApi } from '@lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '@lib/mv2/content-script/cosmetic-controller';
 
 import * as SendMessageModule from '@lib/common/content-script/send-app-message';

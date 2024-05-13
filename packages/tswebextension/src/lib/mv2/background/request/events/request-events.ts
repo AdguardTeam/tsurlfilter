@@ -1,4 +1,4 @@
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import type { HTTPMethod } from '@adguard/tsurlfilter';
 

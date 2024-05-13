@@ -1,9 +1,9 @@
-import { Filter, IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { getFilterName } from '../utils/get-filter-name';
 
-import { ConfigurationMV3 } from './configuration';
+import { type ConfigurationMV3 } from './configuration';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 

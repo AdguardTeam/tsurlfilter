@@ -7,7 +7,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { PermissionsPolicyService } from '@lib/mv2/background/services/permissions-policy-service';
-import { RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
+import { type RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
 import { ContentType, FilteringEventType } from '@lib/common';
 
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';

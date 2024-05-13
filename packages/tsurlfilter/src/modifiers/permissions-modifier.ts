@@ -1,4 +1,4 @@
-import { IAdvancedModifier } from './advanced-modifier';
+import { type IAdvancedModifier } from './advanced-modifier';
 
 export const PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
 

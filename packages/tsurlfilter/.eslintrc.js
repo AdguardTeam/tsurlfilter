@@ -10,11 +10,18 @@ module.exports = {
     plugins: [
         'import',
         'import-newlines',
+        '@typescript-eslint',
     ],
     extends: [
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:@typescript-eslint/eslint-recommended',
+    ],
+    ignorePatterns: [
+        'dist',
+        'coverage',
+        'build-txt.js',
+        '.eslintrc.js',
     ],
     rules: {
         indent: 'off',
@@ -31,5 +38,19 @@ module.exports = {
         'no-constant-condition': ['error', { checkLoops: false }],
         '@typescript-eslint/interface-name-prefix': 'off',
         'arrow-body-style': 'off',
+
+        // Force proper import and export of types
+        '@typescript-eslint/consistent-type-imports': [
+            'error',
+            {
+                fixStyle: 'inline-type-imports',
+            },
+        ],
+        '@typescript-eslint/consistent-type-exports': [
+            'error',
+            {
+                fixMixedExportsWithInlineTypeSpecifier: true,
+            },
+        ],
     },
 };

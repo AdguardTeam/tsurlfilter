@@ -2,7 +2,7 @@ import { z as zod } from 'zod';
 
 import {
     messageValidator as commonMessageValidator,
-    getCssPayloadValidator,
+    type getCssPayloadValidator,
     MessageType as CommonMessageType,
 } from '../../common';
 

@@ -1,5 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { WebRequest } from 'webextension-polyfill';
+import { type WebRequest } from 'webextension-polyfill';
 
 /**
  * Request content type.

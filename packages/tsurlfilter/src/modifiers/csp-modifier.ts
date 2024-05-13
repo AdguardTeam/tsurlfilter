@@ -1,4 +1,4 @@
-import { IAdvancedModifier } from './advanced-modifier';
+import { type IAdvancedModifier } from './advanced-modifier';
 
 export const CSP_HEADER_NAME = 'Content-Security-Policy';
 

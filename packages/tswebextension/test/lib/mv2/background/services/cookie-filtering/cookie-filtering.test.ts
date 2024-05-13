@@ -10,7 +10,7 @@ import {
 import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import { BrowserCookieApi } from '@lib/common/cookie-filtering/browser-cookie-api';
 import {
-    RequestContext,
+    type RequestContext,
     RequestContextState,
     requestContextStorage,
 } from '@lib/mv2/background/request/request-context-storage';
