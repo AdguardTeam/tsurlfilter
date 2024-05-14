@@ -96,7 +96,7 @@ export class RequestBlockingApi {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-            // TODO: Check that redirected url is exists in our resources as in mv2.
+            // TODO: Check that redirected url exists in our resources as in mv2.
             return { redirectUrl: '' };
         }
 
@@ -164,7 +164,8 @@ export class RequestBlockingApi {
                 tabId,
                 // TODO: Check if eventId is needed in mv3.
                 eventId: '1',
-                // TODO: Fix this.
+                // TODO: Add saving correct request type to request context
+                // storage in the upper level.
                 requestType: ContentType.Document,
                 frameUrl: referrerUrl,
                 requestUrl,

@@ -221,6 +221,9 @@ export class WebRequestApi {
         if (!context) {
             return;
         }
+
+        // TODO: In getBlockingResponse we need extract requestType from context
+        // to save it for filtering log. Check, if we really need this in MV3.
         const {
             requestType,
             requestUrl,

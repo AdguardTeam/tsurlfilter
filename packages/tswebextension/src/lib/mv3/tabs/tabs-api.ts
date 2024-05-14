@@ -15,8 +15,8 @@ export type TabFrameRequestContext = FrameRequestContext & {
 };
 
 /**
- * TabsApi works with {@link browser.tabs} to record tabs URL's - they needed
- * for work domain-specific blocking/allowing cosmetic rules.
+ * TabsApi works with {@link browser.tabs} to record tabs' URLs - they are
+ * needed for work domain-specific blocking/allowing cosmetic rules.
  */
 export class TabsApi {
     public context = new Map<number, TabContext>();
@@ -54,7 +54,7 @@ export class TabsApi {
     }
 
     /**
-     * Starts recording the main frame URL's for the tabs.
+     * Starts recording the main frame URLs for the tabs.
      */
     public async start(): Promise<void> {
         browser.tabs.onCreated.addListener(this.handleTabCreate);
@@ -71,7 +71,7 @@ export class TabsApi {
     }
 
     /**
-     * Stops recording the main frame URL's for the tabs.
+     * Stops recording the main frame URLs for the tabs.
      */
     public stop(): void {
         browser.tabs.onCreated.removeListener(this.handleTabCreate);
