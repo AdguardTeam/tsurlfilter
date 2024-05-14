@@ -3,7 +3,7 @@ import {
     Configuration,
     CommonMessageType,
 } from '@adguard/tswebextension/mv3';
-import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
+import { LF, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
 import { loadDefaultConfig } from './loadDefaultConfig';
@@ -57,7 +57,8 @@ const messageHandler = async (message: IMessage) => {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                rules: config.userrules,
+                // TODO: Change the interface later
+                rules: config.userrules.content.split(LF),
             };
 
             return res;
@@ -98,7 +99,9 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
-            config.userrules = (data as string).split('\n');
+            config.userrules = {
+                content: String(data),
+            };
 
             await tsWebExtension.configure(config);
 

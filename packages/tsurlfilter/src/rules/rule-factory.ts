@@ -1,6 +1,6 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
-import { DEFAULT_RULE_INDEX, type IRule } from './rule';
+import { RULE_INDEX_NONE, type IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
 import { logger } from '../utils/logger';
@@ -18,6 +18,9 @@ export class RuleFactory {
      *
      * @param text rule string
      * @param filterListId list id
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index
      * @param ignoreNetwork do not create network rules
      * @param ignoreCosmetic do not create cosmetic rules
      * @param ignoreHost do not create host rules
@@ -31,7 +34,7 @@ export class RuleFactory {
     public static createRule(
         text: string,
         filterListId: number,
-        ruleIndex = DEFAULT_RULE_INDEX,
+        ruleIndex = RULE_INDEX_NONE,
         ignoreNetwork = false,
         ignoreCosmetic = false,
         ignoreHost = true,
@@ -81,8 +84,11 @@ export class RuleFactory {
     /**
      * Creates host rule from text
      *
-     * @param ruleText
-     * @param filterListId
+     * @param ruleText Rule text
+     * @param filterListId Filter list id
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index
      */
     private static createHostRule(ruleText: string, filterListId: number, ruleIndex: number): HostRule | null {
         const rule = new HostRule(ruleText, filterListId, ruleIndex);

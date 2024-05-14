@@ -1,4 +1,5 @@
 import { type ConfigurationMV2 } from '@lib/mv2/background/configuration';
+import { LF } from '@lib/common';
 
 export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     filters: [
@@ -7,7 +8,9 @@ export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     ],
     allowlist: ['example.com'],
     trustedDomains: [],
-    userrules: ['||example.org^', 'example.com##h1'],
+    userrules: {
+        content: ['||example.org^', 'example.com##h1'].join(LF),
+    },
     verbose: false,
     settings: {
         filteringEnabled: true,

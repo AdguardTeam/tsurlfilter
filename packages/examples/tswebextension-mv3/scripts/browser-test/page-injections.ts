@@ -37,7 +37,9 @@ export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrul
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, userrules ] = arg;
     const configuration: Configuration = defaultConfig;
-    configuration.userrules = userrules.split('\n');
+    configuration.userrules = {
+        content: userrules,
+    };
     await self.tsWebExtension.configure(configuration);
 };
 

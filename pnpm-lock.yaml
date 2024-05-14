@@ -761,6 +761,9 @@ importers:
 
   packages/tsurlfilter:
     dependencies:
+      '@adguard/agtree':
+        specifier: workspace:^
+        version: link:../agtree
       '@adguard/scriptlets':
         specifier: ^1.10.25
         version: 1.10.25
@@ -786,9 +789,12 @@ importers:
         specifier: 5.6.45
         version: 5.6.45
       zod:
-        specifier: 3.19.1
-        version: 3.19.1
+        specifier: 3.21.4
+        version: 3.21.4
     devDependencies:
+      '@rollup/plugin-alias':
+        specifier: ^5.0.0
+        version: 5.1.0(rollup@2.77.3)
       '@rollup/plugin-commonjs':
         specifier: 22.0.2
         version: 22.0.2(rollup@2.77.3)
@@ -3715,6 +3721,19 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@rollup/plugin-alias@5.1.0(rollup@2.77.3):
+    resolution: {integrity: sha512-lpA3RZ9PdIG7qqhEfv79tBffNaoDuukFDrmhLqg9ifv99u/ehn+lOg30x2zmhf8AQqQUZaMk/B9fZraQ6/acDQ==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      rollup: 2.77.3
+      slash: 4.0.0
+    dev: true
 
   /@rollup/plugin-alias@5.1.0(rollup@3.29.4):
     resolution: {integrity: sha512-lpA3RZ9PdIG7qqhEfv79tBffNaoDuukFDrmhLqg9ifv99u/ehn+lOg30x2zmhf8AQqQUZaMk/B9fZraQ6/acDQ==}
@@ -18655,10 +18674,6 @@ packages:
       compress-commons: 6.0.2
       readable-stream: 4.5.2
     dev: true
-
-  /zod@3.19.1:
-    resolution: {integrity: sha512-LYjZsEDhCdYET9ikFu6dVPGp2YH9DegXjdJToSzD9rO6fy4qiRYFoyEYwps88OseJlPyl2NOe2iJuhEhL7IpEA==}
-    dev: false
 
   /zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}

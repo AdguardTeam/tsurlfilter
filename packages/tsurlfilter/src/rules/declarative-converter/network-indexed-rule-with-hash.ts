@@ -1,7 +1,7 @@
 import { getErrorMessage } from '../../common/error';
 import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
-import { DEFAULT_RULE_INDEX, IndexedRule, type IRule } from '../rule';
+import { RULE_INDEX_NONE, IndexedRule, type IRule } from '../rule';
 import { RuleConverter } from '../rule-converter';
 import { RuleFactory } from '../rule-factory';
 
@@ -87,7 +87,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             networkRule = RuleFactory.createRule(
                 ruleConvertedToAGSyntax,
                 filterId,
-                DEFAULT_RULE_INDEX, // FIXME(David, v2.3): rule index
+                RULE_INDEX_NONE, // FIXME(David, v2.3): rule index
                 false, // convert only network rules
                 true, // ignore cosmetic rules
                 true, // ignore host rules

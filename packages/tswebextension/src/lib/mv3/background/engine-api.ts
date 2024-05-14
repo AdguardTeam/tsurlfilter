@@ -96,8 +96,8 @@ export class EngineApi {
         }
 
         // Wrap user rules to IRuleList
-        if (userrules.length > 0) {
-            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
+        if (userrules.content.length > 0) {
+            const convertedUserRules = RuleConverter.convertRules(userrules.content);
             lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
