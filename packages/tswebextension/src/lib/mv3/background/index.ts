@@ -1,15 +1,15 @@
 import {
-    ConversionError,
+    type ConversionError,
     EmptyResourcesError,
     TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
-    ConverterOptionsError,
+    type ConverterOptionsError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRegexpRulesError,
     ResourcesPathError,
-    LimitationError,
+    type LimitationError,
     TooManyRegexpRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,
@@ -22,7 +22,7 @@ export { USER_FILTER_ID } from './user-rules-api';
 export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';
 export { MAIN_FRAME_ID } from '../tabs/frame';
-export { ConfigurationMV3 as Configuration } from './configuration';
+export type { ConfigurationMV3 as Configuration } from './configuration';
 export { CommonMessageType, ExtendedMV3MessageType } from './messages';
 export { RULE_SET_NAME_PREFIX } from './filters-api';
 export {
@@ -34,19 +34,19 @@ export {
 export {
     defaultFilteringLog,
     FilteringEventType,
-    SendRequestEvent,
-    ReceiveResponseEvent,
-    TabReloadEvent,
-    RemoveParamEvent,
-    RemoveHeaderEvent,
-    ApplyCosmeticRuleEvent,
-    ApplyBasicRuleEvent,
-    ApplyCspRuleEvent,
-    CookieEvent,
-    JsInjectEvent,
-    ReplaceRuleApplyEvent,
-    StealthActionEvent,
-    CspReportBlockedEvent,
+    type SendRequestEvent,
+    type ReceiveResponseEvent,
+    type TabReloadEvent,
+    type RemoveParamEvent,
+    type RemoveHeaderEvent,
+    type ApplyCosmeticRuleEvent,
+    type ApplyBasicRuleEvent,
+    type ApplyCspRuleEvent,
+    type CookieEvent,
+    type JsInjectEvent,
+    type ReplaceRuleApplyEvent,
+    type StealthActionEvent,
+    type CspReportBlockedEvent,
 } from '../../common/filtering-log';
 export { BACKGROUND_TAB_ID } from '../../common/constants';
 export { ContentType } from '../../common/request-type';
@@ -61,17 +61,17 @@ export {
 
 // IMPORTANT! Re-exporting errors is necessary to correctly work on instanceof.
 export {
-    ConversionError,
+    type ConversionError,
     EmptyResourcesError,
     TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
-    ConverterOptionsError,
+    type ConverterOptionsError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRegexpRulesError,
     ResourcesPathError,
-    LimitationError,
+    type LimitationError,
     TooManyRegexpRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,

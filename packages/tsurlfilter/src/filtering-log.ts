@@ -1,4 +1,4 @@
-import { NetworkRule } from './rules/network-rule';
+import { type NetworkRule } from './rules/network-rule';
 
 export interface CookieEventOptions {
     tabId: number;

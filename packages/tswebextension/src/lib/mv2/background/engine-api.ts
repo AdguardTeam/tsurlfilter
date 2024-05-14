@@ -7,13 +7,13 @@ import {
     setConfiguration,
     CompatibilityTypes,
     RequestType,
-    NetworkRule,
-    MatchingResult,
+    type NetworkRule,
+    type MatchingResult,
     Request,
     CosmeticResult,
-    CosmeticOption,
+    type CosmeticOption,
     RuleConverter,
-    HTTPMethod,
+    type HTTPMethod,
 } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';

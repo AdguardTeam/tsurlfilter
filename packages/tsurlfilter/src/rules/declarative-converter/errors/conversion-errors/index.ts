@@ -10,7 +10,7 @@ type ConversionError = TooComplexRegexpError
 | UnsupportedRegexpError;
 
 export {
-    ConversionError,
+    type ConversionError,
     EmptyResourcesError,
     TooComplexRegexpError,
     UnsupportedModifierError,

@@ -168,7 +168,7 @@
  *                                       │                             │
  *                                       └─────────────────────────────┘.
  */
-import browser, { WebRequest, WebNavigation } from 'webextension-polyfill';
+import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { tabsApi, engineApi, documentApi } from './api';
@@ -192,7 +192,7 @@ import { TrustedTypesService } from './services/trusted-types-service';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
-    RequestData,
+    type RequestData,
     requestContextStorage,
     RequestBlockingApi,
 } from './request';

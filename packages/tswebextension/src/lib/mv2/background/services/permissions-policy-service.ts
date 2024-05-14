@@ -3,10 +3,10 @@ import { PERMISSIONS_POLICY_HEADER_NAME } from '@adguard/tsurlfilter';
 import {
     defaultFilteringLog,
     FilteringEventType,
-    FilteringLogInterface,
+    type FilteringLogInterface,
     ContentType,
 } from '../../../common';
-import { requestContextStorage, RequestContextStorage, RequestContext } from '../request';
+import { requestContextStorage, type RequestContextStorage, type RequestContext } from '../request';
 
 /**
  * Permissions Policy service.

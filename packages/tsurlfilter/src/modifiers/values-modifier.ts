@@ -1,5 +1,5 @@
 import { SEPARATOR } from '../common/constants';
-import { IAdvancedModifier } from './advanced-modifier';
+import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
  * Permitted/restricted values modifier

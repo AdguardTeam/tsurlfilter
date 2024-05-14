@@ -2,8 +2,10 @@ import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
 import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '@lib/mv2/background/services/content-filtering/charsets';
-import { RequestContext, RequestContextState } from '@lib/mv2/background/request';
-import { ContentStringFilterInterface } from '@lib/mv2/background/services/content-filtering/content-string-filter';
+import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
+import {
+    type ContentStringFilterInterface,
+} from '@lib/mv2/background/services/content-filtering/content-string-filter';
 import { MockStreamFilter } from './mock-stream-filter';
 import { MockFilteringLog } from '../../../../common/mocks';
 

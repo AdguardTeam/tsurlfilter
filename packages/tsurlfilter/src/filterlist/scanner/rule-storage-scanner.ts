@@ -1,4 +1,4 @@
-import { RuleScanner } from './rule-scanner';
+import { type RuleScanner } from './rule-scanner';
 import { IndexedStorageRule } from '../../rules/rule';
 
 /**

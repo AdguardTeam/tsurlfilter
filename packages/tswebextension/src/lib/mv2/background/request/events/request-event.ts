@@ -1,5 +1,5 @@
-import { WebRequest, Events } from 'webextension-polyfill';
-import { RequestContext } from '../request-context-storage';
+import { type WebRequest, type Events } from 'webextension-polyfill';
+import { type RequestContext } from '../request-context-storage';
 
 /**
  * Extended {@link EventCallback} argument data.

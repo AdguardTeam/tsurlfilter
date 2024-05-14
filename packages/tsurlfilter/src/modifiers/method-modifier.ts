@@ -1,4 +1,4 @@
-import { IValueListModifier } from './value-list-modifier';
+import { type IValueListModifier } from './value-list-modifier';
 
 export enum HTTPMethod {
     GET = 'GET',

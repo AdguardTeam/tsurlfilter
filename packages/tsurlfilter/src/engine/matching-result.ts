@@ -1,9 +1,9 @@
-import { CookieModifier } from '../modifiers/cookie-modifier';
-import { HttpHeadersItem } from '../modifiers/header-modifier';
-import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { type CookieModifier } from '../modifiers/cookie-modifier';
+import { type HttpHeadersItem } from '../modifiers/header-modifier';
+import { type RedirectModifier } from '../modifiers/redirect-modifier';
 import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
 import { RequestType } from '../request-type';
-import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
+import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { logger } from '../utils/logger';
 
 import { CosmeticOption } from './cosmetic-option';

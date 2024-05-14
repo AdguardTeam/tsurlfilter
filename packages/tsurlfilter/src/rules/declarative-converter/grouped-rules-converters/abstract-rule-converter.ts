@@ -100,24 +100,24 @@
 import punycode from 'punycode/';
 import { redirects } from '@adguard/scriptlets';
 
-import { NetworkRule, NetworkRuleOption } from '../../network-rule';
-import { RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
-import { RequestType } from '../../../request-type';
+import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
+import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
+import { type RequestType } from '../../../request-type';
 import {
     ResourceType,
-    DeclarativeRule,
-    RuleAction,
+    type DeclarativeRule,
+    type RuleAction,
     RuleActionType,
-    RuleCondition,
+    type RuleCondition,
     DomainType,
-    Redirect,
+    type Redirect,
     HeaderOperation,
-    RuleActionHeaders,
-    ModifyHeaderInfo,
+    type RuleActionHeaders,
+    type ModifyHeaderInfo,
     DECLARATIVE_RESOURCE_TYPES_MAP,
     DECLARATIVE_REQUEST_METHOD_MAP,
-    SupportedHttpMethod,
-    RequestMethod,
+    type SupportedHttpMethod,
+    type RequestMethod,
 } from '../declarative-rule';
 import {
     TooComplexRegexpError,
@@ -125,11 +125,11 @@ import {
     EmptyResourcesError,
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
-import { ConvertedRules } from '../converted-result';
+import { type ConvertedRules } from '../converted-result';
 import type { IRule } from '../../rule';
 import { ResourcesPathError } from '../errors/converter-options-errors';
-import { RedirectModifier } from '../../../modifiers/redirect-modifier';
-import { RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
+import { type RedirectModifier } from '../../../modifiers/redirect-modifier';
+import { type RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';

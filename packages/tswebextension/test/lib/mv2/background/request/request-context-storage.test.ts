@@ -3,7 +3,7 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { ContentType } from '@lib/common';
 import {
     requestContextStorage,
-    RequestContext,
+    type RequestContext,
     RequestContextState,
 } from '@lib/mv2/background/request/request-context-storage';
 
