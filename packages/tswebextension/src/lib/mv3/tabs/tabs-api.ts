@@ -1,7 +1,7 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
-import { getDomain, isHttpRequest } from '../../common/utils/url';
+import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 import { EventChannel } from '../../common/utils/channels';
 import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
@@ -302,7 +302,7 @@ export class TabsApi {
     public updateTabMainFrameRule(tabId: number): void {
         const tabContext = this.context.get(tabId);
 
-        if (!tabContext?.info.url) {
+        if (!tabContext?.info.url || !isHttpOrWsRequest(tabContext.info.url)) {
             return;
         }
 
