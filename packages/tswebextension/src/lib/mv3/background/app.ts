@@ -284,6 +284,8 @@ MessagesHandlerMV3
         });
         await engineApi.waitingForEngine;
 
+        // Update previously opened tabs with new rules - find for each tab
+        // new main frame rule.
         await tabsApi.updateCurrentTabsMainFrameRules();
 
         // TODO: Recreate only dynamic rule set, because static cannot be changed
