@@ -1,5 +1,6 @@
 import console from 'console';
 import fs from 'fs';
+import os from 'os';
 import {
     BufferRuleList,
     DnsEngine,
@@ -10,26 +11,81 @@ import {
 } from '../../src';
 import { ByteBuffer } from '../../src/utils/byte-buffer';
 
-const toFixed = (num: number): string => {
-    return num.toFixed(2);
-};
-
+// Time: Tue May 14 2024
+// Env:
+// ┌──────────────┬────────────────────────────────────────────┐
+// │   (index)    │                   Values                   │
+// ├──────────────┼────────────────────────────────────────────┤
+// │   Platform   │                'darwin x64'                │
+// │     CPU      │ 'Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz' │
+// │     RAM      │                  '16 GB'                   │
+// │ Node version │                 '18.19.0'                  │
+// │  V8 version  │           '10.2.154.26-node.28'            │
+// └──────────────┴────────────────────────────────────────────┘
+// Result (10 rounds):
+// ┌────────────────┬─────────────┬─────────────┬────────────┐
+// │    (index)     │    cold     │     hot     │    diff    │
+// ├────────────────┼─────────────┼─────────────┼────────────┤
+// │     engine     │ '554.46 ms' │ '321.80 ms' │ '-41.96 %' │
+// │ network engine │ '241.32 ms' │  '0.01 ms'  │ '-99.99 %' │
+// │   dns engine   │ '190.96 ms' │  '1.05 ms'  │ '-99.45 %' │
+// └────────────────┴─────────────┴─────────────┴────────────┘
 describe('Start Engine Benchmark', () => {
+    const ROUNDS = 10;
+
+    let result: Record<string, {
+        cold: string,
+        hot: string,
+        diff: string,
+    }>;
+
+    function runBenchmark(title: string, cb: () => { cold: number, hot: number }): void {
+        const coldMeasurements = [];
+        const hotMeasurements = [];
+        let i = ROUNDS;
+
+        while (i > 0) {
+            const { cold, hot } = cb();
+            coldMeasurements.push(cold);
+            hotMeasurements.push(hot);
+            i -= 1;
+        }
+
+        const coldAverage = coldMeasurements.reduce((a, b) => a + b, 0) / ROUNDS;
+        const hotAverage = hotMeasurements.reduce((a, b) => a + b, 0) / ROUNDS;
+        const differenceInPercent = ((hotAverage - coldAverage) / coldAverage) * 100;
+
+        result[title] = {
+            cold: `${coldAverage.toFixed(2)} ms`,
+            hot: `${hotAverage.toFixed(2)} ms`,
+            diff: `${differenceInPercent.toFixed(2)} %`,
+        };
+    }
+
     beforeAll(() => {
         setLogger({
-            error(): void {
-            },
-            info(): void {
-            },
-            debug(): void {
-            },
-            warn(): void {
-            },
+            error: jest.fn(),
+            info: jest.fn(),
+            debug: jest.fn(),
+            warn: jest.fn(),
         });
+
+        result = {};
     });
 
     afterAll(() => {
         setLogger(console);
+        console.log('Time:', new Date(Date.now()).toDateString());
+        console.log('Env:');
+        console.table({
+            Platform: `${os.platform()} ${os.arch()}`,
+            CPU: os.cpus()[0].model,
+            RAM: `${os.totalmem() / (1024 ** 3)} GB`,
+            'Node version': `${process.versions.node}`,
+            'V8 version': `${process.versions.v8}`,
+        });
+        console.log(`Result (${ROUNDS} rounds):`);
+        console.table(result);
     });
 
     it('starts engine', async () => {
@@ -37,34 +93,14 @@ describe('Start Engine Benchmark', () => {
 
         const ruleText = await fs.promises.readFile(rulesFilePath, 'utf8');
 
-        console.log('Starting engine..');
-        const startParse = performance.now();
-
-        // Starting engine..
-        // ┌─────────┬─────────────┐
-        // │ (index) │   Values    │
-        // ├─────────┼─────────────┤
-        // │  cold   │ '377.50 ms' │
-        // │   hot   │ '187.66 ms' │
-        // │  diff   │ '-50.29 %'  │
-        // └─────────┴─────────────┘
-        // Elapsed on parsing rules: 5660.67 ms
-
-        let count = 0;
-        let buffer;
-        const loopsCount = 10;
-        const coldMeasurements = [];
-        const hotMeasurements = [];
-        while (count < loopsCount) {
-            count += 1;
-
+        runBenchmark('engine', () => {
             const list = new BufferRuleList(1, ruleText, false);
             const ruleStorage = new RuleStorage([list]);
 
-            buffer = new ByteBuffer();
+            const buffer = new ByteBuffer();
             const coldStart = performance.now();
             const engine = Engine.create(ruleStorage, buffer, false);
-            coldMeasurements.push(performance.now() - coldStart);
+            const coldEnd = performance.now() - coldStart;
 
             expect(engine).toBeTruthy();
             expect(engine.getRulesCount()).toEqual(91694);
@@ -73,81 +109,48 @@ describe('Start Engine Benchmark', () => {
 
             const hotStart = performance.now();
             const engineFromBuffer = Engine.from(ruleStorage, newBuffer);
-            hotMeasurements.push(performance.now() - hotStart);
+            const hotEnd = performance.now() - hotStart;
 
             expect(engineFromBuffer).toBeTruthy();
             expect(engineFromBuffer.getRulesCount()).toEqual(91694);
-        }
 
-        const coldAverage = coldMeasurements.reduce((a, b) => a + b, 0) / loopsCount;
-        const hotAverage = hotMeasurements.reduce((a, b) => a + b, 0) / loopsCount;
-        const differenceInPercent = ((hotAverage - coldAverage) / coldAverage) * 100;
-        console.table({
-            cold: `${toFixed(coldAverage)} ms`,
-            hot: `${toFixed(hotAverage)} ms`,
-            diff: `${toFixed(differenceInPercent)} %`,
+            return {
+                cold: coldEnd,
+                hot: hotEnd,
+            };
         });
-
-        console.log(`Elapsed on parsing rules: ${toFixed(performance.now() - startParse)} ms`);
     });
 
     it('starts network engine', async () => {
         const rulesFilePath = './test/resources/adguard_base_filter.txt';
 
         const ruleText = await fs.promises.readFile(rulesFilePath, 'utf8');
-
-        console.log('Starting network engine...');
-        const startParse = performance.now();
-
-        // Starting network engine...
-        // ┌─────────┬─────────────┐
-        // │ (index) │   Values    │
-        // ├─────────┼─────────────┤
-        // │  cold   │ '133.58 ms' │
-        // │   hot   │  '0.03 ms'  │
-        // │  diff   │ '-99.98 %'  │
-        // └─────────┴─────────────┘
-        // Elapsed on parsing rules: 1342.14 ms
-
-        let count = 0;
-        let buffer;
-        const loopsCount = 10;
-        const coldMeasurements = [];
-        const hotMeasurements = [];
-        while (count < loopsCount) {
-            count += 1;
-
+        runBenchmark('network engine', () => {
             const list = new BufferRuleList(1, ruleText, false);
             const ruleStorage = new RuleStorage([list]);
 
-            buffer = new ByteBuffer();
+            const buffer = new ByteBuffer();
             const coldStart = performance.now();
-            const networkEngine = NetworkEngine.create(ruleStorage, buffer, false);
-            coldMeasurements.push(performance.now() - coldStart);
+            const engine = NetworkEngine.create(ruleStorage, buffer, false);
+            const coldEnd = performance.now() - coldStart;
 
-            expect(networkEngine).toBeTruthy();
-            expect(networkEngine.rulesCount).toEqual(44613);
+            expect(engine).toBeTruthy();
+            expect(engine.rulesCount).toEqual(44613);
 
             const newBuffer = new ByteBuffer(buffer.data); // copy buffer
 
             const hotStart = performance.now();
-            const networkEngineFromBuffer = new NetworkEngine(ruleStorage, newBuffer, 0);
-            hotMeasurements.push(performance.now() - hotStart);
+            const engineFromBuffer = new NetworkEngine(ruleStorage, newBuffer, 0);
+            const hotEnd = performance.now() - hotStart;
 
-            expect(networkEngineFromBuffer).toBeTruthy();
-            expect(networkEngineFromBuffer.rulesCount).toEqual(44613);
-        }
+            expect(engineFromBuffer).toBeTruthy();
+            expect(engine.rulesCount).toEqual(44613);
 
-        const coldAverage = coldMeasurements.reduce((a, b) => a + b, 0) / loopsCount;
-        const hotAverage = hotMeasurements.reduce((a, b) => a + b, 0) / loopsCount;
-        const differenceInPercent = ((hotAverage - coldAverage) / coldAverage) * 100;
-        console.table({
-            cold: `${toFixed(coldAverage)} ms`,
-            hot: `${toFixed(hotAverage)} ms`,
-            diff: `${toFixed(differenceInPercent)} %`,
+            return {
+                cold: coldEnd,
+                hot: hotEnd,
+            };
         });
-
-        console.log(`Elapsed on parsing rules: ${toFixed(performance.now() - startParse)} ms`);
     });
 
     it('starts dns engine', async () => {
@@ -157,58 +160,32 @@ describe('Start Engine Benchmark', () => {
         const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
         const hostsText = await fs.promises.readFile(hostsFilePath, 'utf8');
 
-        console.log('Starting dns engine...');
-        const startParse = performance.now();
-
-        // Starting dns engine...
-        // ┌─────────┬─────────────┐
-        // │ (index) │   Values    │
-        // ├─────────┼─────────────┤
-        // │  cold   │ '191.61 ms' │
-        // │   hot   │  '0.76 ms'  │
-        // │  diff   │ '-99.61 %'  │
-        // └─────────┴─────────────┘
-        // Elapsed on parsing rules: 1979.51 ms
-
-        let count = 0;
-        let buffer;
-        const loopsCount = 10;
-        const coldMeasurements = [];
-        const hotMeasurements = [];
-        while (count < loopsCount) {
-            count += 1;
-
+        runBenchmark('dns engine', () => {
             const ruleList = new BufferRuleList(1, rulesText, false);
             const hostList = new BufferRuleList(2, hostsText, false);
             const ruleStorage = new RuleStorage([ruleList, hostList]);
 
-            buffer = new ByteBuffer();
+            const buffer = new ByteBuffer();
             const coldStart = performance.now();
-            const dnsEngine = DnsEngine.create(ruleStorage, buffer, false);
-            coldMeasurements.push(performance.now() - coldStart);
+            const engine = DnsEngine.create(ruleStorage, buffer, false);
+            const coldEnd = performance.now() - coldStart;
 
-            expect(dnsEngine).toBeTruthy();
-            expect(dnsEngine.rulesCount).toEqual(55999);
+            expect(engine).toBeTruthy();
+            expect(engine.rulesCount).toEqual(55999);
 
             const newBuffer = new ByteBuffer(buffer.data); // copy buffer
 
             const hotStart = performance.now();
-            const dnsEngineFromBuffer = DnsEngine.from(ruleStorage, newBuffer);
-            hotMeasurements.push(performance.now() - hotStart);
+            const engineFromBuffer = DnsEngine.from(ruleStorage, newBuffer);
+            const hotEnd = performance.now() - hotStart;
 
-            expect(dnsEngineFromBuffer).toBeTruthy();
-            expect(dnsEngineFromBuffer.rulesCount).toEqual(55999);
-        }
+            expect(engineFromBuffer).toBeTruthy();
+            expect(engine.rulesCount).toEqual(55999);
 
-        const coldAverage = coldMeasurements.reduce((a, b) => a + b, 0) / loopsCount;
-        const hotAverage = hotMeasurements.reduce((a, b) => a + b, 0) / loopsCount;
-        const differenceInPercent = ((hotAverage - coldAverage) / coldAverage) * 100;
-        console.table({
-            cold: `${toFixed(coldAverage)} ms`,
-            hot: `${toFixed(hotAverage)} ms`,
-            diff: `${toFixed(differenceInPercent)} %`,
+            return {
+                cold: coldEnd,
+                hot: hotEnd,
+            };
         });
-
-        console.log(`Elapsed on parsing rules: ${toFixed(performance.now() - startParse)} ms`);
     });
 });
