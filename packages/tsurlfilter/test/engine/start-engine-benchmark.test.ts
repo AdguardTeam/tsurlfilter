@@ -144,7 +144,7 @@ describe('Start Engine Benchmark', () => {
             const hotEnd = performance.now() - hotStart;
 
             expect(engineFromBuffer).toBeTruthy();
-            expect(engine.rulesCount).toEqual(44613);
+            expect(engineFromBuffer.rulesCount).toEqual(44613);
 
             return {
                 cold: coldEnd,
@@ -180,7 +180,7 @@ describe('Start Engine Benchmark', () => {
             const hotEnd = performance.now() - hotStart;
 
             expect(engineFromBuffer).toBeTruthy();
-            expect(engine.rulesCount).toEqual(55999);
+            expect(engineFromBuffer.rulesCount).toEqual(55999);
 
             return {
                 cold: coldEnd,
