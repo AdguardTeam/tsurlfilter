@@ -1,0 +1,4 @@
+# TODO: add description and documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: ati-smarttag

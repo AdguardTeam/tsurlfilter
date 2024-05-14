@@ -1,12 +1,27 @@
-# TODO: add adg_os_any after CoreLibs 1.13 release
-# https://adguard.app/kb/general/ad-filtering/create-own-filters/#to-modifier
+define:
+  - &common_props
+    name: to
+    conflicts:
+      - denyallow
+    assignable: true
+    negatable: false
+    value_format: pipe_separated_domains
+  - &common_adg_props
+    <<: *common_props
+    description: |-
+      `$to` limits the rule scope to requests made to the specified domains and their subdomains.
+      To add multiple domains to one rule, use the `|` character as a separator.
+    docs: https://adguard.com/kb/general/ad-filtering/create-own-filters/#to-modifier
+
+adg_os_any:
+  <<: *common_adg_props
+
+adg_ext_any:
+  <<: *common_adg_props
 
 ubo_ext_any:
-  name: to
+  <<: *common_props
   description: |-
     The main motivation of this option is
     to give static network filtering engine an equivalent of DNR's `requestDomains` and `excludedRequestDomains`.
   docs: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#to
-  assignable: true
-  negatable: false
-  value_format: pipe_separated_domains

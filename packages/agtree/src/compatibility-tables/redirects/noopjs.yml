@@ -1,0 +1,16 @@
+# TODO: add documentation reference
+# Note: content blocking products do not support redirects
+adg_any_not_cb:
+  name: noopjs
+  aliases:
+    - noop.js
+    - blank-js
+  description: Redirects to an empty JavaScript file.
+
+ubo_any:
+  name: noop.js
+  description: Redirects to an empty JavaScript file.
+
+abp_any:
+  name: blank-js
+  description: Redirects to an empty JavaScript file.

@@ -1,0 +1,10 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: prevent-adfly
+  version_added: 1.0.4
+  aliases:
+    - adfly-defuser.js
+    - ubo-adfly-defuser.js
+    - ubo-adfly-defuser
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-adfly
