@@ -2,7 +2,7 @@ import browser, { type WebRequest } from 'webextension-polyfill';
 import {
     RequestType,
     NetworkRuleOption,
-    NetworkRule,
+    type NetworkRule,
 } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../../tabs/tabs-api';
