@@ -1,6 +1,6 @@
 import { NetworkRule, RuleStorage, StringRuleList } from '../../../src';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
-import { ILookupTable } from '../../../src/engine/lookup-tables/lookup-table';
+import { type ILookupTable } from '../../../src/engine/lookup-tables/lookup-table';
 
 export function createRuleStorage(rules: string[]): RuleStorage {
     const list = new StringRuleList(1, rules.join('\n'), true);

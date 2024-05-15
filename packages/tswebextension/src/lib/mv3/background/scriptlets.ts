@@ -1,10 +1,10 @@
-import { CosmeticOption, ScriptletData } from '@adguard/tsurlfilter';
+import { CosmeticOption, type ScriptletData } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils';
 import { logger } from '../utils/logger';
 
 import { engineApi } from './engine-api';
-import { tabsApi } from './tabs-api';
+import { tabsApi } from '../tabs/tabs-api';
 
 // eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns
 /**

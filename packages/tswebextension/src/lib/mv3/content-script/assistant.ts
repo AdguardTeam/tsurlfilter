@@ -1,4 +1,4 @@
-import { adguardAssistant, Assistant } from '@adguard/assistant';
+import { adguardAssistant, type Assistant } from '@adguard/assistant';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';

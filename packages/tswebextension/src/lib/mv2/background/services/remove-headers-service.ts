@@ -1,15 +1,15 @@
 import { nanoid } from 'nanoid';
-import { WebRequest } from 'webextension-polyfill';
-import { NetworkRule, RemoveHeaderModifier } from '@adguard/tsurlfilter';
+import { type WebRequest } from 'webextension-polyfill';
+import { type NetworkRule, type RemoveHeaderModifier } from '@adguard/tsurlfilter';
 
 import {
     defaultFilteringLog,
     FilteringEventType,
-    FilteringLogInterface,
+    type FilteringLogInterface,
     getDomain,
 } from '../../../common';
 import { removeHeader, findHeaderByName } from '../utils/headers';
-import { RequestContext, requestContextStorage } from '../request';
+import { type RequestContext, requestContextStorage } from '../request';
 
 /**
  * Headers filtering service module.

@@ -1,7 +1,8 @@
+import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 import { BufferLineReader } from './reader/buffer-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
-import { ScannerType } from './scanner/scanner-type';
+import { type ScannerType } from './scanner/scanner-type';
 
 /**
  * BufferRuleList represents a string-based rule list. It keeps the original
@@ -36,6 +37,11 @@ export class BufferRuleList implements IRuleList {
     private readonly ignoreUnsafe: boolean;
 
     /**
+     * Source map for the filter list.
+     */
+    private readonly sourceMap: FilterListSourceMap;
+
+    /**
      * Text decoder that is used to read strings from the internal buffer of
      * UTF-8 encoded characters.
      */
@@ -49,6 +55,7 @@ export class BufferRuleList implements IRuleList {
      * @param ignoreCosmetic - (Optional) True to ignore cosmetic rules.
      * @param ignoreJS - (Optional) True to ignore JS rules.
      * @param ignoreUnsafe - (Optional) True to ignore unsafe rules.
+     * @param sourceMap - (Optional) Source map for the filter list.
      */
     constructor(
         listId: number,
@@ -56,6 +63,7 @@ export class BufferRuleList implements IRuleList {
         ignoreCosmetic?: boolean,
         ignoreJS?: boolean,
         ignoreUnsafe?: boolean,
+        sourceMap?: FilterListSourceMap,
     ) {
         if (listId >= LIST_ID_MAX_VALUE) {
             throw new Error(`Invalid list identifier, it must be less than ${LIST_ID_MAX_VALUE}`);
@@ -67,6 +75,7 @@ export class BufferRuleList implements IRuleList {
         this.ignoreCosmetic = !!ignoreCosmetic;
         this.ignoreJS = !!ignoreJS;
         this.ignoreUnsafe = !!ignoreUnsafe;
+        this.sourceMap = sourceMap ?? {};
     }
 
     /**
@@ -96,6 +105,7 @@ export class BufferRuleList implements IRuleList {
             ignoreCosmetic: this.ignoreCosmetic,
             ignoreJS: this.ignoreJS,
             ignoreUnsafe: this.ignoreUnsafe,
+            sourceMap: this.sourceMap,
         });
     }
 
@@ -126,5 +136,12 @@ export class BufferRuleList implements IRuleList {
         }
 
         return line;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    retrieveRuleSourceIndex(ruleIdx: number): number {
+        return getRuleSourceIndex(ruleIdx, this.sourceMap);
     }
 }

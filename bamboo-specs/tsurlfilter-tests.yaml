@@ -58,6 +58,9 @@ Test:
             # Install dependencies
             pnpm install
 
+            # Build dependencies before running tests
+            pnpm --filter "@adguard/tsurlfilter^..." --depth=-1 build
+
             pnpm --filter @adguard/tsurlfilter lint
             pnpm --filter @adguard/tsurlfilter build
 

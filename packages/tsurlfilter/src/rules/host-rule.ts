@@ -23,6 +23,8 @@ import { isDomainName } from '../utils/url';
 export class HostRule implements rule.IRule {
     private readonly ruleText: string;
 
+    private readonly ruleIndex: number;
+
     private readonly filterListId: number;
 
     private readonly hostnames: string[] = [];
@@ -41,8 +43,9 @@ export class HostRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
         this.ruleText = ruleText;
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
         const commentIndex = ruleText.indexOf('#');
@@ -87,6 +90,13 @@ export class HostRule implements rule.IRule {
      */
     getText(): string {
         return this.ruleText;
+    }
+
+    /**
+     * Returns rule index
+     */
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     /**

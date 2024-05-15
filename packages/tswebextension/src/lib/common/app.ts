@@ -1,5 +1,5 @@
-import { FilteringLogEvent } from './filtering-log';
-import { EventChannelInterface } from './utils';
+import { type FilteringLogEvent } from './filtering-log';
+import { type EventChannelInterface } from './utils';
 
 export interface AppInterface<
     TConfiguration,

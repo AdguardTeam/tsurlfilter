@@ -1,8 +1,9 @@
 import type { WebRequest } from 'webextension-polyfill';
-import type { MatchingResult, HTTPMethod, RequestType } from '@adguard/tsurlfilter';
+import type { MatchingResult, HTTPMethod, CosmeticResult } from '@adguard/tsurlfilter';
 
 import type { ContentType } from '../../../common';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
+import type { TabFrameRequestContext } from '../../tabs/tabs-api';
 
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
@@ -19,30 +20,28 @@ export const enum RequestContextState {
 /**
  * Request context data.
  */
-export type RequestContext =
-    {
-        tabId: number;
-    } & {
-        requestId: string;
-        requestUrl: string;
-        requestType: RequestType;
-    } & {
-        state: RequestContextState;
-        timestamp: number; // record time in ms
-        referrerUrl: string;
-        contentType: ContentType;
-        thirdParty: boolean;
-        method: HTTPMethod;
+export type RequestContext = TabFrameRequestContext & {
+    state: RequestContextState;
+    timestamp: number; // record time in ms
+    referrerUrl: string;
+    contentType: ContentType;
+    thirdParty: boolean;
+    method: HTTPMethod;
 
-        requestHeaders?: WebRequest.HttpHeaders;
-        responseHeaders?: WebRequest.HttpHeaders;
-        cookies?: ParsedCookie[];
+    requestHeaders?: WebRequest.HttpHeaders;
+    responseHeaders?: WebRequest.HttpHeaders;
+    cookies?: ParsedCookie[];
 
-        /**
-         * Filtering data from {@link EngineApi.matchRequest}.
-         */
-        matchingResult?: MatchingResult | null;
-    };
+    /**
+     * Filtering data from {@link EngineApi.matchRequest}.
+     */
+    matchingResult?: MatchingResult | null;
+
+    /**
+     * Filtering data from {@link EngineApi.getCosmeticResult}.
+     */
+    cosmeticResult?: CosmeticResult;
+};
 
 /**
  * Implementation of the request context storage.

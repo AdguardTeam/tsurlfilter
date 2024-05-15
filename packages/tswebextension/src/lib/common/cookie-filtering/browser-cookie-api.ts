@@ -1,8 +1,9 @@
 /* eslint-disable class-methods-use-this */
 import browser, { Cookies } from 'webextension-polyfill';
+import { getDomain } from 'tldts';
 
 import { logger } from '../utils/logger';
-import { ParsedCookie } from './parsed-cookie';
+import { type ParsedCookie } from './parsed-cookie';
 
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
@@ -45,7 +46,10 @@ export class BrowserCookieApi {
         } catch (e) {
             // If `domain` contains the `path` part, the cookie cannot be saved,
             // since `domain` can only contain hostname.
-            if (cookie.domain?.includes('/')) {
+            if (cookie.domain?.includes('/')
+                // if url is not matched with domain, cookie cannot be set
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2683
+                || (cookie.domain && !BrowserCookieApi.doesDomainMatchUrl(cookie.domain, cookie.url))) {
                 logger.info((e as Error).message);
             } else {
                 logger.error((e as Error).message);
@@ -72,6 +76,27 @@ export class BrowserCookieApi {
         }
 
         return [];
+    }
+
+    /**
+     * Checks whether the cookie domain matches the url.
+     *
+     * @param rawCookieDomain Cookie domain.
+     * @param url Request url.
+     *
+     * @returns True if domain matches the url, false otherwise.
+     */
+    private static doesDomainMatchUrl(rawCookieDomain: string, url: string): boolean {
+        let cookieDomain = rawCookieDomain;
+
+        // cookie domain can be '.example.com'
+        if (cookieDomain.startsWith('.')) {
+            cookieDomain = cookieDomain.slice(1);
+        }
+
+        const urlDomain = getDomain(url);
+
+        return !!urlDomain && cookieDomain.includes(urlDomain);
     }
 
     /**

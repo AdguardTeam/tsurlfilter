@@ -91,19 +91,19 @@
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
 import type { DeclarativeRule } from './declarative-rule';
-import { ConvertedRules } from './converted-result';
+import { type ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
 import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-header-converter';
 import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
-import { Source } from './source-map';
+import { type Source } from './source-map';
 import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
-import { LimitationError, TooManyRulesError, TooManyRegexpRulesError } from './errors/limitation-errors';
+import { type LimitationError, TooManyRulesError, TooManyRegexpRulesError } from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';
-import { DeclarativeRulesGrouper, GroupedRules, RulesGroup } from './rules-grouper';
-import { DeclarativeConverterOptions } from './declarative-converter-options';
-import { ConversionError, InvalidDeclarativeRuleError } from './errors/conversion-errors';
-import { ScannedFilter } from './network-rules-scanner';
+import { DeclarativeRulesGrouper, type GroupedRules, RulesGroup } from './rules-grouper';
+import { type DeclarativeConverterOptions } from './declarative-converter-options';
+import { type ConversionError, InvalidDeclarativeRuleError } from './errors/conversion-errors';
+import { type ScannedFilter } from './network-rules-scanner';
 
 type FiltersIdsWithGroupedRules = [number, GroupedRules][];
 

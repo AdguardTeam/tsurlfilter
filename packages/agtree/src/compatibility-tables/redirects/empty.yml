@@ -1,0 +1,8 @@
+# TODO: add documentation reference
+adg_any_not_cb:
+  name: empty
+  description: Redirects to an empty file.
+
+ubo_any:
+  name: empty
+  description: Redirects to an empty file.

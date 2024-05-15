@@ -7,13 +7,12 @@ import {
     setConfiguration,
     CompatibilityTypes,
     RequestType,
-    NetworkRule,
-    MatchingResult,
+    type NetworkRule,
+    type MatchingResult,
     Request,
     CosmeticResult,
-    CosmeticOption,
-    RuleConverter,
-    HTTPMethod,
+    type CosmeticOption,
+    type HTTPMethod,
 } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
@@ -89,22 +88,37 @@ export class EngineApi {
         const lists: IRuleList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
-            const { filterId, content, trusted } = filters[i];
-            const convertedContent = RuleConverter.convertRules(content);
-            lists.push(new BufferRuleList(
+            const {
                 filterId,
-                convertedContent,
-                false,
-                !trusted,
-                !trusted,
-            ));
+                content,
+                trusted,
+                sourceMap,
+            } = filters[i];
+
+            lists.push(
+                new BufferRuleList(
+                    filterId,
+                    content,
+                    false,
+                    !trusted,
+                    !trusted,
+                    sourceMap,
+                ),
+            );
         }
 
-        if (userrules.length > 0) {
-            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
-            lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
+        if (userrules.content.length > 0) {
+            lists.push(
+                new BufferRuleList(
+                    USER_FILTER_ID,
+                    userrules.content,
+                    false,
+                    false,
+                    false,
+                    userrules.sourceMap,
+                ),
+            );
         }
-
         const allowlistRulesList = this.allowlist.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);

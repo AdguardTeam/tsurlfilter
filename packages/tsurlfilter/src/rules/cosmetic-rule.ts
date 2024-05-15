@@ -1,12 +1,12 @@
-import scriptlets, { IConfiguration } from '@adguard/scriptlets';
+import scriptlets, { type IConfiguration } from '@adguard/scriptlets';
 import * as rule from './rule';
 import { CosmeticRuleMarker, isExtCssMarker, ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
-import { DomainModifier } from '../modifiers/domain-modifier';
+import { type DomainModifier } from '../modifiers/domain-modifier';
 import { hasUnquotedSubstring, indexOfAny } from '../utils/string-utils';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
 import { CosmeticRuleParser, isUrlPatternResult } from './cosmetic-rule-parser';
-import { Request } from '../request';
+import { type Request } from '../request';
 import { Pattern } from './pattern';
 import { config } from '../configuration';
 import { ScriptletsParams } from './scriptlets-params';
@@ -137,6 +137,8 @@ export const EXT_CSS_PSEUDO_INDICATORS = [
  */
 export class CosmeticRule implements rule.IRule {
     private readonly ruleText: string;
+
+    private readonly ruleIndex: number;
 
     private readonly filterListId: number;
 
@@ -278,6 +280,10 @@ export class CosmeticRule implements rule.IRule {
         return this.ruleText;
     }
 
+    getIndex(): number {
+        return this.ruleIndex;
+    }
+
     getFilterListId(): number {
         return this.filterListId;
     }
@@ -378,13 +384,17 @@ export class CosmeticRule implements rule.IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param ruleText - original rule text.
-     * @param filterListId - ID of the filter list this rule belongs to.
+     * @param ruleText Original rule text.
+     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex: number = rule.RULE_INDEX_NONE) {
         this.ruleText = ruleText;
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
         const {

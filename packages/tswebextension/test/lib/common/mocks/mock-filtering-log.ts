@@ -1,6 +1,6 @@
 import {
-    FilteringLogEvent,
-    FilteringLogInterface,
+    type FilteringLogEvent,
+    type FilteringLogInterface,
     EventChannel,
 } from '@lib/common';
 

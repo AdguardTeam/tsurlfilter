@@ -6,23 +6,23 @@ import {
     RequestType,
     Request,
     CosmeticResult,
-    CosmeticOption,
+    type CosmeticOption,
     RuleConverter,
-    ScriptletData,
-    CosmeticRule,
-    NetworkRule,
-    MatchingResult,
+    type ScriptletData,
+    type CosmeticRule,
+    type NetworkRule,
+    type MatchingResult,
     type HTTPMethod,
 } from '@adguard/tsurlfilter';
 
-import { IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { getHost } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../utils/logger';
 
-import { ConfigurationMV3 } from './configuration';
+import { type ConfigurationMV3 } from './configuration';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -96,8 +96,8 @@ export class EngineApi {
         }
 
         // Wrap user rules to IRuleList
-        if (userrules.length > 0) {
-            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
+        if (userrules.content.length > 0) {
+            const convertedUserRules = RuleConverter.convertRules(userrules.content);
             lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
         }
 

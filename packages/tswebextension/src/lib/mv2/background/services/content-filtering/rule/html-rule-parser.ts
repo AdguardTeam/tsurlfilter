@@ -1,4 +1,4 @@
-import { CosmeticRule, replaceAll } from '@adguard/tsurlfilter';
+import { type CosmeticRule, replaceAll } from '@adguard/tsurlfilter';
 import { Wildcard } from './wildcard';
 import { HtmlRuleAttributes } from './html-rule-attributes';
 

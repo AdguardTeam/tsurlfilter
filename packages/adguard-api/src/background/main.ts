@@ -22,6 +22,8 @@ import {
     type MessageHandlerMV2,
     EventChannel,
     createTsWebExtension,
+    BasicFilterValidator,
+    FilterListConverter,
 } from '@adguard/tswebextension';
 
 import { Network } from './network';
@@ -48,6 +50,7 @@ import { Logger } from './logger';
  *  This way filters maintainers can test new rules before including them in the filters.
  */
 import localScriptRules from '../local_script_rules.json';
+import { LF } from './constants';
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = 'adguard';
 
@@ -244,7 +247,18 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        const userrules = this.configuration.rules || [];
+        const userrules: BasicFilterValidator = {
+            content: '',
+        };
+
+        if (this.configuration.rules) {
+            // TODO: Change the interface later
+            const userRules = this.configuration.rules.join(LF);
+            const convertedUserRules = FilterListConverter.convertFilter(userRules);
+
+            userrules.sourceMap = convertedUserRules.sourceMap;
+            userrules.content = convertedUserRules.convertedFilterList;
+        }
 
         const filters = await this.filtersApi.getFilters(this.configuration.filters);
 

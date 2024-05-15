@@ -1,12 +1,12 @@
 // eslint-disable-next-line max-classes-per-file
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
-import { Request } from '../request';
+import { type Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { parseOptionsString } from '../utils/parse-options-string';
 import { stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
-import { IAdvancedModifier } from '../modifiers/advanced-modifier';
-import { IValueListModifier } from '../modifiers/value-list-modifier';
+import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
+import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
@@ -14,8 +14,8 @@ import { StealthModifier } from '../modifiers/stealth-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
-import { AppModifier, IAppModifier } from '../modifiers/app-modifier';
-import { HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { AppModifier, type IAppModifier } from '../modifiers/app-modifier';
+import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
 import { HeaderModifier, type HttpHeadersItem, type HttpHeaderMatcher } from '../modifiers/header-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
 import { PermissionsModifier } from '../modifiers/permissions-modifier';
@@ -144,6 +144,15 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Ctag,
 
     /**
+     * Cosmetic option modifiers
+     */
+    CosmeticOption = NetworkRuleOption.Elemhide
+    | NetworkRuleOption.Generichide
+    | NetworkRuleOption.Specifichide
+    | NetworkRuleOption.Jsinject
+    | NetworkRuleOption.Content,
+
+    /**
      * Removeparam compatible modifiers
      *
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
@@ -217,6 +226,8 @@ class BasicRuleParts {
  */
 export class NetworkRule implements rule.IRule {
     private readonly ruleText: string;
+
+    private readonly ruleIndex: number;
 
     private readonly filterListId: number;
 
@@ -426,6 +437,10 @@ export class NetworkRule implements rule.IRule {
      */
     getText(): string {
         return this.ruleText;
+    }
+
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     /**
@@ -1009,13 +1024,17 @@ export class NetworkRule implements rule.IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param ruleText - original rule text.
-     * @param filterListId - ID of the filter list this rule belongs to.
+     * @param ruleText Original rule text.
+     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
         this.ruleText = ruleText;
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
         const ruleParts = NetworkRule.parseRuleText(ruleText);
@@ -1080,6 +1099,13 @@ export class NetworkRule implements rule.IRule {
      */
     hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
+    }
+
+    /**
+     * Returns true if rule has at least one cosmetic option enabled.
+     */
+    hasCosmeticOption(): boolean {
+        return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
     }
 
     /**

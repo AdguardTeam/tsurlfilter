@@ -1,9 +1,9 @@
-import { CookieModifier } from '../modifiers/cookie-modifier';
-import { HttpHeadersItem } from '../modifiers/header-modifier';
-import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { type CookieModifier } from '../modifiers/cookie-modifier';
+import { type HttpHeadersItem } from '../modifiers/header-modifier';
+import { type RedirectModifier } from '../modifiers/redirect-modifier';
 import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
 import { RequestType } from '../request-type';
-import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
+import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { logger } from '../utils/logger';
 
 import { CosmeticOption } from './cosmetic-option';
@@ -90,6 +90,12 @@ export class MatchingResult {
     public readonly stealthRules: NetworkRule[] | null;
 
     /**
+     * CosmeticExceptionRule - a rule that disables cosmetic rules for the document or subdocument.
+     * It is moved to it's own filed to not interfere with applying network blocking rules.
+     */
+    public readonly cosmeticExceptionRule: NetworkRule | null;
+
+    /**
      * PopupRule - this is a rule that specified which way should be used
      * to blocking document request: close the tab or open dummy blocking page.
      * We should store it separately from other blocking rules, because $popup
@@ -118,6 +124,7 @@ export class MatchingResult {
         this.permissionsRules = null;
         this.headerRules = null;
         this.popupRule = null;
+        this.cosmeticExceptionRule = null;
 
         // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
@@ -141,6 +148,27 @@ export class MatchingResult {
 
         // Iterate through the list of rules and fill the MatchingResult
         for (const rule of rules) {
+            if (rule.hasCosmeticOption()) {
+                if (!this.cosmeticExceptionRule || rule.isHigherPriority(this.cosmeticExceptionRule)) {
+                    this.cosmeticExceptionRule = rule;
+                }
+
+                /**
+                 * Some rules include both cosmetic options and network modifiers,
+                 * and affect both network and cosmetic engines matching.
+                 *
+                 * Such rules should also compete for `basicRule` slot down below,
+                 * e.g `@@||example.org$document` and `@@||nhk.or.jp^$content`.
+                 *
+                 * Cosmetic options rules that don't contain such modifiers should only affect cosmetic engine.
+                 */
+                if (!rule.isOptionEnabled(NetworkRuleOption.Urlblock)
+                    && !rule.isOptionEnabled(NetworkRuleOption.Genericblock)
+                    && !rule.isOptionEnabled(NetworkRuleOption.Content)
+                ) {
+                    continue;
+                }
+            }
             if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
                 (this.cookieRules ??= []).push(rule);
                 continue;
@@ -349,9 +377,10 @@ export class MatchingResult {
      * @return {CosmeticOption} mask
      */
     getCosmeticOption(): CosmeticOption {
-        const { basicRule, documentRule } = this;
+        const { basicRule, documentRule, cosmeticExceptionRule } = this;
 
-        let rule = basicRule;
+        let rule = cosmeticExceptionRule || basicRule;
+
         // We choose a non-empty rule and the one of the two with the higher
         // priority in order to accurately calculate cosmetic options.
         if ((!rule && documentRule) || (rule && documentRule?.isHigherPriority(rule))) {

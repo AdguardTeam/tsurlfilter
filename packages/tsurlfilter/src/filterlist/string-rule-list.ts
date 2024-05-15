@@ -1,7 +1,8 @@
+import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 import { StringLineReader } from './reader/string-line-reader';
-import { IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
+import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
-import { ScannerType } from './scanner/scanner-type';
+import { type ScannerType } from './scanner/scanner-type';
 
 /**
  * StringRuleList represents a string-based rule list. Consider it a reference
@@ -35,6 +36,11 @@ export class StringRuleList implements IRuleList {
     private readonly ignoreUnsafe: boolean;
 
     /**
+     * Source map for the filter list.
+     */
+    private readonly sourceMap: FilterListSourceMap;
+
+    /**
      * Constructor
      *
      * @param listId
@@ -42,6 +48,7 @@ export class StringRuleList implements IRuleList {
      * @param ignoreCosmetic (Optional) default false
      * @param ignoreJS (Optional) default false
      * @param ignoreUnsafe (Optional) default false
+     * @param sourceMap - (Optional) Source map for the filter list
      */
     constructor(
         listId: number,
@@ -49,6 +56,7 @@ export class StringRuleList implements IRuleList {
         ignoreCosmetic?: boolean,
         ignoreJS?: boolean,
         ignoreUnsafe?: boolean,
+        sourceMap?: FilterListSourceMap,
     ) {
         if (listId >= LIST_ID_MAX_VALUE) {
             throw new Error(`Invalid list identifier, it must be less than ${LIST_ID_MAX_VALUE}`);
@@ -59,6 +67,7 @@ export class StringRuleList implements IRuleList {
         this.ignoreCosmetic = !!ignoreCosmetic;
         this.ignoreJS = !!ignoreJS;
         this.ignoreUnsafe = !!ignoreUnsafe;
+        this.sourceMap = sourceMap || {};
     }
 
     /**
@@ -87,6 +96,7 @@ export class StringRuleList implements IRuleList {
             ignoreCosmetic: this.ignoreCosmetic,
             ignoreJS: this.ignoreJS,
             ignoreUnsafe: this.ignoreUnsafe,
+            sourceMap: this.sourceMap,
         });
     }
 
@@ -113,5 +123,12 @@ export class StringRuleList implements IRuleList {
         }
 
         return line;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    retrieveRuleSourceIndex(ruleIdx: number): number {
+        return getRuleSourceIndex(ruleIdx, this.sourceMap);
     }
 }

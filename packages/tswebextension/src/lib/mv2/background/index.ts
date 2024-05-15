@@ -4,6 +4,12 @@ export {
     CosmeticRule,
     CosmeticRuleType,
     NetworkRuleOption,
+    FilterListConverter,
+    type ConvertedFilterList,
+    type FilterListConversionMap,
+    type FilterListSourceMap,
+    getRuleSourceIndex,
+    getRuleSourceText,
 } from '@adguard/tsurlfilter';
 
 // Re-export needed to print libraries version in extension popup.

@@ -3,7 +3,7 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 
 import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
-import { FrameRequestContext, TabContext } from './tab-context';
+import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
 import { isHttpRequest, getDomain } from '../../../common';
 
@@ -81,6 +81,7 @@ export class TabsApi {
         browser.tabs.onRemoved.removeListener(this.handleTabDelete);
         browser.tabs.onUpdated.removeListener(this.handleTabUpdate);
         browser.tabs.onActivated.removeListener(this.handleTabActivate);
+        browser.tabs.onReplaced.removeListener(this.handleTabReplace);
 
         // Firefox for android doesn't support windows API
         if (browser.windows) {
