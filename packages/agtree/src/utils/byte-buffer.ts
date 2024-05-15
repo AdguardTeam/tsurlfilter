@@ -29,10 +29,13 @@ export class ByteBuffer {
      * Constructs a new ByteBuffer instance.
      *
      * @param chunks Optional array of chunks to initialize the ByteBuffer with.
-     * @note If you provide chunks, for performance reasons, they are passed by reference and not copied.
+     * @param cloneChunks Flag indicating if the chunks should be cloned. For performance reasons,
+     * its default value is `false`. If the original chunks are guaranteed not to change,
+     * leave this flag as `false` to avoid unnecessary copying.
      */
-    constructor(chunks?: Uint8Array[]) {
-        this.chunks = chunks ?? [];
+    constructor(chunks?: Uint8Array[], cloneChunks = false) {
+        const chunksToUse = chunks ?? [];
+        this.chunks = cloneChunks ? chunksToUse.map((chunk) => new Uint8Array(chunk)) : chunksToUse;
         this.chunksLength = chunks?.length ?? 0;
     }
 

@@ -91,7 +91,7 @@ describe('ByteBuffer', () => {
         });
 
         test('should work for long strings', async () => {
-            await testWithString('Hello, 世界! 👋'.repeat(2500));
+            await testWithString('Hello, 世界! 👋'.repeat(25000));
         });
     });
 
@@ -164,6 +164,43 @@ describe('ByteBuffer', () => {
             const input = await InputByteBuffer.createFromStorage(storage, 'test');
 
             expect(() => input.assertUint8(2)).toThrow('Expected 2, but got 1');
+        });
+    });
+
+    describe('InputByteBuffer.createCopyWithOffset', () => {
+        test('should work on valid data', async () => {
+            const storage = new SimpleStorage();
+            const output = new OutputByteBuffer();
+            output.writeUint8(100);
+            output.writeUint8(101);
+            output.writeUint8(102);
+            await output.writeChunksToStorage(storage, 'test');
+
+            // make the original input buffer read the first byte
+            const input = await InputByteBuffer.createFromStorage(storage, 'test');
+            expect(input.readUint8()).toBe(100);
+
+            // make a copy of the input buffer and read the first two bytes from the copy
+            const copy = input.createCopyWithOffset(0, false);
+            expect(copy.readUint8()).toBe(100);
+            expect(copy.readUint8()).toBe(101);
+
+            // reading from the copy should not affect the original buffer
+            expect(input.readUint8()).toBe(101);
+            expect(input.readUint8()).toBe(102);
+        });
+
+        test('should throw error on invalid data', async () => {
+            const storage = new SimpleStorage();
+            const output = new OutputByteBuffer();
+            output.writeUint8(1);
+            await output.writeChunksToStorage(storage, 'test');
+            const input = await InputByteBuffer.createFromStorage(storage, 'test');
+
+            expect(() => input.createCopyWithOffset(-1)).toThrow('Invalid offset: -1');
+            expect(() => input.createCopyWithOffset(ByteBuffer.CHUNK_SIZE + 1)).toThrow(
+                `Invalid offset: ${ByteBuffer.CHUNK_SIZE + 1}`,
+            );
         });
     });
 

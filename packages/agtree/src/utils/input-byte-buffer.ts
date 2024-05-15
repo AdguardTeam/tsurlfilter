@@ -24,11 +24,6 @@ export class InputByteBuffer extends ByteBuffer {
     private offset: number;
 
     /**
-     * Shared buffer for decoding strings.
-     */
-    private readonly sharedBuffer: Uint8Array;
-
-    /**
      * Shared native decoder for decoding strings.
      */
     private readonly sharedNativeDecoder: TextDecoder;
@@ -41,24 +36,33 @@ export class InputByteBuffer extends ByteBuffer {
     private readonly isChromium: boolean;
 
     /**
-     * Constructs a new InputByteBuffer instance.
+     * Constructs a new `InputByteBuffer` instance.
      *
      * @param chunks Array of chunks to initialize the ByteBuffer with.
-     * @note If you provide chunks, for performance reasons, they are passed by reference and not copied.
-     * @throws {BinarySchemaMismatchError} If the binary schema version in the buffer is not equal to the
-     * expected version.
+     * @param cloneChunks Flag indicating if the chunks should be cloned. For performance reasons,
+     * its default value is `false`. If the original chunks are guaranteed not to change,
+     * leave this flag as `false` to avoid unnecessary copying.
+     * @param initialOffset Initial offset in the buffer for reading.
+     *
+     * @throws If the binary schema version in the buffer is not equal to the expected version.
+     * @throws If the initial offset is out of bounds.
      */
-    constructor(chunks: Uint8Array[]) {
-        super(chunks);
+    constructor(chunks: Uint8Array[], cloneChunks = false, initialOffset = 0) {
+        super(chunks, cloneChunks);
 
-        // check binary schema version
+        // Check binary schema version
         const actualVersion = this.readSchemaVersion();
         if (actualVersion !== BINARY_SCHEMA_VERSION) {
             throw new BinarySchemaMismatchError(BINARY_SCHEMA_VERSION, actualVersion);
         }
 
-        this.offset = 4; // schema version is already read
-        this.sharedBuffer = new Uint8Array(ByteBuffer.CHUNK_SIZE * 2);
+        // Throw an error if the initial offset is out of bounds
+        if (initialOffset < 0 || initialOffset > this.chunks.length * ByteBuffer.CHUNK_SIZE) {
+            throw new Error(`Invalid offset: ${initialOffset}`);
+        }
+
+        // Schema version is always stored at the beginning of the buffer - skip it, because it is already processed
+        this.offset = Math.max(4, initialOffset);
         this.sharedNativeDecoder = new TextDecoder();
         this.isChromium = isChromium();
     }
@@ -184,12 +188,7 @@ export class InputByteBuffer extends ByteBuffer {
         const chunkOffset = this.offset & 0x7FFF; // offset is only relevant for the first chunk
         const endOffset = chunkOffset + length;
 
-        // In 99% of cases string is:
-        //  1. stored in the current chunk, or
-        //  2. stored in the end of the current chunk and the beginning of the next chunk
-        // We should decode these cases without using decoder's stream option
-
-        // Case 1:
+        // In most cases, the string is stored in the current chunk
         if (endOffset < ByteBuffer.CHUNK_SIZE) {
             this.offset += length;
             if (this.isChromium) {
@@ -198,29 +197,9 @@ export class InputByteBuffer extends ByteBuffer {
             return this.sharedNativeDecoder.decode(this.chunks[chunkIndex].subarray(chunkOffset, endOffset));
         }
 
-        // Case 2:
-        if (endOffset < ByteBuffer.CHUNK_SIZE * 2 - chunkOffset) {
-            this.sharedBuffer.set(this.chunks[chunkIndex].subarray(chunkOffset), 0);
-            this.sharedBuffer.set(
-                this.chunks[chunkIndex + 1].subarray(0, length - (ByteBuffer.CHUNK_SIZE - chunkOffset)),
-                ByteBuffer.CHUNK_SIZE - chunkOffset,
-            );
-            this.offset += length;
-            if (this.isChromium) {
-                return decodeTextPolyfill(this.sharedBuffer, 0, length);
-            }
-            return this.sharedNativeDecoder.decode(this.sharedBuffer.subarray(0, length));
-        }
-
-        // If we are still in the function, we should decode the string using the stream option,
-        // because it is large
         const result = [];
-
-        // Add first 2 chunks to the result
         result.push(this.sharedNativeDecoder.decode(this.chunks[chunkIndex++].subarray(chunkOffset), { stream: true }));
-        result.push(this.sharedNativeDecoder.decode(this.chunks[chunkIndex++], { stream: true }));
-
-        let remaining = length - (ByteBuffer.CHUNK_SIZE * 2 - chunkOffset);
+        let remaining = length - (ByteBuffer.CHUNK_SIZE - chunkOffset);
 
         while (remaining) {
             const chunk = this.chunks[chunkIndex];
@@ -261,5 +240,21 @@ export class InputByteBuffer extends ByteBuffer {
         if (result !== value) {
             throw new Error(`Expected ${value}, but got ${result}`);
         }
+    }
+
+    /**
+     * Creates a new `InputByteBuffer` instance with the given initial offset.
+     *
+     * @param initialOffset Initial offset for the new buffer.
+     * @param cloneChunks Flag indicating if the chunks should be cloned. For performance reasons,
+     * its default value is `false`. If the original chunks are guaranteed not to change,
+     * leave this flag as `false` to avoid unnecessary copying.
+     *
+     * @returns New `InputByteBuffer` instance with the given initial offset.
+     *
+     * @note This method is useful if you want to read some data from a specific index.
+     */
+    public createCopyWithOffset(initialOffset: number, cloneChunks = false): InputByteBuffer {
+        return new InputByteBuffer(this.chunks, cloneChunks, initialOffset);
     }
 }
