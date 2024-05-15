@@ -135,6 +135,7 @@ export class RuleScanner {
         this.sourceMap = configuration.sourceMap ?? {};
     }
 
+    // FIXME (David, v2.3): Change to InputByteBuffer-only
     private readNextNode(): { ruleStartIndex: number, ruleNode: AnyRule } | null {
         if (this.childrenCount === undefined) {
             this.childrenCount = FilterListParser.jumpToChildren(this.reader);
