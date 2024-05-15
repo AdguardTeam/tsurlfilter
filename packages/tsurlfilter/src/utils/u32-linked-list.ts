@@ -97,7 +97,7 @@ export class U32LinkedList {
     public static create(buffer: ByteBuffer): number {
         const { byteOffset } = buffer;
 
-        // Add list size;
+        // Add list size
         buffer.addUint32(byteOffset, 0);
         // Add last node position
         buffer.addUint32(
