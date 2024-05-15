@@ -81,6 +81,7 @@ export class TabsApi {
         browser.tabs.onRemoved.removeListener(this.handleTabDelete);
         browser.tabs.onUpdated.removeListener(this.handleTabUpdate);
         browser.tabs.onActivated.removeListener(this.handleTabActivate);
+        browser.tabs.onReplaced.removeListener(this.handleTabReplace);
 
         // Firefox for android doesn't support windows API
         if (browser.windows) {

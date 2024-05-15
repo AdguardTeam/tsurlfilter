@@ -1,10 +1,11 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import type { HTTPMethod } from '@adguard/tsurlfilter';
+import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
-import { tabsApi } from '../../tabs-api';
+import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
+import { MAIN_FRAME_ID } from '../../../tabs/frame';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -122,13 +123,14 @@ export class RequestEvents {
             requestId,
             type,
             tabId,
+            parentFrameId,
             originUrl,
             initiator,
             method,
             timeStamp,
         } = details;
 
-        let { url } = details;
+        let { url, frameId } = details;
 
         /**
          * Truncate too long urls.
@@ -150,17 +152,46 @@ export class RequestEvents {
 
         const { requestType, contentType } = getRequestType(type);
 
+        const isDocumentRequest = requestType === RequestType.Document;
+
+        // Pre-rendered documents can have a frame ID other than zero
+        frameId = isDocumentRequest ? MAIN_FRAME_ID : details.frameId;
+
+        let requestFrameId = isDocumentRequest ? frameId : parentFrameId;
+
+        // Relate request to main_frame
+        if (requestFrameId === -1) {
+            requestFrameId = 0;
+        }
+
+        // To mark requests started via navigation from the address bar (real
+        // request or pre-render, it does not matter) as first-party requests,
+        // we get only part of the request context to record only the tab and
+        // frame information before calculating the request referrer.
+        const tabFrameRequestContext: TabFrameRequestContext = {
+            requestUrl: url,
+            requestType,
+            requestId,
+            frameId,
+            tabId,
+        };
+
+        if (isDocumentRequest || requestType === RequestType.SubDocument) {
+            // Saves the current tab url to retrieve it correctly below.
+            tabsApi.handleFrameRequest(tabFrameRequestContext);
+        }
+
         const referrerUrl = originUrl
             || initiator
-            || tabsApi.getMainFrameUrl(tabId)
+            // Comparison of the requested url with the tab frame url in case of
+            // a navigation change from the browser address bar.
+            || tabsApi.getTabMainFrame(tabId)?.url
+            || tabsApi.getTabFrame(tabId, requestFrameId)?.url
             || url;
 
         // Retrieve the rest part of the request context for record all fields.
         const requestContext = requestContextStorage.create(requestId, {
-            tabId,
-            requestId,
-            requestUrl: url,
-            requestType,
+            ...tabFrameRequestContext,
             state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
             thirdParty: isThirdPartyRequest(url, referrerUrl),
