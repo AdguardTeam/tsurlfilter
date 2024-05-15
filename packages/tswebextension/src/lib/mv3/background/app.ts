@@ -1,7 +1,7 @@
 import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
-import { type AppInterface, defaultFilteringLog } from '../../common';
+import { type AppInterface, defaultFilteringLog, LF } from '../../common';
 import { getErrorMessage } from '../../common';
 import { logger } from '../utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
@@ -268,7 +268,8 @@ MessagesHandlerMV3
 
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
-            configuration.userrules,
+            // TODO: Change the interface later
+            configuration.userrules.content.split(LF),
             customFilters,
             staticRuleSets,
             this.webAccessibleResourcesPath,

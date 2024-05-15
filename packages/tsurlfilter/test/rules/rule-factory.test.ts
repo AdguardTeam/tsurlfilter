@@ -2,7 +2,7 @@ import { RuleFactory } from '../../src/rules/rule-factory';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { HostRule } from '../../src/rules/host-rule';
-import { CompatibilityTypes, DEFAULT_RULE_INDEX, setConfiguration } from '../../src';
+import { CompatibilityTypes, RULE_INDEX_NONE, setConfiguration } from '../../src';
 
 describe('RuleFactory Builder Test', () => {
     it('works if builder creates correct rules', () => {
@@ -29,7 +29,7 @@ describe('RuleFactory Builder Test', () => {
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(NetworkRule);
 
-        rule = RuleFactory.createRule('127.0.0.1 localhost', 1, DEFAULT_RULE_INDEX, false, false, false);
+        rule = RuleFactory.createRule('127.0.0.1 localhost', 1, RULE_INDEX_NONE, false, false, false);
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('127.0.0.1 localhost');
         expect(rule!.getFilterListId()).toBe(1);
@@ -39,13 +39,13 @@ describe('RuleFactory Builder Test', () => {
     it('check host and network rules recognition', () => {
         let rule;
 
-        rule = RuleFactory.createRule('example.org', 1, DEFAULT_RULE_INDEX, false, false, true);
+        rule = RuleFactory.createRule('example.org', 1, RULE_INDEX_NONE, false, false, true);
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('example.org');
         expect(rule!.getFilterListId()).toBe(1);
         expect(rule!).toBeInstanceOf(NetworkRule);
 
-        rule = RuleFactory.createRule('example.org', 1, DEFAULT_RULE_INDEX, false, false, false);
+        rule = RuleFactory.createRule('example.org', 1, RULE_INDEX_NONE, false, false, false);
         expect(rule).toBeTruthy();
         expect(rule!.getText()).toBe('example.org');
         expect(rule!.getFilterListId()).toBe(1);
@@ -55,13 +55,13 @@ describe('RuleFactory Builder Test', () => {
     it('respects ignore flags', () => {
         let rule;
 
-        rule = RuleFactory.createRule('##.banner', 1, DEFAULT_RULE_INDEX, false, true);
+        rule = RuleFactory.createRule('##.banner', 1, RULE_INDEX_NONE, false, true);
         expect(rule).toBeFalsy();
 
-        rule = RuleFactory.createRule('||example.org^', 1, DEFAULT_RULE_INDEX, true);
+        rule = RuleFactory.createRule('||example.org^', 1, RULE_INDEX_NONE, true);
         expect(rule).toBeFalsy();
 
-        rule = RuleFactory.createRule('127.0.0.1 localhost', 1, DEFAULT_RULE_INDEX, false, false, true);
+        rule = RuleFactory.createRule('127.0.0.1 localhost', 1, RULE_INDEX_NONE, false, false, true);
         expect(rule).toBeFalsy();
     });
 
@@ -76,7 +76,7 @@ describe('RuleFactory Builder Test', () => {
 
         setConfiguration(config);
         // eslint-disable-next-line max-len
-        const rule = RuleFactory.createRule('*$denyallow=org|com|example.net', 1, DEFAULT_RULE_INDEX, false, true, false);
+        const rule = RuleFactory.createRule('*$denyallow=org|com|example.net', 1, RULE_INDEX_NONE, false, true, false);
         expect(rule).toBeTruthy();
     });
 });

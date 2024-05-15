@@ -384,12 +384,15 @@ export class CosmeticRule implements rule.IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param ruleText - original rule text.
-     * @param filterListId - ID of the filter list this rule belongs to.
+     * @param ruleText Original rule text.
+     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number, ruleIndex: number = rule.DEFAULT_RULE_INDEX) {
+    constructor(ruleText: string, filterListId: number, ruleIndex: number = rule.RULE_INDEX_NONE) {
         this.ruleText = ruleText;
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
