@@ -75,6 +75,31 @@ const enum InvalidRuleSerializationMap {
  */
 export class RuleParser extends ParserBase {
     /**
+     * Helper method to parse host rules if the `parseHostRules` option is enabled, otherwise it will
+     * parse network rules.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     * @returns Host rule or network rule node.
+     */
+    private static parseHostOrNetworkRule(
+        raw: string,
+        options: typeof defaultParserOptions,
+        baseOffset: number,
+    ): HostRule | NetworkRule {
+        if (options.parseHostRules) {
+            try {
+                return HostRuleParser.parse(raw, options, baseOffset);
+            } catch (error: unknown) {
+                // Ignore the error, and fall back to network rule parser
+            }
+        }
+
+        return NetworkRuleParser.parse(raw, options, baseOffset);
+    }
+
+    /**
      * Parse an adblock rule. You can pass any kind of rule to this method, since it will automatically determine
      * the category and syntax. If the rule is syntactically invalid, then an error will be thrown. If the
      * syntax / compatibility cannot be determined clearly, then the value of the `syntax` property will be
@@ -185,12 +210,12 @@ export class RuleParser extends ParserBase {
                 }
 
                 return CosmeticRuleParser.parse(raw, options, baseOffset)
-                    || NetworkRuleParser.parse(raw, options, baseOffset);
+                    || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
             }
 
             return CommentRuleParser.parse(raw, options, baseOffset)
                 || CosmeticRuleParser.parse(raw, options, baseOffset)
-                || NetworkRuleParser.parse(raw, options, baseOffset);
+                || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
         } catch (error: unknown) {
             // If tolerant mode is disabled or the error is not known, then simply
             // re-throw the error

@@ -80,7 +80,7 @@ export const enum CommentMarker {
  * Represents the main categories that an adblock rule can belong to.
  * Of course, these include additional subcategories.
  */
-export const enum RuleCategory {
+export enum RuleCategory {
     /**
      * Empty "rules" that are only containing whitespaces. These rules are handled just for convenience.
      */
@@ -134,7 +134,7 @@ export enum ListItemNodeType {
 /**
  * Represents possible comment types.
  */
-export const enum CommentRuleType {
+export enum CommentRuleType {
     AgentCommentRule = 'AgentCommentRule',
     CommentRule = 'CommentRule',
     ConfigCommentRule = 'ConfigCommentRule',
@@ -146,7 +146,7 @@ export const enum CommentRuleType {
 /**
  * Represents possible cosmetic rule types.
  */
-export const enum CosmeticRuleType {
+export enum CosmeticRuleType {
     ElementHidingRule = 'ElementHidingRule',
     CssInjectionRule = 'CssInjectionRule',
     ScriptletInjectionRule = 'ScriptletInjectionRule',
@@ -1287,7 +1287,7 @@ export interface JsInjectionRule extends CosmeticRule {
 /**
  * Represents the different types of network rules.
  */
-export const enum NetworkRuleType {
+export enum NetworkRuleType {
     NetworkRule = 'NetworkRule',
     HostRule = 'HostRule',
 }

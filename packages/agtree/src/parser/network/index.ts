@@ -65,6 +65,8 @@ export class NetworkRuleParser extends ParserBase {
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Network rule AST
+     *
+     * @throws If the rule is syntactically incorrect.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): NetworkRule {
         let offset = 0;

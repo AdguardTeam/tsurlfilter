@@ -51,7 +51,7 @@ export {
     type ScriptletInjectionRule,
     type ScriptletInjectionRuleBody,
     type Value,
-    type NetworkRuleType,
+    NetworkRuleType,
     type HostnameList,
     type HostRule,
     type AnyNetworkRule,

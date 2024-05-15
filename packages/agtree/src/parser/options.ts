@@ -36,6 +36,11 @@ export interface ParserOptions {
      * Whether to ignore comment-rules.
      */
     ignoreComments?: boolean;
+
+    /**
+     * Whether to parse host rules.
+     */
+    parseHostRules?: boolean;
 }
 
 /**
@@ -48,4 +53,5 @@ export const defaultParserOptions: ParserOptions = {
     parseUboSpecificRules: true,
     includeRaws: true,
     ignoreComments: false,
+    parseHostRules: false,
 };

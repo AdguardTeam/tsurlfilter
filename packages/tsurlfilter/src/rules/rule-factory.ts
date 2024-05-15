@@ -1,4 +1,11 @@
-import { CommentRuleParser } from '@adguard/agtree';
+import {
+    type AnyRule,
+    CommentRuleParser,
+    NetworkRuleType,
+    RuleCategory,
+    RuleParser,
+    defaultParserOptions,
+} from '@adguard/agtree';
 
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
@@ -7,6 +14,7 @@ import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../common/error';
+import { isString } from '../utils/string-utils';
 
 /**
  * Rule builder class
@@ -18,7 +26,7 @@ export class RuleFactory {
      *
      * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
      *
-     * @param text rule string
+     * @param inputRule rule string
      * @param filterListId list id
      * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
@@ -34,7 +42,7 @@ export class RuleFactory {
      * @return IRule object or null
      */
     public static createRule(
-        text: string,
+        inputRule: string | AnyRule,
         filterListId: number,
         ruleIndex = RULE_INDEX_NONE,
         ignoreNetwork = false,
@@ -42,35 +50,54 @@ export class RuleFactory {
         ignoreHost = true,
         silent = true,
     ): IRule | null {
-        if (!text || CommentRuleParser.isCommentRule(text)) {
-            return null;
-        }
-
-        if (RuleFactory.isShort(text)) {
-            logger.info(`The rule is too short: ${text}`);
-        }
+        let ruleNode: AnyRule;
 
         try {
-            if (RuleFactory.isCosmetic(text)) {
-                if (ignoreCosmetic) {
+            if (isString(inputRule)) {
+                ruleNode = RuleParser.parse(inputRule.trim(), {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                    includeRaws: true,
+                    parseHostRules: !ignoreHost,
+                });
+            } else {
+                ruleNode = inputRule;
+            }
+
+            switch (ruleNode.category) {
+                case RuleCategory.Invalid:
+                case RuleCategory.Empty:
+                case RuleCategory.Comment:
                     return null;
-                }
 
-                return new CosmeticRule(text, filterListId, ruleIndex);
-            }
+                case RuleCategory.Cosmetic:
+                    if (ignoreCosmetic) {
+                        return null;
+                    }
 
-            if (!ignoreHost) {
-                const hostRule = RuleFactory.createHostRule(text, filterListId, ruleIndex);
-                if (hostRule) {
-                    return hostRule;
-                }
-            }
+                    return new CosmeticRule(ruleNode, filterListId, ruleIndex);
 
-            if (!ignoreNetwork) {
-                return new NetworkRule(text, filterListId, ruleIndex);
+                case RuleCategory.Network:
+                    if (ruleNode.type === NetworkRuleType.HostRule) {
+                        if (ignoreHost) {
+                            return null;
+                        }
+
+                        return new HostRule(ruleNode, filterListId, ruleIndex);
+                    }
+
+                    if (ignoreNetwork) {
+                        return null;
+                    }
+
+                    return new NetworkRule(ruleNode, filterListId, ruleIndex);
+
+                default:
+                    // should not happen in normal operation
+                    return null;
             }
         } catch (e) {
-            const msg = `"${getErrorMessage(e)}" in the rule: "${text}"`;
+            const msg = `"${getErrorMessage(e)}" in the rule: "${inputRule}"`;
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {

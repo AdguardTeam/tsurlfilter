@@ -1,6 +1,7 @@
-import isIp from 'is-ip';
+import { type HostRule as HostRuleNode, HostRuleParser, defaultParserOptions } from '@adguard/agtree';
+
 import * as rule from './rule';
-import { isDomainName } from '../utils/url';
+import { isString } from '../utils/string-utils';
 
 /**
  * Implements a host rule.
@@ -38,35 +39,43 @@ export class HostRule implements rule.IRule {
      *
      * Parses the rule and creates a new HostRule instance
      *
-     * @param ruleText - original rule text.
+     * @param inputRule - original rule text.
      * @param filterListId - ID of the filter list this rule belongs to.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
-        this.ruleText = ruleText;
+    constructor(inputRule: string | HostRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
-        const commentIndex = ruleText.indexOf('#');
-        const stripped = commentIndex >= 0 ? ruleText.substring(0, commentIndex) : ruleText;
-
-        const parts = stripped.trim().split(' ');
-        if (parts.length >= 2) {
-            if (!isIp(parts[0])) {
+        let node: HostRuleNode;
+        if (isString(inputRule)) {
+            try {
+                node = HostRuleParser.parse(inputRule.trim(), {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                    includeRaws: true,
+                });
+            } catch (e) {
                 this.invalid = true;
+                this.ruleText = inputRule;
                 return;
             }
-
-            // eslint-disable-next-line prefer-destructuring
-            this.ip = parts[0];
-            this.hostnames = parts.slice(1).filter((x) => !!x);
-        } else if (parts.length === 1 && isDomainName(parts[0])) {
-            this.hostnames = [parts[0]];
-            this.ip = '0.0.0.0';
         } else {
-            this.invalid = true;
+            node = inputRule;
         }
+
+        // FIXME (David, v2.3): Remove storing the rule text
+        this.ruleText = node.raws!.text!;
+
+        this.ip = node.ip.value;
+
+        if (node.hostnames.children.length === 0) {
+            this.invalid = true;
+            return;
+        }
+
+        this.hostnames = node.hostnames.children.map((hostname) => hostname.value);
     }
 
     /**

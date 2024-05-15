@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import * as tldts from 'tldts';
 import isIp from 'is-ip';
 
 import { StringUtils } from '../../utils/string';
@@ -89,6 +90,8 @@ export class HostRuleParser extends ParserBase {
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Host rule node.
+     *
+     * @throws If the input contains invalid data.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): HostRule {
         let offset = StringUtils.skipWS(raw, 0);
@@ -134,7 +137,12 @@ export class HostRuleParser extends ParserBase {
         };
 
         if (partsLength === 1) {
-            // domain-only syntax
+            // "Just domain" syntax, e.g. `example.org`
+            // In this case, domain should be valid and IP will be set to 0.0.0.0 by default
+            if (tldts.getDomain(parts[0].value) !== parts[0].value) {
+                throw new Error(`Not a valid domain: ${parts[0].value}`);
+            }
+
             result.ip = {
                 type: 'Value',
                 value: HostRuleParser.NULL_IP,
@@ -152,6 +160,12 @@ export class HostRuleParser extends ParserBase {
                 throw new Error(`Invalid IP address: ${ip.value}`);
             }
 
+            for (const { value } of hostnames) {
+                if (tldts.getHostname(value) !== value) {
+                    throw new Error(`Not a valid hostname: ${value}`);
+                }
+            }
+
             result.ip = ip;
 
             result.hostnames = {
@@ -162,6 +176,12 @@ export class HostRuleParser extends ParserBase {
 
         if (comment) {
             result.comment = comment;
+        }
+
+        if (options.includeRaws) {
+            result.raws = {
+                text: raw,
+            };
         }
 
         return result as HostRule;

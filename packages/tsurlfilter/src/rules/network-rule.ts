@@ -1,11 +1,21 @@
 // eslint-disable-next-line max-classes-per-file
-import { type ModifierList, NetworkRuleParser, defaultParserOptions } from '@adguard/agtree';
+import {
+    type ModifierList,
+    NetworkRuleParser,
+    defaultParserOptions,
+    type NetworkRule as NetworkRuleNode,
+} from '@adguard/agtree';
 
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { type Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
-import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
+import {
+    hasSpaces,
+    isString,
+    stringArraysEquals,
+    stringArraysHaveIntersection,
+} from '../utils/string-utils';
 import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
@@ -1037,7 +1047,7 @@ export class NetworkRule implements rule.IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param ruleText Original rule text.
+     * @param inputRule Original rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
@@ -1045,9 +1055,16 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
-        const node = NetworkRuleParser.parse(ruleText.trim(), { ...defaultParserOptions, isLocIncluded: false });
-        // Raw rule text definitely present here
+    // FIXME (David, v2.3): Remove type union and only accept AST node
+    constructor(inputRule: string | NetworkRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
+        let node: NetworkRuleNode;
+        if (isString(inputRule)) {
+            node = NetworkRuleParser.parse(inputRule.trim(), { ...defaultParserOptions, isLocIncluded: false });
+        } else {
+            node = inputRule;
+        }
+
+        // FIXME (David, v2.3): Remove storing the rule text
         this.ruleText = node.raws!.text!;
 
         this.ruleIndex = ruleIndex;
@@ -1064,7 +1081,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (this.ruleText.length < NetworkRule.MIN_RULE_LENGTH) {
-            throw new SyntaxError(`The rule must be of length ${NetworkRule.MIN_RULE_LENGTH} or more: "${ruleText}"`);
+            throw new SyntaxError(`The rule must be of length ${NetworkRule.MIN_RULE_LENGTH} or more: "${inputRule}"`);
         }
 
         this.calculatePriorityWeight();

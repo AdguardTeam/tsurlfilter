@@ -96,21 +96,6 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
     return result + split.hash;
 }
 
-const DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
-
-/**
- * Check if the string could be a domain name
- *
- * @param text
- */
-export const isDomainName = (text: string): boolean => {
-    if (text.indexOf('.') < 0 || text.endsWith('.')) {
-        return false;
-    }
-
-    return DOMAIN_REGEX.test(text);
-};
-
 /**
  * Extract relative part from hierarchical structured URL
  * @param url

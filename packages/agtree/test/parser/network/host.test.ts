@@ -177,6 +177,12 @@ describe('HostRuleParser', () => {
                     actual: '127.0.0.-1 example.com',
                     expected: /^Invalid IP address/,
                 },
+
+                // "just domain" host rule, but with invalid domain
+                {
+                    actual: 'example..com',
+                    expected: /^Not a valid domain:/,
+                },
             ])("should throw an error for '$actual'", ({ actual, expected }) => {
                 expect(() => HostRuleParser.parse(actual)).toThrow(expected);
             });

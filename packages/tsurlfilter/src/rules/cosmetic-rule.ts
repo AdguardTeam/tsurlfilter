@@ -27,7 +27,7 @@ import { EMPTY_STRING, SPACE, WILDCARD } from '../common/constants';
 import { validateSelectorList } from './css/selector-list-validator';
 import { validateDeclarationList } from './css/declaration-list-validator';
 import { getErrorMessage } from '../common/error';
-import { hasUnquotedSubstring } from '../utils/string-utils';
+import { hasUnquotedSubstring, isString } from '../utils/string-utils';
 
 const MULTILINE_COMMENT_MARKER = '/*';
 const SINGLELINE_COMMENT_MARKER = '//';
@@ -167,21 +167,6 @@ interface Raws {
      * @example `.banner` (for `example.org##.banner`)
      */
     bodyText: string;
-}
-
-/**
- * Represents the rule with raws (helper function return type)
- */
-interface RuleWithRaws {
-    /**
-     * Rule node
-     */
-    ruleNode: AnyCosmeticRule;
-
-    /**
-     * Rule raws, see {@link Raws}
-     */
-    ruleRaws: Raws;
 }
 
 /**
@@ -405,37 +390,6 @@ export class CosmeticRule implements rule.IRule {
         return ({
             ruleText: ruleText.join(EMPTY_STRING),
             bodyText,
-        });
-    }
-
-    /**
-     * Helper method to get the rule node and its raws.
-     *
-     * @param ruleText Input rule text
-     * @returns Rule node and its raws ({@link RuleWithRaws})
-     * @throws Error if the rule is not a valid cosmetic rule
-     */
-    private static getRuleNodeAndRaws(ruleText: string): RuleWithRaws {
-        // Parse the rule - this will throw an error if the rule is syntactically invalid
-        const ruleNode = CosmeticRuleParser.parse(ruleText, {
-            ...defaultParserOptions,
-            isLocIncluded: false,
-            parseAbpSpecificRules: false,
-            parseUboSpecificRules: false,
-        });
-
-        // Parser might returns 'null' which means that the given rule is not a known cosmetic rule.
-        // In this case, we should throw an error.
-        if (!ruleNode) {
-            throw new SyntaxError('Not a cosmetic rule');
-        }
-
-        // Get the rule raws
-        const ruleRaws = CosmeticRule.getRuleRaws(ruleNode);
-
-        return ({
-            ruleNode,
-            ruleRaws,
         });
     }
 
@@ -673,7 +627,7 @@ export class CosmeticRule implements rule.IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param ruleText Original rule text.
+     * @param inputRule Original rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
@@ -681,9 +635,29 @@ export class CosmeticRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number, ruleIndex: number = rule.RULE_INDEX_NONE) {
-        // Parse the rule and get the raws
-        const { ruleNode, ruleRaws } = CosmeticRule.getRuleNodeAndRaws(ruleText.trim());
+    // FIXME (David, v2.3): Remove type union and only accept AST node
+    constructor(
+        inputRule: string | AnyCosmeticRule,
+        filterListId: number,
+        ruleIndex: number = rule.RULE_INDEX_NONE,
+    ) {
+        let node: AnyCosmeticRule | null;
+        if (isString(inputRule)) {
+            node = CosmeticRuleParser.parse(inputRule.trim(), {
+                ...defaultParserOptions,
+                isLocIncluded: false,
+                parseAbpSpecificRules: false,
+                parseUboSpecificRules: false,
+            });
+
+            if (!node) {
+                throw new SyntaxError('Not a cosmetic rule');
+            }
+        } else {
+            node = inputRule;
+        }
+
+        const ruleRaws = CosmeticRule.getRuleRaws(node);
 
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
@@ -691,15 +665,15 @@ export class CosmeticRule implements rule.IRule {
         this.ruleText = ruleRaws.ruleText;
         this.content = ruleRaws.bodyText;
 
-        this.allowlist = CosmeticRuleSeparatorUtils.isException(ruleNode.separator.value as CosmeticRuleSeparator);
-        this.type = ruleNode.type;
-        this.isScriptlet = ruleNode.type === CosmeticRuleType.ScriptletInjectionRule;
+        this.allowlist = CosmeticRuleSeparatorUtils.isException(node.separator.value as CosmeticRuleSeparator);
+        this.type = node.type;
+        this.isScriptlet = node.type === CosmeticRuleType.ScriptletInjectionRule;
 
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
-        if (ruleNode.type === CosmeticRuleType.ScriptletInjectionRule) {
+        if (node.type === CosmeticRuleType.ScriptletInjectionRule) {
             // Transform complex node into a simple array of strings
-            const params = ruleNode.body.children[0].children.map(
+            const params = node.body.children[0].children.map(
                 (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
             );
 
@@ -708,7 +682,7 @@ export class CosmeticRule implements rule.IRule {
             this.scriptletParams = new ScriptletParams();
         }
 
-        const validationResult = CosmeticRule.validate(ruleNode);
+        const validationResult = CosmeticRule.validate(node);
 
         // We should throw an error if the validation failed for any reason
         if (!validationResult.isValid) {
@@ -717,13 +691,13 @@ export class CosmeticRule implements rule.IRule {
 
         // Check if the rule is ExtendedCss
         const isExtendedCssSeparator = CosmeticRuleSeparatorUtils.isExtendedCssMarker(
-            ruleNode.separator.value as CosmeticRuleSeparator,
+            node.separator.value as CosmeticRuleSeparator,
         );
 
         this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
 
         // Process cosmetic rule modifiers
-        const processedModifiers = CosmeticRule.processModifiers(ruleNode);
+        const processedModifiers = CosmeticRule.processModifiers(node);
 
         if (processedModifiers) {
             if (processedModifiers.domainModifier) {
@@ -740,7 +714,7 @@ export class CosmeticRule implements rule.IRule {
         }
 
         // Process domain list, if at least one domain is specified
-        const { domains: domainListNode } = ruleNode;
+        const { domains: domainListNode } = node;
 
         if (CosmeticRule.isAnyDomainSpecified(domainListNode)) {
             this.domainModifier = new DomainModifier(domainListNode, COMMA_DOMAIN_LIST_SEPARATOR);
