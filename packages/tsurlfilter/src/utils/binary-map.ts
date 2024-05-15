@@ -127,7 +127,7 @@ export class BinaryMap {
 
             if (key === input) {
                 // If the key is found, return the value.
-                return buffer.getUint32(keyPosition + 4 /** Uint32Array.BYTES_PER_ELEMENT. */);
+                return buffer.getUint32(keyPosition + 4 /* Uint32Array.BYTES_PER_ELEMENT. */);
             }
 
             cursor += 4; // Uint32Array.BYTES_PER_ELEMENT
