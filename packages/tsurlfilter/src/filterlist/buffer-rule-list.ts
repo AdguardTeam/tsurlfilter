@@ -1,8 +1,10 @@
+import { type InputByteBuffer } from '@adguard/agtree';
 import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 import { BufferLineReader } from './reader/buffer-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
+import { isString } from '../utils/string-utils';
 
 /**
  * BufferRuleList represents a string-based rule list. It keeps the original
@@ -47,11 +49,13 @@ export class BufferRuleList implements IRuleList {
      */
     private static readonly decoder = new TextDecoder('utf-8');
 
+    private readonly inputByteBuffer: InputByteBuffer;
+
     /**
      * Constructor of BufferRuleList.
      *
      * @param listId - List identifier.
-     * @param rulesText - String with filtering rules (one per line).
+     * @param inputRules - String with filtering rules (one per line).
      * @param ignoreCosmetic - (Optional) True to ignore cosmetic rules.
      * @param ignoreJS - (Optional) True to ignore JS rules.
      * @param ignoreUnsafe - (Optional) True to ignore unsafe rules.
@@ -59,7 +63,7 @@ export class BufferRuleList implements IRuleList {
      */
     constructor(
         listId: number,
-        rulesText: string,
+        inputRules: string | InputByteBuffer,
         ignoreCosmetic?: boolean,
         ignoreJS?: boolean,
         ignoreUnsafe?: boolean,
@@ -71,7 +75,14 @@ export class BufferRuleList implements IRuleList {
 
         this.id = listId;
         const encoder = new TextEncoder();
-        this.rulesBuffer = encoder.encode(rulesText);
+
+        // FIXME (David, v2.3): Change to InputByteBuffer-only
+        if (isString(inputRules)) {
+            this.rulesBuffer = encoder.encode(inputRules);
+        } else {
+            this.inputByteBuffer = inputRules;
+        }
+
         this.ignoreCosmetic = !!ignoreCosmetic;
         this.ignoreJS = !!ignoreJS;
         this.ignoreUnsafe = !!ignoreUnsafe;
@@ -99,7 +110,13 @@ export class BufferRuleList implements IRuleList {
      * @return - Scanner object.
      */
     newScanner(scannerType: ScannerType): RuleScanner {
-        const reader = new BufferLineReader(this.rulesBuffer);
+        let reader;
+        if (this.inputByteBuffer) {
+            reader = this.inputByteBuffer;
+        } else {
+            reader = new BufferLineReader(this.rulesBuffer);
+        }
+
         return new RuleScanner(reader, this.id, {
             scannerType,
             ignoreCosmetic: this.ignoreCosmetic,

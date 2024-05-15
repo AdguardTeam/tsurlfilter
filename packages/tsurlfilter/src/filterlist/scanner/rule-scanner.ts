@@ -1,4 +1,10 @@
-import { CosmeticRuleType } from '@adguard/agtree';
+import {
+    type AnyRule,
+    CosmeticRuleType,
+    FilterListParser,
+    InputByteBuffer,
+    RuleParser,
+} from '@adguard/agtree';
 
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
@@ -80,7 +86,7 @@ export class RuleScanner {
     /**
      * Underlying reader object.
      */
-    private readonly reader: ILineReader;
+    private readonly reader: ILineReader | InputByteBuffer;
 
     /**
      * Current rule.
@@ -105,7 +111,7 @@ export class RuleScanner {
      * @param configuration - Scanner configuration object
      */
     constructor(
-        reader: ILineReader,
+        reader: ILineReader | InputByteBuffer,
         listId: number,
         configuration: RuleScannerConfiguration,
     ) {
@@ -131,6 +137,40 @@ export class RuleScanner {
      * input or an error. If there's a rule available, returns true.
      */
     public scan(): boolean {
+        if (this.reader instanceof InputByteBuffer) {
+            const buffer = this.reader;
+
+            let count = FilterListParser.jumpToChildren(buffer);
+
+            while (count) {
+                const ruleStartIndex = buffer.currentOffset;
+                let ruleNode: AnyRule;
+                RuleParser.deserialize(buffer, ruleNode = {} as AnyRule);
+
+                if (ruleNode) {
+                    const rule = RuleFactory.createRule(
+                        ruleNode,
+                        this.listId,
+                        getRuleSourceIndex(ruleStartIndex, this.sourceMap),
+                        this.ignoreNetwork,
+                        this.ignoreCosmetic,
+                        this.ignoreHost,
+                    );
+
+                    if (rule && !this.isIgnored(rule)) {
+                        this.currentRule = rule;
+                        this.currentRuleIndex = ruleStartIndex;
+                        return true;
+                    }
+                }
+
+                count -= 1;
+            }
+
+            return false;
+        }
+
+        // FIXME (David, v2.3): Change to InputByteBuffer-only
         while (true) {
             const lineIndex = this.reader.getCurrentPos();
             const line = this.readNextLine();

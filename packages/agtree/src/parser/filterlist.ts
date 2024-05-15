@@ -242,4 +242,28 @@ export class FilterListParser extends ParserBase {
             prop = buffer.readUint8();
         }
     }
+
+    public static jumpToChildren(buffer: InputByteBuffer): number {
+        buffer.assertUint8(BinaryTypeMap.FilterListNode); // filter list indicator
+        let prop = buffer.readUint8();
+
+        while (prop) {
+            switch (prop) {
+                case FilterListNodeSerializationMap.Children:
+                    return buffer.readUint32();
+
+                case FilterListNodeSerializationMap.Start:
+                case FilterListNodeSerializationMap.End:
+                    buffer.readUint32(); // ignore value
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+
+            prop = buffer.readUint8();
+        }
+
+        return 0;
+    }
 }

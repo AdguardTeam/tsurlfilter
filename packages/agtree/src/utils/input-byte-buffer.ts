@@ -257,4 +257,8 @@ export class InputByteBuffer extends ByteBuffer {
     public createCopyWithOffset(initialOffset: number, cloneChunks = false): InputByteBuffer {
         return new InputByteBuffer(this.chunks, cloneChunks, initialOffset);
     }
+
+    public get currentOffset(): number {
+        return this.offset;
+    }
 }
