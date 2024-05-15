@@ -104,6 +104,12 @@ export class RuleScanner {
     private readonly sourceMap: FilterListSourceMap;
 
     /**
+     * Number of children in the current node.
+     * @private
+     */
+    private childrenCount: number | undefined;
+
+    /**
      * Constructor of a RuleScanner object.
      *
      * @param reader - Source of the filtering rules
@@ -129,6 +135,26 @@ export class RuleScanner {
         this.sourceMap = configuration.sourceMap ?? {};
     }
 
+    private readNextNode(): { ruleStartIndex: number, ruleNode: AnyRule } | null {
+        if (this.childrenCount === undefined) {
+            this.childrenCount = FilterListParser.jumpToChildren(this.reader);
+        }
+
+        if (this.childrenCount) {
+            const ruleStartIndex = this.reader.currentOffset;
+            let ruleNode: AnyRule;
+            RuleParser.deserialize(this.reader, ruleNode = {} as AnyRule);
+
+            if (ruleNode) {
+                return { ruleStartIndex, ruleNode };
+            }
+
+            this.childrenCount -= 1;
+        }
+
+        return null;
+    }
+
     /**
      * Scan advances the RuleScanner to the next rule, which will then be
      * available through the getRule() method.
@@ -138,36 +164,28 @@ export class RuleScanner {
      */
     public scan(): boolean {
         if (this.reader instanceof InputByteBuffer) {
-            const buffer = this.reader;
-
-            let count = FilterListParser.jumpToChildren(buffer);
-
-            while (count) {
-                const ruleStartIndex = buffer.currentOffset;
-                let ruleNode: AnyRule;
-                RuleParser.deserialize(buffer, ruleNode = {} as AnyRule);
-
-                if (ruleNode) {
-                    const rule = RuleFactory.createRule(
-                        ruleNode,
-                        this.listId,
-                        getRuleSourceIndex(ruleStartIndex, this.sourceMap),
-                        this.ignoreNetwork,
-                        this.ignoreCosmetic,
-                        this.ignoreHost,
-                    );
-
-                    if (rule && !this.isIgnored(rule)) {
-                        this.currentRule = rule;
-                        this.currentRuleIndex = ruleStartIndex;
-                        return true;
-                    }
+            while (true) {
+                const next = this.readNextNode();
+                if (!next) {
+                    return false;
                 }
 
-                count -= 1;
-            }
+                const { ruleStartIndex, ruleNode } = next;
+                const rule = RuleFactory.createRule(
+                    ruleNode,
+                    this.listId,
+                    getRuleSourceIndex(ruleStartIndex, this.sourceMap),
+                    this.ignoreNetwork,
+                    this.ignoreCosmetic,
+                    this.ignoreHost,
+                );
 
-            return false;
+                if (rule && !this.isIgnored(rule)) {
+                    this.currentRule = rule;
+                    this.currentRuleIndex = ruleStartIndex;
+                    return true;
+                }
+            }
         }
 
         // FIXME (David, v2.3): Change to InputByteBuffer-only
