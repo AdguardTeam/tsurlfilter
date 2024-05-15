@@ -58,8 +58,8 @@ Test:
             # Install dependencies
             pnpm install
 
-            # Build CSS Tokenizer because it is used in AGTree tests
-            pnpm --filter @adguard/css-tokenizer build
+            # Build dependencies before running tests
+            pnpm --filter "@adguard/agtree^..." --depth=-1 build
 
             # Check TypeScript types with TSC
             pnpm --filter @adguard/agtree check-types

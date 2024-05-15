@@ -58,8 +58,8 @@ Test:
             # Install dependencies
             pnpm install
 
-            # Build tsurlfilter and its dependencies from the monorepo
-            npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
+            # Build dependencies before running tests
+            pnpm --filter "@adguard/tsurlfilter^..." --depth=-1 build
 
             pnpm --filter @adguard/tsurlfilter lint
 

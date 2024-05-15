@@ -1,19 +1,14 @@
 import { z } from 'zod';
-import { configurationValidator } from '../../common';
+import { basicFilterValidator, configurationValidator } from '../../common';
 
 /**
  * Filter list configuration validator for MV2.
  */
-export const filterMV2Validator = z.object({
+export const filterMV2Validator = basicFilterValidator.extend({
     /**
      * Filter identifier.
      */
     filterId: z.number(),
-
-    /**
-     * Filter list text content.
-     */
-    content: z.string(),
 
     /**
      * Filter trusted flag. If true, js rules from list can be executed.

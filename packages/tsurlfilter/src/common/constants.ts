@@ -11,3 +11,6 @@ export const EMPTY_STRING = '';
 export const SEPARATOR = '|';
 export const SPACE = ' ';
 export const WILDCARD = '*';
+
+export const LF = '\n';
+export const CR = '\r';

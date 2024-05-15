@@ -1,5 +1,6 @@
 import { ZodError } from 'zod';
 import { type ConfigurationMV2, configurationMV2Validator } from '@lib/mv2';
+import { LF } from '@lib/common';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {
@@ -9,7 +10,9 @@ describe('configuration validator', () => {
         ],
         allowlist: ['example.com'],
         trustedDomains: [],
-        userrules: ['||example.org^', 'example.com##h1'],
+        userrules: {
+            content: ['||example.org^', 'example.com##h1'].join(LF),
+        },
         verbose: false,
         settings: {
             filteringEnabled: true,

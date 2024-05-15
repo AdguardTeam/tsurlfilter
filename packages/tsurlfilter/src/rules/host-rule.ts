@@ -43,7 +43,7 @@ export class HostRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number, ruleIndex = rule.DEFAULT_RULE_INDEX) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
         this.ruleText = ruleText;
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;

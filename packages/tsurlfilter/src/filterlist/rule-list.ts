@@ -27,9 +27,19 @@ export interface IRuleList {
     /**
      * Retrieves rule text by its index.
      *
-     * @param ruleIdx - Rule index in the storage.
+     * @param ruleIdx Rule index in the storage.
+     *
+     * @returns Rule text or `null` if the rule could not be found.
      */
     retrieveRuleText(ruleIdx: number): string | null;
+
+    /**
+     * Finds the rule source index by its index.
+     *
+     * @param ruleIdx rule index.
+     * @return rule source index or RULE_INDEX_NONE (-1).
+     */
+    retrieveRuleSourceIndex(ruleIdx: number): number;
 
     /**
      * Closes the rules list.

@@ -25,7 +25,9 @@ export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     filters: [],
     allowlist: [],
     trustedDomains: [],
-    userrules: [],
+    userrules: {
+        content: '',
+    },
     verbose: false,
     settings: {
         assistantUrl: `${BuildOutput.AssistantInject}.js`,

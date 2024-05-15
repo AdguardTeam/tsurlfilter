@@ -41,8 +41,8 @@ Build:
             pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
-            # Build AGTree with Rollup
-            pnpm --filter @adguard/agtree build
+            # Build dependencies, then the package itself
+            pnpm --filter "@adguard/agtree..." --depth=-1 build
 
             # Pack the AGTree package into a tarball
             cd packages/agtree

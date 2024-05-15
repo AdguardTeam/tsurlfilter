@@ -1,12 +1,13 @@
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { DEFAULT_RULE_INDEX, IndexedRule, type IRule } from '../../rules/rule';
+import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
 import { type ILineReader } from '../reader/line-reader';
 import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
+import { type FilterListSourceMap, getRuleSourceIndex } from '../source-map';
 
 /**
  * Represents the RuleScanner configuration.
@@ -34,11 +35,17 @@ export interface RuleScannerConfiguration {
      * TODO(ameshkov): Reconsider how "unsafe" works (does not include JS now).
      */
     ignoreUnsafe?: boolean;
+
+    /**
+     * Source map for the filter list.
+     */
+    sourceMap?: FilterListSourceMap;
 }
 
 /**
  * Rule scanner provides the functionality for reading rules from a filter list.
  */
+// TODO: Change string filter list to byte buffer.
 export class RuleScanner {
     /**
      * Filter list ID.
@@ -86,13 +93,22 @@ export class RuleScanner {
     private currentRuleIndex = 0;
 
     /**
+     * Source map for the filter list.
+     */
+    private readonly sourceMap: FilterListSourceMap;
+
+    /**
      * Constructor of a RuleScanner object.
      *
      * @param reader - Source of the filtering rules
      * @param listId - Filter list ID
      * @param configuration - Scanner configuration object
      */
-    constructor(reader: ILineReader, listId: number, configuration: RuleScannerConfiguration) {
+    constructor(
+        reader: ILineReader,
+        listId: number,
+        configuration: RuleScannerConfiguration,
+    ) {
         this.reader = reader;
         this.listId = listId;
 
@@ -103,6 +119,8 @@ export class RuleScanner {
 
         this.ignoreJS = !!configuration.ignoreJS;
         this.ignoreUnsafe = !!configuration.ignoreUnsafe;
+
+        this.sourceMap = configuration.sourceMap ?? {};
     }
 
     /**
@@ -111,7 +129,7 @@ export class RuleScanner {
      *
      * @return - False when the scan stops, either by reaching the end of the
      * input or an error. If there's a rule available, returns true.
-    */
+     */
     public scan(): boolean {
         while (true) {
             const lineIndex = this.reader.getCurrentPos();
@@ -124,7 +142,7 @@ export class RuleScanner {
                 const rule = RuleFactory.createRule(
                     line,
                     this.listId,
-                    DEFAULT_RULE_INDEX, // FIXME(David, v2.3): rule index
+                    getRuleSourceIndex(lineIndex, this.sourceMap),
                     this.ignoreNetwork,
                     this.ignoreCosmetic,
                     this.ignoreHost,
