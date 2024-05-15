@@ -1,4 +1,4 @@
-import { type InputByteBuffer } from '@adguard/agtree';
+import { InputByteBuffer, RuleParser, type AnyRule } from '@adguard/agtree';
 import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 import { BufferLineReader } from './reader/buffer-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
@@ -11,7 +11,7 @@ import { isString } from '../utils/string-utils';
  * rule list as a byte array with UTF-8 encoded characters. This approach
  * allows saving on the memory used by tsurlfilter compared to StringRuleList.
  */
-export class BufferRuleList implements IRuleList {
+export class BufferRuleList<T extends string | AnyRule = string> implements IRuleList<T> {
     /**
      * Rule list ID.
      */
@@ -21,7 +21,7 @@ export class BufferRuleList implements IRuleList {
      * String with filtering rules (one per line) encoded as a
      * UTF-8 array.
      */
-    private readonly rulesBuffer: Uint8Array;
+    private readonly rulesBuffer: Uint8Array | InputByteBuffer;
 
     /**
      * Whether to ignore cosmetic rules or not.
@@ -48,8 +48,6 @@ export class BufferRuleList implements IRuleList {
      * UTF-8 encoded characters.
      */
     private static readonly decoder = new TextDecoder('utf-8');
-
-    private readonly inputByteBuffer: InputByteBuffer;
 
     /**
      * Constructor of BufferRuleList.
@@ -80,7 +78,7 @@ export class BufferRuleList implements IRuleList {
         if (isString(inputRules)) {
             this.rulesBuffer = encoder.encode(inputRules);
         } else {
-            this.inputByteBuffer = inputRules;
+            this.rulesBuffer = inputRules;
         }
 
         this.ignoreCosmetic = !!ignoreCosmetic;
@@ -109,13 +107,8 @@ export class BufferRuleList implements IRuleList {
      *
      * @return - Scanner object.
      */
-    newScanner(scannerType: ScannerType): RuleScanner {
-        let reader;
-        if (this.inputByteBuffer) {
-            reader = this.inputByteBuffer;
-        } else {
-            reader = new BufferLineReader(this.rulesBuffer);
-        }
+    newScanner(scannerType: ScannerType): RuleScanner<T> {
+        const reader = new BufferLineReader<T>(this.rulesBuffer);
 
         return new RuleScanner(reader, this.id, {
             scannerType,
@@ -135,7 +128,12 @@ export class BufferRuleList implements IRuleList {
      * @param ruleIdx - rule index.
      * @return - rule text or null.
      */
+    // FIXME (David, v2.3): Remove this method and only use `retrieveRuleNode`
     retrieveRuleText(ruleIdx: number): string | null {
+        if (!(this.rulesBuffer instanceof Uint8Array)) {
+            throw new Error('This method is not supported for InputByteBuffer');
+        }
+
         if (ruleIdx < 0 || ruleIdx >= this.rulesBuffer.length) {
             return null;
         }
@@ -153,6 +151,33 @@ export class BufferRuleList implements IRuleList {
         }
 
         return line;
+    }
+
+    /**
+     * Retrieves a rule node by its index.
+     *
+     * If there's no rule by that index or the rule is invalid, it will return
+     * null.
+     *
+     * @param ruleIdx Rule index.
+     * @return Rule node or `null`.
+     */
+    retrieveRuleNode(ruleIdx: number): AnyRule | null {
+        // FIXME (David, v2.3): Remove this check after type union is removed
+        if (!(this.rulesBuffer instanceof InputByteBuffer)) {
+            throw new Error('This method is not supported for Uint8Array');
+        }
+
+        try {
+            const ruleNode: AnyRule = {} as AnyRule;
+            const copy = this.rulesBuffer.createCopyWithOffset(ruleIdx);
+            RuleParser.deserialize(copy, ruleNode);
+            return ruleNode;
+        } catch (e) {
+            // fall through
+        }
+
+        return null;
     }
 
     /**

@@ -1,10 +1,4 @@
-import {
-    type AnyRule,
-    CosmeticRuleType,
-    FilterListParser,
-    InputByteBuffer,
-    RuleParser,
-} from '@adguard/agtree';
+import { type AnyRule, CosmeticRuleType } from '@adguard/agtree';
 
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
@@ -14,6 +8,7 @@ import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { type FilterListSourceMap, getRuleSourceIndex } from '../source-map';
+import { isString } from '../../utils/string-utils';
 
 /**
  * Represents the RuleScanner configuration.
@@ -52,7 +47,7 @@ export interface RuleScannerConfiguration {
  * Rule scanner provides the functionality for reading rules from a filter list.
  */
 // TODO: Change string filter list to byte buffer.
-export class RuleScanner {
+export class RuleScanner<T extends string | AnyRule = string> {
     /**
      * Filter list ID.
      */
@@ -86,7 +81,7 @@ export class RuleScanner {
     /**
      * Underlying reader object.
      */
-    private readonly reader: ILineReader | InputByteBuffer;
+    private readonly reader: ILineReader<T>;
 
     /**
      * Current rule.
@@ -104,12 +99,6 @@ export class RuleScanner {
     private readonly sourceMap: FilterListSourceMap;
 
     /**
-     * Number of children in the current node.
-     * @private
-     */
-    private childrenCount: number | undefined;
-
-    /**
      * Constructor of a RuleScanner object.
      *
      * @param reader - Source of the filtering rules
@@ -117,7 +106,7 @@ export class RuleScanner {
      * @param configuration - Scanner configuration object
      */
     constructor(
-        reader: ILineReader | InputByteBuffer,
+        reader: ILineReader<T>,
         listId: number,
         configuration: RuleScannerConfiguration,
     ) {
@@ -135,27 +124,6 @@ export class RuleScanner {
         this.sourceMap = configuration.sourceMap ?? {};
     }
 
-    // FIXME (David, v2.3): Change to InputByteBuffer-only
-    private readNextNode(): { ruleStartIndex: number, ruleNode: AnyRule } | null {
-        if (this.childrenCount === undefined) {
-            this.childrenCount = FilterListParser.jumpToChildren(this.reader);
-        }
-
-        if (this.childrenCount) {
-            const ruleStartIndex = this.reader.currentOffset;
-            let ruleNode: AnyRule;
-            RuleParser.deserialize(this.reader, ruleNode = {} as AnyRule);
-
-            if (ruleNode) {
-                return { ruleStartIndex, ruleNode };
-            }
-
-            this.childrenCount -= 1;
-        }
-
-        return null;
-    }
-
     /**
      * Scan advances the RuleScanner to the next rule, which will then be
      * available through the getRule() method.
@@ -164,32 +132,6 @@ export class RuleScanner {
      * input or an error. If there's a rule available, returns true.
      */
     public scan(): boolean {
-        if (this.reader instanceof InputByteBuffer) {
-            while (true) {
-                const next = this.readNextNode();
-                if (!next) {
-                    return false;
-                }
-
-                const { ruleStartIndex, ruleNode } = next;
-                const rule = RuleFactory.createRule(
-                    ruleNode,
-                    this.listId,
-                    getRuleSourceIndex(ruleStartIndex, this.sourceMap),
-                    this.ignoreNetwork,
-                    this.ignoreCosmetic,
-                    this.ignoreHost,
-                );
-
-                if (rule && !this.isIgnored(rule)) {
-                    this.currentRule = rule;
-                    this.currentRuleIndex = ruleStartIndex;
-                    return true;
-                }
-            }
-        }
-
-        // FIXME (David, v2.3): Change to InputByteBuffer-only
         while (true) {
             const lineIndex = this.reader.getCurrentPos();
             const line = this.readNextLine();
@@ -251,11 +193,15 @@ export class RuleScanner {
      *
      * @return - Next line string or null.
      */
-    private readNextLine(): string | null {
+    private readNextLine(): T | null {
         const line = this.reader.readLine();
 
-        if (line != null) {
-            return line.trim();
+        if (line !== null) {
+            if (isString(line)) {
+                return line.trim() as T;
+            }
+
+            return line;
         }
 
         return null;

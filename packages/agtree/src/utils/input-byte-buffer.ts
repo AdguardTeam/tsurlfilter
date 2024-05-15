@@ -261,4 +261,8 @@ export class InputByteBuffer extends ByteBuffer {
     public get currentOffset(): number {
         return this.offset;
     }
+
+    public get capacity(): number {
+        return this.chunks.length * ByteBuffer.CHUNK_SIZE;
+    }
 }
