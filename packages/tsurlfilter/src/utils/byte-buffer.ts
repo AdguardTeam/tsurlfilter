@@ -66,7 +66,7 @@ export class ByteBuffer {
 
     /**
      * Sets uint8 value to buffer. This method is used for overwriting value.
-     * NOTE: This method does not allocate memory.
+     * WARNING: This method does not allocate memory.
      *
      * @param byteOffset The byte offset of the value.
      * @param value The uint8 value to set.
