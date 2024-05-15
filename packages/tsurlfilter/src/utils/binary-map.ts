@@ -118,7 +118,7 @@ export class BinaryMap {
         // Get the position of the first entry in the chain.
         let cursor = chainPosition + 4; // Uint32Array.BYTES_PER_ELEMENT
         // Calculate the end of the chain.
-        const endOfChain = cursor + (chainLength * 4/** Uint32Array.BYTES_PER_ELEMENT. */);
+        const endOfChain = cursor + (chainLength * 4 /* Uint32Array.BYTES_PER_ELEMENT. */);
 
         // Iterate over the chain and find the key.
         while (cursor < endOfChain) {
