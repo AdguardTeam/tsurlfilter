@@ -73,6 +73,7 @@
     "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
+    "prepare": "pnpn build",
     "prepublishOnly": "pnpm build",
     "increment": "pnpm version patch --no-git-tag-version"
   },
