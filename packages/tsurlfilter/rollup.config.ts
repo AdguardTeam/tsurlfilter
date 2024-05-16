@@ -62,9 +62,10 @@ const commonConfig = {
 };
 
 const commonExternal = [
-    '@adguard/agtree',
-    '@adguard/css-tokenizer',
-    '@adguard/ecss-tree',
+    // FIXME split later if needed
+    // '@adguard/agtree',
+    // '@adguard/css-tokenizer',
+    // '@adguard/ecss-tree',
     '@adguard/scriptlets',
     'is-ip',
     'punycode/',
