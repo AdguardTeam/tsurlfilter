@@ -1,5 +1,5 @@
 import { z as zod } from 'zod';
-import { filterListSourceMapValidator, InputByteBuffer } from '@adguard/tsurlfilter';
+import { filterListSourceMapValidator } from '@adguard/tsurlfilter';
 import { logLevelSchema, verboseSchema } from './utils/logger';
 import { version } from '../../../package.json';
 
@@ -84,7 +84,7 @@ export const basicFilterValidator = zod.object({
     // TODO: change to byte buffer
     content: zod.union([
         zod.string(),
-        zod.instanceof(InputByteBuffer),
+        zod.array(zod.instanceof(Uint8Array)),
     ]),
 
     /**

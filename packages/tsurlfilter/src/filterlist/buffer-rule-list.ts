@@ -61,7 +61,7 @@ export class BufferRuleList<T extends string | AnyRule = string> implements IRul
      */
     constructor(
         listId: number,
-        inputRules: string | InputByteBuffer,
+        inputRules: string | Uint8Array[],
         ignoreCosmetic?: boolean,
         ignoreJS?: boolean,
         ignoreUnsafe?: boolean,
@@ -78,7 +78,7 @@ export class BufferRuleList<T extends string | AnyRule = string> implements IRul
         if (isString(inputRules)) {
             this.rulesBuffer = encoder.encode(inputRules);
         } else {
-            this.rulesBuffer = inputRules;
+            this.rulesBuffer = new InputByteBuffer(inputRules);
         }
 
         this.ignoreCosmetic = !!ignoreCosmetic;

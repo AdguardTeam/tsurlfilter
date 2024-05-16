@@ -6,7 +6,6 @@ import {
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { type InputByteBuffer } from '@adguard/tsurlfilter';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../../common/error';
 
@@ -40,7 +39,7 @@ export default class UserRulesApi {
      * limitations. @see {@link ConversionResult}.
      */
     public static async updateDynamicFiltering(
-        userRules: string | InputByteBuffer,
+        userRules: string | Uint8Array[],
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
