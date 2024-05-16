@@ -925,7 +925,7 @@ importers:
         specifier: ^1.10.25
         version: 1.10.25
       '@adguard/tsurlfilter':
-        specifier: ^2.2.18
+        specifier: ^2.2.19
         version: link:../tsurlfilter
       bowser:
         specifier: 2.11.0
