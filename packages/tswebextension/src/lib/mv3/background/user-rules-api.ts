@@ -39,15 +39,20 @@ export default class UserRulesApi {
      * limitations. @see {@link ConversionResult}.
      */
     public static async updateDynamicFiltering(
-        userRules: string[],
+        userRules: string | Uint8Array[],
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
+        // FIXME: Add support
+        if (!(typeof userRules === 'string')) {
+            throw new Error('User rules must be a string');
+        }
+
         const filterList = [
             new Filter(
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(userRules) },
+                { getContent: () => Promise.resolve(userRules.split('\n')) },
             ),
             ...customFilters,
         ];

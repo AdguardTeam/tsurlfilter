@@ -1,3 +1,4 @@
+import { type AnyRule } from '@adguard/agtree';
 import { type RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
 
@@ -13,7 +14,7 @@ export const LIST_ID_MAX_VALUE = 10 ** 6;
 /**
  * RuleList represents a set of filtering rules.
  */
-export interface IRuleList {
+export interface IRuleList<T extends string | AnyRule = string> {
     /**
      * Returns the rule list identifier.
      */
@@ -22,7 +23,7 @@ export interface IRuleList {
     /**
      * Creates a new scanner that reads the list contents.
      */
-    newScanner(scannerType: ScannerType): RuleScanner;
+    newScanner(scannerType: ScannerType): RuleScanner<T>;
 
     /**
      * Retrieves rule text by its index.

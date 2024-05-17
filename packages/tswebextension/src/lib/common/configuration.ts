@@ -82,7 +82,10 @@ export const basicFilterValidator = zod.object({
      * Filter list text content.
      */
     // TODO: change to byte buffer
-    content: zod.string(),
+    content: zod.union([
+        zod.string(),
+        zod.array(zod.instanceof(Uint8Array)),
+    ]),
 
     /**
      * Source map.

@@ -51,6 +51,19 @@ let initializingPromise: Promise<void> | undefined;
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 const messageHandler = async (message: IMessage) => {
+    // FIXME: Handle Uint8Array[] later
+    const userrules = config.userrules.content;
+
+    if (!userrules) {
+        config.userrules = {
+            content: '',
+        };
+    }
+
+    if (Array.isArray(userrules)) {
+        throw new Error('Uint8Array is not supported');
+    }
+
     const { type, data } = message;
     switch (type) {
         case Message.GetConfig: {
@@ -58,7 +71,7 @@ const messageHandler = async (message: IMessage) => {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
                 // TODO: Change the interface later
-                rules: config.userrules.content.split(LF),
+                rules: userrules.split(LF),
             };
 
             return res;

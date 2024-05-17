@@ -1,4 +1,4 @@
-import { CosmeticRuleType } from '@adguard/agtree';
+import { type AnyRule, CosmeticRuleType } from '@adguard/agtree';
 
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
@@ -8,6 +8,7 @@ import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { type FilterListSourceMap, getRuleSourceIndex } from '../source-map';
+import { isString } from '../../utils/string-utils';
 
 /**
  * Represents the RuleScanner configuration.
@@ -46,7 +47,7 @@ export interface RuleScannerConfiguration {
  * Rule scanner provides the functionality for reading rules from a filter list.
  */
 // TODO: Change string filter list to byte buffer.
-export class RuleScanner {
+export class RuleScanner<T extends string | AnyRule = string> {
     /**
      * Filter list ID.
      */
@@ -80,7 +81,7 @@ export class RuleScanner {
     /**
      * Underlying reader object.
      */
-    private readonly reader: ILineReader;
+    private readonly reader: ILineReader<T>;
 
     /**
      * Current rule.
@@ -105,7 +106,7 @@ export class RuleScanner {
      * @param configuration - Scanner configuration object
      */
     constructor(
-        reader: ILineReader,
+        reader: ILineReader<T>,
         listId: number,
         configuration: RuleScannerConfiguration,
     ) {
@@ -192,11 +193,15 @@ export class RuleScanner {
      *
      * @return - Next line string or null.
      */
-    private readNextLine(): string | null {
+    private readNextLine(): T | null {
         const line = this.reader.readLine();
 
-        if (line != null) {
-            return line.trim();
+        if (line !== null) {
+            if (isString(line)) {
+                return line.trim() as T;
+            }
+
+            return line;
         }
 
         return null;

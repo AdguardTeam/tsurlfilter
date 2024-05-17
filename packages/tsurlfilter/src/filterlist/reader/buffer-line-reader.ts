@@ -1,10 +1,16 @@
+import {
+    type AnyRule,
+    FilterListParser,
+    type InputByteBuffer,
+    RuleParser,
+} from '@adguard/agtree';
 import { type ILineReader } from './line-reader';
 
 /**
  * BufferLineReader is a class responsible for reading content line by line
  * from a bytes buffer with a UTF-8 encoded string.
  */
-export class BufferLineReader implements ILineReader {
+export class BufferLineReader<T extends string | AnyRule = string> implements ILineReader<T> {
     /**
      * EOL is a new line character that is used to detect line endings. We only
      * rely on \n and not \r so the lines need to be trimmed after processing.
@@ -14,7 +20,7 @@ export class BufferLineReader implements ILineReader {
     /**
      * Byte buffer with a UTF-8 encoded string.
      */
-    private readonly buffer: Uint8Array;
+    private readonly buffer: Uint8Array | InputByteBuffer;
 
     /**
      * Current position of the reader.
@@ -28,11 +34,17 @@ export class BufferLineReader implements ILineReader {
     private static readonly decoder = new TextDecoder('utf-8');
 
     /**
+     * Number of children in the current node.
+     * @private
+     */
+    private childrenCount: number | undefined;
+
+    /**
      * Constructor of a BufferLineReader.
      *
      * @param buffer - Uint8Array that contains a UTF-8 encoded string.
      */
-    constructor(buffer: Uint8Array) {
+    constructor(buffer: Uint8Array | InputByteBuffer) {
         this.buffer = buffer;
     }
 
@@ -41,25 +53,44 @@ export class BufferLineReader implements ILineReader {
      *
      * @return text or null on end
      */
-    public readLine(): string | null {
-        if (this.currentIndex === -1) {
-            return null;
+    public readLine(): T | null {
+        if (this.buffer instanceof Uint8Array) {
+            if (this.currentIndex === -1) {
+                return null;
+            }
+
+            const startIndex = this.currentIndex;
+            this.currentIndex = this.buffer.indexOf(BufferLineReader.EOL, startIndex);
+
+            if (this.currentIndex === -1) {
+                return BufferLineReader.decoder.decode(this.buffer.subarray(startIndex)) as T;
+            }
+
+            const lineBytes = this.buffer.subarray(startIndex, this.currentIndex);
+            const line = BufferLineReader.decoder.decode(lineBytes);
+
+            // Increment to not include the EOL character.
+            this.currentIndex += 1;
+
+            return line as T;
         }
 
-        const startIndex = this.currentIndex;
-        this.currentIndex = this.buffer.indexOf(BufferLineReader.EOL, startIndex);
-
-        if (this.currentIndex === -1) {
-            return BufferLineReader.decoder.decode(this.buffer.subarray(startIndex));
+        if (this.childrenCount === undefined) {
+            this.childrenCount = FilterListParser.jumpToChildren(this.buffer);
         }
 
-        const lineBytes = this.buffer.subarray(startIndex, this.currentIndex);
-        const line = BufferLineReader.decoder.decode(lineBytes);
+        if (this.childrenCount) {
+            let ruleNode: AnyRule;
+            RuleParser.deserialize(this.buffer, ruleNode = {} as AnyRule);
 
-        // Increment to not include the EOL character.
-        this.currentIndex += 1;
+            if (ruleNode) {
+                return ruleNode as T;
+            }
 
-        return line;
+            this.childrenCount -= 1;
+        }
+
+        return null;
     }
 
     /**
@@ -74,6 +105,10 @@ export class BufferLineReader implements ILineReader {
 
     /** @inheritdoc */
     public getDataLength(): number {
-        return this.buffer.length;
+        if (this.buffer instanceof Uint8Array) {
+            return this.buffer.length;
+        }
+
+        return this.buffer.capacity;
     }
 }

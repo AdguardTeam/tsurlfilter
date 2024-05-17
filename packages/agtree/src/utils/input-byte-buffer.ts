@@ -257,4 +257,22 @@ export class InputByteBuffer extends ByteBuffer {
     public createCopyWithOffset(initialOffset: number, cloneChunks = false): InputByteBuffer {
         return new InputByteBuffer(this.chunks, cloneChunks, initialOffset);
     }
+
+    /**
+     * Gets the current offset in the buffer for reading.
+     *
+     * @returns Current offset in the buffer for reading.
+     */
+    public get currentOffset(): number {
+        return this.offset;
+    }
+
+    /**
+     * Gets the capacity of the buffer.
+     *
+     * @returns Capacity of the buffer.
+     */
+    public get capacity(): number {
+        return this.chunks.length * ByteBuffer.CHUNK_SIZE;
+    }
 }

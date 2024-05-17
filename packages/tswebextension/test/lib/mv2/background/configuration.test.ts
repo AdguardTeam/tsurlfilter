@@ -69,17 +69,51 @@ describe('configuration validator', () => {
 
         expect(() => {
             configurationMV2Validator.parse(configuration);
-        }).toThrow(new ZodError([{
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'boolean',
-            path: [
-                'filters',
-                0,
-                'content',
-            ],
-            message: 'Expected string, received boolean',
-        }]));
+        }).toThrow(new ZodError([
+            {
+                code: 'invalid_union',
+                unionErrors: [
+                    {
+                        issues: [
+                            {
+                                code: 'invalid_type',
+                                expected: 'string',
+                                received: 'boolean',
+                                path: [
+                                    'filters',
+                                    0,
+                                    'content',
+                                ],
+                                message: 'Expected string, received boolean',
+                            },
+                        ],
+                        name: 'ZodError',
+                    } as ZodError,
+                    {
+                        issues: [
+                            {
+                                code: 'invalid_type',
+                                expected: 'array',
+                                received: 'boolean',
+                                path: [
+                                    'filters',
+                                    0,
+                                    'content',
+                                ],
+                                message: 'Expected array, received boolean',
+                            },
+                        ],
+                        name: 'ZodError',
+                    } as ZodError,
+                ],
+                path: [
+                    'filters',
+                    0,
+                    'content',
+                ],
+                message: 'Invalid input',
+            },
+        ]));
     });
 
     it('throws error on unrecognized key detection', () => {
