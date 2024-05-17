@@ -67,6 +67,15 @@ Test:
 
             # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
             pnpm --filter @adguard/tswebextension test:prod
+
+            # FIXME remove this line before merging to master
+            pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
+    # FIXME remove this task
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic save tswebextension.tgz artifact'
+          selectedRepository: defaultRepository
   final-tasks:
     - script:
         interpreter: SHELL
