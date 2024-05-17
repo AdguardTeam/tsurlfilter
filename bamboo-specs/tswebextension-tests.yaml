@@ -69,7 +69,7 @@ Test:
             pnpm --filter @adguard/tswebextension test:prod
 
             # FIXME remove this line before merging to master
-            pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
+            cd packages/tswebextension && pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
     # FIXME remove this task
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
