@@ -68,12 +68,12 @@ export function getHost(url: string): string | null {
  * Extracts domain name from url.
  *
  * @param url Url.
- * @returns Domain name or null.
+ * @returns Domain name or undefined if domain cannot be extracted.
  */
-export function getDomain(url: string): string | null {
+export function getDomain(url: string): string | undefined {
     const host = getHost(url);
     if (!host) {
-        return null;
+        return undefined;
     }
 
     return host.startsWith('www.') ? host.substring(4) : host;
