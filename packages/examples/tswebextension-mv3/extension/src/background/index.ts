@@ -4,6 +4,8 @@ import {
     CommonMessageType,
 } from '@adguard/tswebextension/mv3';
 import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
+import browser from 'webextension-polyfill';
+
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
 import { loadDefaultConfig } from './loadDefaultConfig';
@@ -121,7 +123,7 @@ const messageHandler = async (message: IMessage) => {
             break;
         }
         case Message.OpenAssistant: {
-            const tabs = await chrome.tabs.query({ active: true });
+            const tabs = await browser.tabs.query({ active: true });
             if (tabs.length > 0 && tabs[0].id) {
                 await tsWebExtension.openAssistant(tabs[0].id);
             }
@@ -129,7 +131,7 @@ const messageHandler = async (message: IMessage) => {
             break;
         }
         case Message.CloseAssistant: {
-            const tabs = await chrome.tabs.query({ active: true });
+            const tabs = await browser.tabs.query({ active: true });
             if (tabs.length > 0 && tabs[0].id) {
                 await tsWebExtension.closeAssistant(tabs[0].id);
             }
@@ -193,7 +195,7 @@ const initExtension = async (messageId: string) => {
 
 const proxyHandler = async (
     message: IMessage | IMessageInner,
-    sender: chrome.runtime.MessageSender,
+    sender: browser.Runtime.MessageSender,
 ) => {
     const id = 'id_' + Math.random().toString(16).slice(2);
     console.debug('[PROXY HANDLER]: start check config', id, message);
@@ -210,7 +212,7 @@ const proxyHandler = async (
 };
 
 // TODO: Add same logic for update event
-chrome.runtime.onInstalled.addListener(async () => {
+browser.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: start');
 
     await initExtension('install');
@@ -218,13 +220,13 @@ chrome.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: done');
 });
 
-chrome.runtime.onMessage
+browser.runtime.onMessage
     .addListener((
         message: IMessage | IMessageInner,
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
         sendResponse,
     ) => {
-        console.debug('chrome.runtime.onMessage: ', message);
+        console.debug('browser.runtime.onMessage: ', message);
 
         proxyHandler(message, sender).then(sendResponse);
 

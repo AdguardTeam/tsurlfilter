@@ -1,29 +1,23 @@
 import { ExtendedMV3MessageType } from '@adguard/tswebextension/mv3';
+import browser from 'webextension-polyfill';
+
 import { Message } from '../message';
 
-export const sendMessage = (
+export const sendMessage = async (
     type: Message,
     data: any = null, // eslint-disable-line @typescript-eslint/no-explicit-any
     handlerName = '',
 ) => {
-    return new Promise((resolve) => {
-        const callbackWrapper = (response: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-            console.log(`Response for '${type}':`, response);
-            resolve(response);
-        };
-        chrome.runtime.sendMessage({ type, data, handlerName }, callbackWrapper);
-    });
+    const response = await browser.runtime.sendMessage({ type, data, handlerName });
+    console.log(`Response for '${type}':`, response);
+    return response;
 };
 
 export const sendInnerMessage = (
     type: ExtendedMV3MessageType,
     handlerName = 'tsWebExtension',
 ) => {
-    return new Promise((resolve) => {
-        const callbackWrapper = (response: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-            console.log(`Response for '${type}':`, response);
-            resolve(response);
-        };
-        chrome.runtime.sendMessage({ type, handlerName }, callbackWrapper);
-    });
+    const response = browser.runtime.sendMessage({ type, handlerName });
+    console.log(`Response for '${type}':`, response);
+    return response;
 };
