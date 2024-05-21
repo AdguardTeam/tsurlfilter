@@ -31,6 +31,8 @@ export {
     isHttpOrWsRequest,
     isExtensionUrl,
 } from '../../common/utils/url';
+export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
+export { type Message } from '../../common/message';
 export {
     defaultFilteringLog,
     FilteringEventType,
