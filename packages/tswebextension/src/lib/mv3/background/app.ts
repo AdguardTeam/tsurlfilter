@@ -506,4 +506,15 @@ MessagesHandlerMV3
             declarativeFilteringLog.stop();
         }
     }
+
+    /**
+     * FIXME: Check if this method is needed.
+     * Initialize app persistent data.
+     * This method called as soon as possible and allows access
+     * to the actual context before the app is started.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public async initStorage(): Promise<void> {
+        logger.debug('NOT IMPLEMENTED');
+    }
 }
