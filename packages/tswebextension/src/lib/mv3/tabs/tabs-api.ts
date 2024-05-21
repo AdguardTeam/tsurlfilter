@@ -460,18 +460,14 @@ export class TabsApi {
      *
      * @returns Current active tab.
      */
-    static getActiveTab = (): Promise<chrome.tabs.Tab> => {
-        return new Promise((resolve, reject) => {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                const error = browser.runtime.lastError;
-                if (error) {
-                    reject(error);
-                }
-
-                const [tab] = tabs;
-                resolve(tab);
-            });
+    static getActiveTab = async (): Promise<browser.Tabs.Tab> => {
+        const tabs = await browser.tabs.query({
+            active: true,
+            currentWindow: true,
         });
+
+        const [tab] = tabs;
+        return tab;
     };
 }
 

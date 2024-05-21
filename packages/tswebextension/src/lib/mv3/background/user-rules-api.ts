@@ -6,6 +6,8 @@ import {
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
+import browser from 'webextension-polyfill';
+
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../../common/error';
 
@@ -16,7 +18,7 @@ export const USER_FILTER_ID = 0;
 const {
     MAX_NUMBER_OF_REGEX_RULES,
     MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
-} = chrome.declarativeNetRequest;
+} = browser.declarativeNetRequest;
 
 /**
  * UserRulesApi knows how to handle dynamic rules: apply a list of custom
@@ -70,10 +72,9 @@ export default class UserRulesApi {
         // Remove existing dynamic rules, in order their ids not interfere
         // with new
         await this.removeAllRules();
-        await chrome.declarativeNetRequest.updateDynamicRules({
-            // The need for explicit type conversion because the types from
-            // "@types/chrome" are obsolete
-            addRules: declarativeRules as chrome.declarativeNetRequest.Rule[],
+        await browser.declarativeNetRequest.updateDynamicRules({
+            // TODO update rule types returned by getDeclarativeRules();
+            addRules: declarativeRules as browser.DeclarativeNetRequest.Rule[],
         });
 
         if (declarativeRulesToCancel && declarativeRulesToCancel.length > 0) {
@@ -99,10 +100,14 @@ export default class UserRulesApi {
             const rulesetId = r.getId();
 
             // Get list of current disabled rules ids.
-            const enableRuleIds = await chrome.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
+            // FIXME figure out how to implement since it is not available in webextension polifyll
+            // @ts-ignore
+            const enableRuleIds: number[] = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
 
             // And enable all of them.
-            return chrome.declarativeNetRequest.updateStaticRules({
+            // FIXME later
+            // @ts-ignore
+            return browser.declarativeNetRequest.updateStaticRules({
                 rulesetId,
                 enableRuleIds,
             });
@@ -129,7 +134,9 @@ export default class UserRulesApi {
             disableRuleIds: ruleIdsToDisable,
         }) => {
             // Get list of current disabled rules ids.
-            const disabledRuleIds = await chrome.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
+            // FIXME later
+            // @ts-ignore
+            const disabledRuleIds: number[] = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
 
             // Collect rules which should be enabled.
             const enableRuleIds = disabledRuleIds.filter((id) => !ruleIdsToDisable.includes(id));
@@ -137,7 +144,9 @@ export default class UserRulesApi {
             // Filter only that rules which are not disabled already.
             const disableRuleIds = ruleIdsToDisable.filter((id) => !disabledRuleIds.includes(id));
 
-            return chrome.declarativeNetRequest.updateStaticRules({
+            // FIXME later
+            // @ts-ignore
+            return browser.declarativeNetRequest.updateStaticRules({
                 rulesetId,
                 enableRuleIds,
                 disableRuleIds,
@@ -156,10 +165,10 @@ export default class UserRulesApi {
      */
     public static async removeAllRules(): Promise<void> {
         // Get existing dynamic rules
-        const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+        const existingRules = await browser.declarativeNetRequest.getDynamicRules();
         const existingRulesIds = existingRules.map((rule) => rule.id);
 
         // Remove existing dynamic rules
-        await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: existingRulesIds });
+        await browser.declarativeNetRequest.updateDynamicRules({ removeRuleIds: existingRulesIds });
     }
 }

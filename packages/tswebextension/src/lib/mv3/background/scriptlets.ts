@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
+import browser from 'webextension-polyfill';
 
 // eslint-disable-next-line jsdoc/require-param, jsdoc/require-returns
 /**
@@ -49,24 +50,26 @@ const executeScript = async (scripts: string, tabId: number): Promise<void> => {
     };
 
     try {
-        await chrome.scripting.executeScript({
+        await browser.scripting.executeScript({
             target: { tabId },
             func: functionToInject,
             injectImmediately: true,
+            // TODO fix later, MAIN is not supported by webextension-polyfill
+            // @ts-ignore
             world: 'MAIN', // ISOLATED doesn't allow to execute code inline
             args: [scripts],
         });
     } catch (e) {
         logger.debug(
             `Error on executeScript in the tab ${tabId}:`,
-            chrome.runtime.lastError,
+            browser.runtime.lastError,
             e,
         );
     }
 };
 
 /**
- * Executes scriptlets data via chrome.scripting.executeScript api.
+ * Executes scriptlets data via browser.scripting.executeScript api.
  *
  * @param tabId Tab id.
  * @param scriptletsData List of {@link ScriptletData}.
@@ -84,17 +87,19 @@ const executeScriptletsData = async (
         }
 
         try {
-            await chrome.scripting.executeScript({
+            await browser.scripting.executeScript({
                 target: { tabId },
                 func: scriptletData.func,
                 injectImmediately: true,
+                // FIXME later
+                // @ts-ignore
                 world: 'MAIN', // ISOLATED doesn't allow to execute code inline
                 args: [scriptletData.params, scriptletData.params.args],
             });
         } catch (e) {
             logger.debug(
                 `Error on executeScriptlet in the tab ${tabId}:`,
-                chrome.runtime.lastError,
+                browser.runtime.lastError,
                 e,
             );
         }

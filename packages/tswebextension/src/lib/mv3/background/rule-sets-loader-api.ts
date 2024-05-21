@@ -7,6 +7,7 @@ import {
     IndexedNetworkRuleWithHash,
     RulesHashMap,
 } from '@adguard/tsurlfilter/es/declarative-converter';
+import browser from 'webextension-polyfill';
 
 /**
  * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
@@ -47,13 +48,13 @@ export default class RuleSetsLoaderApi {
         };
 
         const rawData = await loadFileText(
-            chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${METADATA_FILENAME}`),
+            browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${METADATA_FILENAME}`),
         );
         const loadLazyData = (): Promise<string> => loadFileText(
-            chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${LAZY_METADATA_FILENAME}`),
+            browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${LAZY_METADATA_FILENAME}`),
         );
         const loadDeclarativeRules = (): Promise<string> => loadFileText(
-            chrome.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`),
+            browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`),
         );
 
         const {

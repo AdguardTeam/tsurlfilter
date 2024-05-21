@@ -13,7 +13,7 @@ import { CookieController } from '../../common/content-script/cookie-controller'
  * - filtering log receives callback with applied rules data.
  *
  * The important point is: there is no way to run cookie controller script via
- * chrome.tabs.executeScript cause one only could be executed for all frames or
+ * browser.tabs.executeScript cause one only could be executed for all frames or
  * main frame only. But it's not correct cause there should be different rules
  * for each frame.
  */

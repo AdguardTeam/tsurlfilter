@@ -19,10 +19,11 @@ import {
     messageMV3Validator,
 } from './messages';
 import { Assistant } from './assistant';
+import browser from 'webextension-polyfill';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
-    sender: chrome.runtime.MessageSender,
+    sender: browser.Runtime.MessageSender,
 ) => Promise<unknown>;
 
 /**
@@ -57,7 +58,7 @@ export class MessagesApi {
      */
     public async handleMessage(
         message: MessageMV3,
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
     ): Promise<unknown> {
         logger.debug('[HANDLE MESSAGE]: ', message);
 
@@ -106,7 +107,7 @@ export class MessagesApi {
      * @returns Cosmetic css or undefined if there are no css rules for this request.
      */
     private getCss(
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): CosmeticRules | undefined {
         logger.debug('[GET CSS]: received call ', payload);
@@ -150,7 +151,7 @@ export class MessagesApi {
      */
     // eslint-disable-next-line class-methods-use-this
     private handleAssistantCreateRuleMessage(
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): boolean {
         if (!payload || !sender?.tab?.id) {
@@ -178,7 +179,7 @@ export class MessagesApi {
      * @returns Cookie rules data.
      */
     private getCookieRules(
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): CookieRule[] | undefined {
         logger.debug('[GET COOKIE RULES]: received call ', payload);
@@ -218,7 +219,7 @@ export class MessagesApi {
      * @param message Some payload to send to the tab.
      */
     public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
-        await chrome.tabs.sendMessage(tabId, message);
+        await browser.tabs.sendMessage(tabId, message);
     }
 
     /**
@@ -236,7 +237,7 @@ export class MessagesApi {
     private static calculateMatchingResult(
         url: string,
         referrer: string,
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
     ): MatchingResult | null {
         let isSubDocument = false;
 

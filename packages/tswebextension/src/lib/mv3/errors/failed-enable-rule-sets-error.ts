@@ -20,7 +20,7 @@ export class FailedEnableRuleSetsError extends Error {
      * attempted to enable.
      * @param disableRulesetIds A list of the IDs of the rule sets that were
      * attempted to disable.
-     * @param cause Specific chrome.declarativeNetRequest error.
+     * @param cause Specific browser.declarativeNetRequest error.
      */
     constructor(
         message: string,
