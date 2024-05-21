@@ -1,4 +1,5 @@
 import { type MatchingResult, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+import browser from 'webextension-polyfill';
 
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import {
@@ -19,7 +20,6 @@ import {
     messageMV3Validator,
 } from './messages';
 import { Assistant } from './assistant';
-import browser from 'webextension-polyfill';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
