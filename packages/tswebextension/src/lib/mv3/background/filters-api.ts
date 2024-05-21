@@ -4,6 +4,7 @@ import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-err
 import { getFilterName } from '../utils/get-filter-name';
 
 import { type ConfigurationMV3 } from './configuration';
+import browser from 'webextension-polyfill';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
@@ -37,7 +38,7 @@ export default class FiltersApi {
         const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
 
         try {
-            await chrome.declarativeNetRequest.updateEnabledRulesets({
+            await browser.declarativeNetRequest.updateEnabledRulesets({
                 enableRulesetIds,
                 disableRulesetIds,
             });
@@ -61,7 +62,7 @@ export default class FiltersApi {
      * @returns List of extracted enabled rule sets ids.
      */
     public static async getEnabledRuleSets(): Promise<number[]> {
-        const ruleSets = await chrome.declarativeNetRequest.getEnabledRulesets();
+        const ruleSets = await browser.declarativeNetRequest.getEnabledRulesets();
         return ruleSets.map((f) => Number.parseInt(f.slice(RULE_SET_NAME_PREFIX.length), 10));
     }
 
@@ -76,7 +77,7 @@ export default class FiltersApi {
      */
     private static async loadFilterContent(id: number, filtersPath: string): Promise<string[]> {
         const filterName = getFilterName(id);
-        const url = chrome.runtime.getURL(`${filtersPath}/${filterName}`);
+        const url = browser.runtime.getURL(`${filtersPath}/${filterName}`);
         const file = await fetch(url);
         const content = await file.text();
 

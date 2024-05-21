@@ -1,5 +1,6 @@
 import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
+import browser from 'webextension-polyfill';
 
 import { type AppInterface, defaultFilteringLog } from '../../common';
 import { getErrorMessage } from '../../common';
@@ -151,12 +152,12 @@ MessagesHandlerMV3
     /**
      * Fires on WebNavigation.onCommitted event.
      *
-     * @param item Web navigation details {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
+     * @param item Web navigation details.
      * @param item.tabId The ID of the tab in which the navigation occurred.
      * @param item.url The url of the tab in which the navigation occurred.
      */
     private async onCommitted(
-        { tabId, url }: chrome.webNavigation.WebNavigationTransitionCallbackDetails,
+        { tabId, url }: browser.WebNavigation.OnCommittedDetailsType,
     ): Promise<void> {
         if (this.isStarted && this.configuration) {
             // If service worker just woke up
@@ -164,6 +165,7 @@ MessagesHandlerMV3
                 await this.startPromise;
             }
 
+            // TODO verbose is deprecated, consider removing or replacing
             const { verbose } = this.configuration;
             await getAndExecuteScripts(tabId, url, verbose);
         }
@@ -241,7 +243,7 @@ MessagesHandlerMV3
         // Update configuration of engine.
         setConfiguration({
             engine: 'extension',
-            version: chrome.runtime.getManifest().version,
+            version: browser.runtime.getManifest().version,
             verbose: configuration.verbose,
             compatibility: CompatibilityTypes.Extension,
         });
@@ -363,7 +365,7 @@ MessagesHandlerMV3
 
     /**
      * Executes scriptlets for the currently active tab and adds a listener to
-     * the {@link chrome.webNavigation.onCommitted} hook to execute scriptlets.
+     * the {@link browser.webNavigation.onCommitted} hook to execute scriptlets.
      *
      * TODO: Move to RequestEvents.
      */
@@ -378,7 +380,7 @@ MessagesHandlerMV3
         }
 
         // TODO: Move to RequestEvents.
-        chrome.webNavigation.onCommitted.addListener(this.onCommitted);
+        browser.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
     /**
@@ -461,9 +463,12 @@ MessagesHandlerMV3
     ): Promise<IRuleSet[]> {
         // Wrap filters into rule sets
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        const manifest = chrome.runtime.getManifest();
-        // eslint-disable-next-line max-len
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources as chrome.declarativeNetRequest.Ruleset[];
+        const manifest = browser.runtime.getManifest();
+        if (!manifest.declarative_net_request) {
+            throw new Error('Cannot find declarative_net_request in manifest');
+        }
+
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
         const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
             return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });

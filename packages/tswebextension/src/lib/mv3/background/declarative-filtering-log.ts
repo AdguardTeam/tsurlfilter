@@ -1,4 +1,5 @@
 import { type IRuleSet, type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
+import browser from 'webextension-polyfill';
 
 /**
  * Information about applied declarative network rule.
@@ -98,9 +99,11 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
     /**
      * Adds a new record extending it with information about the original rule.
      *
-     * @param record Request details {@link chrome.declarativeNetRequest.MatchedRuleInfoDebug}.
+     * @param record Request details {@link browser.declarativeNetRequest.MatchedRuleInfoDebug}.
      */
-    private addNewRecord = async (record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> => {
+    // FIXME later
+    // @ts-ignore
+    private addNewRecord = async (record): Promise<void> => {
         const { request, rule } = record;
         const { rulesetId, ruleId } = rule;
         const {
@@ -139,9 +142,12 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
     public start = (): void => {
         // onRuleMatchedDebug can be null if the extension is running
         // as a packed version
-        if (chrome.declarativeNetRequest.onRuleMatchedDebug && !this.isListening) {
-            const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
-            onRuleMatchedDebug.addListener(this.addNewRecord);
+        // FIXME later
+        // @ts-ignore
+        if (browser.declarativeNetRequest.onRuleMatchedDebug && !this.isListening) {
+            // FIXME later
+            // @ts-ignore
+            browser.declarativeNetRequest.onRuleMatchedDebug.addListener(this.addNewRecord);
 
             this.isListening = true;
         }
@@ -155,9 +161,12 @@ class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
 
         // onRuleMatchedDebug can be null if the extension is running
         // as a packed version
-        if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
-            const { onRuleMatchedDebug } = chrome.declarativeNetRequest;
-            onRuleMatchedDebug.removeListener(this.addNewRecord);
+        // FIXME later
+        // @ts-ignore
+        if (browser.declarativeNetRequest.onRuleMatchedDebug) {
+            // FIXME later
+            // @ts-ignore
+            browser.declarativeNetRequest.onRuleMatchedDebug.removeListener(this.addNewRecord);
 
             this.isListening = false;
         }
