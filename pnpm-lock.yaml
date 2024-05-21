@@ -641,6 +641,9 @@ importers:
       '@types/react-dom':
         specifier: ^17.0.14
         version: 17.0.25
+      '@types/webextension-polyfill':
+        specifier: ^0.10.7
+        version: 0.10.7
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.5.0
         version: 7.6.0(@typescript-eslint/parser@7.6.0)(eslint@8.56.0)(typescript@5.4.3)
@@ -9237,8 +9240,8 @@ packages:
       '@typescript-eslint/parser': ^7.0.0
       eslint: ^8.56.0
     dependencies:
-      '@typescript-eslint/eslint-plugin': 7.6.0(@typescript-eslint/parser@7.6.0)(eslint@8.56.0)(typescript@5.4.4)
-      '@typescript-eslint/parser': 7.6.0(eslint@8.56.0)(typescript@5.4.4)
+      '@typescript-eslint/eslint-plugin': 7.6.0(@typescript-eslint/parser@7.6.0)(eslint@8.56.0)(typescript@5.4.3)
+      '@typescript-eslint/parser': 7.6.0(eslint@8.56.0)(typescript@5.4.3)
       eslint: 8.56.0
       eslint-config-airbnb-base: 15.0.0(eslint-plugin-import@2.29.1)(eslint@8.56.0)
     transitivePeerDependencies:
@@ -9421,7 +9424,7 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 7.6.0(eslint@8.56.0)(typescript@5.4.4)
+      '@typescript-eslint/parser': 7.6.0(eslint@8.56.0)(typescript@5.4.3)
       debug: 3.2.7
       eslint: 8.56.0
       eslint-import-resolver-node: 0.3.9
@@ -9638,7 +9641,7 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 7.6.0(eslint@8.56.0)(typescript@5.4.4)
+      '@typescript-eslint/parser': 7.6.0(eslint@8.56.0)(typescript@5.4.3)
       array-includes: 3.1.7
       array.prototype.findlastindex: 1.2.4
       array.prototype.flat: 1.3.2
