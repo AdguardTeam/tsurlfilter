@@ -1,10 +1,10 @@
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import browser from 'webextension-polyfill';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { getFilterName } from '../utils/get-filter-name';
 
 import { type ConfigurationMV3 } from './configuration';
-import browser from 'webextension-polyfill';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 

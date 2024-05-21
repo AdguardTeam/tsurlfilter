@@ -1,9 +1,9 @@
 import { adguardAssistant, type Assistant } from '@adguard/assistant';
+import browser from 'webextension-polyfill';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { logger } from '../utils/logger';
-import browser from 'webextension-polyfill';
 
 /**
  * Initializes assistant object.
