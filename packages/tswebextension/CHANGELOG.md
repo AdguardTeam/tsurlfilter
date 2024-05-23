@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [Unreleased]
+
+## Fixed
+
+- Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792]
+
+[AdguardBrowserExtension#2792]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2792
+
 ## [1.0.24] - 2024-04-15
 
 ### Fixed
