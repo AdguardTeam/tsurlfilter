@@ -60,18 +60,14 @@ export class TabsCosmeticInjector {
 
         const { url } = tab;
 
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
         const tabContext = new TabContext(tab, this.documentApi);
 
         const tabId = tab.id;
 
         this.tabsApi.context.set(tabId, tabContext);
 
-        if (url) {
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
+        if (url && isHttpRequest(url)) {
             tabContext.mainFrameRule = this.documentApi.matchFrame(url);
         }
 

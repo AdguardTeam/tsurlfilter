@@ -347,4 +347,21 @@ describe('TabsApi', () => {
             expect(browser.tabs.insertCSS.calledOnceWith(tabId, injectDetails)).toBe(true);
         });
     });
+
+    describe('handleTabNavigation', () => {
+        it('should not handle non http requests', () => {
+            const tabId = 1;
+
+            const tabContext = createTestTabContext();
+
+            tabsApi.context.set(tabId, tabContext);
+            tabsApi.context.set(tabId, tabContext);
+
+            tabsApi.handleTabNavigation(1, 'chrome://new-tab-page/');
+            expect(TabContext.prototype.updateMainFrameData).not.toBeCalled();
+
+            tabsApi.handleTabNavigation(1, 'https://example.org');
+            expect(TabContext.prototype.updateMainFrameData).toBeCalled();
+        });
+    });
 });
