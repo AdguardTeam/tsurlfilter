@@ -390,6 +390,10 @@ export class TabsApi {
             return;
         }
 
+        if (!isHttpRequest(url)) {
+            return;
+        }
+
         tabContext.updateMainFrameData(tabId, url);
     }
 
