@@ -68,6 +68,13 @@ Test:
             # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
             pnpm --filter @adguard/tswebextension test:prod
 
+            # Commit changes only in release/v2.3-for-5.0 branch.
+            # FIXME: Remove this line.
+            if [ "$branch" != "release/v2.3-for-5.0" ]; then
+              echo "No changes in project, skipping tests"
+              exit 0;
+            fi
+
             # FIXME remove this line before merging to master
             (cd packages/tswebextension && pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz)
 
