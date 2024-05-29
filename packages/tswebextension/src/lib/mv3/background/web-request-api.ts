@@ -150,6 +150,7 @@ import { tabsApi } from '../tabs/tabs-api';
 import { MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
 import { RequestBlockingApi } from './request/request-blocking-api';
+import { DocumentApi } from './document-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -240,7 +241,7 @@ export class WebRequestApi {
 
         let frameRule = null;
         if (requestType === RequestType.SubDocument) {
-            frameRule = engineApi.matchFrame(referrerUrl);
+            frameRule = DocumentApi.matchFrame(referrerUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }

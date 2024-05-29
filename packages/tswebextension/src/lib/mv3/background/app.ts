@@ -24,6 +24,7 @@ import { RequestEvents } from './request/events/request-events';
 import { TabsApi, tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
+import { allowlistApi } from './allowlist-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -268,9 +269,19 @@ MessagesHandlerMV3
             staticFilters,
         );
 
+        // Update allowlist settings.
+        allowlistApi.updateState(
+            configuration.settings.allowlistEnabled,
+            configuration.settings.allowlistInverted,
+            configuration.allowlist,
+        );
+        // Combine all allowlist rules into one network rule.
+        const combinedAllowListRules = allowlistApi.combineAllowListRules();
+
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
             configuration.userrules,
+            combinedAllowListRules,
             customFilters,
             staticRuleSets,
             this.webAccessibleResourcesPath,
@@ -283,6 +294,8 @@ MessagesHandlerMV3
                 ...customFilters,
             ],
             userrules: configuration.userrules,
+            allowlist: configuration.allowlist,
+            settings: configuration.settings,
         });
         await engineApi.waitingForEngine;
 
@@ -515,6 +528,6 @@ MessagesHandlerMV3
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
-        logger.debug('NOT IMPLEMENTED');
+        logger.debug('initStorage NOT IMPLEMENTED');
     }
 }

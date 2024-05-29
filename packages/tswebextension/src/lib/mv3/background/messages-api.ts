@@ -20,6 +20,7 @@ import {
     messageMV3Validator,
 } from './messages';
 import { Assistant } from './assistant';
+import { DocumentApi } from './document-api';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
@@ -255,7 +256,7 @@ export class MessagesApi {
             // because in MV3 we request CSS for the already loaded page
             // from content-script.
             requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
-            frameRule: engineApi.matchFrame(url),
+            frameRule: DocumentApi.matchFrame(url),
         });
     }
 }
