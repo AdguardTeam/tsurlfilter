@@ -294,8 +294,6 @@ MessagesHandlerMV3
                 ...customFilters,
             ],
             userrules: configuration.userrules,
-            allowlist: configuration.allowlist,
-            settings: configuration.settings,
         });
         await engineApi.waitingForEngine;
 

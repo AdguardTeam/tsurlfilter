@@ -29,7 +29,7 @@ import { DocumentApi } from './document-api';
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'allowlist' | 'settings'> & {
+type EngineConfig = Pick<ConfigurationMV3, 'userrules'> & {
     filters: IFilter[],
 };
 
