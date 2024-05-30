@@ -272,12 +272,12 @@ MessagesHandlerMV3
         // Update allowlist settings.
         allowlistApi.configure(configuration);
         // Combine all allowlist rules into one network rule.
-        const combinedAllowListRules = allowlistApi.combineAllowListRulesForDNR();
+        const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
 
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
             configuration.userrules,
-            combinedAllowListRules,
+            combinedAllowlistRules,
             customFilters,
             staticRuleSets,
             this.webAccessibleResourcesPath,
