@@ -1,7 +1,8 @@
 import { BufferRuleList } from '@adguard/tsurlfilter';
 import { Allowlist } from '@lib/mv2/background/allowlist';
 import { ALLOWLIST_FILTER_ID } from '@lib/common/constants';
-import { getConfigurationMv2Fixture } from './fixtures/configuration';
+import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
+import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
 
 describe('Allowlist Api', () => {
     let allowlist: Allowlist;
@@ -19,8 +20,18 @@ describe('Allowlist Api', () => {
             { input: ['www.sub.sub.example.com'], expected: ['sub.sub.example.com'] },
         ];
 
-        it.each(cases)('should parse $input to $expected', ({ input, expected }) => {
+        it.each(cases)('should parse $input to $expected for MV2', ({ input, expected }) => {
             const config = getConfigurationMv2Fixture();
+
+            config.allowlist = input;
+
+            allowlist.configure(config);
+
+            expect(allowlist.domains).toStrictEqual(expected);
+        });
+
+        it.each(cases)('should parse $input to $expected for MV3', ({ input, expected }) => {
+            const config = getConfigurationMv3Fixture();
 
             config.allowlist = input;
 

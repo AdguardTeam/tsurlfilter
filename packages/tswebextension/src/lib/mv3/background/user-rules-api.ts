@@ -52,7 +52,8 @@ export default class UserRulesApi {
         const filterList = [
             new Filter(
                 // NOTE: Here we use USER_FILTER_ID for user rules and allowlist rules.
-                // But for cosmetic engine we use different filter id for allowlist rules - ALLOWLIST_FILTER_ID.
+                // But for tsurlfilter engine we use different filter id for
+                // allowlist rules - ALLOWLIST_FILTER_ID.
                 // TODO: This need to be changed in the future.
                 USER_FILTER_ID,
                 { getContent: () => Promise.resolve(userRules.concat(allowListRules)) },

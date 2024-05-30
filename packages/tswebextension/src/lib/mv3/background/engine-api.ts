@@ -103,7 +103,7 @@ export class EngineApi {
             lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
-        const allowlistRulesList = allowlistApi.createRuleList();
+        const allowlistRulesList = allowlistApi.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);
         }

@@ -270,13 +270,9 @@ MessagesHandlerMV3
         );
 
         // Update allowlist settings.
-        allowlistApi.updateState(
-            configuration.settings.allowlistEnabled,
-            configuration.settings.allowlistInverted,
-            configuration.allowlist,
-        );
+        allowlistApi.configure(configuration);
         // Combine all allowlist rules into one network rule.
-        const combinedAllowListRules = allowlistApi.combineAllowListRules();
+        const combinedAllowListRules = allowlistApi.combineAllowListRulesForDNR();
 
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
