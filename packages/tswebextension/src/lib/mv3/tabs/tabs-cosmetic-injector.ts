@@ -7,6 +7,7 @@ import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
+import { DocumentApi } from '../background/document-api';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -56,7 +57,7 @@ export class TabsCosmeticInjector {
         tabsApi.context.set(tabId, tabContext);
 
         if (url) {
-            tabContext.mainFrameRule = engineApi.matchFrame(url);
+            tabContext.mainFrameRule = DocumentApi.matchFrame(url);
         }
 
         const frames = await browser.webNavigation.getAllFrames({ tabId });

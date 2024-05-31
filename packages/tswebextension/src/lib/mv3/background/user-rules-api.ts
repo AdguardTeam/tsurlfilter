@@ -31,6 +31,8 @@ export default class UserRulesApi {
      * rule set and applies it via the declarativeNetRequest API.
      *
      * @param userRules String[] contains user rules.
+     * @param allowListRules String with combined allowlist rules in AG format
+     * (e.g. '@@$document,domain=example.com|example.org').
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of static rule sets to apply $badfilter rules
      * from dynamic rules to static.
@@ -42,14 +44,19 @@ export default class UserRulesApi {
      */
     public static async updateDynamicFiltering(
         userRules: string[],
+        allowListRules: string,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
             new Filter(
+                // NOTE: Here we use USER_FILTER_ID for user rules and allowlist rules.
+                // But for tsurlfilter engine we use different filter id for
+                // allowlist rules - ALLOWLIST_FILTER_ID.
+                // TODO: This need to be changed in the future.
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(userRules) },
+                { getContent: () => Promise.resolve(userRules.concat(allowListRules)) },
             ),
             ...customFilters,
         ];
