@@ -63,6 +63,8 @@ export {
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
+export { TSWEBEXTENSION_VERSION } from '../../common/configuration';
+
 // IMPORTANT! Re-exporting errors is necessary to correctly work on instanceof.
 export {
     type ConversionError,
