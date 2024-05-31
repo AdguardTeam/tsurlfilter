@@ -24,6 +24,7 @@ import { RequestEvents } from './request/events/request-events';
 import { TabsApi, tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
+import { allowlistApi } from './allowlist-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -268,9 +269,15 @@ MessagesHandlerMV3
             staticFilters,
         );
 
+        // Update allowlist settings.
+        allowlistApi.configure(configuration);
+        // Combine all allowlist rules into one network rule.
+        const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
             configuration.userrules,
+            combinedAllowlistRules,
             customFilters,
             staticRuleSets,
             this.webAccessibleResourcesPath,
@@ -515,6 +522,6 @@ MessagesHandlerMV3
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
-        logger.debug('NOT IMPLEMENTED');
+        logger.debug('initStorage NOT IMPLEMENTED');
     }
 }

@@ -23,6 +23,8 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
+import { allowlistApi } from './allowlist-api';
+import { DocumentApi } from './document-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -101,6 +103,11 @@ export class EngineApi {
             lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
         }
 
+        const allowlistRulesList = allowlistApi.getAllowlistRules();
+        if (allowlistRulesList) {
+            lists.push(allowlistRulesList);
+        }
+
         const ruleStorage = new RuleStorage(lists);
 
         /*
@@ -155,7 +162,7 @@ export class EngineApi {
 
         // Checks if an allowlist rule exists at the document level,
         // then discards all cosmetic rules.
-        const allowlistFrameRule = this.engine.matchFrame(url);
+        const allowlistFrameRule = DocumentApi.matchFrame(url);
         if (allowlistFrameRule) {
             return new CosmeticResult();
         }

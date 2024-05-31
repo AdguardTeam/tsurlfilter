@@ -9,8 +9,8 @@ import {
     defaultFilteringLog,
     FilteringEventType,
 } from '../../common/filtering-log';
-import { engineApi } from '../background/engine-api';
 import { isHttpOrWsRequest } from '../../common/utils/url';
+import { DocumentApi } from '../background/document-api';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
@@ -252,7 +252,7 @@ export class TabContext {
         this.frames.set(MAIN_FRAME_ID, new Frame(requestUrl, requestId));
 
         // Calculate new main frame rule.
-        this.mainFrameRule = engineApi.matchFrame(requestUrl);
+        this.mainFrameRule = DocumentApi.matchFrame(requestUrl);
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
 
@@ -284,7 +284,7 @@ export class TabContext {
         const url = tab.pendingUrl || tab.url;
 
         if (url && isHttpOrWsRequest(url)) {
-            tabContext.mainFrameRule = engineApi.matchFrame(url);
+            tabContext.mainFrameRule = DocumentApi.matchFrame(url);
 
             tabContext.frames.set(MAIN_FRAME_ID, new Frame(url));
         }

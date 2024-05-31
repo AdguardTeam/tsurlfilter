@@ -5,7 +5,7 @@ import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/
 import { EventChannel } from '../../common/utils/channels';
 import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
-import { engineApi } from '../background/engine-api';
+import { DocumentApi } from '../background/document-api';
 
 /**
  * Request context data related to the tab's frame.
@@ -306,7 +306,7 @@ export class TabsApi {
             return;
         }
 
-        tabContext.mainFrameRule = engineApi.matchFrame(tabContext.info.url);
+        tabContext.mainFrameRule = DocumentApi.matchFrame(tabContext.info.url);
     }
 
     /**
