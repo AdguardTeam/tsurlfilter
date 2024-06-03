@@ -211,6 +211,44 @@ const assistantInjectScriptConfig = {
     ],
 };
 
+const gpcContentScriptSrc = 'src/lib/mv3/content-script/gpc.ts';
+const gpcContentScriptOutput = `${OUTPUT_PATH}/gpc.js`;
+
+const gpcContentScriptConfig = {
+    cache,
+    input: gpcContentScriptSrc,
+    output: [
+        {
+            file: gpcContentScriptOutput,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: gpcContentScriptSrc,
+    },
+    plugins: commonPlugins,
+};
+
+const hideDocumentReferrerContentScriptSrc = 'src/lib/mv3/content-script/hideDocumentReferrer.ts';
+const hideDocumentReferrerContentScriptOutput = `${OUTPUT_PATH}/hideDocumentReferrer.js`;
+
+const hideDocumentReferrerContentScriptConfig = {
+    cache,
+    input: hideDocumentReferrerContentScriptSrc,
+    output: [
+        {
+            file: hideDocumentReferrerContentScriptOutput,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: hideDocumentReferrerContentScriptSrc,
+    },
+    plugins: commonPlugins,
+};
+
 // TODO: Remove index files from 'src/lib', 'src/lib/mv2', 'src/lib/mv3' because
 // they are not participating in the build process and not specified as entry points.
 export default [
@@ -222,4 +260,6 @@ export default [
     cliConfig,
     mv3UtilsConfig,
     assistantInjectScriptConfig,
+    gpcContentScriptConfig,
+    hideDocumentReferrerContentScriptConfig,
 ];

@@ -38,6 +38,7 @@ Table of content:
         - [filteringEnabled](#filteringenabled)
         - [documentBlockingPageUrl](#documentblockingpageurl)
         - [assistantUrl](#assistanturl)
+        - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
         - [stealthConfig](#stealthconfig)
           - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
           - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
@@ -334,6 +335,18 @@ Redirect url for $document rules.
 type: `string`
 
 Path to the assembled `@adguard/assistant` module. Necessary for lazy on-demand loading of the assistant.
+
+##### gpcScriptUrl (MV3 only)
+
+type: `string`
+
+Path to the content script that set GPC Signal. Necessary for `Do Not Track` stealth option.
+
+##### hideDocumentReferrerScriptUrl (MV3 only)
+
+type: `string`
+
+Path to the content script that hides the document referrer. Necessary for `Hide Search Queries` stealth option.
 
 ##### stealthConfig
 

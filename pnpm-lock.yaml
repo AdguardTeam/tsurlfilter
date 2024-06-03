@@ -936,6 +936,9 @@ importers:
       bowser:
         specifier: 2.11.0
         version: 2.11.0
+      chrome-types:
+        specifier: ^0.1.283
+        version: 0.1.283
       commander:
         specifier: 11.0.0
         version: 11.0.0
@@ -7501,6 +7504,10 @@ packages:
     engines: {node: '>=6.0'}
     dev: true
 
+  /chrome-types@0.1.283:
+    resolution: {integrity: sha512-6ZsatWbwBlUeqHUL9I8V/SzR+Ya/7zFTSr6ryxIXVHDEbE1fMuQvg+Qo9E63UdOcezQCzt7fwP1ldUUi7hoCwQ==}
+    dev: false
+
   /ci-info@2.0.0:
     resolution: {integrity: sha512-5tK7EtrZ0N+OLFMthtqOj4fI2Jeb88C4CAZPu25LDVUgXJ0A3Js4PMGqrn0JU1W0Mh1/Z8wZzYPxqUrXeBboCQ==}
     dev: true
@@ -12481,7 +12488,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.4.2)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.1.3)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color

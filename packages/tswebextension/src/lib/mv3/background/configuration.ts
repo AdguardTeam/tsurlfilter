@@ -1,6 +1,6 @@
 import { z as zod } from 'zod';
 
-import { configurationValidator } from '../../common';
+import { configurationValidator, settingsConfigValidator } from '../../common';
 
 /**
  * Custom filter list configuration validator for MV3.
@@ -22,6 +22,22 @@ export const customFilterMV3Validator = zod.object({
  * This type is inferred from the {@link customFilterMV3Validator} schema.
  */
 export type CustomFilterMV3 = zod.infer<typeof customFilterMV3Validator>;
+
+export const settingsConfigMV3 = settingsConfigValidator.extend({
+    /**
+     * Path to the content script that set GPC Signal.
+     * Necessary for `Do Not Track` stealth option.
+     */
+    gpcScriptUrl: zod.string(),
+
+    /**
+     * Path to the content script that hide document referrer.
+     * Necessary for `Hide Search Queries` stealth option.
+     */
+    hideDocumentReferrerScriptUrl: zod.string(),
+});
+
+export type SettingsConfigMV3 = zod.infer<typeof settingsConfigMV3>;
 
 /**
  * Configuration validator for MV3.
@@ -55,6 +71,8 @@ export const configurationMV3Validator = configurationValidator.extend({
      */
     // TODO: use settings.collectStats instead?
     filteringLogEnabled: zod.boolean(),
+
+    settings: settingsConfigMV3,
 });
 
 /**
