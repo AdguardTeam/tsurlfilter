@@ -1,4 +1,4 @@
-import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import type { IFilter, IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
@@ -24,6 +24,7 @@ import { RequestEvents } from './request/events/request-events';
 import { TabsApi, tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
+import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
 
 type ConfigurationResult = {
@@ -54,10 +55,10 @@ export type {
  * starting/stopping declarative filtering log.
  */
 export class TsWebExtension implements AppInterface<
-ConfigurationMV3,
-ConfigurationMV3Context,
-ConfigurationResult,
-MessagesHandlerMV3
+    ConfigurationMV3,
+    ConfigurationMV3Context,
+    ConfigurationResult,
+    MessagesHandlerMV3
 > {
     /**
      * Fires on filtering log event.
@@ -241,6 +242,8 @@ MessagesHandlerMV3
 
         const configuration = configurationMV3Validator.parse(config);
 
+        await StealthService.applySettings(configuration.settings);
+
         // Update configuration of engine.
         setConfiguration({
             engine: 'extension',
@@ -321,6 +324,91 @@ MessagesHandlerMV3
             staticFilters: staticRuleSets,
             dynamicRules,
         };
+    }
+
+    /**
+     * Updates `hideReferrer` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isHideReferrer `isHideReferrer` stealth config value.
+     */
+    public async setHideReferrer(isHideReferrer: boolean): Promise<void> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        await StealthService.setHideReferrer(isHideReferrer);
+        this.configuration.settings.stealth.hideReferrer = isHideReferrer;
+    }
+
+    /**
+     * Updates `blockWebRTC` stealth config value without re-initialization of engine.
+     * Also updates webRTC privacy.network settings on demand.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     */
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        await StealthService.setDisableWebRTC(isBlockWebRTC);
+        this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
+    }
+
+    /**
+     * Updates `blockChromeClientData` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     */
+    public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<void> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        await StealthService.setBlockChromeClientData(isBlockChromeClientData);
+
+        this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
+    }
+
+    /**
+     * Updates `sendDoNotTrack` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     */
+    public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<void> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        await StealthService.setSendDoNotTrack(
+            isSendDoNotTrack,
+            this.configuration.settings.gpcScriptUrl,
+        );
+
+        this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
+    }
+
+    /**
+     * Updates `hideSearchQueries` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     */
+    public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<void> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        await StealthService.setHideSearchQueries(
+            isHideSearchQueries,
+            this.configuration.settings.hideDocumentReferrerScriptUrl,
+        );
+
+        this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
     }
 
     /**

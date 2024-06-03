@@ -22,7 +22,10 @@ export { USER_FILTER_ID } from './user-rules-api';
 export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';
 export { MAIN_FRAME_ID } from '../tabs/frame';
-export type { ConfigurationMV3 as Configuration } from './configuration';
+export type {
+    ConfigurationMV3 as Configuration,
+    SettingsConfigMV3 as SettingsConfig,
+} from './configuration';
 export { CommonMessageType, ExtendedMV3MessageType } from './messages';
 export { RULE_SET_NAME_PREFIX } from './filters-api';
 export {

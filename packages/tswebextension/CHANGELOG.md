@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration properties are provided to specify the path to stealth content scripts.
+- Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
+- Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
+
 ### Changed
 
 - Filtering log to not reload on History API navigation [AdguardBrowserExtension#2598].
