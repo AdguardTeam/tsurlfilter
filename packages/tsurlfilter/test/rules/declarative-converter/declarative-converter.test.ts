@@ -8,6 +8,9 @@ import {
 import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { NetworkRule } from '../../../src/rules/network-rule';
 import { RuleActionType } from '../../../src/rules/declarative-converter/declarative-rule';
+import {
+    EmptyDomainsError,
+} from '../../../src/rules/declarative-converter/errors/conversion-errors/empty-domains-error';
 
 const createFilter = (
     rules: string[],
@@ -702,6 +705,15 @@ describe('DeclarativeConverter', () => {
             expect(errors).toHaveLength(1);
 
             expect(errors[0]).toStrictEqual(err);
+        });
+
+        it('returns error if initiatorDomains is empty, but original rule has domains', async () => {
+            const filter = createFilter(['$script,xmlhttprequest,third-party,domain=clickndownload.*|clicknupload.*']);
+            const { ruleSet, errors } = await converter.convertStaticRuleSet(filter);
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(0); // wildcard domains are not supported
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
         });
     });
 
