@@ -136,6 +136,7 @@ import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-m
 import { SimpleRegex } from '../../simple-regex';
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
+import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -694,31 +695,43 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
-     * Checks if the converted declarative rule passes the regexp validation
-     * (too complex regexps are not allowed also back reference,
-     * possessive and negative lookahead are not supported)
-     * and if it contains resource types.
+     * Verifies whether the converted declarative rule passes the regular expression (regexp) validation.
+     * Note: Complex regexps are not allowed, nor are back references,
+     * possessive quantifiers, and negative lookaheads supported.
+     * Additionally, it checks whether the rule contains resource types.
      *
-     * @param networkRule Network rule.
-     * @param declarativeRule Declarative rule.
+     * @param networkRule The original network rule.
+     * @param declarativeRule The converted declarative rule.
      *
-     * @returns Error {@link TooComplexRegexpError} if regexp is too complex
-     * OR Error {@link EmptyResourcesError} if there is empty resources
-     * in the rule
-     * OR Error {@link UnsupportedRegexpError} if regexp is not supported
-     * in the RE2 syntax @see https://github.com/google/re2/wiki/Syntax
-     * OR null.
+     * @returns Different errors:
+     * - {@link TooComplexRegexpError} if the regexp is too complex,
+     * - {@link EmptyResourcesError} if the rule has empty resources,
+     * - {@link UnsupportedRegexpError} if the regexp is not supported
+     * by RE2 syntax (@see https://github.com/google/re2/wiki/Syntax),
+     * - {@link EmptyDomainsError} if the declarative rule has empty domains
+     * while the original rule has non-empty domains,
+     * or null if no errors are found.
      */
     private static checkDeclarativeRuleApplicable(
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
-    ): TooComplexRegexpError | EmptyResourcesError | UnsupportedRegexpError | null {
+    ): TooComplexRegexpError | EmptyResourcesError | UnsupportedRegexpError | EmptyDomainsError | null {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
             const ruleText = networkRule.getText();
             const msg = `Conversion resourceTypes is empty: "${ruleText}"`;
             return new EmptyResourcesError(msg, networkRule, declarativeRule);
+        }
+
+        const permittedDomains = networkRule.getPermittedDomains();
+        if (permittedDomains && permittedDomains.length > 0) {
+            const { initiatorDomains } = declarativeRule.condition;
+            if (!initiatorDomains || initiatorDomains.length === 0) {
+                const ruleText = networkRule.getText();
+                const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
+                return new EmptyDomainsError(msg, networkRule, declarativeRule);
+            }
         }
 
         // More complex regex than allowed as part of the "regexFilter" key.
@@ -742,10 +755,10 @@ export abstract class DeclarativeRuleConverter {
             }
         }
 
-        // Back reference, possessive and negative lookahead are not supported
+        // Back references, possessive quantifiers, and negative lookaheads are not supported
         // See more: https://github.com/google/re2/wiki/Syntax
         if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
-            const msg = `Invalid regex in the: "${networkRule.getText()}"`;
+            const msg = `Invalid regex in the rule: "${networkRule.getText()}"`;
             return new UnsupportedRegexpError(
                 msg,
                 networkRule,
@@ -778,6 +791,7 @@ export abstract class DeclarativeRuleConverter {
             || e instanceof TooComplexRegexpError
             || e instanceof UnsupportedModifierError
             || e instanceof UnsupportedRegexpError
+            || e instanceof EmptyDomainsError
         ) {
             return e;
         }
