@@ -146,11 +146,6 @@ export const configurationValidator = zod.object({
     allowlist: zod.string().array(),
 
     /**
-     * List of domain names of sites, which should be temporary excluded from document blocking.
-     */
-    trustedDomains: zod.string().array(),
-
-    /**
      * List of rules added by user.
      */
     userrules: zod.string().array(),
