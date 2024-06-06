@@ -6,7 +6,6 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     filtersPath: '',
     ruleSetsPath: '',
     allowlist: ['example.com'],
-    trustedDomains: [],
     userrules: ['||example.org^', 'example.com##h1'],
     verbose: false,
     filteringLogEnabled: false,
