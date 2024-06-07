@@ -99,6 +99,7 @@
 
 import punycode from 'punycode/';
 import { redirects } from '@adguard/scriptlets';
+import { RE2 } from '@adguard/re2-wasm';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -735,16 +736,10 @@ export abstract class DeclarativeRuleConverter {
         }
 
         // More complex regex than allowed as part of the "regexFilter" key.
-        if (regexFilter?.match(/\|/g)) {
-            const regexArr = regexFilter.split('|');
-            // TODO: Find how exactly the complexity of a rule is calculated.
-            // The values maxGroups & maxGroupLength are obtained by testing.
-            // TODO: Fix these values based on Chrome Errors
-            const maxGroups = 15;
-            const maxGroupLength = 31;
-            if (regexArr.length > maxGroups
-                || regexArr.some((i) => i.length > maxGroupLength)
-            ) {
+        if (regexFilter) {
+            try {
+                new RE2(regexFilter, 'u', 1990);
+            } catch (e) {
                 const ruleText = networkRule.getText();
                 const msg = `More complex regex than allowed: "${ruleText}"`;
                 return new TooComplexRegexpError(
@@ -753,18 +748,35 @@ export abstract class DeclarativeRuleConverter {
                     declarativeRule,
                 );
             }
+            // const regexArr = regexFilter.split('|');
+            // // TODO: Find how exactly the complexity of a rule is calculated.
+            // // The values maxGroups & maxGroupLength are obtained by testing.
+            // // TODO: Fix these values based on Chrome Errors
+            // const maxGroups = 15;
+            // const maxGroupLength = 31;
+            // if (regexArr.length > maxGroups
+            //     || regexArr.some((i) => i.length > maxGroupLength)
+            // ) {
+            //     const ruleText = networkRule.getText();
+            //     const msg = `More complex regex than allowed: "${ruleText}"`;
+            //     return new TooComplexRegexpError(
+            //         msg,
+            //         networkRule,
+            //         declarativeRule,
+            //     );
+            // }
         }
 
-        // Back references, possessive quantifiers, and negative lookaheads are not supported
-        // See more: https://github.com/google/re2/wiki/Syntax
-        if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
-            const msg = `Invalid regex in the rule: "${networkRule.getText()}"`;
-            return new UnsupportedRegexpError(
-                msg,
-                networkRule,
-                declarativeRule,
-            );
-        }
+        // // Back references, possessive quantifiers, and negative lookaheads are not supported
+        // // See more: https://github.com/google/re2/wiki/Syntax
+        // if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
+        //     const msg = `Invalid regex in the rule: "${networkRule.getText()}"`;
+        //     return new UnsupportedRegexpError(
+        //         msg,
+        //         networkRule,
+        //         declarativeRule,
+        //     );
+        // }
 
         return null;
     }

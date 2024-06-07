@@ -470,7 +470,76 @@ describe('DeclarativeRuleConverter', () => {
         expect(errors[0]).toStrictEqual(err);
     });
 
-    it('converts regex negative lookahead', async () => {
+    it('checks more complex regex than allowed with re2', async () => {
+        const filterId = 0;
+        // eslint-disable-next-line max-len
+        const regexpRuleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
+        const filter = await createFilter(
+            filterId,
+            [regexpRuleText],
+        );
+
+        const {
+            errors,
+            declarativeRules,
+        } = DeclarativeRulesConverter.convert([filter]);
+
+        const networkRule = new NetworkRule(regexpRuleText, filterId);
+
+        const err = new TooComplexRegexpError(
+            `More complex regex than allowed: "${networkRule.getText()}"`,
+            networkRule,
+            // Note that the declarative rule will be "undefined" due to
+            // a conversion error, but this will not prevent error checking
+            declarativeRules[0],
+        );
+
+        expect(declarativeRules).toHaveLength(0);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toStrictEqual(err);
+    });
+    it('invalid re2', async () => {
+        const filterId = 0;
+        // eslint-disable-next-line max-len
+        const regexpRuleText = '/^https?:\\/\\/(?!image\\.)[a-z0-9]{0,6}\\.fhserv\\.ru/$domain=fishingsib.ru';
+        const anotherRegexpRuleText = '/\\w{2}\\.\\w+\\.com\\/\\w{13,}\\/\\w{5}$/';
+
+        const filter = await createFilter(
+            filterId,
+            [regexpRuleText, anotherRegexpRuleText],
+        );
+
+        const {
+            errors,
+            declarativeRules,
+        } = DeclarativeRulesConverter.convert([filter]);
+
+        const networkRule = new NetworkRule(regexpRuleText, filterId);
+
+        const err = new TooComplexRegexpError(
+            `More complex regex than allowed: "${networkRule.getText()}"`,
+            networkRule,
+            // Note that the declarative rule will be "undefined" due to
+            // a conversion error, but this will not prevent error checking
+            declarativeRules[0],
+        );
+
+        const anotherRule = new NetworkRule(anotherRegexpRuleText, filterId);
+        const err2 = new TooComplexRegexpError(
+            `More complex regex than allowed: "${anotherRule.getText()}"`,
+            anotherRule,
+            // Note that the declarative rule will be "undefined" due to
+            // a conversion error, but this will not prevent error checking
+            declarativeRules[1],
+        );
+
+        expect(declarativeRules).toHaveLength(0);
+        expect(errors).toHaveLength(2);
+        expect(errors[0]).toStrictEqual(err);
+        expect(errors[1]).toStrictEqual(err2);
+    });
+
+    it('excludes regex negative lookahead', async () => {
         const filterId = 0;
 
         const filter = await createFilter(
