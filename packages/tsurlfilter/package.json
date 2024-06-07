@@ -88,6 +88,7 @@
     ]
   },
   "dependencies": {
+    "@adguard/re2-wasm": "1.2.0",
     "@adguard/scriptlets": "^1.10.25",
     "cidr-tools": "^6.4.1",
     "commander": "9.4.1",
