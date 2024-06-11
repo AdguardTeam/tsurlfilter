@@ -632,4 +632,24 @@ export class TsWebExtension implements AppInterface<
     public setCollectHitStats(collect: boolean): void {
         logger.debug('mv3 does not support setCollectHitStats yet');
     }
+
+    /**
+     * TODO implement this method later if needed
+     * Sets prebuild local script rules.
+     *
+     * @see {@link LocalScriptRulesService}
+     *
+     // eslint-disable-next-line jsdoc/check-param-names
+     * @param localScriptRules JSON object with pre-build JS rules. @see {@link LocalScriptRulesService}.
+     */
+    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+    public setLocalScriptRules(localScriptRules:{
+        comment: string, // TODO extract type to common
+        rules: {
+            domains: string,
+            script: string,
+        }[],
+    }): void {
+        logger.debug('mv3 does not support setCollectHitStats yet');
+    }
 }
