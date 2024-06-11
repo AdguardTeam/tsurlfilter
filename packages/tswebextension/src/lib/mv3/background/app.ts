@@ -637,10 +637,11 @@ export class TsWebExtension implements AppInterface<
      * TODO implement this method later if needed
      * Sets prebuild local script rules.
      *
+     * @param localScriptRules JSON object with pre-build JS rules.
+     * @param localScriptRules.comment Comment for the rules.
+     * @param localScriptRules.rules List of rules.
      * @see {@link LocalScriptRulesService}
      *
-     // eslint-disable-next-line jsdoc/check-param-names
-     * @param localScriptRules JSON object with pre-build JS rules. @see {@link LocalScriptRulesService}.
      */
     // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
     public setLocalScriptRules(localScriptRules:{
@@ -650,6 +651,6 @@ export class TsWebExtension implements AppInterface<
             script: string,
         }[],
     }): void {
-        logger.debug('mv3 does not support setCollectHitStats yet');
+        logger.debug('mv3 does not support setLocalScriptRules yet');
     }
 }
