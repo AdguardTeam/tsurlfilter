@@ -12,18 +12,8 @@ describe('AppListParser', () => {
                 actual: EMPTY,
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                    },
+                    start: 0,
+                    end: 0,
                     separator: '|',
                     children: [],
                 },
@@ -34,34 +24,14 @@ describe('AppListParser', () => {
                 actual: 'Example.exe',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 11,
-                            line: 1,
-                            column: 12,
-                        },
-                    },
+                    start: 0,
+                    end: 11,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                            },
+                            start: 0,
+                            end: 11,
                             value: 'Example.exe',
                             exception: false,
                         },
@@ -74,51 +44,21 @@ describe('AppListParser', () => {
                 actual: 'Example.exe|com.example.app',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 27,
-                            line: 1,
-                            column: 28,
-                        },
-                    },
+                    start: 0,
+                    end: 27,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                            },
+                            start: 0,
+                            end: 11,
                             value: 'Example.exe',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                                end: {
-                                    offset: 27,
-                                    line: 1,
-                                    column: 28,
-                                },
-                            },
+                            start: 12,
+                            end: 27,
                             value: 'com.example.app',
                             exception: false,
                         },
@@ -130,68 +70,28 @@ describe('AppListParser', () => {
                 actual: 'Example.exe|com.example.app|com.example.osx',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 43,
-                            line: 1,
-                            column: 44,
-                        },
-                    },
+                    start: 0,
+                    end: 43,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                            },
+                            start: 0,
+                            end: 11,
                             value: 'Example.exe',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                                end: {
-                                    offset: 27,
-                                    line: 1,
-                                    column: 28,
-                                },
-                            },
+                            start: 12,
+                            end: 27,
                             value: 'com.example.app',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 28,
-                                    line: 1,
-                                    column: 29,
-                                },
-                                end: {
-                                    offset: 43,
-                                    line: 1,
-                                    column: 44,
-                                },
-                            },
+                            start: 28,
+                            end: 43,
                             value: 'com.example.osx',
                             exception: false,
                         },
@@ -204,34 +104,14 @@ describe('AppListParser', () => {
                 actual: '~Example.exe',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 12,
-                            line: 1,
-                            column: 13,
-                        },
-                    },
+                    start: 0,
+                    end: 12,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 1,
+                            end: 12,
                             value: 'Example.exe',
                             exception: true,
                         },
@@ -244,51 +124,21 @@ describe('AppListParser', () => {
                 actual: '~Example.exe|~com.example.app',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 29,
-                            line: 1,
-                            column: 30,
-                        },
-                    },
+                    start: 0,
+                    end: 29,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 1,
+                            end: 12,
                             value: 'Example.exe',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                                end: {
-                                    offset: 29,
-                                    line: 1,
-                                    column: 30,
-                                },
-                            },
+                            start: 14,
+                            end: 29,
                             value: 'com.example.app',
                             exception: true,
                         },
@@ -300,68 +150,28 @@ describe('AppListParser', () => {
                 actual: '~Example.exe|~com.example.app|~com.example.osx',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 46,
-                            line: 1,
-                            column: 47,
-                        },
-                    },
+                    start: 0,
+                    end: 46,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 1,
+                            end: 12,
                             value: 'Example.exe',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                                end: {
-                                    offset: 29,
-                                    line: 1,
-                                    column: 30,
-                                },
-                            },
+                            start: 14,
+                            end: 29,
                             value: 'com.example.app',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 31,
-                                    line: 1,
-                                    column: 32,
-                                },
-                                end: {
-                                    offset: 46,
-                                    line: 1,
-                                    column: 47,
-                                },
-                            },
+                            start: 31,
+                            end: 46,
                             value: 'com.example.osx',
                             exception: true,
                         },
@@ -374,68 +184,28 @@ describe('AppListParser', () => {
                 actual: '~Example.exe|com.example.app|~com.example.osx',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 45,
-                            line: 1,
-                            column: 46,
-                        },
-                    },
+                    start: 0,
+                    end: 45,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 1,
+                            end: 12,
                             value: 'Example.exe',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                                end: {
-                                    offset: 28,
-                                    line: 1,
-                                    column: 29,
-                                },
-                            },
+                            start: 13,
+                            end: 28,
                             value: 'com.example.app',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 30,
-                                    line: 1,
-                                    column: 31,
-                                },
-                                end: {
-                                    offset: 45,
-                                    line: 1,
-                                    column: 46,
-                                },
-                            },
+                            start: 30,
+                            end: 45,
                             value: 'com.example.osx',
                             exception: true,
                         },
@@ -448,85 +218,35 @@ describe('AppListParser', () => {
                 actual: '~Example.exe|  com.example.app    |   com.test.example.app |        ~com.example.osx',
                 expected: {
                     type: ListNodeType.AppList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 84,
-                            line: 1,
-                            column: 85,
-                        },
-                    },
+                    start: 0,
+                    end: 84,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 1,
+                            end: 12,
                             value: 'Example.exe',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                                end: {
-                                    offset: 30,
-                                    line: 1,
-                                    column: 31,
-                                },
-                            },
+                            start: 15,
+                            end: 30,
                             value: 'com.example.app',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 38,
-                                    line: 1,
-                                    column: 39,
-                                },
-                                end: {
-                                    offset: 58,
-                                    line: 1,
-                                    column: 59,
-                                },
-                            },
+                            start: 38,
+                            end: 58,
                             value: 'com.test.example.app',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.App,
-                            loc: {
-                                start: {
-                                    offset: 69,
-                                    line: 1,
-                                    column: 70,
-                                },
-                                end: {
-                                    offset: 84,
-                                    line: 1,
-                                    column: 85,
-                                },
-                            },
+                            start: 69,
+                            end: 84,
                             value: 'com.example.osx',
                             exception: true,
                         },

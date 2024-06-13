@@ -294,7 +294,7 @@ export class TabsApi {
     public updateTabMainFrameRule(tabId: number): void {
         const tabContext = this.context.get(tabId);
 
-        if (!tabContext?.info.url) {
+        if (!tabContext?.info.url || !isHttpRequest(tabContext.info.url)) {
             return;
         }
 

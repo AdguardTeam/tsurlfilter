@@ -2,17 +2,12 @@ import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import {
-    CosmeticRuleType,
-    type ElementHidingRule,
-    RuleCategory,
-    defaultLocation,
-} from '../../../src/parser/common';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/parser/common';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
-import { shiftLoc } from '../../../src/utils/location';
 import { CLOSE_SQUARE_BRACKET, DOLLAR_SIGN } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of AdGuard modifier list', () => {
@@ -26,9 +21,7 @@ describe('CosmeticRuleParser', () => {
                         type: CosmeticRuleType.ElementHidingRule,
                         syntax: AdblockSyntax.Adg,
                         exception: false,
-                        domains: DomainListParser.parse('', {
-                            baseLoc: shiftLoc(defaultLocation, '[$path=/something]'.length),
-                        }),
+                        domains: DomainListParser.parse('', defaultParserOptions, '[$path=/something]'.length),
                         modifiers: {
                             type: 'ModifierList',
                             children: [
@@ -37,32 +30,32 @@ describe('CosmeticRuleParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'path',
-                                        loc: context.getLocRangeFor('path'),
+                                        ...context.getRangeFor('path'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '/something',
-                                        loc: context.getLocRangeFor('/something'),
+                                        ...context.getRangeFor('/something'),
                                     },
                                 },
                             ],
-                            loc: context.getLocRangeFor('[$path=/something]'),
+                            ...context.getRangeFor('[$path=/something]'),
                         },
                         separator: {
                             type: 'Value',
                             value: '##',
-                            loc: context.getLocRangeFor('##'),
+                            ...context.getRangeFor('##'),
                         },
                         body: {
                             type: 'ElementHidingRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad',
-                                loc: context.getLocRangeFor('.ad'),
+                                ...context.getRangeFor('.ad'),
                             },
-                            loc: context.getLocRangeFor('.ad'),
+                            ...context.getRangeFor('.ad'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -79,7 +72,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.MISSING_ADGUARD_MODIFIER_LIST_MARKER, DOLLAR_SIGN, '[path=/something]'),
-                        context.getLocRangeFor('path=/something]'),
+                        ...context.toTuple(context.getRangeFor('path=/something]')),
                     );
                 },
             },
@@ -90,7 +83,7 @@ describe('CosmeticRuleParser', () => {
                     return new AdblockSyntaxError(
                         // eslint-disable-next-line max-len
                         "Missing '$' at the beginning of the AdGuard modifier list in pattern '[path=/something]example.com'",
-                        context.getLocRangeFor('path=/something]example.com'),
+                        ...context.toTuple(context.getRangeFor('path=/something]example.com')),
                     );
                 },
             },
@@ -104,7 +97,7 @@ describe('CosmeticRuleParser', () => {
                             CLOSE_SQUARE_BRACKET,
                             '[$path=/something',
                         ),
-                        context.getLocRangeFor('path=/something'),
+                        ...context.toTuple(context.getRangeFor('path=/something')),
                     );
                 },
             },
@@ -116,7 +109,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Ubo, AdblockSyntax.Adg),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -126,7 +119,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Ubo, AdblockSyntax.Adg),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -136,7 +129,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Ubo, AdblockSyntax.Adg),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -146,7 +139,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Abp, AdblockSyntax.Adg),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -162,7 +155,8 @@ describe('CosmeticRuleParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 

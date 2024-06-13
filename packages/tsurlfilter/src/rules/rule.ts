@@ -13,12 +13,6 @@ export const RULE_INDEX_NONE = -1;
 // eslint-disable-next-line max-classes-per-file
 export interface IRule {
     /**
-     * Rule's source text
-     */
-    // FIXME(David, v2.3): remove
-    getText(): string;
-
-    /**
      * Unique rule index within the filter list, which can be used to source map the rule back to its original source.
      *
      * @return Rule index or {@link RULE_INDEX_NONE} if not available
@@ -34,7 +28,7 @@ export interface IRule {
 /**
  * Rule with index
  */
-// FIXME(David, v2.3): possibly not needed anymore
+// TODO: Consider remove this because rule already has an index field
 export class IndexedRule {
     /**
      * Rule

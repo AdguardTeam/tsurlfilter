@@ -1,11 +1,13 @@
+import { type AnyRule, CosmeticRuleType } from '@adguard/agtree';
+
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
-import { type ILineReader } from '../reader/line-reader';
-import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
+import { type IReader } from '../reader/reader';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
-import { type FilterListSourceMap, getRuleSourceIndex } from '../source-map';
+import { type FilterListSourceMap } from '../source-map';
 
 /**
  * Represents the RuleScanner configuration.
@@ -78,7 +80,7 @@ export class RuleScanner {
     /**
      * Underlying reader object.
      */
-    private readonly reader: ILineReader;
+    private readonly reader: IReader;
 
     /**
      * Current rule.
@@ -103,7 +105,7 @@ export class RuleScanner {
      * @param configuration - Scanner configuration object
      */
     constructor(
-        reader: ILineReader,
+        reader: IReader,
         listId: number,
         configuration: RuleScannerConfiguration,
     ) {
@@ -131,7 +133,7 @@ export class RuleScanner {
     public scan(): boolean {
         while (true) {
             const lineIndex = this.reader.getCurrentPos();
-            const line = this.readNextLine();
+            const line = this.readNext();
             if (line === null) {
                 return false;
             }
@@ -140,7 +142,7 @@ export class RuleScanner {
                 const rule = RuleFactory.createRule(
                     line,
                     this.listId,
-                    getRuleSourceIndex(lineIndex, this.sourceMap),
+                    lineIndex,
                     this.ignoreNetwork,
                     this.ignoreCosmetic,
                     this.ignoreHost,
@@ -190,14 +192,8 @@ export class RuleScanner {
      *
      * @return - Next line string or null.
      */
-    private readNextLine(): string | null {
-        const line = this.reader.readLine();
-
-        if (line != null) {
-            return line.trim();
-        }
-
-        return null;
+    private readNext(): AnyRule | null {
+        return this.reader.readNext();
     }
 
     /**
@@ -218,7 +214,11 @@ export class RuleScanner {
             // Ignore JS type rules.
             // TODO: in the future we may allow CSS rules and Scriptlets (except
             // for "trusted" scriptlets).
-            return (this.ignoreJS && rule.getType() === CosmeticRuleType.Js);
+            const type = rule.getType();
+            return (
+                this.ignoreJS
+                && (type === CosmeticRuleType.JsInjectionRule || type === CosmeticRuleType.ScriptletInjectionRule)
+            );
         }
 
         if (this.ignoreUnsafe) {

@@ -1,22 +1,23 @@
-import { NetworkRule, RequestType } from '../../../src';
+import { RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { SeqScanLookupTable } from '../../../src/engine/lookup-tables/seq-scan-lookup-table';
+import { createNetworkRule } from '../../helpers/rule-creator';
 
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const table = new SeqScanLookupTable();
 
-        expect(table.addRule(new NetworkRule('path', 0))).toBeTruthy();
+        expect(table.addRule(createNetworkRule('path', 0))).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
 
-        expect(table.addRule(new NetworkRule('||*example.org^', 0))).toBeTruthy();
+        expect(table.addRule(createNetworkRule('||*example.org^', 0))).toBeTruthy();
         expect(table.getRulesCount()).toBe(2);
 
-        expect(table.addRule(new NetworkRule('||example.org^', 0))).toBeTruthy();
+        expect(table.addRule(createNetworkRule('||example.org^', 0))).toBeTruthy();
         expect(table.getRulesCount()).toBe(3);
 
-        expect(table.addRule(new NetworkRule('||example.net/path', 0))).toBeTruthy();
+        expect(table.addRule(createNetworkRule('||example.net/path', 0))).toBeTruthy();
         expect(table.getRulesCount()).toBe(4);
     });
 

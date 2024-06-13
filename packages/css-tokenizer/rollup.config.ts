@@ -86,11 +86,6 @@ const nodePlugins = [
         presets: [
             [
                 '@babel/preset-env',
-                {
-                    targets: {
-                        node: '12.0',
-                    },
-                },
             ],
         ],
         allowAllFormats: true,

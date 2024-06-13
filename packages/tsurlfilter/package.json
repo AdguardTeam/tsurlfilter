@@ -65,6 +65,7 @@
   "scripts": {
     "lint": "eslint 'src/**/*.ts' 'cli/**/*.ts' 'test/**/*.ts' && pnpm lint:tsc",
     "lint:tsc": "tsc --noEmit -p test/tsconfig.tests.json",
+    "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist && pnpm build:types",
     "build": "pnpm prebuild && rollup -c rollup.config.ts && pnpm postbuild",
     "postbuild": "node tasks/build-txt",
@@ -72,6 +73,7 @@
     "docs": "typedoc src --out docs",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
+    "test:light": "jest --testPathIgnorePatterns=benchmark",
     "test:watch": "jest --coverage --watch",
     "test:smoke": "cd test/builders/rollup-ts && pnpm test",
     "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache --runInBand",
@@ -89,7 +91,8 @@
   },
   "dependencies": {
     "@adguard/agtree": "workspace:^",
-    "@adguard/scriptlets": "^1.10.25",
+    "@adguard/css-tokenizer": "^0.0.2",
+    "@adguard/scriptlets": "^1.11.1",
     "cidr-tools": "^6.4.1",
     "commander": "9.4.1",
     "is-cidr": "4.0.2",
@@ -120,6 +123,7 @@
     "coveralls": "3.1.1",
     "esbuild": "^0.19.3",
     "esbuild-register": "^3.5.0",
+    "escape-string-regexp": "^5.0.0",
     "eslint": "8.21.0",
     "eslint-config-airbnb-typescript": "17.0.0",
     "eslint-plugin-import": "2.26.0",

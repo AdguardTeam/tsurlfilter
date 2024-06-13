@@ -1,21 +1,25 @@
-import { AdblockSyntax } from '../../utils/adblockers';
+/* eslint-disable no-param-reassign */
 import { AgentCommentRuleParser } from './agent-rule';
 import {
     type AnyCommentRule,
-    CommentMarker,
     CommentRuleType,
-    RuleCategory,
-    type Value,
+    BinaryTypeMap,
+    type AgentCommentRule,
+    type HintCommentRule,
+    type PreProcessorCommentRule,
+    type MetadataCommentRule,
+    type ConfigCommentRule,
+    type CommentRule,
 } from '../common';
 import { ConfigCommentRuleParser } from './inline-config';
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { HintCommentRuleParser } from './hint-rule';
 import { MetadataCommentRuleParser } from './metadata';
 import { PreProcessorCommentRuleParser } from './preprocessor';
-import { EMPTY } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { locRange } from '../../utils/location';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { SimpleCommentParser } from './simple-comment';
 
 /**
  * `CommentParser` is responsible for parsing any comment-like adblock rules.
@@ -73,19 +77,7 @@ import { getParserOptions, type ParserOptions } from '../options';
  *        ```
  *      - etc.
  */
-export class CommentRuleParser {
-    /**
-     * Checks whether a rule is a regular comment. Regular comments are the ones that start with
-     * an exclamation mark (`!`).
-     *
-     * @param raw Raw rule
-     * @returns `true` if the rule is a regular comment, `false` otherwise
-     */
-    public static isRegularComment(raw: string): boolean {
-        // Source may start with a whitespace, so we need to trim it first
-        return raw.trim().startsWith(CommentMarker.Regular);
-    }
-
+export class CommentRuleParser extends ParserBase {
     /**
      * Checks whether a rule is a comment.
      *
@@ -94,148 +86,138 @@ export class CommentRuleParser {
      */
     public static isCommentRule(raw: string): boolean {
         const trimmed = raw.trim();
-
-        // Regular comments
-        if (CommentRuleParser.isRegularComment(trimmed)) {
-            return true;
-        }
-
-        // Hashmark based comments
-        if (trimmed.startsWith(CommentMarker.Hashmark)) {
-            const result = CosmeticRuleSeparatorUtils.find(trimmed);
-
-            // No separator
-            if (result === null) {
-                return true;
-            }
-
-            // Separator end index
-            const { end } = result;
-
-            // No valid selector
-            if (
-                !trimmed[end + 1]
-                    || StringUtils.isWhitespace(trimmed[end + 1])
-                    || (trimmed[end + 1] === CommentMarker.Hashmark && trimmed[end + 2] === CommentMarker.Hashmark)
-            ) {
-                return true;
-            }
-        }
-
-        // Adblock agent comment rules
-        return AgentCommentRuleParser.isAgentRule(trimmed);
+        return SimpleCommentParser.isSimpleComment(trimmed) || AgentCommentRuleParser.isAgentRule(trimmed);
     }
 
     /**
      * Parses a raw rule as comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Comment AST or null (if the raw rule cannot be parsed as comment)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyCommentRule | null {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyCommentRule | null {
         // Ignore non-comment rules
         if (!CommentRuleParser.isCommentRule(raw)) {
             return null;
         }
 
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-        const options2 = { isLocIncluded, baseLoc };
-
-        // First, try to parse as non-regular comment
-        const nonRegular = AgentCommentRuleParser.parse(raw, options2)
-            || HintCommentRuleParser.parse(raw, options2)
-            || PreProcessorCommentRuleParser.parse(raw, options2)
-            || MetadataCommentRuleParser.parse(raw, options2)
-            || ConfigCommentRuleParser.parse(raw, options2);
-
-        if (nonRegular) {
-            return nonRegular;
-        }
-
-        // If we are here, it means that the rule is a regular comment
-        let offset = 0;
-
-        // Skip leading whitespace (if any)
-        offset = StringUtils.skipWS(raw, offset);
-
-        // Get comment marker
-        const marker: Value<CommentMarker> = {
-            type: 'Value',
-            value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
-        };
-
-        if (isLocIncluded) {
-            marker.loc = locRange(baseLoc, offset, offset + 1);
-        }
-
-        // Skip marker
-        offset += 1;
-
-        // Get comment text
-        const text: Value = {
-            type: 'Value',
-            value: raw.slice(offset),
-        };
-
-        if (isLocIncluded) {
-            text.loc = locRange(baseLoc, offset, raw.length);
-        }
-
-        // Regular comment rule
-        const result: AnyCommentRule = {
-            category: RuleCategory.Comment,
-            type: CommentRuleType.CommentRule,
-            raws: {
-                text: raw,
-            },
-            // TODO: Change syntax when hashmark is used?
-            syntax: AdblockSyntax.Common,
-            marker,
-            text,
-        };
-
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
-        }
-
-        return result;
+        // Note: we parse non-functional comments at the end,
+        // if the input does not match any of the previous, more specific comment patterns
+        return AgentCommentRuleParser.parse(raw, options, baseOffset)
+            || HintCommentRuleParser.parse(raw, options, baseOffset)
+            || PreProcessorCommentRuleParser.parse(raw, options, baseOffset)
+            || MetadataCommentRuleParser.parse(raw, options, baseOffset)
+            || ConfigCommentRuleParser.parse(raw, options, baseOffset)
+            || SimpleCommentParser.parse(raw, options, baseOffset);
     }
 
     /**
-     * Converts a comment AST to a string.
+     * Converts a comment rule node to a string.
      *
-     * @param ast Comment AST
+     * @param node Comment rule node
      * @returns Raw string
      */
-    public static generate(ast: AnyCommentRule): string {
-        let result = EMPTY;
-
-        // Generate based on the rule type
-        switch (ast.type) {
+    public static generate(node: AnyCommentRule): string {
+        switch (node.type) {
             case CommentRuleType.AgentCommentRule:
-                return AgentCommentRuleParser.generate(ast);
+                return AgentCommentRuleParser.generate(node);
 
             case CommentRuleType.HintCommentRule:
-                return HintCommentRuleParser.generate(ast);
+                return HintCommentRuleParser.generate(node);
 
             case CommentRuleType.PreProcessorCommentRule:
-                return PreProcessorCommentRuleParser.generate(ast);
+                return PreProcessorCommentRuleParser.generate(node);
 
             case CommentRuleType.MetadataCommentRule:
-                return MetadataCommentRuleParser.generate(ast);
+                return MetadataCommentRuleParser.generate(node);
 
             case CommentRuleType.ConfigCommentRule:
-                return ConfigCommentRuleParser.generate(ast);
+                return ConfigCommentRuleParser.generate(node);
 
-            // Regular comment rule
             case CommentRuleType.CommentRule:
-                result += ast.marker.value;
-                result += ast.text.value;
-                return result;
+                return SimpleCommentParser.generate(node);
 
             default:
                 throw new Error('Unknown comment rule type');
+        }
+    }
+
+    /**
+     * Serializes a comment rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: AnyCommentRule, buffer: OutputByteBuffer): void {
+        switch (node.type) {
+            case CommentRuleType.AgentCommentRule:
+                AgentCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.HintCommentRule:
+                HintCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.PreProcessorCommentRule:
+                PreProcessorCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.MetadataCommentRule:
+                MetadataCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.ConfigCommentRule:
+                ConfigCommentRuleParser.serialize(node, buffer);
+                return;
+
+            case CommentRuleType.CommentRule:
+                SimpleCommentParser.serialize(node, buffer);
+                break;
+
+            default:
+                throw new Error('Unknown comment rule type');
+        }
+    }
+
+    /**
+     * Deserializes a comment rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyCommentRule>): void {
+        const type = buffer.peekUint8();
+
+        switch (type) {
+            case BinaryTypeMap.AgentRuleNode:
+                AgentCommentRuleParser.deserialize(buffer, node as Partial<AgentCommentRule>);
+                return;
+
+            case BinaryTypeMap.HintRuleNode:
+                HintCommentRuleParser.deserialize(buffer, node as Partial<HintCommentRule>);
+                return;
+
+            case BinaryTypeMap.PreProcessorCommentRuleNode:
+                PreProcessorCommentRuleParser.deserialize(buffer, node as Partial<PreProcessorCommentRule>);
+                return;
+
+            case BinaryTypeMap.MetadataCommentRuleNode:
+                MetadataCommentRuleParser.deserialize(buffer, node as Partial<MetadataCommentRule>);
+                return;
+
+            case BinaryTypeMap.ConfigCommentRuleNode:
+                ConfigCommentRuleParser.deserialize(buffer, node as Partial<ConfigCommentRule>);
+                return;
+
+            case BinaryTypeMap.CommentRuleNode:
+                SimpleCommentParser.deserialize(buffer, node as Partial<CommentRule>);
+                return;
+
+            default:
+                throw new Error(`Unknown comment rule type: ${type}`);
         }
     }
 }

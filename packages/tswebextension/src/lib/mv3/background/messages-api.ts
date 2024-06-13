@@ -203,11 +203,16 @@ export class MessagesApi {
         const cookieRules = result.getCookieRules();
 
         return cookieRules.map((rule) => ({
-            ruleText: rule.getText(),
+            ruleIndex: rule.getIndex(),
             match: rule.getAdvancedModifierValue(),
             isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
             filterId: rule.getFilterListId(),
             isAllowlist: rule.isAllowlist(),
+            isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+            isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+            isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+            isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+            advancedModifier: rule.getAdvancedModifierValue(),
         }));
     }
 

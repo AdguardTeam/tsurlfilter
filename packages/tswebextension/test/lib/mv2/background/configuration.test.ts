@@ -1,17 +1,19 @@
 import { ZodError } from 'zod';
-import { type ConfigurationMV2, configurationMV2Validator } from '@lib/mv2';
+import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '@lib/mv2';
 import { LF } from '@lib/common';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {
         filters: [
-            { filterId: 1, content: '', trusted: true },
-            { filterId: 2, content: '', trusted: true },
+            { filterId: 1, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
+            { filterId: 2, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
         ],
         allowlist: ['example.com'],
         trustedDomains: [],
         userrules: {
-            content: ['||example.org^', 'example.com##h1'].join(LF),
+            content: FilterListPreprocessor.preprocess(
+                ['||example.org^', 'example.com##h1'].join(LF),
+            ).filterList,
         },
         verbose: false,
         settings: {
@@ -69,17 +71,30 @@ describe('configuration validator', () => {
 
         expect(() => {
             configurationMV2Validator.parse(configuration);
-        }).toThrow(new ZodError([{
-            code: 'invalid_type',
-            expected: 'string',
-            received: 'boolean',
-            path: [
-                'filters',
-                0,
-                'content',
-            ],
-            message: 'Expected string, received boolean',
-        }]));
+        }).toThrow(new ZodError([
+            {
+                code: 'invalid_type',
+                expected: 'array',
+                received: 'boolean',
+                path: [
+                    'filters',
+                    0,
+                    'content',
+                ],
+                message: 'Expected array, received boolean',
+            },
+            {
+                code: 'invalid_type',
+                expected: 'array',
+                received: 'string',
+                path: [
+                    'filters',
+                    1,
+                    'content',
+                ],
+                message: 'Expected array, received string',
+            },
+        ]));
     });
 
     it('throws error on unrecognized key detection', () => {

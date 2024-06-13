@@ -87,8 +87,15 @@ export class CspService {
                     frameUrl: referrerUrl,
                     frameDomain: getDomain(referrerUrl) as string,
                     requestType: ContentType.Csp,
-                    rule,
+                    filterId: rule.getFilterListId(),
+                    ruleIndex: rule.getIndex(),
                     timestamp: Date.now(),
+                    isAllowlist: rule.isAllowlist(),
+                    isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                    isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                    isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                    isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                    advancedModifier: rule.getAdvancedModifierValue(),
                 },
             });
         }

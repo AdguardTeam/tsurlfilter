@@ -1,6 +1,5 @@
 import {
     DeclarativeFilterConverter,
-    Filter,
     type ConversionResult,
     type IFilter,
     type IRuleSet,
@@ -28,7 +27,7 @@ export default class UserRulesApi {
      * Converts custom filters and user rules on the fly into a single merged
      * rule set and applies it via the declarativeNetRequest API.
      *
-     * @param userRules String[] contains user rules.
+     * @param userRules User rules.
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of static rule sets to apply $badfilter rules
      * from dynamic rules to static.
@@ -39,16 +38,17 @@ export default class UserRulesApi {
      * limitations. @see {@link ConversionResult}.
      */
     public static async updateDynamicFiltering(
-        userRules: string[],
+        userRules: Uint8Array[],
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
-            new Filter(
-                USER_FILTER_ID,
-                { getContent: () => Promise.resolve(userRules) },
-            ),
+            // FIXME (David, v2.3): Change declarative converter to AST-based
+            // new Filter(
+            //     USER_FILTER_ID,
+            //     { getContent: () => Promise.resolve(userRules) },
+            // ),
             ...customFilters,
         ];
 

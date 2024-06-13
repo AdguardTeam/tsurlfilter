@@ -2,7 +2,12 @@
  * @file Network rule converter
  */
 
-import { RuleCategory, type NetworkRule } from '../../parser/common';
+import {
+    RuleCategory,
+    type NetworkRule,
+    NetworkRuleType,
+    type AnyNetworkRule,
+} from '../../parser/common';
 import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
@@ -22,9 +27,14 @@ export class NetworkRuleConverter extends RuleConverterBase {
      * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    public static convertToAdg(rule: NetworkRule): NodeConversionResult<NetworkRule> {
+    public static convertToAdg(rule: AnyNetworkRule): NodeConversionResult<NetworkRule> {
+        // TODO: add support for host rules
+        if (rule.type !== NetworkRuleType.NetworkRule) {
+            throw new Error(`Invalid rule type: ${rule.type}`);
+        }
+
         if (rule.modifiers) {
-            const modifiers = NetworkRuleModifierListConverter.convertToAdg(rule.modifiers);
+            const modifiers = NetworkRuleModifierListConverter.convertToAdg(rule.modifiers, rule.exception);
 
             // If the object reference is different, it means that the modifiers were converted
             // In this case, we should clone the entire rule and replace the modifiers with the converted ones
@@ -32,7 +42,7 @@ export class NetworkRuleConverter extends RuleConverterBase {
                 return {
                     result: [{
                         category: RuleCategory.Network,
-                        type: 'NetworkRule',
+                        type: NetworkRuleType.NetworkRule,
                         syntax: rule.syntax,
                         exception: rule.exception,
                         pattern: {

@@ -26,7 +26,8 @@ export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     allowlist: [],
     trustedDomains: [],
     userrules: {
-        content: '',
+        content: [],
+        sourceMap: {},
     },
     verbose: false,
     settings: {

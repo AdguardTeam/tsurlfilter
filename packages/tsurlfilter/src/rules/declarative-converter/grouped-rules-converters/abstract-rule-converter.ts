@@ -286,9 +286,7 @@ export abstract class DeclarativeRuleConverter {
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
             const resourcesPath = this.webAccessibleResourcesPath;
             if (!resourcesPath) {
-                const ruleText = rule.getText();
-                const msg = `Empty web accessible resources path: ${ruleText}`;
-                throw new ResourcesPathError(msg);
+                throw new ResourcesPathError('Empty web accessible resources path');
             }
             const advancedModifier = rule.getAdvancedModifier();
             const redirectTo = advancedModifier as RedirectModifier;
@@ -716,9 +714,7 @@ export abstract class DeclarativeRuleConverter {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
-            const ruleText = networkRule.getText();
-            const msg = `Conversion resourceTypes is empty: "${ruleText}"`;
-            return new EmptyResourcesError(msg, networkRule, declarativeRule);
+            return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule, declarativeRule);
         }
 
         // More complex regex than allowed as part of the "regexFilter" key.
@@ -732,10 +728,8 @@ export abstract class DeclarativeRuleConverter {
             if (regexArr.length > maxGroups
                 || regexArr.some((i) => i.length > maxGroupLength)
             ) {
-                const ruleText = networkRule.getText();
-                const msg = `More complex regex than allowed: "${ruleText}"`;
                 return new TooComplexRegexpError(
-                    msg,
+                    'More complex regex than allowed',
                     networkRule,
                     declarativeRule,
                 );
@@ -745,9 +739,8 @@ export abstract class DeclarativeRuleConverter {
         // Back reference, possessive and negative lookahead are not supported
         // See more: https://github.com/google/re2/wiki/Syntax
         if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
-            const msg = `Invalid regex in the: "${networkRule.getText()}"`;
             return new UnsupportedRegexpError(
-                msg,
+                'Invalid regex',
                 networkRule,
                 declarativeRule,
             );
@@ -782,7 +775,7 @@ export abstract class DeclarativeRuleConverter {
             return e;
         }
 
-        const msg = `Non-categorized error during a conversion rule: ${rule.getText()} (index - ${index}, id - ${id})`;
+        const msg = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
         return e instanceof Error
             ? new Error(msg, { cause: e })
             : new Error(msg);

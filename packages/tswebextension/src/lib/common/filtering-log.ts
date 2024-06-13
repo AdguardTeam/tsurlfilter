@@ -1,5 +1,4 @@
-import type { NetworkRule, CosmeticRule } from '@adguard/tsurlfilter';
-
+import { type RuleInfo } from '../mv2/content-script/rule-info';
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
 
@@ -81,10 +80,17 @@ export type TabReloadEvent = {
 export type ApplyBasicRuleEventData = {
     tabId: number,
     eventId: string,
-    rule: NetworkRule,
+    filterId: number,
+    ruleIndex: number,
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
+    isAllowlist: boolean,
+    isImportant: boolean,
+    isDocumentLevel: boolean,
+    isCsp: boolean,
+    isCookie: boolean,
+    advancedModifier: string | null,
 };
 
 /**
@@ -102,12 +108,19 @@ export type ApplyBasicRuleEvent = {
 export type ApplyCspRuleEventData = {
     tabId: number,
     eventId: string,
-    rule: NetworkRule,
+    filterId: number,
+    ruleIndex: number,
     requestUrl: string,
     frameUrl: string,
     frameDomain: string | null,
     requestType: ContentType,
     timestamp: number,
+    isAllowlist: boolean,
+    isImportant: boolean,
+    isDocumentLevel: boolean,
+    isCsp: boolean,
+    isCookie: boolean,
+    advancedModifier: string | null,
 };
 
 /**
@@ -131,13 +144,16 @@ export type ApplyPermissionsRuleEvent = {
 export type ApplyCosmeticRuleEventData = {
     tabId: number,
     eventId: string,
-    ruleIndex: number,
     filterId: number,
+    ruleIndex: number,
     element: string,
     frameUrl: string,
     frameDomain: string,
     requestType: ContentType,
     timestamp: number,
+    cssRule: boolean,
+    scriptRule: boolean,
+    contentRule: boolean,
 };
 
 /**
@@ -175,11 +191,18 @@ export type CookieEventData = {
     cookieName: string,
     cookieValue: string,
     frameDomain: string,
-    rule: NetworkRule,
+    filterId: number,
+    ruleIndex: number,
     isModifyingCookieRule: boolean,
     requestThirdParty: boolean,
     timestamp: number,
     requestType: ContentType,
+    isAllowlist: boolean,
+    isImportant: boolean,
+    isDocumentLevel: boolean,
+    isCsp: boolean,
+    isCookie: boolean,
+    advancedModifier: string | null,
 };
 
 /**
@@ -204,7 +227,14 @@ export type RemoveHeaderEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number,
-    rule: NetworkRule;
+    filterId: number,
+    ruleIndex: number,
+    isAllowlist: boolean,
+    isImportant: boolean,
+    isDocumentLevel: boolean,
+    isCsp: boolean,
+    isCookie: boolean,
+    advancedModifier: string | null,
 };
 
 /**
@@ -228,7 +258,14 @@ export type RemoveParamEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number,
-    rule: NetworkRule,
+    filterId: number,
+    ruleIndex: number,
+    isAllowlist: boolean,
+    isImportant: boolean,
+    isDocumentLevel: boolean,
+    isCsp: boolean,
+    isCookie: boolean,
+    advancedModifier: string | null,
 };
 
 /**
@@ -246,7 +283,7 @@ export type RemoveParamEvent = {
 export type ReplaceRuleApplyEventData = {
     tabId: number;
     eventId: string;
-    rules: NetworkRule[];
+    rules: RuleInfo[];
 };
 
 /**
@@ -313,7 +350,7 @@ export type StealthActionEvent = {
 export type StealthAllowlistActionEventData = {
     tabId: number;
     eventId: string;
-    rules: NetworkRule[];
+    rules: RuleInfo[];
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
@@ -340,7 +377,11 @@ export type JsInjectEventData = {
     frameDomain: string,
     requestType: ContentType,
     timestamp: number,
-    rule: CosmeticRule,
+    filterId: number,
+    ruleIndex: number,
+    cssRule: boolean,
+    scriptRule: boolean,
+    contentRule: boolean,
 };
 
 /**

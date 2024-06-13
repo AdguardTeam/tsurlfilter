@@ -4,7 +4,8 @@ import {
     Engine,
     RuleStorage,
     setLogger,
-    StringRuleList,
+    BufferRuleList,
+    FilterListPreprocessor,
 } from '../../src';
 
 describe('Start Engine Benchmark', () => {
@@ -28,7 +29,8 @@ describe('Start Engine Benchmark', () => {
     it('starts network-engine', async () => {
         const rulesFilePath = './test/resources/adguard_base_filter.txt';
 
-        const ruleText = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const rawFilterList = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const processed = FilterListPreprocessor.preprocess(rawFilterList);
 
         console.log('Starting engine..');
         const startParse = Date.now();
@@ -40,12 +42,12 @@ describe('Start Engine Benchmark', () => {
         while (count < 20) {
             count += 1;
 
-            const list = new StringRuleList(1, ruleText, false);
+            const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
             const ruleStorage = new RuleStorage([list]);
 
             const engine = new Engine(ruleStorage, false);
             expect(engine).toBeTruthy();
-            expect(engine.getRulesCount()).toEqual(91694);
+            expect(engine.getRulesCount()).toEqual(91691);
         }
 
         console.log(`Elapsed on parsing rules: ${Date.now() - startParse}`);

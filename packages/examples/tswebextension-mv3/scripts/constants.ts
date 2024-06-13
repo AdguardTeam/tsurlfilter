@@ -10,7 +10,8 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     customFilters: [],
     allowlist: [],
     userrules: {
-        content: '',
+        content: [],
+        sourceMap: {},
     },
     trustedDomains: [],
     verbose: false,

@@ -409,10 +409,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'domain=|example.com|example.org',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com| |example.org',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -466,10 +470,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'denyallow=|example.com|example.org',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'denyallow=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'denyallow=example.com| |example.org',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -543,10 +551,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'app=|Example.exe|com.example.app',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'app=Example.exe||com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'app=Example.exe| |com.example.app',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -610,10 +622,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'method=|get|post',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'method=get||post',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'method=get| |post',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -678,10 +694,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'stealth=|donottrack|ip',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'stealth=ip||useragent',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=ip| |useragent',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -1141,10 +1161,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'domain=|example.com|example.org',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com| |example.org',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {

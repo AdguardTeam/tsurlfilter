@@ -1,7 +1,6 @@
 import {
     HTTPMethod,
     MatchingResult,
-    NetworkRule,
     RequestType,
 } from '@adguard/tsurlfilter';
 
@@ -9,6 +8,7 @@ import { ParamsService } from '@lib/mv2/background/services/params-service';
 import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
 import { ContentType, FilteringEventType } from '@lib/common';
 
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Params service', () => {
@@ -40,7 +40,7 @@ describe('Params service', () => {
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: new MatchingResult(rulesText.map(((ruleText) => new NetworkRule(ruleText, 1))), null),
+            matchingResult: new MatchingResult(rulesText.map(((ruleText) => createNetworkRule(ruleText, 1))), null),
             contentType: ContentType.Document,
         });
 

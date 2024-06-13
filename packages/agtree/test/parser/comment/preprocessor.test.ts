@@ -1,5 +1,6 @@
 import { PreProcessorCommentRuleParser } from '../../../src/parser/comment/preprocessor';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
@@ -18,148 +19,58 @@ describe('PreProcessorParser', () => {
         // Valid pre-processors
         expect(PreProcessorCommentRuleParser.parse('!#endif')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 7,
-                    line: 1,
-                    column: 8,
-                },
-            },
+            start: 0,
+            end: 7,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 2,
+                end: 7,
                 value: 'endif',
             },
         });
 
         expect(PreProcessorCommentRuleParser.parse('!#include ../sections/ads.txt')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 29,
-                    line: 1,
-                    column: 30,
-                },
-            },
+            start: 0,
+            end: 29,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                },
+                start: 2,
+                end: 9,
                 value: 'include',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 10,
-                        line: 1,
-                        column: 11,
-                    },
-                    end: {
-                        offset: 29,
-                        line: 1,
-                        column: 30,
-                    },
-                },
+                start: 10,
+                end: 29,
                 value: '../sections/ads.txt',
             },
         });
 
         expect(PreProcessorCommentRuleParser.parse('!#if (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 14,
-                    line: 1,
-                    column: 15,
-                },
-            },
+            start: 0,
+            end: 14,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 4,
-                        line: 1,
-                        column: 5,
-                    },
-                },
+                start: 2,
+                end: 4,
                 value: 'if',
             },
             params: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 6,
-                        line: 1,
-                        column: 7,
-                    },
-                    end: {
-                        offset: 13,
-                        line: 1,
-                        column: 14,
-                    },
-                },
+                start: 6,
+                end: 13,
                 expression: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 6,
-                            line: 1,
-                            column: 7,
-                        },
-                        end: {
-                            offset: 13,
-                            line: 1,
-                            column: 14,
-                        },
-                    },
+                    start: 6,
+                    end: 13,
                     name: 'adguard',
                 },
             },
@@ -167,64 +78,24 @@ describe('PreProcessorParser', () => {
 
         expect(PreProcessorCommentRuleParser.parse('!#if      (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 19,
-                    line: 1,
-                    column: 20,
-                },
-            },
+            start: 0,
+            end: 19,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 4,
-                        line: 1,
-                        column: 5,
-                    },
-                },
+                start: 2,
+                end: 4,
                 value: 'if',
             },
             params: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                    end: {
-                        offset: 18,
-                        line: 1,
-                        column: 19,
-                    },
-                },
+                start: 11,
+                end: 18,
                 expression: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 11,
-                            line: 1,
-                            column: 12,
-                        },
-                        end: {
-                            offset: 18,
-                            line: 1,
-                            column: 19,
-                        },
-                    },
+                    start: 11,
+                    end: 18,
                     name: 'adguard',
                 },
             },
@@ -232,64 +103,24 @@ describe('PreProcessorParser', () => {
 
         expect(PreProcessorCommentRuleParser.parse('!#if      (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 19,
-                    line: 1,
-                    column: 20,
-                },
-            },
+            start: 0,
+            end: 19,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 4,
-                        line: 1,
-                        column: 5,
-                    },
-                },
+                start: 2,
+                end: 4,
                 value: 'if',
             },
             params: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                    end: {
-                        offset: 18,
-                        line: 1,
-                        column: 19,
-                    },
-                },
+                start: 11,
+                end: 18,
                 expression: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 11,
-                            line: 1,
-                            column: 12,
-                        },
-                        end: {
-                            offset: 18,
-                            line: 1,
-                            column: 19,
-                        },
-                    },
+                    start: 11,
+                    end: 18,
                     name: 'adguard',
                 },
             },
@@ -299,18 +130,8 @@ describe('PreProcessorParser', () => {
             PreProcessorCommentRuleParser.parse('!#safari_cb_affinity(content_blockers)'),
         ).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 38,
-                    line: 1,
-                    column: 39,
-                },
-            },
+            start: 0,
+            end: 38,
             raws: {
                 text: '!#safari_cb_affinity(content_blockers)',
             },
@@ -318,49 +139,19 @@ describe('PreProcessorParser', () => {
             syntax: 'AdGuard',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 20,
-                        line: 1,
-                        column: 21,
-                    },
-                },
+                start: 2,
+                end: 20,
                 value: 'safari_cb_affinity',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 21,
-                        line: 1,
-                        column: 22,
-                    },
-                    end: {
-                        offset: 37,
-                        line: 1,
-                        column: 38,
-                    },
-                },
+                start: 21,
+                end: 37,
                 children: [
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                            end: {
-                                offset: 37,
-                                line: 1,
-                                column: 38,
-                            },
-                        },
+                        type: 'Value',
+                        start: 21,
+                        end: 37,
                         value: 'content_blockers',
                     },
                 ],
@@ -370,50 +161,20 @@ describe('PreProcessorParser', () => {
         // If the parenthesis is open, do not split it in half along the space:
         expect(PreProcessorCommentRuleParser.parse('!#aaa(bbb ccc)')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 14,
-                    line: 1,
-                    column: 15,
-                },
-            },
+            start: 0,
+            end: 14,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 5,
-                        line: 1,
-                        column: 6,
-                    },
-                },
+                start: 2,
+                end: 5,
                 value: 'aaa',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 5,
-                        line: 1,
-                        column: 6,
-                    },
-                    end: {
-                        offset: 14,
-                        line: 1,
-                        column: 15,
-                    },
-                },
+                start: 5,
+                end: 14,
                 value: '(bbb ccc)',
             },
         });
@@ -448,7 +209,7 @@ describe('PreProcessorParser', () => {
                         type: 'ParameterList',
                         children: [
                             {
-                                type: 'Parameter',
+                                type: 'Value',
                                 value: 'content_blockers',
                             },
                         ],
@@ -456,7 +217,9 @@ describe('PreProcessorParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(PreProcessorCommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                PreProcessorCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -491,5 +254,20 @@ describe('PreProcessorParser', () => {
         expect(parseAndGenerate('!#if (adguard && !adguard_ext_safari)')).toEqual(
             '!#if (adguard && !adguard_ext_safari)',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '!#endif',
+            '!#include ../sections/ads.txt',
+            '!#if adguard',
+            '!#if (adguard)',
+            '!#if (adguard && !adguard_ext_safari)',
+            '!#safari_cb_affinity(content_blockers)',
+            '!#safari_cb_affinity(general)',
+            '!#safari_cb_affinity',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(PreProcessorCommentRuleParser);
+        });
     });
 });
