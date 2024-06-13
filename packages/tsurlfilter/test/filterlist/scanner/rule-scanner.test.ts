@@ -1,13 +1,29 @@
+import { InputByteBuffer } from '@adguard/agtree';
+import escapeStringRegexp from 'escape-string-regexp';
+
+import { readFile } from 'fs/promises';
+import { FilterListPreprocessor, getRuleSourceIndex } from '../../../src';
+import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
-import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
-import { FileLineReader } from '../../../src/filterlist/reader/file-line-reader';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 
-describe('TestRuleScannerOfStringReader', () => {
+/**
+ * Helper function to get the rule index from the raw filter list by the rule text.
+ *
+ * @param rawFilterList Raw filter list.
+ * @param rule Rule text.
+ * @returns Rule index or -1 if the rule couldn't be found.
+ */
+const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
+    return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
+};
+
+describe('TestRuleScannerOfBufferReader', () => {
     it('works if scanner is fine with string reader', () => {
         const filterList = '||example.org\n! test\n##banner';
+        const processed = FilterListPreprocessor.preprocess(filterList);
 
-        const reader = new StringLineReader(filterList);
+        const reader = new BufferReader(new InputByteBuffer(processed.filterList));
         const scanner = new RuleScanner(reader, 1, {
             scannerType: ScannerType.All, ignoreCosmetic: false,
         });
@@ -17,22 +33,30 @@ describe('TestRuleScannerOfStringReader', () => {
 
         let indexedRule = scanner.getRule();
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule && indexedRule.index).toBe(0);
+        expect(indexedRule && indexedRule.index).toBe(4);
 
         let rule = indexedRule && indexedRule.rule;
         expect(rule).toBeTruthy();
-        expect(rule!.getText()).toBe('||example.org');
+        expect(
+            getRuleSourceIndex(rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '||example.org'),
+        );
         expect(rule!.getFilterListId()).toEqual(1);
 
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule && indexedRule.index).toBe(21);
+        expect(indexedRule && indexedRule.index).toBe(28);
 
         rule = indexedRule && indexedRule.rule;
         expect(rule).toBeTruthy();
-        expect(rule!.getText()).toBe('##banner');
+        expect(
+            getRuleSourceIndex(rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '##banner'),
+        );
         expect(rule!.getFilterListId()).toEqual(1);
 
         expect(scanner.scan()).toBeFalsy();
@@ -43,8 +67,9 @@ describe('TestRuleScannerOfStringReader', () => {
 describe('TestRuleScannerOfFileReader', () => {
     it('works if scanner is fine with file reader', async () => {
         const hostsPath = './test/resources/hosts';
-
-        const reader = new FileLineReader(hostsPath);
+        const content = await readFile(hostsPath, 'utf-8');
+        const processed = FilterListPreprocessor.preprocess(content, true);
+        const reader = new BufferReader(new InputByteBuffer(processed.filterList));
 
         const scanner = new RuleScanner(reader, 1, {
             scannerType: ScannerType.All, ignoreCosmetic: true,
@@ -68,9 +93,10 @@ describe('TestRuleScannerOfFileReader', () => {
 describe('Rule Scanner Flags', () => {
     // eslint-disable-next-line max-len
     const filterList = '||one.org\nexample.org#%#window.__gaq=undefined;\n||example.org^$removeheader=header-name\n||two.org';
+    const processed = FilterListPreprocessor.preprocess(filterList);
 
     it('works if scanner respects ignoreJS flag', () => {
-        const reader = new StringLineReader(filterList);
+        const reader = new BufferReader(new InputByteBuffer(processed.filterList));
         const scanner = new RuleScanner(reader, 1, {
             scannerType: ScannerType.All,
             ignoreCosmetic: true,
@@ -82,27 +108,39 @@ describe('Rule Scanner Flags', () => {
         expect(scanner.scan()).toBeTruthy();
 
         let indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(0);
-        expect(indexedRule!.rule!.getText()).toBe('||one.org');
+        expect(indexedRule!.index).toBe(4);
+        expect(
+            getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '||one.org'),
+        );
 
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(48);
-        expect(indexedRule!.rule!.getText()).toBe('||example.org^$removeheader=header-name');
+        expect(indexedRule!.index).toBe(86);
+        expect(
+            getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '||example.org^$removeheader=header-name'),
+        );
 
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(88);
-        expect(indexedRule!.rule!.getText()).toBe('||two.org');
+        expect(indexedRule!.index).toBe(142);
+        expect(
+            getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '||two.org'),
+        );
 
         expect(scanner.scan()).toBeFalsy();
         expect(scanner.scan()).toBeFalsy();
     });
 
     it('works if scanner respects ignoreUnsafe flag', () => {
-        const reader = new StringLineReader(filterList);
+        const reader = new BufferReader(new InputByteBuffer(processed.filterList));
         const scanner = new RuleScanner(reader, 1, {
             scannerType: ScannerType.All,
             ignoreCosmetic: false,
@@ -114,20 +152,32 @@ describe('Rule Scanner Flags', () => {
         expect(scanner.scan()).toBeTruthy();
 
         let indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(0);
-        expect(indexedRule!.rule!.getText()).toBe('||one.org');
+        expect(indexedRule!.index).toBe(4);
+        expect(
+            getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '||one.org'),
+        );
 
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(10);
-        expect(indexedRule!.rule!.getText()).toBe('example.org#%#window.__gaq=undefined;');
+        expect(indexedRule!.index).toBe(24);
+        expect(
+            getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, 'example.org#%#window.__gaq=undefined;'),
+        );
 
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(88);
-        expect(indexedRule!.rule!.getText()).toBe('||two.org');
+        expect(indexedRule!.index).toBe(142);
+        expect(
+            getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
+        ).toEqual(
+            getRawRuleIndex(filterList, '||two.org'),
+        );
 
         expect(scanner.scan()).toBeFalsy();
         expect(scanner.scan()).toBeFalsy();

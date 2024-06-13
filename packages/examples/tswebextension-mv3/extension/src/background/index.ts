@@ -3,7 +3,7 @@ import {
     Configuration,
     CommonMessageType,
 } from '@adguard/tswebextension/mv3';
-import { LF, MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
+import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
 import { loadDefaultConfig } from './loadDefaultConfig';
@@ -51,14 +51,23 @@ let initializingPromise: Promise<void> | undefined;
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 const messageHandler = async (message: IMessage) => {
+    // FIXME: Handle Uint8Array[] later
+    const userrules = config.userrules.content;
+
+    if (!userrules) {
+        config.userrules = {
+            content: [],
+        };
+    }
+
     const { type, data } = message;
     switch (type) {
         case Message.GetConfig: {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                // TODO: Change the interface later
-                rules: config.userrules.content.split(LF),
+                // FIXME (David): Handle this
+                rules: [],
             };
 
             return res;
@@ -100,7 +109,8 @@ const messageHandler = async (message: IMessage) => {
         }
         case Message.ApplyUserRules: {
             config.userrules = {
-                content: String(data),
+                // FIXME (David): Handle this
+                content: [],
             };
 
             await tsWebExtension.configure(config);

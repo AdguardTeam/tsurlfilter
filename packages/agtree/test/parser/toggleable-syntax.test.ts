@@ -1,6 +1,7 @@
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
 import { RuleParser } from '../../src/parser/rule';
 import { NodeExpectContext, type NodeExpectFn } from '../helpers/node-utils';
+import { defaultParserOptions } from '../../src/parser/options';
 
 describe('Toggleable syntax', () => {
     describe('RuleParser.parse - handle if uBO syntax is disabled', () => {
@@ -11,7 +12,7 @@ describe('Toggleable syntax', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'UblockOrigin' syntax is disabled, but the rule uses it",
-                        context.getLocRangeFor('+js(scriptlet0, arg0)'),
+                        ...context.toTuple(context.getRangeFor('+js(scriptlet0, arg0)')),
                     );
                 },
             },
@@ -21,7 +22,7 @@ describe('Toggleable syntax', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'UblockOrigin' syntax is disabled, but the rule uses it",
-                        context.getLocRangeFor('^script:has-text(foo)'),
+                        ...context.toTuple(context.getRangeFor('^script:has-text(foo)')),
                     );
                 },
             },
@@ -31,7 +32,7 @@ describe('Toggleable syntax', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'UblockOrigin' syntax is disabled, but the rule uses it",
-                        context.getLocRangeFor('+js(scriptlet0, arg0)'),
+                        ...context.toTuple(context.getRangeFor('+js(scriptlet0, arg0)')),
                     );
                 },
             },
@@ -41,12 +42,15 @@ describe('Toggleable syntax', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'UblockOrigin' syntax is disabled, but the rule uses it",
-                        context.getLocRangeFor('^script:has-text(foo)'),
+                        ...context.toTuple(context.getRangeFor('^script:has-text(foo)')),
                     );
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => RuleParser.parse(actual, { parseUboSpecificRules: false }));
+            const fn = jest.fn(() => RuleParser.parse(actual, {
+                ...defaultParserOptions,
+                parseUboSpecificRules: false,
+            }));
 
             // parse should throw
             expect(fn).toThrow();
@@ -57,7 +61,8 @@ describe('Toggleable syntax', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 
@@ -69,7 +74,7 @@ describe('Toggleable syntax', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'AdblockPlus' syntax is disabled, but the rule uses it",
-                        context.getLocRangeFor('snippet0 arg0'),
+                        ...context.toTuple(context.getRangeFor('snippet0 arg0')),
                     );
                 },
             },
@@ -79,12 +84,15 @@ describe('Toggleable syntax', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Parsing 'AdblockPlus' syntax is disabled, but the rule uses it",
-                        context.getLocRangeFor('snippet0 arg0'),
+                        ...context.toTuple(context.getRangeFor('snippet0 arg0')),
                     );
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => RuleParser.parse(actual, { parseAbpSpecificRules: false }));
+            const fn = jest.fn(() => RuleParser.parse(actual, {
+                ...defaultParserOptions,
+                parseAbpSpecificRules: false,
+            }));
 
             // parse should throw
             expect(fn).toThrow();
@@ -95,7 +103,8 @@ describe('Toggleable syntax', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 });

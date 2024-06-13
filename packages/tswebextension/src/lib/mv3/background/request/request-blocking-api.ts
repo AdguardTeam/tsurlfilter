@@ -169,7 +169,14 @@ export class RequestBlockingApi {
                 requestType: ContentType.Document,
                 frameUrl: referrerUrl,
                 requestUrl,
-                rule: appliedRule,
+                filterId: appliedRule.getFilterListId(),
+                ruleIndex: appliedRule.getIndex(),
+                isAllowlist: appliedRule.isAllowlist(),
+                isImportant: appliedRule.isOptionEnabled(NetworkRuleOption.Important),
+                isDocumentLevel: appliedRule.isDocumentLevelAllowlistRule(),
+                isCsp: appliedRule.isOptionEnabled(NetworkRuleOption.Csp),
+                isCookie: appliedRule.isOptionEnabled(NetworkRuleOption.Cookie),
+                advancedModifier: appliedRule.getAdvancedModifierValue(),
             },
         });
     }

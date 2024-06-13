@@ -531,6 +531,7 @@ export class RuleSet implements IRuleSet {
             regexpRulesCount: this.regexpRulesCount,
             rulesCount: this.rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
+            // TODO: Remove .getText() completely
             badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.getText()) || [],
         };
 

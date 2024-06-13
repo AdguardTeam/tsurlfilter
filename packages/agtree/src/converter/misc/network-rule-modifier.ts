@@ -118,12 +118,13 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
      * @param modifierList Network rule modifier list node to convert
+     * @param isException If `true`, the rule is an exception rule
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
      * If the node was not converted, the result will contain the original node with the same object reference
      * @throws If the conversion is not possible
      */
-    public static convertToAdg(modifierList: ModifierList): ConversionResult<ModifierList> {
+    public static convertToAdg(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
         const conversionMap = new MultiValueMap<number, Modifier>();
 
         // Special case: $csp modifier
@@ -173,7 +174,9 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                 // Convert the redirect resource name to ADG format
                 const redirectResource = modifierNode.value?.value;
 
-                if (!redirectResource) {
+                // Special case: for exception rules, $redirect without value is allowed,
+                // and in this case it means an exception for all redirects
+                if (!redirectResource && !isException) {
                     throw new RuleConversionError(
                         `No redirect resource specified for '${modifierNode.name.value}' modifier`,
                     );
@@ -186,7 +189,9 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
 
                 // Try to convert the redirect resource name to ADG format
                 // This function returns undefined if the resource name is unknown
-                const convertedRedirectResource = redirects.convertRedirectNameToAdg(redirectResource);
+                const convertedRedirectResource = redirectResource
+                    ? redirects.convertRedirectNameToAdg(redirectResource)
+                    : undefined;
 
                 // Check if the modifier name or the redirect resource name is different from the original modifier
                 // If so, add the converted modifier to the list

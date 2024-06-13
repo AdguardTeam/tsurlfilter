@@ -99,12 +99,12 @@ export class ElementUtils {
             return null;
         }
 
-        const filterId = Number.parseInt(filterIdAndRuleText.substring(0, index), 10);
+        const filterId = Number.parseInt(filterIdAndRuleText.slice(0, index), 10);
         if (Number.isNaN(filterId)) {
             return null;
         }
 
-        const ruleIndex = Number.parseInt(filterIdAndRuleText.substring(index + 1), 10);
+        const ruleIndex = Number.parseInt(filterIdAndRuleText.slice(index + 1), 10);
         if (Number.isNaN(ruleIndex)) {
             return null;
         }

@@ -2,11 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { CosmeticResult } from '@adguard/tsurlfilter';
 import { type ContentScriptCosmeticData, CosmeticApi } from '@lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '@lib/mv2/content-script/cosmetic-controller';
 
 import * as SendMessageModule from '@lib/common/content-script/send-app-message';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
 
 jest.mock('@lib/common/content-script/send-app-message', () => {
     return {
@@ -25,7 +26,7 @@ jest.mock('@lib/common/content-script/send-app-message', () => {
 const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
     const cosmeticResult = new CosmeticResult();
     rules.forEach((rule) => {
-        cosmeticResult.elementHiding.append(new CosmeticRule(rule, 0));
+        cosmeticResult.elementHiding.append(createCosmeticRule(rule, 0));
     });
     return cosmeticResult;
 };

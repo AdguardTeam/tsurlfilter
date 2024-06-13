@@ -1,11 +1,14 @@
-type ScriptRule = {
-    domains: string,
-    script: string,
+import { type CosmeticRule } from '@adguard/tsurlfilter';
+import { some } from 'lodash-es';
+
+type ScriptDomains = {
+    permittedDomains: string[],
+    restrictedDomains: string[],
 };
 
 export type LocalScriptRules = {
     comment: string,
-    rules: ScriptRule[],
+    rules: Record<string, ScriptDomains[]>,
 };
 
 /**
@@ -19,17 +22,15 @@ export type LocalScriptRules = {
  *  This way filters maintainers can test new rules before including them in the filters.
  */
 export class LocalScriptRulesService {
-    private static readonly JS_RULE_GENERIC_DOMAIN_TOKEN = '<any>';
-
-    private static readonly JS_RULE_SEPARATOR_TOKEN = '#%#';
-
     /**
      * If {@link setLocalScriptRules} was called (for example, it should be
      * called in Firefox AMO), this set will contain a list of prebuilt JSON
      * with scriptlets and JS rules allowed to run.
      * Otherwise it will remain undefined.
+     * Key is the scriptlet call (e.g.: `example.com#%#//scriptlet('foo')` it will be `#%#//scriptlet('foo')`)
+     * and the value is the list of domains from the rule.
      */
-    private localScripts: Set<string> | undefined;
+    private localScripts: Map<string, ScriptDomains[]> | undefined;
 
     /**
      * Saves local script rules to object.
@@ -37,39 +38,32 @@ export class LocalScriptRulesService {
      * @param json JSON object with pre-build JS rules.
      */
     setLocalScriptRules(json: LocalScriptRules): void {
-        this.localScripts = new Set(json.rules.map((rule) => {
-            const { domains, script } = rule;
-            let ruleText = '';
-            if (domains !== LocalScriptRulesService.JS_RULE_GENERIC_DOMAIN_TOKEN) {
-                ruleText = domains;
-            }
-            ruleText += `${LocalScriptRulesService.JS_RULE_SEPARATOR_TOKEN}${script}`;
-
-            return ruleText;
-        }));
+        this.localScripts = new Map(Object.entries(json.rules));
     }
 
     /**
      * Checks if ruleText is in the pre-built JSON with JS rules.
      *
-     * @param ruleText Rule text.
+     * @param rule Rule text.
      *
      * @returns True, if rule is local, else returns false.
      */
-    isLocal(ruleText: string): boolean {
+    isLocal(rule: CosmeticRule): boolean {
         if (this.localScripts === undefined) {
             return true;
         }
 
-        /**
-         * In case of Firefox add-ons JS filtering rules are hardcoded
-         * into add-on code. So, if rule is not local - we exclude these
-         * rules from execution for Firefox AMO.
-         *
-         * Check description of {@link LocalScriptRulesService} for
-         * details about script source.
-         */
-        return this.localScripts.has(ruleText);
+        // Key can be checked quickly
+        const scriptDomains = this.localScripts.get(rule.getContent());
+
+        if (scriptDomains === undefined) {
+            return false;
+        }
+
+        return some(scriptDomains, {
+            permittedDomains: rule.getPermittedDomains() ?? [],
+            restrictedDomains: rule.getRestrictedDomains() ?? [],
+        } as ScriptDomains);
     }
 }
 

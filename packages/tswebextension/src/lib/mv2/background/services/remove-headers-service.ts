@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { type WebRequest } from 'webextension-polyfill';
-import { type NetworkRule, type RemoveHeaderModifier } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, type NetworkRule, type RemoveHeaderModifier } from '@adguard/tsurlfilter';
 
 import {
     defaultFilteringLog,
@@ -81,7 +81,14 @@ export class RemoveHeadersService {
                         frameDomain: getDomain(requestUrl) as string,
                         requestType: contentType,
                         timestamp,
-                        rule,
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
                     },
                 });
             }
@@ -148,7 +155,14 @@ export class RemoveHeadersService {
                         frameDomain: getDomain(requestUrl) as string,
                         requestType: contentType,
                         timestamp,
-                        rule,
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
                     },
                 });
             }

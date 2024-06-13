@@ -1,8 +1,9 @@
+import { type AnyRule, RuleConverter, RuleParser } from '@adguard/agtree';
+
 import { getErrorMessage } from '../../common/error';
 import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { RULE_INDEX_NONE, IndexedRule, type IRule } from '../rule';
-import { RuleConverter } from '../rule-converter';
 import { RuleFactory } from '../rule-factory';
 
 /**
@@ -75,7 +76,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
     private static createIndexedNetworkRuleWithHash(
         filterId: number,
         lineIndex: number,
-        ruleConvertedToAGSyntax: string,
+        ruleConvertedToAGSyntax: AnyRule,
     ): IndexedNetworkRuleWithHash | null {
         // Create indexed network rule from AG rule. These rules will be used in
         // declarative rules, that's why we ignore cosmetic and host rules.
@@ -87,7 +88,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             networkRule = RuleFactory.createRule(
                 ruleConvertedToAGSyntax,
                 filterId,
-                RULE_INDEX_NONE, // FIXME(David, v2.3): rule index
+                RULE_INDEX_NONE, // FIXME (David, v2.3): rule index
                 false, // convert only network rules
                 true, // ignore cosmetic rules
                 true, // ignore host rules
@@ -144,9 +145,15 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         rawString: string,
     ): IndexedNetworkRuleWithHash[] {
         // Converts a raw string rule to AG syntax (apply aliases, etc.)
-        let rulesConvertedToAGSyntax: string[];
+        let rulesConvertedToAGSyntax: AnyRule[];
         try {
-            rulesConvertedToAGSyntax = RuleConverter.convertRule(rawString);
+            const node = RuleParser.parse(rawString);
+            const conversionResult = RuleConverter.convertToAdg(node);
+            if (conversionResult.isConverted) {
+                rulesConvertedToAGSyntax = conversionResult.result;
+            } else {
+                rulesConvertedToAGSyntax = [node];
+            }
         } catch (e) {
             // eslint-disable-next-line max-len
             throw new Error(`Unknown error during conversion rule to AG syntax: ${getErrorMessage(e)}`);

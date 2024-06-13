@@ -14,7 +14,7 @@
     "node-fetch": "^3.3.2",
     "os-name": "^6.0.0",
     "tsurlfilter-v1": "npm:@adguard/tsurlfilter@^1.0.80",
-    "tsurlfilter-v2": "npm:@adguard/tsurlfilter@^2.2.7"
+    "tsurlfilter-v2": "npm:@adguard/tsurlfilter@2.2.7"
   },
   "devDependencies": {
     "@types/benchmark": "^2.1.5",

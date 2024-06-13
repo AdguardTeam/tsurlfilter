@@ -1,6 +1,7 @@
-import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { CosmeticResult } from '@adguard/tsurlfilter';
 import { type RequestContext } from '@lib/mv2';
 import { TrustedTypesService } from '@lib/mv2/background/services/trusted-types-service';
+import { createCosmeticRule } from '../../../../helpers/rule-creator';
 
 /**
  * Expects that header is modified as expected.
@@ -31,7 +32,7 @@ const getCosmeticResult = (): CosmeticResult => {
     const cosmeticResult = new CosmeticResult();
 
     cosmeticResult.JS.append(
-        new CosmeticRule("angular.io#%#//scriptlet('prevent-element-src-loading', 'script', 'analytics')", 1),
+        createCosmeticRule("angular.io#%#//scriptlet('prevent-element-src-loading', 'script', 'analytics')", 1),
     );
 
     return cosmeticResult;

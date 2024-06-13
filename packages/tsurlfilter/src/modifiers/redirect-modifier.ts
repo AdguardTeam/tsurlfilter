@@ -1,6 +1,5 @@
 import scriptlets from '@adguard/scriptlets';
 import { type IAdvancedModifier } from './advanced-modifier';
-import { NETWORK_RULE_OPTIONS } from '../rules/network-rule-options';
 
 /**
  * Redirect modifier class
@@ -25,8 +24,8 @@ export class RedirectModifier implements IAdvancedModifier {
      * @param isAllowlist
      * @param isRedirectingOnlyBlocked is redirect-rule modifier
      */
-    constructor(value: string, ruleText: string, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
-        RedirectModifier.validate(ruleText, value, isAllowlist);
+    constructor(value: string, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
+        RedirectModifier.validate(value, isAllowlist);
 
         this.redirectTitle = value;
         this.isRedirectingOnlyBlocked = isRedirectingOnlyBlocked;
@@ -46,7 +45,7 @@ export class RedirectModifier implements IAdvancedModifier {
      * @param redirectTitle
      * @param isAllowlist
      */
-    private static validate(ruleText: string, redirectTitle: string, isAllowlist: boolean): void {
+    private static validate(redirectTitle: string, isAllowlist: boolean): void {
         if (isAllowlist && !redirectTitle) {
             return;
         }
@@ -56,8 +55,7 @@ export class RedirectModifier implements IAdvancedModifier {
         }
 
         const { redirects } = scriptlets;
-        const ruleTextToValidate = ruleText.replace(NETWORK_RULE_OPTIONS.REDIRECTRULE, NETWORK_RULE_OPTIONS.REDIRECT);
-        if (!redirects.isAdgRedirectRule(ruleTextToValidate) || !redirects.isValidAdgRedirectRule(ruleTextToValidate)) {
+        if (!redirects.isRedirectResourceCompatibleWithAdg(redirectTitle)) {
             throw new SyntaxError('$redirect modifier is invalid');
         }
     }

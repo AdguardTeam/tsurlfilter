@@ -23,21 +23,20 @@ function isBetween(code: number | undefined, min: number, max: number): boolean 
     return code >= min && code <= max;
 }
 
-// TODO: Uncomment when needed, maybe useful in the future
-// /**
-//  * Check if code point code is greater than other code point
-//  *
-//  * @param code Code point to check
-//  * @param min Minimum code point
-//  * @returns `true` if code point is greater than `min`, `false` otherwise
-//  * @note This function is used instead of `code > min` because TypeScript doesn't allow to compare
-//  * `number | undefined` with `number` (even though it's perfectly valid in JavaScript)
-//  */
-// function isGreaterThan(code: number | undefined, min: number): boolean {
-//     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//     // @ts-ignore 18048
-//     return isGreaterThan(code, min);
-// }
+/**
+ * Check if code point code is greater than other code point
+ *
+ * @param code Code point to check
+ * @param min Minimum code point
+ * @returns `true` if code point is greater than `min`, `false` otherwise
+ * @note This function is used instead of `code > min` because TypeScript doesn't allow to compare
+ * `number | undefined` with `number` (even though it's perfectly valid in JavaScript)
+ */
+function isGreaterThan(code: number | undefined, min: number): boolean {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore 18048
+    return code > min;
+}
 
 /**
  * Check if code point code is greater than or equal to other code point
@@ -194,17 +193,49 @@ export function isWhitespace(code: number | undefined): boolean {
     return isNewline(code) || code === CodePoint.CharacterTabulation || code === CodePoint.Space;
 }
 
-// TODO: Uncomment when needed, maybe useful in the future
-// /**
-//  * Check if character code is greater than maximum allowed code point
-//  *
-//  * @param code Character code
-//  * @returns `true` if character code is greater than maximum allowed code point, `false` otherwise
-//  * @see {@link https://www.w3.org/TR/css-syntax-3/#maximum-allowed-code-point}
-//  */
-// export function greaterThanMaxAllowedCodePoint(code: number | undefined): boolean {
-//     return greaterThan(code, CodePoint.MaxCodePoint);
-// }
+/**
+ * Check if character code is a leading surrogate
+ *
+ * @param code Character code
+ * @returns `true` if character code is a leading surrogate, `false` otherwise
+ * @see {@link https://infra.spec.whatwg.org/#surrogate}
+ */
+export function isLeadingSurrogate(code: number | undefined): boolean {
+    return isBetween(code, CodePoint.LeadingSurrogateStart, CodePoint.LeadingSurrogateEnd);
+}
+
+/**
+ * Check if character code is a trailing surrogate
+ *
+ * @param code Character code
+ * @returns `true` if character code is a trailing surrogate, `false` otherwise
+ * @see {@link https://infra.spec.whatwg.org/#surrogate}
+ */
+export function isTrailingSurrogate(code: number | undefined): boolean {
+    return isBetween(code, CodePoint.TrailingSurrogateStart, CodePoint.TrailingSurrogateEnd);
+}
+
+/**
+ * Check if character code is a surrogate
+ *
+ * @param code Character code
+ * @returns `true` if character code is a surrogate, `false` otherwise
+ * @see {@link https://infra.spec.whatwg.org/#surrogate}
+ */
+export function isSurrogate(code: number | undefined): boolean {
+    return isLeadingSurrogate(code) || isTrailingSurrogate(code);
+}
+
+/**
+ * Check if character code is greater than maximum allowed code point
+ *
+ * @param code Character code
+ * @returns `true` if character code is greater than maximum allowed code point, `false` otherwise
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#maximum-allowed-code-point}
+ */
+export function isGreaterThanMaxAllowedCodePoint(code: number | undefined): boolean {
+    return isGreaterThan(code, CodePoint.MaxCodePoint);
+}
 
 // TODO: Uncomment when needed, maybe useful in the future
 // /**

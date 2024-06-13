@@ -10,7 +10,7 @@ export const filterListSourceMapValidator = z.record(
     /**
      * Rule start index in the converted list's byte buffer.
      */
-    z.number(),
+    z.string(),
 
     /**
      * Rule start index in the raw converted list.

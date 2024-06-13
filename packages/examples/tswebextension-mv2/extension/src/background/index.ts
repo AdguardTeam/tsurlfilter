@@ -26,7 +26,8 @@ const defaultConfig: ConfigurationMV2 = {
     allowlist: [],
     trustedDomains: [],
     userrules: {
-        content: '',
+        content: [],
+        sourceMap: {},
     },
     verbose: false,
     settings: {

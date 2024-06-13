@@ -1,4 +1,4 @@
-import { isUndefined } from '../utils/common';
+import { isUndefined } from '../utils/type-guards';
 import { rawModifiersData } from './raw-modifiers';
 import {
     type ModifierData,

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#110].
+- Updated `@adguard/scriptlets` to `v1.11.1`.
 
 ### Fixed
 

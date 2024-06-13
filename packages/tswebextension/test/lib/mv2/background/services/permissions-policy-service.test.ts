@@ -1,6 +1,5 @@
 import {
     MatchingResult,
-    NetworkRule,
     RequestType,
     PERMISSIONS_POLICY_HEADER_NAME,
     HTTPMethod,
@@ -10,6 +9,7 @@ import { PermissionsPolicyService } from '@lib/mv2/background/services/permissio
 import { type RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
 import { ContentType, FilteringEventType } from '@lib/common';
 
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Permissions policy service', () => {
@@ -54,7 +54,7 @@ describe('Permissions policy service', () => {
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: new MatchingResult(rulesText.map(((ruleText) => new NetworkRule(ruleText, 1))), null),
+            matchingResult: new MatchingResult(rulesText.map(((ruleText) => createNetworkRule(ruleText, 1))), null),
             contentType: ContentType.Document,
         });
 

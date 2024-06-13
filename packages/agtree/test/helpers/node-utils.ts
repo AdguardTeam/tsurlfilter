@@ -2,8 +2,10 @@
  * @file Node utils for testing.
  */
 
-import { type LocationRange, defaultLocation } from '../../src/parser/common';
-import { locRange } from '../../src/utils/location';
+interface Range {
+    start: number;
+    end: number;
+}
 
 /**
  * Finds the start and end indices of a substring occurrence in a string.
@@ -27,7 +29,7 @@ import { locRange } from '../../src/utils/location';
  * getRanges('abcabcabc', 'abc', 0); // Error: Invalid occurrence value. Occurrence must be a non-zero number.
  * ```
  */
-export function getRanges(string: string, substring: string, occurrence: number): [number, number] {
+export function getRange(string: string, substring: string, occurrence: number): Range {
     if (occurrence === 0) {
         throw new Error('Invalid occurrence value. Occurrence must be a non-zero number.');
     }
@@ -50,7 +52,10 @@ export function getRanges(string: string, substring: string, occurrence: number)
         throw new Error(`Substring '${substring}' not found for occurrence '${occurrence}'`);
     }
 
-    return [index, index + substring.length];
+    return {
+        start: index,
+        end: index + substring.length,
+    };
 }
 
 /**
@@ -74,10 +79,24 @@ export class NodeExpectContext {
     /**
      * Gets the full location range for the whole actual string.
      *
-     * @returns Location range. See {@link LocationRange}.
+     * @returns Location range. See {@link Range}.
      */
-    public getFullLocRange(): LocationRange {
-        return locRange(defaultLocation, 0, this.actual.length);
+    public getFullRange(): Range {
+        return {
+            start: 0,
+            end: this.actual.length,
+        };
+    }
+
+    /**
+     * Converts the given range to a tuple.
+     *
+     * @param range Range to convert.
+     * @returns Tuple containing the start and end indices of the range.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public toTuple(range: Range): [number, number] {
+        return [range.start, range.end];
     }
 
     /**
@@ -90,11 +109,11 @@ export class NodeExpectContext {
      * @param occurrence 1-based occurrence of the substring to get the location range for. Defaults to 1
      * (first occurrence). If you want to get the last occurrence, you can pass -1, or if you want to get the
      * second last occurrence, you can pass -2, etc.
-     * @returns Location range. See {@link LocationRange}.
+     * @returns Location range. See {@link Range}.
      * @throws Throws an error if the occurrence is not found or if occurrence is 0.
      */
-    public getLocRangeFor(substring: string, occurrence = 1): LocationRange {
-        return locRange(defaultLocation, ...getRanges(this.actual, substring, occurrence));
+    public getRangeFor(substring: string, occurrence = 1): Range {
+        return getRange(this.actual, substring, occurrence);
     }
 
     /**
@@ -102,9 +121,9 @@ export class NodeExpectContext {
      *
      * @param substring1 The first substring.
      * @param substring2 The second substring.
-     * @returns Location range. See {@link LocationRange}.
+     * @returns Location range. See {@link Range}.
      */
-    public getLocRangeBetween(substring1: string, substring2: string): LocationRange {
+    public getRangeBetween(substring1: string, substring2: string): Range {
         const idx1 = this.actual.indexOf(substring1);
         const idx2 = this.actual.indexOf(substring2);
         if (idx1 === -1) {
@@ -113,7 +132,10 @@ export class NodeExpectContext {
         if (idx2 === -1) {
             throw new Error(`Substring '${substring2}' not found`);
         }
-        return locRange(defaultLocation, idx1 + substring1.length, idx2);
+        return {
+            start: idx1 + substring1.length,
+            end: idx2,
+        };
     }
 }
 

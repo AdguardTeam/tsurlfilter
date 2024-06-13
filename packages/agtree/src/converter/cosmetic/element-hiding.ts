@@ -29,19 +29,16 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
         const stream = new CssTokenStream(rule.body.selectorList.value);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
 
-        // Change the separator if the rule contains ExtendedCSS selectors
-        if (stream.hasAnySelectorExtendedCssNode()) {
+        // Change the separator if the rule contains ExtendedCSS elements,
+        // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
+        // because sometimes we use it to force executing ExtendedCSS library.
+        if (stream.hasAnySelectorExtendedCssNodeStrict()) {
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.ExtendedElementHidingException
                 : CosmeticRuleSeparator.ExtendedElementHiding;
-        } else {
-            convertedSeparator = rule.exception
-                ? CosmeticRuleSeparator.ElementHidingException
-                : CosmeticRuleSeparator.ElementHiding;
         }
-
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
 
         // Check if the rule needs to be converted
         if (

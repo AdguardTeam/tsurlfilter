@@ -1,5 +1,5 @@
 import { getDomain } from 'tldts';
-import { PERMISSIONS_POLICY_HEADER_NAME } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, PERMISSIONS_POLICY_HEADER_NAME } from '@adguard/tsurlfilter';
 import {
     defaultFilteringLog,
     FilteringEventType,
@@ -82,8 +82,15 @@ export class PermissionsPolicyService {
                         frameUrl: referrerUrl,
                         frameDomain: getDomain(referrerUrl),
                         requestType: ContentType.PermissionsPolicy,
-                        rule,
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
                         timestamp: Date.now(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
                     },
                 });
             }

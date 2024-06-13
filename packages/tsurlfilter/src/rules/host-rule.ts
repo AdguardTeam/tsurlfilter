@@ -1,6 +1,6 @@
-import isIp from 'is-ip';
+import { type HostRule as HostRuleNode } from '@adguard/agtree';
+
 import * as rule from './rule';
-import { isDomainName } from '../utils/url';
 
 /**
  * Implements a host rule.
@@ -21,8 +21,6 @@ import { isDomainName } from '../utils/url';
  * * `example.org` -- "just domain" syntax
  */
 export class HostRule implements rule.IRule {
-    private readonly ruleText: string;
-
     private readonly ruleIndex: number;
 
     private readonly filterListId: number;
@@ -38,35 +36,23 @@ export class HostRule implements rule.IRule {
      *
      * Parses the rule and creates a new HostRule instance
      *
-     * @param ruleText - original rule text.
+     * @param inputRule - original rule text.
      * @param filterListId - ID of the filter list this rule belongs to.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
-        this.ruleText = ruleText;
+    constructor(node: HostRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
-        const commentIndex = ruleText.indexOf('#');
-        const stripped = commentIndex >= 0 ? ruleText.substring(0, commentIndex) : ruleText;
+        this.ip = node.ip.value;
 
-        const parts = stripped.trim().split(' ');
-        if (parts.length >= 2) {
-            if (!isIp(parts[0])) {
-                this.invalid = true;
-                return;
-            }
-
-            // eslint-disable-next-line prefer-destructuring
-            this.ip = parts[0];
-            this.hostnames = parts.slice(1).filter((x) => !!x);
-        } else if (parts.length === 1 && isDomainName(parts[0])) {
-            this.hostnames = [parts[0]];
-            this.ip = '0.0.0.0';
-        } else {
+        if (node.hostnames.children.length === 0) {
             this.invalid = true;
+            return;
         }
+
+        this.hostnames = node.hostnames.children.map((hostname) => hostname.value);
     }
 
     /**
@@ -83,13 +69,6 @@ export class HostRule implements rule.IRule {
      */
     getFilterListId(): number {
         return this.filterListId;
-    }
-
-    /**
-     * Return rule text
-     */
-    getText(): string {
-        return this.ruleText;
     }
 
     /**

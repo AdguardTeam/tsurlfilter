@@ -2,8 +2,8 @@
 
 ## Environment
 
-- Date: Tue, 12 Dec 2023 14:03:15 GMT
-- Node.js version: v18.17.1
+- Date: Thu, 13 Jun 2024 14:24:31 GMT
+- Node.js version: v20.13.1
 - OS: Linux 5.15
 
 > [!NOTE]
@@ -14,55 +14,55 @@
 
 |                                                            Tool                                                            |    ops/sec    | Runs sampled |   Average runtime  | Processed rules |   Status  |
 | :------------------------------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :----------------: | :-------------: | :-------: |
-|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 4.40 (±4.52%) |      16      |  227.0532922500 ms |      114376     | no errors |
-| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 3.88 (±0.97%) |      14      |  258.0008580000 ms |      114376     | no errors |
-| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 3.76 (±1.11%) |      14      |  266.2552963571 ms |      115540     | no errors |
-|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 2.63 (±5.68%) |      11      |  380.0473333636 ms |      114376     | no errors |
-|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 1.61 (±4.52%) |       9      |  620.7521183333 ms |      114376     | no errors |
-|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 0.75 (±2.95%) |       6      | 1326.2270626667 ms |      114376     | no errors |
+|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 4.23 (±5.90%) |      16      |  236.1527558125 ms |      122847     | no errors |
+| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 3.51 (±3.58%) |      13      |  284.5360981538 ms |      123446     | no errors |
+| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 3.51 (±3.76%) |      13      |  284.9554656923 ms |      122843     | no errors |
+|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 2.42 (±6.16%) |      10      |  413.7739712000 ms |      122847     | no errors |
+|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 1.72 (±7.45%) |       9      |  580.5367927778 ms |      122847     | no errors |
+|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 0.71 (±7.05%) |       6      | 1417.7992008333 ms |      122847     | no errors |
 
 ## AdGuard Annoyances Filter
 
 |                                                            Tool                                                            |    ops/sec    | Runs sampled |  Average runtime  | Processed rules |   Status  |
 | :------------------------------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :---------------: | :-------------: | :-------: |
-| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 8.33 (±1.63%) |      25      | 119.9781295200 ms |      45467      | no errors |
-| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 7.79 (±0.56%) |      24      | 128.4177104167 ms |      45468      | no errors |
-|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 6.16 (±3.36%) |      20      | 162.3102395000 ms |      45468      | no errors |
-|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 3.54 (±3.78%) |      14      | 282.3064771429 ms |      45468      | no errors |
-|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 2.36 (±3.62%) |      10      | 423.5180626000 ms |      45468      | no errors |
-|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 1.09 (±6.22%) |       7      | 918.6340444286 ms |      45468      | no errors |
+| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 7.44 (±1.77%) |      23      | 134.3745148261 ms |      47720      | no errors |
+| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 7.41 (±2.56%) |      23      | 134.9176940435 ms |      47714      | no errors |
+|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 5.87 (±5.13%) |      19      | 170.5024830000 ms |      47720      | no errors |
+|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 3.63 (±5.59%) |      14      | 275.8097956429 ms |      47720      | no errors |
+|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 3.20 (±2.81%) |      12      | 312.4363049167 ms |      47720      | no errors |
+|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 1.04 (±5.38%) |       7      | 957.3148612857 ms |      47720      | no errors |
 
 ## AdGuard Mobile Ads Filter
 
 |                                                            Tool                                                            |     ops/sec    | Runs sampled |  Average runtime  | Processed rules |   Status  |
 | :------------------------------------------------------------------------------------------------------------------------: | :------------: | :----------: | :---------------: | :-------------: | :-------: |
-| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 66.71 (±0.45%) |      70      |  14.9903966286 ms |       6624      | no errors |
-|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 56.12 (±2.26%) |      60      |  17.8181076056 ms |       6625      | no errors |
-| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 53.57 (±0.32%) |      70      |  18.6687396714 ms |       6625      | no errors |
-|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 28.45 (±3.21%) |      52      |  35.1454598173 ms |       6625      | no errors |
-|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 21.16 (±1.77%) |      40      |  47.2585943625 ms |       6625      | no errors |
-|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  8.72 (±2.00%) |      26      | 114.7106876923 ms |       6625      | no errors |
+| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 63.49 (±1.08%) |      67      |  15.7513535597 ms |       7032      | no errors |
+|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 51.91 (±3.16%) |      55      |  19.2644355379 ms |       7034      | no errors |
+| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 50.53 (±0.90%) |      66      |  19.7908455657 ms |       7034      | no errors |
+|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 29.16 (±2.79%) |      52      |  34.2893600385 ms |       7034      | no errors |
+|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 25.80 (±2.56%) |      47      |  38.7645089681 ms |       7034      | no errors |
+|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  7.93 (±3.32%) |      24      | 126.1210967500 ms |       7034      | no errors |
 
 ## uBlock Base List
 
 |                                                            Tool                                                            |     ops/sec    | Runs sampled |  Average runtime  | Processed rules |   Status  |
 | :------------------------------------------------------------------------------------------------------------------------: | :------------: | :----------: | :---------------: | :-------------: | :-------: |
-|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 33.14 (±2.22%) |      59      |  30.1771164068 ms |      12229      | no errors |
-| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 22.72 (±0.56%) |      42      |  44.0071092857 ms |      12258      | no errors |
-| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 19.78 (±0.86%) |      37      |  50.5677765541 ms |      12219      | no errors |
-|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 18.88 (±2.80%) |      36      |  52.9778113333 ms |      12229      | no errors |
-|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 12.65 (±2.40%) |      36      |  79.0679927222 ms |      12229      | no errors |
-|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  7.58 (±3.36%) |      24      | 131.9675452917 ms |      12229      | no errors |
+|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 27.60 (±2.28%) |      51      |  36.2300315784 ms |      11173      | no errors |
+| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 26.49 (±1.06%) |      48      |  37.7447089688 ms |      11204      | no errors |
+| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 23.16 (±1.42%) |      43      |  43.1801831047 ms |      11168      | no errors |
+|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 21.17 (±3.33%) |      40      |  47.2268794375 ms |      11173      | no errors |
+|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      | 16.47 (±2.46%) |      45      |  60.7018958667 ms |      11173      | no errors |
+|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  8.49 (±3.74%) |      26      | 117.8028340385 ms |      11173      | no errors |
 
 ## EasyList
 
 |                                                            Tool                                                            |     ops/sec    | Runs sampled |  Average runtime  | Processed rules |   Status  |
 | :------------------------------------------------------------------------------------------------------------------------: | :------------: | :----------: | :---------------: | :-------------: | :-------: |
-|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 12.30 (±2.57%) |      35      |  81.3054506286 ms |      65211      | no errors |
-| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 10.94 (±0.52%) |      32      |  91.4072321562 ms |      65211      | no errors |
-| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) | 10.63 (±0.48%) |      31      |  94.0361756129 ms |      65211      | no errors |
-|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           |  8.24 (±5.10%) |      25      | 121.4255464000 ms |      65211      | no errors |
-|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  4.40 (±4.75%) |      16      | 227.0952640625 ms |      65211      | no errors |
-|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  2.16 (±4.26%) |      10      | 463.8661264000 ms |      65211      | no errors |
+|            [@adguard/agtree v2 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           | 10.98 (±4.01%) |      31      |  91.0414494194 ms |      73413      | no errors |
+| [@adguard/tsurlfilter v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) |  9.61 (±1.25%) |      28      | 104.0317523214 ms |      73413      | no errors |
+| [@adguard/tsurlfilter v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter) |  9.49 (±1.43%) |      28      | 105.4164031429 ms |      73413      | no errors |
+|            [@adguard/agtree v1 - parser](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)           |  7.40 (±4.39%) |      23      | 135.0795113043 ms |      73413      | no errors |
+|      [@adguard/agtree v2 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  4.17 (±2.42%) |      15      | 239.8171682000 ms |      73413      | no errors |
+|      [@adguard/agtree v1 - parse and convert](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree)      |  1.91 (±5.51%) |       9      | 523.9055340000 ms |      73413      | no errors |
 
 <!--markdownlint-enable MD013-->

@@ -105,6 +105,7 @@ export class StealthService {
      *
      * @returns Strings of cookie rules.
      */
+    // TODO (David): Change to AST-based rule creation.
     public getCookieRulesTexts(): string[] {
         const result: string[] = [];
 
@@ -211,7 +212,10 @@ export class StealthService {
                 data: {
                     tabId,
                     eventId,
-                    rules: Array.from(appliedAllowlistRules),
+                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                    })),
                     requestUrl,
                     frameUrl: referrerUrl,
                     requestType: contentType,

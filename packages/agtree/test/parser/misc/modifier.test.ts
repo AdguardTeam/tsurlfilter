@@ -52,24 +52,12 @@ describe('ModifierParser', () => {
             expect(ModifierParser.parse('a')).toMatchObject(
                 {
                     type: 'Modifier',
-                    loc: {
-                        start: {
-                            offset: 0,
-                        },
-                        end: {
-                            offset: 1,
-                        },
-                    },
+                    start: 0,
+                    end: 1,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 0,
-                            },
-                            end: {
-                                offset: 1,
-                            },
-                        },
+                        start: 0,
+                        end: 1,
                         value: 'a',
                     },
                     exception: false,
@@ -79,24 +67,12 @@ describe('ModifierParser', () => {
             expect(ModifierParser.parse('~a')).toMatchObject(
                 {
                     type: 'Modifier',
-                    loc: {
-                        start: {
-                            offset: 0,
-                        },
-                        end: {
-                            offset: 2,
-                        },
-                    },
+                    start: 0,
+                    end: 2,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 1,
-                            },
-                            end: {
-                                offset: 2,
-                            },
-                        },
+                        start: 1,
+                        end: 2,
                         value: 'a',
                     },
                     exception: true,
@@ -106,36 +82,18 @@ describe('ModifierParser', () => {
             expect(ModifierParser.parse('a=b')).toMatchObject(
                 {
                     type: 'Modifier',
-                    loc: {
-                        start: {
-                            offset: 0,
-                        },
-                        end: {
-                            offset: 3,
-                        },
-                    },
+                    start: 0,
+                    end: 3,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 0,
-                            },
-                            end: {
-                                offset: 1,
-                            },
-                        },
+                        start: 0,
+                        end: 1,
                         value: 'a',
                     },
                     value: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 2,
-                            },
-                            end: {
-                                offset: 3,
-                            },
-                        },
+                        start: 2,
+                        end: 3,
                         value: 'b',
                     },
                     exception: false,
@@ -145,36 +103,18 @@ describe('ModifierParser', () => {
             expect(ModifierParser.parse('a=~b')).toMatchObject(
                 {
                     type: 'Modifier',
-                    loc: {
-                        start: {
-                            offset: 0,
-                        },
-                        end: {
-                            offset: 4,
-                        },
-                    },
+                    start: 0,
+                    end: 4,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 0,
-                            },
-                            end: {
-                                offset: 1,
-                            },
-                        },
+                        start: 0,
+                        end: 1,
                         value: 'a',
                     },
                     value: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 2,
-                            },
-                            end: {
-                                offset: 4,
-                            },
-                        },
+                        start: 2,
+                        end: 4,
                         value: '~b',
                     },
                     exception: false,
@@ -184,36 +124,18 @@ describe('ModifierParser', () => {
             expect(ModifierParser.parse(' a = b ')).toMatchObject(
                 {
                     type: 'Modifier',
-                    loc: {
-                        start: {
-                            offset: 1,
-                        },
-                        end: {
-                            offset: 6,
-                        },
-                    },
+                    start: 1,
+                    end: 6,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 1,
-                            },
-                            end: {
-                                offset: 2,
-                            },
-                        },
+                        start: 1,
+                        end: 2,
                         value: 'a',
                     },
                     value: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 5,
-                            },
-                            end: {
-                                offset: 6,
-                            },
-                        },
+                        start: 5,
+                        end: 6,
                         value: 'b',
                     },
                     exception: false,
@@ -223,36 +145,18 @@ describe('ModifierParser', () => {
             expect(ModifierParser.parse('~a=b')).toMatchObject(
                 {
                     type: 'Modifier',
-                    loc: {
-                        start: {
-                            offset: 0,
-                        },
-                        end: {
-                            offset: 4,
-                        },
-                    },
+                    start: 0,
+                    end: 4,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 1,
-                            },
-                            end: {
-                                offset: 2,
-                            },
-                        },
+                        start: 1,
+                        end: 2,
                         value: 'a',
                     },
                     value: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                            },
-                            end: {
-                                offset: 4,
-                            },
-                        },
+                        start: 3,
+                        end: 4,
                         value: 'b',
                     },
                     exception: true,
@@ -293,6 +197,17 @@ describe('ModifierParser', () => {
             expect(generate('~a=b')).toEqual('~a=b');
             expect(generate('~a = b')).toEqual('~a=b');
             expect(generate(' ~a = b ')).toEqual('~a=b');
+        });
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'foo',
+            '~foo',
+            'foo=bar',
+            '~foo=bar',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(ModifierParser);
         });
     });
 });

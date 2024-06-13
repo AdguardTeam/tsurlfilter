@@ -1,12 +1,11 @@
 import {
-    CosmeticRule,
     HTTPMethod,
-    NetworkRule,
     RequestType,
 } from '@adguard/tsurlfilter';
 import { RequestContextState } from '@lib/mv2/background/request';
 import { ContentStringFilter } from '@lib/mv2/background/services/content-filtering/content-string-filter';
 import { ContentType, defaultFilteringLog } from '@lib/common';
+import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 
 describe('Content string filter', () => {
     const context = {
@@ -30,8 +29,8 @@ describe('Content string filter', () => {
 
     it('applies html rules to content', () => {
         const htmlRules = [
-            new CosmeticRule('$$h1', 1),
-            new CosmeticRule('example.org$$span', 1),
+            createCosmeticRule('$$h1', 1),
+            createCosmeticRule('example.org$$span', 1),
         ];
 
         const contentStringFilter = new ContentStringFilter(context, htmlRules, null, defaultFilteringLog);
@@ -43,8 +42,8 @@ describe('Content string filter', () => {
 
     it('applies replace rules to content', () => {
         const replaceRules = [
-            new NetworkRule('||example.org^$replace=/test/a/', 1),
-            new NetworkRule('||example.org^$replace=/test/b/', 1),
+            createNetworkRule('||example.org^$replace=/test/a/', 1),
+            createNetworkRule('||example.org^$replace=/test/b/', 1),
         ];
 
         const contentStringFilter = new ContentStringFilter(context, null, replaceRules, defaultFilteringLog);
