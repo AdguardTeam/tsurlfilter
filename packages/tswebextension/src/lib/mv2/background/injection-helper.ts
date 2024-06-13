@@ -1,3 +1,5 @@
+import { appContext } from './context';
+
 /**
  * Taken from:
  * {@link https://github.com/seanl-adg/InlineResourceLiteral/blob/master/index.js#L136}
@@ -31,14 +33,6 @@ const escapeJs = (match: string): string => {
 };
 
 /**
- * We use changing variable name because global properties can be modified across isolated worlds of extension
- * content page and tab page.
- *
- * Issue: @see {@link https://bugs.chromium.org/p/project-zero/issues/detail?id=1225&desc=6}.
- */
-const variableName = `scriptExecuted${Date.now()}`;
-
-/**
  * Builds script to inject in a safe way.
  *
  * @see {@link LocalScriptRulesService} for details about script source.
@@ -46,6 +40,14 @@ const variableName = `scriptExecuted${Date.now()}`;
  * @returns Script to inject.
  */
 export const buildScriptText = (scriptText: string): string => {
+    /**
+     * We use changing variable name because global properties can be modified across isolated worlds of extension
+     * content page and tab page.
+     *
+     * Issue: @see {@link https://bugs.chromium.org/p/project-zero/issues/detail?id=1225&desc=6}.
+     */
+    const variableName = `scriptExecuted${appContext.startTimeMs}`;
+
     /**
      * Executes scripts in a scope of the page, but the `window` fields are in
      * an isolated scope, e.g. `window.${variableName}` will only be visible in

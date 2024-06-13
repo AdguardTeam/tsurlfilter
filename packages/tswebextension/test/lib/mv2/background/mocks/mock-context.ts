@@ -10,4 +10,6 @@ export class MockAppContext implements AppContext {
     isStorageInitialized: boolean = false;
 
     configuration: ConfigurationMV2Context | undefined = undefined;
+
+    startTimeMs: number | undefined = undefined;
 }

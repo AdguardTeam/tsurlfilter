@@ -1,0 +1,14 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: nowebrtc
+  version_added: 1.0.4
+  aliases:
+    - nowebrtc.js
+    - ubo-nowebrtc.js
+    - ubo-nowebrtc
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#nowebrtc
+
+ubo_any:
+  name: nowebrtc.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#nowebrtcjs-

@@ -1,0 +1,11 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: prevent-element-src-loading
+  version_added: 1.6.2
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-element-src-loading
+  parameters:
+    - name: tagName
+      required: true
+    - name: match
+      required: true
