@@ -114,7 +114,7 @@
         "yaml-jest-transform": "^2.0.2"
     },
     "dependencies": {
-        "@adguard/css-tokenizer": "^0.0.2",
+        "@adguard/css-tokenizer": "workspace:^",
         "@adguard/scriptlets": "^1.9.61",
         "clone-deep": "^4.0.1",
         "is-ip": "3.1.0",
