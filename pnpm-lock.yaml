@@ -88,7 +88,7 @@ importers:
   packages/agtree:
     dependencies:
       '@adguard/css-tokenizer':
-        specifier: ^0.0.2
+        specifier: workspace:^
         version: link:../css-tokenizer
       '@adguard/scriptlets':
         specifier: ^1.9.61
@@ -795,7 +795,7 @@ importers:
         specifier: workspace:^
         version: link:../agtree
       '@adguard/css-tokenizer':
-        specifier: ^0.0.2
+        specifier: workspace:^
         version: link:../css-tokenizer
       '@adguard/scriptlets':
         specifier: ^1.11.1
