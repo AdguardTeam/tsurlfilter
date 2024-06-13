@@ -21,7 +21,7 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       '@adguard/tswebextension':
-        specifier: ^1.0.22
+        specifier: workspace:^
         version: link:../tswebextension
       webextension-polyfill:
         specifier: 0.10.0
@@ -967,7 +967,7 @@ importers:
         specifier: ^1.11.1
         version: 1.11.1
       '@adguard/tsurlfilter':
-        specifier: ^2.2.19
+        specifier: workspace:^
         version: link:../tsurlfilter
       bowser:
         specifier: 2.11.0
