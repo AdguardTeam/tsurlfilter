@@ -143,6 +143,10 @@ MessageHandlerMV2
      * @throws Error if configuration is not valid.
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
+        if (!this.appContext.startTimeMs) {
+            this.appContext.startTimeMs = Date.now();
+        }
+
         configurationMV2Validator.parse(configuration);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);

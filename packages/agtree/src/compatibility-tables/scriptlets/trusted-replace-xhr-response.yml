@@ -1,0 +1,12 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: trusted-replace-xhr-response
+  version_added: 1.7.3
+  parameters:
+    - name: pattern
+      required: false
+    - name: replacement
+      required: false
+    - name: propsToMatch
+      required: false

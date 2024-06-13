@@ -12,6 +12,20 @@ describe('works', () => {
         jest.clearAllMocks();
     });
 
+    describe('logs any message', () => {
+        it('logs null', () => {
+            const logger = new Logger(writer);
+            logger.info('test', null);
+            expect(writer.info).toHaveBeenCalledWith(expect.any(String), 'test', 'null');
+        });
+
+        it('logs undefined', () => {
+            const logger = new Logger(writer);
+            logger.info('test', undefined);
+            expect(writer.info).toHaveBeenCalledWith(expect.any(String), 'test', 'undefined');
+        });
+    });
+
     describe('calls expected method of writer', () => {
         it('info calls info', () => {
             const logger = new Logger(writer);

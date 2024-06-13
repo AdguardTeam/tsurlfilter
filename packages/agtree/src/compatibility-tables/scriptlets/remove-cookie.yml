@@ -1,0 +1,37 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: remove-cookie
+  version_added: 1.0.4
+  aliases:
+    - cookie-remover.js
+    - ubo-cookie-remover.js
+    - ubo-cookie-remover
+    - remove-cookie.js
+    - ubo-remove-cookie.js
+    - ubo-remove-cookie
+    - abp-cookie-remover
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-cookie
+  parameters:
+    - name: match
+      required: false
+
+ubo_any:
+  name: remove-cookie.js
+  version_added: 1.28.0
+  aliases:
+    - cookie-remover.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-cookiejs-
+  parameters:
+    - name: match
+      required: false
+
+abp_any:  
+  name: cookie-remover
+  version_added: 3.11.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: cookie
+      required: true
+    - name: autoRemoveCookie
+      required: false

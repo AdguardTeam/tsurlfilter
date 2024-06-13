@@ -1,0 +1,14 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_any_not_cb:
+  name: trusted-prune-inbound-object
+  version_added: 1.9.91
+  parameters:
+    - name: functionName
+      required: true
+    - name: propsToRemove
+      required: false
+    - name: obligatoryProps
+      required: false
+    - name: stack
+      required: false
