@@ -1,5 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
 import { findHeaderByName, getHost, isThirdPartyRequest } from '../../../common/utils';
@@ -215,6 +215,12 @@ export class StealthService {
                     rules: Array.from(appliedAllowlistRules).map((rule) => ({
                         filterId: rule.getFilterListId(),
                         ruleIndex: rule.getIndex(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
                     })),
                     requestUrl,
                     frameUrl: referrerUrl,
