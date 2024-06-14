@@ -221,6 +221,7 @@ export class StealthService {
                         isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
                         isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
                         advancedModifier: rule.getAdvancedModifierValue(),
+                        appliedRuleText: rule.getText(),
                     })),
                     requestUrl,
                     frameUrl: referrerUrl,
