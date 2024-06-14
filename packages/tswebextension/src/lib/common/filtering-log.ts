@@ -322,7 +322,8 @@ export type StealthActionEvent = {
 export type StealthAllowlistActionEventData = {
     tabId: number;
     eventId: string;
-    rules: (RuleInfo & AdditionalNetworkRuleInfo)[];
+    // TODO: Remove appliedRuleText
+    rules: (RuleInfo & AdditionalNetworkRuleInfo & { appliedRuleText: string })[];
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
