@@ -81,18 +81,6 @@ const commonPlugins = [
 // Plugins for Node.js builds
 const nodePlugins = [
     ...commonPlugins,
-    // TODO: Add other plugins if needed
-    getBabelOutputPlugin({
-        presets: [
-            [
-                '@babel/preset-env',
-            ],
-        ],
-        allowAllFormats: true,
-        compact: false,
-    }),
-    // Minify the output with Terser
-    terserPlugin,
 ];
 
 // Plugins for browser builds
@@ -145,6 +133,36 @@ const cjs = {
     plugins: nodePlugins,
 };
 
+// ES module build configuration
+const esm = {
+    input: path.join(ROOT_DIR, 'src', 'index.ts'),
+    output: [
+        {
+            file: path.join(distDirLocation, `${BASE_FILE_NAME}.esm.mjs`),
+            format: 'esm',
+            exports: 'auto',
+            sourcemap: false,
+            banner: BANNER,
+        },
+    ],
+    plugins: nodePlugins,
+};
+
+// Browser-friendly UMD build configuration
+const umd = {
+    input: path.join(ROOT_DIR, 'src', 'index.ts'),
+    output: [
+        {
+            file: path.join(distDirLocation, `${BASE_FILE_NAME}.umd.min.js`),
+            format: 'umd',
+            sourcemap: false,
+            banner: BANNER,
+            name: BASE_NAME,
+        },
+    ],
+    plugins: browserPlugins,
+};
+
 // Browser-friendly IIFE build configuration
 const iife = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
@@ -177,4 +195,4 @@ const dts = {
 };
 
 // Export build configs for Rollup
-export default [cjs, iife, dts];
+export default [cjs, esm, umd, iife, dts];
