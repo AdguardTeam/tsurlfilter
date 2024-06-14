@@ -83,7 +83,17 @@ const getUrlsOfFiltersResources = async (): Promise<FilterDTO[]> => {
 const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
     console.info(`Download ${filter.url}...`);
 
-    const response = await axios.get(filter.url, { responseType: 'arraybuffer' });
+    const response = await axios.get<string>(filter.url, { responseType: 'text' });
+
+    /**
+     * This tho rules breaking the DNR ruleset.
+     * We need to remove them from the filter.
+     * TODO: delete this code after the converter update.
+     */
+    if (filter.id === 227) {
+        response.data = response.data.replace('/^https:\\/\\/\\jusoyo[0-9]+\\.(net|com)\\/data\\/apms\\/background\\//', '')
+        response.data = response.data.replace('/^https:\\/\\/\\jusoyo[0-9]+\\.(net|com)\\/.+\\.webp$/', '')
+    }
 
     await fs.promises.writeFile(path.join(filtersDir, filter.file), response.data);
 
