@@ -119,3 +119,22 @@ describe('RuleStorageScanner Test', () => {
         expect(storageScanner.scan()).toBeFalsy();
     });
 });
+
+// Note: this is needed because some special filter lists have negative IDs,
+// like the internal Stealth Mode's filter list which has ID -1.
+describe('Check negative filter list ID', () => {
+    const processed = FilterListPreprocessor.preprocess('||example.org');
+    const reader = new BufferReader(new InputByteBuffer(processed.filterList));
+    const scanner = new RuleScanner(reader, -1, {
+        scannerType: ScannerType.All,
+        ignoreCosmetic: false,
+    });
+
+    const storageScanner = new RuleStorageScanner([scanner]);
+
+    expect(storageScanner.scan()).toBeTruthy();
+    expect(storageScanner.getRule()).toBeTruthy();
+    expect(storageScanner.getRule()!.rule.getFilterListId()).toBe(-1);
+
+    expect(storageScanner.scan()).toBeFalsy();
+});
