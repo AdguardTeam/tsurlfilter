@@ -1,0 +1,6 @@
+---
+version: 2
+deployment:
+  name: Adguard API MV3 - deploy
+  source-plan: AJL-ADGUARDAPIMV3BUILD
+release-naming: ${bamboo.inject.version}

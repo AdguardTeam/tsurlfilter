@@ -1,0 +1,6 @@
+---
+version: 2
+deployment:
+  name: DNR Rulesets - deploy
+  source-plan: AJL-DNRRULESETSBUILD
+release-naming: ${bamboo.inject.version}

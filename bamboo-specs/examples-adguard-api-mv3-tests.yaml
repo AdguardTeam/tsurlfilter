@@ -1,0 +1,6 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: AGAPIEXMV3TEST
+  name: examples-adguard-api-mv3 - tests
