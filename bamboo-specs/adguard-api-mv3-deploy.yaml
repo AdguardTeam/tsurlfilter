@@ -4,3 +4,18 @@ deployment:
   name: Adguard API MV3 - deploy
   source-plan: AJL-ADGUARDAPIMV3BUILD
 release-naming: ${bamboo.inject.version}
+environments:
+  - npmjs
+
+npmjs:
+  triggers: [ ]
+  tasks:
+    - script:
+      - echo 'Task run successfully!'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo

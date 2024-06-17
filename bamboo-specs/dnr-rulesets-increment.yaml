@@ -4,3 +4,10 @@ plan:
   project-key: AJL
   key: DNRRULESETSINCREMENT
   name: DNR Rulesets - increment
+stages:
+  - Increment:
+    - Increment
+Increment:
+  tasks:
+    - script:
+      - echo 'Task run successfully!'

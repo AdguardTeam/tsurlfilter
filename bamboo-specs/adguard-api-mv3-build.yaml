@@ -4,3 +4,11 @@ plan:
   project-key: AJL
   key: ADGUARDAPIMV3BUILD
   name: Adguard API MV3 - build
+stages:
+  - Build:
+    - Build
+
+Build:
+  tasks:
+    - script:
+      - echo 'Task run successfully!'

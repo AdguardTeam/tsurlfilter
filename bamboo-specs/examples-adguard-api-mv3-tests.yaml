@@ -4,3 +4,11 @@ plan:
   project-key: AJL
   key: AGAPIEXMV3TEST
   name: examples-adguard-api-mv3 - tests
+stages:
+  - Test:
+    - Test
+
+Test:
+  tasks:
+    - script:
+      - echo 'Task run successfully!'

@@ -4,3 +4,11 @@ plan:
   project-key: AJL
   key: DNRRULESETSBUILD
   name: DNR Rulesets - build
+stages:
+  - Build:
+    - Build
+
+Build:
+  tasks:
+    - script:
+      - echo 'Task run successfully!'

@@ -4,3 +4,18 @@ deployment:
   name: DNR Rulesets - deploy
   source-plan: AJL-DNRRULESETSBUILD
 release-naming: ${bamboo.inject.version}
+environments:
+  - npmjs
+
+npmjs:
+  triggers: [ ]
+  tasks:
+    - script:
+      - echo 'Task run successfully!'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
