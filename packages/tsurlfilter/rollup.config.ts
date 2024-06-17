@@ -48,7 +48,7 @@ const commonConfig = {
 const commonExternal = [
     '@adguard/scriptlets',
     'is-ip',
-    'punycode/',
+    'punycode',
     'tldts',
     'is-cidr',
     'cidr-tools',
@@ -84,8 +84,13 @@ const esmDeclarativeConverterConfig = {
     input: 'src/rules/declarative-converter/index.ts',
     output: [
         {
-            file: `${OUTPUT_PATH}/es/declarative-converter.js`,
+            file: `${OUTPUT_PATH}/esm/declarative-converter.mjs`,
             format: 'esm',
+            sourcemap: false,
+        },
+        {
+            file: `${OUTPUT_PATH}/cjs/declarative-converter.js`,
+            format: 'cjs',
             sourcemap: false,
         },
     ],

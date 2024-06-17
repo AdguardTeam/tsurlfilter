@@ -6,7 +6,7 @@ echo "Staring to test a bundling with rollup-ts "
 pnpm install
 
 # pack @adguard/tsurlfilter
-curr_path="test/builders/rollup-ts"
+curr_path="test/smoke/rollup-ts"
 tsurlfilter="tsurlfilter.tgz"
 
 (cd ../../.. && pnpm pack && mv adguard-tsurlfilter-*.tgz "$curr_path/$tsurlfilter")

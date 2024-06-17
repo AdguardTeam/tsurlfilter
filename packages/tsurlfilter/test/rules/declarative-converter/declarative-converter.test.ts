@@ -26,7 +26,7 @@ describe('DeclarativeConverter', () => {
     const converter = new DeclarativeFilterConverter();
 
     it('converts simple blocking rule', async () => {
-        const filter = createFilter(['||example.org^']);
+        const filter = createFilter([String.raw`/meduza\.io\/favicon\.ico/`]);
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
         const declarativeRules = await ruleSet.getDeclarativeRules();
 

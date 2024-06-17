@@ -14,7 +14,19 @@
     ".": {
       "types": "./dist/types/src/index.d.ts",
       "import": "./dist/es/index.js",
-      "require": "./dist/tsurlfilter.umd.js"
+      "require": "./dist/tsurlfilter.js"
+    },
+    "./declarative-converter": {
+      "import": {
+        "source": "./src/rules/declarative-converter",
+        "types": "./dist/types/src/rules/declarative-converter",
+        "default": "./dist/esm/declarative-converter.mjs"
+      },
+      "require": {
+        "source": "./src/rules/declarative-converter",
+        "types": "./dist/types/src/rules/declarative-converter",
+        "default": "./dist/cjs/declarative-converter.js"
+      }
     },
     "./es/*": "./dist/es/*.js",
     "./umd": "./dist/tsurlfilter.umd.js",
@@ -73,7 +85,7 @@
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:smoke": "cd test/builders/rollup-ts && pnpm test",
+    "test:smoke": "cd test/smoke/rollup-ts && pnpm test",
     "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache --runInBand",
     "test:debug": "node --inspect node_modules/.bin/jest --watch --runInBand",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",

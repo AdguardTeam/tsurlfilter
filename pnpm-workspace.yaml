@@ -2,4 +2,4 @@ packages:
   - "packages/*"
   - "packages/examples/*"
   - "packages/agtree/benchmark"
-  - "packages/tsurlfilter/test/builders/*"
+  - "packages/tsurlfilter/test/smoke/*"
