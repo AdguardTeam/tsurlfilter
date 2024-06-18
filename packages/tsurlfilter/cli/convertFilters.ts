@@ -2,6 +2,7 @@
 import path from 'path';
 import fs from 'fs';
 
+import { RuleParser } from '@adguard/agtree';
 import {
     type ConversionResult,
     type IRuleSet,
@@ -65,7 +66,7 @@ export const convertFilters = async (
             console.info(`Preparing filter #${filterId} to convert`);
 
             return new Filter(filterId, {
-                getContent: async () => data.split(/\r?\n/),
+                getContent: async () => data.split(/\r?\n/).map((rule) => RuleParser.parse(rule)),
             });
         })
         .filter((filter): filter is Filter => filter !== null);
