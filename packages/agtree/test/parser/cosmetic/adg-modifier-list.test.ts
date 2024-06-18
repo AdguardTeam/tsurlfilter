@@ -163,6 +163,71 @@ describe('CosmeticRuleParser', () => {
                     };
                 },
             },
+
+            // should handle cases with complicated slashes
+            {
+                actual: String.raw`[$path=/foo/bar,domain=/example/]##.ad`,
+                expected: (context: NodeExpectContext): ElementHidingRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.ElementHidingRule,
+                        syntax: AdblockSyntax.Adg,
+                        exception: false,
+                        domains: DomainListParser.parse(
+                            '',
+                            defaultParserOptions,
+                            String.raw`[$path=/foo/bar,domain=/example/]`.length,
+                        ),
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [
+                                {
+                                    type: 'Modifier',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'path',
+                                        ...context.getRangeFor('path'),
+                                    },
+                                    value: {
+                                        type: 'Value',
+                                        value: String.raw`/foo/bar`,
+                                        ...context.getRangeFor(String.raw`/foo/bar`),
+                                    },
+                                },
+                                {
+                                    type: 'Modifier',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'domain',
+                                        ...context.getRangeFor('domain'),
+                                    },
+                                    value: {
+                                        type: 'Value',
+                                        value: String.raw`/example/`,
+                                        ...context.getRangeFor(String.raw`/example/`),
+                                    },
+                                },
+                            ],
+                            ...context.getRangeFor(String.raw`[$path=/foo/bar,domain=/example/]`),
+                        },
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'ElementHidingRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: '.ad',
+                                ...context.getRangeFor('.ad'),
+                            },
+                            ...context.getRangeFor('.ad'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
         });
@@ -271,8 +336,8 @@ describe('CosmeticRuleParser', () => {
                 expected: '[$path=/something]##.ad',
             },
             {
-                actual: '[$domain=example.com,path=/page.html]##.ad',
-                expected: '[$domain=example.com,path=/page.html]##.ad',
+                actual: '[$domain=example.com,path=/foo/bar]##.ad',
+                expected: '[$domain=example.com,path=/foo/bar]##.ad',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = CosmeticRuleParser.parse(actual);
