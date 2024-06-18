@@ -16,6 +16,7 @@ import {
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
+import { OutputByteBuffer, RuleParser } from '@adguard/agtree';
 import { getHost } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
@@ -73,14 +74,18 @@ export class EngineApi {
     async startEngine(config: EngineConfig): Promise<void> {
         const { filters, userrules } = config;
 
+        // TODO: Optimize this
         const lists: IRuleList[] = [];
-
-        // FIXME (David, v2.3): Make declarative converter AST-based
         // Wrap IFilter to IRuleList
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const tasks = filters.map(async (filter) => {
-            // const content = await filter.getContent();
-            // lists.push(new BufferRuleList(filter.getId(), content));
+            const content = await filter.getContent();
+            const buffer: OutputByteBuffer = new OutputByteBuffer();
+            for (const rule of content) {
+                RuleParser.serialize(rule, buffer);
+            }
+            // TODO (David): Remove any cast
+            const { chunks } = buffer as any;
+            lists.push(new BufferRuleList(filter.getId(), chunks));
         });
 
         try {

@@ -1,5 +1,6 @@
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
+import { type AnyRule, RuleParser } from '@adguard/agtree';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { getFilterName } from '../utils/get-filter-name';
 
@@ -74,13 +75,13 @@ export default class FiltersApi {
      *
      * @returns Promise resolved file content as a list of strings.
      */
-    private static async loadFilterContent(id: number, filtersPath: string): Promise<string[]> {
+    private static async loadFilterContent(id: number, filtersPath: string): Promise<AnyRule[]> {
         const filterName = getFilterName(id);
         const url = chrome.runtime.getURL(`${filtersPath}/${filterName}`);
         const file = await fetch(url);
         const content = await file.text();
 
-        return content.split(/\r?\n/);
+        return content.split(/\r?\n/).map((rule) => RuleParser.parse(rule));
     }
 
     /**
@@ -109,7 +110,7 @@ export default class FiltersApi {
      */
     static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
         return customFilters.map((f) => new Filter(f.filterId, {
-            getContent: () => Promise.resolve(f.content.split('\n')),
+            getContent: () => Promise.resolve(f.content.split('\n').map((rule) => RuleParser.parse(rule))),
         }));
     }
 }
