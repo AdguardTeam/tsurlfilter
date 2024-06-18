@@ -271,7 +271,7 @@ export class CosmeticRuleParser extends ParserBase {
             patternOffset = StringUtils.skipWS(rawPattern, patternOffset);
 
             // Modifier list ends with the next unescaped square bracket
-            const modifierListEnd = StringUtils.findNextUnescapedCharacter(rawPattern, CLOSE_SQUARE_BRACKET);
+            const modifierListEnd = StringUtils.findLastUnescapedCharacter(rawPattern, CLOSE_SQUARE_BRACKET);
 
             if (modifierListEnd === -1) {
                 throw new AdblockSyntaxError(

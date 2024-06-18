@@ -3,12 +3,13 @@ import { MODIFIERS_SEPARATOR, NULL, UINT16_MAX } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
+import { BinaryTypeMap, Value, type Modifier, type ModifierList } from '../common';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+import { ValueParser } from './value';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
@@ -24,6 +25,8 @@ const enum ModifierListNodeSerializationMap {
     End,
 }
 
+const POSSIBLE_REGEX_MODIFIERS = new Set(['domain', 'app', 'url', 'path']);
+
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
  * uniform, "modifiers" are also known as "options".
@@ -33,6 +36,9 @@ const enum ModifierListNodeSerializationMap {
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
  */
 export class ModifierListParser extends ParserBase {
+    // private static tokenize(raw: string): string[] {
+
+
     /**
      * Parses the cosmetic rule modifiers, eg. `third-party,domain=example.com|~example.org`.
      *
@@ -65,22 +71,96 @@ export class ModifierListParser extends ParserBase {
             offset = StringUtils.skipWS(raw, offset);
 
             const modifierStart = offset;
+            let modifierNameStart = offset;
 
-            // Find the index of the first unescaped comma
-            separatorIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
+            // Get modifier name here
+            // If modifier name is in a set, we should check for regex
+            // If we check for regex, we need to check for = sign (assign operator), and if the value starts with /,
+            // it's a regex, and we should continue until we find the closing /
 
-            const modifierEnd = separatorIndex === -1
-                ? raw.length
-                : StringUtils.skipWSBack(raw, separatorIndex - 1) + 1;
+            let exception = false;
 
-            // Parse the modifier
-            const modifier = ModifierParser.parse(
-                raw.slice(modifierStart, modifierEnd),
+            if (raw[offset] === '~') {
+                exception = true;
+                offset += 1;
+                modifierNameStart += 1;
+            }
+
+            // consume until we find alphanumeric characters and _ and -
+            while (offset < raw.length && raw[offset].match(/[a-zA-Z0-9_-]/)) {
+                offset += 1;
+            }
+
+            const modifierName = ValueParser.parse(
+                raw.slice(modifierNameStart, offset),
                 options,
                 baseOffset + modifierStart,
             );
 
-            result.children.push(modifier);
+            offset = StringUtils.skipWS(raw, offset);
+
+            let modifierValue: Value | undefined;
+
+            // next character should be an assign operator or a separator or the end of the string
+
+            // if the next character is an assign operator, we should check if the modifier is a regex
+            if (raw[offset] === '=') {
+                if (POSSIBLE_REGEX_MODIFIERS.has(modifierName.value)) {
+                    // if the modifier is a regex, we should continue until we find the closing /
+                    offset += 1; // skip the =
+                    offset = StringUtils.skipWS(raw, offset);
+                    const valueStart = offset;
+                    offset = StringUtils.findNextUnescapedCharacter(raw, '/', offset);
+
+                    if (offset === -1) {
+                        throw new Error(`Missing closing / at ${baseOffset + offset}`);
+                    }
+
+                    // skip the closing /
+                    offset += 1;
+
+                    modifierValue = ValueParser.parse(
+                        raw.slice(valueStart, offset),
+                        options,
+                        baseOffset + valueStart,
+                    );
+                } else {
+                    // its a regular modifier
+                    offset += 1; // skip the =
+                    offset = StringUtils.skipWS(raw, offset);
+                    const valueStart = offset;
+                    offset = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
+
+                    if (offset === -1) {
+                        offset = raw.length;
+                    }
+
+                    modifierValue = ValueParser.parse(
+                        raw.slice(valueStart, offset),
+                        options,
+                        baseOffset + valueStart,
+                    );
+                }
+            } else if (raw[offset] === MODIFIERS_SEPARATOR) {
+                // if the next character is a separator, we should skip it
+                offset += 1;
+            } else if (offset < raw.length) {
+                throw new Error(`Unexpected character at ${baseOffset + offset}`);
+            }
+
+            const modifierNode: Modifier = {
+                type: 'Modifier',
+                name: modifierName,
+                value: modifierValue,
+                exception,
+            };
+
+            if (options.isLocIncluded) {
+                modifierNode.start = baseOffset + modifierStart;
+                modifierNode.end = baseOffset + offset;
+            }
+
+            result.children.push(modifierNode);
 
             // Increment the offset to the next modifier (or the end of the string)
             offset = separatorIndex === -1 ? raw.length : separatorIndex + 1;
