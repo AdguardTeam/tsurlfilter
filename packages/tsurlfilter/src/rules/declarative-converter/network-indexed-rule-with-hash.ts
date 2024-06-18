@@ -1,4 +1,4 @@
-import { type AnyRule, RuleConverter, RuleParser } from '@adguard/agtree';
+import { type AnyRule, RuleConverter } from '@adguard/agtree';
 
 import { getErrorMessage } from '../../common/error';
 import { fastHash } from '../../utils/string-utils';
@@ -127,11 +127,11 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
     }
 
     /**
-     * Creates {@link IndexedNetworkRuleWithHash} from text string.
+     * Creates {@link IndexedNetworkRuleWithHash} from rule node.
      *
      * @param filterId Filter's id from which rule was extracted.
      * @param lineIndex Line index of rule in that filter.
-     * @param rawString Text string.
+     * @param node Rule node.
      *
      * @throws Error when rule cannot be converted to AG syntax or when indexed
      * rule cannot be created from the rule which is already converted to AG
@@ -139,15 +139,14 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @returns Item of {@link IndexedNetworkRuleWithHash}.
      */
-    public static createFromRawString(
+    public static createFromNode(
         filterId: number,
         lineIndex: number,
-        rawString: string,
+        node: AnyRule,
     ): IndexedNetworkRuleWithHash[] {
         // Converts a raw string rule to AG syntax (apply aliases, etc.)
         let rulesConvertedToAGSyntax: AnyRule[];
         try {
-            const node = RuleParser.parse(rawString);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;

@@ -1,3 +1,5 @@
+import { RuleParser } from '@adguard/agtree';
+
 import {
     Filter,
     IndexedNetworkRuleWithHash,
@@ -13,9 +15,10 @@ const createFilter = (
     rules: string[],
     filterId: number = 0,
 ) => {
+    const rulesParsed = rules.map((rule) => RuleParser.parse(rule));
     return new Filter(
         filterId,
-        { getContent: async () => rules },
+        { getContent: async () => rulesParsed },
     );
 };
 
@@ -93,7 +96,7 @@ describe('RuleSet', () => {
 
         const [declarativeRule] = await ruleSet.getDeclarativeRules();
         const originalRules = await ruleSet.getRulesById(declarativeRule.id);
-        expect(originalRules[0].sourceRule).toStrictEqual(content[sourceRuleIndex]);
+        expect(originalRules[0].sourceRule).toStrictEqual(RuleParser.parse(content[sourceRuleIndex]));
 
         const declarativeRulesIds = await ruleSet.getDeclarativeRulesIdsBySourceRuleIndex({
             sourceRuleIndex,
@@ -142,7 +145,7 @@ describe('RuleSet', () => {
         const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
         const ruleSetHashMap = new RulesHashMap(sources);
         const badFilterRules = badFilterRulesRaw
-            .map((rawString) => IndexedNetworkRuleWithHash.createFromRawString(filterId, 3, rawString))
+            .map((rawString) => IndexedNetworkRuleWithHash.createFromNode(filterId, 3, RuleParser.parse(rawString)))
             .flat();
 
         const deserializedRuleSet = new RuleSet(

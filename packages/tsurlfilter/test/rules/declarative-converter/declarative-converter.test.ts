@@ -1,3 +1,5 @@
+import { RuleParser } from '@adguard/agtree';
+
 import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
 import { Filter } from '../../../src/rules/declarative-converter/filter';
 import { TooManyRulesError } from '../../../src/rules/declarative-converter/errors/limitation-errors';
@@ -13,9 +15,10 @@ const createFilter = (
     rules: string[],
     filterId: number = 0,
 ) => {
+    const rulesParsed = rules.map((rule) => RuleParser.parse(rule));
     return new Filter(
         filterId,
-        { getContent: async () => rules },
+        { getContent: async () => rulesParsed },
     );
 };
 
@@ -219,11 +222,11 @@ describe('DeclarativeConverter', () => {
 
             expect(disableRuleIds[0]).toEqual(2);
             let source = await ruleSet.getRulesById(2);
-            expect(source[0].sourceRule).toBe(ruleToCancel1);
+            expect(source[0].sourceRule).toEqual(RuleParser.parse(ruleToCancel1));
 
             expect(disableRuleIds[1]).toEqual(4);
             source = await ruleSet.getRulesById(4);
-            expect(source[0].sourceRule).toBe(ruleToCancel2);
+            expect(source[0].sourceRule).toEqual(RuleParser.parse(ruleToCancel2));
         });
 
         it('applies badfilter rules from custom filter and user rules to several static filters', async () => {
@@ -277,11 +280,11 @@ describe('DeclarativeConverter', () => {
 
             expect(disableStatic1.disableRuleIds[0]).toEqual(2);
             let source = await staticRuleSets[0].getRulesById(2);
-            expect(source[0].sourceRule).toBe(ruleToCancel1);
+            expect(source[0].sourceRule).toEqual(RuleParser.parse(ruleToCancel1));
 
             expect(disableStatic1.disableRuleIds[1]).toEqual(4);
             source = await staticRuleSets[0].getRulesById(4);
-            expect(source[0].sourceRule).toBe(ruleToCancel2);
+            expect(source[0].sourceRule).toEqual(RuleParser.parse(ruleToCancel2));
 
             // Check second static filter.
             expect(disableStatic2.rulesetId).toBe(staticRuleSets[1].getId());
@@ -290,7 +293,7 @@ describe('DeclarativeConverter', () => {
 
             expect(disableStatic2.disableRuleIds[0]).toEqual(3);
             source = await staticRuleSets[1].getRulesById(3);
-            expect(source[0].sourceRule).toBe(ruleToCancel3);
+            expect(source[0].sourceRule).toEqual(RuleParser.parse(ruleToCancel3));
         });
     });
 
@@ -341,11 +344,11 @@ describe('DeclarativeConverter', () => {
 
         let sources = await ruleSet.getRulesById(1);
         let originalRules = sources.map(({ sourceRule }) => sourceRule);
-        expect(originalRules).toEqual(expect.arrayContaining(rules));
+        expect(originalRules).toEqual(expect.arrayContaining(rules.map((rule) => RuleParser.parse(rule))));
 
         sources = await ruleSet.getRulesById(4);
         originalRules = sources.map(({ sourceRule }) => sourceRule);
-        expect(originalRules).toEqual(expect.arrayContaining([additionalRule]));
+        expect(originalRules).toEqual(expect.arrayContaining([RuleParser.parse(additionalRule)]));
     });
 
     it('returns badfilter sources', async () => {
@@ -463,7 +466,7 @@ describe('DeclarativeConverter', () => {
             const filter = createFilter([
                 '/.s/src/[a-z0-9]*.js/$domain=plasma.3dn.ru',
                 '/dbp/pre/$script,third-party',
-                '/wind10.ru/w*.js/$domain=wind10.ru,',
+                '/wind10.ru/w*.js/$domain=wind10.ru',
             ]);
 
             const { ruleSet } = await converter.convertStaticRuleSet(

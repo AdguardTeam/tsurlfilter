@@ -1,3 +1,5 @@
+import { RuleParser } from '@adguard/agtree';
+
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
@@ -15,10 +17,11 @@ const createFilter = async (
     filterId: number,
     lines: string[],
 ): Promise<ScannedFilter> => {
+    const rulesParsed = lines.map((line) => RuleParser.parse(line));
     const scanner = await FilterScanner.createNew({
         getId: () => filterId,
-        getContent: async () => lines,
-        getRuleByIndex: async (index) => lines[index],
+        getContent: async () => rulesParsed,
+        getRuleByIndex: async (index) => rulesParsed[index],
     });
 
     const { rules } = scanner.getIndexedRules();

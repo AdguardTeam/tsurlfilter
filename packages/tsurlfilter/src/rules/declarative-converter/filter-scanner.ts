@@ -1,3 +1,5 @@
+import { type AnyRule } from '@adguard/agtree';
+
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type IFilter } from './filter';
 
@@ -22,7 +24,7 @@ type ScannedRulesWithErrors = {
  */
 export class FilterScanner implements IFilterScanner {
     // Filter's content
-    private readonly filterContent: string[];
+    private readonly filterContent: AnyRule[];
 
     // Filter's id
     private readonly filterId: number;
@@ -33,7 +35,7 @@ export class FilterScanner implements IFilterScanner {
      * @param filterContent Filter rules.
      * @param filterId Filter id.
      */
-    constructor(filterContent: string[], filterId: number) {
+    constructor(filterContent: AnyRule[], filterId: number) {
         this.filterContent = filterContent;
         this.filterId = filterId;
     }
@@ -83,7 +85,7 @@ export class FilterScanner implements IFilterScanner {
             let indexedNetworkRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
             try {
-                indexedNetworkRulesWithHash = IndexedNetworkRuleWithHash.createFromRawString(
+                indexedNetworkRulesWithHash = IndexedNetworkRuleWithHash.createFromNode(
                     filterId,
                     lineIndex,
                     line,

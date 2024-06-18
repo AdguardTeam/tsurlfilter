@@ -1,3 +1,5 @@
+import { type AnyRule } from '@adguard/agtree';
+
 import { UnavailableFilterSourceError } from './errors/unavailable-sources-errors';
 
 /**
@@ -5,7 +7,7 @@ import { UnavailableFilterSourceError } from './errors/unavailable-sources-error
  */
 type IStringSourceProvider = {
     // Return content from string source
-    getContent: () => Promise<string[]>;
+    getContent: () => Promise<AnyRule[]>;
 };
 
 /**
@@ -16,10 +18,10 @@ export interface IFilter {
     getId(): number;
 
     // Returns original rule for provided index
-    getRuleByIndex(index: number): Promise<string>;
+    getRuleByIndex(index: number): Promise<AnyRule>;
 
     // Returns filter's content
-    getContent(): Promise<string[]>;
+    getContent(): Promise<AnyRule[]>;
 }
 
 /**
@@ -31,7 +33,7 @@ export class Filter implements IFilter {
     private readonly id: number;
 
     // Content of filter, lazy load
-    private content: string[] = [];
+    private content: AnyRule[] = [];
 
     // Provider of filter content
     private source: IStringSourceProvider;
@@ -76,7 +78,7 @@ export class Filter implements IFilter {
      *
      * @returns Original filtering rule by provided identifier.
      */
-    public async getRuleByIndex(index: number): Promise<string> {
+    public async getRuleByIndex(index: number): Promise<AnyRule> {
         if (this.content.length === 0) {
             try {
                 await this.loadContent();
@@ -100,7 +102,7 @@ export class Filter implements IFilter {
      *
      * @returns List of original filter rules.
      */
-    public async getContent(): Promise<string[]> {
+    public async getContent(): Promise<AnyRule[]> {
         if (this.content.length === 0) {
             try {
                 await this.loadContent();
