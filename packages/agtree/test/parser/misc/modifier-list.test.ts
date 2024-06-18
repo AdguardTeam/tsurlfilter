@@ -7,11 +7,11 @@ describe('ModifierListParser', () => {
         // TODO: Refactor to test.each
         // Invalid cases
         expect(() => ModifierListParser.parse(',')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse(' , ')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse(',b')).toThrowError(
@@ -19,23 +19,23 @@ describe('ModifierListParser', () => {
         );
 
         expect(() => ModifierListParser.parse('a,')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse('a, ')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse(' a , ')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse('a,,')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse('a,b,')).toThrowError(
-            'Modifier name cannot be empty',
+            'Modifier list cannot end with a separator',
         );
 
         expect(() => ModifierListParser.parse('a,,b')).toThrowError(
