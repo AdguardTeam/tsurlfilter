@@ -99,7 +99,6 @@
 
 import punycode from 'punycode/';
 import { redirects } from '@adguard/scriptlets';
-import { RE2 } from '@adguard/re2-wasm';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -138,6 +137,7 @@ import { SimpleRegex } from '../../simple-regex';
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
+import { re2Validator } from '../re2-regexp/re2-validator';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -661,10 +661,10 @@ export abstract class DeclarativeRuleConverter {
      *
      * @returns A list of declarative rules.
      */
-    protected convertRule(
+    protected async convertRule(
         rule: NetworkRule,
         id: number,
-    ): DeclarativeRule[] {
+    ): Promise<DeclarativeRule[]> {
         // If the rule is not convertible - method will throw an error.
         const shouldConvert = NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule);
 
@@ -684,7 +684,7 @@ export abstract class DeclarativeRuleConverter {
             declarativeRule.priority = priority;
         }
 
-        const conversionErr = DeclarativeRuleConverter.checkDeclarativeRuleApplicable(
+        const conversionErr = await DeclarativeRuleConverter.checkDeclarativeRuleApplicable(
             rule,
             declarativeRule,
         );
@@ -713,10 +713,10 @@ export abstract class DeclarativeRuleConverter {
      * while the original rule has non-empty domains,
      * or null if no errors are found.
      */
-    private static checkDeclarativeRuleApplicable(
+    private static async checkDeclarativeRuleApplicable(
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
-    ): TooComplexRegexpError | EmptyResourcesError | UnsupportedRegexpError | EmptyDomainsError | null {
+    ): Promise<TooComplexRegexpError | EmptyResourcesError | UnsupportedRegexpError | EmptyDomainsError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
@@ -738,7 +738,7 @@ export abstract class DeclarativeRuleConverter {
         // More complex regex than allowed as part of the "regexFilter" key.
         if (regexFilter) {
             try {
-                new RE2(regexFilter, 'u', 1990);
+                await re2Validator.isRegexSupported(regexFilter);
             } catch (e) {
                 const ruleText = networkRule.getText();
                 const msg = `More complex regex than allowed: "${ruleText}"`;
@@ -826,23 +826,23 @@ export abstract class DeclarativeRuleConverter {
      * @returns Transformed declarative rules with their sources
      * and caught conversion errors.
      */
-    protected convertRules(
+    protected async convertRules(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
-    ): ConvertedRules {
+    ): Promise<ConvertedRules> {
         const res: ConvertedRules = {
             declarativeRules: [],
             errors: [],
             sourceMapValues: [],
         };
 
-        rules.forEach(({ rule, index }: IndexedNetworkRuleWithHash) => {
+        await Promise.all(rules.map(async ({ rule, index }: IndexedNetworkRuleWithHash) => {
             const id = offsetId + index;
             let converted: DeclarativeRule[] = [];
 
             try {
-                converted = this.convertRule(
+                converted = await this.convertRule(
                     rule,
                     id,
                 );
@@ -861,7 +861,7 @@ export abstract class DeclarativeRuleConverter {
                 });
                 res.declarativeRules.push(dRule);
             });
-        });
+        }));
 
         return res;
     }
@@ -959,5 +959,5 @@ export abstract class DeclarativeRuleConverter {
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
-    ): ConvertedRules;
+    ): Promise<ConvertedRules>;
 }

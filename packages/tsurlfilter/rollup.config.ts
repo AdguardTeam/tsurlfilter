@@ -131,6 +131,7 @@ const cliConfig = {
         'fs',
         'path',
         'commander',
+        '@adguard/re2-wasm',
     ],
     plugins: [
         // Allow json resolution
