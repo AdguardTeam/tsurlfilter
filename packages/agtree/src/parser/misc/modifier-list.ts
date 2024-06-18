@@ -1,15 +1,21 @@
 /* eslint-disable no-param-reassign */
-import { MODIFIERS_SEPARATOR, NULL, UINT16_MAX } from '../../utils/constants';
+import {
+    COMMA,
+    MODIFIERS_SEPARATOR,
+    MODIFIER_ASSIGN_OPERATOR,
+    NULL,
+    REGEX_MARKER,
+    UINT16_MAX,
+} from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, Value, type Modifier, type ModifierList } from '../common';
+import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-import { ValueParser } from './value';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
 /**
@@ -26,7 +32,113 @@ const enum ModifierListNodeSerializationMap {
     End,
 }
 
-const POSSIBLE_REGEX_MODIFIERS = new Set(['domain', 'app', 'url', 'path']);
+/**
+ * List of modifier names where the value is / can be a regex.
+ * These modifiers require special handling while tokenizing the modifier list.
+ */
+const POSSIBLE_REGEX_MODIFIERS = new Set([
+    'domain',
+    'app',
+    'url',
+    'path',
+]);
+
+/**
+ * Utility function to skip modifiers whose values is / can be a regex, like domain=/example.(com|org)/.
+ *
+ * @param input Input string.
+ * @param offset Starting offset.
+ * @returns The offset after the regex modifier or the original offset if no regex modifier is found
+ *          at the given offset.
+ */
+const skipRegexModifier = (input: string, offset: number): number => {
+    let i = offset;
+
+    // Obtain modifier name by consuming all valid modifier name characters
+    while (i < input.length && input[i].match(/[a-zA-Z0-9_-]/)) {
+        i += 1;
+    }
+
+    const name = input.slice(offset, i);
+
+    // If the found sequence is not a possible modifier name, then no need to continue
+    if (!POSSIBLE_REGEX_MODIFIERS.has(name)) {
+        return offset;
+    }
+
+    // Skip possible whitespace after the modifier name
+    i = StringUtils.skipWS(input, i);
+
+    // If the next character is not an equal sign, then no need to continue
+    // We expect modifiers to have a value, so if there is no value, then it is not a regex modifier
+    if (input[i] !== MODIFIER_ASSIGN_OPERATOR) {
+        return offset;
+    }
+
+    // Skip the equal sign
+    i += 1;
+
+    // Skip possible whitespace after the equal sign
+    i = StringUtils.skipWS(input, i);
+
+    // If the next character is not a slash, then no need to continue, because regex values should start with a slash
+    if (input[i] !== REGEX_MARKER) {
+        return offset;
+    }
+
+    // $path modifier needs special handling, because its value can be a regex or a path,
+    // e.g. $path=/foo/bar or $path=/regex/
+    // (but the value starts with a slash in both cases)
+    if (name === 'path') {
+        i += 1;
+        const nextSlash = StringUtils.findNextUnescapedCharacter(input, REGEX_MARKER, i);
+
+        if (nextSlash === -1) {
+            // $path is used without regex value
+            return offset;
+        }
+
+        // If we find a slash, we should handle this case:
+        // [$path=/page.html,domain=/example/]##.ad
+        //                          ^ next slash is a part of the next modifier
+        //
+        // It's a rare case, so its ok to use a bit heavier logic here
+        const regex = new RegExp(
+            // pattern: <possible-regexp-modifier><ws*>=<ws*>/, like domain=/ or domain = /
+            String.raw`${Array.from(POSSIBLE_REGEX_MODIFIERS).join('|')}\s*=\s*/`,
+        );
+
+        const nextPossibleModifierIndex = input.slice(i).search(regex);
+
+        if (nextPossibleModifierIndex !== -1 && nextPossibleModifierIndex < nextSlash) {
+            // $path is used without regex value, like $path=/foo/bar,domain=/example.(com|org)/
+            return offset;
+        }
+
+        // Skip spaces after the slash
+        i = StringUtils.skipWS(input, nextSlash + 1);
+
+        // Slash should be followed by a modifier separator or the end of the input
+        // This is needed, because if our input is $path=/foo/bar, then the value continues after the slash
+        //                                                   ^ do not stop here
+        if (i === input.length || input[i] === COMMA) {
+            return nextSlash + 1;
+        }
+    }
+
+    // Skip the slash
+    i += 1;
+    // Find the next unescaped slash
+    i = StringUtils.findNextUnescapedCharacter(input, REGEX_MARKER, i);
+
+    // If we don't find a closing slash, then no need to continue, because it is not a regex modifier
+    if (i === -1) {
+        return offset;
+    }
+
+    // Return the index after the closing slash
+    return i + 1;
+};
 
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
@@ -37,9 +149,6 @@ const POSSIBLE_REGEX_MODIFIERS = new Set(['domain', 'app', 'url', 'path']);
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
  */
 export class ModifierListParser extends ParserBase {
-    // private static tokenize(raw: string): string[] {
-
-
     /**
      * Parses the cosmetic rule modifiers, eg. `third-party,domain=example.com|~example.org`.
      *
@@ -83,129 +192,36 @@ export class ModifierListParser extends ParserBase {
 
         // Split modifiers by unescaped commas
         while (offset < raw.length) {
-            // Skip whitespace before the modifier
             offset = StringUtils.skipWS(raw, offset);
 
-            const modifierStart = offset;
-            let modifierNameStart = offset;
-
-            // Get modifier name here
-            // If modifier name is in a set, we should check for regex
-            // If we check for regex, we need to check for = sign (assign operator), and if the value starts with /,
-            // it's a regex, and we should continue until we find the closing /
-
-            // FIXME: $path modifier may contain non-regexp value which starts with /
-            // e.g. [$path=/page.html]##.ad
-
-            let exception = false;
-
-            // FIXME: use constant
-            if (raw[offset] === '~') {
-                exception = true;
-                offset += 1;
-                modifierNameStart += 1;
+            if (offset === raw.length) {
+                break;
             }
 
-            // consume until we find alphanumeric characters and _ and -
-            while (offset < raw.length && raw[offset].match(/[a-zA-Z0-9_-]/)) {
-                offset += 1;
+            const modifierStartIndex = offset;
+            let modifierEndIndex = -1;
+
+            const regexModifierEnd = skipRegexModifier(raw, offset);
+
+            if (regexModifierEnd > offset) {
+                // Special regex modifier
+                modifierEndIndex = regexModifierEnd;
+            } else {
+                // Regular modifier
+                const separatorIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
+                modifierEndIndex = separatorIndex === -1 ? raw.length : separatorIndex;
             }
 
-            const modifierName = ValueParser.parse(
-                raw.slice(modifierNameStart, offset),
-                options,
-                baseOffset + modifierNameStart,
+            result.children.push(
+                ModifierParser.parse(
+                    raw.slice(modifierStartIndex, StringUtils.skipWSBack(raw, modifierEndIndex - 1) + 1),
+                    options,
+                    baseOffset + modifierStartIndex,
+                ),
             );
 
-            if (modifierName.value.length === 0) {
-                throw new AdblockSyntaxError(
-                    'Modifier name cannot be empty',
-                    baseOffset + modifierNameStart,
-                    baseOffset + raw.length,
-                );
-            }
-
-            offset = StringUtils.skipWS(raw, offset);
-
-            let modifierValue: Value | undefined;
-
-            // next character should be an assign operator or a separator or the end of the string
-
-            // if the next character is an assign operator, we should check if the modifier is a regex
-            // FIXME: use constant for '='
-            if (raw[offset] === '=') {
-                if (POSSIBLE_REGEX_MODIFIERS.has(modifierName.value)) {
-                    // if the modifier is a regex, we should continue until we find the closing /
-                    offset += 1; // skip the =
-                    offset = StringUtils.skipWS(raw, offset);
-                    const valueStart = offset;
-                    // FIXME: use constant for `/`
-                    offset = StringUtils.findNextUnescapedCharacter(raw, '/', offset + 1);
-
-                    if (offset === -1) {
-                        throw new Error(`Missing closing / at ${baseOffset + offset}`);
-                    }
-
-                    // skip the closing /
-                    offset += 1;
-
-                    modifierValue = ValueParser.parse(
-                        raw.slice(valueStart, offset),
-                        options,
-                        baseOffset + valueStart,
-                    );
-                } else {
-                    // its a regular modifier
-                    offset += 1; // skip the =
-                    offset = StringUtils.skipWS(raw, offset);
-                    const valueStart = offset;
-
-                    const separatorIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
-
-                    const rawValueEnd = separatorIndex === -1 ? raw.length : separatorIndex;
-                    const realValueEnd = StringUtils.skipWSBack(raw, rawValueEnd - 1);
-
-                    modifierValue = ValueParser.parse(
-                        raw.slice(valueStart, realValueEnd + 1),
-                        options,
-                        baseOffset + valueStart,
-                    );
-
-                    offset = rawValueEnd;
-                }
-
-                if (modifierValue?.value.length === 0) {
-                    throw new AdblockSyntaxError(
-                        'Modifier value cannot be empty',
-                        baseOffset + modifierStart,
-                        baseOffset + offset,
-                    );
-                }
-            } else if (raw[offset] === MODIFIERS_SEPARATOR) {
-                // FIXME: check if this condition is needed
-            } else if (offset < raw.length) {
-                throw new Error(`Unexpected character at ${baseOffset + offset}: '${raw[offset]}'`);
-            }
-
-            const modifierNode: Modifier = {
-                type: 'Modifier',
-                name: modifierName,
-                value: modifierValue,
-                exception,
-            };
-
-            if (options.isLocIncluded) {
-                modifierNode.start = baseOffset + modifierStart;
-                modifierNode.end = modifierValue?.end || baseOffset + offset;
-            }
-
-            result.children.push(modifierNode);
-
-            // Increment the offset if the end of the string is not reached
-            if (offset !== -1) {
-                // skip the separator
-                offset += 1;
-            }
+            // +1 to skip the comma
+            offset = modifierEndIndex + 1;
         }
 
         return result;
