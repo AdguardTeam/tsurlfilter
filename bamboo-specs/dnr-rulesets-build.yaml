@@ -12,3 +12,9 @@ Build:
   tasks:
     - script:
       - echo 'Task run successfully!'
+  artifacts:
+    - name: dnr-rulesets.tgz
+      location: packages/dnr-rulesets/
+      pattern: dnr-rulesets.tgz
+      shared: true
+      required: true
