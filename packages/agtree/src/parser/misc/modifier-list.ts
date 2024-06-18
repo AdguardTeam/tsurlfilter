@@ -10,6 +10,7 @@ import { ModifierParser } from './modifier';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { ValueParser } from './value';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
@@ -63,7 +64,22 @@ export class ModifierListParser extends ParserBase {
 
         let offset = StringUtils.skipWS(raw);
 
-        let separatorIndex = -1;
+        const lastNonWS = StringUtils.skipWSBack(raw, raw.length - 1);
+        if (raw[lastNonWS] === MODIFIERS_SEPARATOR) {
+            throw new AdblockSyntaxError(
+                'Modifier list cannot end with a separator',
+                baseOffset + lastNonWS,
+                baseOffset + raw.length,
+            );
+        }
+
+        if (offset === lastNonWS) {
+            throw new AdblockSyntaxError(
+                'Modifier list cannot be empty',
+                baseOffset,
+                baseOffset + raw.length,
+            );
+        }
 
         // Split modifiers by unescaped commas
         while (offset < raw.length) {
@@ -78,8 +94,12 @@ export class ModifierListParser extends ParserBase {
             // If we check for regex, we need to check for = sign (assign operator), and if the value starts with /,
             // it's a regex, and we should continue until we find the closing /
 
+            // FIXME: $path modifier may contain non-regexp value which starts with /
+            // e.g. [$path=/page.html]##.ad
+
             let exception = false;
 
+            // FIXME: use constant
             if (raw[offset] === '~') {
                 exception = true;
                 offset += 1;
@@ -94,8 +114,16 @@ export class ModifierListParser extends ParserBase {
             const modifierName = ValueParser.parse(
                 raw.slice(modifierNameStart, offset),
                 options,
-                baseOffset + modifierStart,
+                baseOffset + modifierNameStart,
             );
+
+            if (modifierName.value.length === 0) {
+                throw new AdblockSyntaxError(
+                    'Modifier name cannot be empty',
+                    baseOffset + modifierNameStart,
+                    baseOffset + raw.length,
+                );
+            }
 
             offset = StringUtils.skipWS(raw, offset);
 
@@ -104,13 +132,15 @@ export class ModifierListParser extends ParserBase {
             // next character should be an assign operator or a separator or the end of the string
 
             // if the next character is an assign operator, we should check if the modifier is a regex
+            // FIXME: use constant for '='
             if (raw[offset] === '=') {
                 if (POSSIBLE_REGEX_MODIFIERS.has(modifierName.value)) {
                     // if the modifier is a regex, we should continue until we find the closing /
                     offset += 1; // skip the =
                     offset = StringUtils.skipWS(raw, offset);
                     const valueStart = offset;
-                    offset = StringUtils.findNextUnescapedCharacter(raw, '/', offset);
+                    // FIXME: use constant for `/`
+                    offset = StringUtils.findNextUnescapedCharacter(raw, '/', offset + 1);
 
                     if (offset === -1) {
                         throw new Error(`Missing closing / at ${baseOffset + offset}`);
@@ -129,23 +159,32 @@ export class ModifierListParser extends ParserBase {
                     offset += 1; // skip the =
                     offset = StringUtils.skipWS(raw, offset);
                     const valueStart = offset;
-                    offset = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
 
-                    if (offset === -1) {
-                        offset = raw.length;
-                    }
+                    const separatorIndex = StringUtils.findNextUnescapedCharacter(raw, MODIFIERS_SEPARATOR, offset);
+
+                    const rawValueEnd = separatorIndex === -1 ? raw.length : separatorIndex;
+                    const realValueEnd = StringUtils.skipWSBack(raw, rawValueEnd - 1);
 
                     modifierValue = ValueParser.parse(
-                        raw.slice(valueStart, offset),
+                        raw.slice(valueStart, realValueEnd + 1),
                         options,
                         baseOffset + valueStart,
                     );
+
+                    offset = rawValueEnd;
+                }
+
+                if (modifierValue?.value.length === 0) {
+                    throw new AdblockSyntaxError(
+                        'Modifier value cannot be empty',
+                        baseOffset + modifierStart,
+                        baseOffset + offset,
+                    );
                 }
             } else if (raw[offset] === MODIFIERS_SEPARATOR) {
-                // if the next character is a separator, we should skip it
-                offset += 1;
+                // FIXME: check if this condition is needed
             } else if (offset < raw.length) {
-                throw new Error(`Unexpected character at ${baseOffset + offset}`);
+                throw new Error(`Unexpected character at ${baseOffset + offset}: '${raw[offset]}'`);
             }
 
             const modifierNode: Modifier = {
@@ -157,26 +196,16 @@ export class ModifierListParser extends ParserBase {
 
             if (options.isLocIncluded) {
                 modifierNode.start = baseOffset + modifierStart;
-                modifierNode.end = baseOffset + offset;
+                modifierNode.end = modifierValue?.end || baseOffset + offset;
             }
 
             result.children.push(modifierNode);
 
-            // Increment the offset to the next modifier (or the end of the string)
-            offset = separatorIndex === -1 ? raw.length : separatorIndex + 1;
-        }
-
-        // Check if there are any modifiers after the last separator
-        if (separatorIndex !== -1) {
-            const modifierStart = StringUtils.skipWS(raw, separatorIndex + 1);
-
-            result.children.push(
-                ModifierParser.parse(
-                    raw.slice(modifierStart, raw.length),
-                    options,
-                    baseOffset + modifierStart,
-                ),
-            );
+            // Increment the offset if the end of the string is not reached
+            if (offset !== -1) {
+                // skip the separator
+                offset += 1;
+            }
         }
 
         return result;
