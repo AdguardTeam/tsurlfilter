@@ -420,8 +420,6 @@ export class TabsApi {
             }
             tabContext.updateTabInfo(changeInfo, tabInfo);
             this.onUpdate.dispatch(tabContext);
-        } else {
-            this.handleTabCreate(tabInfo);
         }
     }
 

@@ -43,18 +43,18 @@ export class TabsCosmeticInjector {
             return;
         }
 
+        const tabContext = new TabContext(tab);
+
+        const tabId = tab.id;
+
+        tabsApi.context.set(tabId, tabContext);
+
         const { url } = tab;
 
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
         if (!isHttpRequest(url)) {
             return;
         }
-
-        const tabContext = new TabContext(tab);
-
-        const tabId = tab.id;
-
-        tabsApi.context.set(tabId, tabContext);
 
         if (url) {
             tabContext.mainFrameRule = DocumentApi.matchFrame(url);
