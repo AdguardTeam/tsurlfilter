@@ -98,6 +98,8 @@ Test:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
+            pnpm --filter @adguard/dnr-rulesets clear
+
             # Check if node_modules directory exists
             if [ -d "node_modules" ]; then
               pnpm clean
