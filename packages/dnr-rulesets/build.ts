@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { convertFilters } from '@adguard/tsurlfilter/cli';
-import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 import axios from 'axios';
 import { ensureDir } from 'fs-extra';
 import { version } from './package.json';
@@ -71,7 +70,7 @@ const getUrlsOfFiltersResources = async (): Promise<FilterDTO[]> => {
     return metadata.map(({ filterId }) => ({
         id: filterId,
         url: `${FILTERS_URL}/${filterId}.txt`,
-        file: getFilterName(filterId),
+        file: `filter_${filterId}.txt`,
     }));
 };
 
