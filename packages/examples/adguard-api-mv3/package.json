@@ -11,12 +11,12 @@
         "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
     },
     "dependencies": {
-        "@adguard/api-mv3": "workspace:^",
+        "@adguard/api-mv3": "0.0.2",
         "webextension-polyfill": "^0.10.0"
     },
     "devDependencies": {
-        "@adguard/dnr-rulesets": "workspace:^",
-        "@adguard/tswebextension": "workspace:^",
+        "@adguard/dnr-rulesets": "0.0.2",
+        "@adguard/tswebextension": "2.0.0-alpha.0",
         "@swc-node/register": "^1.6.6",
         "@swc/core": "^1.3.75",
         "@types/archiver": "^6.0.2",
