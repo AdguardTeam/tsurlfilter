@@ -8,10 +8,34 @@ environments:
   - npmjs
 
 npmjs:
+  docker:
+    image: adguard/node-ssh:18.19--0
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   triggers: [ ]
   tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - artifact-download:
+        artifacts:
+          - name: dnr-rulesets.tgz
     - script:
-      - echo 'Task run successfully!'
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            export NPM_TOKEN=${bamboo.npmSecretToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            npm publish dnr-rulesets.tgz --access public
+  requirements:
+    - adg-docker: 'true'
   notifications:
     - events:
         - deployment-started-and-finished
