@@ -12,7 +12,8 @@
     "build": "pnpm run clear && pnpm run build:assets && pnpm run build:cli",
     "build:assets": "node -r @swc-node/register build.ts",
     "build:cli": "tsc --project tsconfig.build.json",
-    "clear": "rimraf ./dist"
+    "clear": "rimraf ./dist",
+    "increment": "pnpm version patch --no-git-tag-version"
   },
   "author": "Adguard Software Ltd.",
   "license": "GPL-3.0-only",
