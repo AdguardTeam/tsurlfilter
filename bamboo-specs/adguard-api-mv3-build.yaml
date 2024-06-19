@@ -90,6 +90,8 @@ Build:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
+            pnpm --filter @adguard/dnr-rulesets clear
+
             pnpm clean
   
             echo "Size after cleanup:" && du -h | tail -n 1
