@@ -270,7 +270,7 @@ export class CosmeticRuleParser extends ParserBase {
             // Skip whitespace after modifier separator
             patternOffset = StringUtils.skipWS(rawPattern, patternOffset);
 
-            // Modifier list ends with the next unescaped square bracket
+            // Modifier list ends with the last unescaped square bracket
             const modifierListEnd = StringUtils.findLastUnescapedCharacter(rawPattern, CLOSE_SQUARE_BRACKET);
 
             if (modifierListEnd === -1) {
