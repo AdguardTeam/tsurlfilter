@@ -512,7 +512,7 @@ importers:
         version: 12.1.0
     devDependencies:
       '@adguard/tsurlfilter':
-        specifier: workspace:^
+        specifier: 3.0.0-alpha.0
         version: link:../tsurlfilter
       '@swc-node/register':
         specifier: ^1.6.6
@@ -622,14 +622,14 @@ importers:
     dependencies:
       '@adguard/api-mv3':
         specifier: 0.0.2
-        version: 0.0.2
+        version: link:../../adguard-api-mv3
       webextension-polyfill:
         specifier: ^0.10.0
         version: 0.10.0
     devDependencies:
       '@adguard/dnr-rulesets':
         specifier: 0.0.2
-        version: 0.0.2
+        version: link:../../dnr-rulesets
       '@adguard/tswebextension':
         specifier: 2.0.0-alpha.0
         version: link:../../tswebextension
@@ -1282,14 +1282,6 @@ packages:
       xregexp: 5.1.1
     dev: false
 
-  /@adguard/api-mv3@0.0.2:
-    resolution: {integrity: sha512-o9Y17CO7RiXQLJb4yVTs/e0yPBu3GJ96H8R2UcaL6VkxYh4LwqfNcJ/+rDkvvS8FJLhUALAw7LM/E7tK8lLJNQ==}
-    dependencies:
-      '@adguard/logger': 1.0.1
-      '@adguard/tswebextension': '@github.com/AdguardTeam/tsurlfilter/raw/release/v2.3-for-5.0/packages/tswebextension/tswebextension.tgz'
-      zod: 3.22.4
-    dev: false
-
   /@adguard/assistant@4.3.70:
     resolution: {integrity: sha512-q5o4ejQgRQMFbtV49X1ark0Ytb+MP/3vC9XErHqAcvh6wHpN/Hm2Q1+jbhiHHIs/H2rCU20TyVwZlGs0xtQ60w==}
     dev: false
@@ -1302,14 +1294,6 @@ packages:
       crypto-js: 4.2.0
       diff: github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a
     dev: false
-
-  /@adguard/dnr-rulesets@0.0.2:
-    resolution: {integrity: sha512-PHahqXLzxODPQriIjDhE+M3oDCC8yWEad+Ixom0A9BuAnm2oJGAa6/rl0tN8zG4DWafBGlrwYpX70NE9cmVpUg==}
-    hasBin: true
-    dependencies:
-      '@adguard/logger': 1.0.1
-      commander: 12.1.0
-    dev: true
 
   /@adguard/ecss-tree@1.0.8:
     resolution: {integrity: sha512-Y5dfzWH5nnzEH9URuzOQ1RXl0bzmLiGO7Nt9Wc/na7uD5UHqoz4PlzVllFpO1bLA+Cqq5ebNrz+uWRKN3BxSTg==}
@@ -1336,6 +1320,7 @@ packages:
   /@adguard/logger@1.0.1:
     resolution: {integrity: sha512-g1Uv0ett0cby5EuXHNe9QIJKip4YRrhQcCi2Fm/d01rMA4v1oFbqk3JgvzS8iwKuhTjk7CCaKaTscvGgKQ+dcQ==}
     engines: {node: '>=18.19.0'}
+    dev: false
 
   /@adguard/scriptlets@1.10.1:
     resolution: {integrity: sha512-tGZOmdo/KFDQ5chkKES6l9VfI8kaGCjy4i4fFEHeOvi28xm1sdSb8F7jWJpqLicqC8FjydJU72i8hhZYejRQ4Q==}
@@ -8390,6 +8375,7 @@ packages:
   /commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
+    dev: false
 
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
