@@ -53,6 +53,9 @@ Build:
 
             cd packages/examples/adguard-api-mv3
 
+            # pnpm break symlinks to binary after building cli, so we re-install dependencies
+            pnpm install
+
             # load precompile DNR rulesets
             pnpm run load-dnr-rulesets
 

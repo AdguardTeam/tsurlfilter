@@ -31,7 +31,8 @@ Increment:
 
             # Throw error if current branch is not "master",
             # because we do not deploy changes from other branches
-            if [ $branch != "master" ]
+            # TODO: remove "release/v2.3-for-5.0" branch after merge
+            if [ $branch != "master" && $branch != "release/v2.3-for-5.0" ]
             then
               echo "increment is not supported on branch ${branch}"
               exit 1;
