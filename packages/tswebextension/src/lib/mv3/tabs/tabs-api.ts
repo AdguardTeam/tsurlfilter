@@ -123,20 +123,29 @@ export class TabsApi {
     /**
      * Updates tab context data on tab update.
      *
+     * If the tab context is not found, creates a new tab context.
+     *
      * @param tabId Tab ID.
      * @param changeInfo Tab change info.
      * @param tabInfo Tab info.
      */
     private handleTabUpdate(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: Tabs.Tab): void {
+        if (!TabContext.isBrowserTab(tabInfo)) {
+            return;
+        }
+
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
-        if (tabContext && TabContext.isBrowserTab(tabInfo)) {
+
+        if (tabContext) {
             // Skip updates for non-http requests.
             if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
                 return;
             }
             tabContext.updateTabInfo(changeInfo, tabInfo);
             this.onUpdate.dispatch(tabContext);
+        } else {
+            this.handleTabCreate(tabInfo);
         }
     }
 

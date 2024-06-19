@@ -1,0 +1,130 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: AGAPIEXMV3TEST
+  name: examples-adguard-api-mv3 - tests
+variables:
+  dockerContainer: adguard/node-ssh:18.19--0
+
+stages:
+  - Test:
+      manual: false
+      final: false
+      jobs:
+        - Test
+
+Test:
+  key: TEST
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+
+            branch="${bamboo_planRepository_branchName}"
+            target_branch="${bamboo_repository_pr_targetBranch:-master}"
+
+            is_root_affected() {
+              git diff --name-only "${target_branch}"...HEAD | grep -v '^packages/' > /dev/null
+            }
+
+            is_project_affected() {
+              local project_name="$1"
+              pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
+            }
+
+            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "adguard-api-mv3-example"; then
+              echo "No changes in project, skipping tests"
+              exit 0;
+            fi
+
+            # Install dependencies
+            pnpm install
+
+            # pre-build cli for 
+            npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
+            # Lint
+            pnpm --filter adguard-api-mv3-example lint
+    
+            cd ./packages/examples/adguard-api-mv3
+
+            # pnpm break symlinks to binary after building cli, so we re-install dependencies
+            pnpm install
+
+            # load precompile DNR rulesets
+            pnpm run load-dnr-rulesets
+
+            # Path extension manifest
+            pnpm run patch-manifest
+
+            # Build
+            npx lerna run build --scope adguard-api-mv3-example --include-dependencies
+  artifacts:
+    - name: extension.zip
+      location: packages/examples/adguard-api-mv3/build
+      pattern: extension.zip
+      shared: true
+      required: false
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+
+            # Check if node_modules directory exists
+            if [ -d "node_modules" ]; then
+              pnpm clean
+            else
+              echo "node_modules directory does not exist, skipping pnpm clean"
+            fi
+
+            echo "Size after cleanup:" && du -h | tail -n 1
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
+  link-to-jira: 'true'
+
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default
