@@ -748,35 +748,7 @@ export abstract class DeclarativeRuleConverter {
                     declarativeRule,
                 );
             }
-            // const regexArr = regexFilter.split('|');
-            // // TODO: Find how exactly the complexity of a rule is calculated.
-            // // The values maxGroups & maxGroupLength are obtained by testing.
-            // // TODO: Fix these values based on Chrome Errors
-            // const maxGroups = 15;
-            // const maxGroupLength = 31;
-            // if (regexArr.length > maxGroups
-            //     || regexArr.some((i) => i.length > maxGroupLength)
-            // ) {
-            //     const ruleText = networkRule.getText();
-            //     const msg = `More complex regex than allowed: "${ruleText}"`;
-            //     return new TooComplexRegexpError(
-            //         msg,
-            //         networkRule,
-            //         declarativeRule,
-            //     );
-            // }
         }
-
-        // // Back references, possessive quantifiers, and negative lookaheads are not supported
-        // // See more: https://github.com/google/re2/wiki/Syntax
-        // if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
-        //     const msg = `Invalid regex in the rule: "${networkRule.getText()}"`;
-        //     return new UnsupportedRegexpError(
-        //         msg,
-        //         networkRule,
-        //         declarativeRule,
-        //     );
-        // }
 
         return null;
     }
