@@ -603,7 +603,7 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * FIXME: Check if this method is needed.
+     * TODO: Check if this method is needed.
      * Initialize app persistent data.
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.
@@ -611,5 +611,46 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
         logger.debug('initStorage NOT IMPLEMENTED');
+    }
+
+    /**
+     * TODO implement this method later
+     * Sets the debug filtering state.
+     * @param debug Debug filtering state.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
+    public setDebugScriptlets(debug: boolean): void {
+        logger.debug('mv3 does not support setDebugScriptlets yet');
+    }
+
+    /**
+     * TODO implement this method later
+     * Sets the collect hit stats state.
+     * @param collect Collect hit stats state.
+     */
+    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+    public setCollectHitStats(collect: boolean): void {
+        logger.debug('mv3 does not support setCollectHitStats yet');
+    }
+
+    /**
+     * TODO implement this method later if needed
+     * Sets prebuild local script rules.
+     *
+     * @param localScriptRules JSON object with pre-build JS rules.
+     * @param localScriptRules.comment Comment for the rules.
+     * @param localScriptRules.rules List of rules.
+     * @see {@link LocalScriptRulesService}
+     *
+     */
+    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+    public setLocalScriptRules(localScriptRules:{
+        comment: string, // TODO extract type to common
+        rules: {
+            domains: string,
+            script: string,
+        }[],
+    }): void {
+        logger.debug('mv3 does not support setLocalScriptRules yet');
     }
 }

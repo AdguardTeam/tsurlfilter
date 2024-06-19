@@ -17,7 +17,7 @@ import {
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
-import { getHost } from '../../common/utils';
+import { getHost, isHttpOrWsRequest } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../utils/logger';
@@ -137,7 +137,7 @@ export class EngineApi {
      * @returns Document-level allowlist rule if found, otherwise null.
      */
     public matchFrame(frameUrl: string): NetworkRule | null {
-        if (!this.engine) {
+        if (!this.engine || !isHttpOrWsRequest(frameUrl)) {
             return null;
         }
 
