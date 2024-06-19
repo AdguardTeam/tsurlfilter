@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## 2.0.0-alpha.0
 
 ### Added
 
@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocked ads count leaking between websites [AdguardBrowserExtension#2080].
 - Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2549].
 
+[2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
 [AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
 [AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549

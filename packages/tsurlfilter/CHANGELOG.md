@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## 3.0.0-alpha.0
 
 ### Added
 
@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extension leaking it's instance id when redirecting requests [AdguardBrowserExtension#2278].
 - Cosmetic option allowlist rules interfering with basic blocking rules [AdguardBrowserExtension#2690].
 
+[3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.0
 [#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
 [#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100

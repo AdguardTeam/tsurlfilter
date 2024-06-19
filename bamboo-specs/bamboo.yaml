@@ -104,6 +104,9 @@
 !include 'adguard-api-mv3-increment.yaml'
 
 ---
+!include 'adguard-api-mv3-permissions.yaml'
+
+---
 !include 'dnr-rulesets-build.yaml'
 
 ---
@@ -111,6 +114,9 @@
 
 ---
 !include 'dnr-rulesets-increment.yaml'
+
+---
+!include 'dnr-rulesets-permissions.yaml'
 
 ---
 !include 'examples-adguard-api-mv3-tests.yaml'

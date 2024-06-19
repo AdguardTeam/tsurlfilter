@@ -58,10 +58,16 @@ Test:
             # Install dependencies
             pnpm install
 
+            # pre-build cli for 
+            npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
             # Lint
             pnpm --filter adguard-api-mv3-example lint
     
             cd ./packages/examples/adguard-api-mv3
+
+            # pnpm break symlinks to binary after building cli, so we re-install dependencies
+            pnpm install
 
             # load precompile DNR rulesets
             pnpm run load-dnr-rulesets
