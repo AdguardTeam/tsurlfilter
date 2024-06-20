@@ -8,8 +8,7 @@ type IsRegexSupportedResult = chrome.declarativeNetRequest.IsRegexSupportedResul
  * Check if the regex is supported in a browser extension using the built-in chrome.declarativeNetRequest API.
  *
  * @param regexFilter Regex to check.
- * @returns True if regex is supported.
- * @throws Error if the regex is not supported.
+ * @returns Promise that resolves to true if the regex is supported, and rejects with an error otherwise.
  */
 export const regexValidatorExtension = async (regexFilter: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
