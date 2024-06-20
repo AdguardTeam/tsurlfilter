@@ -1,7 +1,6 @@
 import {
     type ConversionError,
     EmptyResourcesError,
-    TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
@@ -72,7 +71,6 @@ export { TSWEBEXTENSION_VERSION } from '../../common/configuration';
 export {
     type ConversionError,
     EmptyResourcesError,
-    TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,
