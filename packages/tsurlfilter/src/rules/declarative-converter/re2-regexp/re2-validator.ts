@@ -17,7 +17,7 @@ class Re2Validator {
      * The default validator function.
      * By default, it uses the builtin browser validator.
      */
-    validator: ValidatorFunction = regexValidatorExtension;
+    private validator: ValidatorFunction = regexValidatorExtension;
 
     /**
      * Set a custom validator function.
