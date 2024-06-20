@@ -6,7 +6,7 @@ import {
     getAssistantCreateRulePayloadValidator,
     getCssPayloadValidator,
 } from '../../common';
-import { isHttpOrWsRequest } from '../../common/utils';
+import { isEmptySrcFrame, isHttpOrWsRequest } from '../../common/utils';
 import { logger } from '../utils/logger';
 
 import { type CosmeticRules, engineApi } from './engine-api';
@@ -195,6 +195,11 @@ export class MessagesApi {
         }
 
         const { url, referrer } = res.data;
+
+        if (isEmptySrcFrame(url)) {
+            logger.debug('[GET COOKIE RULES]: frame has empty src');
+            return undefined;
+        }
 
         const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
 
