@@ -87,6 +87,9 @@
       "eslint"
     ]
   },
+  "peerDependencies": {
+    "@adguard/re2-wasm": "1.2.0"
+  },
   "dependencies": {
     "@adguard/scriptlets": "^1.10.25",
     "cidr-tools": "^6.4.1",
@@ -106,6 +109,7 @@
     "@rollup/plugin-typescript": "8.3.4",
     "@swc/core": "1.4.8",
     "@swc/jest": "0.2.36",
+    "@types/chrome": "^0.0.268",
     "@types/ip6addr": "0.2.3",
     "@types/jest": "29.5.3",
     "@types/lodash": "^4.17.0",

@@ -31,7 +31,7 @@ describe('RuleSet', () => {
         const {
             sourceMapValues,
             declarativeRules,
-        } = DeclarativeRulesConverter.convert(filters);
+        } = await DeclarativeRulesConverter.convert(filters);
 
         const ruleSetContent: RuleSetContentProvider = {
             loadSourceMap: async () => new SourceMap(sourceMapValues),

@@ -145,10 +145,10 @@ export class DeclarativeRulesConverter {
      * and a list of sourcemap values that contain the relationship between the
      * transformed declarative rule and the source rule.
      */
-    public static convert(
+    public static async convert(
         filtersWithRules: ScannedFilter[],
         options?: DeclarativeConverterOptions,
-    ): ConvertedRules {
+    ): Promise<ConvertedRules> {
         const filters = this.applyBadFilter(filtersWithRules);
 
         let converted: ConvertedRules = {
@@ -157,7 +157,7 @@ export class DeclarativeRulesConverter {
             errors: [],
         };
 
-        filters.forEach(([filterId, groupedRules]) => {
+        for (const [filterId, groupedRules] of filters) {
             const lastUsedId = converted.declarativeRules.length > 0
                 ? converted.declarativeRules[converted.declarativeRules.length - 1].id + 1
                 : DeclarativeRulesConverter.START_DECLARATIVE_RULE_ID;
@@ -166,7 +166,8 @@ export class DeclarativeRulesConverter {
                 sourceMapValues,
                 declarativeRules,
                 errors,
-            } = this.convertRules(
+                // eslint-disable-next-line no-await-in-loop
+            } = await this.convertRules(
                 filterId,
                 groupedRules,
                 lastUsedId,
@@ -176,7 +177,7 @@ export class DeclarativeRulesConverter {
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
             converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
             converted.errors = converted.errors.concat(errors);
-        });
+        }
 
         converted = this.checkLimitations(
             converted,
@@ -200,12 +201,12 @@ export class DeclarativeRulesConverter {
      * and a list of sourcemap values that contain the relationship between the
      * transformed declarative rule and the source rule.
      */
-    private static convertRules(
+    private static async convertRules(
         filterId: number,
         groupsRules: GroupedRules,
         lastUsedId: number,
         options?: DeclarativeConverterOptions,
-    ): ConvertedRules {
+    ): Promise<ConvertedRules> {
         const converted: ConvertedRules = {
             sourceMapValues: [],
             declarativeRules: [],
@@ -214,13 +215,13 @@ export class DeclarativeRulesConverter {
 
         // Map because RulesGroup values are numbers
         const groups = Object.keys(groupsRules).map(Number);
-        groups.forEach((key: RulesGroup) => {
+        await Promise.all(groups.map(async (key: RulesGroup) => {
             const converter = new DeclarativeRulesConverter.converters[key](options?.resourcesPath);
             const {
                 sourceMapValues,
                 declarativeRules,
                 errors,
-            } = converter.convert(
+            } = await converter.convert(
                 filterId,
                 groupsRules[key],
                 lastUsedId,
@@ -229,7 +230,7 @@ export class DeclarativeRulesConverter {
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
             converted.declarativeRules = converted.declarativeRules.concat(declarativeRules);
             converted.errors = converted.errors.concat(errors);
-        });
+        }));
 
         return converted;
     }
