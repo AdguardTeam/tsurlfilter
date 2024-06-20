@@ -2,13 +2,18 @@ import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
 import {
-    TooComplexRegexpError,
     UnsupportedModifierError,
+    UnsupportedRegexpError,
 } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { FilterScanner } from '../../../src/rules/declarative-converter/filter-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
+import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
+import {
+    isUnsupportedRegexpError,
+} from '../../../src/rules/declarative-converter/errors/conversion-errors/unsupported-regexp-error';
 
 const createFilter = async (
     filterId: number,
@@ -36,6 +41,10 @@ const createFilter = async (
 const allResourcesTypes = Object.values(ResourceType);
 
 describe('DeclarativeRuleConverter', () => {
+    beforeAll(() => {
+        re2Validator.setValidator(regexValidatorNode);
+    });
+
     it('converts simple blocking rules', async () => {
         const filterId = 0;
         const ruleId = 1;
@@ -440,7 +449,6 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(undefined);
     });
 
-    // TODO Find how exactly the complexity of a rule is calculated
     it('checks more complex regex than allowed', async () => {
         const filterId = 0;
         // eslint-disable-next-line max-len
@@ -457,17 +465,25 @@ describe('DeclarativeRuleConverter', () => {
 
         const networkRule = new NetworkRule(regexpRuleText, filterId);
 
-        const err = new TooComplexRegexpError(
-            `More complex regex than allowed: "${networkRule.getText()}"`,
+        const expectedError = new UnsupportedRegexpError(
+            `Regex is unsupported: "${networkRule.getText()}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking
             declarativeRules[0],
         );
 
+        const expectedErrorReason = 'pattern too large - compile failed';
         expect(declarativeRules).toHaveLength(0);
         expect(errors).toHaveLength(1);
-        expect(errors[0]).toStrictEqual(err);
+        const actualError = errors[0];
+        expect(actualError).toStrictEqual(expectedError);
+
+        if (isUnsupportedRegexpError(actualError)) {
+            expect(actualError.reason).toContain(expectedErrorReason);
+        } else {
+            fail(`Expected error to be UnsupportedRegexpError, but got ${actualError.constructor.name}`);
+        }
     });
 
     it('checks more complex regex than allowed with re2', async () => {
@@ -486,8 +502,8 @@ describe('DeclarativeRuleConverter', () => {
 
         const networkRule = new NetworkRule(regexpRuleText, filterId);
 
-        const err = new TooComplexRegexpError(
-            `More complex regex than allowed: "${networkRule.getText()}"`,
+        const expectedError = new UnsupportedRegexpError(
+            `Regex is unsupported: "${networkRule.getText()}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking
@@ -496,7 +512,16 @@ describe('DeclarativeRuleConverter', () => {
 
         expect(declarativeRules).toHaveLength(0);
         expect(errors).toHaveLength(1);
-        expect(errors[0]).toStrictEqual(err);
+
+        const actualError = errors[0];
+        expect(errors[0]).toStrictEqual(expectedError);
+        const expectedErrorReason = 'pattern too large - compile failed';
+
+        if (isUnsupportedRegexpError(actualError)) {
+            expect(actualError.reason).toContain(expectedErrorReason);
+        } else {
+            fail(`Expected error to be UnsupportedRegexpError, but got ${actualError.constructor.name}`);
+        }
     });
 
     it('excludes regex negative lookahead', async () => {

@@ -15,6 +15,7 @@ const MAX_MEMORY_BYTES = 1990;
  * @throws Error if the regex is not supported.
  */
 export const regexValidatorNode = async (regexFilter: string): Promise<boolean> => {
+    // `RE2` only works in the Unicode mode. The `u` flag must be passed to the `RE2` constructor.
     new RE2(regexFilter, 'u', MAX_MEMORY_BYTES);
     return true;
 };

@@ -119,12 +119,7 @@ import {
     type SupportedHttpMethod,
     type RequestMethod,
 } from '../declarative-rule';
-import {
-    TooComplexRegexpError,
-    UnsupportedModifierError,
-    EmptyResourcesError,
-    UnsupportedRegexpError,
-} from '../errors/conversion-errors';
+import { UnsupportedModifierError, EmptyResourcesError, UnsupportedRegexpError } from '../errors/conversion-errors';
 import { type ConvertedRules } from '../converted-result';
 import type { IRule } from '../../rule';
 import { ResourcesPathError } from '../errors/converter-options-errors';
@@ -138,6 +133,7 @@ import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-ha
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
 import { re2Validator } from '../re2-regexp/re2-validator';
+import { getErrorMessage } from '../../../common/error';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -652,7 +648,6 @@ export abstract class DeclarativeRuleConverter {
      *
      * @throws An {@link UnsupportedModifierError} if the network rule
      * contains an unsupported modifier
-     * OR a {@link TooComplexRegexpError} if regexp is too complex
      * OR an {@link EmptyResourcesError} if there is empty resources in the rule
      * OR an {@link UnsupportedRegexpError} if regexp is not supported in
      * the RE2 syntax.
@@ -705,7 +700,6 @@ export abstract class DeclarativeRuleConverter {
      * @param declarativeRule The converted declarative rule.
      *
      * @returns Different errors:
-     * - {@link TooComplexRegexpError} if the regexp is too complex,
      * - {@link EmptyResourcesError} if the rule has empty resources,
      * - {@link UnsupportedRegexpError} if the regexp is not supported
      * by RE2 syntax (@see https://github.com/google/re2/wiki/Syntax),
@@ -716,7 +710,7 @@ export abstract class DeclarativeRuleConverter {
     private static async checkDeclarativeRuleApplicable(
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
-    ): Promise<TooComplexRegexpError | EmptyResourcesError | UnsupportedRegexpError | EmptyDomainsError | null> {
+    ): Promise<EmptyResourcesError | UnsupportedRegexpError | EmptyDomainsError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
@@ -741,11 +735,12 @@ export abstract class DeclarativeRuleConverter {
                 await re2Validator.isRegexSupported(regexFilter);
             } catch (e) {
                 const ruleText = networkRule.getText();
-                const msg = `More complex regex than allowed: "${ruleText}"`;
-                return new TooComplexRegexpError(
+                const msg = `Regex is unsupported: "${ruleText}"`;
+                return new UnsupportedRegexpError(
                     msg,
                     networkRule,
                     declarativeRule,
+                    getErrorMessage(e),
                 );
             }
         }
@@ -772,7 +767,6 @@ export abstract class DeclarativeRuleConverter {
         e: unknown,
     ): Error {
         if (e instanceof EmptyResourcesError
-            || e instanceof TooComplexRegexpError
             || e instanceof UnsupportedModifierError
             || e instanceof UnsupportedRegexpError
             || e instanceof EmptyDomainsError
