@@ -1,8 +1,6 @@
 import { type NetworkRule } from '../../../network-rule';
 import { type DeclarativeRule } from '../../declarative-rule';
 
-import { type ConversionError } from './index';
-
 import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
 
 /**
@@ -27,22 +25,13 @@ export class UnsupportedRegexpError extends InvalidDeclarativeRuleError {
         declarativeRule: DeclarativeRule,
         reason?: string,
     ) {
-        super(message, networkRule, declarativeRule, reason);
+        super(message, networkRule, declarativeRule);
 
         this.name = 'UnsupportedRegexpError';
+
+        this.reason = reason;
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, UnsupportedRegexpError.prototype);
     }
-}
-
-/**
- * Type guard to check if the error is an UnsupportedRegexpError.
- * Used in the tests.
- *
- * @param error Error to check.
- * @returns True if the error is an UnsupportedRegexpError.
- */
-export function isUnsupportedRegexpError(error: Error | ConversionError): error is UnsupportedRegexpError {
-    return (error as UnsupportedRegexpError).reason !== undefined;
 }

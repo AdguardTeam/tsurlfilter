@@ -20,20 +20,17 @@ export abstract class InvalidDeclarativeRuleError extends Error {
      * @param message Message of error.
      * @param networkRule {@link NetworkRule}.
      * @param declarativeRule {@link DeclarativeRule}.
-     * @param reason Describes a reason of the error.
      */
     constructor(
         message: string,
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
-        reason?: string,
     ) {
         super(message);
 
         this.name = 'InvalidDeclarativeRuleError';
         this.networkRule = networkRule;
         this.declarativeRule = declarativeRule;
-        this.reason = reason;
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, InvalidDeclarativeRuleError.prototype);
