@@ -11,9 +11,6 @@ import type { ScannedFilter } from '../../../src/rules/declarative-converter/net
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import {
-    isUnsupportedRegexpError,
-} from '../../../src/rules/declarative-converter/errors/conversion-errors/unsupported-regexp-error';
 
 const createFilter = async (
     filterId: number,
@@ -478,12 +475,7 @@ describe('DeclarativeRuleConverter', () => {
         expect(errors).toHaveLength(1);
         const actualError = errors[0];
         expect(actualError).toStrictEqual(expectedError);
-
-        if (isUnsupportedRegexpError(actualError)) {
-            expect(actualError.reason).toContain(expectedErrorReason);
-        } else {
-            fail(`Expected error to be UnsupportedRegexpError, but got ${actualError.constructor.name}`);
-        }
+        expect((actualError as UnsupportedRegexpError).reason).toContain(expectedErrorReason);
     });
 
     it('checks more complex regex than allowed with re2', async () => {
@@ -516,12 +508,7 @@ describe('DeclarativeRuleConverter', () => {
         const actualError = errors[0];
         expect(errors[0]).toStrictEqual(expectedError);
         const expectedErrorReason = 'pattern too large - compile failed';
-
-        if (isUnsupportedRegexpError(actualError)) {
-            expect(actualError.reason).toContain(expectedErrorReason);
-        } else {
-            fail(`Expected error to be UnsupportedRegexpError, but got ${actualError.constructor.name}`);
-        }
+        expect((actualError as UnsupportedRegexpError).reason).toContain(expectedErrorReason);
     });
 
     it('excludes regex negative lookahead', async () => {
