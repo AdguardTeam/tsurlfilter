@@ -23,7 +23,7 @@ export class RegularRulesConverter extends DeclarativeRuleConverter {
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
-    ): ConvertedRules {
+    ): Promise<ConvertedRules> {
         return this.convertRules(filterId, rules, offsetId);
     }
 }

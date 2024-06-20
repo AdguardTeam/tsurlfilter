@@ -2,13 +2,15 @@ import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
 import {
-    TooComplexRegexpError,
     UnsupportedModifierError,
+    UnsupportedRegexpError,
 } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { FilterScanner } from '../../../src/rules/declarative-converter/filter-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
+import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 
 const createFilter = async (
     filterId: number,
@@ -36,6 +38,10 @@ const createFilter = async (
 const allResourcesTypes = Object.values(ResourceType);
 
 describe('DeclarativeRuleConverter', () => {
+    beforeAll(() => {
+        re2Validator.setValidator(regexValidatorNode);
+    });
+
     it('converts simple blocking rules', async () => {
         const filterId = 0;
         const ruleId = 1;
@@ -46,7 +52,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual({
             id: ruleId,
             priority: 1,
@@ -69,7 +75,7 @@ describe('DeclarativeRuleConverter', () => {
         const ruleId = 1;
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual({
             id: ruleId,
             priority: 100001,
@@ -92,7 +98,7 @@ describe('DeclarativeRuleConverter', () => {
         const ruleId = 1;
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual({
             id: ruleId,
             priority: 1100001,
@@ -116,7 +122,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [thirdPartyDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithThirdPartyRules],
         );
         expect(thirdPartyDeclarative).toEqual({
@@ -138,7 +144,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [negateFirstPartyDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithNegateFirstPartyRules],
         );
 
@@ -166,7 +172,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [firstPartyDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithFirstPartyRules],
         );
         expect(firstPartyDeclarative).toEqual({
@@ -189,7 +195,7 @@ describe('DeclarativeRuleConverter', () => {
         // );
         // const {
         //     declarativeRules: [negateFirstPartyDeclarative],
-        // } = DeclarativeRulesConverter.convert(
+        // } = await DeclarativeRulesConverter.convert(
         //     [filterWithNegateFirstPartyRules],
         // );
         // expect(negateFirstPartyDeclarative).toEqual({
@@ -216,7 +222,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [domainDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithDomainRules],
         );
         expect(domainDeclarative).toEqual({
@@ -238,7 +244,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [multipleDomainDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithMultipleDomainRules],
         );
         expect(multipleDomainDeclarative).toEqual({
@@ -261,7 +267,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [negateDomainDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithNegateDomainRules],
         );
         expect(negateDomainDeclarative).toEqual({
@@ -288,7 +294,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [scriptRuleDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithScriptRules],
         );
         expect(scriptRuleDeclarative).toEqual({
@@ -310,7 +316,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [negatedScriptRuleDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithNegatedScriptRules],
         );
         expect(negatedScriptRuleDeclarative).toEqual({
@@ -332,7 +338,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [multipleDeclarativeRule],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithMultipleRequestTypesRules],
         );
         expect(multipleDeclarativeRule.condition?.resourceTypes?.sort())
@@ -344,7 +350,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [multipleNegatedDeclarativeRule],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithMultipleNegatedRequestTypesRules],
         );
         expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort())
@@ -361,7 +367,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [matchCaseDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithMatchCaseRules],
         );
         expect(matchCaseDeclarative).toEqual({
@@ -382,7 +388,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [negatedMatchCaseDeclarative],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filterWithNegatedMatchCaseRules],
         );
         expect(negatedMatchCaseDeclarative).toEqual({
@@ -408,7 +414,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
 
         expect(declarativeRule).toEqual({
             id: ruleId,
@@ -435,12 +441,11 @@ describe('DeclarativeRuleConverter', () => {
         );
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
 
         expect(declarativeRule).toEqual(undefined);
     });
 
-    // TODO Find how exactly the complexity of a rule is calculated
     it('checks more complex regex than allowed', async () => {
         const filterId = 0;
         // eslint-disable-next-line max-len
@@ -453,12 +458,44 @@ describe('DeclarativeRuleConverter', () => {
         const {
             errors,
             declarativeRules,
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
 
         const networkRule = new NetworkRule(regexpRuleText, filterId);
 
-        const err = new TooComplexRegexpError(
-            `More complex regex than allowed: "${networkRule.getText()}"`,
+        const expectedError = new UnsupportedRegexpError(
+            `Regex is unsupported: "${networkRule.getText()}"`,
+            networkRule,
+            // Note that the declarative rule will be "undefined" due to
+            // a conversion error, but this will not prevent error checking
+            declarativeRules[0],
+        );
+
+        const expectedErrorReason = 'pattern too large - compile failed';
+        expect(declarativeRules).toHaveLength(0);
+        expect(errors).toHaveLength(1);
+        const actualError = errors[0];
+        expect(actualError).toStrictEqual(expectedError);
+        expect((actualError as UnsupportedRegexpError).reason).toContain(expectedErrorReason);
+    });
+
+    it('checks more complex regex than allowed with re2', async () => {
+        const filterId = 0;
+        // eslint-disable-next-line max-len
+        const regexpRuleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
+        const filter = await createFilter(
+            filterId,
+            [regexpRuleText],
+        );
+
+        const {
+            errors,
+            declarativeRules,
+        } = await DeclarativeRulesConverter.convert([filter]);
+
+        const networkRule = new NetworkRule(regexpRuleText, filterId);
+
+        const expectedError = new UnsupportedRegexpError(
+            `Regex is unsupported: "${networkRule.getText()}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking
@@ -467,10 +504,14 @@ describe('DeclarativeRuleConverter', () => {
 
         expect(declarativeRules).toHaveLength(0);
         expect(errors).toHaveLength(1);
-        expect(errors[0]).toStrictEqual(err);
+
+        const actualError = errors[0];
+        expect(errors[0]).toStrictEqual(expectedError);
+        const expectedErrorReason = 'pattern too large - compile failed';
+        expect((actualError as UnsupportedRegexpError).reason).toContain(expectedErrorReason);
     });
 
-    it('converts regex negative lookahead', async () => {
+    it('excludes regex negative lookahead', async () => {
         const filterId = 0;
 
         const filter = await createFilter(
@@ -480,7 +521,7 @@ describe('DeclarativeRuleConverter', () => {
 
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual(undefined);
     });
 
@@ -495,7 +536,7 @@ describe('DeclarativeRuleConverter', () => {
 
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
 
         expect(declarativeRule).toEqual(undefined);
     });
@@ -511,7 +552,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toEqual({
                 id: ruleId,
@@ -539,7 +580,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toEqual({
                 id: ruleId,
@@ -568,7 +609,7 @@ describe('DeclarativeRuleConverter', () => {
 
         const {
             declarativeRules: [declarativeRule],
-        } = DeclarativeRulesConverter.convert(
+        } = await DeclarativeRulesConverter.convert(
             [filter],
             { resourcesPath },
         );
@@ -604,7 +645,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
@@ -635,7 +676,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
@@ -669,7 +710,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 priority: 1,
@@ -714,7 +755,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 priority: 1,
@@ -761,7 +802,7 @@ describe('DeclarativeRuleConverter', () => {
             const firstGroupedRuleId = 1;
             const secondGroupedRuleId = 4;
 
-            const { declarativeRules } = DeclarativeRulesConverter.convert(
+            const { declarativeRules } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules[0]).toStrictEqual({
@@ -817,7 +858,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toEqual({
                 id: ruleId,
                 priority: 101,
@@ -854,7 +895,7 @@ describe('DeclarativeRuleConverter', () => {
         const {
             declarativeRules,
             errors,
-        } = DeclarativeRulesConverter.convert([filter]);
+        } = await DeclarativeRulesConverter.convert([filter]);
 
         const networkRule = new NetworkRule(rules[0], filterId);
         const expectedError = new UnsupportedModifierError(
@@ -888,7 +929,7 @@ describe('DeclarativeRuleConverter', () => {
             filterId,
             ['||example.org^$all', '||test.com^$document'],
         );
-        const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
+        const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
             id: 1,
@@ -927,7 +968,7 @@ describe('DeclarativeRuleConverter', () => {
                 '@@||example.com^$redirect',
             ],
         );
-        const { declarativeRules } = DeclarativeRulesConverter.convert(
+        const { declarativeRules } = await DeclarativeRulesConverter.convert(
             [filter],
             { resourcesPath: '/path/to/resources' },
         );
@@ -974,7 +1015,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
                 priority: 1,
@@ -1002,7 +1043,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
                 priority: 1,
@@ -1033,7 +1074,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules: [declarativeRule],
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toStrictEqual({
                 id: ruleId,
                 priority: 1,
@@ -1068,7 +1109,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = await DeclarativeRulesConverter.convert([filter]);
+            } = await await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: 2,
@@ -1119,7 +1160,7 @@ describe('DeclarativeRuleConverter', () => {
                 ],
             );
 
-            const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
                 id: 1,
@@ -1152,7 +1193,7 @@ describe('DeclarativeRuleConverter', () => {
                 ],
             );
 
-            const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0]).toStrictEqual({
                 id: 1,
@@ -1195,7 +1236,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
 
             const networkRule = new NetworkRule(badRule, filterId);
             const err = new UnsupportedModifierError(
@@ -1223,7 +1264,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
                 id: 1,
@@ -1258,7 +1299,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1293,7 +1334,7 @@ describe('DeclarativeRuleConverter', () => {
                 ],
             );
 
-            const { declarativeRules } = DeclarativeRulesConverter.convert(
+            const { declarativeRules } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(3);
@@ -1364,7 +1405,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = DeclarativeRulesConverter.convert([filter]);
+            } = await DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(0);
@@ -1381,7 +1422,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules.length).toBe(1);
@@ -1422,7 +1463,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(errors.length).toBe(3);
@@ -1469,7 +1510,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1500,7 +1541,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1529,7 +1570,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1562,7 +1603,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1590,7 +1631,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1618,7 +1659,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1646,7 +1687,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1673,7 +1714,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(0);
@@ -1700,7 +1741,7 @@ describe('DeclarativeRuleConverter', () => {
 
             const {
                 declarativeRules,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1732,7 +1773,7 @@ describe('DeclarativeRuleConverter', () => {
                 ],
             );
 
-            const { declarativeRules } = DeclarativeRulesConverter.convert(
+            const { declarativeRules } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
@@ -1768,7 +1809,7 @@ describe('DeclarativeRuleConverter', () => {
             const {
                 declarativeRules,
                 errors,
-            } = DeclarativeRulesConverter.convert(
+            } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules).toHaveLength(0);

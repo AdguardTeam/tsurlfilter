@@ -23,11 +23,11 @@ export class RemoveHeaderRulesConverter extends DeclarativeRuleConverter {
      *
      * @returns Converted rules.
      */
-    public convert(
+    public async convert(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
-    ): ConvertedRules {
+    ): Promise<ConvertedRules> {
         const createRuleTemplate = (rule: DeclarativeRule): string => {
             // Deep copy without relation to source rule
             const template = JSON.parse(JSON.stringify(rule));
@@ -61,7 +61,7 @@ export class RemoveHeaderRulesConverter extends DeclarativeRuleConverter {
             return resultRule;
         };
 
-        const converted = this.convertRules(filterId, rules, offsetId);
+        const converted = await this.convertRules(filterId, rules, offsetId);
 
         const result = this.groupConvertedRules(
             converted,

@@ -243,7 +243,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         const [scannedStaticFilter] = filters;
         const { id, badFilterRules } = scannedStaticFilter;
 
-        const convertedRules = DeclarativeRulesConverter.convert(
+        const convertedRules = await DeclarativeRulesConverter.convert(
             filters,
             options,
         );
@@ -301,7 +301,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         // cannot show info about it to user.
         const scanned = await NetworkRulesScanner.scanRules(filterList, skipNegatedRulesFn);
 
-        const convertedRules = DeclarativeRulesConverter.convert(
+        const convertedRules = await DeclarativeRulesConverter.convert(
             scanned.filters,
             options,
         );

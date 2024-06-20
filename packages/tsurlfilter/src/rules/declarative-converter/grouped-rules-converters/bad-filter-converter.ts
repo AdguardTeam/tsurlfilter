@@ -24,11 +24,11 @@ export class BadFilterRulesConverter extends DeclarativeRuleConverter {
         rules: IndexedNetworkRuleWithHash[],
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         offsetId: number,
-    ): ConvertedRules {
-        return {
+    ): Promise<ConvertedRules> {
+        return Promise.resolve({
             sourceMapValues: [],
             declarativeRules: [],
             errors: [],
-        };
+        });
     }
 }

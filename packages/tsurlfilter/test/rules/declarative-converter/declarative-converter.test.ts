@@ -11,6 +11,8 @@ import { RuleActionType } from '../../../src/rules/declarative-converter/declara
 import {
     EmptyDomainsError,
 } from '../../../src/rules/declarative-converter/errors/conversion-errors/empty-domains-error';
+import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 
 const createFilter = (
     rules: string[],
@@ -24,6 +26,7 @@ const createFilter = (
 
 describe('DeclarativeConverter', () => {
     const converter = new DeclarativeFilterConverter();
+    re2Validator.setValidator(regexValidatorNode);
 
     it('converts simple blocking rule', async () => {
         const filter = createFilter(['||example.org^']);
