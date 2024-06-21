@@ -114,10 +114,13 @@ export class TabsApi {
      */
     private handleTabDelete(tabId: number): void {
         const tabContext = this.context.get(tabId);
-        if (tabContext) {
-            this.context.delete(tabId);
-            this.onDelete.dispatch(tabContext);
+
+        if (!tabContext) {
+            return;
         }
+
+        this.context.delete(tabId);
+        this.onDelete.dispatch(tabContext);
     }
 
     /**
@@ -134,17 +137,20 @@ export class TabsApi {
             return;
         }
 
+        // Skip updates for non-http requests.
+        if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
+            return;
+        }
+
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
 
-        if (tabContext) {
-            // Skip updates for non-http requests.
-            if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
-                return;
-            }
-            tabContext.updateTabInfo(changeInfo, tabInfo);
-            this.onUpdate.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        tabContext.updateTabInfo(changeInfo, tabInfo);
+        this.onUpdate.dispatch(tabContext);
     }
 
     /**
@@ -156,9 +162,11 @@ export class TabsApi {
     private handleTabActivate({ tabId }: Tabs.OnActivatedActiveInfoType): void {
         const tabContext = this.context.get(tabId);
 
-        if (tabContext) {
-            this.onActivate.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        this.onActivate.dispatch(tabContext);
     }
 
     /**
@@ -173,11 +181,13 @@ export class TabsApi {
     private handleTabReplace(addedTabId: number, removedTabId: number): void {
         const tabContext = this.context.get(removedTabId);
 
-        if (tabContext) {
-            this.context.delete(removedTabId);
-            this.context.set(addedTabId, tabContext);
-            this.onReplace.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        this.context.delete(removedTabId);
+        this.context.set(addedTabId, tabContext);
+        this.onReplace.dispatch(tabContext);
     }
 
     /**
@@ -191,13 +201,14 @@ export class TabsApi {
      * @param url Url.
      */
     public handleTabNavigation(tabId: number, url: string): void {
-        const tabContext = this.context.get(tabId);
-        if (!tabContext) {
+        // Skip updates for non-http requests.
+        if (!isHttpRequest(url)) {
             return;
         }
 
-        // Skip updates for non-http requests.
-        if (!isHttpRequest(url)) {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
             return;
         }
 
@@ -226,9 +237,11 @@ export class TabsApi {
 
         const tabContext = this.context.get(activeTab.id);
 
-        if (tabContext) {
-            this.onActivate.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        this.onActivate.dispatch(tabContext);
     }
 
     /**
