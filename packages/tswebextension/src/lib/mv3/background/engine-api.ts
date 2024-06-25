@@ -95,7 +95,7 @@ export class EngineApi {
         }
 
         // Wrap user rules to IRuleList
-        if (userrules.content) {
+        if (userrules.content.length > 0) {
             // Note: rules are already converted at the extension side
             lists.push(new BufferRuleList(USER_FILTER_ID, userrules.content));
         }
