@@ -268,6 +268,7 @@ MessagesHandlerMV3
 
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
+            // FIXME (David, v2.3): Handle this later
             configuration.userrules.content,
             customFilters,
             staticRuleSets,

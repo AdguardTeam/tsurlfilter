@@ -107,7 +107,7 @@ export class EngineApi {
             );
         }
 
-        if (userrules.content) {
+        if (userrules.content.length > 0) {
             lists.push(
                 new BufferRuleList(
                     USER_FILTER_ID,
