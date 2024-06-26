@@ -116,7 +116,7 @@ export class CosmeticJsApi {
         }
 
         if (isHttpRequest(url) && !url.includes(NEW_TAB_PAGE)) {
-        // TODO: Extract cosmetic option from matching result (AG-24586)
+            // TODO: Extract cosmetic option from matching result (AG-24586)
             const wrappedScript = engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
             if (wrappedScript) {
                 await CosmeticJsApi.executeScript(wrappedScript, tabId);
