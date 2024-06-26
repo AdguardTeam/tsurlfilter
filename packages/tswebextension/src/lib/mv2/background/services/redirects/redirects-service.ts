@@ -109,6 +109,7 @@ export class RedirectsService {
         if (redirectSource.isBlocking) {
             // For blocking redirects we generate additional search params.
             const params = this.blockingUrlParams(title, requestUrl);
+            // TODO: 'redirects/' should be moved to extension part
             return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
         }
 

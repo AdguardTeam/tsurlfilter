@@ -13,7 +13,10 @@ import {
     type NetworkRule,
     type MatchingResult,
     type HTTPMethod,
+    setConfiguration,
+    CompatibilityTypes,
 } from '@adguard/tsurlfilter';
+import browser from 'webextension-polyfill';
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
@@ -29,7 +32,7 @@ import { DocumentApi } from './document-api';
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules'> & {
+type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
     filters: IFilter[],
 };
 
@@ -74,7 +77,7 @@ export class EngineApi {
      * custom), custom rules and the verbose flag.
      */
     async startEngine(config: EngineConfig): Promise<void> {
-        const { filters, userrules } = config;
+        const { filters, userrules, verbose } = config;
 
         const lists: IRuleList[] = [];
 
@@ -120,12 +123,20 @@ export class EngineApi {
         const engine = new Engine(ruleStorage, true);
         await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
         this.engine = engine;
+
+        // Update configuration of engine.
+        setConfiguration({
+            engine: 'extension',
+            version: browser.runtime.getManifest().version,
+            verbose,
+            compatibility: CompatibilityTypes.Extension,
+        });
     }
 
     /**
      * Stops filtering engine with cosmetic rules.
      */
-    public async stopEngine(): Promise<void> {
+    public stopEngine(): void {
         this.engine = undefined;
     }
 

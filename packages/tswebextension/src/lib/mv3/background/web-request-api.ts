@@ -3,6 +3,8 @@
  * API for applying rules from background service
  * by handling web Request API and web navigation events.
  *
+ * TODO: Update description of flow.
+ *
  * This scheme describes flow for MV3.
  *
  * Event data is aggregated into two contexts: {@link RequestContext},
@@ -96,9 +98,9 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- *                                       │                             │
- *                                       │         onCommitted         │
- *                                       │                             │
+ * Try injecting JS rules                │                             │
+ * into the frame with source            │         onCommitted         │
+ * based on {@link CosmeticRule}.        │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
@@ -151,6 +153,7 @@ import { MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { DocumentApi } from './document-api';
+import { CosmeticJsApi } from './cosmetic-js-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -175,6 +178,7 @@ export class WebRequestApi {
 
         // browser.webNavigation Events
         browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
+        browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
         browser.webNavigation.onErrorOccurred.addListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
     }
@@ -191,6 +195,7 @@ export class WebRequestApi {
 
         // browser.webNavigation Events
         browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
+        browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
     }
@@ -438,5 +443,20 @@ export class WebRequestApi {
          * etc.
          */
         setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT);
+    }
+
+    /**
+     * On WebNavigation.onCommitted event we will try to inject scripts into tab.
+     *
+     * @param item Web navigation details.
+     * @param item.tabId The ID of the tab in which the navigation occurred.
+     * @param item.url The url of the tab in which the navigation occurred.
+     */
+    private static onCommitted(
+        { tabId, url }: browser.WebNavigation.OnCommittedDetailsType,
+    ): void {
+        // Note: this is async function but we will not await it because
+        // events do not support async listeners.
+        CosmeticJsApi.getAndExecuteScripts(tabId, url);
     }
 }
