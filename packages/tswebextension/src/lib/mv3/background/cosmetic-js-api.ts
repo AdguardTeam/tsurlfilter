@@ -26,10 +26,6 @@ export class CosmeticJsApi {
      * @param tabId Tab id.
      */
     public static async executeScript(scripts: string, tabId: number): Promise<void> {
-        if (scripts.length === 0) {
-            return;
-        }
-
         const functionToInject = (script: string): void => {
             const scriptTag = document.createElement('script');
             scriptTag.setAttribute('type', 'text/javascript');
@@ -121,8 +117,10 @@ export class CosmeticJsApi {
 
         if (isHttpRequest(url) && !url.includes(NEW_TAB_PAGE)) {
         // TODO: Extract cosmetic option from matching result (AG-24586)
-            const response = engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
-            await CosmeticJsApi.executeScript(response, tabId);
+            const wrappedScript = engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
+            if (wrappedScript) {
+                await CosmeticJsApi.executeScript(wrappedScript, tabId);
+            }
 
             // TODO: Extract cosmetic option from matching result (AG-24586)
             const scriptletData = engineApi.getScriptletsDataForUrl(url, CosmeticOption.CosmeticOptionAll);

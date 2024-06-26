@@ -325,9 +325,9 @@ export class EngineApi {
      * @param url Page URL.
      * @param option Bitmask.
      *
-     * @returns Script to be applied.
+     * @returns Wrapped script in IIFE form to be applied or null if no scripts found.
      */
-    public getScriptsStringForUrl(url: string, option: CosmeticOption): string {
+    public getScriptsStringForUrl(url: string, option: CosmeticOption): string | null {
         const scriptRules = this.getScriptsForUrl(url, option);
 
         // TODO: Add check for firefox AMO
@@ -336,6 +336,11 @@ export class EngineApi {
         const scripts = scriptRules
             .filter((rule) => !rule.isScriptlet)
             .map((scriptRule) => scriptRule.getScript());
+
+        if (scripts.length === 0) {
+            return null;
+        }
+
         // remove repeating scripts
         const scriptsCode = [...new Set(scripts)].join('\r\n');
 
