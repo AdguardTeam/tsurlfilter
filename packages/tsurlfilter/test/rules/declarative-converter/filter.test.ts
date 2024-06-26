@@ -5,9 +5,11 @@ describe('Filter', () => {
     const splittedContent = content.split(/\r?\n/);
 
     it('loads content from string source provider', async () => {
-        const filter = new Filter(1, {
-            getContent: async () => splittedContent,
-        });
+        const filter = new Filter(
+            1,
+            { getContent: async () => splittedContent },
+            true,
+        );
 
         const loadedContent = await filter.getContent();
 
@@ -15,9 +17,11 @@ describe('Filter', () => {
     });
 
     it('returns original rule by index', async () => {
-        const filter = new Filter(1, {
-            getContent: async () => splittedContent,
-        });
+        const filter = new Filter(
+            1,
+            { getContent: async () => splittedContent },
+            true,
+        );
 
         const secondRule = await filter.getRuleByIndex(1);
 

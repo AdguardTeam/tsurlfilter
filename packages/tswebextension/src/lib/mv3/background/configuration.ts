@@ -15,6 +15,11 @@ export const customFilterMV3Validator = zod.object({
      * Filter text content.
      */
     content: zod.string(),
+
+    /**
+     * Filter trusted flag.
+     */
+    trusted: zod.boolean(),
 });
 
 /**

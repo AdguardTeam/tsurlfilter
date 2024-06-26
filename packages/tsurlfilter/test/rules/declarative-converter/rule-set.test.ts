@@ -16,6 +16,7 @@ const createFilter = (
     return new Filter(
         filterId,
         { getContent: async () => rules },
+        true,
     );
 };
 

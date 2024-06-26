@@ -57,6 +57,8 @@ export default class UserRulesApi {
                 // TODO: This need to be changed in the future.
                 USER_FILTER_ID,
                 { getContent: () => Promise.resolve(userRules.concat(allowListRules)) },
+                // user filter considered as trusted
+                true,
             ),
             ...customFilters,
         ];

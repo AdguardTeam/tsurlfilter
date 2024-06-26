@@ -96,9 +96,14 @@ export default class FiltersApi {
         filtersIds: ConfigurationMV3['staticFiltersIds'],
         filtersPath: string,
     ): IFilter[] {
-        return filtersIds.map((filterId) => new Filter(filterId, {
-            getContent: () => this.loadFilterContent(filterId, filtersPath),
-        }));
+        return filtersIds.map((filterId) => new Filter(
+            filterId,
+            { getContent: () => this.loadFilterContent(filterId, filtersPath) },
+            /**
+             * Static filters are trusted.
+             */
+            true,
+        ));
     }
 
     /**
@@ -109,8 +114,12 @@ export default class FiltersApi {
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
-        return customFilters.map((f) => new Filter(f.filterId, {
-            getContent: () => Promise.resolve(f.content.split('\n')),
-        }));
+        return customFilters.map((f) => new Filter(
+            f.filterId,
+            {
+                getContent: () => Promise.resolve(f.content.split('\n')),
+            },
+            f.trusted,
+        ));
     }
 }

@@ -83,7 +83,8 @@ export class EngineApi {
             const content = await filter.getContent();
             // TODO: Maybe pass filters content via FilterList to exclude double conversion
             const convertedContent = RuleConverter.convertRules(content.join('\n'));
-            lists.push(new BufferRuleList(filter.getId(), convertedContent));
+            const trusted = filter.isTrusted();
+            lists.push(new BufferRuleList(filter.getId(), convertedContent, false, !trusted, !trusted));
         });
 
         try {
