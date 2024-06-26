@@ -5,9 +5,9 @@ import { Frame, MAIN_FRAME_ID } from './frame';
 import { TabContext } from './tab-context';
 import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
-import { isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
+import { isHttpOrWsRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
-import { DocumentApi } from '../background/document-api';
+import { CosmeticJsApi } from '../background/cosmetic-js-api';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -44,21 +44,11 @@ export class TabsCosmeticInjector {
         }
 
         const tabContext = new TabContext(tab);
-
         const tabId = tab.id;
 
         tabsApi.context.set(tabId, tabContext);
 
-        const { url } = tab;
-
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
-        if (url) {
-            tabContext.mainFrameRule = DocumentApi.matchFrame(url);
-        }
+        tabsApi.updateTabMainFrameRule(tabId);
 
         const frames = await browser.webNavigation.getAllFrames({ tabId });
 
@@ -91,6 +81,9 @@ export class TabsCosmeticInjector {
             const cosmeticOption = frame.matchingResult.getCosmeticOption();
 
             frame.cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+
+            // TODO: Should be moved to CosmeticApi
+            CosmeticJsApi.getAndExecuteScripts(tabId, frameUrl);
 
             // const { cosmeticResult } = frame;
 

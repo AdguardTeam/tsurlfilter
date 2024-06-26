@@ -1,6 +1,7 @@
 import browser from 'sinon-chrome';
 import { TextEncoder, TextDecoder } from 'util';
 
+// TODO: Set manifest 3 for mv3 tests.
 browser.runtime.getManifest.returns({ version: '2', manifest_version: 2 });
 
 jest.mock('webextension-polyfill', () => ({

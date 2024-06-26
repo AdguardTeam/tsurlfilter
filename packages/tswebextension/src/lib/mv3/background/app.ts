@@ -1,5 +1,4 @@
-import type { IFilter, IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
-import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
+import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
 import { type AppInterface, defaultFilteringLog } from '../../common';
@@ -10,7 +9,6 @@ import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-set
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import UserRulesApi, { type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
-import { getAndExecuteScripts } from './scriptlets';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
 import RuleSetsLoaderApi from './rule-sets-loader-api';
@@ -21,16 +19,17 @@ import {
     configurationMV3Validator,
 } from './configuration';
 import { RequestEvents } from './request/events/request-events';
-import { TabsApi, tabsApi } from '../tabs/tabs-api';
+import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
+import { CosmeticJsApi } from './cosmetic-js-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
     staticFilters: IRuleSet[],
-    dynamicRules: ConversionResult
+    dynamicRules?: ConversionResult
 };
 
 type FiltersUpdateInfo = {
@@ -103,10 +102,6 @@ export class TsWebExtension implements AppInterface<
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
-
-        // Keep app context when use method as callback
-        // of WebNavigation API listeners.
-        this.onCommitted = this.onCommitted.bind(this);
     }
 
     /**
@@ -124,52 +119,31 @@ export class TsWebExtension implements AppInterface<
 
         try {
             const res = await this.configure(config);
-            await this.executeScriptlets();
 
             // Start listening for request events.
             RequestEvents.init();
+
             // Start handle request events.
             WebRequestApi.start();
 
             // Add tabs listeners
             await tabsApi.start();
 
-            // TODO: Inject cosmetic rules into tabs, opened before app initialization.
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
             this.isStarted = true;
             this.startPromise = undefined;
+
             logger.debug('[START]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
+
             logger.debug('[START]: failed', e);
 
             throw new Error('Cannot be started: ', { cause: e as Error });
-        }
-    }
-
-    /**
-     * Fires on WebNavigation.onCommitted event.
-     *
-     * @param item Web navigation details.
-     * @param item.tabId The ID of the tab in which the navigation occurred.
-     * @param item.url The url of the tab in which the navigation occurred.
-     */
-    private async onCommitted(
-        { tabId, url }: browser.WebNavigation.OnCommittedDetailsType,
-    ): Promise<void> {
-        if (this.isStarted && this.configuration) {
-            // If service worker just woke up
-            if (this.startPromise) {
-                await this.startPromise;
-            }
-
-            // TODO verbose is deprecated, consider removing or replacing
-            const { verbose } = this.configuration;
-            await getAndExecuteScripts(tabId, url, verbose);
         }
     }
 
@@ -202,15 +176,26 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Stops service, disables all user rules and filters.
+     * Removes all static and dynamic DNR rules and stops tsurlfilter engine.
      */
-    public async stop(): Promise<void> {
+    private static async removeAllFilteringRules(): Promise<void> {
         await UserRulesApi.removeAllRules();
 
         const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
         await FiltersApi.updateFiltering(disableFiltersIds);
 
-        await engineApi.stopEngine();
+        await StealthService.clearAll();
+
+        TsWebExtension.updateRuleSetsForFilteringLog([], false);
+
+        engineApi.stopEngine();
+    }
+
+    /**
+     * Stops service, disables all user rules and filters.
+     */
+    public async stop(): Promise<void> {
+        await TsWebExtension.removeAllFilteringRules();
 
         await declarativeFilteringLog.stop();
 
@@ -242,88 +227,92 @@ export class TsWebExtension implements AppInterface<
 
         const configuration = configurationMV3Validator.parse(config);
 
-        await StealthService.applySettings(configuration.settings);
+        const res: ConfigurationResult = {
+            staticFiltersStatus: {
+                errors: [],
+            },
+            staticFilters: [],
+        };
 
-        // Update configuration of engine.
-        setConfiguration({
-            engine: 'extension',
-            version: browser.runtime.getManifest().version,
-            verbose: configuration.verbose,
-            compatibility: CompatibilityTypes.Extension,
-        });
+        if (configuration.settings.filteringEnabled) {
+            await StealthService.applySettings(configuration.settings);
 
-        // Extract filter into from configuration.
-        const {
-            staticFilters,
-            customFilters,
-            filtersIdsToEnable,
-            filtersIdsToDisable,
-        } = await TsWebExtension.getFiltersUpdateInfo(configuration);
+            // Extract filters info from configuration and wrap them into IFilters.
+            const {
+                staticFilters,
+                customFilters,
+                filtersIdsToEnable,
+                filtersIdsToDisable,
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration);
 
-        // Update list of enabled static filters
-        const staticFiltersStatus = await FiltersApi.updateFiltering(
-            filtersIdsToDisable,
-            filtersIdsToEnable,
-        );
+            // Update list of enabled static filters
+            res.staticFiltersStatus = await FiltersApi.updateFiltering(
+                filtersIdsToDisable,
+                filtersIdsToEnable,
+            );
 
-        // Create static rulesets.
-        const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
-            configuration.ruleSetsPath,
-            staticFilters,
-        );
+            // Create static rulesets.
+            const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
+                configuration.ruleSetsPath,
+                staticFilters,
+            );
 
-        // Update allowlist settings.
-        allowlistApi.configure(configuration);
-        // Combine all allowlist rules into one network rule.
-        const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+            // Update allowlist settings.
+            allowlistApi.configure(configuration);
+            // Combine all allowlist rules into one network rule.
+            const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
 
-        // Convert custom filters and user rules into one rule set and apply it
-        const dynamicRules = await UserRulesApi.updateDynamicFiltering(
-            configuration.userrules,
-            combinedAllowlistRules,
-            customFilters,
-            staticRuleSets,
-            this.webAccessibleResourcesPath,
-        );
+            // Convert custom filters and user rules into one rule set and apply it
+            res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
+                configuration.userrules,
+                combinedAllowlistRules,
+                customFilters,
+                staticRuleSets,
+                this.webAccessibleResourcesPath,
+            );
 
-        // Reload engine for cosmetic rules
-        engineApi.waitingForEngine = engineApi.startEngine({
-            filters: [
-                ...staticFilters,
-                ...customFilters,
-            ],
-            userrules: configuration.userrules,
-        });
-        await engineApi.waitingForEngine;
+            // Reload engine for cosmetic rules
+            engineApi.waitingForEngine = engineApi.startEngine({
+                filters: [
+                    ...staticFilters,
+                    ...customFilters,
+                ],
+                userrules: configuration.userrules,
+            });
+            await engineApi.waitingForEngine;
+
+            // TODO: Recreate only dynamic rule set, because static cannot be changed
+            const ruleSets = [
+                ...staticRuleSets,
+                res.dynamicRules.ruleSet,
+            ];
+
+            // Update rulesets in declarative filtering log.
+            TsWebExtension.updateRuleSetsForFilteringLog(
+                ruleSets,
+                configuration.filteringLogEnabled,
+            );
+
+            res.staticFilters = staticRuleSets;
+        } else {
+            await TsWebExtension.removeAllFilteringRules();
+        }
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
         await tabsApi.updateCurrentTabsMainFrameRules();
 
-        // TODO: Recreate only dynamic rule set, because static cannot be changed
-        const ruleSets = [
-            ...staticRuleSets,
-            dynamicRules.ruleSet,
-        ];
-
-        // Update rulesets in declarative filtering log.
-        TsWebExtension.updateRuleSetsForFilteringLog(
-            ruleSets,
-            configuration.filteringLogEnabled,
-        );
-
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
+
+        // TODO: verbose is deprecated, consider removing or replacing
+        CosmeticJsApi.verbose = this.configuration?.verbose || false;
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         logger.debug('[CONFIGURE]: end');
 
-        return {
-            staticFiltersStatus,
-            staticFilters: staticRuleSets,
-            dynamicRules,
-        };
+        return res;
     }
 
     /**
@@ -456,26 +445,6 @@ export class TsWebExtension implements AppInterface<
         // Keep app context when handle message.
         const messagesApi = new MessagesApi(this);
         return messagesApi.handleMessage;
-    }
-
-    /**
-     * Executes scriptlets for the currently active tab and adds a listener to
-     * the {@link browser.webNavigation.onCommitted} hook to execute scriptlets.
-     *
-     * TODO: Move to RequestEvents.
-     */
-    public async executeScriptlets(): Promise<void> {
-        const activeTab = await TabsApi.getActiveTab();
-
-        if (this.isStarted && this.configuration && activeTab?.url && activeTab?.id) {
-            const { url, id } = activeTab;
-            const { verbose } = this.configuration;
-
-            await getAndExecuteScripts(id, url, verbose);
-        }
-
-        // TODO: Move to RequestEvents.
-        browser.webNavigation.onCommitted.addListener(this.onCommitted);
     }
 
     /**
