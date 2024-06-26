@@ -71,9 +71,12 @@ export const convertFilters = async (
 
             console.info(`Preparing filter #${filterId} to convert`);
 
-            return new Filter(filterId, {
-                getContent: async () => data.split(/\r?\n/),
-            });
+            return new Filter(
+                filterId,
+                { getContent: async () => data.split(/\r?\n/) },
+                // we consider that all preinstalled filters are trusted
+                true,
+            );
         })
         .filter((filter): filter is Filter => filter !== null);
 
