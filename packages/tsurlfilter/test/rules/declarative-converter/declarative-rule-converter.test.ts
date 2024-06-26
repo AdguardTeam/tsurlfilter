@@ -20,6 +20,7 @@ const createFilter = async (
         getId: () => filterId,
         getContent: async () => lines,
         getRuleByIndex: async (index) => lines[index],
+        isTrusted: () => true,
     });
 
     const { rules } = scanner.getIndexedRules();

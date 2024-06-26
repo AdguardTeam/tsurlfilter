@@ -12,14 +12,25 @@ type IStringSourceProvider = {
  * Describe filter with original rules.
  */
 export interface IFilter {
-    // Return filter id
+    /**
+     * Return filter id.
+     */
     getId(): number;
 
-    // Returns original rule for provided index
+    /**
+     * Returns original rule for provided index.
+     */
     getRuleByIndex(index: number): Promise<string>;
 
-    // Returns filter's content
+    /**
+     * Returns filter's content.
+     */
     getContent(): Promise<string[]>;
+
+    /**
+     * Returns if the filter is trusted or not.
+     */
+    isTrusted(): boolean;
 }
 
 /**
@@ -37,17 +48,25 @@ export class Filter implements IFilter {
     private source: IStringSourceProvider;
 
     /**
+     * Filter trusted flag.
+     */
+    private readonly trusted: boolean;
+
+    /**
      * Creates new FilterList.
      *
      * @param id Number id of filter.
      * @param source Provider of filter content.
+     * @param trusted Filter trusted flag.
      */
     constructor(
         id: number,
         source: IStringSourceProvider,
+        trusted: boolean,
     ) {
         this.id = id;
         this.source = source;
+        this.trusted = trusted;
     }
 
     /**
@@ -111,5 +130,14 @@ export class Filter implements IFilter {
         }
 
         return this.content;
+    }
+
+    /**
+     * Returns if the filter is trusted or not.
+     *
+     * @returns True if the filter is trusted, false otherwise.
+     */
+    public isTrusted(): boolean {
+        return this.trusted;
     }
 }

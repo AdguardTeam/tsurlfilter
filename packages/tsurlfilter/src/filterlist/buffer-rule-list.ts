@@ -31,7 +31,7 @@ export class BufferRuleList implements IRuleList {
     private readonly ignoreJS: boolean;
 
     /**
-     * Whether to ignore unsafe rules or not.
+     * Whether to ignore unsafe rules or not (e.g. removeheader)
      */
     private readonly ignoreUnsafe: boolean;
 
@@ -48,7 +48,7 @@ export class BufferRuleList implements IRuleList {
      * @param rulesText - String with filtering rules (one per line).
      * @param ignoreCosmetic - (Optional) True to ignore cosmetic rules.
      * @param ignoreJS - (Optional) True to ignore JS rules.
-     * @param ignoreUnsafe - (Optional) True to ignore unsafe rules.
+     * @param ignoreUnsafe - (Optional) True to ignore unsafe rules (e.g. removeheader).
      */
     constructor(
         listId: number,
