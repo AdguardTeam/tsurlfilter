@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger';
 /**
  * Reserved stealth rule ids for the DNR.
  */
-const enum StealthRuleId {
+enum StealthRuleId {
     HideReferrer = 1,
     BlockChromeClientData,
     SendDoNotTrack,
@@ -15,7 +15,7 @@ const enum StealthRuleId {
 /**
  * Reserved stealth content script ids.
  */
-const enum StealthContentScriptId {
+enum StealthContentScriptId {
     Gpc = 'gpc',
     DocumentReferrer = 'documentReferrer',
 }
@@ -413,7 +413,9 @@ export class StealthService {
         });
 
         if (existedContentScripts.length > 0) {
-            await chrome.scripting.unregisterContentScripts({ ids: [contentScriptId] });
+            await chrome.scripting.unregisterContentScripts({
+                ids: existedContentScripts.map(((script) => script.id)),
+            });
         }
     }
 
@@ -428,5 +430,20 @@ export class StealthService {
         await StealthService.removeContentScript(contentScript.id);
 
         await chrome.scripting.registerContentScripts([contentScript]);
+    }
+
+    /**
+     * Removes all stealth rules and content scripts.
+     */
+    public static async clearAll(): Promise<void> {
+        const ruleIds = Object.keys(StealthRuleId)
+            .map((key) => Number(key))
+            .filter((keyNumber) => !Number.isNaN(keyNumber));
+        await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: ruleIds });
+
+        const contentScriptIds = Object.values(StealthContentScriptId);
+        contentScriptIds.forEach(async (id) => {
+            await StealthService.removeContentScript(id);
+        });
     }
 }
