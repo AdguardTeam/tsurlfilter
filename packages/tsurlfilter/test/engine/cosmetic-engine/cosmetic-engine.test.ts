@@ -386,6 +386,24 @@ describe('Test cosmetic engine - JS rules', () => {
             expect(result.JS.generic.length).toBe(0);
         });
 
+        it('does not allowlist if params are different', () => {
+            const content = '//scriptlet("set-constant", "firstVal", "false")';
+            const jsRule = `testcases.agrd.dev,pages.dev#%#${content}`;
+            const jsExceptionRule = 'testcases.agrd.dev,pages.dev#@%#//scriptlet("set-constant", "firstVal", "true")';
+            const rules = [jsRule, jsExceptionRule];
+            const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
+            const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, processed));
+
+            const result = cosmeticEngine.match(
+                createRequest('https://testcases.agrd.dev'),
+                CosmeticOption.CosmeticOptionAll,
+            );
+
+            expect(result.JS.specific.length).toBe(1);
+            expect(result.JS.specific[0].getContent()).toBe(content);
+            expect(result.JS.generic.length).toBe(0);
+        });
+
         it('checks scriptlet exception even if content has different quotes', () => {
             const jsRule = String.raw`testcases.adguard.com,surge.sh#%#//scriptlet('abort-on-property-read', 'I10\'C')`;
             // eslint-disable-next-line max-len
