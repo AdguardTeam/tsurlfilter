@@ -85,7 +85,12 @@ module.exports = {
                 ],
             },
         ],
-        'jsdoc/require-description-complete-sentence': ['error'],
+        'jsdoc/require-description-complete-sentence': [
+            'error',
+            {
+                abbreviations: ['e.g.'],
+            },
+        ],
         'jsdoc/require-returns': ['error'],
     },
 };

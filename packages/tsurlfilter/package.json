@@ -97,7 +97,7 @@
     "is-cidr": "4.0.2",
     "is-ip": "3.1.0",
     "lru_map": "0.4.1",
-    "punycode": "2.1.1",
+    "punycode": "2.3.1",
     "tldts": "5.6.45",
     "zod": "3.19.1"
   },
@@ -115,7 +115,7 @@
     "@types/lodash": "^4.17.0",
     "@types/netmask": "1.0.30",
     "@types/node": "18.7.1",
-    "@types/punycode": "2.1.0",
+    "@types/punycode": "2.1.4",
     "@types/rollup-plugin-node-globals": "1.4.1",
     "@typescript-eslint/eslint-plugin": "5.59.11",
     "@typescript-eslint/parser": "5.59.11",

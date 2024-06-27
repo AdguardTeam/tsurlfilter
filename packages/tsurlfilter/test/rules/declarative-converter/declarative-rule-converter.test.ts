@@ -542,7 +542,7 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(undefined);
     });
 
-    describe('converts cyrillic domain rules', () => {
+    describe('converts non-ascii rules', () => {
         it('converts domains section', async () => {
             const filterId = 0;
             const ruleId = 1;
@@ -592,6 +592,32 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: 'xn--||-8kcdv4aty.xn--^-4tbdh',
                     domainType: 'thirdParty',
+                    isUrlFilterCaseSensitive: false,
+                },
+            });
+        });
+
+        it("converts rule with non-ascii before the at '@' sign", async () => {
+            const filterId = 0;
+            const ruleId = 1;
+            const filter = await createFilter(
+                filterId,
+                // non-ascii characters before '@' symbol
+                ['abc“@'],
+            );
+
+            const {
+                declarativeRules: [declarativeRule],
+            } = await DeclarativeRulesConverter.convert([filter]);
+
+            expect(declarativeRule).toEqual({
+                id: ruleId,
+                priority: 1,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    urlFilter: 'abc@-db7a',
                     isUrlFilterCaseSensitive: false,
                 },
             });

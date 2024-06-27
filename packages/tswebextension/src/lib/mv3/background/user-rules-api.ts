@@ -41,6 +41,10 @@ export default class UserRulesApi {
      *
      * @returns Converted dynamic rule set with rule set, errors and
      * limitations. @see {@link ConversionResult}.
+     *
+     * @throws Error if declarativeNetRequest.updateDynamicRules() receives invalid rules
+     * e.g. with non-ASCII `urlFilter` value.
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}
      */
     public static async updateDynamicFiltering(
         userRules: string[],
@@ -78,9 +82,9 @@ export default class UserRulesApi {
 
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        // Remove existing dynamic rules, in order their ids not interfere
-        // with new
+        // Remove existing dynamic rules, in order their ids not interfere with new ones
         await this.removeAllRules();
+
         await browser.declarativeNetRequest.updateDynamicRules({
             // TODO update rule types returned by getDeclarativeRules();
             addRules: declarativeRules as browser.DeclarativeNetRequest.Rule[],
