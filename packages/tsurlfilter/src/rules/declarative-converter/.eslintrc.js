@@ -44,7 +44,12 @@ module.exports = {
                 ]
             }
         ],
-        'jsdoc/require-description-complete-sentence': ['error'],
+        'jsdoc/require-description-complete-sentence': [
+            'error',
+            {
+                abbreviations: ['e.g.'],
+            },
+        ],
         // types described in ts
         'jsdoc/require-param-type': 'off',
         'jsdoc/require-returns-type': 'off',

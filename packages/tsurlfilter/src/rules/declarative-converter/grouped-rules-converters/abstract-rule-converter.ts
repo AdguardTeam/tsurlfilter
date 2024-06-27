@@ -119,7 +119,12 @@ import {
     type SupportedHttpMethod,
     type RequestMethod,
 } from '../declarative-rule';
-import { UnsupportedModifierError, EmptyResourcesError, UnsupportedRegexpError } from '../errors/conversion-errors';
+import {
+    type ConversionError,
+    EmptyResourcesError,
+    UnsupportedModifierError,
+    UnsupportedRegexpError,
+} from '../errors/conversion-errors';
 import { type ConvertedRules } from '../converted-result';
 import type { IRule } from '../../rule';
 import { ResourcesPathError } from '../errors/converter-options-errors';
@@ -206,17 +211,33 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
-     * Converts to punycode if string contains non ASCII characters.
+     * Converts to ASCII characters only if `str` contains non-ASCII characters.
      *
      * @param str String to convert.
      *
      * @returns A transformed string containing only ASCII characters or
      * the original string.
+     *
+     * @throws Error if conversion into ASCII fails.
      */
     private static prepareASCII(str: string): string {
-        return DeclarativeRuleConverter.isASCII(str)
-            ? str
-            : punycode.toASCII(str);
+        let res = str;
+
+        try {
+            if (!DeclarativeRuleConverter.isASCII(res)) {
+                // for cyrillic domains we need to convert them by isASCII()
+                res = punycode.toASCII(res);
+            }
+            // after toASCII() some characters can be still non-ASCII
+            // e.g. `abc“@` with non-ASCII `“`
+            if (!DeclarativeRuleConverter.isASCII(res)) {
+                res = punycode.encode(res);
+            }
+        } catch (e: unknown) {
+            throw new Error(`Error converting to ASCII: "${str}" due to ${getErrorMessage(e)}`);
+        }
+
+        return res;
     }
 
     /**
@@ -692,9 +713,13 @@ export abstract class DeclarativeRuleConverter {
 
     /**
      * Verifies whether the converted declarative rule passes the regular expression (regexp) validation.
-     * Note: Complex regexps are not allowed, nor are back references,
-     * possessive quantifiers, and negative lookaheads supported.
+     *
      * Additionally, it checks whether the rule contains resource types.
+     *
+     * Note: some complex regexps are not allowed,
+     * e.g. back references, possessive quantifiers, negative lookaheads.
+     *
+     * @see {@link https://github.com/google/re2/wiki/Syntax}.
      *
      * @param networkRule The original network rule.
      * @param declarativeRule The converted declarative rule.
@@ -702,15 +727,16 @@ export abstract class DeclarativeRuleConverter {
      * @returns Different errors:
      * - {@link EmptyResourcesError} if the rule has empty resources,
      * - {@link UnsupportedRegexpError} if the regexp is not supported
-     * by RE2 syntax (@see https://github.com/google/re2/wiki/Syntax),
+     * by RE2 syntax (@see {@link https://github.com/google/re2/wiki/Syntax}),
      * - {@link EmptyDomainsError} if the declarative rule has empty domains
      * while the original rule has non-empty domains,
+     * - {@link NonAsciiUrlFilterError} if condition `urlFilter` contains non-ASCII characters,
      * or null if no errors are found.
      */
     private static async checkDeclarativeRuleApplicable(
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
-    ): Promise<EmptyResourcesError | UnsupportedRegexpError | EmptyDomainsError | null> {
+    ): Promise<ConversionError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
