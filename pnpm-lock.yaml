@@ -91,8 +91,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       '@adguard/tswebextension':
-        specifier: https://github.com/AdguardTeam/tsurlfilter/raw/release/v2.3-for-5.0/packages/tswebextension/tswebextension.tgz
-        version: '@github.com/AdguardTeam/tsurlfilter/raw/release/v2.3-for-5.0/packages/tswebextension/tswebextension.tgz'
+        specifier: 2.0.0-alpha.0
+        version: link:../tswebextension
       zod:
         specifier: 3.22.4
         version: 3.22.4
@@ -18911,31 +18911,6 @@ packages:
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-    dev: false
-
-  '@github.com/AdguardTeam/tsurlfilter/raw/release/v2.3-for-5.0/packages/tswebextension/tswebextension.tgz':
-    resolution: {tarball: https://github.com/AdguardTeam/tsurlfilter/raw/release/v2.3-for-5.0/packages/tswebextension/tswebextension.tgz}
-    name: '@adguard/tswebextension'
-    version: 1.0.25
-    engines: {node: '>=6.0.0'}
-    hasBin: true
-    dependencies:
-      '@adguard/assistant': 4.3.70
-      '@adguard/extended-css': 2.0.56
-      '@adguard/scriptlets': 1.11.1
-      '@adguard/tsurlfilter': 2.2.19
-      bowser: 2.11.0
-      chrome-types: 0.1.288
-      commander: 11.0.0
-      fs-extra: 11.1.1
-      lodash-es: 4.17.21
-      lru_map: 0.4.1
-      nanoid: 4.0.2
-      text-encoding: github.com/AdguardTeam/text-encoding/4268d6b7dc0e15f57134545ae1c8c59e9c5ced70
-      tldts: 6.1.27
-      tslib: 2.5.3
-      webextension-polyfill: 0.12.0
-      zod: 3.21.4
     dev: false
 
   github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a:
