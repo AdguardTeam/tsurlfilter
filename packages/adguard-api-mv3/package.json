@@ -36,7 +36,7 @@
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/logger": "^1.0.1",
-    "@adguard/tswebextension": "https://github.com/AdguardTeam/tsurlfilter/raw/release/v2.3-for-5.0/packages/tswebextension/tswebextension.tgz",
+    "@adguard/tswebextension": "2.0.0-alpha.0",
     "zod": "3.22.4"
   },
   "devDependencies": {
