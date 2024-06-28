@@ -3,45 +3,16 @@ import path from 'path';
 import { convertFilters } from '@adguard/tsurlfilter/cli';
 import axios from 'axios';
 import { ensureDir } from 'fs-extra';
-import { version } from './package.json';
 
-const BASE_DIR = './dist';
-const COMMON_FILTERS_DIR = `${BASE_DIR}/filters`;
-const FILTERS_DIR = `${COMMON_FILTERS_DIR}`;
-const DEST_RULE_SETS_DIR = `${COMMON_FILTERS_DIR}/declarative`;
-const RESOURCES_DIR = '/war/redirects';
-
-const FILTERS_SERVER_URL = 'https://filters.adtidy.org/extension/chromium';
-const FILTERS_URL = `${FILTERS_SERVER_URL}/filters`;
-const FILTERS_METADATA_URL = `${FILTERS_SERVER_URL}/filters.json`;
-
-/**
- * Filter metadata.
- * @see https://github.com/AdguardTeam/FiltersRegistry?tab=readme-ov-file#metadata
- */
-type FilterMetadata = {
-    description: string;
-    displayNumber: number;
-    expires: number;
-    filterId: number;
-    groupId: number;
-    homepage: string;
-    name: string;
-    tags: number[];
-    version: string;
-    languages: string[];
-    timeAdded: string;
-    timeUpdated: string;
-    subscriptionUrl: string;
-    diffPath?: string | undefined;
-}
-
-/**
- * Metadata response payload. 
- */
-type FiltersMetadataResponse = {
-    filters: FilterMetadata[];
-}
+import { getMetadata, type Metadata } from './metadata';
+import {
+    FILTERS_URL,
+    FILTERS_DIR,
+    BASE_DIR,
+    RESOURCES_DIR,
+    DEST_RULE_SETS_DIR,
+} from './constants';
+import { version } from '../package.json';
 
 /**
  * Filter data transfer object.
@@ -53,21 +24,14 @@ type FilterDTO = {
 };
 
 /**
- * Downloads filter metadata from {@link FILTERS_METADATA_URL}.
- * @returns Filter metadata
- */
-const getFiltersMetadata = async (): Promise<FilterMetadata[]> => {
-    const res = await axios.get<FiltersMetadataResponse>(FILTERS_METADATA_URL);
-    return res.data.filters;
-}
-
-/**
  * Gets {@link FilterDTO} array from filter metadata.
+ * @param metadata Filters metadata downloaded from {@link FILTERS_METADATA_URL}
  * @returns Array of filter data.
  */
-const getUrlsOfFiltersResources = async (): Promise<FilterDTO[]> => {
-    const metadata = await getFiltersMetadata();
-    return metadata.map(({ filterId }) => ({
+const getUrlsOfFiltersResources = async (
+    metadata: Metadata
+): Promise<FilterDTO[]> => {
+    return metadata.filters.map(({ filterId }) => ({
         id: filterId,
         url: `${FILTERS_URL}/${filterId}.txt`,
         file: `filter_${filterId}.txt`,
@@ -84,16 +48,6 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 
     const response = await axios.get<string>(filter.url, { responseType: 'text' });
 
-    /**
-     * This tho rules breaking the DNR ruleset.
-     * We need to remove them from the filter.
-     * TODO: delete this code after the converter update.
-     */
-    if (filter.id === 227) {
-        response.data = response.data.replace('/^https:\\/\\/\\jusoyo[0-9]+\\.(net|com)\\/data\\/apms\\/background\\//', '')
-        response.data = response.data.replace('/^https:\\/\\/\\jusoyo[0-9]+\\.(net|com)\\/.+\\.webp$/', '')
-    }
-
     await fs.promises.writeFile(path.join(filtersDir, filter.file), response.data);
 
     console.info(`Download ${filter.url} done`);
@@ -102,10 +56,9 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 /**
  * Downloads filters from the server and saves them to the specified directory.
  */
-const startDownload = async (): Promise<void> => {
+const startDownload = async (metadata: Metadata): Promise<void> => {
     await ensureDir(FILTERS_DIR);
-
-    const urls = await getUrlsOfFiltersResources();
+    const urls = await getUrlsOfFiltersResources(metadata);
     await Promise.all(urls.map((url) => downloadFilter(url, FILTERS_DIR)));
 };
 
@@ -134,7 +87,8 @@ const createTxt = async (): Promise<void> => {
  * we should find corresponding text file in resources, and then convert and save json to path specified in the manifest
  */
 const build = async (): Promise<void> => {
-    await startDownload();
+    const metadata = await getMetadata();
+    await startDownload(metadata);
 
     await convertFilters(
         FILTERS_DIR,

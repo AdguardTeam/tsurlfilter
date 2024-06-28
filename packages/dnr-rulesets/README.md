@@ -6,6 +6,8 @@ The list of available filters can be found [here](https://filters.adtidy.org/ext
 
 - [Dnr-rulesets](#dnr-rulesets)
   - [How to use](#how-to-use)
+    - [CLI](#cli)
+    - [API](#api)
     - [Output structure](#output-structure)
     - [Example](#example)
   - [Included filter lists](#included-filter-lists)
@@ -14,6 +16,7 @@ The list of available filters can be found [here](https://filters.adtidy.org/ext
       - [AdGuard Mobile Ads filter](#adguard-mobile-ads-filter)
     - [Privacy](#privacy)
       - [AdGuard Tracking Protection filter](#adguard-tracking-protection-filter)
+      - [AdGuard URL Tracking filter](#adguard-url-tracking-filter)
     - [Social Widgets](#social-widgets)
       - [AdGuard Social Media filter](#adguard-social-media-filter)
     - [Annoyances](#annoyances)
@@ -23,7 +26,13 @@ The list of available filters can be found [here](https://filters.adtidy.org/ext
       - [AdGuard Other Annoyances filter](#adguard-other-annoyances-filter)
       - [AdGuard Widgets filter](#adguard-widgets-filter)
     - [Security](#security)
+      - [Online Malicious URL Blocklist](#online-malicious-url-blocklist)
+      - [Phishing URL Blocklist](#phishing-url-blocklist)
+      - [Scam Blocklist by DurableNapkin](#scam-blocklist-by-durablenapkin)
+      - [uBlock Origin – Badware risks](#ublock-origin--badware-risks)
     - [Other](#other)
+      - [AdGuard Experimental filter](#adguard-experimental-filter)
+      - [Filter unblocking search ads and self-promotion](#filter-unblocking-search-ads-and-self-promotion)
     - [Language-specific](#language-specific)
       - [AdGuard Russian filter](#adguard-russian-filter)
       - [AdGuard German filter](#adguard-german-filter)
@@ -58,12 +67,14 @@ The list of available filters can be found [here](https://filters.adtidy.org/ext
       - [Macedonian adBlock Filters](#macedonian-adblock-filters)
   - [Development](#development)
     - [build:assets](#buildassets)
+    - [build:lib](#buildlib)
     - [build:cli](#buildcli)
+    - [build:docs](#builddocs)
     - [build](#build)
 
 ## How to use
 
-1. Install package.
+Install package.
 
 > NOTE: To update filters in time, make sure you have the latest version of the package installed.
 
@@ -71,7 +82,9 @@ The list of available filters can be found [here](https://filters.adtidy.org/ext
 npm install --save-dev @adguard/dnr-rulesets
 ```
 
-2. Add scripts to your `package.json` to load DNR rulesets and patch extension manifest.
+### CLI
+
+1. Add scripts to your `package.json` to load DNR rulesets and patch extension manifest.
 
 ```json
 {
@@ -82,7 +95,11 @@ npm install --save-dev @adguard/dnr-rulesets
 }
 ```
 
-3. Run the script to load DNR rulesets as part of your build flow.
+`patch-manifest` command also provide two options:
+- `-f, --force-update` - set to true to overwrite existing rulesets.
+- `-i, --ids <ids>` - specify filter IDs to include.
+
+1. Run the script to load DNR rulesets as part of your build flow.
 
 ```bash
 npm run load-dnr-rulesets
@@ -92,6 +109,28 @@ npm run load-dnr-rulesets
 
 ```bash
 npm run patch-manifest
+```
+
+### API
+
+You can also integrate functions for downloading and updating the manifest into your build script:
+
+```ts
+import { loadAssets, patchManifest } from '@adguard/dnr-rulesets';
+
+...
+
+await loadAssets('<path-to-output>');
+await patchManifest(
+  '<path-to-manifest>',
+  '<path-to-output>',
+  {
+    // Optional: specify filter IDs to include
+    ids: ['2', '3'],
+    // Optional: set to true to overwrite existing rulesets
+    forceUpdate: true,
+  },
+);
 ```
 
 ### Output structure
@@ -141,6 +180,13 @@ The most comprehensive list of various online counters and web analytics tools. 
 * Filter ID: **3**
 * Path: `<filters-directory>/declarative/ruleset_3/ruleset_3.json`
 
+#### AdGuard URL Tracking filter
+
+Filter that enhances privacy by removing tracking parameters from URLs.
+
+* Filter ID: **17**
+* Path: `<filters-directory>/declarative/ruleset_17/ruleset_17.json`
+
 ### Social Widgets
 
 #### AdGuard Social Media filter
@@ -189,7 +235,49 @@ Blocks annoying third-party widgets: online assistants, live support chats, etc.
 
 ### Security
 
+#### Online Malicious URL Blocklist
+
+Blocks domains that are known to be used to propagate malware and spyware.
+
+* Filter ID: **208**
+* Path: `<filters-directory>/declarative/ruleset_208/ruleset_208.json`
+
+#### Phishing URL Blocklist
+
+Phishing URL blocklist for uBlock Origin (uBO), AdGuard, Vivaldi, Pi-hole, Hosts file, Dnsmasq, BIND, Unbound, Snort and Suricata.
+
+* Filter ID: **255**
+* Path: `<filters-directory>/declarative/ruleset_255/ruleset_255.json`
+
+#### Scam Blocklist by DurableNapkin
+
+List for blocking untrustworthy websites.
+
+* Filter ID: **256**
+* Path: `<filters-directory>/declarative/ruleset_256/ruleset_256.json`
+
+#### uBlock Origin – Badware risks
+
+Filter for risky sites, warning users of potential threats.
+
+* Filter ID: **257**
+* Path: `<filters-directory>/declarative/ruleset_257/ruleset_257.json`
+
 ### Other
+
+#### AdGuard Experimental filter
+
+Filter designed to test certain hazardous filtering rules before they are added to the basic filters.
+
+* Filter ID: **5**
+* Path: `<filters-directory>/declarative/ruleset_5/ruleset_5.json`
+
+#### Filter unblocking search ads and self-promotion
+
+Filter that unblocks search ads in Google, DuckDuckGo, Bing, or Yahoo and self-promotion on websites.
+
+* Filter ID: **10**
+* Path: `<filters-directory>/declarative/ruleset_10/ruleset_10.json`
 
 ### Language-specific
 
@@ -420,6 +508,14 @@ Downloads original rules, converts it to DNR rule sets via [TSUrlFilter declarat
 pnpm run build:assets
 ```
 
+### build:lib
+
+Builds SDK to load DNR rule sets to the specified directory.
+
+```bash
+pnpm run build:lib
+```
+
 ### build:cli
 
 Builds CLI utility to load DNR rule sets to the specified directory.
@@ -428,9 +524,17 @@ Builds CLI utility to load DNR rule sets to the specified directory.
 pnpm run build:cli
 ```
 
+### build:docs
+
+Generates [Included filter lists](#included-filter-lists) section.
+
+```bash
+pnpm run build:docs
+```
+
 ### build
 
-Clears `dist` folder and runs `build:assets` and `build:cli` scripts.
+Clears `dist` folder and runs `build:assets`, `build:cli` and `build:lib` scripts.
 
 ```bash
 pnpm run build

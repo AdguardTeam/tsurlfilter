@@ -13,9 +13,11 @@
       "skipLibCheck": true,
       "esModuleInterop": true,
       "types": ["node"],
-      "lib": ["es2022"]
+      "lib": ["es2022"],
+      "outDir": "dist",
     },
     "ts-node": {
       "swc": true
-    }
+    },
+    "exclude": ["node_modules"],
 }
