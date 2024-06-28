@@ -245,23 +245,27 @@ export class TsWebExtension implements AppInterface<
                 filtersIdsToDisable,
             } = await TsWebExtension.getFiltersUpdateInfo(configuration);
 
+            console.log('before updateFiltering', performance.now());
             // Update list of enabled static filters
             res.staticFiltersStatus = await FiltersApi.updateFiltering(
                 filtersIdsToDisable,
                 filtersIdsToEnable,
             );
 
+            console.log('before loadStaticRuleSets', performance.now());
             // Create static rulesets.
             const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
                 configuration.ruleSetsPath,
                 staticFilters,
             );
 
+            console.log('before  allowlistApi.configure', performance.now());
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
             const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
 
+            console.log('before UserRulesApi.updateDynamicFiltering', performance.now());
             // Convert custom filters and user rules into one rule set and apply it
             res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
                 configuration.userrules,
@@ -271,6 +275,7 @@ export class TsWebExtension implements AppInterface<
                 this.webAccessibleResourcesPath,
             );
 
+            console.log('before engineApi.startEngine', performance.now());
             // Reload engine for cosmetic rules
             engineApi.waitingForEngine = engineApi.startEngine({
                 filters: [

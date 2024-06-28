@@ -1,13 +1,14 @@
 import {
     type IFilter,
-    type IRuleSet,
-    RuleSet,
-    METADATA_FILENAME,
-    LAZY_METADATA_FILENAME,
     IndexedNetworkRuleWithHash,
+    type IRuleSet,
+    LAZY_METADATA_FILENAME,
+    METADATA_FILENAME,
+    RuleSet,
     RulesHashMap,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
+import { loadFileText } from './loader';
 
 /**
  * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
@@ -41,12 +42,6 @@ export default class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
-        const loadFileText = async (url: string): Promise<string> => {
-            const file = await fetch(url);
-
-            return file.text();
-        };
-
         const rawData = await loadFileText(
             browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${METADATA_FILENAME}`),
         );

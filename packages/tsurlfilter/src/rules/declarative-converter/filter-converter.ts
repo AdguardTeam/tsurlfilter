@@ -270,11 +270,14 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         staticRuleSets: IRuleSet[],
         options?: DeclarativeConverterOptions,
     ): Promise<ConversionResult> {
+        console.log({ filterList, staticRuleSets, options });
         if (options) {
             DeclarativeFilterConverter.checkConverterOptions(options);
         }
 
+        console.log('before DeclarativeFilterConverter.createBadFilterRulesHashMap', performance.now());
         const allStaticBadFilterRules = DeclarativeFilterConverter.createBadFilterRulesHashMap(staticRuleSets);
+        console.log('after DeclarativeFilterConverter.createBadFilterRulesHashMap', performance.now());
 
         const skipNegatedRulesFn = (r: IndexedNetworkRuleWithHash): boolean => {
             const fastMatchedBadFilterRules = allStaticBadFilterRules.get(r.hash);
@@ -297,9 +300,11 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             return true;
         };
 
+        console.log('before NetworkRulesScanner.scanRules', performance.now());
         // Note: if we drop some rules because of applying $badfilter - we
         // cannot show info about it to user.
         const scanned = await NetworkRulesScanner.scanRules(filterList, skipNegatedRulesFn);
+        console.log('after NetworkRulesScanner.scanRules', performance.now());
 
         const convertedRules = await DeclarativeRulesConverter.convert(
             scanned.filters,

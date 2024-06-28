@@ -5,6 +5,7 @@ import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-err
 import { getFilterName } from '../utils/get-filter-name';
 
 import { type ConfigurationMV3 } from './configuration';
+import { loadFileText } from './loader';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
@@ -78,8 +79,7 @@ export default class FiltersApi {
     private static async loadFilterContent(id: number, filtersPath: string): Promise<string[]> {
         const filterName = getFilterName(id);
         const url = browser.runtime.getURL(`${filtersPath}/${filterName}`);
-        const file = await fetch(url);
-        const content = await file.text();
+        const content = await loadFileText(url);
 
         return content.split(/\r?\n/);
     }

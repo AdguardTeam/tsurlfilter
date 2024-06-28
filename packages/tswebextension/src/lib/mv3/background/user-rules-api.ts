@@ -65,6 +65,7 @@ export default class UserRulesApi {
 
         // Create filter and convert into single rule set
         const converter = new DeclarativeFilterConverter();
+        console.log('before converter.convertDynamicRuleSets', performance.now());
         const conversionResult = await converter.convertDynamicRuleSets(
             filterList,
             staticRuleSets,
@@ -76,11 +77,14 @@ export default class UserRulesApi {
         );
         const { ruleSet, declarativeRulesToCancel } = conversionResult;
 
+        console.log('before ruleSet.getDeclarativeRules', performance.now());
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
         // Remove existing dynamic rules, in order their ids not interfere
         // with new
+        console.log('before this.removeAllRules', performance.now());
         await this.removeAllRules();
+        console.log('before browser.declarativeNetRequest.updateDynamicRules', performance.now());
         await browser.declarativeNetRequest.updateDynamicRules({
             // TODO update rule types returned by getDeclarativeRules();
             addRules: declarativeRules as browser.DeclarativeNetRequest.Rule[],
@@ -88,9 +92,11 @@ export default class UserRulesApi {
 
         if (declarativeRulesToCancel && declarativeRulesToCancel.length > 0) {
             // Apply $badfilter rules from dynamic filters.
+            console.log('before this.applyBadFilterRules', performance.now());
             await this.applyBadFilterRules(declarativeRulesToCancel);
         } else {
             // Undoes all previously applied changes.
+            console.log('before this.cancelAllStaticRulesUpdates', performance.now());
             await this.cancelAllStaticRulesUpdates(staticRuleSets);
         }
 
@@ -105,6 +111,7 @@ export default class UserRulesApi {
     private static async cancelAllStaticRulesUpdates(
         staticRuleSets: IRuleSet[],
     ): Promise<void> {
+        console.log('cancelAllStaticRulesUpdates start:', performance.now());
         const tasks = staticRuleSets.map(async (r) => {
             const rulesetId = r.getId();
 
@@ -126,6 +133,8 @@ export default class UserRulesApi {
             await Promise.all(tasks);
         } catch (e) {
             logger.error(`Cannot cancel all updates to static rules due to: ${getErrorMessage(e)}`);
+        } finally {
+            console.log('cancelAllStaticRulesUpdates end:', performance.now());
         }
     }
 
@@ -138,6 +147,7 @@ export default class UserRulesApi {
     private static async applyBadFilterRules(
         declarativeRulesToCancel: UpdateStaticRulesOptions[],
     ): Promise<void> {
+        console.log('applyBadFilterRules start:', performance.now());
         const tasks = declarativeRulesToCancel.map(async ({
             rulesetId,
             disableRuleIds: ruleIdsToDisable,
@@ -166,6 +176,8 @@ export default class UserRulesApi {
             await Promise.all(tasks);
         } catch (e) {
             logger.error(`Cannot apply updates to static rules due to: ${getErrorMessage(e)}`);
+        } finally {
+            console.log('applyBadFilterRules end:', performance.now());
         }
     }
 
