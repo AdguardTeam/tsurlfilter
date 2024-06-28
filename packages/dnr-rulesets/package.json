@@ -1,6 +1,6 @@
 {
   "name": "@adguard/dnr-rulesets",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
   "files": [
     "dist/**/*"
@@ -8,10 +8,14 @@
   "bin": {
     "dnr-rulesets": "dist/cli.js"
   },
+  "main": "dist/lib.js",
+  "types": "dist/lib.d.ts",
   "scripts": {
-    "build": "pnpm run clear && pnpm run build:assets && pnpm run build:cli",
-    "build:assets": "node -r @swc-node/register build.ts",
-    "build:cli": "tsc --project tsconfig.build.json",
+    "build": "pnpm run clear && pnpm run build:assets && pnpm run build:lib && pnpm run build:cli",
+    "build:assets": "node -r @swc-node/register tasks/build.ts",
+    "build:docs": "node -r @swc-node/register tasks/update-readme.ts",
+    "build:cli": "tsc --project tsconfig.cli.json",
+    "build:lib": "tsc --project tsconfig.lib.json",
     "clear": "rimraf ./dist",
     "increment": "pnpm version patch --no-git-tag-version"
   },

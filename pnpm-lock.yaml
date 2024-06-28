@@ -628,7 +628,7 @@ importers:
         version: 0.10.0
     devDependencies:
       '@adguard/dnr-rulesets':
-        specifier: 0.0.2
+        specifier: 0.1.0
         version: link:../../dnr-rulesets
       '@adguard/tswebextension':
         specifier: 2.0.0-alpha.0
