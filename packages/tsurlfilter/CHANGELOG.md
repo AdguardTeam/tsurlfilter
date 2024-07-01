@@ -8,14 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## [2.2.20] - 2024-07-01
 
 ### Added
+
 - Ability to allowlist scriptlets by name [#377].
-- New rule indexing algorithm. The storage index is now an integer representing 
-  the rule position in the concatenated filter list text. 
+- New rule indexing algorithm. The storage index is now an integer representing
+  the rule position in the concatenated filter list text.
   The list id is determined by the pre-stored filter list offset during the scan.
 
+### Changed
+
+- Updated `@adguard/scriptlets` to `v1.11.1`.
+
+[2.2.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.20
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
 ## [2.2.19] - 2024-04-03
