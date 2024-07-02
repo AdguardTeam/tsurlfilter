@@ -1,10 +1,22 @@
 /* eslint-disable no-console */
 import browser from 'webextension-polyfill';
-import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/api-mv3';
+import {
+    AdguardApi,
+    type Configuration,
+    MESSAGE_HANDLER_NAME,
+    type RequestBlockingEvent,
+} from '@adguard/api-mv3';
 
 (async (): Promise<void> => {
     // create new AdguardApi instance
     const adguardApi = await AdguardApi.create();
+
+    // console log event on request blocking
+    const onRequestBlocked = (event: RequestBlockingEvent) => {
+        console.log(event);
+    };
+
+    adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     let configuration: Configuration = {
         filters: [
@@ -78,7 +90,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
 
     // Disable Adguard in 1 minute
     setTimeout(async () => {
-        // adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
+        adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
         await adguardApi.stop();
         console.log('Adguard API has been disabled.');

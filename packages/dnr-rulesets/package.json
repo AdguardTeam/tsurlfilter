@@ -22,11 +22,11 @@
   "author": "Adguard Software Ltd.",
   "license": "GPL-3.0-only",
   "dependencies": {
-    "@adguard/logger": "^1.0.1",
+    "@adguard/logger": "workspace:^",
     "commander": "^12.1.0"
   },
   "devDependencies": {
-    "@adguard/tsurlfilter": "3.0.0-alpha.0",
+    "@adguard/tsurlfilter": "workspace:^",
     "@swc-node/register": "^1.6.6",
     "@swc/core": "^1.5.25",
     "@types/fs-extra": "^11.0.4",

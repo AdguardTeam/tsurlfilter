@@ -1,7 +1,7 @@
 # AdGuard API MV3
 
 > [!NOTE]
-> Version: **v0.0.1**
+> Version: **v0.1.0**
 
 AdGuard API is a filtering library that provides the following features:
 
@@ -30,7 +30,6 @@ AdGuard API is a filtering library that provides the following features:
     - [`adguardApi.closeAssistant`](#adguardapicloseassistant)
     - [`adguardApi.getRulesCount`](#adguardapigetrulescount)
     - [`adguardApi.onAssistantCreateRule`](#adguardapionassistantcreaterule)
-  - [Coming soon](#coming-soon)
     - [`adguardApi.onRequestBlocking`](#adguardapionrequestblocking)
   - [Usage](#usage)
   - [Minimum supported browser versions](#minimum-supported-browser-versions)
@@ -373,13 +372,17 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
 ```
 
-## Coming soon
-
-Some APIs are not implemented yet, we publish them in the next releases.
-
 ### `adguardApi.onRequestBlocking`
 
 API for adding and removing listeners for request blocking events.
+
+> [!NOTE]
+> You must have the `webRequest` permission in your manifest to use.
+
+> [!NOTE]
+> Rule calculated by tsurlfilter is not always the same as the declarative rule that has blocked the request.
+> That's why we provide an `assumedRule` and `assumedFilterId` properties in the event object.
+> We will improve the rule calculation algorithm to provide more accurate results in future releases.
 
 **Syntax:**
 
@@ -388,6 +391,25 @@ export interface RequestBlockingLoggerInterface {
     addListener(listener: EventChannelListener<RequestBlockingEvent>): void;
     removeListener(listener: EventChannelListener<RequestBlockingEvent>): void;
 }
+```
+
+**Callback parameter properties:**
+
+```typescript
+type RequestBlockingEvent = {
+    // Tab identifier.
+    tabId: number;
+    // Blocked request URL.
+    requestUrl: string;
+    // Referrer URL.
+    referrerUrl: string;
+    // Assumed Filtering rule, which has blocked this request.
+    assumedRule: string;
+    // Assumed rule's filter identifier.
+    assumedFilterId: number;
+    // Request mime type.
+    requestType: ContentType;
+};
 ```
 
 **Example:**
@@ -403,16 +425,7 @@ adguardApi.onRequestBlocked.removeListener(
 )
 ```
 
-**Callback parameter properties:**
-
-- `tabId` - Tab identifier.
-- `requestUrl` - URL of the blocked request.
-- `referrerUrl` - Referrer URL.
-- `rule` - Filtering rule that has been applied to this request.
-- `filterId` - ID of the filter list the rule belongs to.
-- `requestType` - Request mime type. Possible values are listed below:
-
-> Request types:
+> Supported Request types:
 >
 > - `DOCUMENT` - top-level frame document.
 > - `SUBDOCUMENT` - document loaded in a nested frame.
@@ -437,6 +450,13 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
 (async (): Promise<void> => {
     // create new AdguardApi instance
     const adguardApi = await AdguardApi.create();
+
+    // console log event on request blocking
+    const onRequestBlocked = (event: RequestBlockingEvent) => {
+        console.log(event);
+    };
+
+    adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     let configuration: Configuration = {
         /**
@@ -507,6 +527,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
 
     // Disable Adguard in 1 minute
     setTimeout(async () => {
+        adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
         await adguardApi.stop();
         console.log('Adguard API has been disabled.');
