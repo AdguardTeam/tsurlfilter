@@ -46,6 +46,9 @@ Build:
             # Build api
             npx lerna run build --scope @adguard/api-mv3 --include-dependencies
 
+            # Run e2e tests for api
+            npx lerna run e2e --scope @adguard/api-mv3
+
             # Build declarative network rulesets
             npx lerna run build --scope @adguard/dnr-rulesets
 
