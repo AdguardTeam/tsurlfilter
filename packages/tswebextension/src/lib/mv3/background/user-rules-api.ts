@@ -33,12 +33,11 @@ export default class UserRulesApi {
     }
 
     /**
-     * The maximum number of dynamic and session rules an extension can add.
+     * The maximum number of combined dynamic and session scoped rules an extension can add.
+     * In Chrome, this limit is enforced for the combination of dynamic and session scoped rules.
+     * In Firefox, each ruleset has its own quota.
      *
-     * NOTE: In the Firefox we are enforcing this limit to the session and dynamic rules count separately,
-     * instead of enforcing it to the rules count for both combined as the Chrome implementation does.
-     *
-     * @returns Maximum number of dynamic and session rules.
+     * @returns Maximum number of combined dynamic and session rules.
      */
     private static get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES(): number {
         return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES;
