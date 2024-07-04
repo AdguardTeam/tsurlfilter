@@ -59,6 +59,58 @@ describe('CosmeticRuleParser', () => {
                     };
                 },
             },
+
+            // modifier with regex which contains ] character - it shouldn't be treated as the end of the modifier list
+            {
+                actual: String.raw`[$domain=/example[0-9]\.(com|org)/]##.ad`,
+                expected: (context: NodeExpectContext): ElementHidingRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.ElementHidingRule,
+                        syntax: AdblockSyntax.Adg,
+                        exception: false,
+                        domains: DomainListParser.parse(
+                            '',
+                            defaultParserOptions,
+                            String.raw`[$domain=/example[0-9]\.(com|org)/]`.length,
+                        ),
+                        modifiers: {
+                            type: 'ModifierList',
+                            children: [
+                                {
+                                    type: 'Modifier',
+                                    name: {
+                                        type: 'Value',
+                                        value: 'domain',
+                                        ...context.getRangeFor('domain'),
+                                    },
+                                    value: {
+                                        type: 'Value',
+                                        value: String.raw`/example[0-9]\.(com|org)/`,
+                                        ...context.getRangeFor(String.raw`/example[0-9]\.(com|org)/`),
+                                    },
+                                },
+                            ],
+                            ...context.getRangeFor(String.raw`[$domain=/example[0-9]\.(com|org)/]`),
+                        },
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'ElementHidingRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: '.ad',
+                                ...context.getRangeFor('.ad'),
+                            },
+                            ...context.getRangeFor('.ad'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
         });
