@@ -99,6 +99,20 @@ describe('Permissions policy service', () => {
         }));
     });
 
+    it('allowlist rule should be ignored properly', () => {
+        const context = getContext(testUrl, [
+            // simple rule should be ignored
+            simpleRule,
+            `@@${simpleRule}`,
+            complexRule,
+        ]);
+
+        const result = permissionsPolicyService.onHeadersReceived(context);
+        expect(result).toBe(true);
+        const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
+        expect(responseHeaders).toStrictEqual([complexRuleHeaderItem]);
+    });
+
     it('updates filtering log', () => {
         const rules = [simpleRule, complexRule];
         const context = getContext(testUrl, rules);

@@ -55,23 +55,26 @@ export class PermissionsPolicyService {
         const permissionsPolicyRules = matchingResult.getPermissionsPolicyRules();
         const permissionsPolicyHeaders = [];
 
-        /**
-         * Allowlist with $permissions modifier disables
-         * all the $permissions rules on all the pages matching the rule pattern.
-         */
-        if (permissionsPolicyRules.length === 0 || permissionsPolicyRules[0].isAllowlist()) {
+        if (permissionsPolicyRules.length === 0) {
+            return false;
+        }
+
+        // Check if a global allowlist rule is present.
+        if (permissionsPolicyRules.some((rule) => rule.isAllowlist() && !rule.getAdvancedModifierValue())) {
             return false;
         }
 
         for (let i = 0; i < permissionsPolicyRules.length; i += 1) {
             const rule = permissionsPolicyRules[i];
-            const directive = rule.getAdvancedModifierValue();
+            const directives = rule.getAdvancedModifierValue();
 
-            if (directive) {
-                permissionsPolicyHeaders.push({
-                    name: PERMISSIONS_POLICY_HEADER_NAME,
-                    value: directive,
-                });
+            if (directives) {
+                if (!rule.isAllowlist()) {
+                    permissionsPolicyHeaders.push({
+                        name: PERMISSIONS_POLICY_HEADER_NAME,
+                        value: directives,
+                    });
+                }
 
                 this.filteringLog.publishEvent({
                     type: FilteringEventType.ApplyPermissionsRule,
