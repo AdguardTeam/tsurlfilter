@@ -6,8 +6,10 @@
     "include": [
         "src/**/*.ts",
         "tasks/**/*.ts",
+        "e2e/**/*.ts",
         "constants.ts",
         "rollup.config.ts",
+        "jest.config.ts",
         ".eslintrc.js"
     ],
     "ts-node": {
