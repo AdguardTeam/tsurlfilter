@@ -15,17 +15,35 @@ export type { ConversionResult };
 
 export const USER_FILTER_ID = 0;
 
-const {
-    MAX_NUMBER_OF_REGEX_RULES,
-    MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
-} = browser.declarativeNetRequest;
-
 /**
  * UserRulesApi knows how to handle dynamic rules: apply a list of custom
  * filters along with user rules and disable all dynamic rules
  * when the filtration is stopped.
  */
 export default class UserRulesApi {
+    /**
+     * The maximum number of regular expression rules that an extension can add.
+     * This limit is evaluated separately for the set of session rules,
+     * dynamic rules and those specified in the rule_resources file.
+     *
+     * @returns Maximum number of regular expression rules.
+     */
+    private static get MAX_NUMBER_OF_REGEX_RULES(): number {
+        return browser.declarativeNetRequest.MAX_NUMBER_OF_REGEX_RULES;
+    }
+
+    /**
+     * The maximum number of dynamic and session rules an extension can add.
+     *
+     * NOTE: In the Firefox we are enforcing this limit to the session and dynamic rules count separately,
+     * instead of enforcing it to the rules count for both combined as the Chrome implementation does.
+     *
+     * @returns Maximum number of dynamic and session rules.
+     */
+    private static get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES(): number {
+        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES;
+    }
+
     /**
      * Converts custom filters and user rules on the fly into a single merged
      * rule set and applies it via the declarativeNetRequest API.
@@ -74,8 +92,8 @@ export default class UserRulesApi {
             staticRuleSets,
             {
                 resourcesPath,
-                maxNumberOfRules: MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
-                maxNumberOfRegexpRules: MAX_NUMBER_OF_REGEX_RULES,
+                maxNumberOfRules: UserRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
+                maxNumberOfRegexpRules: UserRulesApi.MAX_NUMBER_OF_REGEX_RULES,
             },
         );
         const { ruleSet, declarativeRulesToCancel } = conversionResult;
