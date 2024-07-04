@@ -37,22 +37,26 @@ export class StealthService {
 
     /**
      * Types of resources to apply the stealth declarative network rules.
+     *
+     * @returns Array of resource types.
      */
-    private static readonly RESOURCE_TYPES = [
-        chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
-        chrome.declarativeNetRequest.ResourceType.SUB_FRAME,
-        chrome.declarativeNetRequest.ResourceType.STYLESHEET,
-        chrome.declarativeNetRequest.ResourceType.SCRIPT,
-        chrome.declarativeNetRequest.ResourceType.IMAGE,
-        chrome.declarativeNetRequest.ResourceType.FONT,
-        chrome.declarativeNetRequest.ResourceType.OBJECT,
-        chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
-        chrome.declarativeNetRequest.ResourceType.PING,
-        chrome.declarativeNetRequest.ResourceType.CSP_REPORT,
-        chrome.declarativeNetRequest.ResourceType.MEDIA,
-        chrome.declarativeNetRequest.ResourceType.WEBSOCKET,
-        chrome.declarativeNetRequest.ResourceType.OTHER,
-    ];
+    private static get RESOURCE_TYPES(): chrome.declarativeNetRequest.ResourceType[] {
+        return [
+            chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
+            chrome.declarativeNetRequest.ResourceType.SUB_FRAME,
+            chrome.declarativeNetRequest.ResourceType.STYLESHEET,
+            chrome.declarativeNetRequest.ResourceType.SCRIPT,
+            chrome.declarativeNetRequest.ResourceType.IMAGE,
+            chrome.declarativeNetRequest.ResourceType.FONT,
+            chrome.declarativeNetRequest.ResourceType.OBJECT,
+            chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
+            chrome.declarativeNetRequest.ResourceType.PING,
+            chrome.declarativeNetRequest.ResourceType.CSP_REPORT,
+            chrome.declarativeNetRequest.ResourceType.MEDIA,
+            chrome.declarativeNetRequest.ResourceType.WEBSOCKET,
+            chrome.declarativeNetRequest.ResourceType.OTHER,
+        ];
+    }
 
     /**
      * Applies the stealth options from the settings configuration.
