@@ -1,5 +1,10 @@
 import { getDomain } from 'tldts';
-import { NetworkRuleOption, PERMISSIONS_POLICY_HEADER_NAME } from '@adguard/tsurlfilter';
+import {
+    type NetworkRule,
+    NetworkRuleOption,
+    PERMISSIONS_POLICY_HEADER_NAME,
+    RequestType,
+} from '@adguard/tsurlfilter';
 import {
     defaultFilteringLog,
     FilteringEventType,
@@ -34,6 +39,16 @@ export class PermissionsPolicyService {
     }
 
     /**
+     * Checks if a network rule is sub document rule.
+     *
+     * @param rule Rule to check.
+     * @returns `true` if the rule is sub document rule.
+     */
+    private static isSubDocumentRule(rule: NetworkRule): boolean {
+        return (rule.getPermittedRequestTypes() & RequestType.SubDocument) === RequestType.SubDocument;
+    }
+
+    /**
      * Applies permissions policy directives to the response headers.
      * @param context Request context.
      * @returns True if policies were set successfully.
@@ -43,6 +58,7 @@ export class PermissionsPolicyService {
             matchingResult,
             responseHeaders,
             requestId,
+            requestType,
             tabId,
             requestUrl,
             referrerUrl,
@@ -60,12 +76,24 @@ export class PermissionsPolicyService {
         }
 
         // Check if a global allowlist rule is present.
-        if (permissionsPolicyRules.some((rule) => rule.isAllowlist() && !rule.getAdvancedModifierValue())) {
+        if (
+            permissionsPolicyRules.some(
+                (rule) => rule.isAllowlist()
+                    && !rule.getAdvancedModifierValue()
+                    && !PermissionsPolicyService.isSubDocumentRule(rule),
+            )
+        ) {
             return false;
         }
 
         for (let i = 0; i < permissionsPolicyRules.length; i += 1) {
             const rule = permissionsPolicyRules[i];
+
+            // Sub frames can only be affected by a rule where the $subdocument modifier has been set.
+            if (PermissionsPolicyService.isSubDocumentRule(rule) !== (requestType === RequestType.SubDocument)) {
+                continue;
+            }
+
             const directives = rule.getAdvancedModifierValue();
 
             if (directives) {
