@@ -403,13 +403,15 @@ describe('MatchingResult constructor handling $permissions rules', () => {
     it('finds global allowlist rule', () => {
         const { expectedRules, matchingResult } = makeMatchingResult([
             '||example.*^$permissions=sync-xhr=()|accelerometer=self,domain=example.org',
+            '||example.com$permissions=geolocation=(),subdocument',
+            '@@||example.com$permissions,subdocument',
             '@@||example.org^$permissions',
         ]);
         expect(matchingResult).toBeTruthy();
 
         const permissionsRules = matchingResult.getPermissionsPolicyRules();
         expect(permissionsRules.length).toBe(1);
-        expect(permissionsRules[0]).toBe(expectedRules[1]);
+        expect(permissionsRules[0]).toBe(expectedRules[3]);
     });
 
     it('filters blocking and allowlist rules by modifier value', () => {
@@ -424,6 +426,40 @@ describe('MatchingResult constructor handling $permissions rules', () => {
         expect(permissionsRules.length).toBe(2);
         expect(permissionsRules[0]).toBe(expectedRules[0]);
         expect(permissionsRules[1]).toBe(expectedRules[2]);
+        // Allowlisted rule gets removed from the result
+        expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
+    });
+
+    it('filters blocking and allowlist rules by modifier value', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            '/ads^$permissions=sync-xhr=(self)',
+            '/ads^$permissions=sync-xhr=("https://example.com")|accelerometer=self',
+            '@@||$permissions=sync-xhr=("https://example.com")|accelerometer=self',
+        ]);
+        expect(matchingResult).toBeTruthy();
+
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(2);
+        expect(permissionsRules[0]).toBe(expectedRules[0]);
+        expect(permissionsRules[1]).toBe(expectedRules[2]);
+        // Allowlisted rule gets removed from the result
+        expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
+    });
+
+    it('should handle global allowlist for subdocument', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            '||example.com$permissions=autoplay=()', // should be added
+            '||example.com$permissions=geolocation=(),subdocument', // should be removed
+            '||example.com$permissions=sync-xhr=(),subdocument', // should be removed
+            '@@||example.com$permissions,subdocument', // should be added
+        ]);
+        expect(matchingResult).toBeTruthy();
+
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
+
+        expect(permissionsRules.length).toBe(2);
+        expect(permissionsRules[0]).toBe(expectedRules[0]);
+        expect(permissionsRules[1]).toBe(expectedRules[3]);
         // Allowlisted rule gets removed from the result
         expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
     });
