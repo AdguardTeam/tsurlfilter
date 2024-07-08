@@ -260,7 +260,7 @@ export class CssHitsCounter {
         elements: NodeListOf<Element> | Element[],
         start: number,
         length: number | null,
-    ): { filterId: number; ruleText: string; element: string }[] {
+    ): ICountedElement[] {
         const RULE_FILTER_SEPARATOR = ';';
         start = start || 0;
         length = length || elements.length;
@@ -284,7 +284,7 @@ export class CssHitsCounter {
             result.push({
                 filterId,
                 ruleText,
-                element: ElementUtils.elementToString(element),
+                element: this.elementToString ? ElementUtils.elementToString(element) : element,
             });
         }
 
