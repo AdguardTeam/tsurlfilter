@@ -62,7 +62,6 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
             },
         });
     });
@@ -85,7 +84,7 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -108,7 +107,7 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -135,7 +134,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 domainType: 'thirdParty',
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+
             },
         });
 
@@ -158,7 +157,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 domainType: 'firstParty',
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -185,7 +184,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 domainType: 'firstParty',
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+
             },
         });
 
@@ -235,7 +234,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 initiatorDomains: ['example.com'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
 
@@ -258,7 +257,7 @@ describe('DeclarativeRuleConverter', () => {
                 urlFilter: '||example.org^',
                 initiatorDomains: ['example.com', 'example2.com'],
                 excludedInitiatorDomains: ['example3.com', 'example4.com'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
 
@@ -280,7 +279,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 excludedInitiatorDomains: ['example.com'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -307,7 +306,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 resourceTypes: ['script'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
 
@@ -329,7 +328,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 excludedResourceTypes: ['script'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
 
@@ -400,7 +399,8 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+                // This is false by default
+                //
             },
         });
     });
@@ -425,7 +425,7 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '*example.org^',
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -563,7 +563,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: 'path',
-                    isUrlFilterCaseSensitive: false,
+
                     initiatorDomains: [
                         'xn--e1agjb.xn--p1ai',
                     ],
@@ -592,7 +592,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: 'xn--||-8kcdv4aty.xn--^-4tbdh',
                     domainType: 'thirdParty',
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });
@@ -618,7 +618,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: 'abc@-db7a',
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });
@@ -651,7 +651,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
             },
             condition: {
-                isUrlFilterCaseSensitive: false,
+
                 resourceTypes: [
                     'script',
                 ],
@@ -686,7 +686,7 @@ describe('DeclarativeRuleConverter', () => {
                     ],
                     excludedRequestDomains: ['cdn.adguard.com'],
                     resourceTypes: ['image'],
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });
@@ -720,7 +720,7 @@ describe('DeclarativeRuleConverter', () => {
                         'fastcdn.adguard.com',
                     ],
                     resourceTypes: ['image'],
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });
@@ -752,7 +752,7 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: [
                         'main_frame',
@@ -795,7 +795,7 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: [
                         'main_frame',
@@ -852,7 +852,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||testcases.adguard.com',
                     resourceTypes: ['xmlhttprequest'],
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -870,7 +870,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     resourceTypes: ['xmlhttprequest'],
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });
@@ -900,7 +900,7 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     resourceTypes: ['xmlhttprequest'],
                     urlFilter: '||testcases.adguard.com',
                 },
@@ -944,7 +944,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||test.com^',
                 resourceTypes: ['main_frame'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -966,7 +966,7 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
+
                 resourceTypes: allResourcesTypes,
             },
         });
@@ -979,7 +979,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||test.com^',
                 resourceTypes: ['main_frame'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -1014,7 +1014,7 @@ describe('DeclarativeRuleConverter', () => {
                 resourceTypes: [
                     'script',
                 ],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
         expect(declarativeRules[1]).toStrictEqual({
@@ -1026,7 +1026,7 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.com^',
                 resourceTypes: ['image'],
-                isUrlFilterCaseSensitive: false,
+
             },
         });
     });
@@ -1053,7 +1053,7 @@ describe('DeclarativeRuleConverter', () => {
                     ],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1081,7 +1081,6 @@ describe('DeclarativeRuleConverter', () => {
                     ],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1111,7 +1110,7 @@ describe('DeclarativeRuleConverter', () => {
                     requestHeaders: [{ header: 'location', operation: 'remove' }],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1148,7 +1147,7 @@ describe('DeclarativeRuleConverter', () => {
                     ],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1201,7 +1200,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: '||example.org',
-                    isUrlFilterCaseSensitive: false,
+
                     resourceTypes: allResourcesTypes,
                 },
             });
@@ -1234,7 +1233,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: '||example.org^',
-                    isUrlFilterCaseSensitive: false,
+
                     resourceTypes: allResourcesTypes,
                 },
             });
@@ -1249,7 +1248,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: '||example.com^',
-                    isUrlFilterCaseSensitive: false,
+
                     resourceTypes: allResourcesTypes,
                 },
             });
@@ -1309,7 +1308,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: '||example.com',
-                    isUrlFilterCaseSensitive: false,
+
                     resourceTypes: allResourcesTypes,
                 },
             });
@@ -1342,7 +1341,7 @@ describe('DeclarativeRuleConverter', () => {
                     }],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1379,7 +1378,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -1396,7 +1395,7 @@ describe('DeclarativeRuleConverter', () => {
                 condition: {
                     urlFilter: '||example.com',
                     resourceTypes: ['sub_frame'],
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
             expect(declarativeRules[2]).toStrictEqual({
@@ -1416,7 +1415,7 @@ describe('DeclarativeRuleConverter', () => {
                         'example.net',
                     ],
                     resourceTypes: allResourcesTypes,
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });
@@ -1468,7 +1467,7 @@ describe('DeclarativeRuleConverter', () => {
                     }],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1548,7 +1547,7 @@ describe('DeclarativeRuleConverter', () => {
                     type: 'block',
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     requestDomains: [
                         'evil.com',
                         'evil.org',
@@ -1579,7 +1578,7 @@ describe('DeclarativeRuleConverter', () => {
                     type: 'block',
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     requestDomains: ['evil.com'],
                     excludedRequestDomains: ['not.evil.com'],
                     urlFilter: '/ads',
@@ -1608,7 +1607,7 @@ describe('DeclarativeRuleConverter', () => {
                     type: 'block',
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     excludedRequestDomains: [
                         'good.com',
                         'good.org',
@@ -1642,7 +1641,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     requestMethods: ['get', 'head'],
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||evil.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1670,7 +1669,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     excludedRequestMethods: ['post', 'put'],
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||evil.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1698,7 +1697,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     requestMethods: ['get'],
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||evil.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1726,7 +1725,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     excludedRequestMethods: ['post'],
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||evil.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1784,7 +1783,7 @@ describe('DeclarativeRuleConverter', () => {
                     }],
                 },
                 condition: {
-                    isUrlFilterCaseSensitive: false,
+
                     urlFilter: '||example.org^',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1821,7 +1820,7 @@ describe('DeclarativeRuleConverter', () => {
                         'example.com',
                     ],
                     resourceTypes: allResourcesTypes,
-                    isUrlFilterCaseSensitive: false,
+
                 },
             });
         });

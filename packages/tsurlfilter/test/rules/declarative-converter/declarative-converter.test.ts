@@ -42,7 +42,6 @@ describe('DeclarativeConverter', () => {
             action: { type: 'block' },
             condition: {
                 urlFilter: '||example.org^',
-                isUrlFilterCaseSensitive: false,
             },
             priority: 1,
         });
@@ -62,7 +61,6 @@ describe('DeclarativeConverter', () => {
             condition: {
                 regexFilter: '/banner\\d+/',
                 domainType: 'thirdParty',
-                isUrlFilterCaseSensitive: false,
             },
             priority: 2,
         });
@@ -81,7 +79,6 @@ describe('DeclarativeConverter', () => {
             action: { type: 'block' },
             condition: {
                 regexFilter: '/aaa?/',
-                isUrlFilterCaseSensitive: false,
             },
             priority: 1,
         });
@@ -106,7 +103,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
-                    isUrlFilterCaseSensitive: false,
                 },
                 priority: 1,
             });
@@ -127,7 +123,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.org^',
-                    isUrlFilterCaseSensitive: false,
                 },
                 priority: 1,
             });
@@ -159,7 +154,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
-                    isUrlFilterCaseSensitive: false,
                 },
                 priority: 1,
             });
@@ -186,7 +180,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
-                    isUrlFilterCaseSensitive: false,
                 },
                 priority: 1,
             });
@@ -326,7 +319,6 @@ describe('DeclarativeConverter', () => {
             priority: 140101,
             action: { type: 'allowAllRequests' },
             condition: {
-                isUrlFilterCaseSensitive: false,
                 resourceTypes: ['main_frame'],
                 urlFilter: '||example.org^',
             },
@@ -395,7 +387,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.org^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -404,7 +395,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.com^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
         });
@@ -434,7 +424,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.org^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -443,7 +432,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.com^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
             expect(declarativeRules[2]).toStrictEqual({
@@ -452,7 +440,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.net^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
             expect(declarativeRules[3]).toStrictEqual({
@@ -461,7 +448,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.co.uk^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
         });
@@ -486,7 +472,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     initiatorDomains: ['plasma.3dn.ru'],
-                    isUrlFilterCaseSensitive: false,
                     regexFilter: '/.s/src/[a-z0-9]*.js/',
                 },
             });
@@ -498,7 +483,6 @@ describe('DeclarativeConverter', () => {
                     domainType: 'thirdParty',
                     regexFilter: '/dbp/pre/',
                     resourceTypes: ['script'],
-                    isUrlFilterCaseSensitive: false,
                 },
             });
         });
@@ -525,7 +509,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.org^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -534,7 +517,6 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.com^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
 
@@ -630,7 +612,6 @@ describe('DeclarativeConverter', () => {
                 condition: {
                     urlFilter: '||example.org^',
                     resourceTypes: ['media'],
-                    isUrlFilterCaseSensitive: false,
                 },
             });
         });
@@ -656,7 +637,6 @@ describe('DeclarativeConverter', () => {
                 },
                 condition: {
                     urlFilter: '||example.org^',
-                    isUrlFilterCaseSensitive: false,
                 },
             });
         });
