@@ -21,6 +21,32 @@ const ensureDirSync = (dirPath: string) => {
 };
 
 /**
+ * Default options used by convert filters
+ */
+const CONVERT_FILTER_DEFAULT_OPTIONS = {
+    debug: false,
+    prettifyJson: true,
+};
+
+/**
+ * Options for the convert filters function
+ */
+interface ConvertFiltersOptions {
+    /**
+     * If true, additional information is printed during conversion.
+     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.debug}
+     */
+    debug?: boolean;
+
+    /**
+     * Defines whether to prettify the rulesets JSON or not.
+     * Not prettifying can save on JSON size.
+     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}
+     */
+    prettifyJson?: boolean;
+}
+
+/**
  * Converts filters with textual rules from the provided path to declarative
  * rule sets and saves them with counters, source map and list of source filter
  * identifiers on the specified path.
@@ -28,14 +54,19 @@ const ensureDirSync = (dirPath: string) => {
  * @param filtersDir Path fo source filters.
  * @param resourcesDir Path to web accessible resources.
  * @param destRuleSetsDir Destination path for declarative rule sets.
- * @param debug Print debug information about conversion.
+ * @param options Options for convert filters {@link ConvertFiltersOptions}.
  */
 export const convertFilters = async (
     filtersDir: string,
     resourcesDir: string,
     destRuleSetsDir: string,
-    debug: boolean,
+    options: ConvertFiltersOptions = {},
 ): Promise<void> => {
+    const {
+        debug = CONVERT_FILTER_DEFAULT_OPTIONS.debug,
+        prettifyJson = CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson,
+    } = options;
+
     const filtersPath = path.resolve(process.cwd(), filtersDir);
     const resourcesPath = path.resolve(process.cwd(), resourcesDir);
     const destRuleSetsPath = path.resolve(process.cwd(), destRuleSetsDir);
@@ -171,9 +202,13 @@ export const convertFilters = async (
         const ruleSetDir = `${destRuleSetsPath}/${id}`;
         ensureDirSync(ruleSetDir);
 
+        const stringifiedDeclarativeRules = prettifyJson
+            ? JSON.stringify(declarativeRules, null, '\t')
+            : JSON.stringify(declarativeRules);
+
         // eslint-disable-next-line no-await-in-loop
         await Promise.all([
-            fs.promises.writeFile(`${ruleSetDir}/${id}.json`, JSON.stringify(declarativeRules, null, '\t')),
+            fs.promises.writeFile(`${ruleSetDir}/${id}.json`, stringifiedDeclarativeRules),
             fs.promises.writeFile(`${ruleSetDir}/${METADATA_FILENAME}`, data),
             fs.promises.writeFile(`${ruleSetDir}/${LAZY_METADATA_FILENAME}`, lazyData),
         ]);
