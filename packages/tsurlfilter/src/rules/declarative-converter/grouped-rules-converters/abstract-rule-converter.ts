@@ -104,20 +104,20 @@ import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
 import { type RequestType } from '../../../request-type';
 import {
-    ResourceType,
+    DECLARATIVE_REQUEST_METHOD_MAP,
+    DECLARATIVE_RESOURCE_TYPES_MAP,
     type DeclarativeRule,
+    DomainType,
+    HeaderOperation,
+    type ModifyHeaderInfo,
+    type Redirect,
+    type RequestMethod,
+    ResourceType,
     type RuleAction,
+    type RuleActionHeaders,
     RuleActionType,
     type RuleCondition,
-    DomainType,
-    type Redirect,
-    HeaderOperation,
-    type RuleActionHeaders,
-    type ModifyHeaderInfo,
-    DECLARATIVE_RESOURCE_TYPES_MAP,
-    DECLARATIVE_REQUEST_METHOD_MAP,
     type SupportedHttpMethod,
-    type RequestMethod,
 } from '../declarative-rule';
 import {
     type ConversionError,
@@ -616,8 +616,11 @@ export abstract class DeclarativeRuleConverter {
             condition.excludedRequestMethods = this.mapHttpMethodToDeclarativeHttpMethod(restrictedMethods);
         }
 
-        // set isUrlFilterCaseSensitive
-        condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
+        // By default, this option is false, so there is no need to specify it everywhere.
+        // We do it only if it is true.
+        if (rule.isOptionEnabled(NetworkRuleOption.MatchCase)) {
+            condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
+        }
 
         /**
          * Here we need to set 'main_frame' to apply to document requests
