@@ -16,11 +16,17 @@ async function main() {
     program
         .command('convert')
         .description('Converts filters to declarative rule sets')
-        .argument('<filters_dir>', 'path to filters to convert')
-        .argument('<resources_dir>', 'path to web accessible resources')
-        .argument('[dest_rule_sets_dir]', 'destination path for rule sets', DEFAULT_DEST_RULE_SETS_DIR)
-        .argument('[debug]', 'debug mode', false)
-        .action(convertFilters);
+        .argument('<filters_dir>', 'Path to filters to convert')
+        .argument('<resources_dir>', 'Path to web accessible resources')
+        .argument('[dest_rule_sets_dir]', 'Destination path for rule sets', DEFAULT_DEST_RULE_SETS_DIR)
+        .option('--debug', 'Enable debug mode', false)
+        .option('--prettify-json', 'Prettify JSON output', true)
+        .action((filtersDir, resourcesDir, destRuleSetsDir, options) => {
+            convertFilters(filtersDir, resourcesDir, destRuleSetsDir, {
+                debug: options.debug,
+                prettifyJson: options.prettifyJson,
+            });
+        });
 
     await program.parseAsync(process.argv);
 }

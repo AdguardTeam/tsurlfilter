@@ -68,7 +68,10 @@ const precompileRules = async () => {
         FILTERS_DIR,
         RESOURCES_DIR,
         DEST_RULE_SETS_DIR,
-        true,
+        {
+            debug: true,
+            prettifyJson: true,
+        },
     );
 };
 
