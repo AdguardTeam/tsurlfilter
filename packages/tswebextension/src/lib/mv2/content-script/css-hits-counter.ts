@@ -9,7 +9,23 @@ import { HitsStorage } from './hits-storage';
 interface ICountedElement {
     filterId: number;
     ruleText: string;
-    element: string;
+    element: string | Element;
+}
+
+const DEFAULT_ELEMENT_TO_STRING = true;
+
+/**
+ * CssHitsCounter options.
+ */
+interface CssHitsCounterOptions {
+    /**
+     * Flag determining if the element should be converted to a string.
+     * If true, the element is converted to a string.
+     * Otherwise, the element is left as is, which might be helpful in corelibs,
+     * where logs are printed in the developer tools console.
+     * By default, is true.
+     */
+    elementToString: boolean;
 }
 
 /**
@@ -63,12 +79,24 @@ export class CssHitsCounter {
     private countIsWorking = false;
 
     /**
+     * Flag determining if we should convert elements to string, or not.
+     * @private
+     */
+    private elementToString = DEFAULT_ELEMENT_TO_STRING;
+
+    /**
      * This function prepares calculation of css hits.
      * We are waiting for 'load' event and start calculation.
      *
      * @param callback Which receives {@link ICountedElement} and handles counted css hits.
+     * @param options CssHitsCounter options.
      */
-    constructor(callback: (x: ICountedElement[]) => void) {
+    constructor(callback: (x: ICountedElement[]) => void, options?: CssHitsCounterOptions) {
+        if (options) {
+            const { elementToString } = options;
+            this.elementToString = elementToString;
+        }
+
         this.onCssHitsFoundCallback = callback;
 
         if (document.readyState === 'complete'
@@ -111,10 +139,14 @@ export class CssHitsCounter {
 
                     const { filterId, ruleText } = styleInfo;
                     if (filterId !== undefined && ruleText !== undefined) {
+                        const element = this.elementToString
+                            ? ElementUtils.elementToString(affectedEl.node)
+                            : affectedEl.node;
+
                         result.push({
                             filterId,
                             ruleText,
-                            element: ElementUtils.elementToString(affectedEl.node),
+                            element,
                         });
 
                         // clear style content to avoid duplicate counting
