@@ -61,14 +61,14 @@ Test:
             # Check TypeScript types with TSC
             pnpm --filter @adguard/agtree check-types
 
-            # Validate compatibility tables
-            pnpm --filter @adguard/agtree check-compatibility-tables
-
             # Check code with ESLint
             pnpm --filter @adguard/agtree lint
 
             # Run tests with Jest
             pnpm --filter @adguard/agtree test
+
+            # Build should work
+            pnpm --filter @adguard/agtree build
   final-tasks:
     - script:
         interpreter: SHELL

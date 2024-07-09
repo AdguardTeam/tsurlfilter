@@ -1,43 +1,4 @@
-adg_os_any:
-  name: denyallow
-  description: |-
-    The `$denyallow` modifier allows to avoid creating additional rules
-    when it is needed to disable a certain rule for specific domains.
-    `$denyallow` matches only target domains and not referrer domains.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#denyallow-modifier
-  conflicts:
-    - to
-  assignable: true
-  negatable: false
-  value_format: pipe_separated_denyallow_domains
-
-adg_ext_any:
-  name: denyallow
-  description: |-
-    The `$denyallow` modifier allows to avoid creating additional rules
-    when it is needed to disable a certain rule for specific domains.
-    `$denyallow` matches only target domains and not referrer domains.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#denyallow-modifier
-  conflicts:
-    - to
-  assignable: true
-  negatable: false
-  value_format: pipe_separated_denyallow_domains
-
-adg_cb_ios:
-  name: denyallow
-  description: |-
-    The `$denyallow` modifier allows to avoid creating additional rules
-    when it is needed to disable a certain rule for specific domains.
-    `$denyallow` matches only target domains and not referrer domains.
-  docs: https://adguard.app/kb/general/ad-filtering/create-own-filters/#denyallow-modifier
-  conflicts:
-    - to
-  assignable: true
-  negatable: false
-  value_format: pipe_separated_denyallow_domains
-
-adg_cb_safari:
+adg_any|~adg_cb_android:
   name: denyallow
   description: |-
     The `$denyallow` modifier allows to avoid creating additional rules
