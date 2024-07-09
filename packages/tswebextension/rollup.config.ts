@@ -101,9 +101,15 @@ const backgroundMv2Config = {
     input: ['src/lib/mv2/background/index.ts'],
     output: [
         {
-            file: `${OUTPUT_PATH}/index.js`,
+            dir: OUTPUT_PATH,
             format: 'esm',
             sourcemap: false,
+            chunkFileNames: '[name].js',
+            manualChunks: {
+                'text-encoding-polyfill': [
+                    'node_modules/text-encoding',
+                ],
+            },
         },
     ],
     watch: {
