@@ -1,9 +1,11 @@
-import { createFilter } from './helpers';
+/* eslint-disable no-console */
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
+
+import { createFilter } from './helpers';
 
 const generateRules = (rulesNumber: number) => {
     const rules = [];
-    for (let i = 0; i < rulesNumber; i++) {
+    for (let i = 0; i < rulesNumber; i += 1) {
         rules.push(`example_${i}.com`);
     }
     return rules;
