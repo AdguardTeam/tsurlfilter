@@ -1,5 +1,5 @@
 # TODO: add documentation reference
 # Note: content blocking products do not support redirects
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: metrika-yandex-watch
   description: Mocks the old Yandex Metrika API.

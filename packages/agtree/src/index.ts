@@ -135,6 +135,23 @@ export { RuleCategorizer } from './utils/categorizer';
 // Constants
 export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
 
+export {
+    GenericPlatform,
+    SpecificPlatform,
+    modifiersCompatibilityTable,
+    redirectsCompatibilityTable,
+    scriptletsCompatibilityTable,
+    parseRawPlatforms,
+    type CompatibilityTable,
+    type CompatibilityTableRow,
+    type ProductRecords,
+    type RowByProduct,
+    type RowsByProduct,
+    isGenericPlatform,
+    getPlatformId,
+    getSpecificPlatformName,
+} from './compatibility-tables';
+
 export { defaultParserOptions } from './parser/options';
 
 // Version

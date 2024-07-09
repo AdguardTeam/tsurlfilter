@@ -1,0 +1,20 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: DNRRULESETSBUILD
+  name: DNR Rulesets - build
+stages:
+  - Build:
+    - Build
+
+Build:
+  tasks:
+    - script:
+      - echo 'Task run successfully!'
+  artifacts:
+    - name: dnr-rulesets.tgz
+      location: packages/dnr-rulesets/
+      pattern: dnr-rulesets.tgz
+      shared: true
+      required: true

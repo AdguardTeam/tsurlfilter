@@ -1,6 +1,6 @@
 # TODO: add scriptlet and param descriptions, documentation references, and versions
 # Note: content blocking products do not support scriptlets
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: prevent-addEventListener
   version_added: 1.0.4
   aliases:

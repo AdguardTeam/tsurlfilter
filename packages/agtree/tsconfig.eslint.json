@@ -9,6 +9,7 @@
       "rollup.config.ts",
       "scripts/**/*.ts",
       "scripts/.eslintrc.cjs",
+      "src/compatibility-tables/extractors/.eslintrc.cjs",
       "src/**/*.ts",
       "test/**/*.ts",
     ]

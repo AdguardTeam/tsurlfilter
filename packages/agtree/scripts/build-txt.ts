@@ -4,10 +4,6 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import * as url from 'url';
-
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const PROJECT_ROOT_RELATIVE_PATH = '../';
 const DIST_FOLDER_NAME = 'dist';

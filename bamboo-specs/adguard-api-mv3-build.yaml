@@ -1,0 +1,25 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: ADGUARDAPIMV3BUILD
+  name: Adguard API MV3 - build
+stages:
+  - Build:
+    - Build
+
+Build:
+  tasks:
+    - script:
+      - echo 'Task run successfully!'
+  artifacts:
+    - name: adguard-api-mv3.tgz
+      location: packages/adguard-api-mv3/
+      pattern: adguard-api-mv3.tgz
+      shared: true
+      required: true
+    - name: extension.zip
+      location: packages/examples/adguard-api-mv3/build
+      pattern: extension.zip
+      shared: true
+      required: true
