@@ -2,8 +2,6 @@
  * @file Network rule modifier list converter.
  */
 
-import scriptlets from '@adguard/scriptlets';
-
 import { type Modifier, type ModifierList } from '../../parser/common';
 import { SEMICOLON, SPACE } from '../../utils/constants';
 import { createModifierNode } from '../../ast-utils/modifiers';
@@ -12,12 +10,7 @@ import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { MultiValueMap } from '../../utils/multi-value-map';
 import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
 import { cloneModifierListNode } from '../../ast-utils/clone';
-
-// Since scriptlets library doesn't have ESM exports, we should import
-// the whole module and then extract the required functions from it here.
-// Otherwise importing AGTree will cause an error in ESM environment,
-// because scriptlets library doesn't support named exports.
-const { redirects } = scriptlets;
+import { GenericPlatform, redirectsCompatibilityTable } from '../../compatibility-tables';
 
 /**
  * Modifier conversion interface.
@@ -187,13 +180,14 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                     ? REDIRECT_MODIFIER
                     : modifierNode.name.value;
 
-                // Try to convert the redirect resource name to ADG format
-                // This function returns undefined if the resource name is unknown
                 const convertedRedirectResource = redirectResource
-                    ? redirects.convertRedirectNameToAdg(redirectResource)
+                    ? redirectsCompatibilityTable.getFirst(
+                        redirectResource,
+                        GenericPlatform.AdgAny,
+                    )?.name
                     : undefined;
 
-                // Check if the modifier name or the redirect resource name is different from the original modifier
+                // Check if the modifier name or the redirect resource name is different from the original modifier.
                 // If so, add the converted modifier to the list
                 if (
                     modifierName !== modifierNode.name.value

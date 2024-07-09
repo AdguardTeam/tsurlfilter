@@ -1,5 +1,5 @@
 # Note: content blocking products do not support redirects
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: 1x1-transparent.gif
   aliases:
     - 1x1.gif

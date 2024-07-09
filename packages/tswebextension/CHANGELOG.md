@@ -29,6 +29,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 
+## [1.0.28] - 2024-07-08
+
+### Fixed
+
+- CssHitsCounter logs elements blocked by elemhide rules.
+
+[1.0.28]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.28
+
+## [1.0.27] - 2024-07-08
+
+### Changed
+
+- CssHitsCounter can log elements without converting to string [CoreLibs#180].
+
+[1.0.27]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.27
+[CoreLibs#180]: https://github.com/AdguardTeam/CoreLibs/issues/180
+
+## [1.0.26] - 2024-07-01
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v2.2.20`.
+- Updated `@adguard/scriptlets` to `v1.11.1`.
+
+[1.0.26]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.26
+
 ## [1.0.15] - 2024-05-23
 
 ## Fixed

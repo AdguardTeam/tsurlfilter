@@ -43,7 +43,9 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm build` - builds the library with [rollup][rollup] to the `dist` folder
 - `pnpm build-txt` - creates a `dist/build.txt` file which contains the version of the library.
 - `pnpm build-types` - build type definitions with [TypeScript][typescript] to the `dist/types` folder.
-- `pnpm check-compatibility-tables` - checks if the [compatibility tables][compatibility-tables] are valid.
+- `pnpm build-compatibility-tables` - build compatibility tables to `dist/compatibility-tables.json` file.
+  This is a transformed data structure that is used by the library.
+- `build-compatibility-tables-wiki` - build compatibility tables to Markdown files in the `wiki` folder.
 - `pnpm check-types` - check type definitions with [TypeScript][typescript].
 - `pnpm clean` - remove the `dist` folder.
 - `pnpm clean-types` - remove the `dist/types` folder.
@@ -55,7 +57,6 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm precommit` - run all checks before committing.
 - `pnpm test` - run tests with [Jest][jest].
 
-[compatibility-tables]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [contribute]: https://adguard.com/contribute.html
 [eslint]: https://eslint.org/
 [git]: https://git-scm.com/

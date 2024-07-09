@@ -93,3 +93,30 @@
 
 ---
 !include 'examples-tswebextension-mv3-tests.yaml'
+
+---
+!include 'adguard-api-mv3-build.yaml'
+
+---
+!include 'adguard-api-mv3-deploy.yaml'
+
+---
+!include 'adguard-api-mv3-increment.yaml'
+
+---
+!include 'adguard-api-mv3-permissions.yaml'
+
+---
+!include 'dnr-rulesets-build.yaml'
+
+---
+!include 'dnr-rulesets-deploy.yaml'
+
+---
+!include 'dnr-rulesets-increment.yaml'
+
+---
+!include 'dnr-rulesets-permissions.yaml'
+
+---
+!include 'examples-adguard-api-mv3-tests.yaml'

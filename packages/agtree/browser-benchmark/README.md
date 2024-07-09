@@ -3,13 +3,13 @@
 1. Install Playwright browsers with their dependencies:
 
 ```sh
-yarn playwright install --with-deps
+pnpm playwright install --with-deps
 ```
 
 1. Run the benchmark:
 
 ```sh
-npx ts-node benchmark.ts
+npx tsx benchmark.ts
 ```
 
 > [!NOTE]

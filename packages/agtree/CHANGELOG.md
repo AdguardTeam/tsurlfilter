@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Added
+
+- Compatibility table API.
+- Compatibility table wiki, which is generated from the compatibility table API.
+
+### Changed
+
+- Reworked the compatibility table structure.
+- Library now use CJS.
+
+### Removed
+
+- Scriptlets library, since it is not needed anymore, because AGTree now has its own compatibility tables.
+
 ## 1.1.8 - 2024-04-24
 
 ### Added

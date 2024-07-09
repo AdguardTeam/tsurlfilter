@@ -2,6 +2,7 @@
  * @file Benchmark runner.
  */
 import { type Browser, type BrowserType } from 'playwright';
+import path from 'path';
 
 import { type ParserOptions } from '../src/parser/options';
 import { type DownloadedFilterListResource } from './interfaces';
@@ -35,8 +36,8 @@ export const runBenchmarkBrowser = async (
         await page.addScriptTag({ content: agtreeIife });
         await page.addScriptTag({ content: objectSizeofIife });
         // These modules can be used directly from 'node_modules'
-        await page.addScriptTag({ path: '../node_modules/lodash/lodash.js' });
-        await page.addScriptTag({ path: '../node_modules/benchmark/benchmark.js' });
+        await page.addScriptTag({ path: path.join(__dirname, '../node_modules/lodash/lodash.js') });
+        await page.addScriptTag({ path: path.join(__dirname, '../node_modules/benchmark/benchmark.js') });
 
         // Display console logs, if any
         page.on('console', (message) => {

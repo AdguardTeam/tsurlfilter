@@ -20,7 +20,8 @@
     },
     "include": [
         "./src",
-        "./browser-benchmark"
+        "./browser-benchmark",
+        "./scripts"
     ],
     "exclude": [
         "./node_modules",
@@ -28,7 +29,6 @@
     ],
     "ts-node": {
         "swc": true,
-        "esm": true,
         "experimentalSpecifierResolution": "node",
         "compilerOptions": {
             "module": "ESNext"
