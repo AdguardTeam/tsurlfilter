@@ -341,7 +341,7 @@ export class DeclarativeRulesConverter {
         // Checks and, if necessary, trims the maximum number of regexp rules
         if (maxNumberOfRegexpRules) {
             const filteredRules: DeclarativeRule[] = [];
-            let excludedRulesIds: number[] = [];
+            const excludedRulesIds: number[] = [];
             let regexpRulesCounter = 0;
 
             for (let i = 0; i < declarativeRules.length; i += 1) {
@@ -360,7 +360,8 @@ export class DeclarativeRulesConverter {
                         // Removing an error for a truncated rule
                         convertedRulesErrorsIndex.set(rule.id, []);
 
-                        excludedRulesIds = excludedRulesIds.concat(sourcesRulesIds);
+                        // Note: be sure, that sourceRulesIds are not too much to overflow stack.
+                        excludedRulesIds.push(...sourcesRulesIds);
 
                         continue;
                     }
