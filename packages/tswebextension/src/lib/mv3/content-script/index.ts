@@ -5,7 +5,7 @@ import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import type { CosmeticRules } from '../background/engine-api';
 import type { GetCssPayload } from '../background/messages';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { runCookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
@@ -39,7 +39,7 @@ const applyCss = (cssRules: string[]): void => {
     styleEl.textContent = cssRules.join('');
 
     (document.head || document.documentElement).appendChild(styleEl);
-    logger.debug('[COSMETIC CSS]: applied');
+    logger.debug('[tswebextension.applyCss]: applied');
 };
 
 /**
@@ -58,7 +58,7 @@ const applyExtendedCss = (extendedCssRules: string[] | undefined): void => {
 
     extendedCss.apply();
 
-    logger.debug('[EXTENDED CSS]: applied');
+    logger.debug('[tswebextension.applyExtendedCss]: applied');
 };
 
 /**
@@ -90,11 +90,11 @@ const applyCssRules = async (): Promise<void> => {
             payload,
         });
     } catch (e) {
-        logger.error('[GET_CSS]: error ', e);
+        logger.error(`[tswebextension.applyCssRules]: error on sending ${MessageType.GetCss} message: `, e);
         return;
     }
 
-    logger.debug('[GET_CSS]: result ', res);
+    logger.debug('[tswebextension.applyCssRules]: result: ', res);
 
     if (res) {
         const { css, extendedCss } = res;

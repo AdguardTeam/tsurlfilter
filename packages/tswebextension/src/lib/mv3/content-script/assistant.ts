@@ -3,7 +3,7 @@ import browser from 'webextension-polyfill';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 /**
  * Initializes assistant object.
@@ -31,7 +31,7 @@ export const initAssistant = (): void => {
                         payload: { ruleText },
                     });
                     if (!res) {
-                        logger.debug(`Rule '${ruleText}' has not been applied.`);
+                        logger.debug(`[tswebextension.initAssistant]: rule '${ruleText}' has not been applied.`);
                     }
                 });
                 // FIXME types later
@@ -49,7 +49,7 @@ export const initAssistant = (): void => {
                 break;
             }
             default: {
-                logger.debug(`Not found handler for message type '${message.type}'`);
+                logger.debug(`[tswebextension.initAssistant]: not found handler for message type '${message.type}'`);
                 // FIXME types later
                 // @ts-ignore
                 sendResponse(false);

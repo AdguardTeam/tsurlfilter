@@ -2,7 +2,7 @@ import { CosmeticOption, type ScriptletData } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
 import { isHttpRequest } from '../../common/utils';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
@@ -50,11 +50,8 @@ export class CosmeticJsApi {
                 args: [scripts],
             });
         } catch (e) {
-            logger.debug(
-                `Error on executeScript in the tab ${tabId}:`,
-                browser.runtime.lastError,
-                e,
-            );
+            // eslint-disable-next-line max-len
+            logger.debug(`[tswebextension.executeScript]: Error on executeScript in the tab ${tabId}:`, browser.runtime.lastError, e);
         }
     }
 
@@ -82,11 +79,8 @@ export class CosmeticJsApi {
                     args: [scriptletData.params, scriptletData.params.args],
                 });
             } catch (e) {
-                logger.debug(
-                    `Error on executeScriptlet in the tab ${tabId}:`,
-                    browser.runtime.lastError,
-                    e,
-                );
+                // eslint-disable-next-line max-len
+                logger.debug(`[tswebextension.executeScriptletsData]: Error on executeScriptlet in the tab ${tabId}:`, browser.runtime.lastError, e);
             }
         });
 

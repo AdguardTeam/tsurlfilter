@@ -1,5 +1,6 @@
 import { z as zod } from 'zod';
-import { logLevelSchema, verboseSchema } from './utils/logger';
+import { LogLevel } from '@adguard/logger';
+
 import { version } from '../../../package.json';
 
 export const TSWEBEXTENSION_VERSION = version;
@@ -156,12 +157,12 @@ export const configurationValidator = zod.object({
      * @deprecated  Will be removed in the next minor version.
      * Use {@link Configuration.logLevel} instead.
      */
-    verbose: verboseSchema.optional(),
+    verbose: zod.boolean().optional(),
 
     /**
      * Logging level.
      */
-    logLevel: logLevelSchema.optional(),
+    logLevel: zod.enum([LogLevel.Error, LogLevel.Warn, LogLevel.Info, LogLevel.Debug]).optional(),
 
     settings: settingsConfigValidator,
 
