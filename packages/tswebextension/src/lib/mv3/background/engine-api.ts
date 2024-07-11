@@ -23,7 +23,7 @@ import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { getHost, isHttpOrWsRequest } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
@@ -96,7 +96,7 @@ export class EngineApi {
             const filterListIds = filters.map((f) => f.getId());
 
             // eslint-disable-next-line max-len
-            logger.error(`Cannot create IRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
+            logger.error(`[tswebextension.startEngine]: Cannot create IRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
 
             // Do not return value here because we can try to convert at least user rules.
         }
@@ -229,7 +229,7 @@ export class EngineApi {
             ? CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false)
             : [];
 
-        logger.debug('[BUILD COSMETIC CSS]: builded');
+        logger.debug('[tswebextension.buildCosmeticCss]: builded');
 
         return {
             css: styles,

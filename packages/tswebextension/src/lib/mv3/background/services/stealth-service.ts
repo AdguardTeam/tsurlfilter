@@ -1,6 +1,6 @@
 import type { SettingsConfigMV3 } from '../configuration';
 import { searchEngineDomains } from './searchEngineDomains';
-import { logger } from '../../utils/logger';
+import { logger } from '../../../common/utils/logger';
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -88,7 +88,7 @@ export class StealthService {
         // or update ConfigurationResult record in `app.ts`
         result.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error(promise.reason);
+                logger.error('[tswebextension.applySettings]: error on applying stealth settings: ', promise.reason);
             }
         });
     }

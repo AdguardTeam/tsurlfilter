@@ -7,7 +7,7 @@ import {
     getCssPayloadValidator,
 } from '../../common';
 import { isEmptySrcFrame, isHttpOrWsRequest } from '../../common/utils';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 
 import { type CosmeticRules, engineApi } from './engine-api';
 import { type TsWebExtension } from './app';
@@ -61,12 +61,12 @@ export class MessagesApi {
         message: MessageMV3,
         sender: browser.Runtime.MessageSender,
     ): Promise<unknown> {
-        logger.debug('[HANDLE MESSAGE]: ', message);
+        logger.debug('[tswebextension.handleMessage]: ', message);
 
         try {
             message = messageMV3Validator.parse(message);
         } catch (e) {
-            logger.error('Bad message', message);
+            logger.error('[tswebextension.handleMessage]: cannot parse message: ', message);
             // Ignore this message
             return undefined;
         }
@@ -92,7 +92,7 @@ export class MessagesApi {
                 );
             }
             default: {
-                logger.error('Did not found handler for message');
+                logger.error('[tswebextension.handleMessage]: did not found handler for message');
             }
         }
 
@@ -111,7 +111,7 @@ export class MessagesApi {
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): CosmeticRules | undefined {
-        logger.debug('[GET CSS]: received call ', payload);
+        logger.debug('[tswebextension.getCss]: received call: ', payload);
 
         if (!this.tsWebExtension.isStarted) {
             return undefined;
@@ -183,7 +183,7 @@ export class MessagesApi {
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): CookieRule[] | undefined {
-        logger.debug('[GET COOKIE RULES]: received call ', payload);
+        logger.debug('[tswebextension.getCookieRules]: received call: ', payload);
 
         if (!this.tsWebExtension.isStarted) {
             return undefined;
@@ -197,7 +197,7 @@ export class MessagesApi {
         const { url, referrer } = res.data;
 
         if (isEmptySrcFrame(url)) {
-            logger.debug('[GET COOKIE RULES]: frame has empty src');
+            logger.debug('[tswebextension.getCookieRules]: frame has empty src');
             return undefined;
         }
 
