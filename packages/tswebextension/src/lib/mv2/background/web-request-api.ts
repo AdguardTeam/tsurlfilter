@@ -326,11 +326,10 @@ export class WebRequestApi {
             },
         });
 
-        let frameRule = null;
-        if (requestType === RequestType.SubDocument) {
+        let frameRule = tabsApi.getTabFrameRule(tabId);
+        // If filtering is disabled for the main frame, we don't need to check the subdocument frame.
+        if (!frameRule?.isFilteringDisabled() && requestType === RequestType.SubDocument) {
             frameRule = documentApi.matchFrame(referrerUrl);
-        } else {
-            frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
         const result = engineApi.matchRequest({
