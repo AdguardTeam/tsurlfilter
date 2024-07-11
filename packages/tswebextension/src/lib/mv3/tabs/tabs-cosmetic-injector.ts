@@ -27,7 +27,7 @@ export class TabsCosmeticInjector {
         // Handles errors
         promises.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error(promise.reason);
+                logger.error('[tswebextension.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
     }

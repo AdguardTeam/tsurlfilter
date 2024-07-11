@@ -1,6 +1,6 @@
 import { type NetworkRule, type CookieModifier } from '@adguard/tsurlfilter';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
-import { logger } from '../../../../common';
+import { logger } from '../../../../common/utils/logger';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
@@ -63,7 +63,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error((e as Error).message);
+                logger.error('[tswebextension.onBeforeSendHeaders]: cannot apply rules due to: ', e);
             });
     }
 
@@ -103,7 +103,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error((e as Error).message);
+                logger.error('[tswebextension.onHeadersReceived]: cannot apply rules due to: ', e);
             });
     }
 

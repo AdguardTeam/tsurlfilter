@@ -1,4 +1,6 @@
 /* eslint-disable class-methods-use-this */
+import { LogLevel } from '@adguard/logger';
+
 import { WebRequestApi } from './web-request-api';
 import {
     type ConfigurationMV2,
@@ -147,8 +149,7 @@ MessageHandlerMV2
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
-        logger.setVerbose(configuration.verbose);
-        logger.setLogLevel(configuration.logLevel);
+        TsWebExtension.updateLogLevel(configuration.logLevel);
 
         RequestEvents.init();
         await this.redirectsService.start();
@@ -193,8 +194,7 @@ MessageHandlerMV2
 
         configurationMV2Validator.parse(configuration);
 
-        logger.setVerbose(configuration.verbose);
-        logger.setLogLevel(configuration.logLevel);
+        TsWebExtension.updateLogLevel(configuration.logLevel);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
 
@@ -417,5 +417,18 @@ MessageHandlerMV2
             logLevel,
             settings,
         };
+    }
+
+    /**
+     * Updates the log level.
+     *
+     * @param logLevel Log level.
+     */
+    private static updateLogLevel(logLevel: ConfigurationMV2['logLevel']): void {
+        try {
+            logger.currentLevel = logLevel as LogLevel || LogLevel.Info;
+        } catch (e) {
+            logger.currentLevel = LogLevel.Info;
+        }
     }
 }

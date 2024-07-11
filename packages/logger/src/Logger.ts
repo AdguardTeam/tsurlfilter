@@ -73,7 +73,7 @@ export interface Writer {
      * @param args
      */
     error: (...args: any[]) => void;
-    // We do not print error, since in the extensions warn is counted as error.
+    // We do not use 'warn' channel, since in the extensions warn is counted as error.
     // warn: (...args: any[]) => void;
 }
 
@@ -95,6 +95,7 @@ export class Logger {
 
     /**
      * Print debug messages. Usually used for technical information.
+     * Will be printed in 'log' channel.
      *
      * @param args Printed arguments.
      */
@@ -113,6 +114,8 @@ export class Logger {
 
     /**
      * Print warn messages.
+     * NOTE: We do not use 'warn' channel, since in the extensions warn is
+     * counted as error. Instead of this we use 'info' channel.
      *
      * @param args Printed arguments.
      */

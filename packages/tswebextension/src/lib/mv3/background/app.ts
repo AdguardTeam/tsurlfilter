@@ -1,9 +1,10 @@
 import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
+import { LogLevel } from '@adguard/logger';
 import { type AppInterface, defaultFilteringLog } from '../../common';
 import { getErrorMessage } from '../../common';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
@@ -115,7 +116,7 @@ export class TsWebExtension implements AppInterface<
      * {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[START]: start');
+        logger.debug('[tswebextension.innerStart]: start');
 
         try {
             const res = await this.configure(config);
@@ -135,13 +136,13 @@ export class TsWebExtension implements AppInterface<
             this.isStarted = true;
             this.startPromise = undefined;
 
-            logger.debug('[START]: started');
+            logger.debug('[tswebextension.innerStart]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
 
-            logger.debug('[START]: failed', e);
+            logger.debug('[tswebextension.innerStart]: failed due to ', getErrorMessage(e));
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
@@ -157,16 +158,19 @@ export class TsWebExtension implements AppInterface<
      * @returns Promise resolved with result of configuration {@link ConfigurationResult}.
      */
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[START]: is started ', this.isStarted);
+        // Update log level before first log message.
+        TsWebExtension.updateLogLevel(config.logLevel);
+
+        logger.debug('[tswebextension.start]: is started ', this.isStarted);
 
         if (this.isStarted) {
             throw new Error('Already started');
         }
 
         if (this.startPromise) {
-            logger.debug('[START]: already called start, waiting');
+            logger.debug('[tswebextension.start]: already called start, waiting');
             const res = await this.startPromise;
-            logger.debug('[START]: awaited start');
+            logger.debug('[tswebextension.start]: awaited start');
             return res;
         }
 
@@ -223,7 +227,10 @@ export class TsWebExtension implements AppInterface<
      * @see {@link ConversionResult}
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[CONFIGURE]: start with ', config);
+        // Update log level before first log message.
+        TsWebExtension.updateLogLevel(config.logLevel);
+
+        logger.debug('[tswebextension.configure]: start with ', config);
 
         const configuration = configurationMV3Validator.parse(config);
 
@@ -305,12 +312,11 @@ export class TsWebExtension implements AppInterface<
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
 
-        // TODO: verbose is deprecated, consider removing or replacing
-        CosmeticJsApi.verbose = this.configuration?.verbose || false;
+        CosmeticJsApi.verbose = this.configuration?.settings.debugScriptlets || false;
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
-        logger.debug('[CONFIGURE]: end');
+        logger.debug('[tswebextension.configure]: end');
 
         return res;
     }
@@ -547,7 +553,8 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            logger.error(`Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
+            // eslint-disable-next-line max-len
+            logger.error(`[tswebextension.loadStaticRuleSets]: Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
 
             return [];
         }
@@ -582,7 +589,7 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
-        logger.debug('initStorage NOT IMPLEMENTED');
+        logger.debug('[tswebextension.initStorage]: initStorage NOT IMPLEMENTED');
     }
 
     /**
@@ -592,7 +599,7 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
     public setDebugScriptlets(debug: boolean): void {
-        logger.debug('mv3 does not support setDebugScriptlets yet');
+        logger.debug('[tswebextension.setDebugScriptlets]: mv3 does not support setDebugScriptlets yet');
     }
 
     /**
@@ -602,7 +609,7 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
     public setCollectHitStats(collect: boolean): void {
-        logger.debug('mv3 does not support setCollectHitStats yet');
+        logger.debug('[tswebextension.setCollectHitStats]: mv3 does not support setCollectHitStats yet');
     }
 
     /**
@@ -616,13 +623,26 @@ export class TsWebExtension implements AppInterface<
      *
      */
     // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
-    public setLocalScriptRules(localScriptRules:{
+    public setLocalScriptRules(localScriptRules: {
         comment: string, // TODO extract type to common
         rules: {
             domains: string,
             script: string,
         }[],
     }): void {
-        logger.debug('mv3 does not support setLocalScriptRules yet');
+        logger.debug('[tswebextension.setLocalScriptRules]: mv3 does not support setLocalScriptRules yet');
+    }
+
+    /**
+     * Updates the log level.
+     *
+     * @param logLevel Log level.
+     */
+    private static updateLogLevel(logLevel: ConfigurationMV3['logLevel']): void {
+        try {
+            logger.currentLevel = logLevel as LogLevel || LogLevel.Info;
+        } catch (e) {
+            logger.currentLevel = LogLevel.Info;
+        }
     }
 }
