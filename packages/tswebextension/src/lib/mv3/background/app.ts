@@ -142,7 +142,7 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: failed', e);
+            logger.debug('[tswebextension.innerStart]: failed due to ', getErrorMessage(e));
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }

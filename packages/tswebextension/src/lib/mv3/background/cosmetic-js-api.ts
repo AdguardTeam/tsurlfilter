@@ -50,8 +50,11 @@ export class CosmeticJsApi {
                 args: [scripts],
             });
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.debug(`[tswebextension.executeScript]: Error on executeScript in the tab ${tabId}:`, browser.runtime.lastError, e);
+            logger.debug(
+                `[tswebextension.executeScript]: Error on executeScript in the tab ${tabId}:`,
+                browser.runtime.lastError,
+                e,
+            );
         }
     }
 
@@ -79,8 +82,11 @@ export class CosmeticJsApi {
                     args: [scriptletData.params, scriptletData.params.args],
                 });
             } catch (e) {
-                // eslint-disable-next-line max-len
-                logger.debug(`[tswebextension.executeScriptletsData]: Error on executeScriptlet in the tab ${tabId}:`, browser.runtime.lastError, e);
+                logger.debug(
+                    `[tswebextension.executeScriptletsData]: Error on executeScriptlet in the tab ${tabId}:`,
+                    browser.runtime.lastError,
+                    e,
+                );
             }
         });
 

@@ -63,7 +63,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error('[tswebextension.onBeforeSendHeaders]: ', e);
+                logger.error('[tswebextension.onBeforeSendHeaders]: cannot apply rules due to: ', e);
             });
     }
 
@@ -103,7 +103,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error('[tswebextension.onHeadersReceived]: ', e);
+                logger.error('[tswebextension.onHeadersReceived]: cannot apply rules due to: ', e);
             });
     }
 
