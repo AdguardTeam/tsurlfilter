@@ -16,7 +16,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { USER_FILTER_ID } from '../../common/constants';
-import { getHost } from '../../common/utils/url';
+import { getHost, isHttpRequest } from '../../common/utils/url';
 
 import type { Allowlist } from './allowlist';
 import type { StealthApi } from './stealth-api';
@@ -192,7 +192,7 @@ export class EngineApi {
      * @returns Cosmetic result.
      */
     public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
-        if (!this.engine || !this.isFilteringEnabled) {
+        if (!this.engine || !this.isFilteringEnabled || !isHttpRequest(matchQuery.frameUrl)) {
             return new CosmeticResult();
         }
 
@@ -214,7 +214,7 @@ export class EngineApi {
      * @returns NetworkRule or null.
      */
     public matchFrame(frameUrl: string): NetworkRule | null {
-        if (!this.engine || !this.isFilteringEnabled) {
+        if (!this.engine || !this.isFilteringEnabled || !isHttpRequest(frameUrl)) {
             return null;
         }
 
