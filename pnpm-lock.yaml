@@ -722,8 +722,8 @@ importers:
   packages/tsurlfilter:
     dependencies:
       '@adguard/scriptlets':
-        specifier: ^1.11.1
-        version: 1.11.1
+        specifier: ^1.11.6
+        version: 1.11.6
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -882,10 +882,10 @@ importers:
         specifier: ^2.0.56
         version: 2.0.56
       '@adguard/scriptlets':
-        specifier: ^1.11.1
-        version: 1.11.1
+        specifier: ^1.11.6
+        version: 1.11.6
       '@adguard/tsurlfilter':
-        specifier: ^2.2.20
+        specifier: ^2.2.21
         version: link:../tsurlfilter
       bowser:
         specifier: 2.11.0
@@ -1063,8 +1063,8 @@ packages:
       - debug
     dev: false
 
-  /@adguard/scriptlets@1.11.1:
-    resolution: {integrity: sha512-HRDgDeHmYXEvplVec9ABOwV6Hwh9nN5E6rMSdb8yioPrHsj5orI5BQ2ABz+s2JgC9fjshauvk818jWTtDxX9aw==}
+  /@adguard/scriptlets@1.11.6:
+    resolution: {integrity: sha512-ArHRCGGOprZNQet+zpNNPWo8O4/Y/TdJ3k1y7XlKDE/FlEo/BDBDqD0GCYthAXEPtJvnmIFBOyV1MhlONqhM1A==}
     dependencies:
       '@babel/runtime': 7.24.1
       js-yaml: 3.14.1
