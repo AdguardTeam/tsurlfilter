@@ -13,9 +13,11 @@ import {
     CosmeticResult,
     type CosmeticOption,
     type HTTPMethod,
+    STEALTH_MODE_FILTER_ID,
 } from '@adguard/tsurlfilter';
 
-import { USER_FILTER_ID } from '../../common/constants';
+import { type AnyRule } from '@adguard/agtree';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getHost, isHttpRequest } from '../../common/utils/url';
 
 import type { Allowlist } from './allowlist';
@@ -41,6 +43,8 @@ export class EngineApi {
     private static readonly ASYNC_LOAD_CHINK_SIZE = 5000;
 
     private engine: Engine | undefined;
+
+    private dynamicFilters: Map<number, IRuleList> = new Map();
 
     /**
      * Gets app filtering status.
@@ -122,11 +126,13 @@ export class EngineApi {
         const allowlistRulesList = this.allowlist.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);
+            this.dynamicFilters.set(ALLOWLIST_FILTER_ID, allowlistRulesList);
         }
 
         const stealthModeList = this.stealthApi.getStealthModeRuleList();
         if (stealthModeList) {
             lists.push(stealthModeList);
+            this.dynamicFilters.set(STEALTH_MODE_FILTER_ID, stealthModeList);
         }
 
         const ruleStorage = new RuleStorage(lists);
@@ -237,6 +243,24 @@ export class EngineApi {
         const request = new Request(url, frameUrl, RequestType.Document);
 
         return this.engine.getCosmeticResult(request, option);
+    }
+
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        const ruleList = this.dynamicFilters.get(filterId);
+
+        if (!ruleList) {
+            return null;
+        }
+
+        return ruleList.retrieveRuleNode(ruleIndex);
     }
 
     /**

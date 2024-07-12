@@ -1,6 +1,7 @@
 import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
+import { type AnyRule } from '@adguard/agtree';
 import { type AppInterface, defaultFilteringLog } from '../../common';
 import { getErrorMessage } from '../../common';
 import { logger } from '../utils/logger';
@@ -380,6 +381,21 @@ MessagesHandlerMV3
 
         // TODO: Move to RequestEvents.
         chrome.webNavigation.onCommitted.addListener(this.onCommitted);
+    }
+
+    // TODO: Implement this method.
+    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        throw new Error('Method not implemented.');
     }
 
     /**

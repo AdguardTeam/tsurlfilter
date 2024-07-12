@@ -152,7 +152,7 @@ export {
     getSpecificPlatformName,
 } from './compatibility-tables';
 
-export { defaultParserOptions } from './parser/options';
+export { defaultParserOptions, type ParserOptions } from './parser/options';
 
 // Version
 export { version } from './version';
