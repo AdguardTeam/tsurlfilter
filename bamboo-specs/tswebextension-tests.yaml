@@ -68,7 +68,7 @@ Test:
             # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
             pnpm --filter @adguard/tswebextension test:prod
 
-            # Commit changes only in release/v2.3-for-5.0 branch.
+            # Commit changes and mv3-examples update only in release/v2.3-for-5.0 branch.
             # FIXME: Remove this line.
             if [ "$branch" != "release/v2.3-for-5.0" ]; then
               echo "No changes in project, skipping tests"
@@ -80,11 +80,14 @@ Test:
 
             # FIXME remove this line before merging to master
             (cd packages/tsurlfilter && pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz)
+
+            # FIXME move this task to the separate plan
+            pnpm --filter @adguard/tsurlfilter examples
     # FIXME remove this task
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
-          commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files'
+          commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files and MV3 examples'
           selectedRepository: defaultRepository
   final-tasks:
     - script:
