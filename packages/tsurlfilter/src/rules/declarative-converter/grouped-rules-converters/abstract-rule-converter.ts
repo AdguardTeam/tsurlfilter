@@ -241,6 +241,20 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Removes slashes from the beginning and end of the string.
+     * We do that because regexFilter does not support them.
+     *
+     * @param str String to remove slashes.
+     * @returns String without slashes.
+     */
+    private static removeSlashes(str: string): string {
+        if (str.startsWith('/') && str.endsWith('/')) {
+            return str.substring(1, str.length - 1);
+        }
+        return str;
+    }
+
+    /**
      * Converts a list of strings into strings containing only ASCII characters.
      *
      * @param strings List of strings.
@@ -546,7 +560,8 @@ export abstract class DeclarativeRuleConverter {
         if (pattern) {
             // set regexFilter
             if (rule.isRegexRule()) {
-                condition.regexFilter = DeclarativeRuleConverter.prepareASCII(pattern);
+                const regexFilter = DeclarativeRuleConverter.removeSlashes(pattern);
+                condition.regexFilter = DeclarativeRuleConverter.prepareASCII(regexFilter);
             } else {
                 // A pattern beginning with ||* is not allowed. Use * instead.
                 const patternWithoutVerticals = pattern.startsWith('||*')

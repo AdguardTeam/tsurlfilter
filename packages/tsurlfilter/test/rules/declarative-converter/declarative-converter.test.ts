@@ -59,7 +59,7 @@ describe('DeclarativeConverter', () => {
             id: ruleId,
             action: { type: 'block' },
             condition: {
-                regexFilter: '/banner\\d+/',
+                regexFilter: 'banner\\d+',
                 domainType: 'thirdParty',
             },
             priority: 2,
@@ -78,7 +78,7 @@ describe('DeclarativeConverter', () => {
             id: ruleId,
             action: { type: 'block' },
             condition: {
-                regexFilter: '/aaa?/',
+                regexFilter: 'aaa?',
             },
             priority: 1,
         });
@@ -472,7 +472,7 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     initiatorDomains: ['plasma.3dn.ru'],
-                    regexFilter: '/.s/src/[a-z0-9]*.js/',
+                    regexFilter: '.s/src/[a-z0-9]*.js',
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -481,7 +481,7 @@ describe('DeclarativeConverter', () => {
                 action: { type: 'block' },
                 condition: {
                     domainType: 'thirdParty',
-                    regexFilter: '/dbp/pre/',
+                    regexFilter: 'dbp/pre',
                     resourceTypes: ['script'],
                 },
             });
