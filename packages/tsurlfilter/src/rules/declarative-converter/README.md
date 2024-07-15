@@ -2404,7 +2404,11 @@ example 10
 ```
 <a name="advanced_capabilities__$cookie"></a>
 ## $cookie
-<b>Status</b>: implemented in `release/v2.2` branch
+<b>Status</b>: supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+The use of additional parameters in $cookie (apart from $cookie itself) is not supported
 <br/>
 <b>Examples:</b>
 <br/>
@@ -2568,6 +2572,8 @@ example 10
 <a name="advanced_capabilities__$csp"></a>
 ## $csp
 <b>Status</b>: supported
+<br/>
+<b>MV3 limitations:</b>
 <br/>
 Allowlist rules are not supported
 <br/>
@@ -2749,7 +2755,11 @@ example 5
 ```
 <a name="advanced_capabilities__$permissions"></a>
 ## $permissions
-<b>Status</b>: not implemented yet
+<b>Status</b>: supported
+<br/>
+<b>MV3 limitations:</b>
+<br/>
+Allowlist rules are not supported
 <br/>
 <b>Examples:</b>
 <br/>
@@ -3384,6 +3394,8 @@ example 3
 <a name="advanced_capabilities__$removeheader"></a>
 ## $removeheader
 <b>Status</b>: supported
+<br/>
+<b>MV3 limitations:</b>
 <br/>
 Allowlist rules are not supported
 <br/>
