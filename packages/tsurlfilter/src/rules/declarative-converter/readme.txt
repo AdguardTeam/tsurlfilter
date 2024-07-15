@@ -495,7 +495,11 @@ page$domain=targetdomain.com|~example.org
 /some$domain=example.com|~example.org,badfilter
 
 ! ## $cookie
-! <b>Status</b>: implemented in `release/v2.2` branch
+! <b>Status</b>: supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! The use of additional parameters in $cookie (apart from $cookie itself) is not supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -523,6 +527,8 @@ $cookie=/__utm[a-z]/
 ! ## $csp
 ! <b>Status</b>: supported
 ! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
 ! Allowlist rules are not supported
 ! <br/>
 ! Rules with the same matching condition are combined into one, but only within
@@ -544,7 +550,11 @@ $cookie=/__utm[a-z]/
 @@||example.org^$document
 
 ! ## $permissions
-! <b>Status</b>: not implemented yet
+! <b>Status</b>: supported
+! <br/>
+! <b>MV3 limitations:</b>
+! <br/>
+! Allowlist rules are not supported
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>
@@ -620,6 +630,8 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 
 ! ## $removeheader
 ! <b>Status</b>: supported
+! <br/>
+! <b>MV3 limitations:</b>
 ! <br/>
 ! Allowlist rules are not supported
 ! <br/>
