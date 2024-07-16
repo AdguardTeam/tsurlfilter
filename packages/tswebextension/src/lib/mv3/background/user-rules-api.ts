@@ -48,7 +48,7 @@ export default class UserRulesApi {
      * rule set and applies it via the declarativeNetRequest API.
      *
      * @param userRules String[] contains user rules.
-     * @param allowListRules String with combined allowlist rules in AG format
+     * @param allowlistRule String with combined allowlist rules in AG format
      * (e.g. '@@$document,domain=example.com|example.org').
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of static rule sets to apply $badfilter rules
@@ -65,7 +65,7 @@ export default class UserRulesApi {
      */
     public static async updateDynamicFiltering(
         userRules: string[],
-        allowListRules: string,
+        allowlistRule: string,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
@@ -77,7 +77,7 @@ export default class UserRulesApi {
                 // allowlist rules - ALLOWLIST_FILTER_ID.
                 // TODO: This need to be changed in the future.
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(userRules.concat(allowListRules)) },
+                { getContent: () => Promise.resolve([allowlistRule].concat(userRules)) },
                 // user filter considered as trusted
                 true,
             ),
@@ -130,7 +130,7 @@ export default class UserRulesApi {
             const rulesetId = r.getId();
 
             // Get list of current disabled rules ids.
-            // FIXME figure out how to implement since it is not available in webextension polifyll
+            // FIXME figure out how to implement since it is not available in webextension polyfill
             // @ts-ignore
             const enableRuleIds: number[] = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
 
