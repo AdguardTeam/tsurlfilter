@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [2.2.22] - 2024-07-17
+
+### Fixed
+
+- listId -1 not found in the storage
+
+[2.2.22]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.22
+
 ## [2.2.21] - 2024-07-12
 
 ### Changed
