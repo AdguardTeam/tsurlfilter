@@ -256,6 +256,9 @@ export class TabContext {
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
 
+        // FIXME: This can be deleted for MV3?
+        // Looks like this is needed only for MV2 version, where we reload tab
+        // when applying $removeparam rule (?).
         if (!isRemoveparamRedirect) {
             // dispatch filtering log reload event
             this.filteringLog.publishEvent({

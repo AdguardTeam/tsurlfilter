@@ -7,17 +7,15 @@ import {
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
-import { ContentType } from '..';
+import { type RequestContext } from './request-context-storage';
 
 /**
  * Base params about request.
  */
-type RequestParams = {
-    tabId: number,
-    referrerUrl: string,
-    requestUrl: string,
-    requestType: RequestType,
-};
+type RequestParams = Pick<
+    RequestContext,
+    'tabId' | 'eventId' | 'referrerUrl' | 'requestUrl' | 'requestType' | 'contentType'
+>;
 
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
@@ -147,9 +145,11 @@ export class RequestBlockingApi {
     ): void {
         const {
             tabId,
+            eventId,
             referrerUrl,
             requestUrl,
             requestType,
+            contentType,
         } = data;
 
         if (!appliedRule || requestType === 0) {
@@ -162,11 +162,8 @@ export class RequestBlockingApi {
             type: FilteringEventType.ApplyBasicRule,
             data: {
                 tabId,
-                // TODO: Check if eventId is needed in mv3.
-                eventId: '1',
-                // TODO: Add saving correct request type to request context
-                // storage in the upper level.
-                requestType: ContentType.Document,
+                eventId,
+                requestType: contentType,
                 frameUrl: referrerUrl,
                 requestUrl,
                 rule: appliedRule,

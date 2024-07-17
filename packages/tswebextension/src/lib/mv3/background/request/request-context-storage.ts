@@ -1,6 +1,8 @@
 import type { WebRequest } from 'webextension-polyfill';
 import type { MatchingResult, HTTPMethod, CosmeticResult } from '@adguard/tsurlfilter';
 
+// Non-secure to not use Buffer in service worker.
+import { nanoid } from 'nanoid/non-secure';
 import type { ContentType } from '../../../common';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../../tabs/tabs-api';
@@ -21,8 +23,19 @@ export const enum RequestContextState {
  * Request context data.
  */
 export type RequestContext = TabFrameRequestContext & {
+    /**
+     * During redirect processing, multiple events are processed in the same request lifecycle.
+     * We need a unique identifier to separate these requests in the filtering log.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/webRequest/#life-cycle-of-requests
+     */
+    eventId: string;
+
     state: RequestContextState;
-    timestamp: number; // record time in ms
+    /**
+     * Record time in ms.
+     */
+    timestamp: number;
     referrerUrl: string;
     contentType: ContentType;
     thirdParty: boolean;
@@ -44,6 +57,11 @@ export type RequestContext = TabFrameRequestContext & {
 };
 
 /**
+ * Create request context DTO.
+ */
+type CreateRequestContext = Omit<RequestContext, 'eventId'>;
+
+/**
  * Implementation of the request context storage.
  *
  * TODO: Add persistent storage for cases of deaths service worker.
@@ -56,10 +74,15 @@ export class RequestContextStorage extends Map<string, RequestContext> {
      * @param data Request context with a omitted eventId field. It is automatically generated.
      * @returns Request context storage instance.
      */
-    public create(requestId: string, data: RequestContext): RequestContext {
-        super.set(requestId, data);
+    public create(requestId: string, data: CreateRequestContext): RequestContext {
+        const requestContext: RequestContext = {
+            eventId: nanoid(),
+            ...data,
+        };
 
-        return data;
+        super.set(requestId, requestContext);
+
+        return requestContext;
     }
 
     /**

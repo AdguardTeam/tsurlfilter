@@ -137,7 +137,7 @@ import browser, { type WebRequest, type WebNavigation } from 'webextension-polyf
 
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import {
     BACKGROUND_TAB_ID,
     FilteringEventType,
@@ -238,11 +238,31 @@ export class WebRequestApi {
             method,
             tabId,
             frameId,
+            eventId,
+            contentType,
+            timestamp,
+            thirdParty,
         } = context;
 
         if (!isHttpOrWsRequest(requestUrl)) {
             return;
         }
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.SendRequest,
+            data: {
+                tabId,
+                eventId,
+                requestUrl,
+                requestDomain: getDomain(requestUrl),
+                frameUrl: referrerUrl,
+                frameDomain: getDomain(referrerUrl),
+                requestType: contentType,
+                timestamp,
+                requestThirdParty: thirdParty,
+                method,
+            },
+        });
 
         let frameRule = null;
         if (requestType === RequestType.SubDocument) {
@@ -287,9 +307,11 @@ export class WebRequestApi {
         const response = RequestBlockingApi.getBlockingResponse({
             rule: basicResult,
             popupRule: result.getPopupRule(),
+            eventId,
             requestUrl,
             referrerUrl,
             requestType,
+            contentType,
             tabId,
         });
 

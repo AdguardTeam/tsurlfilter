@@ -25,6 +25,7 @@ type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
 
 /**
  * Request events class.
+ * TODO: Can it be moved to common?
  */
 export class RequestEvents {
     public static onBeforeRequest = new RequestEvent<

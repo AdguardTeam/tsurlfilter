@@ -7,9 +7,9 @@ import { EventChannel, type EventChannelInterface } from './utils';
  * Types of filtering events that can occur during request processing.
  */
 export enum FilteringEventType {
-    SendRequest = 'sendRequest',
-    TabReload = 'tabReload',
-    ApplyBasicRule = 'applyBasicRule',
+    SendRequest = 'sendRequest', // done
+    TabReload = 'tabReload', // FIXME: needed in MV3?
+    ApplyBasicRule = 'applyBasicRule', // done
     ApplyCosmeticRule = 'applyCosmeticRule',
     ApplyCspRule = 'applyCspRule',
     ApplyPermissionsRule = 'applyPermissionsRule',
