@@ -8,7 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## 3.0.0-alpha.0
+## [3.0.0-alpha.1] - 2024-07-17
+
+### Changed
+
+- Updated `@adguard/scriptlets` to `v1.11.6`.
+
+[3.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.1
+
+## [3.0.0-alpha.0] - 2024-06-21
 
 ### Added
 
@@ -22,8 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules [#64].
 - Ability to allowlist scriptlets by name [#377].
-- New rule indexing algorithm. The storage index is now an integer representing 
-  the rule position in the concatenated filter list text. 
+- New rule indexing algorithm. The storage index is now an integer representing
+  the rule position in the concatenated filter list text.
   The list id is determined by the pre-stored filter list offset during the scan.
 
 ### Changed
