@@ -52,6 +52,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 
+## [1.0.30] - 2024-07-17
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v2.2.22`.
+
+[1.0.30]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.30
+
+## [1.0.29] - 2024-07-12
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v2.2.21`.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
+
+[1.0.29]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.29
+
+## [1.0.28] - 2024-07-08
+
+### Fixed
+
+- CssHitsCounter logs elements blocked by elemhide rules.
+
+[1.0.28]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.28
+
+## [1.0.27] - 2024-07-08
+
+### Changed
+
+- CssHitsCounter can log elements without converting to string [CoreLibs#180].
+
+[1.0.27]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.27
+[CoreLibs#180]: https://github.com/AdguardTeam/CoreLibs/issues/180
+
+## [1.0.26] - 2024-07-01
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v2.2.20`.
+- Updated `@adguard/scriptlets` to `v1.11.1`.
+
+[1.0.26]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.26
+
+## [1.0.15] - 2024-05-23
+
+## Fixed
+
+- Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792]
+
+[AdguardBrowserExtension#2792]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2792
+[1.0.25]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.25
+
 ## [1.0.24] - 2024-04-15
 
 ### Fixed
