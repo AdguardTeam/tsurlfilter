@@ -969,8 +969,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^1.10.25
-        version: 1.11.1
+        specifier: ^1.11.6
+        version: 1.11.6
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1135,8 +1135,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       '@adguard/scriptlets':
-        specifier: ^1.10.25
-        version: 1.11.1
+        specifier: ^1.11.6
+        version: 1.11.6
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -1342,6 +1342,13 @@ packages:
 
   /@adguard/scriptlets@1.11.1:
     resolution: {integrity: sha512-HRDgDeHmYXEvplVec9ABOwV6Hwh9nN5E6rMSdb8yioPrHsj5orI5BQ2ABz+s2JgC9fjshauvk818jWTtDxX9aw==}
+    dependencies:
+      '@babel/runtime': 7.24.7
+      js-yaml: 3.14.1
+    dev: false
+
+  /@adguard/scriptlets@1.11.6:
+    resolution: {integrity: sha512-ArHRCGGOprZNQet+zpNNPWo8O4/Y/TdJ3k1y7XlKDE/FlEo/BDBDqD0GCYthAXEPtJvnmIFBOyV1MhlONqhM1A==}
     dependencies:
       '@babel/runtime': 7.24.7
       js-yaml: 3.14.1
@@ -12663,7 +12670,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.14.9)(typescript@5.1.3)
+      ts-node: 10.9.2(@swc/core@1.6.7)(@types/node@20.14.9)(typescript@5.5.3)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
