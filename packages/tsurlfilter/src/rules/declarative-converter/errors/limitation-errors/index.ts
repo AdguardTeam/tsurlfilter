@@ -4,7 +4,7 @@ import { TooManyRulesError } from './too-many-rules-error';
 type LimitationError = TooManyRegexpRulesError | TooManyRulesError;
 
 export {
-    LimitationError,
+    type LimitationError,
     TooManyRegexpRulesError,
     TooManyRulesError,
 };

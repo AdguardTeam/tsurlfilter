@@ -1,5 +1,5 @@
-import { WebRequest } from 'webextension-polyfill';
-import { CosmeticResult } from '@adguard/tsurlfilter';
+import { type WebRequest } from 'webextension-polyfill';
+import { type CosmeticResult } from '@adguard/tsurlfilter';
 import {
     type RequestContext,
     requestContextStorage,

@@ -1,7 +1,7 @@
-import { NetworkRule, NetworkRuleOption } from '../rules/network-rule';
-import { CookieModifier } from '../modifiers/cookie-modifier';
+import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
+import { type CookieModifier } from '../modifiers/cookie-modifier';
 import { CosmeticOption } from './cosmetic-option';
-import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { type RedirectModifier } from '../modifiers/redirect-modifier';
 import { RequestType } from '../request-type';
 
 /**

@@ -1,5 +1,5 @@
 import isIp from 'is-ip';
-import * as rule from './rule';
+import type * as rule from './rule';
 import { isDomainName } from '../utils/url';
 
 /**

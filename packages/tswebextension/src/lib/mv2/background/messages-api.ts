@@ -1,10 +1,10 @@
 /* eslint-disable class-methods-use-this */
 import { nanoid } from 'nanoid';
-import browser, { Runtime } from 'webextension-polyfill';
+import browser, { type Runtime } from 'webextension-polyfill';
 import { CosmeticRule, NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { RequestBlockingApi } from './request';
-import { ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 import {

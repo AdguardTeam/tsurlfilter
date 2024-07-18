@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 
 import { ContentType } from '../../../common/request-type';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { FilteringLogInterface } from '../../../common';
+import { type FilteringLogInterface } from '../../../common';
 import {
     type RequestContext,
     requestContextStorage,

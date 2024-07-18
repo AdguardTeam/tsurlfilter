@@ -1,4 +1,4 @@
-import { NetworkRule, IRuleList, BufferRuleList } from '@adguard/tsurlfilter';
+import { NetworkRule, type IRuleList, BufferRuleList } from '@adguard/tsurlfilter';
 
 import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 import type { Configuration } from '../../common/configuration';

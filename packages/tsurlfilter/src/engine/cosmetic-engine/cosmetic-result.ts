@@ -1,6 +1,6 @@
 import { CosmeticStylesResult } from './cosmetic-styles-result';
 import { CosmeticScriptsResult } from './cosmetic-scripts-result';
-import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { CosmeticHtmlResult } from './cosmetic-html-result';
 
 /**

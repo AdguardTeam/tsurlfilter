@@ -2,7 +2,7 @@
 import browser, { Cookies } from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
-import ParsedCookie from '../parsed-cookie';
+import type ParsedCookie from '../parsed-cookie';
 import { logger } from '../../../../../common/utils/logger';
 
 import SetDetailsType = Cookies.SetDetailsType;

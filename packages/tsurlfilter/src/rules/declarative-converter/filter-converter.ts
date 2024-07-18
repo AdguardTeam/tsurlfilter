@@ -92,10 +92,10 @@ import { getErrorMessage } from '../../common/error';
 import type { NetworkRule } from '../network-rule';
 
 import {
-    IRuleSet,
-    RuleSetContentProvider,
+    type IRuleSet,
+    type RuleSetContentProvider,
     RuleSet,
-    UpdateStaticRulesOptions,
+    type UpdateStaticRulesOptions,
     type SourceRuleAndFilterId,
 } from './rule-set';
 import { SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
@@ -109,9 +109,9 @@ import {
 import type { ConversionResult } from './conversion-result';
 import type { DeclarativeConverterOptions } from './declarative-converter-options';
 import { RulesHashMap } from './rules-hash-map';
-import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
+import { type IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type ConvertedRules } from './converted-result';
-import { NetworkRulesScanner, ScannedFilter } from './network-rules-scanner';
+import { NetworkRulesScanner, type ScannedFilter } from './network-rules-scanner';
 
 /**
  * The interface for the declarative filter converter describes what the filter

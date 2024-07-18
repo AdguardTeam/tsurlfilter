@@ -1,10 +1,10 @@
-import { IRuleList } from './rule-list';
+import { type IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
-import { IRule } from '../rules/rule';
-import { RuleScanner } from './scanner/rule-scanner';
+import { type IRule } from '../rules/rule';
+import { type RuleScanner } from './scanner/rule-scanner';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
-import { ScannerType } from './scanner/scanner-type';
+import { type ScannerType } from './scanner/scanner-type';
 import { RuleFactory } from '../rules/rule-factory';
 import { logger } from '../utils/logger';
 

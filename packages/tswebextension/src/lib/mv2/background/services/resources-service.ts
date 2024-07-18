@@ -1,4 +1,4 @@
-import browser, { WebRequest } from 'webextension-polyfill';
+import browser, { type WebRequest } from 'webextension-polyfill';
 
 export interface ResourcesServiceInterface {
     init: (warDir: string) => void;

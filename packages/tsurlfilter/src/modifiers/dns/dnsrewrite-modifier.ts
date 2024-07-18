@@ -1,4 +1,4 @@
-import { IAdvancedModifier } from '../advanced-modifier';
+import { type IAdvancedModifier } from '../advanced-modifier';
 
 /**
  * The dnsrewrite response modifier allows replacing the content of the response

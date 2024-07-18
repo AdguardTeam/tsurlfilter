@@ -1,7 +1,7 @@
-import { ConversionError } from './errors/conversion-errors';
-import { DeclarativeRule } from './declarative-rule';
-import { Source } from './source-map';
-import { LimitationError } from './errors/limitation-errors';
+import { type ConversionError } from './errors/conversion-errors';
+import { type DeclarativeRule } from './declarative-rule';
+import { type Source } from './source-map';
+import { type LimitationError } from './errors/limitation-errors';
 
 export type ConvertedRules = {
     sourceMapValues: Source[],

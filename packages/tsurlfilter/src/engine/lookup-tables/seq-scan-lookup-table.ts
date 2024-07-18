@@ -1,6 +1,6 @@
-import { ILookupTable } from './lookup-table';
-import { Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
+import { type ILookupTable } from './lookup-table';
+import { type Request } from '../../request';
+import { type NetworkRule } from '../../rules/network-rule';
 
 /**
  * Sequence scan lookup table of rules for which we could not find a shortcut

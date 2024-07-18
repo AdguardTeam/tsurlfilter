@@ -1,4 +1,4 @@
-import { IRule } from '../rules/rule';
+import { type IRule } from '../rules/rule';
 
 /**
  * Cache of an individual filter list.

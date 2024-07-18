@@ -1,8 +1,8 @@
-import { WebRequest } from 'webextension-polyfill';
+import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { ContentType } from '@lib/common';
-import { RequestContext, RequestContextState } from '@lib/mv2';
+import { type RequestContext, RequestContextState } from '@lib/mv2';
 import { StealthActions, StealthService } from '@lib/mv2/background/services/stealth-service';
 
 import type { AppContext } from '@lib/mv2/background/context';
