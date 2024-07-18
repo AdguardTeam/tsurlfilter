@@ -78,6 +78,9 @@ export const configurationMV3Validator = configurationValidator.extend({
     filteringLogEnabled: zod.boolean(),
 
     settings: settingsConfigMV3,
+
+    // FIXME: Make them UInt8Array
+    userrules: zod.array(zod.string()),
 });
 
 /**

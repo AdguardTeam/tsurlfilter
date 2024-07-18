@@ -43,7 +43,7 @@ const commonConfig = {
                 {
                     find: '@adguard/ecss-tree',
                     replacement: path.resolve(
-                        // FIXME (David, v2.3): Temporary solution, moreover, CSSTree will be removed in AGTree v2
+                        // FIXME (David, v3.0): Temporary solution, moreover, CSSTree will be removed in AGTree v2
                         'node_modules/@adguard/agtree/node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
                     ),
                 },
@@ -62,7 +62,7 @@ const commonConfig = {
 };
 
 const commonExternal = [
-    // FIXME (David, v2.3): split later if needed
+    // FIXME (David, v3.0): split later if needed
     // '@adguard/agtree',
     // '@adguard/css-tokenizer',
     // '@adguard/ecss-tree',

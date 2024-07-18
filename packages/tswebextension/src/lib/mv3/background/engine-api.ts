@@ -14,6 +14,7 @@ import {
     type HTTPMethod,
     setConfiguration,
     CompatibilityTypes,
+    FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
@@ -80,15 +81,26 @@ export class EngineApi {
 
         const lists: IRuleList[] = [];
 
-        // FIXME (David, v2.3): Make declarative converter AST-based
+        // FIXME (David, v3.0): Make declarative converter AST-based
         // Wrap IFilter to IRuleList
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const tasks = filters.map(async (filter) => {
             const content = await filter.getContent();
             // TODO: Maybe pass filters content via FilterList to exclude double conversion
-            const convertedContent = RuleConverter.convertRules(content.join('\n'));
+            const preprocessed = FilterListPreprocessor.preprocess(content.join('\n'));
             const trusted = filter.isTrusted();
-            lists.push(new BufferRuleList(filter.getId(), convertedContent, false, !trusted, !trusted));
+
+            // FIXME: Should we have sourceMap?
+            const bufferRuleList = new BufferRuleList(
+                filter.getId(),
+                preprocessed.filterList,
+                false,
+                !trusted,
+                !trusted,
+                preprocessed.sourceMap,
+            );
+
+            lists.push(bufferRuleList);
         });
 
         try {
@@ -97,15 +109,15 @@ export class EngineApi {
             const filterListIds = filters.map((f) => f.getId());
 
             // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.startEngine]: Cannot create IRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
+            logger.error(`[tswebextension.startEngine]: Cannot create BufferRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
 
             // Do not return value here because we can try to convert at least user rules.
         }
 
-        // Wrap user rules to IRuleList
-        if (userrules.content.length > 0) {
+        if (userrules.length > 0) {
+            const preprocessed = FilterListPreprocessor.preprocess(userrules.join('\n'));
             // Note: rules are already converted at the extension side
-            lists.push(new BufferRuleList(USER_FILTER_ID, userrules.content));
+            lists.push(new BufferRuleList(USER_FILTER_ID, preprocessed.filterList));
         }
 
         const allowlistRulesList = allowlistApi.getAllowlistRules();

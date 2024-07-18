@@ -88,7 +88,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             networkRule = RuleFactory.createRule(
                 ruleConvertedToAGSyntax,
                 filterId,
-                RULE_INDEX_NONE, // FIXME (David, v2.3): rule index
+                RULE_INDEX_NONE, // FIXME (David, v3.0): rule index
                 false, // convert only network rules
                 true, // ignore cosmetic rules
                 true, // ignore host rules
