@@ -32,8 +32,10 @@ export type RequestBlockingEvent = {
     requestUrl: string;
     /**  Referrer URL. */
     referrerUrl: string;
+    // FIXME: Check this field
     /** Assumed Filtering rule, which has blocked this request. */
-    assumedRule: string;
+    assumedRuleIndex: number;
+    // FIXME: Check this field
     /** Assumed rule's filter identifier. */
     assumedFilterId: number;
     /** Request mime type. */
@@ -88,22 +90,24 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      */
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
         const {
-            rule,
             tabId,
             requestUrl,
             requestType,
             frameUrl,
+            filterId,
+            ruleIndex,
+            isAllowlist,
         } = event.data;
 
         // exclude allowlist rules
-        if (rule.isAllowlist()) {
+        if (isAllowlist) {
             return;
         }
 
         this.channel.dispatch({
             tabId,
-            assumedRule: rule.getText(),
-            assumedFilterId: rule.getFilterListId(),
+            assumedRuleIndex: ruleIndex,
+            assumedFilterId: filterId,
             requestUrl,
             referrerUrl: frameUrl,
             requestType,
