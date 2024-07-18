@@ -1,6 +1,5 @@
 import {
     MatchingResult,
-    NetworkRule,
     RequestType,
     PERMISSIONS_POLICY_HEADER_NAME,
     HTTPMethod,
@@ -10,6 +9,7 @@ import { PermissionsPolicyService } from '@lib/mv2/background/services/permissio
 import { type RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
 import { ContentType, FilteringEventType } from '@lib/common';
 
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
 describe('Permissions policy service', () => {
@@ -40,6 +40,7 @@ describe('Permissions policy service', () => {
     const getContext = (
         url: string,
         rulesText: string[],
+        requestType: RequestType = RequestType.Document,
     ): RequestContext => {
         requestContextStorage.set(requestId, {
             eventId: '1',
@@ -48,13 +49,13 @@ describe('Permissions policy service', () => {
             requestUrl: url,
             referrerUrl: url,
             method: HTTPMethod.GET,
-            requestType: RequestType.Document,
+            requestType,
             tabId: 0,
             frameId: 0,
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: new MatchingResult(rulesText.map(((ruleText) => new NetworkRule(ruleText, 1))), null),
+            matchingResult: new MatchingResult(rulesText.map(((ruleText) => createNetworkRule(ruleText, 1))), null),
             contentType: ContentType.Document,
         });
 
@@ -97,6 +98,78 @@ describe('Permissions policy service', () => {
             return headerItem.name === PERMISSIONS_POLICY_HEADER_NAME
                 && headerItem.value === complexRuleHeaderItem.value;
         }));
+    });
+
+    it('allowlist rule should be ignored properly', () => {
+        const context = getContext(testUrl, [
+            // simple rule should be ignored
+            simpleRule,
+            `@@${simpleRule}`,
+            complexRule,
+        ]);
+
+        const result = permissionsPolicyService.onHeadersReceived(context);
+        expect(result).toBe(true);
+        const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
+        expect(responseHeaders).toStrictEqual([complexRuleHeaderItem]);
+    });
+
+    it('global allowlist for $permissions + $subdocument works properly', () => {
+        const context = getContext(testUrl, [
+            `||${testUrl}$permissions=autoplay=()`,
+            `||${testUrl}$permissions=geolocation=(),subdocument`,
+            `@@||${testUrl}$permissions,subdocument`,
+        ]);
+
+        const result = permissionsPolicyService.onHeadersReceived(context);
+        expect(result).toBe(true);
+        const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
+        expect(responseHeaders).toStrictEqual([{
+            name: PERMISSIONS_POLICY_HEADER_NAME,
+            value: 'autoplay=()',
+        }]);
+    });
+
+    it('rule not applied on subdocument request without $subdocument modifier', () => {
+        const context = getContext(
+            testUrl,
+            [simpleRule],
+            RequestType.SubDocument,
+        );
+
+        const result = permissionsPolicyService.onHeadersReceived(context);
+        expect(result).toBeTruthy();
+        const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
+        expect(responseHeaders).toBeDefined();
+        expect(responseHeaders).not.toContainEqual(simpleRuleHeaderItem);
+    });
+
+    it('rule not applied on document request with $subdocument modifier', () => {
+        const context = getContext(
+            testUrl,
+            [`${simpleRule},subdocument`],
+            RequestType.Document,
+        );
+
+        const result = permissionsPolicyService.onHeadersReceived(context);
+        expect(result).toBeTruthy();
+        const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
+        expect(responseHeaders).toBeDefined();
+        expect(responseHeaders).not.toContainEqual(simpleRuleHeaderItem);
+    });
+
+    it('rule applied on subdocument request with $subdocument modifier', () => {
+        const context = getContext(
+            testUrl,
+            [`${simpleRule},subdocument`],
+            RequestType.SubDocument,
+        );
+
+        const result = permissionsPolicyService.onHeadersReceived(context);
+        expect(result).toBeTruthy();
+        const { responseHeaders } = requestContextStorage.get(requestId) as RequestContext;
+        expect(responseHeaders).toBeDefined();
+        expect(responseHeaders).toContainEqual(simpleRuleHeaderItem);
     });
 
     it('updates filtering log', () => {

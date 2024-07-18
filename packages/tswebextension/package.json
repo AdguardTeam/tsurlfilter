@@ -65,6 +65,7 @@
   "scripts": {
     "lint": "eslint . && pnpm lint:tsc",
     "lint:tsc": "tsc --noEmit",
+    "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist",
     "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
     "postbuild": "node tasks/build-txt",
@@ -103,6 +104,7 @@
     "zod": "3.21.4"
   },
   "devDependencies": {
+    "@adguard/agtree": "workspace:^",
     "@rollup/plugin-commonjs": "25.0.2",
     "@rollup/plugin-json": "4.1.0",
     "@rollup/plugin-node-resolve": "15.1.0",

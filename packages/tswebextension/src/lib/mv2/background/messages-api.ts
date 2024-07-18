@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { nanoid } from 'nanoid';
 import browser, { type Runtime } from 'webextension-polyfill';
-import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import type { CookieRule } from '../../common/content-script/cookie-controller';
 import { RequestBlockingApi } from './request';
@@ -219,11 +219,16 @@ export class MessagesApi implements MessagesApiInterface {
         const cookieRules = cookieFiltering.getBlockingRules(res.data.documentUrl, tabId, frameId);
 
         return cookieRules.map((rule) => ({
-            ruleText: rule.getText(),
+            ruleIndex: rule.getIndex(),
             match: rule.getAdvancedModifierValue(),
             isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
             filterId: rule.getFilterListId(),
             isAllowlist: rule.isAllowlist(),
+            isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+            isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+            isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+            isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+            advancedModifier: rule.getAdvancedModifierValue(),
         }));
     }
 
@@ -257,11 +262,19 @@ export class MessagesApi implements MessagesApiInterface {
                 cookieName: data.cookieName,
                 frameDomain: data.cookieDomain,
                 cookieValue: data.cookieValue,
-                rule: new NetworkRule(data.ruleText, data.filterId),
+                filterId: data.filterId,
+                ruleIndex: data.ruleIndex,
                 isModifyingCookieRule: false,
                 requestThirdParty: data.thirdParty,
                 timestamp: Date.now(),
                 requestType: ContentType.Cookie,
+                // Additional rule properties
+                isAllowlist: data.isAllowlist,
+                isImportant: data.isImportant,
+                isDocumentLevel: data.isDocumentLevel,
+                isCsp: data.isCsp,
+                isCookie: data.isCookie,
+                advancedModifier: data.advancedModifier,
             },
         });
 
@@ -338,6 +351,9 @@ export class MessagesApi implements MessagesApiInterface {
                     frameDomain: getDomain(url) as string,
                     requestType: ContentType.Document,
                     timestamp: Date.now(),
+                    cssRule: true,
+                    scriptRule: false,
+                    contentRule: false,
                 },
             });
             published = true;

@@ -1,6 +1,10 @@
 /* eslint-disable jsdoc/require-returns */
 import { nanoid } from 'nanoid';
-import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
+import {
+    CosmeticRuleType,
+    type CosmeticResult,
+    type CosmeticRule,
+} from '@adguard/tsurlfilter';
 
 import { appContext } from './context';
 import { getDomain } from '../../common/utils/url';
@@ -336,6 +340,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         for (const scriptRule of permittedScriptRules) {
             if (!scriptRule.isGeneric()) {
+                const ruleType = scriptRule.getType();
                 defaultFilteringLog.publishEvent({
                     type: FilteringEventType.JsInject,
                     data: {
@@ -350,7 +355,13 @@ export class CosmeticApi extends CosmeticApiCommon {
                         frameDomain: getDomain(url) as string,
                         requestType: contentType,
                         timestamp,
-                        rule: scriptRule,
+                        filterId: scriptRule.getFilterListId(),
+                        ruleIndex: scriptRule.getIndex(),
+                        cssRule: ruleType === CosmeticRuleType.ElementHidingRule
+                            || ruleType === CosmeticRuleType.CssInjectionRule,
+                        scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
+                            || ruleType === CosmeticRuleType.JsInjectionRule,
+                        contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
                     },
                 });
             }
@@ -444,22 +455,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             /**
              * @see {@link LocalScriptRulesService} for details about script source
              */
-            const text = rule.getText();
-            return localScriptRulesService.isLocal(text);
+            return localScriptRulesService.isLocal(rule);
         });
-    }
-
-    /**
-     * Encodes rule text.
-     *
-     * @param ruleText Rule text.
-     * @returns Encoded rule text.
-     */
-    private static escapeRule(ruleText: string): string {
-        return encodeURIComponent(ruleText).replace(
-            /['()]/g,
-            (match) => ({ "'": '%27', '(': '%28', ')': '%29' }[match] as string),
-        );
     }
 
     /**
@@ -477,7 +474,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         result.push(CosmeticApi.ELEMHIDE_HIT_START);
         result.push(rule.getFilterListId());
         result.push(CosmeticApi.HIT_SEP);
-        result.push(CosmeticApi.escapeRule(rule.getText()));
+        result.push(rule.getIndex());
         result.push(CosmeticApi.HIT_END);
         return result.join('');
     }
@@ -510,7 +507,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         result.push(CosmeticApi.INJECT_HIT_START);
         result.push(rule.getFilterListId());
         result.push(CosmeticApi.HIT_SEP);
-        result.push(CosmeticApi.escapeRule(rule.getText()));
+        result.push(rule.getIndex());
         result.push(CosmeticApi.HIT_END);
 
         return result.join('');

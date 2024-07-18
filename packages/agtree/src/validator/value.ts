@@ -2,11 +2,11 @@ import XRegExp from 'xregexp';
 
 import {
     type Modifier,
-    type ListItem,
     type AppList,
     type DomainList,
     type MethodList,
     type StealthOptionList,
+    type AnyListItem,
 } from '../parser/common';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { AppListParser } from '../parser/misc/app-list';
@@ -22,7 +22,7 @@ import {
     DOT,
     EQUALS,
     OPEN_PARENTHESIS,
-    PIPE_MODIFIER_SEPARATOR,
+    PIPE,
     SEMICOLON,
     SPACE,
     WILDCARD,
@@ -40,6 +40,7 @@ import {
     SOURCE_DATA_ERROR_PREFIX,
     VALIDATION_ERROR_PREFIX,
 } from './constants';
+import { defaultParserOptions } from '../parser/options';
 
 /**
  * Represents the possible list parsers.
@@ -202,7 +203,7 @@ const isValidDomainModifierValue = (value: string): boolean => {
  *
  * @returns Validation result.
  */
-const customNoNegatedListItemsValidator = (modifierName: string, listItems: ListItem[]): ValidationResult => {
+const customNoNegatedListItemsValidator = (modifierName: string, listItems: AnyListItem[]): ValidationResult => {
     const negatedValues: string[] = [];
 
     listItems.forEach((listItem) => {
@@ -236,7 +237,7 @@ const customNoNegatedListItemsValidator = (modifierName: string, listItems: List
  *
  * @returns Validation result.
  */
-const customConsistentExceptionsValidator = (modifierName: string, listItems: ListItem[]): ValidationResult => {
+const customConsistentExceptionsValidator = (modifierName: string, listItems: AnyListItem[]): ValidationResult => {
     const firstException = listItems[0].exception;
 
     const nonConsistentItemValues: string[] = [];
@@ -276,7 +277,7 @@ const validateListItemsModifier = (
     modifier: Modifier,
     listParser: ListParser,
     isValidListItem: (listItem: string) => boolean,
-    customListValidator?: (modifierName: string, list: ListItem[]) => ValidationResult,
+    customListValidator?: (modifierName: string, list: AnyListItem[]) => ValidationResult,
 ): ValidationResult => {
     const modifierName = modifier.name.value;
     const defaultInvalidValueResult = getValueRequiredValidationResult(modifierName);
@@ -287,7 +288,7 @@ const validateListItemsModifier = (
 
     let theList: PipeSeparatedList;
     try {
-        theList = listParser(modifier.value.value, { separator: PIPE_MODIFIER_SEPARATOR });
+        theList = listParser(modifier.value.value, defaultParserOptions, 0, PIPE);
     } catch (e: unknown) {
         if (e instanceof AdblockSyntaxError) {
             return {

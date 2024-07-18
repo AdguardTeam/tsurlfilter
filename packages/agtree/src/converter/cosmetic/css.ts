@@ -29,19 +29,22 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
         const stream = new CssTokenStream(rule.body.selectorList.value);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
 
-        // Change the separator if the rule contains ExtendedCSS selectors
-        if (stream.hasAnySelectorExtendedCssNode() || rule.body.remove) {
+        // Change the separator if the rule contains ExtendedCSS elements,
+        // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
+        // because sometimes we use it to force executing ExtendedCSS library.
+        if (stream.hasAnySelectorExtendedCssNodeStrict() || rule.body.remove) {
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgExtendedCssInjectionException
                 : CosmeticRuleSeparator.AdgExtendedCssInjection;
-        } else {
+        } else if (rule.syntax !== AdblockSyntax.Adg) {
+            // If the original rule syntax is not AdGuard, use the default separator
+            // e.g. if the input rule is from uBO, we need to convert ## to #$#.
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgCssInjectionException
                 : CosmeticRuleSeparator.AdgCssInjection;
         }
-
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
 
         // Check if the rule needs to be converted
         if (

@@ -34,32 +34,32 @@ describe('CosmeticRuleParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'matches-path',
-                                        loc: context.getLocRangeFor('matches-path'),
+                                        ...context.getRangeFor('matches-path'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '/path',
-                                        loc: context.getLocRangeFor('/path'),
+                                        ...context.getRangeFor('/path'),
                                     },
                                 },
                             ],
-                            loc: context.getLocRangeFor(':matches-path(/path) .ad'),
+                            ...context.getRangeFor(':matches-path(/path) .ad'),
                         },
                         separator: {
                             type: 'Value',
                             value: '##',
-                            loc: context.getLocRangeFor('##'),
+                            ...context.getRangeFor('##'),
                         },
                         body: {
                             type: 'ElementHidingRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad',
-                                loc: context.getLocRangeFor(':matches-path(/path) .ad'),
+                                ...context.getRangeFor(':matches-path(/path) .ad'),
                             },
-                            loc: context.getLocRangeFor(':matches-path(/path) .ad'),
+                            ...context.getRangeFor(':matches-path(/path) .ad'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -85,7 +85,7 @@ describe('CosmeticRuleParser', () => {
                             formatPseudoName('has'),
                             formatPseudoName(CSS_NOT_PSEUDO),
                         ),
-                        context.getLocRangeFor(':has(:matches-path(/path)) .ad'),
+                        ...context.toTuple(context.getRangeFor(':has(:matches-path(/path)) .ad')),
                     );
                 },
             },
@@ -96,7 +96,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         sprintf(COSMETIC_ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Ubo, AdblockSyntax.Adg),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -112,7 +112,8 @@ describe('CosmeticRuleParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 

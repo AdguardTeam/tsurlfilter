@@ -1,4 +1,4 @@
-import { ConfigurationMV2 } from '@adguard/tswebextension';
+import { ConfigurationMV2, FilterListPreprocessor } from '@adguard/tswebextension';
 import { LogDetails } from './logger';
 
 export const addQunitListeners = (logResultFnName: string) => {
@@ -31,9 +31,11 @@ export type SetTsWebExtensionConfigArg = [ defaultConfig: ConfigurationMV2, rule
 export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, rulesText ] = arg;
     const configuration: ConfigurationMV2 = defaultConfig;
+    const processed = FilterListPreprocessor.preprocess(rulesText);
     configuration.filters = [{
         filterId: 1,
-        content: rulesText,
+        content: processed.filterList,
+        sourceMap: processed.sourceMap,
         trusted: true,
     }];
     await window.tsWebExtension.configure(configuration);

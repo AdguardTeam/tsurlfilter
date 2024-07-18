@@ -7,11 +7,14 @@ interface OnRuleAppliedCallback {
 }
 
 export interface CookieRule {
-    ruleText: string;
     match: string | null;
     isThirdParty: boolean;
     filterId: number;
+    ruleIndex: number;
     isAllowlist: boolean;
+    isImportant: boolean;
+    isDocumentLevel: boolean,
+    advancedModifier: string | null,
 }
 
 /**
@@ -139,7 +142,7 @@ export class CookieController {
                 return regex.test(cookieName);
             });
 
-            const importantRules = matchingRules.filter((r) => r.ruleText.includes('important'));
+            const importantRules = matchingRules.filter((r) => r.isImportant);
             if (importantRules.length > 0) {
                 importantRules.forEach((rule) => {
                     this.applyRule(rule, cookieName, cookieValue);
@@ -185,9 +188,15 @@ export class CookieController {
             cookieName,
             cookieValue,
             cookieDomain: document.location.hostname,
-            ruleText: rule.ruleText,
             thirdParty: rule.isThirdParty,
             filterId: rule.filterId,
+            ruleIndex: rule.ruleIndex,
+            isAllowlist: rule.isAllowlist,
+            isImportant: rule.isImportant,
+            isDocumentLevel: rule.isDocumentLevel,
+            isCsp: false,
+            isCookie: true,
+            advancedModifier: null,
         });
     }
 

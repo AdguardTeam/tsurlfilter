@@ -7,7 +7,6 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    RuleConverter,
     type ScriptletData,
     type CosmeticRule,
     type NetworkRule,
@@ -81,7 +80,9 @@ export class EngineApi {
 
         const lists: IRuleList[] = [];
 
+        // FIXME (David, v2.3): Make declarative converter AST-based
         // Wrap IFilter to IRuleList
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const tasks = filters.map(async (filter) => {
             const content = await filter.getContent();
             // TODO: Maybe pass filters content via FilterList to exclude double conversion
@@ -102,9 +103,9 @@ export class EngineApi {
         }
 
         // Wrap user rules to IRuleList
-        if (userrules.length > 0) {
-            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
-            lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
+        if (userrules.content.length > 0) {
+            // Note: rules are already converted at the extension side
+            lists.push(new BufferRuleList(USER_FILTER_ID, userrules.content));
         }
 
         const allowlistRulesList = allowlistApi.getAllowlistRules();

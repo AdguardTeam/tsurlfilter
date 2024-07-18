@@ -1,14 +1,15 @@
 import {
     MatchingResult,
-    NetworkRule,
     CosmeticOption,
     StealthOptionName,
+    type NetworkRule,
 } from '../../src';
+import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('MatchingResult constructor', () => {
     it('works if basic rule is found', () => {
         const ruleText = '||example.org^';
-        const rules = [new NetworkRule(ruleText, 0)];
+        const rules = [createNetworkRule(ruleText, 0)];
 
         const result = new MatchingResult(rules, null);
 
@@ -28,8 +29,8 @@ describe('MatchingResult constructor', () => {
         const ruleText = '||example.org^';
         const sourceRuleText = '@@||example.com^$document';
 
-        const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRule = new NetworkRule(sourceRuleText, 0);
+        const rules = [createNetworkRule(ruleText, 0)];
+        const sourceRule = createNetworkRule(sourceRuleText, 0);
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -46,8 +47,8 @@ describe('MatchingResult constructor', () => {
         const ruleText = '||example.com^$important';
         const sourceRuleText = '@@||example.com^$document';
 
-        const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRule = new NetworkRule(sourceRuleText, 0);
+        const rules = [createNetworkRule(ruleText, 0)];
+        const sourceRule = createNetworkRule(sourceRuleText, 0);
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -63,8 +64,8 @@ describe('MatchingResult constructor', () => {
         const ruleText = '||example.org^';
         const sourceRuleText = '@@||example.com^$urlblock';
 
-        const rules = [new NetworkRule(ruleText, 0)];
-        const sourceRule = new NetworkRule(sourceRuleText, 0);
+        const rules = [createNetworkRule(ruleText, 0)];
+        const sourceRule = createNetworkRule(sourceRuleText, 0);
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -79,7 +80,7 @@ describe('MatchingResult constructor', () => {
 
     it('works if allowlist non-document-level rule is not found', () => {
         const sourceRuleText = '@@||example.com^$generichide';
-        const sourceRule = new NetworkRule(sourceRuleText, 0);
+        const sourceRule = createNetworkRule(sourceRuleText, 0);
 
         const result = new MatchingResult([], sourceRule);
 
@@ -98,7 +99,7 @@ describe('TestGetCosmeticOption', () => {
     let sourceRule: NetworkRule | null = null;
 
     it('works in simple case - no limitations', () => {
-        rules = [new NetworkRule('||example.org^', 0)];
+        rules = [createNetworkRule('||example.org^', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -108,8 +109,8 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with source allowlist rule and blocking rule', () => {
-        rules = [new NetworkRule('||example.org^', 0)];
-        const allowlistSourceRule = new NetworkRule('@@||another.org^$document,important', 0);
+        rules = [createNetworkRule('||example.org^', 0)];
+        const allowlistSourceRule = createNetworkRule('@@||another.org^$document,important', 0);
 
         const result = new MatchingResult(rules, allowlistSourceRule);
 
@@ -119,7 +120,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $generichide modifier', () => {
-        rules = [new NetworkRule('@@||example.org^$generichide', 0)];
+        rules = [createNetworkRule('@@||example.org^$generichide', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -131,7 +132,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $specifichide modifier', () => {
-        rules = [new NetworkRule('@@||example.org^$specifichide', 0)];
+        rules = [createNetworkRule('@@||example.org^$specifichide', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -143,7 +144,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $jsinject modifier', () => {
-        rules = [new NetworkRule('@@||example.org^$jsinject', 0)];
+        rules = [createNetworkRule('@@||example.org^$jsinject', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -157,7 +158,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $elemhide modifier', () => {
-        rules = [new NetworkRule('@@||example.org^$elemhide', 0)];
+        rules = [createNetworkRule('@@||example.org^$elemhide', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -168,8 +169,8 @@ describe('TestGetCosmeticOption', () => {
 
     it('works with elemhide modifier and replace modifier', () => {
         rules = [
-            new NetworkRule('||example.org^$replace=/test/test/', 0),
-            new NetworkRule('@@||example.org^$elemhide', 0),
+            createNetworkRule('||example.org^$replace=/test/test/', 0),
+            createNetworkRule('@@||example.org^$elemhide', 0),
         ];
 
         const result = new MatchingResult(rules, sourceRule);
@@ -180,7 +181,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $content modifier', () => {
-        rules = [new NetworkRule('@@||example.org^$content', 0)];
+        rules = [createNetworkRule('@@||example.org^$content', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -194,7 +195,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $document modifier', () => {
-        rules = [new NetworkRule('@@||example.org^$document', 0)];
+        rules = [createNetworkRule('@@||example.org^$document', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -204,7 +205,7 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $all modifier', () => {
-        rules = [new NetworkRule('||example.org^$all', 0)];
+        rules = [createNetworkRule('||example.org^$all', 0)];
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -214,8 +215,8 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with source allowlist rule and $all blocking rule', () => {
-        rules = [new NetworkRule('||example.org^$all', 0)];
-        const allowlistSourceRule = new NetworkRule('@@||example.org^$document', 0);
+        rules = [createNetworkRule('||example.org^$all', 0)];
+        const allowlistSourceRule = createNetworkRule('@@||example.org^$document', 0);
 
         const result = new MatchingResult(rules, allowlistSourceRule);
 
@@ -226,8 +227,8 @@ describe('TestGetCosmeticOption', () => {
 
     it('works with $all modifier and specifichide allowlist rule', () => {
         rules = [
-            new NetworkRule('||example.org^$all', 0),
-            new NetworkRule('@@||example.org^$specifichide', 0),
+            createNetworkRule('||example.org^$all', 0),
+            createNetworkRule('@@||example.org^$specifichide', 0),
         ];
 
         const result = new MatchingResult(rules, sourceRule);
@@ -243,8 +244,8 @@ describe('TestGetCosmeticOption', () => {
         const ruleText = '||example.com^$important';
         const sourceRuleText = '@@||example.com^$document';
 
-        rules = [new NetworkRule(ruleText, 0)];
-        sourceRule = new NetworkRule(sourceRuleText, 0);
+        rules = [createNetworkRule(ruleText, 0)];
+        sourceRule = createNetworkRule(sourceRuleText, 0);
 
         const result = new MatchingResult(rules, sourceRule);
 
@@ -257,8 +258,8 @@ describe('TestGetCosmeticOption', () => {
 describe('MatchingResult constructor handling badfilter modifier', () => {
     it('works if badfilter is ok', () => {
         const rules = [
-            new NetworkRule('||example.org^', 0),
-            new NetworkRule('||example.org^$badfilter', 0),
+            createNetworkRule('||example.org^', 0),
+            createNetworkRule('||example.org^$badfilter', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -270,9 +271,9 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
 
     it('works if badfilter allowlist is ok', () => {
         const rules = [
-            new NetworkRule('||example.org^', 0),
-            new NetworkRule('@@||example.org^', 0),
-            new NetworkRule('@@||example.org^$badfilter', 0),
+            createNetworkRule('||example.org^', 0),
+            createNetworkRule('@@||example.org^', 0),
+            createNetworkRule('@@||example.org^$badfilter', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -288,8 +289,8 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
 
     it('checks badfilter for a distinct domain', () => {
         const rules = [
-            new NetworkRule('/some$domain=example.com|example.org', 0),
-            new NetworkRule('/some$domain=example.com,badfilter', 0),
+            createNetworkRule('/some$domain=example.com|example.org', 0),
+            createNetworkRule('/some$domain=example.com,badfilter', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -299,8 +300,8 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
 
     it('checks badfilter for a few domains', () => {
         const rules = [
-            new NetworkRule('/some$domain=example.com|example.org|example.test', 0),
-            new NetworkRule('/some$domain=example.com|example.org,badfilter', 0),
+            createNetworkRule('/some$domain=example.com|example.org|example.test', 0),
+            createNetworkRule('/some$domain=example.com|example.org,badfilter', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -310,8 +311,8 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
 
     it('checks badfilter could not be applied - negated domain', () => {
         const rules = [
-            new NetworkRule('/some$domain=example.com|example.org|~negated.com', 0),
-            new NetworkRule('/some$domain=example.com,badfilter', 0),
+            createNetworkRule('/some$domain=example.com|example.org|~negated.com', 0),
+            createNetworkRule('/some$domain=example.com,badfilter', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -329,7 +330,7 @@ describe('MatchingResult constructor handling csp rules', () => {
     const directiveMissAllowlistRule = '@@||example.org^$csp=frame-src \'none\'';
 
     it('works if csp rule is found', () => {
-        const rules = [new NetworkRule(cspRule, 0)];
+        const rules = [createNetworkRule(cspRule, 0)];
         const result = new MatchingResult(rules, null);
 
         expect(result).toBeTruthy();
@@ -340,8 +341,8 @@ describe('MatchingResult constructor handling csp rules', () => {
 
     it('works if csp directive allowlist rule is found', () => {
         const rules = [
-            new NetworkRule(cspRule, 0),
-            new NetworkRule(directiveAllowlistRule, 0),
+            createNetworkRule(cspRule, 0),
+            createNetworkRule(directiveAllowlistRule, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -353,9 +354,9 @@ describe('MatchingResult constructor handling csp rules', () => {
 
     it('works if csp global allowlist rule is found', () => {
         const rules = [
-            new NetworkRule(cspRule, 0),
-            new NetworkRule(directiveAllowlistRule, 0),
-            new NetworkRule(globalAllowlistRule, 0),
+            createNetworkRule(cspRule, 0),
+            createNetworkRule(directiveAllowlistRule, 0),
+            createNetworkRule(globalAllowlistRule, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -367,8 +368,8 @@ describe('MatchingResult constructor handling csp rules', () => {
 
     it('works if csp wrong directive allowlist rule is not found', () => {
         const rules = [
-            new NetworkRule(cspRule, 0),
-            new NetworkRule(directiveMissAllowlistRule, 0),
+            createNetworkRule(cspRule, 0),
+            createNetworkRule(directiveMissAllowlistRule, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -381,7 +382,7 @@ describe('MatchingResult constructor handling csp rules', () => {
 
 describe('MatchingResult constructor handling $permissions rules', () => {
     const makeMatchingResult = (ruleTexts: string[]) => {
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         return {
             expectedRules: rules,
             matchingResult: new MatchingResult(rules, null),
@@ -402,13 +403,15 @@ describe('MatchingResult constructor handling $permissions rules', () => {
     it('finds global allowlist rule', () => {
         const { expectedRules, matchingResult } = makeMatchingResult([
             '||example.*^$permissions=sync-xhr=()|accelerometer=self,domain=example.org',
+            '||example.com$permissions=geolocation=(),subdocument',
+            '@@||example.com$permissions,subdocument',
             '@@||example.org^$permissions',
         ]);
         expect(matchingResult).toBeTruthy();
 
         const permissionsRules = matchingResult.getPermissionsPolicyRules();
         expect(permissionsRules.length).toBe(1);
-        expect(permissionsRules[0]).toBe(expectedRules[1]);
+        expect(permissionsRules[0]).toBe(expectedRules[3]);
     });
 
     it('filters blocking and allowlist rules by modifier value', () => {
@@ -426,13 +429,47 @@ describe('MatchingResult constructor handling $permissions rules', () => {
         // Allowlisted rule gets removed from the result
         expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
     });
+
+    it('filters blocking and allowlist rules by modifier value', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            '/ads^$permissions=sync-xhr=(self)',
+            '/ads^$permissions=sync-xhr=("https://example.com")|accelerometer=self',
+            '@@||$permissions=sync-xhr=("https://example.com")|accelerometer=self',
+        ]);
+        expect(matchingResult).toBeTruthy();
+
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
+        expect(permissionsRules.length).toBe(2);
+        expect(permissionsRules[0]).toBe(expectedRules[0]);
+        expect(permissionsRules[1]).toBe(expectedRules[2]);
+        // Allowlisted rule gets removed from the result
+        expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
+    });
+
+    it('should handle global allowlist for subdocument', () => {
+        const { expectedRules, matchingResult } = makeMatchingResult([
+            '||example.com$permissions=autoplay=()', // should be added
+            '||example.com$permissions=geolocation=(),subdocument', // should be removed
+            '||example.com$permissions=sync-xhr=(),subdocument', // should be removed
+            '@@||example.com$permissions,subdocument', // should be added
+        ]);
+        expect(matchingResult).toBeTruthy();
+
+        const permissionsRules = matchingResult.getPermissionsPolicyRules();
+
+        expect(permissionsRules.length).toBe(2);
+        expect(permissionsRules[0]).toBe(expectedRules[0]);
+        expect(permissionsRules[1]).toBe(expectedRules[3]);
+        // Allowlisted rule gets removed from the result
+        expect(!permissionsRules.find((r) => r === expectedRules[1])).toBeTruthy();
+    });
 });
 
 describe('MatchingResult constructor handling replace rules', () => {
     it('works if replace rules are found', () => {
         const rules = [
-            new NetworkRule('||example.org^$replace=/test/test1/g', 0),
-            new NetworkRule('||example.org^$replace=/test1/test2/g', 0),
+            createNetworkRule('||example.org^$replace=/test/test1/g', 0),
+            createNetworkRule('||example.org^$replace=/test1/test2/g', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -454,7 +491,7 @@ describe('MatchingResult constructor handling replace rules', () => {
             '@@||example.org^$replace=/test1/test2/g',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
 
@@ -472,7 +509,7 @@ describe('MatchingResult constructor handling replace rules', () => {
             '@@||example.org^$replace',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
 
@@ -490,7 +527,7 @@ describe('MatchingResult constructor handling replace rules', () => {
             '@@||example.org^$content',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
 
@@ -509,7 +546,7 @@ describe('MatchingResult constructor handling replace rules', () => {
             '@@||example.org^$document',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
 
@@ -529,7 +566,7 @@ describe('MatchingResult constructor handling replace rules', () => {
             '@@||example.org^$genericblock',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
 
@@ -548,8 +585,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('works if cookie rules are found', () => {
         const rules = [
-            new NetworkRule(cookieRuleTextOne, 0),
-            new NetworkRule(cookieRuleTextTwo, 0),
+            createNetworkRule(cookieRuleTextOne, 0),
+            createNetworkRule(cookieRuleTextTwo, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -562,9 +599,9 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('works if cookie allowlist rule is ok', () => {
         const rules = [
-            new NetworkRule(cookieRuleTextOne, 0),
-            new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleAllowlistTextOne, 0),
+            createNetworkRule(cookieRuleTextOne, 0),
+            createNetworkRule(cookieRuleTextTwo, 0),
+            createNetworkRule(cookieRuleAllowlistTextOne, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -577,10 +614,10 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('works if cookie allowlist rule is ok', () => {
         const rules = [
-            new NetworkRule(cookieRuleTextOne, 0),
-            new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleAllowlistTextOne, 0),
-            new NetworkRule(cookieRuleAllowlistTextTwo, 0),
+            createNetworkRule(cookieRuleTextOne, 0),
+            createNetworkRule(cookieRuleTextTwo, 0),
+            createNetworkRule(cookieRuleAllowlistTextOne, 0),
+            createNetworkRule(cookieRuleAllowlistTextTwo, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -593,11 +630,11 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('works if cookie allowlist all rule is ok', () => {
         const rules = [
-            new NetworkRule(cookieRuleTextOne, 0),
-            new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleAllowlistTextOne, 0),
-            new NetworkRule(cookieRuleAllowlistTextTwo, 0),
-            new NetworkRule(cookieRuleAllowlistText, 0),
+            createNetworkRule(cookieRuleTextOne, 0),
+            createNetworkRule(cookieRuleTextTwo, 0),
+            createNetworkRule(cookieRuleAllowlistTextOne, 0),
+            createNetworkRule(cookieRuleAllowlistTextTwo, 0),
+            createNetworkRule(cookieRuleAllowlistText, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -609,10 +646,10 @@ describe('MatchingResult constructor handling cookie rules', () => {
 
     it('works if cookie allowlist regexp rule is ok', () => {
         const rules = [
-            new NetworkRule(cookieRuleTextOne, 0),
-            new NetworkRule(cookieRuleTextTwo, 0),
-            new NetworkRule(cookieRuleAllowlistTextOne, 0),
-            new NetworkRule(cookieRuleAllowlistRegexpText, 0),
+            createNetworkRule(cookieRuleTextOne, 0),
+            createNetworkRule(cookieRuleTextTwo, 0),
+            createNetworkRule(cookieRuleAllowlistTextOne, 0),
+            createNetworkRule(cookieRuleAllowlistRegexpText, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -626,10 +663,10 @@ describe('MatchingResult constructor handling cookie rules', () => {
     it('returns empty list if document allowlist rule added', () => {
         const documentAllowlistRule = '@@||example.com^$document';
         const rules = [
-            new NetworkRule(cookieRuleTextOne, 0),
-            new NetworkRule(cookieRuleTextTwo, 0),
+            createNetworkRule(cookieRuleTextOne, 0),
+            createNetworkRule(cookieRuleTextTwo, 0),
         ];
-        const sourceRule = new NetworkRule(documentAllowlistRule, 0);
+        const sourceRule = createNetworkRule(documentAllowlistRule, 0);
         const result = new MatchingResult(rules, sourceRule);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toEqual([]);
@@ -638,8 +675,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
     it('respects $cookie-$important rules', () => {
         const importBlockingRuleText = '||example.com^$cookie=test,important';
         const rules = [
-            new NetworkRule('@@||example.com^$cookie=test', 0),
-            new NetworkRule(importBlockingRuleText, 0),
+            createNetworkRule('@@||example.com^$cookie=test', 0),
+            createNetworkRule(importBlockingRuleText, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -652,8 +689,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
         const importBlockingRuleText = '||example.com^$cookie=test';
         const allowlistRuleText = '@@||example.com^$cookie=/test|other/';
         const rules = [
-            new NetworkRule(allowlistRuleText, 0),
-            new NetworkRule(importBlockingRuleText, 0),
+            createNetworkRule(allowlistRuleText, 0),
+            createNetworkRule(importBlockingRuleText, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -665,8 +702,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
     it('checks $cookie-$important rule negates regex allowlist', () => {
         const importBlockingRuleText = '||example.com^$cookie=test,important';
         const rules = [
-            new NetworkRule('@@||example.com^$cookie=/test|other/', 0),
-            new NetworkRule(importBlockingRuleText, 0),
+            createNetworkRule('@@||example.com^$cookie=/test|other/', 0),
+            createNetworkRule(importBlockingRuleText, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -678,8 +715,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
     it('respects $cookie-$important rules - empty option', () => {
         const importBlockingRuleText = '||example.com^$cookie,important';
         const rules = [
-            new NetworkRule('@@||example.com^$cookie', 0),
-            new NetworkRule(importBlockingRuleText, 0),
+            createNetworkRule('@@||example.com^$cookie', 0),
+            createNetworkRule(importBlockingRuleText, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -691,8 +728,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
     it('respects $cookie-$important rules - allowlist empty option', () => {
         const importBlockingRuleText = '||example.com^$cookie=test,important';
         const rules = [
-            new NetworkRule('@@||example.com^$cookie', 0),
-            new NetworkRule(importBlockingRuleText, 0),
+            createNetworkRule('@@||example.com^$cookie', 0),
+            createNetworkRule(importBlockingRuleText, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -705,7 +742,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
 describe('MatchingResult constructor handling stealth modifier', () => {
     it('works if stealth rule is found', () => {
         const ruleText = '@@||example.org^$stealth';
-        const rule = new NetworkRule(ruleText, 0);
+        const rule = createNetworkRule(ruleText, 0);
         const rules = [rule];
 
         const result = new MatchingResult(rules, null);
@@ -720,11 +757,11 @@ describe('MatchingResult constructor handling stealth modifier', () => {
     });
 
     it('manages stealth rules with single and multiple options', () => {
-        const singleOptionRule = new NetworkRule(
+        const singleOptionRule = createNetworkRule(
             `@@||example.org^$stealth=${StealthOptionName.XClientData}`,
             0,
         );
-        const multipleOptionsRule = new NetworkRule(
+        const multipleOptionsRule = createNetworkRule(
             `@@||example.org^$stealth=${StealthOptionName.HideReferrer}|${StealthOptionName.DoNotTrack}`,
             0,
         );
@@ -748,8 +785,8 @@ describe('MatchingResult constructor handling stealth modifier', () => {
         const ruleText = '||example.org^';
         const stealthRuleText = '@@||example.org^$stealth';
         const rules = [
-            new NetworkRule(ruleText, 0),
-            new NetworkRule(stealthRuleText, 0),
+            createNetworkRule(ruleText, 0),
+            createNetworkRule(stealthRuleText, 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -767,8 +804,8 @@ describe('MatchingResult constructor handling stealth modifier', () => {
 describe('MatchingResult constructor handling redirect rules', () => {
     it('works if redirect rules are found', () => {
         const rules = [
-            new NetworkRule('||8s8.eu^*fa.js$script,redirect=noopjs', 0),
-            new NetworkRule('||8s8.eu^*fa.js$script', 0),
+            createNetworkRule('||8s8.eu^*fa.js$script,redirect=noopjs', 0),
+            createNetworkRule('||8s8.eu^*fa.js$script', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -784,7 +821,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '||ya.ru$redirect=2x2-transparent.png,image',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
@@ -799,7 +836,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$redirect=1x1-transparent.gif',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
@@ -811,7 +848,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$redirect=2x2-transparent.png',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
@@ -827,7 +864,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$redirect',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
@@ -842,7 +879,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$document',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document');
@@ -856,7 +893,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$document,important',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
@@ -870,7 +907,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$document',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,important');
@@ -884,7 +921,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||ya.ru$document,important',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
@@ -896,7 +933,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||*/redirect-exception-test.js',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js');
@@ -908,7 +945,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||*/redirect-exception-test.js',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('||*/redirect-exception-test.js$redirect=noopjs,important');
@@ -920,7 +957,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||*/redirect-exception-test.js$important',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js$important');
@@ -932,7 +969,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
             '@@||*/redirect-exception-test.js$redirect',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
@@ -942,8 +979,8 @@ describe('MatchingResult constructor handling redirect rules', () => {
 describe('MatchingResult constructor handling redirect-rule rules', () => {
     it('works if redirect-rule rule is found', () => {
         const rules = [
-            new NetworkRule('*$script,redirect-rule=noopjs,domain=example.org', 0),
-            new NetworkRule('/pagead2', 0),
+            createNetworkRule('*$script,redirect-rule=noopjs,domain=example.org', 0),
+            createNetworkRule('/pagead2', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -958,7 +995,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
             '||example.org^$redirect=noopjs',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getBasicResult();
@@ -973,7 +1010,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
             '||example.org^$redirect=noopjs',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getBasicResult();
@@ -992,7 +1029,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
             '||ya.ru$redirect-rule=nooptext,image,document',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getBasicResult();
@@ -1001,8 +1038,8 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
     });
 
     it('returns redirect-rule if there is blocking rule', () => {
-        const blockingRule = new NetworkRule('!/googleads.$~script,domain=~github.com|~github.io', 0);
-        const redirectRuleRule = new NetworkRule(
+        const blockingRule = createNetworkRule('!/googleads.$~script,domain=~github.com|~github.io', 0);
+        const redirectRuleRule = createNetworkRule(
             '||googleads.g.doubleclick.net/pagead/id^$xmlhttprequest,redirect=nooptext',
             0,
         );
@@ -1020,7 +1057,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
 describe('MatchingResult constructor handling removeparam rules', () => {
     it('works if removeparam rules are found', () => {
         const rules = [
-            new NetworkRule('||example.org^$removeparam=/p1|p2/', 0),
+            createNetworkRule('||example.org^$removeparam=/p1|p2/', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -1035,7 +1072,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
             '@@||example.org^$removeparam=p1',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
@@ -1050,7 +1087,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
             '@@||example.org$removeparam=p1',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
@@ -1065,7 +1102,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
             allowlistRule,
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
 
         const found = result.getRemoveParamRules();
@@ -1075,7 +1112,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
 
     it('works if inverted removeparam rule is found', () => {
         const rules = [
-            new NetworkRule('||example.org^$removeparam=~p0', 0),
+            createNetworkRule('||example.org^$removeparam=~p0', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -1090,7 +1127,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
             '@@||example.org^$removeparam=~p1',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
@@ -1101,7 +1138,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
 describe('MatchingResult constructor handling removeheader rules', () => {
     it('works if removeheader rules are found', () => {
         const rules = [
-            new NetworkRule('||example.org^$removeheader=header-name', 0),
+            createNetworkRule('||example.org^$removeheader=header-name', 0),
         ];
 
         const result = new MatchingResult(rules, null);
@@ -1116,7 +1153,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
             '@@||example.org^$removeheader=h1',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveHeaderRules();
@@ -1130,7 +1167,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
             allowlistRule,
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
 
         const found = result.getRemoveHeaderRules();
@@ -1144,7 +1181,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
             '@@||example.org^$document',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
 
         const found = result.getRemoveHeaderRules();
@@ -1157,7 +1194,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
             '@@||example.org^$urlblock',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
 
         const found = result.getRemoveHeaderRules();
@@ -1170,7 +1207,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
             '@@||example.org^',
         ];
 
-        const rules = ruleTexts.map((rule) => new NetworkRule(rule, 0));
+        const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
         const result = new MatchingResult(rules, null);
 
         const found = result.getRemoveHeaderRules();
@@ -1183,7 +1220,7 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         // $generichide
         let basicRuleText = '||platform.twitter.com/widgets/tweet_button$third-party';
         let cosmeticExceptionRuleText = '@@||twitter.com^$generichide';
-        let rules = [new NetworkRule(basicRuleText, 0), new NetworkRule(cosmeticExceptionRuleText, 0)];
+        let rules = [createNetworkRule(basicRuleText, 0), createNetworkRule(cosmeticExceptionRuleText, 0)];
         let result = new MatchingResult(rules, null);
 
         expect(result.basicRule?.getText()).toBe(basicRuleText);
@@ -1198,7 +1235,7 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         // $specific hide
         basicRuleText = '||safeframe.googlesyndication.com$subdocument,domain=clien.net';
         cosmeticExceptionRuleText = '@@||clien.net$specifichide';
-        rules = [new NetworkRule(basicRuleText, 0), new NetworkRule(cosmeticExceptionRuleText, 0)];
+        rules = [createNetworkRule(basicRuleText, 0), createNetworkRule(cosmeticExceptionRuleText, 0)];
         result = new MatchingResult(rules, null);
 
         expect(result.basicRule?.getText()).toBe(basicRuleText);
@@ -1212,7 +1249,7 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         // $important should not matter, as cosmetic option modifier must be used separately
         basicRuleText = '||facebook.com/plugins/$domain=~facebook.com';
         cosmeticExceptionRuleText = '@@||facebook.com^$elemhide,important';
-        rules = [new NetworkRule(basicRuleText, 0), new NetworkRule(cosmeticExceptionRuleText, 0)];
+        rules = [createNetworkRule(basicRuleText, 0), createNetworkRule(cosmeticExceptionRuleText, 0)];
         result = new MatchingResult(rules, null);
 
         expect(result.basicRule?.getText()).toBe(basicRuleText);
@@ -1226,9 +1263,9 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         const mixedRule = '@@||twitter.com^$elemhide,jsinject';
 
         const rules = [
-            new NetworkRule(basicRuleText, 0),
-            new NetworkRule(genericHideRule, 0),
-            new NetworkRule(mixedRule, 0),
+            createNetworkRule(basicRuleText, 0),
+            createNetworkRule(genericHideRule, 0),
+            createNetworkRule(mixedRule, 0),
         ];
         const result = new MatchingResult(rules, null);
 
@@ -1241,7 +1278,7 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
     it('places allowlist $document rule in both .cosmeticExceptionRule and .basicRule slots', () => {
         const rule = '@@||example.org$document';
 
-        const result = new MatchingResult([new NetworkRule(rule, 0)], null);
+        const result = new MatchingResult([createNetworkRule(rule, 0)], null);
 
         expect(result.basicRule?.getText()).toBe(rule);
 
@@ -1255,8 +1292,8 @@ describe('getResponseHeadersResult', () => {
         const matchingRule = '||example.org/r/w64$header=Content-Length:138';
         const nonMatchingRule = '||example.org/r/w64$header=Etag:yes';
         const rules = [
-            new NetworkRule(matchingRule, 0),
-            new NetworkRule(nonMatchingRule, 0),
+            createNetworkRule(matchingRule, 0),
+            createNetworkRule(nonMatchingRule, 0),
         ];
         const responseHeaders = [
             {
@@ -1274,7 +1311,7 @@ describe('getResponseHeadersResult', () => {
     it('returns null if no rules are found', () => {
         const nonMatchingRule = '||example.org/r/w64$header=Etag:yes';
         const rules = [
-            new NetworkRule(nonMatchingRule, 0),
+            createNetworkRule(nonMatchingRule, 0),
         ];
         const responseHeaders = [
             {
@@ -1292,8 +1329,8 @@ describe('getResponseHeadersResult', () => {
         const blockingRule = '||example.org/r/w64$header=Content-Length:138';
         const allowlistRule = '@@||example.org$header=Content-Length:138';
         const rules = [
-            new NetworkRule(blockingRule, 0),
-            new NetworkRule(allowlistRule, 0),
+            createNetworkRule(blockingRule, 0),
+            createNetworkRule(allowlistRule, 0),
         ];
         const responseHeaders = [
             {
@@ -1311,8 +1348,8 @@ describe('getResponseHeadersResult', () => {
         const blockingRule = '||example.org/r/w64$header=Content-Length:138,important';
         const allowlistRule = '@@||example.org$header=Content-Length:138';
         const rules = [
-            new NetworkRule(blockingRule, 0),
-            new NetworkRule(allowlistRule, 0),
+            createNetworkRule(blockingRule, 0),
+            createNetworkRule(allowlistRule, 0),
         ];
         const responseHeaders = [
             {
@@ -1330,8 +1367,8 @@ describe('getResponseHeadersResult', () => {
         const headerRule = '||example.org/r/w64$header=Content-Length:138,important';
         let allowlistRule = '@@||example.org';
         const rules = [
-            new NetworkRule(headerRule, 0),
-            new NetworkRule(allowlistRule, 0),
+            createNetworkRule(headerRule, 0),
+            createNetworkRule(allowlistRule, 0),
         ];
         const responseHeaders = [
             {
@@ -1347,7 +1384,7 @@ describe('getResponseHeadersResult', () => {
 
         // Document allowlist rule prevents header rule from being applied
         allowlistRule = '@@||example.org^$document';
-        rules[1] = new NetworkRule(allowlistRule, 0);
+        rules[1] = createNetworkRule(allowlistRule, 0);
         matchingResult = new MatchingResult(rules, null);
         headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
         expect(headersResult).toBeNull();
@@ -1359,10 +1396,10 @@ describe('getResponseHeadersResult', () => {
 
     it('picks highest priority rule that has no allowlist counterpart from a set of rules', () => {
         const rules = [
-            new NetworkRule('||example.org/r/w64$header=Content-Length:138', 0),
-            new NetworkRule('@@||example.org$header=Content-Length:138', 0),
-            new NetworkRule('||example.org$header=$header=etag:y,important', 0),
-            new NetworkRule('|@@|example.org$header=$header=etag:y', 0),
+            createNetworkRule('||example.org/r/w64$header=Content-Length:138', 0),
+            createNetworkRule('@@||example.org$header=Content-Length:138', 0),
+            createNetworkRule('||example.org$header=$header=etag:y,important', 0),
+            createNetworkRule('|@@|example.org$header=$header=etag:y', 0),
         ];
         const responseHeaders = [
             {

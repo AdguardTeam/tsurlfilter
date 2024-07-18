@@ -1,5 +1,5 @@
 # TODO: add documentation reference
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: empty
   description: Redirects to an empty file.
 

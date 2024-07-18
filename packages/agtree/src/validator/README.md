@@ -10,9 +10,6 @@ It is used by [AGLint] to validate filtering rules.
 - [Modifier validator API](#modifier-validator-api)
     - [`exists()`](#modifier-validator-api--exists)
     - [`validate()`](#modifier-validator-api--validate)
-    - [`getAdgDocumentationLink()`,
-      `getUboDocumentationLink()`,
-      `getAbpDocumentationLink()`](#modifier-validator-api--getdocumentationlink)
 
 ## <a name="modifier-validator-api"></a> Modifier validator API
 
@@ -189,46 +186,6 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
         warn: "Rules with `$mp4` are still supported and being converted into `$redirect=noopmp4-1s` now but the support shall be removed in the future."
     }
     ```
-
-### <a name="modifier-validator-api--getdocumentationlink"></a> `getAdgDocumentationLink()`, `getUboDocumentationLink()`, `getAbpDocumentationLink()`
-
-<!-- markdownlint-enable line-length -->
-
-Returns specified adblocker syntax documentation URL for given modifier, or `null` if there is no such URL.
-
-```ts
-getAdgDocumentationLink = (modifier: Modifier): string | null;
-```
-
-```ts
-getUboDocumentationLink = (modifier: Modifier): string | null;
-```
-
-```ts
-getAbpDocumentationLink = (modifier: Modifier): string | null;
-```
-
-where `Modifier` is a [common parser type][parser-modifier-type].
-
-<a name="modifier-validator-api--getdocumentationlink--examples"></a>
-
-<!-- markdownlint-disable-next-line line-length -->
-[**Examples of `getAdgDocumentationLink()`, `getUboDocumentationLink()`, and `getAbpDocumentationLink()` usage:**](#modifier-validator-api--getdocumentationlink--examples)
-
-```ts
-import { ModifierParser, modifierValidator } from '@adguard/agtree';
-
-// ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
-
-// `https://adguard.app/kb/general/ad-filtering/create-own-filters/#denyallow-modifier` is returned
-modifierValidator.getAdgDocumentationLink(ModifierParser.parse('denyallow=example.com'));
-
-// `null` is returned because $permissions modifier is not supported by Ublock Origin
-modifierValidator.getUboDocumentationLink(ModifierParser.parse('permissions=autoplay=()'));
-
-// `https://help.adblockplus.org/hc/en-us/articles/360062733293-How-to-write-filters#type-options` is returned
-modifierValidator.getAbpDocumentationLink(ModifierParser.parse('popup'));
-```
 
 [compatibility-tables-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [parser-modifier-type]: https://github.com/AdguardTeam/tsurlfilter/blob/865ff8a6100f804a6392f68b61b76e6d7a2c611d/packages/agtree/src/parser/common.ts#L754

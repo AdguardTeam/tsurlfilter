@@ -1,5 +1,5 @@
 # Note: content blocking products do not support redirects
-adg_any_not_cb:
+adg_os_any|adg_ext_any:
   name: amazon-apstag
   aliases:
     - ubo-amazon_apstag.js

@@ -6,12 +6,6 @@ import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 import { AdblockSyntax } from '../../src/utils/adblockers';
 import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-helpers';
 
-const DOCS_BASE_URL = {
-    ADG: 'https://adguard.app/kb/general/ad-filtering/create-own-filters/',
-    UBO: 'https://github.com/gorhill/uBlock/wiki/Static-filter-syntax',
-    ABP: 'https://help.adblockplus.org/',
-};
-
 /**
  * Returns modifier AST node for given rawModifier.
  *
@@ -409,10 +403,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'domain=|example.com|example.org',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com| |example.org',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -466,10 +464,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'denyallow=|example.com|example.org',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'denyallow=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'denyallow=example.com| |example.org',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -543,10 +545,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'app=|Example.exe|com.example.app',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'app=Example.exe||com.example.app',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'app=Example.exe| |com.example.app',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -610,10 +616,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'method=|get|post',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'method=get||post',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'method=get| |post',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -678,10 +688,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'stealth=|donottrack|ip',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'stealth=ip||useragent',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'stealth=ip| |useragent',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -1141,10 +1155,14 @@ describe('ModifierValidator', () => {
                     test.each([
                         {
                             actual: 'domain=|example.com|example.org',
-                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                            expected: LIST_PARSE_ERROR_PREFIX.NO_SEPARATOR_AT_THE_BEGINNING,
                         },
                         {
                             actual: 'domain=example.com||example.org',
+                            expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
+                        },
+                        {
+                            actual: 'domain=example.com| |example.org',
                             expected: LIST_PARSE_ERROR_PREFIX.EMPTY_ITEM,
                         },
                         {
@@ -1291,106 +1309,6 @@ describe('ModifierValidator', () => {
                 // third argument is 'false' for blocking rules
                 const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
-            });
-        });
-    });
-
-    describe('getAdgDocumentationLink', () => {
-        describe('has docs', () => {
-            const modifiers = [
-                'denyallow',
-                'domain=example.com',
-                'third-party',
-                'important',
-                // deprecated
-                'empty',
-                'mp4',
-                // 'webrtc' is removed and not supported but it has docs url
-                'webrtc',
-            ];
-            test.each(modifiers)('%s', (rawModifier) => {
-                const modifier = getModifier(rawModifier);
-                const docsUrl = modifierValidator.getAdgDocumentationLink(modifier);
-                expect(docsUrl?.startsWith(DOCS_BASE_URL.ADG)).toBeTruthy();
-            });
-        });
-
-        describe('no docs', () => {
-            const modifiers = [
-                // not existent
-                'protobuf',
-                // not supported by ADG
-                'cname',
-            ];
-            test.each(modifiers)('%s', (rawModifier) => {
-                const modifier = getModifier(rawModifier);
-                const docsUrl = modifierValidator.getAdgDocumentationLink(modifier);
-                expect(docsUrl).toBeNull();
-            });
-        });
-    });
-
-    describe('getUboDocumentationLink', () => {
-        describe('has docs', () => {
-            const modifiers = [
-                'cname',
-                'from=example.com',
-                'third-party',
-                'important',
-                // deprecated modifiers
-                'empty',
-                'mp4',
-                // 'webrtc' is removed and not supported but it has docs url
-                'webrtc',
-            ];
-            test.each(modifiers)('%s', (rawModifier) => {
-                const modifier = getModifier(rawModifier);
-                const docsUrl = modifierValidator.getUboDocumentationLink(modifier);
-                expect(docsUrl?.startsWith(DOCS_BASE_URL.UBO)).toBeTruthy();
-            });
-        });
-
-        describe('no docs', () => {
-            const modifiers = [
-                // not existent
-                'protobuf',
-                // not supported by UBO
-                'removeheader',
-            ];
-            test.each(modifiers)('%s', (rawModifier) => {
-                const modifier = getModifier(rawModifier);
-                const docsUrl = modifierValidator.getUboDocumentationLink(modifier);
-                expect(docsUrl).toBeNull();
-            });
-        });
-    });
-
-    describe('getAbpDocumentationLink', () => {
-        describe('has docs', () => {
-            const modifiers = [
-                'domain=example.com',
-                'third-party',
-                'webrtc',
-            ];
-            test.each(modifiers)('%s', (rawModifier) => {
-                const modifier = getModifier(rawModifier);
-                const docsUrl = modifierValidator.getAbpDocumentationLink(modifier);
-                expect(docsUrl?.startsWith(DOCS_BASE_URL.ABP)).toBeTruthy();
-            });
-        });
-
-        describe('no docs', () => {
-            const modifiers = [
-                // not existent
-                'protobuf',
-                // not supported by ABP
-                'denyallow',
-                'important',
-            ];
-            test.each(modifiers)('%s', (rawModifier) => {
-                const modifier = getModifier(rawModifier);
-                const docsUrl = modifierValidator.getAbpDocumentationLink(modifier);
-                expect(docsUrl).toBeNull();
             });
         });
     });

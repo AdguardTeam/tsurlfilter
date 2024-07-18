@@ -27,6 +27,12 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.Configuration)
     accessor configuration: ConfigurationMV2Context | undefined;
+
+    /**
+     * Start time of the app.
+     */
+    @sessionDecorator(SessionStorageKey.StartTimeMs)
+    accessor startTimeMs: number | undefined;
 }
 
 export const appContext = new AppContext();

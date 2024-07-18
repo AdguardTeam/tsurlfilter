@@ -1,15 +1,10 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import {
-    CosmeticRuleType,
-    RuleCategory,
-    defaultLocation,
-    type ScriptletInjectionRule,
-} from '../../../src/parser/common';
+import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/parser/common';
 import { UboScriptletInjectionBodyParser } from '../../../src/parser/cosmetic/body/ubo-scriptlet';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
-import { shiftLoc } from '../../../src/utils/location';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid uBlock scriptlet injection rules', () => {
@@ -28,17 +23,16 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '##',
-                            loc: context.getLocRangeFor('##'),
+                            ...context.getRangeFor('##'),
                         },
                         body: {
                             ...UboScriptletInjectionBodyParser.parse(
                                 '+js(scriptlet0, arg0, arg1)',
-                                {
-                                    baseLoc: shiftLoc(defaultLocation, '##'.length),
-                                },
+                                defaultParserOptions,
+                                '##'.length,
                             ),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -55,17 +49,16 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@#',
-                            loc: context.getLocRangeFor('#@#'),
+                            ...context.getRangeFor('#@#'),
                         },
                         body: {
                             ...UboScriptletInjectionBodyParser.parse(
                                 '+js(scriptlet0, arg0, arg1)',
-                                {
-                                    baseLoc: shiftLoc(defaultLocation, '#@#'.length),
-                                },
+                                defaultParserOptions,
+                                '#@#'.length,
                             ),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -84,17 +77,16 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '##',
-                            loc: context.getLocRangeFor('##'),
+                            ...context.getRangeFor('##'),
                         },
                         body: {
                             ...UboScriptletInjectionBodyParser.parse(
                                 '+js(scriptlet0, arg0, arg1)',
-                                {
-                                    baseLoc: shiftLoc(defaultLocation, 'example.com,~example.net##'.length),
-                                },
+                                defaultParserOptions,
+                                'example.com,~example.net##'.length,
                             ),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -111,17 +103,16 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@#',
-                            loc: context.getLocRangeFor('#@#'),
+                            ...context.getRangeFor('#@#'),
                         },
                         body: {
                             ...UboScriptletInjectionBodyParser.parse(
                                 '+js(scriptlet0, arg0, arg1)',
-                                {
-                                    baseLoc: shiftLoc(defaultLocation, 'example.com,~example.net#@#'.length),
-                                },
+                                defaultParserOptions,
+                                'example.com,~example.net#@#'.length,
                             ),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },

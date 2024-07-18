@@ -1,0 +1,16 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: trusted-create-element
+  version_added: 1.10.1
+  parameters:
+    - name: parentSelector
+      required: true
+    - name: tagName
+      required: true
+    - name: attributePairs
+      required: false
+    - name: textContent
+      required: false
+    - name: cleanupDelayMs
+      required: false

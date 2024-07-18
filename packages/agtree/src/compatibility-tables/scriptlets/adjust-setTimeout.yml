@@ -1,0 +1,37 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: adjust-setTimeout
+  version_added: 1.0.4
+  aliases:
+    - adjust-setTimeout.js
+    - ubo-adjust-setTimeout.js
+    - nano-setTimeout-booster.js
+    - ubo-nano-setTimeout-booster.js
+    - nano-stb.js
+    - ubo-nano-stb.js
+    - ubo-adjust-setTimeout
+    - ubo-nano-setTimeout-booster
+    - ubo-nano-stb
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#adjust-setTimeout
+  parameters:
+    - name: matchCallback
+      required: false
+    - name: matchDelay
+      required: false
+    - name: boost
+      required: false
+
+ubo_any:
+  name: adjust-setTimeout.js
+  aliases:
+    - nano-setTimeout-booster.js
+    - nano-stb.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#adjust-setTimeoutjs-
+  parameters:
+    - name: matchCallback
+      required: false
+    - name: matchDelay
+      required: false
+    - name: boost
+      required: false

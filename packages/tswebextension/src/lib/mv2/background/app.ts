@@ -1,6 +1,7 @@
 /* eslint-disable class-methods-use-this */
 import { LogLevel } from '@adguard/logger';
 
+import { type AnyRule } from '@adguard/agtree';
 import { WebRequestApi } from './web-request-api';
 import {
     type ConfigurationMV2,
@@ -145,6 +146,10 @@ MessageHandlerMV2
      * @throws Error if configuration is not valid.
      */
     public async start(configuration: ConfigurationMV2): Promise<void> {
+        if (!this.appContext.startTimeMs) {
+            this.appContext.startTimeMs = Date.now();
+        }
+
         configurationMV2Validator.parse(configuration);
 
         this.configuration = TsWebExtension.createConfigurationMV2Context(configuration);
@@ -395,6 +400,18 @@ MessageHandlerMV2
         this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
 
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+    }
+
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        return this.engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
     }
 
     /**

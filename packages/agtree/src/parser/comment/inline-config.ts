@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * @file AGLint configuration comments. Inspired by ESLint inline configuration comments.
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
@@ -11,6 +12,7 @@ import {
     AGLINT_CONFIG_COMMENT_MARKER,
     COMMA,
     EMPTY,
+    NULL,
     SPACE,
 } from '../../utils/constants';
 import {
@@ -20,11 +22,75 @@ import {
     type ParameterList,
     RuleCategory,
     type Value,
+    BinaryTypeMap,
+    type ConfigNode,
 } from '../common';
 import { StringUtils } from '../../utils/string';
-import { locRange, shiftLoc } from '../../utils/location';
 import { ParameterListParser } from '../misc/parameter-list';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { ValueParser } from '../misc/value';
+import { isUndefined } from '../../utils/type-guards';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum ConfigCommentRuleSerializationMap {
+    Marker = 1,
+    Command,
+    Params,
+    Comment,
+    Start,
+    End,
+}
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum ConfigNodeSerializationMap {
+    Value = 1,
+    Start,
+    End,
+}
+
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ *
+ * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
+ */
+const FREQUENT_COMMANDS_SERIALIZATION_MAP = new Map<string, number>([
+    ['aglint', 0],
+    ['aglint-disable', 1],
+    ['aglint-enable', 2],
+    ['aglint-disable-next-line', 3],
+    ['aglint-enable-next-line', 4],
+]);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_COMMANDS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_COMMANDS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+);
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -32,7 +98,7 @@ import { getParserOptions, type ParserOptions } from '../options';
  *
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
  */
-export class ConfigCommentRuleParser {
+export class ConfigCommentRuleParser extends ParserBase {
     /**
      * Checks if the raw rule is an inline configuration comment rule.
      *
@@ -64,14 +130,13 @@ export class ConfigCommentRuleParser {
     /**
      * Parses a raw rule as an inline configuration comment.
      *
-     * @param raw Raw rule
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns
      * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment)
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): ConfigCommentRule | null {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ConfigCommentRule | null {
         if (!ConfigCommentRuleParser.isConfigComment(raw)) {
             return null;
         }
@@ -82,14 +147,7 @@ export class ConfigCommentRuleParser {
         offset = StringUtils.skipWS(raw, offset);
 
         // Get comment marker
-        const marker: Value<CommentMarker> = {
-            type: 'Value',
-            value: raw[offset] === CommentMarker.Hashmark ? CommentMarker.Hashmark : CommentMarker.Regular,
-        };
-
-        if (isLocIncluded) {
-            marker.loc = locRange(baseLoc, offset, offset + 1);
-        }
+        const marker = ValueParser.parse(raw[offset], options, baseOffset + offset);
 
         // Skip marker
         offset += 1;
@@ -103,14 +161,7 @@ export class ConfigCommentRuleParser {
         // Get comment text, for example: "aglint-disable-next-line"
         offset = StringUtils.findNextWhitespaceCharacter(raw, offset);
 
-        const command: Value = {
-            type: 'Value',
-            value: raw.substring(commandStart, offset),
-        };
-
-        if (isLocIncluded) {
-            command.loc = locRange(baseLoc, commandStart, offset);
-        }
+        const command = ValueParser.parse(raw.slice(commandStart, offset), options, baseOffset + commandStart);
 
         // Skip whitespace after command
         offset = StringUtils.skipWS(raw, offset);
@@ -123,14 +174,7 @@ export class ConfigCommentRuleParser {
 
         // Check if there is a comment
         if (commentStart !== -1) {
-            comment = {
-                type: 'Value',
-                value: raw.substring(commentStart, commentEnd),
-            };
-
-            if (isLocIncluded) {
-                comment.loc = locRange(baseLoc, commentStart, commentEnd);
-            }
+            comment = ValueParser.parse(raw.slice(commentStart, commentEnd), options, baseOffset + commentStart);
         }
 
         // Get parameter
@@ -139,22 +183,22 @@ export class ConfigCommentRuleParser {
             ? StringUtils.skipWSBack(raw, commentStart - 1) + 1
             : StringUtils.skipWSBack(raw) + 1;
 
-        let params: Value<object> | ParameterList | undefined;
+        let params: ConfigNode | ParameterList | undefined;
 
-        // ! aglint config
+        // `! aglint ...` config comment
         if (command.value === AGLINT_COMMAND_PREFIX) {
             params = {
-                type: 'Value',
-                // It is necessary to use JSON5.parse instead of JSON.parse
-                // because JSON5 allows unquoted keys.
+                type: 'ConfigNode',
+                // It is necessary to use JSON5.parse instead of JSON.parse because JSON5 allows unquoted keys.
                 // But don't forget to add { } to the beginning and end of the string,
                 // otherwise JSON5 will not be able to parse it.
                 // TODO: Better solution? ESLint uses "levn" package for parsing these comments.
-                value: JSON5.parse(`{${raw.substring(paramsStart, paramsEnd)}}`),
+                value: JSON5.parse(`{${raw.slice(paramsStart, paramsEnd)}}`),
             };
 
-            if (isLocIncluded) {
-                params.loc = locRange(baseLoc, paramsStart, paramsEnd);
+            if (options.isLocIncluded) {
+                params.start = paramsStart;
+                params.end = paramsEnd;
             }
 
             // Throw error for empty config
@@ -163,20 +207,15 @@ export class ConfigCommentRuleParser {
             }
         } else if (paramsStart < paramsEnd) {
             params = ParameterListParser.parse(
-                raw.substring(paramsStart, paramsEnd),
-                {
-                    isLocIncluded,
-                    separator: COMMA,
-                    baseLoc: shiftLoc(baseLoc, paramsStart),
-                },
+                raw.slice(paramsStart, paramsEnd),
+                options,
+                baseOffset + paramsStart,
+                COMMA,
             );
         }
 
         const result: ConfigCommentRule = {
             type: CommentRuleType.ConfigCommentRule,
-            raws: {
-                text: raw,
-            },
             category: RuleCategory.Comment,
             syntax: AdblockSyntax.Common,
             marker,
@@ -185,43 +224,209 @@ export class ConfigCommentRuleParser {
             comment,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.includeRaws) {
+            result.raws = {
+                text: raw,
+            };
+        }
+
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;
     }
 
     /**
-     * Converts an inline configuration comment AST to a string.
+     * Converts an inline configuration comment node to a string.
      *
-     * @param ast Inline configuration comment AST
+     * @param node Inline configuration comment node
      * @returns Raw string
      */
-    public static generate(ast: ConfigCommentRule): string {
+    public static generate(node: ConfigCommentRule): string {
         let result = EMPTY;
 
-        result += ast.marker.value;
+        result += node.marker.value;
         result += SPACE;
-        result += ast.command.value;
+        result += node.command.value;
 
-        if (ast.params) {
+        if (node.params) {
             result += SPACE;
 
-            if (ast.params.type === 'ParameterList') {
-                result += ParameterListParser.generate(ast.params, COMMA);
+            if (node.params.type === 'ParameterList') {
+                result += ParameterListParser.generate(node.params, COMMA);
             } else {
                 // Trim JSON boundaries
-                result += JSON.stringify(ast.params.value).slice(1, -1).trim();
+                result += JSON.stringify(node.params.value).slice(1, -1).trim();
             }
         }
 
         // Add comment within the config comment
-        if (ast.comment) {
+        if (node.comment) {
             result += SPACE;
-            result += ast.comment.value;
+            result += node.comment.value;
         }
 
         return result;
+    }
+
+    /**
+     * Serializes a config node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    private static serializeConfigNode(node: ConfigNode, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.ConfigNode);
+
+        buffer.writeUint8(ConfigNodeSerializationMap.Value);
+        // note: we don't support serializing generic objects, only AGTree nodes
+        // this is a very special case, so we just stringify the configuration object
+        buffer.writeString(JSON.stringify(node.value));
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(ConfigNodeSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(ConfigNodeSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a metadata comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    private static deserializeConfigNode(buffer: InputByteBuffer, node: Partial<ConfigNode>): void {
+        buffer.assertUint8(BinaryTypeMap.ConfigNode);
+
+        node.type = 'ConfigNode';
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case ConfigNodeSerializationMap.Value:
+                    // note: it is safe to use JSON.parse here, because we serialized it with JSON.stringify
+                    node.value = JSON.parse(buffer.readString());
+                    break;
+
+                case ConfigNodeSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case ConfigNodeSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Serializes a metadata comment node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: ConfigCommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.ConfigCommentRuleNode);
+
+        buffer.writeUint8(ConfigCommentRuleSerializationMap.Marker);
+        ValueParser.serialize(node.marker, buffer);
+
+        buffer.writeUint8(ConfigCommentRuleSerializationMap.Command);
+        ValueParser.serialize(node.command, buffer, FREQUENT_COMMANDS_SERIALIZATION_MAP, true);
+
+        if (!isUndefined(node.params)) {
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.Params);
+            if (node.params.type === 'ParameterList') {
+                ParameterListParser.serialize(node.params, buffer);
+            } else {
+                ConfigCommentRuleParser.serializeConfigNode(node.params, buffer);
+            }
+        }
+
+        if (!isUndefined(node.comment)) {
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.Comment);
+            ValueParser.serialize(node.comment, buffer);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(ConfigCommentRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a metadata comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<ConfigCommentRule>): void {
+        buffer.assertUint8(BinaryTypeMap.ConfigCommentRuleNode);
+
+        node.type = CommentRuleType.ConfigCommentRule;
+        node.category = RuleCategory.Comment;
+        node.syntax = AdblockSyntax.Common;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case ConfigCommentRuleSerializationMap.Marker:
+                    ValueParser.deserialize(buffer, node.marker = {} as Value);
+                    break;
+
+                case ConfigCommentRuleSerializationMap.Command:
+                    ValueParser.deserialize(buffer, node.command = {} as Value, FREQUENT_COMMANDS_DESERIALIZATION_MAP);
+                    break;
+
+                case ConfigCommentRuleSerializationMap.Params:
+                    if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
+                        ConfigCommentRuleParser.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
+                    } else {
+                        ParameterListParser.deserialize(buffer, node.params = {} as ParameterList);
+                    }
+                    break;
+
+                case ConfigCommentRuleSerializationMap.Comment:
+                    ValueParser.deserialize(buffer, node.comment = {} as Value);
+                    break;
+
+                case ConfigCommentRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case ConfigCommentRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
     }
 }

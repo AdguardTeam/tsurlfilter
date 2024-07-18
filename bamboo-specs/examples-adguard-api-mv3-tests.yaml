@@ -63,7 +63,7 @@ Test:
 
             # Lint
             pnpm --filter adguard-api-mv3-example lint
-    
+
             cd ./packages/examples/adguard-api-mv3
 
             # pnpm break symlinks to binary after building cli, so we re-install dependencies

@@ -5,7 +5,7 @@
 /**
  * Possible adblock syntaxes (supported by this library)
  */
-export const enum AdblockSyntax {
+export enum AdblockSyntax {
     /**
      * Common syntax, which is supported by more than one adblocker (or by all adblockers).
      *

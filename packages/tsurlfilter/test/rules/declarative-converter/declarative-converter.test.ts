@@ -6,13 +6,13 @@ import {
     ResourcesPathError,
 } from '../../../src/rules/declarative-converter/errors/converter-options-errors';
 import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
-import { NetworkRule } from '../../../src/rules/network-rule';
 import { RuleActionType } from '../../../src/rules/declarative-converter/declarative-rule';
 import {
     EmptyDomainsError,
 } from '../../../src/rules/declarative-converter/errors/conversion-errors/empty-domains-error';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
+import { createNetworkRule } from '../../helpers/rule-creator';
 
 const createFilter = (
     rules: string[],
@@ -664,10 +664,10 @@ describe('DeclarativeConverter', () => {
 
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            const networkRule = new NetworkRule(rule, 0);
+            const networkRule = createNetworkRule(rule, 0);
 
             const err = new UnsupportedModifierError(
-                `Unsupported option "${modifierName}" in the rule: "${rule}"`,
+                `Unsupported option "${modifierName}"`,
                 networkRule,
             );
 

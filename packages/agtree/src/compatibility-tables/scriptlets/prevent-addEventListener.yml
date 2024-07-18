@@ -1,0 +1,43 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: prevent-addEventListener
+  version_added: 1.0.4
+  aliases:
+    - addEventListener-defuser.js
+    - ubo-addEventListener-defuser.js
+    - aeld.js
+    - ubo-aeld.js
+    - ubo-addEventListener-defuser
+    - ubo-aeld
+    - abp-prevent-listener
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-addEventListener
+  parameters:
+    - name: typeSearch
+      required: false
+    - name: listenerSearch
+      required: false
+
+ubo_any:
+  name: addEventListener-defuser.js
+  aliases:
+    - aeld.js
+    - prevent-addEventListener.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#addEventListener-defuserjs-
+  parameters:
+    - name: typeSearch
+      required: false
+    - name: listenerSearch
+      required: false
+
+abp_any:  
+  name: prevent-listener
+  version_added: 3.11.2
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: type
+      required: true
+    - name: handler
+      required: false
+    - name: selector
+      required: false

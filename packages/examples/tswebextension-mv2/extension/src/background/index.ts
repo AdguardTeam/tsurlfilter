@@ -25,7 +25,10 @@ const defaultConfig: ConfigurationMV2 = {
     filters: [],
     allowlist: [],
     trustedDomains: [],
-    userrules: [],
+    userrules: {
+        content: [],
+        sourceMap: {},
+    },
     verbose: false,
     settings: {
         assistantUrl: `${BuildOutput.AssistantInject}.js`,

@@ -1,0 +1,40 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: json-prune
+  version_added: 1.1.0
+  aliases:
+    - json-prune.js
+    - ubo-json-prune.js
+    - ubo-json-prune
+    - abp-json-prune
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#json-prune
+  parameters:
+    - name: propsToRemove
+      required: false
+    - name: obligatoryProps
+      required: false
+    - name: stack
+      required: false
+
+ubo_any:
+  name: json-prune.js
+  version_added: 1.23.0
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#json-prunejs-
+  parameters:
+    - name: propsToRemove
+      required: false
+    - name: obligatoryProps
+      required: false
+    - name: stack
+      required: false
+
+abp_any:  
+  name: json-prune
+  version_added: 3.9.0
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: rawPrunePaths
+      required: true
+    - name: rawNeedlePaths
+      required: false

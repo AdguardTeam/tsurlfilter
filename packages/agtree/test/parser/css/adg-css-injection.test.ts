@@ -19,16 +19,16 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         selectorList: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getLocRangeFor('div'),
+                            ...context.getRangeFor('div'),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding: 0;',
-                            loc: context.getLocRangeFor('padding: 0;'),
+                            ...context.getRangeFor('padding: 0;'),
                         },
                     };
                 },
@@ -38,16 +38,16 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         selectorList: {
                             type: 'Value',
                             value: 'div:has(> section[advert])',
-                            loc: context.getLocRangeFor('div:has(> section[advert])'),
+                            ...context.getRangeFor('div:has(> section[advert])'),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding-top: 0 !important; padding-bottom: 0 !important;',
-                            loc: context.getLocRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
+                            ...context.getRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
                         },
                     };
                 },
@@ -59,21 +59,21 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         mediaQueryList: {
                             type: 'Value',
                             value: '((min-width: 400px) and (max-width: 700px))',
-                            loc: context.getLocRangeFor('((min-width: 400px) and (max-width: 700px))'),
+                            ...context.getRangeFor('((min-width: 400px) and (max-width: 700px))'),
                         },
                         selectorList: {
                             type: 'Value',
                             value: 'div:has(> section[advert])',
-                            loc: context.getLocRangeFor('div:has(> section[advert])'),
+                            ...context.getRangeFor('div:has(> section[advert])'),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding-top: 0 !important; padding-bottom: 0 !important;',
-                            loc: context.getLocRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
+                            ...context.getRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
                         },
                     };
                 },
@@ -84,21 +84,21 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         mediaQueryList: {
                             type: 'Value',
                             value: '(min-width: 400px) and (max-width: 700px)',
-                            loc: context.getLocRangeFor('(min-width: 400px) and (max-width: 700px)'),
+                            ...context.getRangeFor('(min-width: 400px) and (max-width: 700px)'),
                         },
                         selectorList: {
                             type: 'Value',
                             value: 'div:has(> section[advert])',
-                            loc: context.getLocRangeFor('div:has(> section[advert])'),
+                            ...context.getRangeFor('div:has(> section[advert])'),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'padding-top: 0 !important; padding-bottom: 0 !important;',
-                            loc: context.getLocRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
+                            ...context.getRangeFor('padding-top: 0 !important; padding-bottom: 0 !important;'),
                         },
                     };
                 },
@@ -110,21 +110,21 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         mediaQueryList: {
                             type: 'Value',
                             value: 'not all and (hover: hover)',
-                            loc: context.getLocRangeFor('not all and (hover: hover)'),
+                            ...context.getRangeFor('not all and (hover: hover)'),
                         },
                         selectorList: {
                             type: 'Value',
                             value: 'abbr::after',
-                            loc: context.getLocRangeFor('abbr::after'),
+                            ...context.getRangeFor('abbr::after'),
                         },
                         declarationList: {
                             type: 'Value',
                             value: "content: 'dummy';",
-                            loc: context.getLocRangeFor("content: 'dummy';"),
+                            ...context.getRangeFor("content: 'dummy';"),
                         },
                     };
                 },
@@ -135,16 +135,16 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): CssInjectionRuleBody => {
                     return {
                         type: 'CssInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         selectorList: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getLocRangeFor('div'),
+                            ...context.getRangeFor('div'),
                         },
                         declarationList: {
                             type: 'Value',
                             value: 'remove: true;',
-                            loc: context.getLocRangeFor('remove: true;'),
+                            ...context.getRangeFor('remove: true;'),
                         },
                         remove: true,
                     };
@@ -186,7 +186,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY,
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -196,7 +196,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY,
-                        context.getLocRangeFor('{ padding: 0; }'),
+                        ...context.toTuple(context.getRangeFor('{ padding: 0; }')),
                     );
                 },
             },
@@ -206,7 +206,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY,
-                        context.getLocRangeFor('{ padding: 0; }'),
+                        ...context.toTuple(context.getRangeFor('{ padding: 0; }')),
                     );
                 },
             },
@@ -216,7 +216,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.DECLARATION_LIST_IS_EMPTY,
-                        context.getLocRangeFor('}'),
+                        ...context.toTuple(context.getRangeFor('}')),
                     );
                 },
             },
@@ -226,7 +226,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.DECLARATION_LIST_IS_EMPTY,
-                        context.getLocRangeFor('}'),
+                        ...context.toTuple(context.getRangeFor('}')),
                     );
                 },
             },
@@ -236,7 +236,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ADG_CSS_INJ_ERROR_MESSAGES.DECLARATION_LIST_IS_EMPTY,
-                        context.getLocRangeFor('}'),
+                        ...context.toTuple(context.getRangeFor('}')),
                     );
                 },
             },
@@ -251,7 +251,7 @@ describe('AdgCssInjectionParser', () => {
                             CSS_TOKEN_STREAM_ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
                             END_OF_INPUT,
                         ),
-                        context.getLocRangeFor('a'),
+                        ...context.toTuple(context.getRangeFor('a')),
                     );
                 },
             },
@@ -264,7 +264,7 @@ describe('AdgCssInjectionParser', () => {
                             CSS_TOKEN_STREAM_ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
                             END_OF_INPUT,
                         ),
-                        context.getLocRangeFor(' '),
+                        ...context.toTuple(context.getRangeFor(' ')),
                     );
                 },
             },
@@ -278,7 +278,7 @@ describe('AdgCssInjectionParser', () => {
                             getFormattedTokenName(TokenType.OpenCurlyBracket),
                             END_OF_INPUT,
                         ),
-                        context.getLocRangeFor('t'),
+                        ...context.toTuple(context.getRangeFor('t')),
                     );
                 },
             },
@@ -292,7 +292,7 @@ describe('AdgCssInjectionParser', () => {
                             getFormattedTokenName(TokenType.OpenCurlyBracket),
                             END_OF_INPUT,
                         ),
-                        context.getLocRangeFor(')'),
+                        ...context.toTuple(context.getRangeFor(')')),
                     );
                 },
             },
@@ -308,7 +308,7 @@ describe('AdgCssInjectionParser', () => {
                             getFormattedTokenName(TokenType.OpenCurlyBracket),
                             END_OF_INPUT,
                         ),
-                        context.getLocRangeFor('v'),
+                        ...context.toTuple(context.getRangeFor('v')),
                     );
                 },
             },
@@ -322,7 +322,7 @@ describe('AdgCssInjectionParser', () => {
                             getFormattedTokenName(TokenType.CloseCurlyBracket),
                             END_OF_INPUT,
                         ),
-                        context.getLocRangeFor(';'),
+                        ...context.toTuple(context.getRangeFor(';')),
                     );
                 },
             },
@@ -337,7 +337,7 @@ describe('AdgCssInjectionParser', () => {
                             REMOVE_VALUE,
                             'aa',
                         ),
-                        context.getLocRangeFor('aa'),
+                        ...context.toTuple(context.getRangeFor('aa')),
                     );
                 },
             },
@@ -353,7 +353,8 @@ describe('AdgCssInjectionParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 

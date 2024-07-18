@@ -20,7 +20,12 @@ export class RuleStorageScanner {
     /**
      * Mapping between list ID and the offset in the storage
      */
-    declare private listOffsetEntries: Uint32Array;
+    declare private listOffsetKeys: Int32Array;
+
+    /**
+     * Mapping between list ID and the offset in the storage
+     */
+    declare private listOffsetValues: Uint32Array;
 
     /**
      * Current scanner
@@ -45,7 +50,8 @@ export class RuleStorageScanner {
     constructor(scanners: RuleScanner[]) {
         this.scanners = scanners;
         this.listOffsetEntriesCursor = 0;
-        this.listOffsetEntries = new Uint32Array(scanners.length * 2);
+        this.listOffsetKeys = new Int32Array(scanners.length);
+        this.listOffsetValues = new Uint32Array(scanners.length);
     }
 
     /**
@@ -115,23 +121,23 @@ export class RuleStorageScanner {
      * @returns tuple of list id and local filter list position
      */
     public getIds(storageIdx: number): [number, number] {
-        const listOffsetEntriesLength = this.listOffsetEntries.length;
+        const listOffsetEntriesLength = this.listOffsetKeys.length;
 
-        if (listOffsetEntriesLength === 2) {
-            return [this.listOffsetEntries[0], storageIdx - this.listOffsetEntries[1]];
+        if (listOffsetEntriesLength === 1) {
+            return [this.listOffsetKeys[0], storageIdx - this.listOffsetValues[0]];
         }
 
-        for (let i = 1; i < listOffsetEntriesLength - 2; i += 2) {
-            const offset = this.listOffsetEntries[i];
-            const nextOffset = this.listOffsetEntries[i + 2];
+        for (let i = 0; i < listOffsetEntriesLength - 1; i += 1) {
+            const offset = this.listOffsetValues[i];
+            const nextOffset = this.listOffsetValues[i + 1];
             if (storageIdx >= offset && storageIdx < nextOffset) {
-                return [this.listOffsetEntries[i - 1], storageIdx - offset];
+                return [this.listOffsetKeys[i], storageIdx - offset];
             }
         }
 
         return [
-            this.listOffsetEntries[listOffsetEntriesLength - 2],
-            storageIdx - this.listOffsetEntries[listOffsetEntriesLength - 1],
+            this.listOffsetKeys[listOffsetEntriesLength - 1],
+            storageIdx - this.listOffsetValues[listOffsetEntriesLength - 1],
         ];
     }
 
@@ -142,9 +148,8 @@ export class RuleStorageScanner {
      * @param offset Filter list offset position in the storage.
      */
     private setListOffset(listId: number, offset: number): void {
-        this.listOffsetEntries[this.listOffsetEntriesCursor] = listId;
-        this.listOffsetEntriesCursor += 1;
-        this.listOffsetEntries[this.listOffsetEntriesCursor] = offset;
+        this.listOffsetKeys[this.listOffsetEntriesCursor] = listId;
+        this.listOffsetValues[this.listOffsetEntriesCursor] = offset;
         this.listOffsetEntriesCursor += 1;
     }
 
@@ -156,10 +161,9 @@ export class RuleStorageScanner {
      * @throws Error if listId is not found.
      */
     private getListOffset(listId: number): number {
-        for (let i = 0; i < this.listOffsetEntries.length; i += 2) {
-            if (this.listOffsetEntries[i] === listId) {
-                return this.listOffsetEntries[i + 1];
-            }
+        const idx = this.listOffsetKeys.indexOf(listId);
+        if (idx !== -1) {
+            return this.listOffsetValues[idx];
         }
 
         throw new Error(`listId ${listId} not found in the storage`);

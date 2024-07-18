@@ -9,7 +9,10 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     staticFiltersIds: [1, 2, 3, 4, 9, 14],
     customFilters: [],
     allowlist: [],
-    userrules: [],
+    userrules: {
+        content: [],
+        sourceMap: {},
+    },
     verbose: false,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',

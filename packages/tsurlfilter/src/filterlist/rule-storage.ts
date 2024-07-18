@@ -1,6 +1,6 @@
 import { type IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
-import { DEFAULT_RULE_INDEX, type IRule } from '../rules/rule';
+import { type IRule } from '../rules/rule';
 import { type RuleScanner } from './scanner/rule-scanner';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
@@ -99,15 +99,16 @@ export class RuleStorage {
             return null;
         }
 
-        const ruleText = list.retrieveRuleText(ruleId);
-        if (!ruleText) {
+        const ruleNode = list.retrieveRuleNode(ruleId);
+
+        if (!ruleNode) {
             logger.warn(`Failed to retrieve rule ${ruleId}, should not happen in normal operation`);
 
             return null;
         }
 
-        // FIXME(David, v2.3): rule index
-        const result = RuleFactory.createRule(ruleText, listId, DEFAULT_RULE_INDEX, false, false, ignoreHost);
+        const result = RuleFactory.createRule(ruleNode, listId, ruleId, false, false, ignoreHost);
+
         if (result) {
             this.cache.set(storageIdx, result);
         }

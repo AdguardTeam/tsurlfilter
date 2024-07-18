@@ -6,7 +6,9 @@ import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import terser from '@rollup/plugin-terser';
+import alias from '@rollup/plugin-alias';
 import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
+import path from 'path';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
@@ -34,6 +36,20 @@ const commonConfig = {
         }),
         nodePolyfills(),
 
+        // The build of CSSTree is a bit complicated (patches, require "emulation", etc.),
+        // so here we only specify the pre-built version by an alias
+        alias({
+            entries: [
+                {
+                    find: '@adguard/ecss-tree',
+                    replacement: path.resolve(
+                        // FIXME (David, v2.3): Temporary solution, moreover, CSSTree will be removed in AGTree v2
+                        'node_modules/@adguard/agtree/node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
+                    ),
+                },
+            ],
+        }),
+
         // Allow node_modules resolution, so you can use 'external' to control
         // which external modules to include in the bundle
         // https://github.com/rollup/rollup-plugin-node-resolve#usage
@@ -46,6 +62,10 @@ const commonConfig = {
 };
 
 const commonExternal = [
+    // FIXME (David, v2.3): split later if needed
+    // '@adguard/agtree',
+    // '@adguard/css-tokenizer',
+    // '@adguard/ecss-tree',
     '@adguard/scriptlets',
     'is-ip',
     'punycode/',
@@ -61,7 +81,6 @@ const esmConfig = {
         'src/index.ts',
         'src/request-type.ts',
         'src/rules/simple-regex.ts',
-        'src/rules/cosmetic-rule-marker.ts',
         'src/rules/network-rule-options.ts',
     ],
     output: [

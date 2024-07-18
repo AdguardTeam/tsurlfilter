@@ -1,10 +1,17 @@
+import {
+    type AnyRule,
+    NetworkRuleType,
+    RuleCategory,
+    RuleParser,
+} from '@adguard/agtree';
+
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
-import { DEFAULT_RULE_INDEX, type IRule } from './rule';
-import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
+import { RULE_INDEX_NONE, type IRule } from './rule';
 import { HostRule } from './host-rule';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../common/error';
+import { createAllowlistRuleNode } from './allowlist';
 
 /**
  * Rule builder class
@@ -16,8 +23,11 @@ export class RuleFactory {
      *
      * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
      *
-     * @param text rule string
+     * @param inputRule rule string
      * @param filterListId list id
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index
      * @param ignoreNetwork do not create network rules
      * @param ignoreCosmetic do not create cosmetic rules
      * @param ignoreHost do not create host rules
@@ -29,45 +39,50 @@ export class RuleFactory {
      * @return IRule object or null
      */
     public static createRule(
-        text: string,
+        node: AnyRule,
         filterListId: number,
-        ruleIndex = DEFAULT_RULE_INDEX,
+        ruleIndex = RULE_INDEX_NONE,
         ignoreNetwork = false,
         ignoreCosmetic = false,
         ignoreHost = true,
         silent = true,
     ): IRule | null {
-        const line = text.trim();
-
-        if (!line || RuleFactory.isComment(line)) {
-            return null;
-        }
-
-        if (RuleFactory.isShort(line)) {
-            logger.info(`The rule is too short: ${line}`);
-        }
-
         try {
-            if (RuleFactory.isCosmetic(line)) {
-                if (ignoreCosmetic) {
+            switch (node.category) {
+                case RuleCategory.Invalid:
+                case RuleCategory.Empty:
+                case RuleCategory.Comment:
                     return null;
-                }
 
-                return new CosmeticRule(line, filterListId, ruleIndex);
-            }
+                case RuleCategory.Cosmetic:
+                    if (ignoreCosmetic) {
+                        return null;
+                    }
 
-            if (!ignoreHost) {
-                const hostRule = RuleFactory.createHostRule(line, filterListId, ruleIndex);
-                if (hostRule) {
-                    return hostRule;
-                }
-            }
+                    return new CosmeticRule(node, filterListId, ruleIndex);
 
-            if (!ignoreNetwork) {
-                return new NetworkRule(line, filterListId, ruleIndex);
+                case RuleCategory.Network:
+                    if (node.type === NetworkRuleType.HostRule) {
+                        if (ignoreHost) {
+                            return null;
+                        }
+
+                        return new HostRule(node, filterListId, ruleIndex);
+                    }
+
+                    if (ignoreNetwork) {
+                        return null;
+                    }
+
+                    return new NetworkRule(node, filterListId, ruleIndex);
+
+                default:
+                    // should not happen in normal operation
+                    return null;
             }
         } catch (e) {
-            const msg = `"${getErrorMessage(e)}" in the rule: "${line}"`;
+            const ruleText = RuleParser.generate(node);
+            const msg = `"${getErrorMessage(e)}" in the rule: "${ruleText}"`;
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {
@@ -79,63 +94,22 @@ export class RuleFactory {
     }
 
     /**
-     * Creates host rule from text
+     * Creates allowlist rule for domain.
      *
-     * @param ruleText
-     * @param filterListId
+     * @param domain Domain name.
+     * @returns Allowlist rule or null.
      */
-    private static createHostRule(ruleText: string, filterListId: number, ruleIndex: number): HostRule | null {
-        const rule = new HostRule(ruleText, filterListId, ruleIndex);
-        return rule.isInvalid() ? null : rule;
-    }
+    public static createAllowlistRule(
+        domain: string,
+        filterListId: number,
+        ruleIndex = RULE_INDEX_NONE,
+    ): null | NetworkRule {
+        const node = createAllowlistRuleNode(domain);
 
-    /**
-     * Checks if rule is short
-     */
-    public static isShort(rule: string): boolean {
-        if (!rule) {
-            return true;
-        }
-        return !!(rule && rule.length <= 3);
-    }
-
-    /**
-     * Checks if the rule is cosmetic or not.
-     * @param ruleText - rule text to check.
-     */
-    public static isCosmetic(ruleText: string): boolean {
-        const marker = findCosmeticRuleMarker(ruleText);
-        return marker[0] !== -1;
-    }
-
-    /**
-     * If text is comment
-     *
-     * @param text
-     */
-    public static isComment(text: string): boolean {
-        const trimmed = text.trim();
-
-        if (trimmed.charAt(0) === '!') {
-            return true;
+        if (!node) {
+            return null;
         }
 
-        // adblock agent
-        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-            // avoid this case: [$adg=modifier]##[css-attribute=selector]
-            return !RuleFactory.isCosmetic(text);
-        }
-
-        // host-like / uBO-like comment
-        if (text.charAt(0) === '#') {
-            if (text.length === 1) {
-                return true;
-            }
-
-            // Now we should check that this is not a cosmetic rule
-            return !RuleFactory.isCosmetic(text);
-        }
-
-        return false;
+        return new NetworkRule(node, filterListId, ruleIndex);
     }
 }

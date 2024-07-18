@@ -1,5 +1,6 @@
 import { getHostname } from 'tldts';
 
+import { type AnyRule } from '@adguard/agtree';
 import { RuleFactory } from '../rules/rule-factory';
 import { type NetworkRule } from '../rules/network-rule';
 import { type CosmeticRule } from '../rules/cosmetic-rule';
@@ -18,8 +19,8 @@ export class RuleSyntaxUtils {
      * @param ruleText
      * @param domain
      */
-    public static isRuleForDomain(ruleText: string, domain: string): boolean {
-        const rule = RuleFactory.createRule(ruleText, this.DUMMY_FILTER_ID) as RulesUnion | null;
+    public static isRuleForDomain(node: AnyRule, domain: string): boolean {
+        const rule = RuleFactory.createRule(node, this.DUMMY_FILTER_ID) as RulesUnion | null;
         if (!rule) {
             return false;
         }
@@ -35,13 +36,13 @@ export class RuleSyntaxUtils {
      * @param ruleText
      * @param url
      */
-    public static isRuleForUrl(ruleText: string, url: string): boolean {
+    public static isRuleForUrl(node: AnyRule, url: string): boolean {
         const domain = getHostname(url);
 
         if (!domain) {
             return false;
         }
 
-        return this.isRuleForDomain(ruleText, domain);
+        return this.isRuleForDomain(node, domain);
     }
 }

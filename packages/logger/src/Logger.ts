@@ -192,11 +192,11 @@ export class Logger {
                 return Logger.errorToString(value);
             }
 
-            if (typeof value.message === 'string') {
+            if (value && typeof value.message === 'string') {
                 return value.message;
             }
 
-            if (typeof value === 'object') {
+            if (typeof value === 'object' && value !== null) {
                 return JSON.stringify(value);
             }
 

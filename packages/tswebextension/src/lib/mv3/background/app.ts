@@ -2,6 +2,7 @@ import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative
 import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
+import { type AnyRule } from '@adguard/agtree';
 import { type AppInterface, defaultFilteringLog } from '../../common';
 import { getErrorMessage } from '../../common';
 import { logger } from '../../common/utils/logger';
@@ -271,7 +272,8 @@ export class TsWebExtension implements AppInterface<
 
             // Convert custom filters and user rules into one rule set and apply it
             res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
-                configuration.userrules,
+                // FIXME: (David, v2.3): Handle this later
+                configuration.userrules.content,
                 combinedAllowlistRules,
                 customFilters,
                 staticRuleSets,
@@ -644,5 +646,20 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }
+    }
+
+    // TODO: Implement this method.
+    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        throw new Error('Method not implemented.');
     }
 }
