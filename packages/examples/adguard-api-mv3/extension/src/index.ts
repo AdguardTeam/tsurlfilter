@@ -20,12 +20,8 @@ import {
 
     let configuration: Configuration = {
         filters: [
-            1,
             2,
             3,
-            4,
-            9,
-            14,
         ],
         filteringEnabled: true,
         allowlist: ['www.example.com'],

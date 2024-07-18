@@ -2,8 +2,10 @@
 import { program } from 'commander';
 
 import { copyWar } from './copyWar';
+import { downloadCompaniesDb } from './donwloadCompaniesDb';
 
 export const DEFAULT_WAR_PATH = 'build/war';
+export const DEFAULT_COMPANIES_DB_PATH = 'build/trackers.json';
 
 /**
  * Main entrypoint.
@@ -20,6 +22,12 @@ async function main(): Promise<void> {
         .argument('[path]', 'resources download path', DEFAULT_WAR_PATH)
         .action(copyWar);
 
+    program
+        .command('companies')
+        .description('Downloads companies database from AdguardTeam/companiesdb repository')
+        .argument('[path]', 'companiesDB download path', DEFAULT_COMPANIES_DB_PATH)
+        .action(downloadCompaniesDb);
+
     await program.parseAsync(process.argv);
 }
 
@@ -29,4 +37,4 @@ if (isRunningViaCli) {
     main();
 }
 
-export { copyWar };
+export { copyWar, downloadCompaniesDb };

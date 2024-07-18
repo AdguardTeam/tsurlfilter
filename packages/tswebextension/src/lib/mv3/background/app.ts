@@ -26,6 +26,7 @@ import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
 import { CosmeticJsApi } from './cosmetic-js-api';
+import { companiesService } from './services/companies';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -95,14 +96,27 @@ export class TsWebExtension implements AppInterface<
     private readonly webAccessibleResourcesPath: string | undefined;
 
     /**
+     * Companies database path in the result bundle relative to the root dir.
+     * Should start with leading slash '/'.
+     * TODO: make private.
+     */
+    public readonly companiesDbPath: string | undefined;
+
+    /**
      * Creates new {@link TsWebExtension} class.
      *
      * @param webAccessibleResourcesPath Path to resources.
+     * @param companiesDbPath Path to companies database.
      *
      * @see {@link TsWebExtension.webAccessibleResourcesPath} for details.
      */
-    constructor(webAccessibleResourcesPath?: string) {
+    constructor(
+        webAccessibleResourcesPath?: string,
+        companiesDbPath?: string,
+    ) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
+        this.companiesDbPath = companiesDbPath;
+
     }
 
     /**
@@ -119,6 +133,11 @@ export class TsWebExtension implements AppInterface<
         logger.debug('[tswebextension.innerStart]: start');
 
         try {
+            // Load companies database if necessary.
+            if (this.companiesDbPath) {
+                await companiesService.loadCompanies(this.companiesDbPath);
+            }
+
             const res = await this.configure(config);
 
             // Start listening for request events.

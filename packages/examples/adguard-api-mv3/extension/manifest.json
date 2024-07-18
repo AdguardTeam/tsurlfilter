@@ -44,7 +44,7 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "/war/*"
+                "/adguard/*"
             ],
             "matches": [
                 "http://*/*",

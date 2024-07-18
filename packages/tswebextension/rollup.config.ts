@@ -166,7 +166,13 @@ const cliConfig = {
     watch: {
         include: 'src/cli/**',
     },
-    external: ['path', 'fs-extra', 'commander'],
+    external: [
+        'path',
+        'fs',
+        'https',
+        'fs-extra',
+        'commander',
+    ],
     plugins: [
         ...commonPlugins,
         commonjs(),

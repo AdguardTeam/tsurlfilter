@@ -38,6 +38,8 @@ export type RequestBlockingEvent = {
     assumedFilterId: number;
     /** Request mime type. */
     requestType: ContentType;
+    /** Tracker category ID. */
+    trackerCategoryId: number;
 };
 
 export interface RequestBlockingLoggerInterface {
@@ -93,6 +95,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             requestUrl,
             requestType,
             frameUrl,
+            companyCategory,
         } = event.data;
 
         // exclude allowlist rules
@@ -107,6 +110,8 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             requestUrl,
             referrerUrl: frameUrl,
             requestType,
+            // always provided for MV3
+            trackerCategoryId: companyCategory!,
         });
     }
 }

@@ -7,6 +7,7 @@ import {
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
+import { companiesService } from '../services/companies';
 import { ContentType } from '..';
 
 /**
@@ -156,6 +157,8 @@ export class RequestBlockingApi {
             return;
         }
 
+        const companyCategory = companiesService.match(requestUrl);
+
         // We need this only for count total blocked requests,
         // so we can skip contentType.
         defaultFilteringLog.publishEvent({
@@ -167,6 +170,7 @@ export class RequestBlockingApi {
                 // TODO: Add saving correct request type to request context
                 // storage in the upper level.
                 requestType: ContentType.Document,
+                companyCategory,
                 frameUrl: referrerUrl,
                 requestUrl,
                 rule: appliedRule,

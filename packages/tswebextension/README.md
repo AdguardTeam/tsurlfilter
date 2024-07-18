@@ -11,8 +11,8 @@ Table of content:
   - [CLI](#cli)
   - [API](#api)
     - [configuration](#configuration)
-      - [TSWEBEXTENSION_VERSION](#tswebextension-version)
-      - [EXTENDED_CSS_VERSION](#extended_css_version)
+      - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
+      - [EXTENDED\_CSS\_VERSION](#extended_css_version)
       - [filters (MV2 only)](#filters-mv2-only)
         - [filterId](#filterid)
         - [content](#content)
@@ -27,7 +27,7 @@ Table of content:
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules](#userrules)
-      - [verbose (deprecated)](#-verbose-deprecated)
+      - [ verbose (deprecated)](#-verbose-deprecated)
       - [logLevel](#loglevel)
       - [settings](#settings)
         - [allowlistInverted](#allowlistinverted)
@@ -39,6 +39,7 @@ Table of content:
         - [documentBlockingPageUrl](#documentblockingpageurl)
         - [assistantUrl](#assistanturl)
         - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
+        - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
         - [stealthConfig](#stealthconfig)
           - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
           - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
@@ -91,6 +92,7 @@ Table of content:
       - [contentFilteringStart](#contentfilteringstart)
       - [contentFilteringFinish](#contentfilteringfinish)
       - [stealthAction](#stealthaction)
+      - [stealthAllowlistAction](#stealthallowlistaction)
       - [JsInject](#jsinject)
     - [properties](#properties-1)
       - [onLogEvent](#onlogevent)
@@ -140,23 +142,45 @@ const build = async () => {
 
 If path is not defined, the resources will be loaded to `build/war` relative to your current working directory by default
 
+For MV3 extension you should to download CompaniesDB to determinate the blocked tracker category.
+
+via built-in cli:
+
+```sh
+tswebextension companies [path]
+```
+
+or intergrate loading in your build pipeline:
+
+```ts
+import { downloadCompaniesDb, DEFAULT_COMPANIES_DB_PATH } from '@adguard/tswebextension/cli';
+
+const build = async () => {
+  ...
+  await downloadCompaniesDb(DEFAULT_COMPANIES_DB_PATH);
+  ...
+};
+```
+
+If path is not defined, the resources will be loaded to `build/trackers.json` relative to your current working directory by default
+
 ## CLI
 
 The console interface provides useful tools for building extensions.
 
 ```
-Usage: tswebextension-utils [options] [command]
+Usage: tswebextension [options] [command]
 
 CLI to some development utils
 
 Options:
-  -V, --version   output the version number
-  -h, --help      display help for command
+  -V, --version     output the version number
+  -h, --help        display help for command
 
 Commands:
-  war [path]      Downloads web accessible resources for
-                  redirect rules
-  help [command]  display help for command
+  war [path]        Downloads web accessible resources for redirect rules
+  companies [path]  Downloads companies database from AdguardTeam/companiesdb repository
+  help [command]    display help for command
 ```
 
 ## API
