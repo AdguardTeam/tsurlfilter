@@ -35,14 +35,10 @@ export const addQunitListeners = (logResultFnName: string) => {
 export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrules: string ];
 
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
-    // FIXME (David): Handle this
+    // FIXME: (David) Handle this array as UInt8Array
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ defaultConfig, userrules ] = arg;
     const configuration: Configuration = defaultConfig;
-    configuration.userrules = {
-        // FIXME (David): Handle this
-        content: [],
-    };
     await self.tsWebExtension.configure(configuration);
 };
 
