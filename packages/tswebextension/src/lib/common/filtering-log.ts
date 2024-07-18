@@ -85,7 +85,7 @@ export type ApplyBasicRuleEventData = {
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
-    /** supported only in MV3 */
+    /** Supported only in MV3. */
     companyCategory?: number,
 };
 

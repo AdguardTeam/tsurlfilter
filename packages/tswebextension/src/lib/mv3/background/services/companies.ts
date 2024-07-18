@@ -1,6 +1,6 @@
-import browser from "webextension-polyfill";
-import { getDomain } from "tldts";
-import zod from "zod";
+import browser from 'webextension-polyfill';
+import { getDomain } from 'tldts';
+import zod from 'zod';
 
 /**
  * Schema for companies database.
@@ -41,7 +41,7 @@ class CompaniesService {
      * @param path Path to the companies database file.
      */
     public async loadCompanies(path: string): Promise<void> {
-        const url = browser.runtime.getURL(path)
+        const url = browser.runtime.getURL(path);
         const res = await fetch(url);
 
         if (!res.ok) {
@@ -54,11 +54,10 @@ class CompaniesService {
     }
 
     /**
-     * Match URL to a tracker category id. if the URL is not found in the database
-     * or database is not loaded, return {@link UNKNOWN_CATEGORY}.
-     * 
-     * list of categories ids can be found in {@link companies.categories}.
-     * @param url request URL to match.
+     * Match URL to a tracker category id.
+     * If the URL is not found in the database or database is not loaded, return {@link UNKNOWN_CATEGORY}.
+     * List of categories ids can be found in {@link companies.categories}.
+     * @param url Request URL to match.
      * @returns Tracker category ID.
      */
     public match(url: string): number {
@@ -84,7 +83,7 @@ class CompaniesService {
             return CompaniesService.UNKNOWN_CATEGORY;
         }
 
-        return trackerData.categoryId ?? CompaniesService.UNKNOWN_CATEGORY
+        return trackerData.categoryId ?? CompaniesService.UNKNOWN_CATEGORY;
     }
 }
 

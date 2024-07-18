@@ -104,10 +104,8 @@ export class TsWebExtension implements AppInterface<
 
     /**
      * Creates new {@link TsWebExtension} class.
-     *
      * @param webAccessibleResourcesPath Path to resources.
      * @param companiesDbPath Path to companies database.
-     *
      * @see {@link TsWebExtension.webAccessibleResourcesPath} for details.
      */
     constructor(
@@ -116,7 +114,6 @@ export class TsWebExtension implements AppInterface<
     ) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
         this.companiesDbPath = companiesDbPath;
-
     }
 
     /**
