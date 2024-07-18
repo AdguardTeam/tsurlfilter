@@ -1,6 +1,7 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
+import { webRequest } from 'sinon-chrome';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
@@ -30,6 +31,11 @@ export class RequestEvents {
     public static onBeforeRequest = new RequestEvent<
         OnBeforeRequestDetailsType,
         WebRequest.OnBeforeRequestOptions
+    >();
+
+    public static onResponseStarted = new RequestEvent<
+        WebRequest.OnResponseStartedDetailsType,
+        WebRequest.OnResponseStartedOptions
     >();
 
     public static onBeforeSendHeaders = new RequestEvent<
@@ -80,6 +86,14 @@ export class RequestEvents {
             onBeforeSendHeadersOptions,
         );
 
+        const onResponseStartedOptions: WebRequest.OnResponseStartedOptions[] = ['responseHeaders', 'extraHeaders'];
+        RequestEvents.onResponseStarted.init(
+            browser.webRequest.onResponseStarted,
+            RequestEvents.handleOnResponseStarted,
+            { urls: ['<all_urls>'] },
+            onResponseStartedOptions,
+        );
+
         const onHeadersReceivedOptions: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders'];
 
         const onHeadersReceivedOptionTypes = (browser as ChromiumBrowser).webRequest.OnHeadersReceivedOptions;
@@ -108,6 +122,25 @@ export class RequestEvents {
             RequestEvents.handleOnErrorOccurred,
             { urls: ['<all_urls>'] },
         );
+    }
+
+    /**
+     * Handles onResponseStarted event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
+    private static handleOnResponseStarted(
+        details: WebRequest.OnResponseStartedDetailsType,
+    ): RequestData<WebRequest.OnResponseStartedDetailsType> {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, {
+            state: RequestContextState.ResponseStarted,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
     }
 
     /**

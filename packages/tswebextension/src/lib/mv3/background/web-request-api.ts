@@ -171,6 +171,7 @@ export class WebRequestApi {
      */
     public static start(): void {
         RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeRequest);
+        RequestEvents.onResponseStarted.addListener(WebRequestApi.onResponseStarted);
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
@@ -213,6 +214,62 @@ export class WebRequestApi {
             const errorMessage = getErrorMessage(e);
             throw new Error(`Cannot flush memory cache and call browser.handlerBehaviorChanged: ${errorMessage}`);
         }
+    }
+
+    /**
+     * On response started event handler.
+     *
+     * @param event On response started event.
+     * @param event.context Event context.
+     */
+    private static onResponseStarted({
+        context,
+    }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+        console.log('on response started', { context });
+        if (!context) {
+            return;
+        }
+
+        const {
+            tabId,
+            frameId,
+            requestType,
+        } = context;
+
+        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+        console.log('on response started', { tabContext });
+
+        if (!tabContext) {
+            return;
+        }
+
+        const frame = tabContext.frames.get(frameId);
+
+        if (!frame || !frame.cosmeticResult) {
+            return;
+        }
+
+        /**
+         * Actual tab url may not be committed by navigation event during response processing.
+         * If {@link tabContext.info.url} and {@link url} are not the same, this means
+         * that tab navigation steel is being processed and js injection may be causing the error.
+         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
+         */
+        if (requestType === RequestType.Document
+            /**
+             * Check if url exists because it might be empty for new tabs.
+             * In this case we may inject on response started
+             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
+             */
+            && tabContext.info.url && tabContext.info.url !== frame.url) {
+            return;
+        }
+
+        // CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
     /**
