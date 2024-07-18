@@ -79,9 +79,15 @@ export const getSaveCookieLogEventPayloadValidator = z.object({
     cookieName: z.string(),
     cookieDomain: z.string(),
     cookieValue: z.string(),
-    ruleText: z.string(),
     filterId: z.number(),
+    ruleIndex: z.number(),
     thirdParty: z.boolean(),
+    isAllowlist: z.boolean(),
+    isImportant: z.boolean(),
+    isDocumentLevel: z.boolean(),
+    isCsp: z.boolean(),
+    isCookie: z.boolean(),
+    advancedModifier: z.string().nullable(),
 }).strict();
 
 /**

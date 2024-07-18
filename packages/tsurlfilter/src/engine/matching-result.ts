@@ -530,6 +530,16 @@ export class MatchingResult {
     }
 
     /**
+     * Checks if a network rule is sub document rule.
+     *
+     * @param rule Rule to check.
+     * @returns `true` if the rule is sub document rule.
+     */
+    private static isSubDocumentRule(rule: NetworkRule): boolean {
+        return (rule.getPermittedRequestTypes() & RequestType.SubDocument) === RequestType.SubDocument;
+    }
+
+    /**
      * Returns an array of permission policy rules
      */
     getPermissionsPolicyRules(): NetworkRule[] {
@@ -537,10 +547,60 @@ export class MatchingResult {
             return [];
         }
 
-        return MatchingResult.filterAdvancedModifierRules(
-            this.permissionsRules,
-            (rule) => ((x): boolean => x.getAdvancedModifierValue() === rule.getAdvancedModifierValue()),
-        );
+        const allowlistRules: NetworkRule[] = [];
+        const blockingRules: NetworkRule[] = [];
+
+        let globalAllowlistRule: NetworkRule | null = null;
+        let globalSubDocAllowlistRule: NetworkRule | null = null;
+
+        for (let i = 0; i < this.permissionsRules.length; i += 1) {
+            const rule = this.permissionsRules[i];
+
+            if (rule.isAllowlist()) {
+                // Global allowlist rule, where $permissions modifier doesn't have a value
+                if (!rule.getAdvancedModifierValue()) {
+                    if (MatchingResult.isSubDocumentRule(rule)) {
+                        if (!globalSubDocAllowlistRule) {
+                            // e.g. @@||example.com^$subdocument,permissions
+                            globalSubDocAllowlistRule = rule;
+                        }
+                    } else if (!globalAllowlistRule) {
+                        // e.g. @@||example.com^$permissions
+                        globalAllowlistRule = rule;
+                    }
+                } else {
+                    allowlistRules.push(rule);
+                }
+            } else {
+                blockingRules.push(rule);
+            }
+        }
+
+        if (globalAllowlistRule) {
+            return [globalAllowlistRule];
+        }
+
+        const result: Set<NetworkRule> = new Set();
+
+        blockingRules.forEach((rule) => {
+            if (MatchingResult.isSubDocumentRule(rule) && globalSubDocAllowlistRule) {
+                result.add(globalSubDocAllowlistRule);
+                return;
+            }
+
+            const allowlistRule = allowlistRules.find(
+                (a) => !rule.isHigherPriority(a) && rule.getAdvancedModifierValue() === a.getAdvancedModifierValue()
+                && MatchingResult.isSubDocumentRule(a) === MatchingResult.isSubDocumentRule(rule),
+            );
+
+            if (allowlistRule) {
+                result.add(allowlistRule);
+            } else {
+                result.add(rule);
+            }
+        });
+
+        return Array.from(result);
     }
 
     /**

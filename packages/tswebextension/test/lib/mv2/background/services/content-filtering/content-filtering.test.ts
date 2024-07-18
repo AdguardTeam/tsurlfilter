@@ -2,17 +2,16 @@
  * @jest-environment jsdom
  */
 import {
-    NetworkRule,
     MatchingResult,
     RequestType,
     CosmeticResult,
-    CosmeticRule,
     HTTPMethod,
 } from '@adguard/tsurlfilter';
 import { ContentType } from '@lib/common';
 import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
 import { ContentFiltering } from '@lib/mv2/background/services/content-filtering/content-filtering';
 import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
+import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 
 describe('Content filtering', () => {
     const requestContext: RequestContext = {
@@ -34,7 +33,7 @@ describe('Content filtering', () => {
     const getCosmeticResult = (): CosmeticResult => {
         const cosmeticResult = new CosmeticResult();
 
-        cosmeticResult.Html.append(new CosmeticRule('example.org$$script[tag-content="test"]', 1));
+        cosmeticResult.Html.append(createCosmeticRule('example.org$$script[tag-content="test"]', 1));
 
         return cosmeticResult;
     };
@@ -59,7 +58,7 @@ describe('Content filtering', () => {
     it('checks replace rules', () => {
         ContentFiltering.onBeforeRequest({
             ...requestContext,
-            matchingResult: new MatchingResult([new NetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
+            matchingResult: new MatchingResult([createNetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
         });
 
         expect(ContentStream.prototype.init).toBeCalledTimes(1);
@@ -68,7 +67,7 @@ describe('Content filtering', () => {
     it('checks replace rules - invalid request type', () => {
         ContentFiltering.onBeforeRequest({
             ...requestContext,
-            matchingResult: new MatchingResult([new NetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
+            matchingResult: new MatchingResult([createNetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
             requestType: RequestType.Image,
         });
 
@@ -84,7 +83,7 @@ describe('Content filtering', () => {
     it('checks empty cases - invalid method', () => {
         ContentFiltering.onBeforeRequest({
             ...requestContext,
-            matchingResult: new MatchingResult([new NetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
+            matchingResult: new MatchingResult([createNetworkRule('||example.org^$replace=/test/test1/g', 1)], null),
             method: HTTPMethod.PUT,
         });
 
@@ -95,8 +94,8 @@ describe('Content filtering', () => {
         ContentFiltering.onBeforeRequest({
             ...requestContext,
             matchingResult: new MatchingResult(
-                [new NetworkRule('||example.org^$replace=/test/test1/g', 1)],
-                new NetworkRule('@@||example.org^$content', 1),
+                [createNetworkRule('||example.org^$replace=/test/test1/g', 1)],
+                createNetworkRule('@@||example.org^$content', 1),
             ),
         });
 

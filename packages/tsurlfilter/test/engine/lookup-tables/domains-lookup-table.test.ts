@@ -1,29 +1,30 @@
-import { NetworkRule, RequestType } from '../../../src';
+import { RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { DomainsLookupTable } from '../../../src/engine/lookup-tables/domains-lookup-table';
+import { createNetworkRule } from '../../helpers/rule-creator';
 
 describe('Domains Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const ruleStorage = createRuleStorage([]);
         const table = new DomainsLookupTable(ruleStorage);
 
-        expect(table.addRule(new NetworkRule('path', 0), 0)).toBeFalsy();
+        expect(table.addRule(createNetworkRule('path', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(new NetworkRule('||example.org^', 0), 0)).toBeFalsy();
+        expect(table.addRule(createNetworkRule('||example.org^', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(new NetworkRule('path$domain=~example.com', 0), 0)).toBeFalsy();
+        expect(table.addRule(createNetworkRule('path$domain=~example.com', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(new NetworkRule('path$domain=example.*', 0), 0)).toBeFalsy();
+        expect(table.addRule(createNetworkRule('path$domain=example.*', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(new NetworkRule('example.com$domain=/example/', 0), 0)).toBeFalsy();
+        expect(table.addRule(createNetworkRule('example.com$domain=/example/', 0), 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(new NetworkRule('path$domain=example.com', 0), 0)).toBeTruthy();
+        expect(table.addRule(createNetworkRule('path$domain=example.com', 0), 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
     });
 

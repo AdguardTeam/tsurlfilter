@@ -2,8 +2,6 @@
  * @file Common options for all parsers.
  */
 
-import { type Location, defaultLocation } from './common';
-
 /**
  * Common options for all parsers.
  */
@@ -15,24 +13,34 @@ export interface ParserOptions {
     tolerant?: boolean;
 
     /**
-     * Base location for parsing (and positions will be relative for this).
-     */
-    baseLoc: Location;
-
-    /**
-     * Is {@link Location} included in AST.
+     * Whether to include location information in the AST nodes.
      */
     isLocIncluded?: boolean;
 
     /**
-     * Parse Adblock Plus-specific rules.
+     * Whether to parse AdBlock-specific rules.
      */
     parseAbpSpecificRules?: boolean;
 
     /**
-     * Parse uBlock Origin-specific rules.
+     * Whether to parse uBlock Origin-specific rules.
      */
     parseUboSpecificRules?: boolean;
+
+    /**
+     * Whether to parse raw parts.
+     */
+    includeRaws?: boolean;
+
+    /**
+     * Whether to ignore comment-rules.
+     */
+    ignoreComments?: boolean;
+
+    /**
+     * Whether to parse host rules.
+     */
+    parseHostRules?: boolean;
 }
 
 /**
@@ -40,21 +48,10 @@ export interface ParserOptions {
  */
 export const defaultParserOptions: ParserOptions = {
     tolerant: false,
-    baseLoc: defaultLocation,
     isLocIncluded: true,
     parseAbpSpecificRules: true,
     parseUboSpecificRules: true,
-};
-
-/**
- * Get parser options or use default values.
- *
- * @param options Options to be used for parsing.
- * @returns Parser options.
- */
-export const getParserOptions = (options: Partial<ParserOptions> = {}): ParserOptions => {
-    return {
-        ...defaultParserOptions,
-        ...options,
-    };
+    includeRaws: true,
+    ignoreComments: false,
+    parseHostRules: false,
 };

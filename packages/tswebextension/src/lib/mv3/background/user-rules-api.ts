@@ -1,6 +1,5 @@
 import {
     DeclarativeFilterConverter,
-    Filter,
     type ConversionResult,
     type IFilter,
     type IRuleSet,
@@ -64,13 +63,14 @@ export default class UserRulesApi {
      * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}
      */
     public static async updateDynamicFiltering(
-        userRules: string[],
+        userRules: Uint8Array[],
         allowlistRule: string,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
+            // FIXME: (David, v2.3): Change declarative converter to AST-based
             new Filter(
                 // NOTE: Here we use USER_FILTER_ID for user rules and allowlist rules.
                 // But for tsurlfilter engine we use different filter id for

@@ -21,14 +21,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#%#',
-                            loc: context.getLocRangeFor('#%#'),
+                            ...context.getRangeFor('#%#'),
                         },
                         body: {
                             type: 'Value',
                             value: 'const a = 2;',
-                            loc: context.getLocRangeFor('const a = 2;'),
+                            ...context.getRangeFor('const a = 2;'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -45,14 +45,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@%#',
-                            loc: context.getLocRangeFor('#@%#'),
+                            ...context.getRangeFor('#@%#'),
                         },
                         body: {
                             type: 'Value',
                             value: 'const a = 2;',
-                            loc: context.getLocRangeFor('const a = 2;'),
+                            ...context.getRangeFor('const a = 2;'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -71,14 +71,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#%#',
-                            loc: context.getLocRangeFor('#%#'),
+                            ...context.getRangeFor('#%#'),
                         },
                         body: {
                             type: 'Value',
                             value: 'const a = 2;',
-                            loc: context.getLocRangeFor('const a = 2;'),
+                            ...context.getRangeFor('const a = 2;'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -95,14 +95,14 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@%#',
-                            loc: context.getLocRangeFor('#@%#'),
+                            ...context.getRangeFor('#@%#'),
                         },
                         body: {
                             type: 'Value',
                             value: 'const a = 2;',
-                            loc: context.getLocRangeFor('const a = 2;'),
+                            ...context.getRangeFor('const a = 2;'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },

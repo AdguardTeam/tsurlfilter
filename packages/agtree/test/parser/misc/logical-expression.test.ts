@@ -36,122 +36,61 @@ describe('LogicalExpressionParser', () => {
         // Valid expressions
         expect(LogicalExpressionParser.parse('a')).toMatchObject({
             type: 'Variable',
-            loc: {
-                start: {
-                    offset: 0,
-                },
-                end: {
-                    offset: 1,
-                },
-            },
+            start: 0,
+            end: 1,
             name: 'a',
         });
 
         expect(LogicalExpressionParser.parse('!a')).toMatchObject({
             type: 'Operator',
-            loc: {
-                start: {
-                    offset: 0,
-                },
-                end: {
-                    offset: 2,
-                },
-            },
+            start: 0,
+            end: 2,
             operator: '!',
             left: {
                 type: 'Variable',
-                loc: {
-                    start: {
-                        offset: 1,
-                    },
-                    end: {
-                        offset: 2,
-                    },
-                },
+                start: 1,
+                end: 2,
                 name: 'a',
             },
         });
 
         expect(LogicalExpressionParser.parse('!!a')).toMatchObject({
             type: 'Operator',
-            loc: {
-                start: {
-                    offset: 0,
-                },
-                end: {
-                    offset: 3,
-                },
-            },
+            start: 0,
+            end: 3,
             operator: '!',
             left: {
                 type: 'Operator',
-                loc: {
-                    start: {
-                        offset: 1,
-                    },
-                    end: {
-                        offset: 3,
-                    },
-                },
+                start: 1,
+                end: 3,
                 operator: '!',
                 left: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 2,
-                        },
-                        end: {
-                            offset: 3,
-                        },
-                    },
+                    start: 2,
+                    end: 3,
                     name: 'a',
                 },
             },
         });
 
         expect(LogicalExpressionParser.parse('!(!a)')).toMatchObject({
-
             type: 'Operator',
-            loc: {
-                start: {
-                    offset: 0,
-                },
-                end: {
-                    offset: 4,
-                },
-            },
+            start: 0,
+            end: 4,
             operator: '!',
             left: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 2,
-                    },
-                    end: {
-                        offset: 4,
-                    },
-                },
+                start: 2,
+                end: 4,
                 expression: {
                     type: 'Operator',
-                    loc: {
-                        start: {
-                            offset: 2,
-                        },
-                        end: {
-                            offset: 4,
-                        },
-                    },
+                    start: 2,
+                    end: 4,
                     operator: '!',
                     left: {
                         type: 'Variable',
-                        loc: {
-                            start: {
-                                offset: 3,
-                            },
-                            end: {
-                                offset: 4,
-                            },
-                        },
+                        start: 3,
+                        end: 4,
                         name: 'a',
                     },
                 },
@@ -160,145 +99,73 @@ describe('LogicalExpressionParser', () => {
 
         expect(LogicalExpressionParser.parse('a||b')).toMatchObject({
             type: 'Operator',
-            loc: {
-                start: {
-                    offset: 0,
-                },
-                end: {
-                    offset: 4,
-                },
-            },
+            start: 0,
+            end: 4,
             operator: '||',
             left: {
                 type: 'Variable',
-                loc: {
-                    start: {
-                        offset: 0,
-                    },
-                    end: {
-                        offset: 1,
-                    },
-                },
+                start: 0,
+                end: 1,
                 name: 'a',
             },
             right: {
                 type: 'Variable',
-                loc: {
-                    start: {
-                        offset: 3,
-                    },
-                    end: {
-                        offset: 4,
-                    },
-                },
+                start: 3,
+                end: 4,
                 name: 'b',
             },
         });
 
         expect(LogicalExpressionParser.parse('a || b')).toMatchObject({
             type: 'Operator',
-            loc: {
-                start: {
-                    offset: 0,
-                },
-                end: {
-                    offset: 6,
-                },
-            },
+            start: 0,
+            end: 6,
             operator: '||',
             left: {
                 type: 'Variable',
-                loc: {
-                    start: {
-                        offset: 0,
-                    },
-                    end: {
-                        offset: 1,
-                    },
-                },
+                start: 0,
+                end: 1,
                 name: 'a',
             },
             right: {
                 type: 'Variable',
-                loc: {
-                    start: {
-                        offset: 5,
-                    },
-                    end: {
-                        offset: 6,
-                    },
-                },
+                start: 5,
+                end: 6,
                 name: 'b',
             },
         });
 
         expect(LogicalExpressionParser.parse('(a)')).toMatchObject({
             type: 'Parenthesis',
-            loc: {
-                start: {
-                    offset: 1,
-                },
-                end: {
-                    offset: 2,
-                },
-            },
+            start: 1,
+            end: 2,
             expression: {
                 type: 'Variable',
-                loc: {
-                    start: {
-                        offset: 1,
-                    },
-                    end: {
-                        offset: 2,
-                    },
-                },
+                start: 1,
+                end: 2,
                 name: 'a',
             },
         });
 
         expect(LogicalExpressionParser.parse('(a||b)')).toMatchObject({
             type: 'Parenthesis',
-            loc: {
-                start: {
-                    offset: 1,
-                },
-                end: {
-                    offset: 5,
-                },
-            },
+            start: 1,
+            end: 5,
             expression: {
                 type: 'Operator',
-                loc: {
-                    start: {
-                        offset: 1,
-                    },
-                    end: {
-                        offset: 5,
-                    },
-                },
+                start: 1,
+                end: 5,
                 operator: '||',
                 left: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 1,
-                        },
-                        end: {
-                            offset: 2,
-                        },
-                    },
+                    start: 1,
+                    end: 2,
                     name: 'a',
                 },
                 right: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 4,
-                        },
-                        end: {
-                            offset: 5,
-                        },
-                    },
+                    start: 4,
+                    end: 5,
                     name: 'b',
                 },
             },
@@ -306,89 +173,41 @@ describe('LogicalExpressionParser', () => {
 
         expect(LogicalExpressionParser.parse('((a) && (!(b)))')).toMatchObject({
             type: 'Parenthesis',
-            loc: {
-                start: {
-                    offset: 2,
-                },
-                end: {
-                    offset: 12,
-                },
-            },
+            start: 2,
+            end: 12,
             expression: {
                 type: 'Operator',
-                loc: {
-                    start: {
-                        offset: 2,
-                    },
-                    end: {
-                        offset: 12,
-                    },
-                },
+                start: 2,
+                end: 12,
                 operator: '&&',
                 left: {
                     type: 'Parenthesis',
-                    loc: {
-                        start: {
-                            offset: 2,
-                        },
-                        end: {
-                            offset: 3,
-                        },
-                    },
+                    start: 2,
+                    end: 3,
                     expression: {
                         type: 'Variable',
-                        loc: {
-                            start: {
-                                offset: 2,
-                            },
-                            end: {
-                                offset: 3,
-                            },
-                        },
+                        start: 2,
+                        end: 3,
                         name: 'a',
                     },
                 },
                 right: {
                     type: 'Parenthesis',
-                    loc: {
-                        start: {
-                            offset: 9,
-                        },
-                        end: {
-                            offset: 12,
-                        },
-                    },
+                    start: 9,
+                    end: 12,
                     expression: {
                         type: 'Operator',
-                        loc: {
-                            start: {
-                                offset: 9,
-                            },
-                            end: {
-                                offset: 12,
-                            },
-                        },
+                        start: 9,
+                        end: 12,
                         operator: '!',
                         left: {
                             type: 'Parenthesis',
-                            loc: {
-                                start: {
-                                    offset: 11,
-                                },
-                                end: {
-                                    offset: 12,
-                                },
-                            },
+                            start: 11,
+                            end: 12,
                             expression: {
                                 type: 'Variable',
-                                loc: {
-                                    start: {
-                                        offset: 11,
-                                    },
-                                    end: {
-                                        offset: 12,
-                                    },
-                                },
+                                start: 11,
+                                end: 12,
                                 name: 'b',
                             },
                         },
@@ -405,93 +224,33 @@ describe('LogicalExpressionParser', () => {
             ),
         ).toMatchObject({
             type: 'Operator',
-            loc: {
-                start: {
-                    offset: 1,
-                    line: 1,
-                    column: 2,
-                },
-                end: {
-                    offset: 106,
-                    line: 1,
-                    column: 107,
-                },
-            },
+            start: 1,
+            end: 106,
             operator: '&&',
             left: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 31,
-                        line: 1,
-                        column: 32,
-                    },
-                },
+                start: 1,
+                end: 31,
                 expression: {
                     type: 'Operator',
-                    loc: {
-                        start: {
-                            offset: 1,
-                            line: 1,
-                            column: 2,
-                        },
-                        end: {
-                            offset: 31,
-                            line: 1,
-                            column: 32,
-                        },
-                    },
+                    start: 1,
+                    end: 31,
                     operator: '&&',
                     left: {
                         type: 'Variable',
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 8,
-                                line: 1,
-                                column: 9,
-                            },
-                        },
+                        start: 1,
+                        end: 8,
                         name: 'adguard',
                     },
                     right: {
                         type: 'Operator',
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 31,
-                                line: 1,
-                                column: 32,
-                            },
-                        },
+                        start: 12,
+                        end: 31,
                         operator: '!',
                         left: {
                             type: 'Variable',
-                            loc: {
-                                start: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                                end: {
-                                    offset: 31,
-                                    line: 1,
-                                    column: 32,
-                                },
-                            },
+                            start: 13,
+                            end: 31,
                             name: 'adguard_ext_safari',
                         },
                     },
@@ -499,137 +258,47 @@ describe('LogicalExpressionParser', () => {
             },
             right: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 37,
-                        line: 1,
-                        column: 38,
-                    },
-                    end: {
-                        offset: 106,
-                        line: 1,
-                        column: 107,
-                    },
-                },
+                start: 37,
+                end: 106,
                 expression: {
                     type: 'Operator',
-                    loc: {
-                        start: {
-                            offset: 37,
-                            line: 1,
-                            column: 38,
-                        },
-                        end: {
-                            offset: 106,
-                            line: 1,
-                            column: 107,
-                        },
-                    },
+                    start: 37,
+                    end: 106,
                     operator: '||',
                     left: {
                         type: 'Variable',
-                        loc: {
-                            start: {
-                                offset: 37,
-                                line: 1,
-                                column: 38,
-                            },
-                            end: {
-                                offset: 56,
-                                line: 1,
-                                column: 57,
-                            },
-                        },
+                        start: 37,
+                        end: 56,
                         name: 'adguard_ext_android',
                     },
                     right: {
                         type: 'Parenthesis',
-                        loc: {
-                            start: {
-                                offset: 61,
-                                line: 1,
-                                column: 62,
-                            },
-                            end: {
-                                offset: 106,
-                                line: 1,
-                                column: 107,
-                            },
-                        },
+                        start: 61,
+                        end: 106,
                         expression: {
                             type: 'Operator',
-                            loc: {
-                                start: {
-                                    offset: 61,
-                                    line: 1,
-                                    column: 62,
-                                },
-                                end: {
-                                    offset: 106,
-                                    line: 1,
-                                    column: 107,
-                                },
-                            },
+                            start: 61,
+                            end: 106,
                             operator: '&&',
                             left: {
                                 type: 'Variable',
-                                loc: {
-                                    start: {
-                                        offset: 61,
-                                        line: 1,
-                                        column: 62,
-                                    },
-                                    end: {
-                                        offset: 81,
-                                        line: 1,
-                                        column: 82,
-                                    },
-                                },
+                                start: 61,
+                                end: 81,
                                 name: 'adguard_ext_chromium',
                             },
                             right: {
                                 type: 'Parenthesis',
-                                loc: {
-                                    start: {
-                                        offset: 86,
-                                        line: 1,
-                                        column: 87,
-                                    },
-                                    end: {
-                                        offset: 106,
-                                        line: 1,
-                                        column: 107,
-                                    },
-                                },
+                                start: 86,
+                                end: 106,
                                 expression: {
                                     type: 'Operator',
-                                    loc: {
-                                        start: {
-                                            offset: 86,
-                                            line: 1,
-                                            column: 87,
-                                        },
-                                        end: {
-                                            offset: 106,
-                                            line: 1,
-                                            column: 107,
-                                        },
-                                    },
+                                    start: 86,
+                                    end: 106,
                                     operator: '!',
                                     left: {
                                         type: 'Variable',
-                                        loc: {
-                                            start: {
-                                                offset: 87,
-                                                line: 1,
-                                                column: 88,
-                                            },
-                                            end: {
-                                                offset: 106,
-                                                line: 1,
-                                                column: 107,
-                                            },
-                                        },
+                                        start: 87,
+                                        end: 106,
                                         name: 'adguard_ext_firefox',
                                     },
                                 },
@@ -730,5 +399,24 @@ describe('LogicalExpressionParser', () => {
         expect(() => LogicalExpressionParser.generate(<any>{ type: 'Unknown' })).toThrowError(
             'Unexpected node type',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            // simple expressions
+            'a',
+            '(a)',
+            '!a',
+            '!!a',
+            '!(!a)',
+            'a||b',
+
+            // complex expressions
+            '((!!a) || (!(b))) && ((!!(!!c)))',
+            // eslint-disable-next-line max-len
+            '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(LogicalExpressionParser);
+        });
     });
 });

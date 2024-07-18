@@ -110,6 +110,17 @@ For more details, please check the pnpm documentation.
 [browser-extension]: https://github.com/AdguardTeam/AdguardBrowserExtension
 [pnpm-link]: https://pnpm.io/cli/link
 
+### Notice about `zod` package versions
+
+Within this monorepo, `zod` is utilized for data validation. There are instances where a `zod` schema is exported
+from one package for use in another.
+However, this can potentially lead to issues if the `zod` versions across these packages differ.
+For more context, refer to [this issue][zod-issue].
+To prevent this problem, it is required to maintain uniformity by using the same `zod` version across all packages
+in the monorepo.
+
+[zod-issue]: https://github.com/colinhacks/zod/issues/2663
+
 ### Sample extensions
 
 Source code of sample extensions can be found in [`./packages/examples`][examples] directory.

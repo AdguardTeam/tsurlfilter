@@ -53,13 +53,23 @@ let initializingPromise: Promise<void> | undefined;
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 const messageHandler = async (message: IMessage) => {
+    // FIXME: Handle Uint8Array[] later
+    const userrules = config.userrules.content;
+
+    if (!userrules) {
+        config.userrules = {
+            content: [],
+        };
+    }
+
     const { type, data } = message;
     switch (type) {
         case Message.GetConfig: {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                rules: config.userrules,
+                // FIXME (David): Handle this
+                rules: [],
             };
 
             return res;
@@ -100,7 +110,10 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
-            config.userrules = (data as string).split('\n');
+            config.userrules = {
+                // FIXME (David): Handle this
+                content: [],
+            };
 
             await tsWebExtension.configure(config);
 

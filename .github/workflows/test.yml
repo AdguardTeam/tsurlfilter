@@ -46,7 +46,6 @@ jobs:
 
           # agtree
           npx lerna run --scope @adguard/agtree check-types
-          npx lerna run --scope @adguard/agtree check-compatibility-tables
           npx lerna run --scope @adguard/agtree lint
           npx lerna run --scope @adguard/agtree test
           npx lerna run --scope @adguard/agtree build

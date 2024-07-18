@@ -21,18 +21,18 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#?#',
-                            loc: context.getLocRangeFor('#?#'),
+                            ...context.getRangeFor('#?#'),
                         },
                         body: {
                             type: 'ElementHidingRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                                ...context.getRangeFor('.ad:-abp-has(.ad)'),
                             },
-                            loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                            ...context.getRangeFor('.ad:-abp-has(.ad)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -50,18 +50,18 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@?#',
-                            loc: context.getLocRangeFor('#@?#'),
+                            ...context.getRangeFor('#@?#'),
                         },
                         body: {
                             type: 'ElementHidingRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                                ...context.getRangeFor('.ad:-abp-has(.ad)'),
                             },
-                            loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                            ...context.getRangeFor('.ad:-abp-has(.ad)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -80,18 +80,18 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#?#',
-                            loc: context.getLocRangeFor('#?#'),
+                            ...context.getRangeFor('#?#'),
                         },
                         body: {
                             type: 'ElementHidingRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                                ...context.getRangeFor('.ad:-abp-has(.ad)'),
                             },
-                            loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                            ...context.getRangeFor('.ad:-abp-has(.ad)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -109,18 +109,18 @@ describe('CosmeticRuleParser', () => {
                         separator: {
                             type: 'Value',
                             value: '#@?#',
-                            loc: context.getLocRangeFor('#@?#'),
+                            ...context.getRangeFor('#@?#'),
                         },
                         body: {
                             type: 'ElementHidingRuleBody',
                             selectorList: {
                                 type: 'Value',
                                 value: '.ad:-abp-has(.ad)',
-                                loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                                ...context.getRangeFor('.ad:-abp-has(.ad)'),
                             },
-                            loc: context.getLocRangeFor('.ad:-abp-has(.ad)'),
+                            ...context.getRangeFor('.ad:-abp-has(.ad)'),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },

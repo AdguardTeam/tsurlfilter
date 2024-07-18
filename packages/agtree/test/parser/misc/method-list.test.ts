@@ -11,18 +11,8 @@ describe('MethodListParser', () => {
                 actual: EMPTY,
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                    },
+                    start: 0,
+                    end: 0,
                     separator: '|',
                     children: [],
                 },
@@ -32,34 +22,14 @@ describe('MethodListParser', () => {
                 actual: 'get',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                    },
+                    start: 0,
+                    end: 3,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                            },
+                            start: 0,
+                            end: 3,
                             value: 'get',
                             exception: false,
                         },
@@ -71,68 +41,28 @@ describe('MethodListParser', () => {
                 actual: 'get|post|put',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 12,
-                            line: 1,
-                            column: 13,
-                        },
-                    },
+                    start: 0,
+                    end: 12,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                            },
+                            start: 0,
+                            end: 3,
                             value: 'get',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                                end: {
-                                    offset: 8,
-                                    line: 1,
-                                    column: 9,
-                                },
-                            },
+                            start: 4,
+                            end: 8,
                             value: 'post',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 9,
-                                    line: 1,
-                                    column: 10,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 9,
+                            end: 12,
                             value: 'put',
                             exception: false,
                         },
@@ -144,34 +74,14 @@ describe('MethodListParser', () => {
                 actual: '~get',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 4,
-                            line: 1,
-                            column: 5,
-                        },
-                    },
+                    start: 0,
+                    end: 4,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                            },
+                            start: 1,
+                            end: 4,
                             value: 'get',
                             exception: true,
                         },
@@ -183,51 +93,21 @@ describe('MethodListParser', () => {
                 actual: '~post|~put',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 10,
-                            line: 1,
-                            column: 11,
-                        },
-                    },
+                    start: 0,
+                    end: 10,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 5,
-                                    line: 1,
-                                    column: 6,
-                                },
-                            },
+                            start: 1,
+                            end: 5,
                             value: 'post',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 7,
-                                    line: 1,
-                                    column: 8,
-                                },
-                                end: {
-                                    offset: 10,
-                                    line: 1,
-                                    column: 11,
-                                },
-                            },
+                            start: 7,
+                            end: 10,
                             value: 'put',
                             exception: true,
                         },
@@ -239,68 +119,28 @@ describe('MethodListParser', () => {
                 actual: '~put|~get|~head',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                    },
+                    start: 0,
+                    end: 15,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                            },
+                            start: 1,
+                            end: 4,
                             value: 'put',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 6,
-                                    line: 1,
-                                    column: 7,
-                                },
-                                end: {
-                                    offset: 9,
-                                    line: 1,
-                                    column: 10,
-                                },
-                            },
+                            start: 6,
+                            end: 9,
                             value: 'get',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                                end: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                            },
+                            start: 11,
+                            end: 15,
                             value: 'head',
                             exception: true,
                         },
@@ -312,68 +152,28 @@ describe('MethodListParser', () => {
                 actual: '~get|post|~head',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                    },
+                    start: 0,
+                    end: 15,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                            },
+                            start: 1,
+                            end: 4,
                             value: 'get',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 5,
-                                    line: 1,
-                                    column: 6,
-                                },
-                                end: {
-                                    offset: 9,
-                                    line: 1,
-                                    column: 10,
-                                },
-                            },
+                            start: 5,
+                            end: 9,
                             value: 'post',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                                end: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                            },
+                            start: 11,
+                            end: 15,
                             value: 'head',
                             exception: true,
                         },
@@ -385,85 +185,35 @@ describe('MethodListParser', () => {
                 actual: '~get|  post    |   put |        ~head',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 37,
-                            line: 1,
-                            column: 38,
-                        },
-                    },
+                    start: 0,
+                    end: 37,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                            },
+                            start: 1,
+                            end: 4,
                             value: 'get',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 7,
-                                    line: 1,
-                                    column: 8,
-                                },
-                                end: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                            },
+                            start: 7,
+                            end: 11,
                             value: 'post',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 19,
-                                    line: 1,
-                                    column: 20,
-                                },
-                                end: {
-                                    offset: 22,
-                                    line: 1,
-                                    column: 23,
-                                },
-                            },
+                            start: 19,
+                            end: 22,
                             value: 'put',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 33,
-                                    line: 1,
-                                    column: 34,
-                                },
-                                end: {
-                                    offset: 37,
-                                    line: 1,
-                                    column: 38,
-                                },
-                            },
+                            start: 33,
+                            end: 37,
                             value: 'head',
                             exception: true,
                         },
@@ -475,85 +225,35 @@ describe('MethodListParser', () => {
                 actual: '~post|  head    |   get |        ~put',
                 expected: {
                     type: ListNodeType.MethodList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 37,
-                            line: 1,
-                            column: 38,
-                        },
-                    },
+                    start: 0,
+                    end: 37,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 5,
-                                    line: 1,
-                                    column: 6,
-                                },
-                            },
+                            start: 1,
+                            end: 5,
                             value: 'post',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 8,
-                                    line: 1,
-                                    column: 9,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 8,
+                            end: 12,
                             value: 'head',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 20,
-                                    line: 1,
-                                    column: 21,
-                                },
-                                end: {
-                                    offset: 23,
-                                    line: 1,
-                                    column: 24,
-                                },
-                            },
+                            start: 20,
+                            end: 23,
                             value: 'get',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.Method,
-                            loc: {
-                                start: {
-                                    offset: 34,
-                                    line: 1,
-                                    column: 35,
-                                },
-                                end: {
-                                    offset: 37,
-                                    line: 1,
-                                    column: 38,
-                                },
-                            },
+                            start: 34,
+                            end: 37,
                             value: 'put',
                             exception: true,
                         },

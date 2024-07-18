@@ -1,0 +1,49 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: set-constant
+  version_added: 1.0.4
+  aliases:
+    - set-constant.js
+    - ubo-set-constant.js
+    - set.js
+    - ubo-set.js
+    - ubo-set-constant
+    - ubo-set
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#set-constant
+  parameters:
+    - name: property
+      required: true
+    - name: value
+      required: true
+    - name: stack
+      required: false
+    - name: valueWrapper
+      required: false
+    - name: setProxyTrap
+      required: false
+
+ubo_any:
+  name: set-constant.js
+  aliases:
+    - set.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#set-constantjs-
+  parameters:
+    - name: chain
+      required: true
+    - name: rawValue
+      required: true
+    - name: runAt
+      required: false
+
+abp_any:  
+  name: override-property-read
+  version_added: 3.9.4
+  docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref
+  parameters:
+    - name: property
+      required: true
+    - name: value
+      required: true
+    - name: setConfigurable
+      required: false

@@ -11,6 +11,7 @@ import type { ScannedFilter } from '../../../src/rules/declarative-converter/net
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
+import { createNetworkRule } from '../../helpers/rule-creator';
 
 const createFilter = async (
     filterId: number,
@@ -461,7 +462,7 @@ describe('DeclarativeRuleConverter', () => {
             declarativeRules,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = new NetworkRule(regexpRuleText, filterId);
+        const networkRule = createNetworkRule(regexpRuleText, filterId);
 
         const expectedError = new UnsupportedRegexpError(
             `Regex is unsupported: "${networkRule.getText()}"`,
@@ -924,10 +925,10 @@ describe('DeclarativeRuleConverter', () => {
             errors,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = new NetworkRule(rules[0], filterId);
+        const networkRule = createNetworkRule(rules[0], filterId);
         const expectedError = new UnsupportedModifierError(
             // eslint-disable-next-line max-len
-            `Network rule with only one enabled modifier $popup is not supported: "${networkRule.getText()}"`,
+            'Network rule with only one enabled modifier $popup is not supported',
             networkRule,
         );
 
@@ -1154,18 +1155,18 @@ describe('DeclarativeRuleConverter', () => {
             });
 
             const networkRules = [
-                new NetworkRule(ruleWithUnsupportedHeaders[0], filterId),
-                new NetworkRule(ruleWithUnsupportedHeaders[1], filterId),
+                createNetworkRule(ruleWithUnsupportedHeaders[0], filterId),
+                createNetworkRule(ruleWithUnsupportedHeaders[1], filterId),
             ];
             const expectedErrors = [
                 new UnsupportedModifierError(
                     // eslint-disable-next-line max-len
-                    `Network rule with $removeheader modifier contains some of the unsupported headers: "${networkRules[0].getText()}"`,
+                    'Network rule with $removeheader modifier contains some of the unsupported headers',
                     networkRules[0],
                 ),
                 new UnsupportedModifierError(
                     // eslint-disable-next-line max-len
-                    `Network rule with $removeheader modifier contains some of the unsupported headers: "${networkRules[1].getText()}"`,
+                    'Network rule with $removeheader modifier contains some of the unsupported headers',
                     networkRules[1],
                 ),
             ];
@@ -1264,10 +1265,10 @@ describe('DeclarativeRuleConverter', () => {
                 errors,
             } = await DeclarativeRulesConverter.convert([filter]);
 
-            const networkRule = new NetworkRule(badRule, filterId);
+            const networkRule = createNetworkRule(badRule, filterId);
             const err = new UnsupportedModifierError(
                 // eslint-disable-next-line max-len
-                `Network rule with $removeheader modifier contains some of the unsupported headers: "${networkRule.getText()}"`,
+                'Network rule with $removeheader modifier contains some of the unsupported headers',
                 networkRule,
             );
 
@@ -1495,25 +1496,25 @@ describe('DeclarativeRuleConverter', () => {
             expect(errors.length).toBe(3);
 
             const networkRules = [
-                new NetworkRule(rulesText[0], filterId),
-                new NetworkRule(rulesText[1], filterId),
-                new NetworkRule(rulesText[2], filterId),
+                createNetworkRule(rulesText[0], filterId),
+                createNetworkRule(rulesText[1], filterId),
+                createNetworkRule(rulesText[2], filterId),
             ];
 
             const expectedErrors = [
                 new UnsupportedModifierError(
                     // eslint-disable-next-line max-len
-                    `The use of additional parameters in $cookie (apart from $cookie itself) is not supported: "${networkRules[0].getText()}"`,
+                    'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
                     networkRules[0],
                 ),
                 new UnsupportedModifierError(
                     // eslint-disable-next-line max-len
-                    `The use of additional parameters in $cookie (apart from $cookie itself) is not supported: "${networkRules[1].getText()}"`,
+                    'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
                     networkRules[1],
                 ),
                 new UnsupportedModifierError(
                     // eslint-disable-next-line max-len
-                    `The use of additional parameters in $cookie (apart from $cookie itself) is not supported: "${networkRules[2].getText()}"`,
+                    'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
                     networkRules[2],
                 ),
             ];
@@ -1746,11 +1747,11 @@ describe('DeclarativeRuleConverter', () => {
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
 
-            const networkRule = new NetworkRule(ruleText, filterId);
+            const networkRule = createNetworkRule(ruleText, filterId);
 
             const err = new UnsupportedModifierError(
                 // eslint-disable-next-line max-len
-                `Network rule with $method modifier containing 'trace' method is not supported: "${networkRule.getText()}"`,
+                'Network rule with $method modifier containing \'trace\' method is not supported',
                 networkRule,
             );
             expect(errors[0]).toStrictEqual(err);
@@ -1811,6 +1812,7 @@ describe('DeclarativeRuleConverter', () => {
                     responseHeaders: [{
                         header: PERMISSIONS_POLICY_HEADER_NAME,
                         operation: 'append',
+                        // TODO: Add special tokenization for AGTree to handle unescaped commas in some modifier values
                         value: 'storage-access=(), сamera=()',
                     }],
                 },
@@ -1841,10 +1843,10 @@ describe('DeclarativeRuleConverter', () => {
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
 
-            const networkRule = new NetworkRule(ruleText, filterId);
+            const networkRule = createNetworkRule(ruleText, filterId);
 
             const err = new UnsupportedModifierError(
-                `Unsupported option "$genericblock" in the rule: "${networkRule.getText()}"`,
+                'Unsupported option "$genericblock"',
                 networkRule,
             );
             expect(errors[0]).toStrictEqual(err);

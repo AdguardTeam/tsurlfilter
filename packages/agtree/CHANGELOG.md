@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Added
+
+- Compatibility table API.
+- Compatibility table wiki, which is generated from the compatibility table API.
+
+### Changed
+
+- Reworked the compatibility table structure.
+- Library now use CJS.
+
+### Removed
+
+- Scriptlets library, since it is not needed anymore, because AGTree now has its own compatibility tables.
+
 ## 1.1.8 - 2024-04-24
 
 ### Added
@@ -27,7 +43,14 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Adjustable syntax parsing. This makes possible to disable parsing of uBO and ABP syntaxes, which can be useful when
   parsing known-syntax filters.
 - Performance benchmarking.
+- `PositionProvider` to convert offsets to line/column pairs.
 - Protected Audience API directives to `$permissions` modifier validator.
+- `OutputByteBuffer` and `InputByteBuffer` utility classes.
+- Binary serialization / deserialization for AST nodes. Practically, this means adding `serialize` and `deserialize`
+  methods to AGTree classes.
+- `decodeTextPolyfill` and `encodeIntoPolyfill` utility functions.
+- `includeRaws` parser option.
+- `HostRuleParser` parser class to make it possible to parse host-like rules to `HostRule` node.
 
 ### Changed
 
@@ -38,11 +61,17 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Modifier node's `modifier` property renamed to `name`.
 - `ScriptletInjectionBodyParser` divided into `AdgScriptletInjectionBodyParser`, `UboScriptletInjectionBodyParser`
   and `AbpSnippetInjectionBodyParser`.
+- Locations (`offset`, `line`, `column`) are changed to only one `offset` value.
+- Parser functions signature to `parse(source, options, baseOffset, ...additionalArgs)`.
+- Removed `Parameter` node from the AST and replaced it with `Value` node.
+- If a parameter is empty, it parsed as `null` instead of empty string.
+- `SimpleCommentParser` now has a separate class.
 
 ### Fixed
 
 - HTML rule converter now correctly handles the new `:contains()` syntax.
 - Location handling for `FilterListParser`.
+- Performance issues.
 
 ### Removed
 

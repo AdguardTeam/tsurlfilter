@@ -1,9 +1,15 @@
-import { NetworkRule, RuleStorage, StringRuleList } from '../../../src';
+import {
+    BufferRuleList,
+    FilterListPreprocessor,
+    NetworkRule,
+    RuleStorage,
+} from '../../../src';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { type ILookupTable } from '../../../src/engine/lookup-tables/lookup-table';
 
 export function createRuleStorage(rules: string[]): RuleStorage {
-    const list = new StringRuleList(1, rules.join('\n'), true);
+    const preprocessed = FilterListPreprocessor.preprocess(rules.join('\n'));
+    const list = new BufferRuleList(1, preprocessed.filterList, false);
     return new RuleStorage([list]);
 }
 

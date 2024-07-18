@@ -27,6 +27,8 @@ const HAS_TEXT_HASH = 1221663855; // getStringHash('has-text')
 const MATCHES_CSS_HASH = 102304302; // getStringHash('matches-css')
 const MATCHES_CSS_AFTER_HASH = 2923888231; // getStringHash('matches-css-after')
 const MATCHES_CSS_BEFORE_HASH = 1739713050; // getStringHash('matches-css-before')
+const MATCHES_PROPERTY_HASH = 1860790666; // getStringHash('matches-property')
+const MATCHES_ATTR_HASH = 3376104318; // getStringHash('matches-attr')
 const XPATH_HASH = 196571984; // getStringHash('xpath')
 
 /**
@@ -41,6 +43,8 @@ const EXT_CSS_PSEUDO_HANDLERS = new Map<number, TokenizerContextFunction>([
     [MATCHES_CSS_HASH, handleRegularExtendedCssPseudo],
     [MATCHES_CSS_AFTER_HASH, handleRegularExtendedCssPseudo],
     [MATCHES_CSS_BEFORE_HASH, handleRegularExtendedCssPseudo],
+    [MATCHES_PROPERTY_HASH, handleRegularExtendedCssPseudo],
+    [MATCHES_ATTR_HASH, handleRegularExtendedCssPseudo],
     [XPATH_HASH, handleXpathExtendedCssPseudo],
 ]);
 

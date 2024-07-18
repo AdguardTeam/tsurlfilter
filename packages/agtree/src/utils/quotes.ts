@@ -180,6 +180,26 @@ export class QuoteUtils {
     }
 
     /**
+     * Removes bounding quotes from a string, if any, and unescapes the escaped quotes,
+     * like transforming `'abc\'def'` to `abc'def`.
+     *
+     * @param string Input string
+     * @returns String without quotes
+     */
+    public static removeQuotesAndUnescape(string: string): string {
+        if (
+            // We should check for string length to avoid false positives
+            string.length > 1
+            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE)
+            && string[0] === string[string.length - 1]
+        ) {
+            return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), string[0]);
+        }
+
+        return string;
+    }
+
+    /**
      * Wraps given `strings` with `quote` (defaults to single quote `'`)
      * and joins them with `separator` (defaults to comma+space `, `).
      *

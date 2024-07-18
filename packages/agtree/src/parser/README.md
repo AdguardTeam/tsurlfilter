@@ -71,6 +71,9 @@ After running this script, basically you will get the following AST:
 ```json
 {
     "type": "NetworkRule",
+    "raws": {
+        "text": "/ads.js^$script"
+    },
     "category": "Network",
     "syntax": "Common",
     "exception": false,
@@ -83,7 +86,7 @@ After running this script, basically you will get the following AST:
         "children": [
             {
                 "type": "Modifier",
-                "modifier": {
+                "name": {
                     "type": "Value",
                     "value": "script"
                 },
@@ -103,18 +106,6 @@ opening the spoiler below:
 ```json
 {
     "type": "NetworkRule",
-    "loc": {
-        "start": {
-            "offset": 0,
-            "line": 1,
-            "column": 1
-        },
-        "end": {
-            "offset": 15,
-            "line": 1,
-            "column": 16
-        }
-    },
     "raws": {
         "text": "/ads.js^$script"
     },
@@ -123,69 +114,31 @@ opening the spoiler below:
     "exception": false,
     "pattern": {
         "type": "Value",
-        "loc": {
-            "start": {
-                "offset": 0,
-                "line": 1,
-                "column": 1
-            },
-            "end": {
-                "offset": 8,
-                "line": 1,
-                "column": 9
-            }
-        },
-        "value": "/ads.js^"
+        "value": "/ads.js^",
+        "start": 0,
+        "end": 8
     },
     "modifiers": {
         "type": "ModifierList",
-        "loc": {
-            "start": {
-                "offset": 9,
-                "line": 1,
-                "column": 10
-            },
-            "end": {
-                "offset": 15,
-                "line": 1,
-                "column": 16
-            }
-        },
         "children": [
             {
                 "type": "Modifier",
-                "loc": {
-                    "start": {
-                        "offset": 9,
-                        "line": 1,
-                        "column": 10
-                    },
-                    "end": {
-                        "offset": 15,
-                        "line": 1,
-                        "column": 16
-                    }
-                },
-                "modifier": {
+                "name": {
                     "type": "Value",
-                    "loc": {
-                        "start": {
-                            "offset": 9,
-                            "line": 1,
-                            "column": 10
-                        },
-                        "end": {
-                            "offset": 15,
-                            "line": 1,
-                            "column": 16
-                        }
-                    },
-                    "value": "script"
+                    "value": "script",
+                    "start": 9,
+                    "end": 15
                 },
-                "exception": false
+                "exception": false,
+                "start": 9,
+                "end": 15
             }
-        ]
-    }
+        ],
+        "start": 9,
+        "end": 15
+    },
+    "start": 0,
+    "end": 15
 }
 ```
 

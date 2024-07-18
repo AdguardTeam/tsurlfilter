@@ -5,6 +5,7 @@ import {
     STEALTH_MODE_FILTER_ID,
     StealthOptionName,
     type NetworkRule, type MatchingResult,
+    FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
@@ -116,9 +117,15 @@ export class StealthApi {
             return null;
         }
 
+        // FIXME (David, v2.3): Double check, consider make it consistent with allowlist
         const rulesTexts = this.stealthService.getCookieRulesTexts().join('\n');
 
-        return new BufferRuleList(STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
+        return new BufferRuleList(
+            STEALTH_MODE_FILTER_ID,
+            FilterListPreprocessor.preprocess(rulesTexts).filterList,
+            false,
+            false,
+        );
     }
 
     /**

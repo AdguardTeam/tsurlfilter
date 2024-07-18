@@ -1,8 +1,10 @@
 /* eslint-disable no-console, no-plusplus */
 import fs from 'fs';
 import console from 'console';
+import { NetworkRuleParser } from '@adguard/agtree';
+
 import { SimpleRegex } from '../../src/rules/simple-regex';
-import { NetworkRule } from '../../src/rules/network-rule';
+import { EMPTY_STRING } from '../../src/common/constants';
 
 /**
  * Maximum amount of patterns that will be passed down to benchmark from incoming rule list.
@@ -35,7 +37,7 @@ const getPatterns = async (filePath: string): Promise<string[]> => {
         .map((r) => r.trim());
 
     const patterns = rulesList
-        .map((r) => NetworkRule.parseRuleText(r)?.pattern || '')
+        .map((r) => NetworkRuleParser.parse(r)?.pattern.value ?? EMPTY_STRING)
         .filter((pattern) => !!pattern)
         .slice(0, MAX_PATTERNS_COUNT);
 

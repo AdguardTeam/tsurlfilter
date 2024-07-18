@@ -5,6 +5,7 @@ import type { ResourcesService } from '../resources-service';
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
 import { logger } from '../../../../common';
+import { isFirefox } from '../../utils';
 
 const BASE_64 = 'base64';
 const CONTENT_TYPE_SEPARATOR = ';';
@@ -111,6 +112,14 @@ export class RedirectsService {
             const params = this.blockingUrlParams(title, requestUrl);
             // TODO: 'redirects/' should be moved to extension part
             return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`, params);
+        }
+
+        if (isFirefox) {
+            // Firefox throws same origin policy error when trying to load redirect resource from data url,
+            // so we use the old way to load redirect resources.
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=1016491
+            // https://www.rfc-editor.org/rfc/rfc6454#section-5
+            return this.resourcesService.createResourceUrl(`redirects/${redirectSource.file}`);
         }
 
         return this.createRedirectDataUrl(redirectSource);

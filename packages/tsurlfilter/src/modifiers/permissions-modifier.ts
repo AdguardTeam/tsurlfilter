@@ -20,14 +20,19 @@ export class PermissionsModifier implements IAdvancedModifier {
     private readonly permissionPolicyDirective: string;
 
     /**
+     * Regular expression to apply correct separators.
+     * It replaces escaped commas and pipe separators with commas.
+     */
+    private static readonly RE_SEPARATOR_REPLACE = new RegExp(`(\\\\${COMMA_SEPARATOR}|\\${PIPE_SEPARATOR})`, 'g');
+
+    /**
      * Constructor
      * @param permissionPolicyStr
      * @param isAllowlist
      */
     constructor(permissionPolicyStr: string, isAllowlist: boolean) {
-        this.permissionPolicyDirective = permissionPolicyStr.includes(PIPE_SEPARATOR)
-            ? permissionPolicyStr.split(PIPE_SEPARATOR).join(COMMA_SEPARATOR)
-            : permissionPolicyStr;
+        this.permissionPolicyDirective = permissionPolicyStr
+            .replace(PermissionsModifier.RE_SEPARATOR_REPLACE, COMMA_SEPARATOR);
 
         PermissionsModifier.validatePermissionPolicyDirective(this.permissionPolicyDirective, isAllowlist);
     }

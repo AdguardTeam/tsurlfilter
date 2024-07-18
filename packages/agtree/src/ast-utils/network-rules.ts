@@ -2,8 +2,13 @@
  * @file Utility functions for working with network rule nodes
  */
 
-import { isUndefined } from '../utils/common';
-import { type ModifierList, type NetworkRule, RuleCategory } from '../parser/common';
+import { isUndefined } from '../utils/type-guards';
+import {
+    type ModifierList,
+    type NetworkRule,
+    RuleCategory,
+    NetworkRuleType,
+} from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
 import { clone } from '../utils/clone';
 
@@ -24,7 +29,7 @@ export function createNetworkRuleNode(
 ): NetworkRule {
     const result: NetworkRule = {
         category: RuleCategory.Network,
-        type: 'NetworkRule',
+        type: NetworkRuleType.NetworkRule,
         syntax,
         exception,
         pattern: {

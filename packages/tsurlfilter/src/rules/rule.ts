@@ -1,5 +1,11 @@
 /* eslint-disable max-classes-per-file */
-export const DEFAULT_RULE_INDEX = -1;
+
+/**
+ * Default rule index for source mapping.
+ *
+ * It is -1, similar to `Array.indexOf()` return value when element is not found.
+ */
+export const RULE_INDEX_NONE = -1;
 
 /**
  * Represents a filtering rule
@@ -7,15 +13,9 @@ export const DEFAULT_RULE_INDEX = -1;
 // eslint-disable-next-line max-classes-per-file
 export interface IRule {
     /**
-     * Rule's source text
-     */
-    // FIXME(David, v2.3): remove
-    getText(): string;
-
-    /**
      * Unique rule index within the filter list, which can be used to source map the rule back to its original source.
      *
-     * @return Rule index or {@link DEFAULT_RULE_INDEX} if not available
+     * @return Rule index or {@link RULE_INDEX_NONE} if not available
      */
     getIndex(): number;
 
@@ -28,7 +28,7 @@ export interface IRule {
 /**
  * Rule with index
  */
-// FIXME(David, v2.3): possibly not needed anymore
+// TODO: Consider remove this because rule already has an index field
 export class IndexedRule {
     /**
      * Rule

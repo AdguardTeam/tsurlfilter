@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#110].
+- Updated `@adguard/scriptlets` to `v1.11.1`.
 
 ### Fixed
 
@@ -59,6 +60,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
 [AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+
+## [2.2.20] - 2024-07-01
+
+### Added
+
+- Ability to allowlist scriptlets by name [#377].
+- New rule indexing algorithm. The storage index is now an integer representing
+  the rule position in the concatenated filter list text.
+  The list id is determined by the pre-stored filter list offset during the scan.
+
+### Changed
+
+- Updated `@adguard/scriptlets` to `v1.11.1`.
+
+[2.2.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.20
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
 ## [2.2.22] - 2024-07-17

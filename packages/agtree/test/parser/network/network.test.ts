@@ -1,204 +1,85 @@
 import { NetworkRuleParser } from '../../../src/parser/network';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type NetworkRule, RuleCategory } from '../../../src/parser/common';
+import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/parser/common';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
         // TODO: Refactor to test.each
         expect(NetworkRuleParser.parse('||example.com')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 13,
-                    line: 1,
-                    column: 14,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 13,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 13,
-                        line: 1,
-                        column: 14,
-                    },
-                },
+                start: 0,
+                end: 13,
                 value: '||example.com',
             },
         });
 
         expect(NetworkRuleParser.parse('@@||example.com')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 15,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: '||example.com',
             },
         });
 
         expect(NetworkRuleParser.parse('@@||example.com$m1,m2=v2')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 24,
-                    line: 1,
-                    column: 25,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 24,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: '||example.com',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 24,
-                        line: 1,
-                        column: 25,
-                    },
-                },
+                start: 16,
+                end: 24,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 18,
-                                line: 1,
-                                column: 19,
-                            },
-                        },
+                        start: 16,
+                        end: 18,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 16,
-                                    line: 1,
-                                    column: 17,
-                                },
-                                end: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                            },
+                            start: 16,
+                            end: 18,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 19,
-                                line: 1,
-                                column: 20,
-                            },
-                            end: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                        },
+                        start: 19,
+                        end: 24,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 19,
-                                    line: 1,
-                                    column: 20,
-                                },
-                                end: {
-                                    offset: 21,
-                                    line: 1,
-                                    column: 22,
-                                },
-                            },
+                            start: 19,
+                            end: 21,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 22,
-                                    line: 1,
-                                    column: 23,
-                                },
-                                end: {
-                                    offset: 24,
-                                    line: 1,
-                                    column: 25,
-                                },
-                            },
+                            start: 22,
+                            end: 24,
                             value: 'v2',
                         },
                         exception: false,
@@ -208,199 +89,79 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('/example/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 9,
-                    line: 1,
-                    column: 10,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 9,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                },
+                start: 0,
+                end: 9,
                 value: '/example/',
             },
         });
 
         expect(NetworkRuleParser.parse('@@/example/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 11,
-                    line: 1,
-                    column: 12,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 11,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                },
+                start: 2,
+                end: 11,
                 value: '/example/',
             },
         });
 
         expect(NetworkRuleParser.parse('@@/example/$m1,m2=v2')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 20,
-                    line: 1,
-                    column: 21,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 20,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                },
+                start: 2,
+                end: 11,
                 value: '/example/',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 20,
-                        line: 1,
-                        column: 21,
-                    },
-                },
+                start: 12,
+                end: 20,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                        },
+                        start: 12,
+                        end: 14,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                                end: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                            },
+                            start: 12,
+                            end: 14,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                            end: {
-                                offset: 20,
-                                line: 1,
-                                column: 21,
-                            },
-                        },
+                        start: 15,
+                        end: 20,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                                end: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                            },
+                            start: 15,
+                            end: 17,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                                end: {
-                                    offset: 20,
-                                    line: 1,
-                                    column: 21,
-                                },
-                            },
+                            start: 18,
+                            end: 20,
                             value: 'v2',
                         },
                         exception: false,
@@ -411,177 +172,67 @@ describe('NetworkRuleParser', () => {
 
         // Last $ in regex pattern
         expect(NetworkRuleParser.parse('@@/example/$m1,m2=v2,m3=/^r3$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 30,
-                    line: 1,
-                    column: 31,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 30,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                },
+                start: 2,
+                end: 11,
                 value: '/example/',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 30,
-                        line: 1,
-                        column: 31,
-                    },
-                },
+                start: 12,
+                end: 30,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                        },
+                        start: 12,
+                        end: 14,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                                end: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                            },
+                            start: 12,
+                            end: 14,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                            end: {
-                                offset: 20,
-                                line: 1,
-                                column: 21,
-                            },
-                        },
+                        start: 15,
+                        end: 20,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                                end: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                            },
+                            start: 15,
+                            end: 17,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                                end: {
-                                    offset: 20,
-                                    line: 1,
-                                    column: 21,
-                                },
-                            },
+                            start: 18,
+                            end: 20,
                             value: 'v2',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                            end: {
-                                offset: 30,
-                                line: 1,
-                                column: 31,
-                            },
-                        },
+                        start: 21,
+                        end: 30,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 21,
-                                    line: 1,
-                                    column: 22,
-                                },
-                                end: {
-                                    offset: 23,
-                                    line: 1,
-                                    column: 24,
-                                },
-                            },
+                            start: 21,
+                            end: 23,
                             value: 'm3',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 24,
-                                    line: 1,
-                                    column: 25,
-                                },
-                                end: {
-                                    offset: 30,
-                                    line: 1,
-                                    column: 31,
-                                },
-                            },
+                            start: 24,
+                            end: 30,
                             value: '/^r3$/',
                         },
                         exception: false,
@@ -592,177 +243,67 @@ describe('NetworkRuleParser', () => {
 
         // Escaped $ in regex
         expect(NetworkRuleParser.parse('@@/example/$m1,m2=v2,m3=/^r3\\$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 31,
-                    line: 1,
-                    column: 32,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 31,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                },
+                start: 2,
+                end: 11,
                 value: '/example/',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 31,
-                        line: 1,
-                        column: 32,
-                    },
-                },
+                start: 12,
+                end: 31,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                        },
+                        start: 12,
+                        end: 14,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                                end: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                            },
+                            start: 12,
+                            end: 14,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                            end: {
-                                offset: 20,
-                                line: 1,
-                                column: 21,
-                            },
-                        },
+                        start: 15,
+                        end: 20,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                                end: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                            },
+                            start: 15,
+                            end: 17,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                                end: {
-                                    offset: 20,
-                                    line: 1,
-                                    column: 21,
-                                },
-                            },
+                            start: 18,
+                            end: 20,
                             value: 'v2',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                            end: {
-                                offset: 31,
-                                line: 1,
-                                column: 32,
-                            },
-                        },
+                        start: 21,
+                        end: 31,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 21,
-                                    line: 1,
-                                    column: 22,
-                                },
-                                end: {
-                                    offset: 23,
-                                    line: 1,
-                                    column: 24,
-                                },
-                            },
+                            start: 21,
+                            end: 23,
                             value: 'm3',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 24,
-                                    line: 1,
-                                    column: 25,
-                                },
-                                end: {
-                                    offset: 31,
-                                    line: 1,
-                                    column: 32,
-                                },
-                            },
+                            start: 24,
+                            end: 31,
                             value: '/^r3\\$/',
                         },
                         exception: false,
@@ -773,117 +314,47 @@ describe('NetworkRuleParser', () => {
 
         // Escaped separator
         expect(NetworkRuleParser.parse('example.com\\$m1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 15,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 0,
+                end: 15,
                 value: 'example.com\\$m1',
             },
         });
 
         // Multiple separators
         expect(NetworkRuleParser.parse('example.com$m1$m2$m3$m4$m5')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 26,
-                    line: 1,
-                    column: 27,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 26,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 23,
-                        line: 1,
-                        column: 24,
-                    },
-                },
+                start: 0,
+                end: 23,
                 value: 'example.com$m1$m2$m3$m4',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 24,
-                        line: 1,
-                        column: 25,
-                    },
-                    end: {
-                        offset: 26,
-                        line: 1,
-                        column: 27,
-                    },
-                },
+                start: 24,
+                end: 26,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                            end: {
-                                offset: 26,
-                                line: 1,
-                                column: 27,
-                            },
-                        },
+                        start: 24,
+                        end: 26,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 24,
-                                    line: 1,
-                                    column: 25,
-                                },
-                                end: {
-                                    offset: 26,
-                                    line: 1,
-                                    column: 27,
-                                },
-                            },
+                            start: 24,
+                            end: 26,
                             value: 'm5',
                         },
                         exception: false,
@@ -893,97 +364,37 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('example.com$m1=v1$m2$m3=v3$m4$m5=v5')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 35,
-                    line: 1,
-                    column: 36,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 35,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 29,
-                        line: 1,
-                        column: 30,
-                    },
-                },
+                start: 0,
+                end: 29,
                 value: 'example.com$m1=v1$m2$m3=v3$m4',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 30,
-                        line: 1,
-                        column: 31,
-                    },
-                    end: {
-                        offset: 35,
-                        line: 1,
-                        column: 36,
-                    },
-                },
+                start: 30,
+                end: 35,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 30,
-                                line: 1,
-                                column: 31,
-                            },
-                            end: {
-                                offset: 35,
-                                line: 1,
-                                column: 36,
-                            },
-                        },
+                        start: 30,
+                        end: 35,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 30,
-                                    line: 1,
-                                    column: 31,
-                                },
-                                end: {
-                                    offset: 32,
-                                    line: 1,
-                                    column: 33,
-                                },
-                            },
+                            start: 30,
+                            end: 32,
                             value: 'm5',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 33,
-                                    line: 1,
-                                    column: 34,
-                                },
-                                end: {
-                                    offset: 35,
-                                    line: 1,
-                                    column: 36,
-                                },
-                            },
+                            start: 33,
+                            end: 35,
                             value: 'v5',
                         },
                         exception: false,
@@ -994,97 +405,37 @@ describe('NetworkRuleParser', () => {
 
         // Starts with "/"
         expect(NetworkRuleParser.parse('/ad.js$m1=v1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 12,
-                    line: 1,
-                    column: 13,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 12,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 6,
-                        line: 1,
-                        column: 7,
-                    },
-                },
+                start: 0,
+                end: 6,
                 value: '/ad.js',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                    end: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                },
+                start: 7,
+                end: 12,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 7,
-                                line: 1,
-                                column: 8,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 7,
+                        end: 12,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 7,
-                                    line: 1,
-                                    column: 8,
-                                },
-                                end: {
-                                    offset: 9,
-                                    line: 1,
-                                    column: 10,
-                                },
-                            },
+                            start: 7,
+                            end: 9,
                             value: 'm1',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 10,
-                                    line: 1,
-                                    column: 11,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 10,
+                            end: 12,
                             value: 'v1',
                         },
                         exception: false,
@@ -1095,97 +446,37 @@ describe('NetworkRuleParser', () => {
 
         // Pattern starts with / like regex patterns
         expect(NetworkRuleParser.parse('/ad.js^$m1=v1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 13,
-                    line: 1,
-                    column: 14,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 13,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 0,
+                end: 7,
                 value: '/ad.js^',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                    end: {
-                        offset: 13,
-                        line: 1,
-                        column: 14,
-                    },
-                },
+                start: 8,
+                end: 13,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 8,
-                                line: 1,
-                                column: 9,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 8,
+                        end: 13,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 8,
-                                    line: 1,
-                                    column: 9,
-                                },
-                                end: {
-                                    offset: 10,
-                                    line: 1,
-                                    column: 11,
-                                },
-                            },
+                            start: 8,
+                            end: 10,
                             value: 'm1',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                                end: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                            },
+                            start: 11,
+                            end: 13,
                             value: 'v1',
                         },
                         exception: false,
@@ -1195,97 +486,37 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('/ad.js^$m1=/^v1$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 17,
-                    line: 1,
-                    column: 18,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 17,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 0,
+                end: 7,
                 value: '/ad.js^',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                    end: {
-                        offset: 17,
-                        line: 1,
-                        column: 18,
-                    },
-                },
+                start: 8,
+                end: 17,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 8,
-                                line: 1,
-                                column: 9,
-                            },
-                            end: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                        },
+                        start: 8,
+                        end: 17,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 8,
-                                    line: 1,
-                                    column: 9,
-                                },
-                                end: {
-                                    offset: 10,
-                                    line: 1,
-                                    column: 11,
-                                },
-                            },
+                            start: 8,
+                            end: 10,
                             value: 'm1',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                                end: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                            },
+                            start: 11,
+                            end: 17,
                             value: '/^v1$/',
                         },
                         exception: false,
@@ -1296,97 +527,37 @@ describe('NetworkRuleParser', () => {
 
         // Pattern contains an odd number of "/" characters
         expect(NetworkRuleParser.parse('example.com/a/b/c$m1=v1')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 23,
-                    line: 1,
-                    column: 24,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 23,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 17,
-                        line: 1,
-                        column: 18,
-                    },
-                },
+                start: 0,
+                end: 17,
                 value: 'example.com/a/b/c',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 18,
-                        line: 1,
-                        column: 19,
-                    },
-                    end: {
-                        offset: 23,
-                        line: 1,
-                        column: 24,
-                    },
-                },
+                start: 18,
+                end: 23,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 18,
-                                line: 1,
-                                column: 19,
-                            },
-                            end: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                        },
+                        start: 18,
+                        end: 23,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                                end: {
-                                    offset: 20,
-                                    line: 1,
-                                    column: 21,
-                                },
-                            },
+                            start: 18,
+                            end: 20,
                             value: 'm1',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 21,
-                                    line: 1,
-                                    column: 22,
-                                },
-                                end: {
-                                    offset: 23,
-                                    line: 1,
-                                    column: 24,
-                                },
-                            },
+                            start: 21,
+                            end: 23,
                             value: 'v1',
                         },
                         exception: false,
@@ -1396,129 +567,49 @@ describe('NetworkRuleParser', () => {
         });
 
         expect(NetworkRuleParser.parse('example.com$m1,m2=/^regex$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 27,
-                    line: 1,
-                    column: 28,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 27,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                },
+                start: 0,
+                end: 11,
                 value: 'example.com',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 27,
-                        line: 1,
-                        column: 28,
-                    },
-                },
+                start: 12,
+                end: 27,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                        },
+                        start: 12,
+                        end: 14,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                                end: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                            },
+                            start: 12,
+                            end: 14,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                            end: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                        },
+                        start: 15,
+                        end: 27,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 15,
-                                    line: 1,
-                                    column: 16,
-                                },
-                                end: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                            },
+                            start: 15,
+                            end: 17,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                                end: {
-                                    offset: 27,
-                                    line: 1,
-                                    column: 28,
-                                },
-                            },
+                            start: 18,
+                            end: 27,
                             value: '/^regex$/',
                         },
                         exception: false,
@@ -1529,129 +620,49 @@ describe('NetworkRuleParser', () => {
 
         // https://github.com/AdguardTeam/AGLint/issues/60
         expect(NetworkRuleParser.parse('||example.com/$aa/bb^$m1,m2=/^regex$/')).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 37,
-                    line: 1,
-                    column: 38,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 37,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: false,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 21,
-                        line: 1,
-                        column: 22,
-                    },
-                },
+                start: 0,
+                end: 21,
                 value: '||example.com/$aa/bb^',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 22,
-                        line: 1,
-                        column: 23,
-                    },
-                    end: {
-                        offset: 37,
-                        line: 1,
-                        column: 38,
-                    },
-                },
+                start: 22,
+                end: 37,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 22,
-                                line: 1,
-                                column: 23,
-                            },
-                            end: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                        },
+                        start: 22,
+                        end: 24,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 22,
-                                    line: 1,
-                                    column: 23,
-                                },
-                                end: {
-                                    offset: 24,
-                                    line: 1,
-                                    column: 25,
-                                },
-                            },
+                            start: 22,
+                            end: 24,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 25,
-                                line: 1,
-                                column: 26,
-                            },
-                            end: {
-                                offset: 37,
-                                line: 1,
-                                column: 38,
-                            },
-                        },
+                        start: 25,
+                        end: 37,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 25,
-                                    line: 1,
-                                    column: 26,
-                                },
-                                end: {
-                                    offset: 27,
-                                    line: 1,
-                                    column: 28,
-                                },
-                            },
+                            start: 25,
+                            end: 27,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 28,
-                                    line: 1,
-                                    column: 29,
-                                },
-                                end: {
-                                    offset: 37,
-                                    line: 1,
-                                    column: 38,
-                                },
-                            },
+                            start: 28,
+                            end: 37,
                             value: '/^regex$/',
                         },
                         exception: false,
@@ -1664,273 +675,103 @@ describe('NetworkRuleParser', () => {
         expect(
             NetworkRuleParser.parse('@@/example/scripts/ad.js$m1,m2=v2,m3=/^r3\\$/,m4=/r4\\/r4$/,m5=/^r5\\$/'),
         ).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 68,
-                    line: 1,
-                    column: 69,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 68,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 24,
-                        line: 1,
-                        column: 25,
-                    },
-                },
+                start: 2,
+                end: 24,
                 value: '/example/scripts/ad.js',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 25,
-                        line: 1,
-                        column: 26,
-                    },
-                    end: {
-                        offset: 68,
-                        line: 1,
-                        column: 69,
-                    },
-                },
+                start: 25,
+                end: 68,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 25,
-                                line: 1,
-                                column: 26,
-                            },
-                            end: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                        },
+                        start: 25,
+                        end: 27,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 25,
-                                    line: 1,
-                                    column: 26,
-                                },
-                                end: {
-                                    offset: 27,
-                                    line: 1,
-                                    column: 28,
-                                },
-                            },
+                            start: 25,
+                            end: 27,
                             value: 'm1',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                            end: {
-                                offset: 33,
-                                line: 1,
-                                column: 34,
-                            },
-                        },
+                        start: 28,
+                        end: 33,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 28,
-                                    line: 1,
-                                    column: 29,
-                                },
-                                end: {
-                                    offset: 30,
-                                    line: 1,
-                                    column: 31,
-                                },
-                            },
+                            start: 28,
+                            end: 30,
                             value: 'm2',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 31,
-                                    line: 1,
-                                    column: 32,
-                                },
-                                end: {
-                                    offset: 33,
-                                    line: 1,
-                                    column: 34,
-                                },
-                            },
+                            start: 31,
+                            end: 33,
                             value: 'v2',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 34,
-                                line: 1,
-                                column: 35,
-                            },
-                            end: {
-                                offset: 44,
-                                line: 1,
-                                column: 45,
-                            },
-                        },
+                        start: 34,
+                        end: 44,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 34,
-                                    line: 1,
-                                    column: 35,
-                                },
-                                end: {
-                                    offset: 36,
-                                    line: 1,
-                                    column: 37,
-                                },
-                            },
+                            start: 34,
+                            end: 36,
                             value: 'm3',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 37,
-                                    line: 1,
-                                    column: 38,
-                                },
-                                end: {
-                                    offset: 44,
-                                    line: 1,
-                                    column: 45,
-                                },
-                            },
+                            start: 37,
+                            end: 44,
                             value: '/^r3\\$/',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 45,
-                                line: 1,
-                                column: 46,
-                            },
-                            end: {
-                                offset: 57,
-                                line: 1,
-                                column: 58,
-                            },
-                        },
+                        start: 45,
+                        end: 57,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 45,
-                                    line: 1,
-                                    column: 46,
-                                },
-                                end: {
-                                    offset: 47,
-                                    line: 1,
-                                    column: 48,
-                                },
-                            },
+                            start: 45,
+                            end: 47,
                             value: 'm4',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 48,
-                                    line: 1,
-                                    column: 49,
-                                },
-                                end: {
-                                    offset: 57,
-                                    line: 1,
-                                    column: 58,
-                                },
-                            },
+                            start: 48,
+                            end: 57,
                             value: '/r4\\/r4$/',
                         },
                         exception: false,
                     },
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 58,
-                                line: 1,
-                                column: 59,
-                            },
-                            end: {
-                                offset: 68,
-                                line: 1,
-                                column: 69,
-                            },
-                        },
+                        start: 58,
+                        end: 68,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 58,
-                                    line: 1,
-                                    column: 59,
-                                },
-                                end: {
-                                    offset: 60,
-                                    line: 1,
-                                    column: 61,
-                                },
-                            },
+                            start: 58,
+                            end: 60,
                             value: 'm5',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 61,
-                                    line: 1,
-                                    column: 62,
-                                },
-                                end: {
-                                    offset: 68,
-                                    line: 1,
-                                    column: 69,
-                                },
-                            },
+                            start: 61,
+                            end: 68,
                             value: '/^r5\\$/',
                         },
                         exception: false,
@@ -1942,97 +783,37 @@ describe('NetworkRuleParser', () => {
         expect(
             NetworkRuleParser.parse('@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i'),
         ).toMatchObject<NetworkRule>({
-            type: 'NetworkRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 72,
-                    line: 1,
-                    column: 73,
-                },
-            },
+            type: NetworkRuleType.NetworkRule,
+            start: 0,
+            end: 72,
             category: RuleCategory.Network,
             syntax: AdblockSyntax.Common,
             exception: true,
             pattern: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                },
+                start: 2,
+                end: 16,
                 value: '||example.org^',
             },
             modifiers: {
                 type: 'ModifierList',
-                loc: {
-                    start: {
-                        offset: 17,
-                        line: 1,
-                        column: 18,
-                    },
-                    end: {
-                        offset: 72,
-                        line: 1,
-                        column: 73,
-                    },
-                },
+                start: 17,
+                end: 72,
                 children: [
                     {
                         type: 'Modifier',
-                        loc: {
-                            start: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                            end: {
-                                offset: 72,
-                                line: 1,
-                                column: 73,
-                            },
-                        },
+                        start: 17,
+                        end: 72,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                                end: {
-                                    offset: 24,
-                                    line: 1,
-                                    column: 25,
-                                },
-                            },
+                            start: 17,
+                            end: 24,
                             value: 'replace',
                         },
                         value: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 25,
-                                    line: 1,
-                                    column: 26,
-                                },
-                                end: {
-                                    offset: 72,
-                                    line: 1,
-                                    column: 73,
-                                },
-                            },
+                            start: 25,
+                            end: 72,
                             value: '/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
                         },
                         exception: false,
@@ -2045,97 +826,37 @@ describe('NetworkRuleParser', () => {
             NetworkRuleParser.parse('@@||example.org^$removeheader=request:header-name'),
         ).toMatchObject<NetworkRule>(
             {
-                type: 'NetworkRule',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 49,
-                        line: 1,
-                        column: 50,
-                    },
-                },
+                type: NetworkRuleType.NetworkRule,
+                start: 0,
+                end: 49,
                 category: RuleCategory.Network,
                 syntax: AdblockSyntax.Common,
                 exception: true,
                 pattern: {
                     type: 'Value',
-                    loc: {
-                        start: {
-                            offset: 2,
-                            line: 1,
-                            column: 3,
-                        },
-                        end: {
-                            offset: 16,
-                            line: 1,
-                            column: 17,
-                        },
-                    },
+                    start: 2,
+                    end: 16,
                     value: '||example.org^',
                 },
                 modifiers: {
                     type: 'ModifierList',
-                    loc: {
-                        start: {
-                            offset: 17,
-                            line: 1,
-                            column: 18,
-                        },
-                        end: {
-                            offset: 49,
-                            line: 1,
-                            column: 50,
-                        },
-                    },
+                    start: 17,
+                    end: 49,
                     children: [
                         {
                             type: 'Modifier',
-                            loc: {
-                                start: {
-                                    offset: 17,
-                                    line: 1,
-                                    column: 18,
-                                },
-                                end: {
-                                    offset: 49,
-                                    line: 1,
-                                    column: 50,
-                                },
-                            },
+                            start: 17,
+                            end: 49,
                             name: {
                                 type: 'Value',
-                                loc: {
-                                    start: {
-                                        offset: 17,
-                                        line: 1,
-                                        column: 18,
-                                    },
-                                    end: {
-                                        offset: 29,
-                                        line: 1,
-                                        column: 30,
-                                    },
-                                },
+                                start: 17,
+                                end: 29,
                                 value: 'removeheader',
                             },
                             value: {
                                 type: 'Value',
-                                loc: {
-                                    start: {
-                                        offset: 30,
-                                        line: 1,
-                                        column: 31,
-                                    },
-                                    end: {
-                                        offset: 49,
-                                        line: 1,
-                                        column: 50,
-                                    },
-                                },
+                                start: 30,
+                                end: 49,
                                 value: 'request:header-name',
                             },
                             exception: false,
@@ -2157,7 +878,7 @@ describe('NetworkRuleParser', () => {
             {
                 actual: '@@||example.com$m1,m2=v2',
                 expected: {
-                    type: 'NetworkRule',
+                    type: NetworkRuleType.NetworkRule,
                     category: RuleCategory.Network,
                     syntax: AdblockSyntax.Common,
                     raws: {
@@ -2196,7 +917,9 @@ describe('NetworkRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(NetworkRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                NetworkRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -2233,5 +956,18 @@ describe('NetworkRuleParser', () => {
         expect(parseAndGenerate('@@||example.org^$removeheader=header-name')).toEqual(
             '@@||example.org^$removeheader=header-name',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'example.com',
+            '$script,redirect-rule=noopjs,domain=aternos.org',
+            '@@||example.com',
+            '@@||example.com^$script,third-party',
+            '/ads.js^$script',
+            '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser);
+        });
     });
 });

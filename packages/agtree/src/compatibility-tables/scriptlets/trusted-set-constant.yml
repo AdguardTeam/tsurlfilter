@@ -1,0 +1,12 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: trusted-set-constant
+  version_added: 1.8.2
+  parameters:
+    - name: property
+      required: true
+    - name: value
+      required: true
+    - name: stack
+      required: false

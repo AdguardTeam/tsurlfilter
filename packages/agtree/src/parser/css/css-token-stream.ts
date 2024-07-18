@@ -7,11 +7,14 @@ import { sprintf } from 'sprintf-js';
 
 import { tokenizeBalanced } from './balancing';
 import { EMPTY } from '../../utils/constants';
-import { type Location, defaultLocation } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { locRange } from '../../utils/location';
 import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
-import { ABP_EXT_CSS_PREFIX, EXT_CSS_PSEUDO_CLASSES, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../../converter/data/css';
+import {
+    ABP_EXT_CSS_PREFIX,
+    EXT_CSS_PSEUDO_CLASSES,
+    EXT_CSS_PSEUDO_CLASSES_STRICT,
+    LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
+} from '../../converter/data/css';
 
 /**
  * Interface for CSS token data.
@@ -88,17 +91,17 @@ export class CssTokenStream {
     private index = 0;
 
     /**
-     * The base location of the source string.
+     * The base offset of the source string.
      */
-    private baseLoc: Location;
+    private baseOffset: number;
 
     /**
      * Initializes a new instance of the TokenStream class.
      *
      * @param source The source string to tokenize.
-     * @param baseLoc The base location of the source string.
+     * @param baseOffset The base offset of the source string.
      */
-    constructor(source: string, baseLoc = defaultLocation) {
+    constructor(source: string, baseOffset = 0) {
         this.source = source;
 
         // Tokenize the source string with the CSS tokenizer and add balance level to each token.
@@ -120,7 +123,7 @@ export class CssTokenStream {
 
         this.index = 0;
 
-        this.baseLoc = baseLoc;
+        this.baseOffset = baseOffset;
     }
 
     /**
@@ -167,7 +170,8 @@ export class CssTokenStream {
                     ERROR_MESSAGES.EXPECTED_ANY_TOKEN_BUT_GOT,
                     END_OF_INPUT,
                 ),
-                locRange(this.baseLoc, this.source.length - 1, this.source.length),
+                this.baseOffset + this.source.length - 1,
+                this.baseOffset + this.source.length,
             );
         }
 
@@ -355,7 +359,8 @@ export class CssTokenStream {
         if (this.isEof()) {
             throw new AdblockSyntaxError(
                 'Unexpected end of input',
-                locRange(this.baseLoc, this.source.length - 1, this.source.length),
+                this.baseOffset + this.source.length - 1,
+                this.baseOffset + this.source.length,
             );
         }
     }
@@ -377,7 +382,8 @@ export class CssTokenStream {
                     getFormattedTokenName(type),
                     END_OF_INPUT,
                 ),
-                locRange(this.baseLoc, this.source.length - 1, this.source.length),
+                this.baseOffset + this.source.length - 1,
+                this.baseOffset + this.source.length,
             );
         }
 
@@ -388,7 +394,8 @@ export class CssTokenStream {
                     getFormattedTokenName(type),
                     getFormattedTokenName(token.type),
                 ),
-                locRange(this.baseLoc, token.start, token.end),
+                this.baseOffset + token.start,
+                this.baseOffset + token.end,
             );
         }
 
@@ -400,7 +407,8 @@ export class CssTokenStream {
                     data.balance,
                     token.balance,
                 ),
-                locRange(this.baseLoc, token.start, token.end),
+                this.baseOffset + token.start,
+                this.baseOffset + token.end,
             );
         }
 
@@ -412,7 +420,8 @@ export class CssTokenStream {
                     data.value,
                     this.fragment(),
                 ),
-                locRange(this.baseLoc, token.start, token.end),
+                this.baseOffset + token.start,
+                this.baseOffset + token.end,
             );
         }
     }
@@ -428,18 +437,41 @@ export class CssTokenStream {
     }
 
     /**
-     * Checks whether the token stream contains any Extended CSS elements, such as `:has()`, `:contains()`, etc.
+     * Checks whether the token stream contains any Extended CSS elements, such as `:contains()`, etc.
      *
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
     public hasAnySelectorExtendedCssNode(): boolean {
+        return this.hasAnySelectorExtendedCssNodeInternal(EXT_CSS_PSEUDO_CLASSES);
+    }
+
+    /**
+     * Strictly checks whether the token stream contains any Extended CSS elements, such as `:contains()`.
+     * Some Extended CSS elements are natively supported by browsers, like `:has()`.
+     * This method is used to check for Extended CSS elements that are not natively supported by browsers,
+     * this is why it called "strict", because it strictly checks for Extended CSS elements.
+     *
+     * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
+     */
+    public hasAnySelectorExtendedCssNodeStrict(): boolean {
+        return this.hasAnySelectorExtendedCssNodeInternal(EXT_CSS_PSEUDO_CLASSES_STRICT);
+    }
+
+    /**
+     * Checks whether the token stream contains any Extended CSS elements, such as `:has()`, `:contains()`, etc.
+     *
+     * @param pseudos Set of pseudo-classes to check for.
+     *
+     * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
+     */
+    private hasAnySelectorExtendedCssNodeInternal(pseudos: Set<string>): boolean {
         for (let i = 0; i < this.tokens.length; i += 1) {
             const token = this.tokens[i];
 
             if (token.type === TokenType.Function) {
-                const name = this.source.substring(token.start, token.end - 1); // omit the last parenthesis
+                const name = this.source.slice(token.start, token.end - 1); // omit the last parenthesis
 
-                if (EXT_CSS_PSEUDO_CLASSES.has(name)) {
+                if (pseudos.has(name)) {
                     return true;
                 }
             } else if (token.type === TokenType.OpenSquareBracket) {

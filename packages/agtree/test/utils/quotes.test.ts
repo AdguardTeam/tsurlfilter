@@ -267,60 +267,80 @@ describe('Quote utils', () => {
         });
     });
 
-    describe('removeQuotes', () => {
-        test.each([
-            {
-                actual: '"test"',
-                expected: 'test',
-            },
-            {
-                actual: "'test'",
-                expected: 'test',
-            },
-            {
-                actual: '"test',
-                expected: '"test',
-            },
-            {
-                actual: "'test",
-                expected: "'test",
-            },
-            {
-                actual: 'test"',
-                expected: 'test"',
-            },
-            {
-                actual: "test'",
-                expected: "test'",
-            },
-            {
-                actual: '"test\'',
-                expected: '"test\'',
-            },
-            {
-                actual: '\'test"',
-                expected: '\'test"',
-            },
-            {
-                actual: 'test',
-                expected: 'test',
-            },
-            {
-                actual: '',
-                expected: '',
-            },
+    const commonRemoveQuotesCases = [
+        {
+            actual: '"test"',
+            expected: 'test',
+        },
+        {
+            actual: "'test'",
+            expected: 'test',
+        },
+        {
+            actual: '"test',
+            expected: '"test',
+        },
+        {
+            actual: "'test",
+            expected: "'test",
+        },
+        {
+            actual: 'test"',
+            expected: 'test"',
+        },
+        {
+            actual: "test'",
+            expected: "test'",
+        },
+        {
+            actual: '"test\'',
+            expected: '"test\'',
+        },
+        {
+            actual: '\'test"',
+            expected: '\'test"',
+        },
+        {
+            actual: 'test',
+            expected: 'test',
+        },
+        {
+            actual: '',
+            expected: '',
+        },
 
-            // do not remove quotes from single char strings
+        // do not remove quotes from single char strings
+        {
+            actual: '"',
+            expected: '"',
+        },
+        {
+            actual: "'",
+            expected: "'",
+        },
+    ];
+
+    describe('removeQuotes', () => {
+        test.each(
+            commonRemoveQuotesCases,
+        )('removeQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.removeQuotes(actual)).toBe(expected);
+        });
+    });
+
+    describe('removeQuotesAndUnescape', () => {
+        test.each([
+            ...commonRemoveQuotesCases,
             {
-                actual: '"',
-                expected: '"',
+                actual: String.raw`'a\'b'`,
+                expected: "a'b",
             },
             {
-                actual: "'",
-                expected: "'",
+                actual: String.raw`"a\"b"`,
+                expected: 'a"b',
             },
         ])('removeQuotes should return $expected for $actual', ({ actual, expected }) => {
-            expect(QuoteUtils.removeQuotes(actual)).toBe(expected);
+            expect(QuoteUtils.removeQuotesAndUnescape(actual)).toBe(expected);
         });
     });
 

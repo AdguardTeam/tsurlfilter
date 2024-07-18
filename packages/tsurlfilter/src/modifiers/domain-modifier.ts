@@ -1,8 +1,10 @@
 import { getPublicSuffix } from 'tldts';
+import { type DomainList, DomainListParser, defaultParserOptions } from '@adguard/agtree';
 
 import { logger } from '../utils/logger';
-import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
 import { SimpleRegex } from '../rules/simple-regex';
+import { isString, unescapeChar } from '../utils/string-utils';
+import { WILDCARD } from '../common/constants';
 
 /**
  * Comma separator
@@ -15,9 +17,12 @@ export const COMMA_SEPARATOR = ',';
 export const PIPE_SEPARATOR = '|';
 
 /**
- * Wildcard character
+ * Processed domain list
  */
-const WILDCARD_CHARACTER = '*';
+export interface ProcessedDomainList {
+    restrictedDomains: string[];
+    permittedDomains: string[];
+}
 
 /**
  * This is a helper class that is used specifically to work
@@ -46,56 +51,76 @@ export class DomainModifier {
     public readonly restrictedDomains: string[] | null;
 
     /**
+     * Processes domain list node, which means extracting permitted and restricted
+     * domains from it.
+     *
+     * @param domainListNode Domain list node to process
+     * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList})
+     */
+    public static processDomainList(domainListNode: DomainList): ProcessedDomainList {
+        const result: ProcessedDomainList = {
+            permittedDomains: [],
+            restrictedDomains: [],
+        };
+
+        const { children: domains } = domainListNode;
+
+        for (const { exception, value: domain } of domains) {
+            const domainLowerCased = domain.toLowerCase();
+
+            if (!SimpleRegex.isRegexPattern(domain) && domain.includes(WILDCARD) && !domain.endsWith(WILDCARD)) {
+                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${domain}"`);
+            }
+
+            if (exception) {
+                result.restrictedDomains.push(domainLowerCased);
+            } else {
+                result.permittedDomains.push(domainLowerCased);
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Parses the `domains` string and initializes the object.
      *
-     * @param domainsStr Domains string.
+     * @param domains Domain list string or AGTree DomainList node.
      * @param separator Separator — `,` or `|`.
      *
      * @throws An error if the domains string is empty or invalid
      */
-    constructor(domainsStr: string, separator: string) {
-        if (!domainsStr) {
-            throw new SyntaxError('Modifier $domain cannot be empty');
+    constructor(domains: string | DomainList, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
+        let processed: ProcessedDomainList;
+
+        if (isString(domains)) {
+            const node = DomainListParser.parse(
+                domains.trim(),
+                { ...defaultParserOptions, isLocIncluded: false },
+                0,
+                separator,
+            );
+
+            if (node.children.length === 0) {
+                throw new SyntaxError('At least one domain must be specified');
+            }
+
+            processed = DomainModifier.processDomainList(node);
+        } else {
+            // domain list node stores the separator
+            if (separator !== domains.separator) {
+                throw new SyntaxError('Separator mismatch');
+            }
+
+            processed = DomainModifier.processDomainList(domains);
         }
 
-        if (domainsStr.startsWith(separator)) {
-            throw new SyntaxError(`Modifier $domain cannot start with "${separator}"`);
-        }
+        // Unescape separator character in domains
+        processed.permittedDomains = processed.permittedDomains.map((domain) => unescapeChar(domain, separator));
+        processed.restrictedDomains = processed.restrictedDomains.map((domain) => unescapeChar(domain, separator));
 
-        const permittedDomains: string[] = [];
-        const restrictedDomains: string[] = [];
-
-        const parts = splitByDelimiterWithEscapeCharacter(domainsStr.toLowerCase(), separator, '\\', true);
-        for (let i = 0; i < parts.length; i += 1) {
-            let domain = parts[i].trim();
-            let restricted = false;
-            if (domain.startsWith('~')) {
-                restricted = true;
-                domain = domain.substring(1);
-            }
-
-            // Regexp pattern check prevents regexp rules being rejected, as they could contain
-            // unescaped wildcards as special characters.
-            if (!SimpleRegex.isRegexPattern(domain)
-                && domain.includes(WILDCARD_CHARACTER)
-                && !domain.endsWith(WILDCARD_CHARACTER)
-            ) {
-                throw new SyntaxError(`Wildcards are only supported for top-level domains: "${domainsStr}"`);
-            }
-
-            if (domain === '') {
-                throw new SyntaxError(`Empty domain specified in "${domainsStr}"`);
-            }
-
-            if (restricted) {
-                restrictedDomains.push(domain);
-            } else {
-                permittedDomains.push(domain);
-            }
-        }
-
-        this.restrictedDomains = restrictedDomains.length > 0 ? restrictedDomains : null;
-        this.permittedDomains = permittedDomains.length > 0 ? permittedDomains : null;
+        this.restrictedDomains = processed.restrictedDomains.length > 0 ? processed.restrictedDomains : null;
+        this.permittedDomains = processed.permittedDomains.length > 0 ? processed.permittedDomains : null;
     }
 
     /**

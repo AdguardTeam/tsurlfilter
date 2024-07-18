@@ -1,8 +1,8 @@
 import { buildScriptText } from '@lib/mv2/background/injection-helper';
+import { extSessionStorage } from '@lib/mv2';
+import { appContext } from '@lib/mv2/background/context';
 
 const timestamp = Date.now();
-
-jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
 const trim = (str: string): string => str.replace(/\s+/g, '');
 
@@ -50,6 +50,11 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
 })()`;
 
 describe('Injection Helper', () => {
+    beforeAll(() => {
+        extSessionStorage.init();
+        appContext.startTimeMs = timestamp;
+    });
+
     it('builds script text without escaped symbols', () => {
         const scriptText = 'alert(1);';
 

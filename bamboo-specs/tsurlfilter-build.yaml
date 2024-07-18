@@ -40,7 +40,8 @@ Build:
             pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
-            pnpm --filter @adguard/tsurlfilter build
+            # Build dependencies, then the package itself
+            pnpm --filter "@adguard/tsurlfilter..." --depth=-1 build
 
             cd packages/tsurlfilter
             pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz

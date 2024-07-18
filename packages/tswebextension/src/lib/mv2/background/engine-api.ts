@@ -12,12 +12,13 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    RuleConverter,
     type HTTPMethod,
+    STEALTH_MODE_FILTER_ID,
 } from '@adguard/tsurlfilter';
 
-import { USER_FILTER_ID } from '../../common/constants';
-import { getHost } from '../../common/utils/url';
+import { type AnyRule } from '@adguard/agtree';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { getHost, isHttpRequest } from '../../common/utils/url';
 
 import type { Allowlist } from './allowlist';
 import type { StealthApi } from './stealth-api';
@@ -42,6 +43,8 @@ export class EngineApi {
     private static readonly ASYNC_LOAD_CHINK_SIZE = 5000;
 
     private engine: Engine | undefined;
+
+    private dynamicFilters: Map<number, IRuleList> = new Map();
 
     /**
      * Gets app filtering status.
@@ -89,30 +92,47 @@ export class EngineApi {
         const lists: IRuleList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
-            const { filterId, content, trusted } = filters[i];
-            const convertedContent = RuleConverter.convertRules(content);
-            lists.push(new BufferRuleList(
+            const {
                 filterId,
-                convertedContent,
-                false,
-                !trusted,
-                !trusted,
-            ));
+                content,
+                trusted,
+                sourceMap,
+            } = filters[i];
+
+            lists.push(
+                new BufferRuleList(
+                    filterId,
+                    content,
+                    false,
+                    !trusted,
+                    !trusted,
+                    sourceMap,
+                ),
+            );
         }
 
-        if (userrules.length > 0) {
-            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
-            lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
+        if (userrules.content.length > 0) {
+            lists.push(
+                new BufferRuleList(
+                    USER_FILTER_ID,
+                    userrules.content,
+                    false,
+                    false,
+                    false,
+                    userrules.sourceMap,
+                ),
+            );
         }
-
         const allowlistRulesList = this.allowlist.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);
+            this.dynamicFilters.set(ALLOWLIST_FILTER_ID, allowlistRulesList);
         }
 
         const stealthModeList = this.stealthApi.getStealthModeRuleList();
         if (stealthModeList) {
             lists.push(stealthModeList);
+            this.dynamicFilters.set(STEALTH_MODE_FILTER_ID, stealthModeList);
         }
 
         const ruleStorage = new RuleStorage(lists);
@@ -178,7 +198,7 @@ export class EngineApi {
      * @returns Cosmetic result.
      */
     public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
-        if (!this.engine || !this.isFilteringEnabled) {
+        if (!this.engine || !this.isFilteringEnabled || !isHttpRequest(matchQuery.frameUrl)) {
             return new CosmeticResult();
         }
 
@@ -200,7 +220,7 @@ export class EngineApi {
      * @returns NetworkRule or null.
      */
     public matchFrame(frameUrl: string): NetworkRule | null {
-        if (!this.engine || !this.isFilteringEnabled) {
+        if (!this.engine || !this.isFilteringEnabled || !isHttpRequest(frameUrl)) {
             return null;
         }
 
@@ -223,6 +243,24 @@ export class EngineApi {
         const request = new Request(url, frameUrl, RequestType.Document);
 
         return this.engine.getCosmeticResult(request, option);
+    }
+
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        const ruleList = this.dynamicFilters.get(filterId);
+
+        if (!ruleList) {
+            return null;
+        }
+
+        return ruleList.retrieveRuleNode(ruleIndex);
     }
 
     /**

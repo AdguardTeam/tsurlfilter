@@ -15,9 +15,9 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { type Value, type CssInjectionRuleBody } from '../common';
-import { locRange } from '../../utils/location';
 import { CssTokenStream } from './css-token-stream';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
 
 export const REMOVE_PROPERTY = 'remove';
 export const REMOVE_VALUE = 'true';
@@ -33,23 +33,23 @@ export const ERROR_MESSAGES = {
 /**
  * Parser for AdGuard CSS injection.
  */
-export class AdgCssInjectionParser {
+export class AdgCssInjectionParser extends ParserBase {
     /**
      * Parses an AdGuard CSS injection.
      *
-     * @param raw Raw text.
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns Parsed AdGuard CSS injection {@link CssInjectionRuleBody}.
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): CssInjectionRuleBody {
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): CssInjectionRuleBody {
         let mediaQueryList: Value | undefined;
         const selectorList: Value = { type: 'Value', value: EMPTY };
         const declarationList: Value = { type: 'Value', value: EMPTY };
 
-        const stream = new CssTokenStream(raw);
+        const stream = new CssTokenStream(raw, baseOffset);
 
         // Skip leading whitespace characters
         stream.skipWhitespace();
@@ -100,7 +100,8 @@ export class AdgCssInjectionParser {
             if (lastNonWsIndex === -1) {
                 throw new AdblockSyntaxError(
                     ERROR_MESSAGES.MEDIA_QUERY_LIST_IS_EMPTY,
-                    locRange(baseLoc, mediaQueryListStart, raw.length),
+                    baseOffset + mediaQueryListStart,
+                    baseOffset + raw.length,
                 );
             }
 
@@ -113,8 +114,9 @@ export class AdgCssInjectionParser {
                 value: raw.slice(mediaQueryListStart, mediaQueryListEnd),
             };
 
-            if (isLocIncluded) {
-                mediaQueryList.loc = locRange(baseLoc, mediaQueryListStart, mediaQueryListEnd);
+            if (options.isLocIncluded) {
+                mediaQueryList.start = baseOffset + mediaQueryListStart;
+                mediaQueryList.end = baseOffset + mediaQueryListEnd;
             }
 
             // Next token should be an open curly bracket
@@ -150,7 +152,8 @@ export class AdgCssInjectionParser {
         if (selectorTokensLength === 0) {
             throw new AdblockSyntaxError(
                 ERROR_MESSAGES.SELECTOR_LIST_IS_EMPTY,
-                locRange(baseLoc, selectorStart, raw.length),
+                baseOffset + selectorStart,
+                baseOffset + raw.length,
             );
         }
 
@@ -160,8 +163,9 @@ export class AdgCssInjectionParser {
 
         selectorList.value = raw.slice(selectorStart, selectorEnd);
 
-        if (isLocIncluded) {
-            selectorList.loc = locRange(baseLoc, selectorStart, selectorEnd);
+        if (options.isLocIncluded) {
+            selectorList.start = baseOffset + selectorStart;
+            selectorList.end = baseOffset + selectorEnd;
         }
 
         // Jump to the next token after the opening curly bracket of the declaration block
@@ -223,14 +227,16 @@ export class AdgCssInjectionParser {
         if (declarationsEnd === -1) {
             throw new AdblockSyntaxError(
                 ERROR_MESSAGES.DECLARATION_LIST_IS_EMPTY,
-                locRange(baseLoc, declarationsStart, raw.length),
+                baseOffset + declarationsStart,
+                baseOffset + raw.length,
             );
         }
 
         declarationList.value = raw.slice(declarationsStart, declarationsEnd);
 
-        if (isLocIncluded) {
-            declarationList.loc = locRange(baseLoc, declarationsStart, declarationsEnd);
+        if (options.isLocIncluded) {
+            declarationList.start = baseOffset + declarationsStart;
+            declarationList.end = baseOffset + declarationsEnd;
         }
 
         // Eat the close curly bracket of the declaration block
@@ -256,8 +262,9 @@ export class AdgCssInjectionParser {
             remove,
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         if (mediaQueryList) {

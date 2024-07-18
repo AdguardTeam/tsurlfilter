@@ -1,7 +1,8 @@
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
+import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { type GetBlockingResponseParams, RequestBlockingApi } from '@lib/mv2/background/request/request-blocking-api';
 import { documentBlockingService, engineApi, tabsApi } from '@lib/mv2/background/api';
 import { ContentType } from '@lib/common';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 
 jest.mock('@lib/mv2/background/api');
 
@@ -28,7 +29,7 @@ const getGetBlockingResponseParamsData = (
     contentType: ContentType,
 ): GetBlockingResponseParams => {
     const result = new MatchingResult(
-        rules.map((rule) => new NetworkRule(rule, 0)),
+        rules.map((rule) => createNetworkRule(rule, 0)),
         null,
     );
 
@@ -49,7 +50,7 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
         let matchingResult = null;
 
         if (ruleText) {
-            const rule = new NetworkRule(ruleText, 0);
+            const rule = createNetworkRule(ruleText, 0);
             matchingResult = new MatchingResult([rule], null);
         }
 

@@ -1,18 +1,27 @@
 # Compatibility tables TODO list
 
-- [ ] Fill compatibility tables with data.
-    - [ ] Import scriptlets/redirects from AdGuard Scriptlets library? GitHub Action for importing?
-    - [ ] GitHub Action workflow that checks YML files for errors.
-- [ ] Finalize table structure, if needed. It depends on edge cases and how we'll use the tables in the API.
-- [ ] Table optimization, if needed. We need a maintainable, convenient data structure for the tables, so maybe we'll
+- [x] Fill compatibility tables with data.
+    - [x] Import scriptlets/redirects from AdGuard Scriptlets library? GitHub Action for importing?
+    - [x] GitHub Action workflow that checks YML files for errors.
+- [x] Finalize table structure, if needed. It depends on edge cases and how we'll use the tables in the API.
+- [x] Table optimization, if needed. We need a maintainable, convenient data structure for the tables, so maybe we'll
       need to optimize it before using it in the API.
-- [ ] Create API endpoints for the tables.
-- [ ] Wiki generation (`.md` files from the tables / gh-pages).
+- [x] Create API endpoints for the tables.
+- [x] Wiki generation (`.md` files from the tables / gh-pages).
 - [ ] Review redirects' aliases in compatibility table:
     - [ ] check if `ubo-` and `abp-` prefixes should be deprecated,
     <!-- markdownlint-disable MD013 -->
-    - [ ] make compatibility table does not miss any [ubo aliases](https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-resources.js).
+    - [x] make compatibility table does not miss any [ubo aliases](https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/redirect-resources.js).
     <!-- markdownlint-enable MD013 -->
+- [ ] Re-use data in YAML files via anchors. This will help to avoid duplication and make the data more maintainable.
+- [ ] Make a site for compatibility tables in React and deploy it to GitHub Pages.
+      Make entities searchable and viewable by URL.
+- [ ] Handle negated aliases properly, like `first-party` and `~third-party`.
+- [ ] Consider adding a field called `limited` and `limitationMessage` to the compatibility tables.
+      This field will be used to indicate that the entity is limited in some way and provide a message with details.
+- [ ] Add documentation link and description to all redirect resources.
+- [ ] Add Extended CSS features to the compatibility tables.
+- [ ] Add more tests for the compatibility tables API.
 
 ## Linter rules
 

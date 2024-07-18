@@ -58,8 +58,10 @@ Test:
             # Install dependencies
             pnpm install
 
+            # Build dependencies, then the package itself
+            pnpm --filter "@adguard/tsurlfilter..." --depth=-1 build
+
             pnpm --filter @adguard/tsurlfilter lint
-            pnpm --filter @adguard/tsurlfilter build
 
             # IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
             pnpm --filter @adguard/tsurlfilter test:prod

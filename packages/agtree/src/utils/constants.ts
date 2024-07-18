@@ -2,6 +2,8 @@
  * @file Constant values used by all parts of the library
  */
 
+// TODO: remove unused constants
+
 // General
 
 /**
@@ -293,3 +295,9 @@ export const PREPROCESSOR_SEPARATOR = ' ';
 export const SAFARI_CB_AFFINITY = 'safari_cb_affinity';
 export const IF = 'if';
 export const INCLUDE = 'include';
+
+export const NULL = 0;
+
+export const UINT8_MAX = 255;
+export const UINT16_MAX = 65535;
+export const UINT32_MAX = 4294967295;

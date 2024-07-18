@@ -1,55 +1,40 @@
 import { PIPE } from '../../utils/constants';
-import { locRange } from '../../utils/location';
-import {
-    type App,
-    type AppList,
-    ListNodeType,
-    ListItemNodeType,
-} from '../common';
+import { type AppList, ListNodeType, ListItemNodeType } from '../common';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type ListParserOptions, parseListItems } from './list-helpers';
-import { getParserOptions } from '../options';
+import { parseListItems } from './list-helpers';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
+
+const APP_LIST_SEPARATOR = PIPE;
 
 /**
  * `AppListParser` is responsible for parsing an app list.
  *
  * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#app-modifier}
  */
-export class AppListParser {
+export class AppListParser extends ParserBase {
     /**
      * Parses an app list which items are separated by `|`,
      * e.g. `Example.exe|com.example.osx`.
      *
-     * @param raw Raw app list
-     * @param options List parser options. See {@link ListParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
      * @returns App list AST.
      * @throws An {@link AdblockSyntaxError} if the app list is syntactically invalid.
      * @throws An {@link Error} if the options are invalid.
      */
-    public static parse(raw: string, options: Partial<ListParserOptions> = {}): AppList {
-        const separator = options.separator ?? PIPE;
-
-        if (separator !== PIPE) {
-            throw new Error(`Invalid separator: ${separator}`);
-        }
-
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
-
-        const rawItems = parseListItems(raw, { separator, baseLoc, isLocIncluded });
-        const children: App[] = rawItems.map((rawListItem) => ({
-            ...rawListItem,
-            type: ListItemNodeType.App,
-        }));
-
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AppList {
         const result: AppList = {
             type: ListNodeType.AppList,
-            separator,
-            children,
+            separator: APP_LIST_SEPARATOR,
+            children: parseListItems(raw, options, baseOffset, APP_LIST_SEPARATOR, ListItemNodeType.App),
         };
 
-        if (isLocIncluded) {
-            result.loc = locRange(baseLoc, 0, raw.length);
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
         }
 
         return result;

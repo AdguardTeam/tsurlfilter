@@ -1,0 +1,30 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: spoof-css
+  version_added: 1.10.1
+  aliases:
+    - spoof-css.js
+    - ubo-spoof-css.js
+    - ubo-spoof-css
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#spoof-css
+  parameters:
+    - name: selectors
+      required: true
+    - name: cssPropertyName
+      required: true
+    - name: cssPropertyValue
+      required: true
+
+ubo_any:
+  name: spoof-css.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#spoof-cssjs-
+  parameters:
+    - name: selectors
+      required: true
+    - name: cssPropertyName
+      required: true
+    - name: cssPropertyValue
+      required: true
+    - name: arguments
+      required: false

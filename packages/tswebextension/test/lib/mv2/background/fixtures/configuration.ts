@@ -1,13 +1,20 @@
 import { type ConfigurationMV2 } from '@lib/mv2/background/configuration';
+import { LF } from '@lib/common';
+
+const { FilterListPreprocessor } = jest.requireActual('@adguard/tsurlfilter');
 
 export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     filters: [
-        { filterId: 1, content: '', trusted: true },
-        { filterId: 2, content: '', trusted: true },
+        { filterId: 1, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
+        { filterId: 2, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
     ],
     allowlist: ['example.com'],
     trustedDomains: [],
-    userrules: ['||example.org^', 'example.com##h1'],
+    userrules: {
+        content: FilterListPreprocessor.preprocess(
+            ['||example.org^', 'example.com##h1'].join(LF),
+        ).filterList,
+    },
     verbose: false,
     settings: {
         filteringEnabled: true,
