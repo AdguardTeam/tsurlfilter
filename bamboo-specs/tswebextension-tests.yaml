@@ -68,9 +68,9 @@ Test:
             # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
             pnpm --filter @adguard/tswebextension test:prod
 
-            # Commit changes and mv3-examples update only in release/v2.3-for-5.0 branch.
+            # Commit changes and mv3-examples update only in release/v3.1 branch.
             # FIXME: Remove this line.
-            if [ "$branch" != "release/v2.3-for-5.0" ]; then
+            if [ "$branch" != "release/v3.1" ]; then
               echo "No changes in project, skipping tests"
               exit 0;
             fi
