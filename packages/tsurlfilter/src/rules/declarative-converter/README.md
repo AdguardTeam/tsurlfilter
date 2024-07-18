@@ -529,7 +529,7 @@ example 6
 			"excludedInitiatorDomains": [
 				"a.com",
 				"b.*",
-				"/(^\\|.+\\\\.)c\\\\.(com\\|org)\\\\$/"
+				"/(^\\|.+\\\\.)c\\\\.(com\\\\|org)\\\\$/"
 			]
 		},
 		"priority": 2

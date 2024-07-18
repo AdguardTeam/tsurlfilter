@@ -494,7 +494,7 @@ describe('DeclarativeRuleConverter', () => {
             declarativeRules,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = new NetworkRule(regexpRuleText, filterId);
+        const networkRule = createNetworkRule(regexpRuleText, filterId);
 
         const expectedError = new UnsupportedRegexpError(
             `Regex is unsupported: "${networkRule.getText()}"`,

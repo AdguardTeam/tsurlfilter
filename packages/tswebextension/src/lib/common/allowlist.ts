@@ -1,7 +1,14 @@
-import { BufferRuleList, type IRuleList, NetworkRule } from '@adguard/tsurlfilter';
+import {
+    type NetworkRule,
+    type IRuleList,
+    RuleFactory,
+    createAllowlistRuleList,
+} from '@adguard/tsurlfilter';
 
 import { ALLOWLIST_FILTER_ID } from './constants';
 import { type Configuration } from './configuration';
+
+type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings'>;
 
 /**
  * The allowlist is used to exclude certain websites from filtering.
@@ -33,7 +40,7 @@ export abstract class Allowlist {
      *
      * @param configuration App configuration.
      */
-    public configure(configuration: Configuration): void {
+    public configure(configuration: AllowlistConfiguration): void {
         const {
             allowlist,
             settings,
@@ -62,9 +69,9 @@ export abstract class Allowlist {
             return null;
         }
 
-        return new BufferRuleList(
+        return createAllowlistRuleList(
             ALLOWLIST_FILTER_ID,
-            this.domains.map(Allowlist.createAllowlistRuleString).join('\n'),
+            this.domains,
         );
     }
 
@@ -82,43 +89,6 @@ export abstract class Allowlist {
             return null;
         }
 
-        const ruleString = Allowlist.createAllowlistRuleString(domain);
-
-        return new NetworkRule(ruleString, ALLOWLIST_FILTER_ID);
-    }
-
-    /**
-     * Creates a rule string based on the specified domain.
-     *
-     * @param domain Allowlisted domain.
-     *
-     * @returns Allowlist rule string.
-     */
-    protected static createAllowlistRuleString(domain: string): string {
-        // Special case for wildcard tld + n domain.
-        if (domain.startsWith('*.')) {
-            return String.raw`@@||${domain.slice(2)}$document,important`;
-        }
-
-        // In other cases we use regexp to match domain
-        // and its 'www' subdomain strictly.
-        let regexp = '';
-
-        // Transform allowlist domain special characters.
-        for (let i = 0; i < domain.length; i += 1) {
-            const char = domain[i];
-
-            // Transform wildcard to regexp equivalent.
-            if (char === '*') {
-                regexp += '.*';
-            // Escape domain separator.
-            } else if (char === '.') {
-                regexp += String.raw`\.`;
-            } else {
-                regexp += char;
-            }
-        }
-
-        return String.raw`@@///(www\.)?${regexp}/$document,important`;
+        return RuleFactory.createAllowlistRule(domain, ALLOWLIST_FILTER_ID);
     }
 }

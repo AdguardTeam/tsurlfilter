@@ -117,7 +117,7 @@ export class StealthApi {
             return null;
         }
 
-        // FIXME (David, v2.3): Double check, consider make it consistent with allowlist
+        // FIXME (David, v3.0): Double check, consider make it consistent with allowlist
         const rulesTexts = this.stealthService.getCookieRulesTexts().join('\n');
 
         return new BufferRuleList(

@@ -272,8 +272,8 @@ export class TsWebExtension implements AppInterface<
 
             // Convert custom filters and user rules into one rule set and apply it
             res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
-                // FIXME: (David, v2.3): Handle this later
-                configuration.userrules.content,
+                // FIXME: (David, v3.0): Handle this later
+                configuration.userrules,
                 combinedAllowlistRules,
                 customFilters,
                 staticRuleSets,
