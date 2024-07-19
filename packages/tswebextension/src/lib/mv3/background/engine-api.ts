@@ -20,7 +20,7 @@ import browser from 'webextension-polyfill';
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
-import { getHost, isHttpOrWsRequest } from '../../common/utils';
+import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../../common/utils/logger';
@@ -301,6 +301,29 @@ export class EngineApi {
         });
 
         return scriptletDataList;
+    }
+
+    /**
+     * Searched for cosmetic rules by match query.
+     *
+     * @param matchQuery Query against which the request would be matched.
+     * @returns Cosmetic result.
+     */
+    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+        // FIXME
+        // if (!this.engine || !this.isFilteringEnabled || !isHttpRequest(matchQuery.frameUrl)) {
+        //     return new CosmeticResult();
+        // }
+
+        const matchingResult = this.matchRequest(matchQuery);
+
+        if (!matchingResult) {
+            return new CosmeticResult();
+        }
+
+        const cosmeticOption = matchingResult.getCosmeticOption();
+
+        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
     }
 
     /**

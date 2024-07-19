@@ -65,7 +65,7 @@ const applyExtendedCss = (extendedCssRules: string[] | undefined): void => {
  * Applies css and extended css rules to the page.
  */
 const applyCssRules = async (): Promise<void> => {
-    let url = document.location.href;
+    let url = window.location.href;
     const { referrer } = document;
 
     if (
@@ -98,7 +98,7 @@ const applyCssRules = async (): Promise<void> => {
 
     if (res) {
         const { css, extendedCss } = res;
-        applyCss(css);
+        // applyCss(css);
         applyExtendedCss(extendedCss);
     }
 };

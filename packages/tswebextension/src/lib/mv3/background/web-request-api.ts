@@ -149,11 +149,14 @@ import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
-import { MAIN_FRAME_ID } from '../tabs/frame';
+import { Frame, MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { DocumentApi } from './document-api';
 import { CosmeticJsApi } from './cosmetic-js-api';
+import { CosmeticApi } from './cosmetic-api';
+// FIXME consider moving to common
+import { InjectCosmeticParams } from '../../mv2/background/web-request-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -269,6 +272,7 @@ export class WebRequestApi {
             return;
         }
 
+        // FIXME uncomment
         // CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
@@ -503,6 +507,54 @@ export class WebRequestApi {
     }
 
     /**
+     * Injects cosmetic rules to specified frame based on data from frame and response context.
+     *
+     * If cosmetic result does not exist or it has been already applied, ignore injection.
+     *
+     * @param params Data required for rule injection.
+     */
+    private static injectCosmetic(params: InjectCosmeticParams): void {
+        const {
+            frameId,
+            tabId,
+            url,
+        } = params;
+
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        let frame = tabContext.frames.get(frameId);
+
+        /**
+         * Subdocument frame context may not be created durning worker request processing.
+         * We create new one in this case.
+         */
+        if (!frame) {
+            frame = new Frame(url);
+            tabContext.frames.set(frameId, frame);
+        }
+
+        /**
+         * Cosmetic result may not be committed to frame context during worker request processing.
+         * We use engine request as a fallback for this case.
+         */
+        if (!frame.cosmeticResult && isHttpOrWsRequest(url)) {
+            frame.cosmeticResult = engineApi.matchCosmetic({
+                requestUrl: url,
+                frameUrl: url,
+                requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
+                frameRule: tabContext.mainFrameRule,
+            });
+        }
+
+        CosmeticApi.applyFrameCssRules(frameId, tabId);
+        // CosmeticApi.applyFrameJsRules(frameId, tabId);
+    }
+
+    /**
      * On WebNavigation.onCommitted event we will try to inject scripts into tab.
      *
      * @param item Web navigation details.
@@ -510,10 +562,24 @@ export class WebRequestApi {
      * @param item.url The url of the tab in which the navigation occurred.
      */
     private static onCommitted(
-        { tabId, url }: browser.WebNavigation.OnCommittedDetailsType,
+        details: browser.WebNavigation.OnCommittedDetailsType,
     ): void {
+        // FIXME consider removing
         // Note: this is async function but we will not await it because
         // events do not support async listeners.
-        CosmeticJsApi.getAndExecuteScripts(tabId, url);
+        // CosmeticJsApi.getAndExecuteScripts(tabId, url);
+        const {
+            frameId,
+            tabId,
+            timeStamp,
+            url,
+        } = details;
+
+        WebRequestApi.injectCosmetic({
+            frameId,
+            tabId,
+            timestamp: timeStamp,
+            url,
+        });
     }
 }

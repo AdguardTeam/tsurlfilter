@@ -113,6 +113,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
      */
     #checkIsInitialized(): void {
         if (!this.#isInitialized) {
+            console.log('test');
             throw new Error('Storage not initialized');
         }
     }
