@@ -2,7 +2,7 @@ import { z as zod } from 'zod';
 
 import {
     messageValidator as commonMessageValidator,
-    type getCssPayloadValidator,
+    type getCosmeticDataPayloadValidator,
     MessageType as CommonMessageType,
 } from '../../common';
 
@@ -23,4 +23,4 @@ export const getCookieRulesPayloadValidator = zod.object({
     referrer: zod.string(),
 }).strict();
 
-export type GetCssPayload = zod.infer<typeof getCssPayloadValidator>;
+export type GetCssPayload = zod.infer<typeof getCosmeticDataPayloadValidator>;

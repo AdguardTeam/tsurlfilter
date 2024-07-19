@@ -17,6 +17,7 @@ export const MESSAGE_HANDLER_NAME = 'tsWebExtension' as const;
 export enum MessageType {
     ProcessShouldCollapse = 'processShouldCollapse',
     GetCosmeticData = 'getCosmeticData',
+    // FIXME remove this message type if it is not used anymore
     GetCss = 'getCss',
     GetCookieRules = 'getCookieRules',
     SaveCookieLogEvent = 'saveCookieLogEvent',

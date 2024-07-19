@@ -31,7 +31,7 @@
         "dist/types/src/lib/mv2/content-script/index.d.ts"
       ],
       "content-script/css-hits-counter": [
-        "dist/types/src/lib/mv2/content-script/css-hits-counter.d.ts"
+        "dist/types/src/lib/common/content-script/css-hits-counter.d.ts"
       ],
       "cli": [
         "dist/types/src/cli/index.d.ts"

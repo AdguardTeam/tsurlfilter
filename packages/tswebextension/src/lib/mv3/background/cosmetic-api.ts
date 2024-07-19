@@ -232,7 +232,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): ContentScriptCosmeticData {
-        const { isStorageInitialized } = appContext;
+        // FIXME bring back
+        // const { isStorageInitialized } = appContext;
+        const isStorageInitialized = true;
 
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,
@@ -245,9 +247,11 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        const { isAppStarted, configuration } = appContext;
-
-        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+        // FIXME bring back concept of appContext
+        // const { isAppStarted, configuration } = appContext;
+        const isAppStarted = true;
+        // const areHitsStatsCollected = configuration?.settings.collectStats || false;
+        const areHitsStatsCollected = false;
 
         data.isAppStarted = isAppStarted;
         data.areHitsStatsCollected = areHitsStatsCollected;
@@ -258,6 +262,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
+        // FIXME remove ts-ignore
         // @ts-ignore
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
