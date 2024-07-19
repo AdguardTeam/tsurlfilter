@@ -7,11 +7,11 @@ import {
 } from '@adguard/tsurlfilter';
 
 // FIXME copy to common
-import { appContext } from '../../mv2/background/context';
+import { appContext } from './app-context';
 import { getDomain } from '../../common/utils/url';
 // import { USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-// import { buildScriptText } from './injection-helper';
+import { buildScriptText } from '../../common/injection-helper';
 // import { localScriptRulesService } from './services/local-script-rules-service';
 // import { stealthApi } from './stealth-api';
 // import { TabsApi } from './tabs/tabs-api';
@@ -26,6 +26,8 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
 import type { ContentType } from '../../common/request-type';
 import { ScriptingApi } from './scripting-api';
+import { scripting } from 'webextension-polyfill';
+import { ScriptletData } from '@adguard/tsurlfilter/src';
 
 export type ApplyCosmeticRulesParams = {
     tabId: number,
@@ -91,8 +93,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static async injectScript(scriptText: string, tabId: number, frameId = 0): Promise<void> {
-        console.log(scriptText, tabId, frameId);
-        // return TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+        return ScriptingApi.executeScript(scriptText, tabId, frameId);
     }
 
     /**
@@ -107,9 +108,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      */
     public static async injectCss(cssText: string, tabId: number, frameId = 0): Promise<void> {
-        console.log(cssText, tabId, frameId);
-        return ScriptingApi.injectCss(cssText, tabId, frameId);
-        // return TabsApi.injectCss(cssText, tabId, frameId);
+        return ScriptingApi.insertCss(cssText, tabId, frameId);
     }
 
     /**
@@ -181,7 +180,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return '';
         }
 
-        // FIXME
+        // FIXME sanitize script rules
         // const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
         const permittedRules = rules;
 
@@ -312,13 +311,32 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const scriptRules = cosmeticResult.getScriptRules();
 
-        let scriptText = CosmeticApi.getScriptText(scriptRules, url);
+        // FIXME get abstract get scriptlets data
+        const scriptletDataList: ScriptletData[] = [];
+        scriptRules.forEach((scriptRule) => {
+            if (!scriptRule.isScriptlet) {
+                return;
+            }
 
-        const tabContext = tabsApi.getTabContext(tabId);
-        if (tabContext) {
-            const frame = tabContext.frames.get(frameId);
-            // scriptText += stealthApi.getStealthScript(tabContext.mainFrameRule, frame?.matchingResult);
-        }
+            const scriptletData = scriptRule.getScriptletData();
+            if (!scriptletData) {
+                return;
+            }
+
+            scriptletDataList.push(scriptletData);
+        });
+
+        ScriptingApi.executeScriptletsData(scriptletDataList, tabId, frameId);
+
+        const scriptText = CosmeticApi.getScriptText(scriptRules, url);
+
+
+        // FIXME check that stealth api does not requires to be attached to the scripts
+        // const tabContext = tabsApi.getTabContext(tabId);
+        // if (tabContext) {
+        //     const frame = tabContext.frames.get(frameId);
+        //     scriptText += stealthApi.getStealthScript(tabContext.mainFrameRule, frame?.matchingResult);
+        // }
 
         if (scriptText) {
             /**
@@ -442,6 +460,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }
         } catch (e) {
+            console.log(e);
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
                     CosmeticApi.applyFrameCosmeticRules(frameId, tabId, injector, tries + 1);

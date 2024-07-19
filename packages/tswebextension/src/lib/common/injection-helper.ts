@@ -1,5 +1,3 @@
-import { appContext } from './context';
-
 /**
  * Taken from:
  * {@link https://github.com/seanl-adg/InlineResourceLiteral/blob/master/index.js#L136}
@@ -39,7 +37,7 @@ const escapeJs = (match: string): string => {
  * @param scriptText Script text.
  * @returns Script to inject.
  */
-export const buildScriptText = (scriptText: string): string => {
+export const buildScriptText = (scriptText: string, appContext: any): string => { // FIXME specify appContext type
     /**
      * We use changing variable name because global properties can be modified across isolated worlds of extension
      * content page and tab page.

@@ -133,6 +133,7 @@ export class RequestEvents {
     private static handleOnResponseStarted(
         details: WebRequest.OnResponseStartedDetailsType,
     ): RequestData<WebRequest.OnResponseStartedDetailsType> {
+        console.log('handleOnResponseStarted', details);
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {

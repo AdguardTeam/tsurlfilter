@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 import { ExtensionStorage, createExtensionStorageDecorator } from '../../common/storage';
-import type { ConfigurationMV2Context } from './configuration';
+import type { ConfigurationMV3Context } from './configuration';
 import { MemoryStorage } from '../../common/memory-storage';
 
 export const enum SessionStorageKey {
@@ -11,7 +11,7 @@ export const enum SessionStorageKey {
 
 export type SessionStorageSchema = {
     [SessionStorageKey.IsAppStarted]: boolean,
-    [SessionStorageKey.Configuration]: ConfigurationMV2Context | undefined,
+    [SessionStorageKey.Configuration]: ConfigurationMV3Context | undefined,
     [SessionStorageKey.StartTimeMs]: number | undefined,
 };
 

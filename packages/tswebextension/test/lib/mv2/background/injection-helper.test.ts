@@ -1,4 +1,4 @@
-import { buildScriptText } from '@lib/mv2/background/injection-helper';
+import { buildScriptText } from '@lib/common/injection-helper';
 import { extSessionStorage } from '@lib/mv2';
 import { appContext } from '@lib/mv2/background/context';
 

@@ -156,7 +156,7 @@ import { DocumentApi } from './document-api';
 import { CosmeticJsApi } from './cosmetic-js-api';
 import { CosmeticApi } from './cosmetic-api';
 // FIXME consider moving to common
-import { InjectCosmeticParams } from '../../mv2/background/web-request-api';
+import { type InjectCosmeticParams } from '../../mv2/background/web-request-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -217,63 +217,6 @@ export class WebRequestApi {
             const errorMessage = getErrorMessage(e);
             throw new Error(`Cannot flush memory cache and call browser.handlerBehaviorChanged: ${errorMessage}`);
         }
-    }
-
-    /**
-     * On response started event handler.
-     *
-     * @param event On response started event.
-     * @param event.context Event context.
-     */
-    private static onResponseStarted({
-        context,
-    }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
-        console.log('on response started', { context });
-        if (!context) {
-            return;
-        }
-
-        const {
-            tabId,
-            frameId,
-            requestType,
-        } = context;
-
-        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
-            return;
-        }
-
-        const tabContext = tabsApi.getTabContext(tabId);
-        console.log('on response started', { tabContext });
-
-        if (!tabContext) {
-            return;
-        }
-
-        const frame = tabContext.frames.get(frameId);
-
-        if (!frame || !frame.cosmeticResult) {
-            return;
-        }
-
-        /**
-         * Actual tab url may not be committed by navigation event during response processing.
-         * If {@link tabContext.info.url} and {@link url} are not the same, this means
-         * that tab navigation steel is being processed and js injection may be causing the error.
-         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
-         */
-        if (requestType === RequestType.Document
-            /**
-             * Check if url exists because it might be empty for new tabs.
-             * In this case we may inject on response started
-             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
-             */
-            && tabContext.info.url && tabContext.info.url !== frame.url) {
-            return;
-        }
-
-        // FIXME uncomment
-        // CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
     /**
@@ -371,6 +314,61 @@ export class WebRequestApi {
             //     thirdParty,
             // );
         }
+    }
+
+    /**
+     * On response started event handler.
+     *
+     * @param event On response started event.
+     * @param event.context Event context.
+     */
+    private static onResponseStarted({
+        context,
+    }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+        console.log('onResponseStarted', context);
+        if (!context) {
+            return;
+        }
+
+        const {
+            tabId,
+            frameId,
+            requestType,
+        } = context;
+
+        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
+            return;
+        }
+
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        const frame = tabContext.frames.get(frameId);
+
+        if (!frame || !frame.cosmeticResult) {
+            return;
+        }
+
+        /**
+         * Actual tab url may not be committed by navigation event during response processing.
+         * If {@link tabContext.info.url} and {@link url} are not the same, this means
+         * that tab navigation steel is being processed and js injection may be causing the error.
+         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
+         */
+        if (requestType === RequestType.Document
+            /**
+             * Check if url exists because it might be empty for new tabs.
+             * In this case we may inject on response started
+             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
+             */
+            && tabContext.info.url && tabContext.info.url !== frame.url) {
+            // FIXME what was inside?
+        }
+
+        CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
     /**
@@ -560,6 +558,7 @@ export class WebRequestApi {
      * @param item Web navigation details.
      * @param item.tabId The ID of the tab in which the navigation occurred.
      * @param item.url The url of the tab in which the navigation occurred.
+     * @param details
      */
     private static onCommitted(
         details: browser.WebNavigation.OnCommittedDetailsType,

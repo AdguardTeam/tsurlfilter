@@ -3,6 +3,8 @@ import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
+import { extSessionStorage } from './ext-session-storage';
+import { appContext } from './app-context';
 import { type AppInterface, defaultFilteringLog } from '../../common';
 import { getErrorMessage } from '../../common';
 import { logger } from '../../common/utils/logger';
@@ -119,6 +121,11 @@ export class TsWebExtension implements AppInterface<
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[tswebextension.innerStart]: start');
 
+        // FIXME use this for scripts
+        if (!appContext.startTimeMs) {
+            appContext.startTimeMs = Date.now();
+        }
+
         try {
             const res = await this.configure(config);
 
@@ -134,6 +141,7 @@ export class TsWebExtension implements AppInterface<
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
+            appContext.isAppStarted = true;
             this.isStarted = true;
             this.startPromise = undefined;
 
@@ -210,6 +218,7 @@ export class TsWebExtension implements AppInterface<
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
+        appContext.isAppStarted = false;
         this.isStarted = false;
     }
 
@@ -591,7 +600,8 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
-        logger.debug('[tswebextension.initStorage]: initStorage NOT IMPLEMENTED');
+        await extSessionStorage.init();
+        appContext.isStorageInitialized = true;
     }
 
     /**
