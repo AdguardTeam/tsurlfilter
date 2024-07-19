@@ -1,4 +1,4 @@
-import { SourceRuleIdxAndFilterId } from './source-map';
+import { type SourceRuleIdxAndFilterId } from './source-map';
 
 // This type is using only to better description of code.
 type RuleHash = number;

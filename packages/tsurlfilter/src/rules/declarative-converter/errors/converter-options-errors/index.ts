@@ -7,7 +7,7 @@ type ConverterOptionsError = EmptyOrNegativeNumberOfRulesError
 | ResourcesPathError;
 
 export {
-    ConverterOptionsError,
+    type ConverterOptionsError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRegexpRulesError,
     ResourcesPathError,

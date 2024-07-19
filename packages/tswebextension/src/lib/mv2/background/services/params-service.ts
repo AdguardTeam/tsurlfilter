@@ -1,11 +1,11 @@
 import { nanoid } from 'nanoid';
-import { NetworkRule, RemoveParamModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, type RemoveParamModifier } from '@adguard/tsurlfilter';
 
 import { requestContextStorage } from '../request';
 import {
     defaultFilteringLog,
     FilteringEventType,
-    FilteringLogInterface,
+    type FilteringLogInterface,
     getDomain,
 } from '../../../common';
 

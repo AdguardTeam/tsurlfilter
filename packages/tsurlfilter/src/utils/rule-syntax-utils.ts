@@ -1,8 +1,8 @@
 import { getHostname } from 'tldts';
 
 import { RuleFactory } from '../rules/rule-factory';
-import { NetworkRule } from '../rules/network-rule';
-import { CosmeticRule } from '../rules/cosmetic-rule';
+import { type NetworkRule } from '../rules/network-rule';
+import { type CosmeticRule } from '../rules/cosmetic-rule';
 
 type RulesUnion = NetworkRule | CosmeticRule;
 

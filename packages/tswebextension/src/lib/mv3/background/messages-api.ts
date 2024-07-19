@@ -4,13 +4,13 @@ import { getAssistantCreateRulePayloadValidator, getCssPayloadValidator } from '
 import { isHttpOrWsRequest } from '../../common/utils';
 import { logger } from '../utils/logger';
 
-import { CosmeticRules, engineApi } from './engine-api';
-import { TsWebExtension } from './app';
+import { type CosmeticRules, engineApi } from './engine-api';
+import { type TsWebExtension } from './app';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import {
     CommonMessageType,
     ExtendedMV3MessageType,
-    MessageMV3,
+    type MessageMV3,
     messageMV3Validator,
 } from './messages';
 import { Assistant } from './assistant';

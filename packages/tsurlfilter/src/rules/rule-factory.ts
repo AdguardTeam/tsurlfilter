@@ -1,6 +1,6 @@
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
-import { IRule } from './rule';
+import { type IRule } from './rule';
 import { findCosmeticRuleMarker } from './cosmetic-rule-marker';
 import { HostRule } from './host-rule';
 import { logger } from '../utils/logger';

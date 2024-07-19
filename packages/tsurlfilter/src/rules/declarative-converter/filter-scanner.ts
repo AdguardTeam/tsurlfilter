@@ -1,5 +1,5 @@
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
-import { IFilter } from './filter';
+import { type IFilter } from './filter';
 
 /**
  * IFilterScanner describes a method that should return indexed network rules

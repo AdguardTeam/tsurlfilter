@@ -1,5 +1,5 @@
 import { SimpleRegex } from './simple-regex';
-import { Request } from '../request';
+import { type Request } from '../request';
 
 /**
  * Rule pattern class

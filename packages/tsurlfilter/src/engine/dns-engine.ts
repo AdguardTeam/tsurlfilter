@@ -1,4 +1,4 @@
-import { RuleStorage } from '../filterlist/rule-storage';
+import { type RuleStorage } from '../filterlist/rule-storage';
 import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { fastHash } from '../utils/string-utils';

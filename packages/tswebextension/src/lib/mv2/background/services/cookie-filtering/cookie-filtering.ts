@@ -1,12 +1,12 @@
 /* eslint-disable class-methods-use-this,jsdoc/require-description-complete-sentence */
 import { nanoid } from 'nanoid';
-import { NetworkRule, CookieModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, type CookieModifier } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
 import {
     ContentType,
     defaultFilteringLog,
     FilteringEventType,
-    FilteringLogInterface,
+    type FilteringLogInterface,
     logger,
 } from '../../../../common';
 import CookieRulesFinder from './cookie-rules-finder';
@@ -14,7 +14,7 @@ import ParsedCookie from './parsed-cookie';
 import CookieUtils from './utils';
 import BrowserCookieApi from './browser-cookie/browser-cookie-api';
 import { findHeaderByName } from '../../utils/headers';
-import { RequestContext, requestContextStorage } from '../../request';
+import { type RequestContext, requestContextStorage } from '../../request';
 import { engineApi, tabsApi } from '../../api';
 import { createFrameMatchQuery } from '../../utils/create-frame-match-query';
 

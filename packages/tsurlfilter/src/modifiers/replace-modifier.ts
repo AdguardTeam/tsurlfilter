@@ -1,5 +1,5 @@
 import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
-import { IAdvancedModifier } from './advanced-modifier';
+import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
 /**

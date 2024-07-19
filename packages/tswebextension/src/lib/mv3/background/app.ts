@@ -1,22 +1,22 @@
-import { IFilter, IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
-import { AppInterface, defaultFilteringLog, getErrorMessage } from '../../common';
+import { type AppInterface, defaultFilteringLog, getErrorMessage } from '../../common';
 import { logger } from '../utils/logger';
-import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { ConversionResult } from './user-rules-api';
+import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import UserRulesApi, { type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { TabsApi, tabsApi } from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
 import { engineApi } from './engine-api';
-import { declarativeFilteringLog, RecordFiltered } from './declarative-filtering-log';
+import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
 import RuleSetsLoaderApi from './rule-sets-loader-api';
 import { Assistant } from './assistant';
 import {
-    ConfigurationMV3,
-    ConfigurationMV3Context,
+    type ConfigurationMV3,
+    type ConfigurationMV3Context,
     configurationMV3Validator,
 } from './configuration';
 

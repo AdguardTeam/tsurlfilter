@@ -1,4 +1,4 @@
-import { CookieRule } from '../../common/content-script';
+import { type CookieRule } from '../../common/content-script';
 import type { GetSaveCookieLogEventPayloadValidator } from '../../common/message';
 
 type OnRuleAppliedData = GetSaveCookieLogEventPayloadValidator;

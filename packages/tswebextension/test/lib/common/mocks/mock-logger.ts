@@ -1,4 +1,4 @@
-import { LoggerInterface } from '../../../../src/lib/common';
+import { type LoggerInterface } from '../../../../src/lib/common';
 
 /**
  * Logger mock.

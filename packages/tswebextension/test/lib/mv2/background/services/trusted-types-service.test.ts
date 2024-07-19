@@ -1,5 +1,5 @@
 import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
-import { RequestContext } from '@lib/mv2';
+import { type RequestContext } from '@lib/mv2';
 import { TrustedTypesService } from '@lib/mv2/background/services/trusted-types-service';
 
 /**

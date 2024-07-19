@@ -1,6 +1,6 @@
 import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
 import { HeadersService } from '@lib/mv2/background/services/headers-service';
-import { RequestContext } from '@lib/mv2/background/request';
+import { type RequestContext } from '@lib/mv2/background/request';
 import { FilteringEventType, ContentType } from '@lib/common';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
