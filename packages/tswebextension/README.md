@@ -27,7 +27,7 @@ Table of content:
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules](#userrules)
-      - [ verbose (deprecated)](#-verbose-deprecated)
+      - [verbose (deprecated)](#verbose-deprecated)
       - [logLevel](#loglevel)
       - [settings](#settings)
         - [allowlistInverted](#allowlistinverted)
@@ -294,7 +294,7 @@ type: `string[]`
 
 List of rules added by user.
 
-#### <a name="verbose"></a> verbose (deprecated)
+#### <a name="verbose"></a>verbose (deprecated)
 
 type: `boolean | undefined`
 
