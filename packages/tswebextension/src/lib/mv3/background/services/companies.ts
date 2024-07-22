@@ -6,17 +6,57 @@ import zod from 'zod';
  * Schema for companies database.
  */
 const companiesSchema = zod.object({
+    /**
+     * Date and time when the database was last updated, in ISO 8601 format.
+     */
     timeUpdated: zod.string(),
+
+    /**
+     * List of categories. Object where key is numeric category ID and value is category name.
+     */
     categories: zod.record(zod.string()),
+
+    /**
+     * List of trackers. Object where
+     * - key — string tracker ID
+     * - value — tracker data.
+     *
+     * @see {@link https://github.com/AdguardTeam/companiesdb/blob/6a8fbfc3bff4fdffc4c8bae30756530afc2635bd/README.md?plain=1#L85}
+     */
     trackers: zod.record(
         zod.object({
+            /**
+             * Tracker name.
+             */
             name: zod.string(),
+
+            /**
+             * Tracker category ID.
+             */
             categoryId: zod.number().optional(),
+
+            /**
+             * Tracker main URL.
+             */
             url: zod.string().or(zod.null()),
+
+            /**
+             * Tracker company ID.
+             */
             companyId: zod.string().or(zod.null()),
+
+            /**
+             * Source of the tracker data.
+             */
             source: zod.string().optional(),
         }).strict(),
     ),
+
+    /**
+     * List of tracker domains. Object where
+     * - key — domain name
+     * - value — tracker ID from `trackers`.
+     */
     trackerDomains: zod.record(zod.string()),
 }).strict();
 
@@ -28,6 +68,8 @@ export type Companies = zod.infer<typeof companiesSchema>;
 class CompaniesService {
     /**
      * Category ID for unknown domains.
+     *
+     * @see {@link https://github.com/AdguardTeam/companiesdb/blob/6a8fbfc3bff4fdffc4c8bae30756530afc2635bd/dist/trackers.json#L15}
      */
     private static UNKNOWN_CATEGORY = 11;
 
@@ -37,7 +79,8 @@ class CompaniesService {
     private companies?: Companies;
 
     /**
-     * Download and validate companies database.
+     * Downloads and validates companies database.
+     *
      * @param path Path to the companies database file.
      */
     public async loadCompanies(path: string): Promise<void> {
@@ -54,11 +97,13 @@ class CompaniesService {
     }
 
     /**
-     * Match URL to a tracker category id.
-     * If the URL is not found in the database or database is not loaded, return {@link UNKNOWN_CATEGORY}.
+     * Matches a URL to a tracker category id.
+     *
      * List of categories ids can be found in {@link companies.categories}.
+     *
      * @param url Request URL to match.
-     * @returns Tracker category ID.
+     *
+     * @returns Actual tracker category ID or {@link UNKNOWN_CATEGORY} if not found or database is not loaded.
      */
     public match(url: string): number {
         if (!this.companies) {
