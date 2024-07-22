@@ -189,6 +189,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (configuration) {
             const { settings } = configuration;
             if (settings) {
+                // FIXME, this possibly should be removed
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
                 debug = settings.debugScriptlets;
             }
@@ -200,8 +201,16 @@ export class CosmeticApi extends CosmeticApiCommon {
         };
 
         const scriptText = permittedRules
-            .map((rule) => rule.getScript(scriptParams))
-            .join('\n');
+            .map((rule) => {
+                // scriptlets are injected via executeScriptletsData,
+                // that's why we select only non-scriptlets
+                if (!rule.isScriptlet) {
+                    return rule.getScript(scriptParams);
+                }
+                return null;
+            })
+            .filter((rule) => rule) // filter out empty rules
+            .join(';\n');
 
         if (!scriptText) {
             return '';
@@ -231,9 +240,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): ContentScriptCosmeticData {
-        // FIXME bring back
-        // const { isStorageInitialized } = appContext;
-        const isStorageInitialized = true;
+        const { isStorageInitialized } = appContext;
 
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,

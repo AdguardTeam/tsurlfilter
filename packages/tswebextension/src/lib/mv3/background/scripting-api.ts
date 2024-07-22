@@ -43,7 +43,7 @@ export class ScriptingApi {
     }
 
     /**
-     *
+     * // FIXME make sure that it is not includes scriptlets
      * @param scriptText
      * @param tabId
      * @param frameId
@@ -92,71 +92,9 @@ export class ScriptingApi {
          * @param variableName
          */
         const functionToInject = (scriptText: string, variableName: string) => {
-            // FIXME check if possible to do anything with the variable
-            // @ts-ignore
-            if (window[variableName] || document instanceof XMLDocument) {
-                return;
-            }
-            const script = document.createElement('script');
-            const preparedScriptText = scriptText;
-            let blob;
-            let url: string;
-            try {
-                blob = new Blob([preparedScriptText], { type: 'text/javascript; charset=utf-8' });
-                url = URL.createObjectURL(blob);
-                script.src = url;
-            } catch (e) {
-                script.setAttribute('type', 'text/javascript');
-                script.textContent = preparedScriptText;
-            }
-            const FRAME_REQUESTS_LIMIT = 500;
-            let frameRequests = 0;
-
-            /**
-             *
-             */
-            function waitParent() {
-                frameRequests += 1;
-                const parent = document.head || document.documentElement;
-                if (parent) {
-                    let scriptInjected = false;
-                    try {
-                        parent.appendChild(script);
-                        if (url) {
-                            URL.revokeObjectURL(url);
-                        }
-                        parent.removeChild(script);
-                        scriptInjected = true;
-                    } catch (e) {
-                        console.error('AdGuard: Error appending/removing script', e);
-                        // do nothing
-                    } finally {
-                        // FIXME check if possible to do anything with the variable
-                        // @ts-ignore
-                        window[variableName] = true;
-                    }
-                    return scriptInjected;
-                }
-                if (frameRequests < FRAME_REQUESTS_LIMIT) {
-                    requestAnimationFrame(waitParent);
-                } else {
-                    console.log('AdGuard: document.head or document.documentElement were unavailable too long');
-                }
-            }
-            waitParent();
+            // eslint-disable-next-line no-eval
+            eval(scriptText);
         };
-
-        function fn() {
-            console.log('hello from max');
-        }
-
-        await ScriptingApi.promisifiedExecuteScript({
-            target: { tabId, frameIds: [frameId] },
-            func: fn,
-            injectImmediately: true,
-            world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-            args: [],
-        });
 
         // FIXME prepare script text
         // scriptText.replace(reJsEscape, escapeJs)
