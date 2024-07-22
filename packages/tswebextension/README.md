@@ -128,7 +128,7 @@ via built-in cli:
  tswebextension war [path]
 ```
 
-or intergrate loading in your build pipeline:
+or integrate loading in your build pipeline:
 
 ```ts
 import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
@@ -150,7 +150,7 @@ via built-in cli:
 tswebextension companies [path]
 ```
 
-or intergrate loading in your build pipeline:
+or integrate loading in your build pipeline:
 
 ```ts
 import { downloadCompaniesDb, DEFAULT_COMPANIES_DB_PATH } from '@adguard/tswebextension/cli';
@@ -162,7 +162,7 @@ const build = async () => {
 };
 ```
 
-If path is not defined, the resources will be loaded to `build/trackers.json` relative to your current working directory by default
+If path is not defined, the resources will be loaded to `build/trackers.json` relative to your current working directory by default.
 
 ## CLI
 
