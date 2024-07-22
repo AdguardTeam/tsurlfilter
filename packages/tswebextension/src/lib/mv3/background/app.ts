@@ -3,6 +3,7 @@ import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
+import { ScriptingApi } from './scripting-api';
 import { extSessionStorage } from './ext-session-storage';
 import { appContext } from './app-context';
 import { type AppInterface, defaultFilteringLog } from '../../common';
@@ -50,6 +51,27 @@ export type {
     FailedEnableRuleSetsError,
     RecordFiltered,
 };
+
+chrome.webRequest.onResponseStarted.addListener((details) => {
+    console.log({ details });
+
+    const fn = (args: any): any => {
+        // @ts-ignore
+        window.test = 'test from backrgound';
+        console.log('hello from the background script', args);
+    };
+
+    const injection = {
+        target: { tabId: details.tabId, frameIds: [details.frameId] },
+        func: fn,
+        injectImmediately: true,
+        world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+        args: [details],
+    };
+
+    // @ts-ignore
+    ScriptingApi.promisifiedExecuteScript(injection);
+}, { urls: ['<all_urls>'] }, ['responseHeaders']);
 
 /**
  * The TsWebExtension class is a facade for working with the Chrome

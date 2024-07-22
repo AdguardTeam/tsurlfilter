@@ -438,6 +438,7 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
+        console.log('onBeforeNavigate', details);
         const { frameId, tabId, url } = details;
 
         if (frameId === MAIN_FRAME_ID) {
@@ -563,6 +564,7 @@ export class WebRequestApi {
     private static onCommitted(
         details: browser.WebNavigation.OnCommittedDetailsType,
     ): void {
+        console.log('onCommitted', { details });
         // FIXME consider removing
         // Note: this is async function but we will not await it because
         // events do not support async listeners.

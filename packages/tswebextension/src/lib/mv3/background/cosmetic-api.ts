@@ -295,8 +295,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         // const { configuration } = appContext;
         //
         // const areHitsStatsCollected = configuration?.settings.collectStats || false;
+        const areHistStatsCollected = false;
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult, false);
+        const cssText = CosmeticApi.getCssText(cosmeticResult, areHistStatsCollected);
 
         if (cssText) {
             await CosmeticApi.injectCss(cssText, tabId, frameId);

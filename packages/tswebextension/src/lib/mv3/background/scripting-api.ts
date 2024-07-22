@@ -28,6 +28,7 @@ export class ScriptingApi {
     /**
      *
      * @param {...any} args
+     * @param injection
      */
     public static async promisifiedExecuteScript(injection: chrome.scripting.ScriptInjection<any[], unknown>): Promise<any> {
         return new Promise((resolve, reject) => {
@@ -43,25 +44,13 @@ export class ScriptingApi {
     }
 
     /**
-     * // FIXME make sure that it is not includes scriptlets
+     * // FIXME make sure that it is not includes scriptlets.
      * @param scriptText
      * @param tabId
      * @param frameId
      */
     public static async executeScript(scriptText: string, tabId: number, frameId: number): Promise<void> {
-        // const functionToInject = (script: string): void => {
-        //     const scriptTag = document.createElement('script');
-        //     scriptTag.setAttribute('type', 'text/javascript');
-        //     scriptTag.textContent = script;
-        //
-        //     const parent = document.head || document.documentElement;
-        //     parent.appendChild(scriptTag);
-        //
-        //     if (scriptTag.parentNode) {
-        //         scriptTag.parentNode.removeChild(scriptTag);
-        //     }
-        // };
-
+        // FIXME use way without polluting global scope
         /**
          * We use changing variable name because global properties can be modified across isolated worlds of extension
          * content page and tab page.
@@ -92,12 +81,33 @@ export class ScriptingApi {
          * @param variableName
          */
         const functionToInject = (scriptText: string, variableName: string) => {
-            // eslint-disable-next-line no-eval
-            eval(scriptText);
+            // @ts-ignore
+            if (window[variableName]) {
+                return;
+            }
+
+            const injectViaScriptTag = (): void => {
+                const scriptTag = document.createElement('script');
+                scriptTag.setAttribute('type', 'text/javascript');
+                scriptTag.textContent = scriptText;
+
+                const parent = document.head || document.documentElement;
+                parent.appendChild(scriptTag);
+
+                if (scriptTag.parentNode) {
+                    scriptTag.parentNode.removeChild(scriptTag);
+                }
+            };
+
+            try {
+                // eslint-disable-next-line no-eval
+                eval(scriptText);
+            } catch (e) {
+                // if eval fails, inject via script tag
+                injectViaScriptTag();
+            }
         };
 
-        // FIXME prepare script text
-        // scriptText.replace(reJsEscape, escapeJs)
         try {
             await ScriptingApi.promisifiedExecuteScript({
                 target: { tabId, frameIds: [frameId] },
@@ -120,6 +130,7 @@ export class ScriptingApi {
      *
      * @param tabId Tab id.
      * @param scriptletsData List of {@link ScriptletData}.
+     * @param frameId
      */
     public static async executeScriptletsData(
         scriptletsData: ScriptletData[],
