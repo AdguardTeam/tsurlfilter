@@ -18,6 +18,7 @@ AdGuard API is a filtering library that provides the following features:
     - [Installation](#installation)
     - [Required web accessible resources](#required-web-accessible-resources)
     - [Required declarativeNetRequest API assets](#required-declarativenetrequest-api-assets)
+    - [Required CompaniesDB data](#required-companiesdb-data)
   - [Configuration](#configuration)
   - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
@@ -85,6 +86,14 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 
 AdGuard API MV3 requires prebuilt DNR rule sets to be able to filter web requests. You can use
 [@adguard/dnr-rulesets CLI](../dnr-rulesets/README.md) to download it. We also provide a extension example with scripts for loading DNR rulesets and patching manifest in the [examples/adguard-api-mv3](../examples/adguard-api-mv3/) directory.
+
+### Required CompaniesDB data
+
+AdGuard API MV3 requires the `trackers.json` file from [AdguardTeam/companiesdb](companiesdb) repository to be able to determinate trackers categories for blocked requests. You can use
+[@adguard/tswebextension CLI][tswebextensionusage] to download it.
+
+[companiesdb]: https://github.com/AdguardTeam/companiesdb
+[tswebextensionusage]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md#cli
 
 ## Configuration
 
@@ -409,6 +418,8 @@ type RequestBlockingEvent = {
     assumedFilterId: number;
     // Request mime type.
     requestType: ContentType;
+    // Tracker category ID.
+    trackerCategoryId: number;
 };
 ```
 
@@ -439,6 +450,8 @@ adguardApi.onRequestBlocked.removeListener(
 > - `WEBSOCKET`
 > - `OTHER`
 
+Supported Tracker categories can be found in the [companiesdb](https://github.com/AdguardTeam/companiesdb?tab=readme-ov-file#tracker-categories) repository.
+
 ## Usage
 
 See full sample app project in [examples/adguard-api](../examples/adguard-api-mv3)
@@ -463,7 +476,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
          * filters identifiers from dnr-rulesets
          * @see https://filters.adtidy.org/extension/chromium/filters.json
          */
-        filters: [1, 2, 3, 4, 9, 14],
+        filters: [2, 3],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
         rules: ['example.org##h1'],

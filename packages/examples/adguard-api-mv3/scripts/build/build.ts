@@ -1,10 +1,15 @@
 /* eslint-disable no-console */
-import { copyWar } from '@adguard/tswebextension/cli';
+import { copyWar, downloadCompaniesDb } from '@adguard/tswebextension/cli';
 import { loadAssets, patchManifest } from '@adguard/dnr-rulesets';
 import path from 'path';
 import { buildRunner } from './build-runner';
 import { config } from './webpack.config';
-import { BUILD_PATH, BUILD_ZIP_FILE_NAME, WEB_ACCESSIBLE_RESOURCES_PATH } from '../constants';
+import {
+    BUILD_PATH,
+    BUILD_ZIP_FILE_NAME,
+    WEB_ACCESSIBLE_RESOURCES_PATH,
+    COMPANIES_DB_PATH,
+} from '../constants';
 import { zipDirectory } from './zip-directory';
 
 const build = async () => {
@@ -20,6 +25,7 @@ const build = async () => {
         );
         await buildRunner(config);
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);
+        await downloadCompaniesDb(COMPANIES_DB_PATH);
         await zipDirectory(BUILD_PATH, path.join(BUILD_PATH, '..', BUILD_ZIP_FILE_NAME));
     } catch (e) {
         console.log(e);

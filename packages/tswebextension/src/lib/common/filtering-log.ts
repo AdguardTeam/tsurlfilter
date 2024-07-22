@@ -95,6 +95,11 @@ export type ApplyBasicRuleEventData = {
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
+
+    /**
+     * Supported only in MV3.
+     */
+    companyCategory?: number,
 } & RuleInfo & AdditionalNetworkRuleInfo;
 
 /**

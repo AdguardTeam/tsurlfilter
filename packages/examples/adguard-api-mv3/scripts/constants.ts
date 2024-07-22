@@ -6,6 +6,8 @@ export const BUILD_ZIP_FILE_NAME = 'extension.zip';
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = path.join(__dirname, '../build/extension/adguard');
 
+export const COMPANIES_DB_PATH = path.join(__dirname, '../build/extension/trackers.json');
+
 export const BACKGROUND_PATH = path.join(__dirname, '../extension/pages/background');
 
 export const CONTENT_SCRIPT = path.join(__dirname, '../extension/pages/content-script');

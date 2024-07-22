@@ -32,6 +32,8 @@ import { RequestBlockingLogger } from './request-blocking-logger';
 export class AdguardApi {
     private static readonly WEB_ACCESSIBLE_RESOURCES_PATH = '/adguard';
 
+    private static readonly COMPANIES_DB_PATH = '/trackers.json';
+
     private static readonly DECLARATIVE_RULES_PATH = '/declarative';
 
     // AdguardApi configuration
@@ -202,7 +204,11 @@ export class AdguardApi {
      * @returns AdguardApi instance.
      */
     public static async create(): Promise<AdguardApi> {
-        const tswebextension = new TsWebExtension(AdguardApi.WEB_ACCESSIBLE_RESOURCES_PATH);
+        const tswebextension = new TsWebExtension(
+            AdguardApi.WEB_ACCESSIBLE_RESOURCES_PATH,
+            AdguardApi.COMPANIES_DB_PATH,
+        );
+
         await tswebextension.initStorage();
         return new AdguardApi(tswebextension);
     }

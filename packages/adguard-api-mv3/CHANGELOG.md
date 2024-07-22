@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `adguardApi.onRequestBlocking` API now includes `trackerCategoryId` property. It is a identifier of the tracker category that the blocked request belongs to. You can find the list of tracker categories in the [AdGuard Tracking Protection Filters documentation](https://github.com/AdguardTeam/companiesdb?tab=readme-ov-file#tracker-categories).
+
+
 ## [0.1.0] - 2024-07-02
 
 ### Added
