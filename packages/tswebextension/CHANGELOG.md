@@ -8,14 +8,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [2.0.0-alpha.2] - 2024-07-17
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.0.0-alpha.1`.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
+
+[2.0.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.2
+
+## [2.0.0-alpha.1] - 2024-07-08
+
+### Added
+
+- Export `EventChannel` utility class in MV3 build.
+
+[2.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.1
+
+## [2.0.0-alpha.0] - 2024-06-21
+
+### Added
+
+- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration properties are provided to specify the path to stealth content scripts.
+- Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
+- Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
 
 ### Changed
 
 - Filtering log to not reload on History API navigation [AdguardBrowserExtension#2598].
 - Extension to stop injecting content-script into xml documents
   to prevent pretty printer breakage in Firefox [AdguardBrowserExtension#2194].
-- Updated `@adguard/scriptlets` to `v1.11.1`.
 
 ### Fixed
 
@@ -23,11 +45,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocked ads count leaking between websites [AdguardBrowserExtension#2080].
 - Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2549].
 
+[2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
 [AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
 [AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
+
+## [1.0.30] - 2024-07-17
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v2.2.22`.
+
+[1.0.30]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.30
+
+## [1.0.29] - 2024-07-12
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v2.2.21`.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
+
+[1.0.29]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.29
 
 ## [1.0.28] - 2024-07-08
 
