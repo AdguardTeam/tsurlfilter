@@ -325,14 +325,12 @@ export class WebRequestApi {
     private static onResponseStarted({
         context,
     }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
-        console.log('onResponseStarted', context);
         if (!context) {
             return;
         }
 
         const {
-            tabId,
-            frameId,
+            requestId,
             requestType,
         } = context;
 
@@ -340,35 +338,7 @@ export class WebRequestApi {
             return;
         }
 
-        const tabContext = tabsApi.getTabContext(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        const frame = tabContext.frames.get(frameId);
-
-        if (!frame || !frame.cosmeticResult) {
-            return;
-        }
-
-        /**
-         * Actual tab url may not be committed by navigation event during response processing.
-         * If {@link tabContext.info.url} and {@link url} are not the same, this means
-         * that tab navigation steel is being processed and js injection may be causing the error.
-         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
-         */
-        if (requestType === RequestType.Document
-            /**
-             * Check if url exists because it might be empty for new tabs.
-             * In this case we may inject on response started
-             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
-             */
-            && tabContext.info.url && tabContext.info.url !== frame.url) {
-            // FIXME what was inside?
-        }
-
-        CosmeticApi.applyFrameJsRules(frameId, tabId);
+        CosmeticApi.applyFrameJsRules(requestId);
     }
 
     /**
@@ -455,7 +425,12 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
-        requestContextStorage.delete(details.requestId);
+        // Do not remove request context immediately to allow retry inject
+        // if it could not inject on ResponseStarted
+        setTimeout(() => {
+            requestContextStorage.delete(details.requestId);
+            console.log({ requestContextStorage });
+        }, 100);
     }
 
     /**
@@ -472,9 +447,12 @@ export class WebRequestApi {
             return;
         }
 
-        const { requestId } = context;
-
-        requestContextStorage.delete(requestId);
+        // Do not remove request context immediately to allow retry inject
+        // if it could not inject on ResponseStarted
+        setTimeout(() => {
+            requestContextStorage.delete(context.requestId);
+            console.log({ requestContextStorage });
+        }, 100);
     }
 
     /**

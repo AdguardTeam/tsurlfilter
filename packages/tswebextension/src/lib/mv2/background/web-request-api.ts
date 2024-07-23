@@ -752,6 +752,8 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
+        console.log(`${new Date().getTime()} start`);
+
         const {
             frameId,
             tabId,

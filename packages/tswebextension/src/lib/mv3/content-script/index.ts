@@ -18,14 +18,15 @@ interface CustomWindow extends Window {
 
 declare const global: CustomWindow;
 
+console.log('hello from content script');
+const cosmeticController = new CosmeticController();
+cosmeticController.init();
+
 // Init assistant only once
 if (!global.isAssistantInitiated) {
     initAssistant();
     global.isAssistantInitiated = true;
 }
-
-const cosmeticController = new CosmeticController();
-cosmeticController.init();
 
 // /**
 //  * Applies extended css rules to the page.

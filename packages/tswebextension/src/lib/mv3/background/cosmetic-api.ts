@@ -7,6 +7,8 @@ import {
 } from '@adguard/tsurlfilter';
 
 // FIXME copy to common
+import { scripting } from 'webextension-polyfill';
+import { type ScriptletData } from '@adguard/tsurlfilter/src';
 import { appContext } from './app-context';
 import { getDomain } from '../../common/utils/url';
 // import { USER_FILTER_ID } from '../../common/constants';
@@ -26,8 +28,7 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
 import type { ContentType } from '../../common/request-type';
 import { ScriptingApi } from './scripting-api';
-import { scripting } from 'webextension-polyfill';
-import { ScriptletData } from '@adguard/tsurlfilter/src';
+import { requestContextStorage } from './request/request-context-storage';
 
 export type ApplyCosmeticRulesParams = {
     tabId: number,
@@ -172,40 +173,19 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Builds scripts from cosmetic rules.
      *
      * @param rules Cosmetic rules.
-     * @param frameUrl Frame url.
      * @returns Script text or empty string if no script rules are passed.
      */
-    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
+    public static getScriptText(rules: CosmeticRule[]): string {
         if (rules.length === 0) {
             return '';
         }
 
-        // FIXME sanitize script rules
-        // const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
-        const permittedRules = rules;
-
-        let debug = false;
-        const { configuration } = appContext;
-        if (configuration) {
-            const { settings } = configuration;
-            if (settings) {
-                // FIXME, this possibly should be removed
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
-                debug = settings.debugScriptlets;
-            }
-        }
-
-        const scriptParams = {
-            debug,
-            frameUrl,
-        };
-
-        const scriptText = permittedRules
+        const scriptText = rules
             .map((rule) => {
                 // scriptlets are injected via executeScriptletsData,
                 // that's why we select only non-scriptlets
                 if (!rule.isScriptlet) {
-                    return rule.getScript(scriptParams);
+                    return rule.getScript();
                 }
                 return null;
             })
@@ -314,13 +294,35 @@ export class CosmeticApi extends CosmeticApiCommon {
             tabId,
             frameId,
             cosmeticResult,
-            url,
         } = params;
 
         const scriptRules = cosmeticResult.getScriptRules();
 
-        // FIXME get abstract get scriptlets data
+        const scriptletDataList = CosmeticApi.getScriptletDataList(scriptRules);
+
+        await ScriptingApi.executeScriptletsData(scriptletDataList, tabId, frameId);
+
+        const scriptText = CosmeticApi.getScriptText(scriptRules);
+
+        if (scriptText) {
+            /**
+             * We can execute injectScript only once per frame, so we need to
+             * combine all the scripts into a single injection.
+             *
+             * @see {@link buildScriptText} for details about multiple injects.
+             * @see {@link LocalScriptRulesService} for details about script source
+             */
+            await CosmeticApi.injectScript(scriptText, tabId, frameId);
+        }
+    }
+
+    /**
+     * FIXME jsdoc
+     * @param scriptRules
+     */
+    private static getScriptletDataList(scriptRules: CosmeticRule[]): ScriptletData[] {
         const scriptletDataList: ScriptletData[] = [];
+
         scriptRules.forEach((scriptRule) => {
             if (!scriptRule.isScriptlet) {
                 return;
@@ -334,28 +336,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             scriptletDataList.push(scriptletData);
         });
 
-        ScriptingApi.executeScriptletsData(scriptletDataList, tabId, frameId);
-
-        const scriptText = CosmeticApi.getScriptText(scriptRules, url);
-
-
-        // FIXME check that stealth api does not requires to be attached to the scripts
-        // const tabContext = tabsApi.getTabContext(tabId);
-        // if (tabContext) {
-        //     const frame = tabContext.frames.get(frameId);
-        //     scriptText += stealthApi.getStealthScript(tabContext.mainFrameRule, frame?.matchingResult);
-        // }
-
-        if (scriptText) {
-            /**
-             * We can execute injectScript only once per frame, so we need to
-             * combine all the scripts into a single injection.
-             *
-             * @see {@link buildScriptText} for details about multiple injects.
-             * @see {@link LocalScriptRulesService} for details about script source
-             */
-            await CosmeticApi.injectScript(scriptText, tabId, frameId);
-        }
+        return scriptletDataList;
     }
 
     /**
@@ -419,10 +400,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      * @param tabId Tab id.
      */
-    public static async applyFrameJsRules(frameId: number, tabId: number): Promise<void> {
+    public static async applyFrameJsRules(requestId: string): Promise<void> {
         return CosmeticApi.applyFrameCosmeticRules(
-            frameId,
-            tabId,
+            requestId,
             CosmeticApi.applyJsRules,
         );
     }
@@ -434,77 +414,51 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      */
     public static async applyFrameCssRules(frameId: number, tabId: number): Promise<void> {
-        return CosmeticApi.applyFrameCosmeticRules(
-            frameId,
-            tabId,
-            CosmeticApi.applyCssRules,
-        );
+        // FIXME
+        // return CosmeticApi.applyFrameCosmeticRules(
+        //     // @ts-ignore
+        //     frameId,
+        //     tabId,
+        //     CosmeticApi.applyCssRules,
+        // );
     }
 
     /**
      * Injects cosmetic result to specified frame based on data provided via context.
      *
-     * @param frameId Frame id.
-     * @param tabId Tab id.
+     * @param requestId
      * @param injector Inject function.
      * @param tries Number of tries for the injection in case of failure.
      */
     private static async applyFrameCosmeticRules(
-        frameId: number,
-        tabId: number,
+        requestId: string,
         injector: (params: ApplyCosmeticRulesParams) => Promise<void>,
         tries = 0,
     ): Promise<void> {
         try {
             // We read a cosmetic result on execution, because the tab context can change while retrying the injection.
-            const frame = tabsApi.getTabFrame(tabId, frameId);
+            const requestContext = requestContextStorage.get(requestId);
 
-            if (frame?.cosmeticResult) {
+            console.log('requestContext', requestContext, requestContext?.cosmeticResult);
+
+            if (requestContext?.cosmeticResult) {
                 await injector({
-                    frameId,
-                    tabId,
-                    url: frame.url,
-                    cosmeticResult: frame.cosmeticResult,
+                    frameId: requestContext.frameId,
+                    tabId: requestContext.tabId,
+                    cosmeticResult: requestContext.cosmeticResult,
                 });
             }
         } catch (e) {
             console.log(e);
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
-                    CosmeticApi.applyFrameCosmeticRules(frameId, tabId, injector, tries + 1);
+                    CosmeticApi.applyFrameCosmeticRules(requestId, injector, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 logger.debug(getErrorMessage(e));
             }
         }
     }
-
-    // FIXME uncomment
-    // /**
-    //  * Filters insecure scripts from remote sources.
-    //  *
-    //  * @param rules Cosmetic rules.
-    //  * @returns Permitted script rules.
-    //  */
-    // private static sanitizeScriptRules(rules: CosmeticRule[]): CosmeticRule[] {
-    //     return rules.filter((rule) => {
-    //         // Scriptlets should not be excluded for remote filters
-    //         if (rule.isScriptlet) {
-    //             return true;
-    //         }
-    //
-    //         // User rules should not be excluded
-    //         const filterId = rule.getFilterListId();
-    //         if (filterId === USER_FILTER_ID) {
-    //             return true;
-    //         }
-    //
-    //         /**
-    //          * @see {@link LocalScriptRulesService} for details about script source
-    //          */
-    //         return localScriptRulesService.isLocal(rule);
-    //     });
-    // }
 
     /**
      * Patches rule selector adding adguard mark rule info in the content attribute.

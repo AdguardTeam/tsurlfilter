@@ -1,7 +1,6 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
-import { webRequest } from 'sinon-chrome';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
@@ -133,7 +132,9 @@ export class RequestEvents {
     private static handleOnResponseStarted(
         details: WebRequest.OnResponseStartedDetailsType,
     ): RequestData<WebRequest.OnResponseStartedDetailsType> {
-        console.log('handleOnResponseStarted', details);
+        if (details.url.includes('ameshkov.w3spaces.com')) {
+            console.log('handleOnResponseStarted', details);
+        }
 
         const { requestId, timeStamp } = details;
 
@@ -154,7 +155,9 @@ export class RequestEvents {
     private static handleOnBeforeRequest(
         details: OnBeforeRequestDetailsType,
     ): RequestData<OnBeforeRequestDetailsType> {
-        console.log('handleOnBeforeRequest', details);
+        if (details.url.includes('ameshkov.w3spaces.com')) {
+            console.log('handleOnBeforeRequest', details);
+        }
 
         const {
             requestId,
@@ -249,7 +252,9 @@ export class RequestEvents {
     private static handleOnBeforeSendHeaders(
         details: WebRequest.OnBeforeSendHeadersDetailsType,
     ): RequestData<WebRequest.OnBeforeSendHeadersDetailsType> {
-        console.log('handleOnHeadersReceived', details);
+        if (details.url.includes('ameshkov.w3spaces.com')) {
+            console.log('handleOnBeforeSendHeaders', details);
+        }
         const { requestId, timeStamp, requestHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -270,7 +275,9 @@ export class RequestEvents {
     private static handleOnHeadersReceived(
         details: WebRequest.OnHeadersReceivedDetailsType,
     ): RequestData<WebRequest.OnHeadersReceivedDetailsType> {
-        console.log('handleOnHeadersReceived', details);
+        if (details.url.includes('ameshkov.w3spaces.com')) {
+            console.log('handleOnHeadersReceived', details);
+        }
         const {
             requestId,
             responseHeaders,
@@ -293,7 +300,9 @@ export class RequestEvents {
     private static handleOnCompleted(
         details: WebRequest.OnCompletedDetailsType,
     ): RequestData<WebRequest.OnCompletedDetailsType> {
-        console.log('handleOnCompleted', details);
+        if (details.url.includes('ameshkov.w3spaces.com')) {
+            console.log('handleOnCompleted', details);
+        }
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -313,6 +322,9 @@ export class RequestEvents {
     private static handleOnErrorOccurred(
         details: WebRequest.OnErrorOccurredDetailsType,
     ): RequestData<WebRequest.OnErrorOccurredDetailsType> {
+        if (details.url.includes('ameshkov.w3spaces.com')) {
+            console.log('handleOnErrorOccurred', details);
+        }
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {

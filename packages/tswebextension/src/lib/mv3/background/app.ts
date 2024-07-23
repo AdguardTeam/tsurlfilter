@@ -52,26 +52,48 @@ export type {
     RecordFiltered,
 };
 
-chrome.webRequest.onResponseStarted.addListener((details) => {
-    console.log({ details });
+// @ts-ignore
+const executeWithRetry = async (injection, counter = 0) => {
+    console.log(counter);
+    try {
+        await ScriptingApi.promisifiedExecuteScript(injection);
+    } catch (e) {
+        if (counter > 1000) {
+            throw (e);
+        }
+        setTimeout(() => {
+            executeWithRetry(injection, counter + 1);
+        }, 1);
+    }
+};
 
-    const fn = (args: any): any => {
-        // @ts-ignore
-        window.test = 'test from backrgound';
-        console.log('hello from the background script', args);
-    };
-
-    const injection = {
-        target: { tabId: details.tabId, frameIds: [details.frameId] },
-        func: fn,
-        injectImmediately: true,
-        world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-        args: [details],
-    };
-
-    // @ts-ignore
-    ScriptingApi.promisifiedExecuteScript(injection);
-}, { urls: ['<all_urls>'] }, ['responseHeaders']);
+// chrome.webRequest.onResponseStarted.addListener((details) => {
+//     if (details.type !== 'main_frame'
+//         && details.type !== 'sub_frame') {
+//         return;
+//     }
+//
+//     if (details.url.includes('ameshkov.w3spaces.com')) {
+//         console.log('onResponseStarted without context', details);
+//     }
+//
+//     const fn = (args: any): any => {
+//         // @ts-ignore
+//         window.test = 'test from backrgound';
+//         console.log('hello from background on response started', args);
+//         return 'has';
+//     };
+//
+//     const injection = {
+//         target: { tabId: details.tabId, frameIds: [details.frameId] },
+//         func: fn,
+//         injectImmediately: true,
+//         world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+//         args: [details],
+//     };
+//
+//     executeWithRetry(injection);
+// }, { urls: ['<all_urls>'] }, ['responseHeaders']);
 
 /**
  * The TsWebExtension class is a facade for working with the Chrome
@@ -260,7 +282,9 @@ export class TsWebExtension implements AppInterface<
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
         // Update log level before first log message.
-        TsWebExtension.updateLogLevel(config.logLevel);
+        // FIXME uncomment
+        // TsWebExtension.updateLogLevel(config.logLevel);
+        TsWebExtension.updateLogLevel(LogLevel.Info); // FIXME remove
 
         logger.debug('[tswebextension.configure]: start with ', config);
 

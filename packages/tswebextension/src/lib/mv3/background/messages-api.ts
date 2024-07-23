@@ -112,6 +112,9 @@ export class MessagesApi {
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): ContentScriptCosmeticData | undefined {
+        console.log({ sender, payload });
+        // CosmeticApi.applyFrameJsRules(frameId, tabId);
+
         logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return undefined;

@@ -31,8 +31,12 @@ export class ScriptingApi {
      * @param injection
      */
     public static async promisifiedExecuteScript(injection: chrome.scripting.ScriptInjection<any[], unknown>): Promise<any> {
+        if (injection.target.tabId === -1) {
+            return;
+        }
+
+        // eslint-disable-next-line consistent-return
         return new Promise((resolve, reject) => {
-            console.trace('to see from which was executed');
             chrome.scripting.executeScript(injection, (result) => {
                 if (chrome.runtime.lastError) {
                     reject(chrome.runtime.lastError);
@@ -108,21 +112,13 @@ export class ScriptingApi {
             }
         };
 
-        try {
-            await ScriptingApi.promisifiedExecuteScript({
-                target: { tabId, frameIds: [frameId] },
-                func: functionToInject,
-                injectImmediately: true,
-                world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-                args: [scriptText, variableName],
-            });
-        } catch (e) {
-            logger.debug(
-                `[tswebextension.executeScript]: Error on executeScript in the tab: ${tabId}, frame: ${frameId}`,
-                browser.runtime.lastError,
-                e,
-            );
-        }
+        await ScriptingApi.promisifiedExecuteScript({
+            target: { tabId, frameIds: [frameId] },
+            func: functionToInject,
+            injectImmediately: true,
+            world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+            args: [scriptText, variableName],
+        });
     }
 
     /**
@@ -142,21 +138,13 @@ export class ScriptingApi {
             // scriptletData.params.verbose = CosmeticJsApi.verbose;
             scriptletData.params.verbose = true;
 
-            try {
-                await ScriptingApi.promisifiedExecuteScript({
-                    target: { tabId, frameIds: [frameId] },
-                    func: scriptletData.func,
-                    injectImmediately: true,
-                    world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-                    args: [scriptletData.params, scriptletData.params.args],
-                });
-            } catch (e) {
-                logger.debug(
-                    `[tswebextension.executeScriptletsData]: Error on executeScriptlet in the tab ${tabId}:`,
-                    browser.runtime.lastError,
-                    e,
-                );
-            }
+            await ScriptingApi.promisifiedExecuteScript({
+                target: { tabId, frameIds: [frameId] },
+                func: scriptletData.func,
+                injectImmediately: true,
+                world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+                args: [scriptletData.params, scriptletData.params.args],
+            });
         });
 
         await Promise.all(promises);
