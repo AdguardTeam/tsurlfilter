@@ -5,7 +5,7 @@ import { IndexedStorageRule } from '../../rules/rule';
  * RuleStorageScanner scans multiple RuleScanner instances.
  * The storage index is built from the rule position in the list
  * + cumulative offset value of filter lists.
-*/
+ */
 export class RuleStorageScanner {
     /**
      * Scanners is the list of list scanners backing this combined scanner
@@ -60,7 +60,7 @@ export class RuleStorageScanner {
      * reaching the end of the input or an error.
      *
      * @return true if there is some result
-    */
+     */
     public scan(): boolean {
         if (this.scanners.length === 0) {
             return false;
