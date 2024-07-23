@@ -12,7 +12,9 @@ const companiesSchema = zod.object({
     timeUpdated: zod.string(),
 
     /**
-     * List of categories. Object where key is numeric category ID and value is category name.
+     * List of categories. Object where
+     * - key — numeric category ID
+     * - value — category name.
      */
     categories: zod.record(zod.string()),
 
