@@ -232,6 +232,11 @@ export class RuleSet implements IRuleSet {
     private initialized: boolean = false;
 
     /**
+     * Waiter for initialization, will be resolved when the content is loaded.
+     */
+    private initializerPromise: Promise<void> | undefined;
+
+    /**
      * Constructor of RuleSet.
      *
      * @param id Id of rule set.
@@ -318,20 +323,31 @@ export class RuleSet implements IRuleSet {
             return;
         }
 
-        const {
-            loadSourceMap,
-            loadFilterList,
-            loadDeclarativeRules,
-        } = this.ruleSetContentProvider;
+        if (this.initializerPromise) {
+            await this.initializerPromise;
+            return;
+        }
 
-        this.sourceMap = await loadSourceMap();
-        this.declarativeRules = await loadDeclarativeRules();
-        const filtersList = await loadFilterList();
-        filtersList.forEach((filter) => {
-            this.filterList.set(filter.getId(), filter);
+        const initialize = async (): Promise<void> => {
+            const {
+                loadSourceMap,
+                loadFilterList,
+                loadDeclarativeRules,
+            } = this.ruleSetContentProvider;
+
+            this.sourceMap = await loadSourceMap();
+            this.declarativeRules = await loadDeclarativeRules();
+            const filtersList = await loadFilterList();
+            filtersList.forEach((filter) => {
+                this.filterList.set(filter.getId(), filter);
+            });
+
+            this.initialized = true;
+        };
+
+        this.initializerPromise = new Promise((resolve, reject) => {
+            initialize().then(resolve).catch((e) => reject(e));
         });
-
-        this.initialized = true;
     }
 
     /** @inheritdoc */
