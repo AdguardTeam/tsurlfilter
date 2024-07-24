@@ -88,9 +88,9 @@ export class TabsCosmeticInjector {
             // const { cosmeticResult } = frame;
 
             // TODO: Inject CSS and JS rules
-            // CosmeticApi.applyFrameCssRules(frameId, tabId);
+            // CosmeticApi.applyCssByTabAndFrame(frameId, tabId);
 
-            // CosmeticApi.applyFrameJsRules(frameId, tabId);
+            // CosmeticApi.applyJsByRequest(frameId, tabId);
 
             // CosmeticApi.logScriptRules({
             //     url: frameUrl,

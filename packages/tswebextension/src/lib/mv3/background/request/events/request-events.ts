@@ -230,7 +230,7 @@ export class RequestEvents {
             || url;
 
         // Retrieve the rest part of the request context for record all fields.
-        const requestContext = requestContextStorage.create(requestId, {
+        const requestContext = {
             ...tabFrameRequestContext,
             state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
@@ -238,7 +238,9 @@ export class RequestEvents {
             referrerUrl,
             contentType,
             method: method as HTTPMethod,
-        });
+        };
+
+        requestContextStorage.set(requestId, requestContext);
 
         return { details, context: requestContext };
     }

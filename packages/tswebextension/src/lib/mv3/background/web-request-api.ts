@@ -149,14 +149,10 @@ import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
-import { Frame, MAIN_FRAME_ID } from '../tabs/frame';
+import { MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
-import { RequestBlockingApi } from './request/request-blocking-api';
 import { DocumentApi } from './document-api';
-import { CosmeticJsApi } from './cosmetic-js-api';
 import { CosmeticApi } from './cosmetic-api';
-// FIXME consider moving to common
-import { type InjectCosmeticParams } from '../../mv2/background/web-request-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -281,38 +277,14 @@ export class WebRequestApi {
 
             // Save cosmeticResult for future return it from cache without recalculating.
             tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
-            requestContextStorage.update(requestId, { cosmeticResult });
-        }
 
-        const basicResult = result.getBasicResult();
+            const scriptText = CosmeticApi.getScriptText(cosmeticResult, requestUrl || referrerUrl);
+            const cssText = CosmeticApi.getCssText(cosmeticResult);
 
-        // For a $replace rule, response will be undefined since we need to get
-        // the response in order to actually apply $replace rules to it.
-        const response = RequestBlockingApi.getBlockingResponse({
-            rule: basicResult,
-            popupRule: result.getPopupRule(),
-            requestUrl,
-            referrerUrl,
-            requestType,
-            tabId,
-        });
-
-        // redirects should be considered as blocked for the tab blocked request count
-        // which is displayed on the extension badge
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
-        if (response?.cancel || response?.redirectUrl !== undefined) {
-            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
-
-            // TODO: Check, if we need collapse elements, we should uncomment this code.
-            // const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
-            // hideRequestInitiatorElement(
-            //     tabId,
-            //     requestFrameId,
-            //     requestUrl,
-            //     mainFrameUrl || referrerUrl,
-            //     requestType,
-            //     thirdParty,
-            // );
+            requestContextStorage.update(requestId, {
+                scriptText,
+                cssText,
+            });
         }
     }
 
@@ -322,23 +294,19 @@ export class WebRequestApi {
      * @param event On response started event.
      * @param event.context Event context.
      */
-    private static onResponseStarted({
-        context,
-    }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+    private static onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
         if (!context) {
             return;
         }
 
-        const {
-            requestId,
-            requestType,
-        } = context;
+        const { requestId, requestType } = context;
 
-        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
+        if (requestType !== RequestType.Document
+            && requestType !== RequestType.SubDocument) {
             return;
         }
 
-        CosmeticApi.applyFrameJsRules(requestId);
+        CosmeticApi.applyJsByRequest(requestId);
     }
 
     /**
@@ -408,7 +376,6 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
-        console.log('onBeforeNavigate', details);
         const { frameId, tabId, url } = details;
 
         if (frameId === MAIN_FRAME_ID) {
@@ -425,12 +392,12 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
+        // FIXME probably should be removed after successful inject
         // Do not remove request context immediately to allow retry inject
         // if it could not inject on ResponseStarted
-        setTimeout(() => {
-            requestContextStorage.delete(details.requestId);
-            console.log({ requestContextStorage });
-        }, 100);
+        // setTimeout(() => {
+        //     requestContextStorage.delete(details.requestId);
+        // }, 3000);
     }
 
     /**
@@ -447,12 +414,12 @@ export class WebRequestApi {
             return;
         }
 
+        // FIXME probably should be removed after successful inject
         // Do not remove request context immediately to allow retry inject
         // if it could not inject on ResponseStarted
-        setTimeout(() => {
-            requestContextStorage.delete(context.requestId);
-            console.log({ requestContextStorage });
-        }, 100);
+        // setTimeout(() => {
+        //     requestContextStorage.delete(context.requestId);
+        // }, 3000);
     }
 
     /**
@@ -484,81 +451,16 @@ export class WebRequestApi {
     }
 
     /**
-     * Injects cosmetic rules to specified frame based on data from frame and response context.
-     *
-     * If cosmetic result does not exist or it has been already applied, ignore injection.
-     *
-     * @param params Data required for rule injection.
-     */
-    private static injectCosmetic(params: InjectCosmeticParams): void {
-        const {
-            frameId,
-            tabId,
-            url,
-        } = params;
-
-        const tabContext = tabsApi.getTabContext(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        let frame = tabContext.frames.get(frameId);
-
-        /**
-         * Subdocument frame context may not be created durning worker request processing.
-         * We create new one in this case.
-         */
-        if (!frame) {
-            frame = new Frame(url);
-            tabContext.frames.set(frameId, frame);
-        }
-
-        /**
-         * Cosmetic result may not be committed to frame context during worker request processing.
-         * We use engine request as a fallback for this case.
-         */
-        if (!frame.cosmeticResult && isHttpOrWsRequest(url)) {
-            frame.cosmeticResult = engineApi.matchCosmetic({
-                requestUrl: url,
-                frameUrl: url,
-                requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
-                frameRule: tabContext.mainFrameRule,
-            });
-        }
-
-        CosmeticApi.applyFrameCssRules(frameId, tabId);
-        // CosmeticApi.applyFrameJsRules(frameId, tabId);
-    }
-
-    /**
      * On WebNavigation.onCommitted event we will try to inject scripts into tab.
      *
-     * @param item Web navigation details.
-     * @param item.tabId The ID of the tab in which the navigation occurred.
-     * @param item.url The url of the tab in which the navigation occurred.
-     * @param details
+     * @param details Navigation event details.
      */
-    private static onCommitted(
-        details: browser.WebNavigation.OnCommittedDetailsType,
-    ): void {
-        console.log('onCommitted', { details });
-        // FIXME consider removing
-        // Note: this is async function but we will not await it because
-        // events do not support async listeners.
-        // CosmeticJsApi.getAndExecuteScripts(tabId, url);
-        const {
-            frameId,
-            tabId,
-            timeStamp,
-            url,
-        } = details;
+    private static onCommitted(details: browser.WebNavigation.OnCommittedDetailsType): void {
+        const { tabId, frameId } = details;
 
-        WebRequestApi.injectCosmetic({
-            frameId,
-            tabId,
-            timestamp: timeStamp,
-            url,
-        });
+        // Note: this is async function, but we will not await it because
+        // events do not support async listeners.
+        CosmeticApi.applyJsByTabAndFrame(tabId, frameId);
+        CosmeticApi.applyCssByTabAndFrame(tabId, frameId);
     }
 }

@@ -51,8 +51,8 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticJsApi.getAndExecuteScripts).toBeCalledWith(tabId, url);
             // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-            // expect(CosmeticApi.applyFrameCssRules).toBeCalledWith(frameId, tabId);
-            // expect(CosmeticApi.applyFrameJsRules).toBeCalledWith(frameId, tabId);
+            // expect(CosmeticApi.applyCssByTabAndFrame).toBeCalledWith(frameId, tabId);
+            // expect(CosmeticApi.applyJsByRequest).toBeCalledWith(frameId, tabId);
             // expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
@@ -65,8 +65,8 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticJsApi.getAndExecuteScripts).not.toBeCalled();
             // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-            // expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-            // expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
+            // expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
+            // expect(CosmeticApi.applyJsByRequest).not.toBeCalled();
             // expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
@@ -83,8 +83,8 @@ describe('TabsCosmeticInjector', () => {
             expect(CosmeticJsApi.getAndExecuteScripts).not.toBeCalled();
 
             // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-            // expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-            // expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
+            // expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
+            // expect(CosmeticApi.applyJsByRequest).not.toBeCalled();
             // expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
     });

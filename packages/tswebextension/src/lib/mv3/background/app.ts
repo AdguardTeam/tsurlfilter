@@ -3,7 +3,6 @@ import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
-import { ScriptingApi } from './scripting-api';
 import { extSessionStorage } from './ext-session-storage';
 import { appContext } from './app-context';
 import { type AppInterface, defaultFilteringLog } from '../../common';
@@ -51,49 +50,6 @@ export type {
     FailedEnableRuleSetsError,
     RecordFiltered,
 };
-
-// @ts-ignore
-const executeWithRetry = async (injection, counter = 0) => {
-    console.log(counter);
-    try {
-        await ScriptingApi.promisifiedExecuteScript(injection);
-    } catch (e) {
-        if (counter > 1000) {
-            throw (e);
-        }
-        setTimeout(() => {
-            executeWithRetry(injection, counter + 1);
-        }, 1);
-    }
-};
-
-// chrome.webRequest.onResponseStarted.addListener((details) => {
-//     if (details.type !== 'main_frame'
-//         && details.type !== 'sub_frame') {
-//         return;
-//     }
-//
-//     if (details.url.includes('ameshkov.w3spaces.com')) {
-//         console.log('onResponseStarted without context', details);
-//     }
-//
-//     const fn = (args: any): any => {
-//         // @ts-ignore
-//         window.test = 'test from backrgound';
-//         console.log('hello from background on response started', args);
-//         return 'has';
-//     };
-//
-//     const injection = {
-//         target: { tabId: details.tabId, frameIds: [details.frameId] },
-//         func: fn,
-//         injectImmediately: true,
-//         world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-//         args: [details],
-//     };
-//
-//     executeWithRetry(injection);
-// }, { urls: ['<all_urls>'] }, ['responseHeaders']);
 
 /**
  * The TsWebExtension class is a facade for working with the Chrome

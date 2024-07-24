@@ -112,9 +112,6 @@ export class MessagesApi {
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): ContentScriptCosmeticData | undefined {
-        console.log({ sender, payload });
-        // CosmeticApi.applyFrameJsRules(frameId, tabId);
-
         logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return undefined;
@@ -138,24 +135,6 @@ export class MessagesApi {
         }
 
         return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
-
-        // FIXME check if some of this code is needed
-        // const { url, referrer } = res.data;
-        //
-        // const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
-        //
-        // const cosmeticOption = result?.getCosmeticOption();
-        //
-        // if (cosmeticOption === undefined) {
-        //     return undefined;
-        // }
-        //
-        // return engineApi.buildCosmeticCss(
-        //     url,
-        //     cosmeticOption,
-        //     false,
-        //     false,
-        // );
     }
 
     /**

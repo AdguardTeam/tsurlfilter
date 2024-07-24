@@ -10,15 +10,12 @@ import { runCookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
 import { CosmeticController } from './cosmetic-controller';
 
-// TODO: add ElementCollapser.start();
-
 interface CustomWindow extends Window {
     isAssistantInitiated: boolean;
 }
 
 declare const global: CustomWindow;
 
-console.log('hello from content script');
 const cosmeticController = new CosmeticController();
 cosmeticController.init();
 

@@ -63,7 +63,7 @@ export class CosmeticController {
         });
 
         if (res) {
-            this.applyCosmetic(res);
+            this.applyExtendedCss(res);
         }
     }
 
@@ -77,7 +77,7 @@ export class CosmeticController {
      *
      * @param cosmeticData Response cosmetic data from background.
      */
-    private applyCosmetic(cosmeticData: ContentScriptCosmeticData): void {
+    private applyExtendedCss(cosmeticData: ContentScriptCosmeticData): void {
         const {
             isAppStarted,
             extCssRules,
