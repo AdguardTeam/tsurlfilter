@@ -1,4 +1,5 @@
-import {
+// IMPORTANT! Re-exporting errors is necessary to correctly work on instanceof.
+export {
     type ConversionError,
     EmptyResourcesError,
     UnsupportedModifierError,
@@ -20,6 +21,14 @@ export {
     getRuleSourceText,
     type PreprocessedFilterList,
     FilterListPreprocessor,
+} from '@adguard/tsurlfilter';
+
+// re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
+export type {
+    NetworkRule,
+    CosmeticRule,
+    CosmeticRuleType,
+    NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
 export * from './app';
@@ -68,30 +77,4 @@ export { ContentType } from '../../common/request-type';
 export type { RequestData } from './request/events/request-event';
 export type { MessagesHandlerMV3 } from './messages-api';
 
-// re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
-export type {
-    NetworkRule,
-    CosmeticRule,
-    CosmeticRuleType,
-    NetworkRuleOption,
-} from '@adguard/tsurlfilter';
-
 export { TSWEBEXTENSION_VERSION } from '../../common/configuration';
-
-// IMPORTANT! Re-exporting errors is necessary to correctly work on instanceof.
-export {
-    type ConversionError,
-    EmptyResourcesError,
-    UnsupportedModifierError,
-    UnsupportedRegexpError,
-    InvalidDeclarativeRuleError,
-    type ConverterOptionsError,
-    EmptyOrNegativeNumberOfRulesError,
-    NegativeNumberOfRegexpRulesError,
-    ResourcesPathError,
-    type LimitationError,
-    TooManyRegexpRulesError,
-    TooManyRulesError,
-    UnavailableFilterSourceError,
-    UnavailableRuleSetSourceError,
-};
