@@ -38,7 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering log to not reload on History API navigation [AdguardBrowserExtension#2598].
 - Extension to stop injecting content-script into xml documents
   to prevent pretty printer breakage in Firefox [AdguardBrowserExtension#2194].
-- Updated `@adguard/scriptlets` to `v1.11.1`.
 
 ### Fixed
 
