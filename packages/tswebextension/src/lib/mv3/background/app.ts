@@ -615,27 +615,6 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * TODO implement this method later if needed
-     * Sets prebuild local script rules.
-     *
-     * @param localScriptRules JSON object with pre-build JS rules.
-     * @param localScriptRules.comment Comment for the rules.
-     * @param localScriptRules.rules List of rules.
-     * @see {@link LocalScriptRulesService}
-     *
-     */
-    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
-    public setLocalScriptRules(localScriptRules: {
-        comment: string, // TODO extract type to common
-        rules: {
-            domains: string,
-            script: string,
-        }[],
-    }): void {
-        logger.debug('[tswebextension.setLocalScriptRules]: mv3 does not support setLocalScriptRules yet');
-    }
-
-    /**
      * Updates the log level.
      *
      * @param logLevel Log level.
