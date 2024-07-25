@@ -5,12 +5,16 @@ import {
     HTTPMethod,
 } from '@adguard/tsurlfilter';
 
-import { PermissionsPolicyService } from '@lib/mv2/background/services/permissions-policy-service';
-import { type RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
-import { ContentType, FilteringEventType } from '@lib/common';
-
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import {
+    ContentType,
+    FilteringEventType,
+    type RequestContext,
+    RequestContextState,
+    RequestContextStorage,
+} from '../../../../../src/lib';
+import { PermissionsPolicyService } from '../../../../../src/lib/mv2/background/services/permissions-policy-service';
 
 describe('Permissions policy service', () => {
     const testUrl = 'https://example.org';

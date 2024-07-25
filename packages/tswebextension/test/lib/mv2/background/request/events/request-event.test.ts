@@ -1,5 +1,6 @@
 import browser from 'sinon-chrome';
-import { RequestEvent } from '@lib/mv2/background/request/events/request-event';
+
+import { RequestEvent } from '../../../../../../src/lib';
 
 describe('Request Event', () => {
     it('subscribes to original event once on initialization', () => {

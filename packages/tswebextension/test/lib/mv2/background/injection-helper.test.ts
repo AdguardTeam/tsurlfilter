@@ -1,6 +1,6 @@
-import { buildScriptText } from '@lib/mv2/background/injection-helper';
-import { extSessionStorage } from '@lib/mv2';
-import { appContext } from '@lib/mv2/background/context';
+import { extSessionStorage } from '../../../../src/lib';
+import { appContext } from '../../../../src/lib/mv2/background/context';
+import { buildScriptText } from '../../../../src/lib/mv2/background/injection-helper';
 
 const timestamp = Date.now();
 

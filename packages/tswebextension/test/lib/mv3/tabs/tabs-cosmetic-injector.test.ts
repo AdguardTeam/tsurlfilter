@@ -1,8 +1,8 @@
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
-import { engineApi } from '@lib/mv3/background/engine-api';
-import { TabsCosmeticInjector } from '@lib/mv3/tabs/tabs-cosmetic-injector';
-import { CosmeticJsApi } from '@lib/mv3/background/cosmetic-js-api';
+import { CosmeticJsApi } from '../../../../src/lib/mv3/background/cosmetic-js-api';
+import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
+import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
 
 jest.mock('@lib/mv3/background/engine-api');
 

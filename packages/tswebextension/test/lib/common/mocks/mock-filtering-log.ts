@@ -1,8 +1,4 @@
-import {
-    type FilteringLogEvent,
-    type FilteringLogInterface,
-    EventChannel,
-} from '@lib/common';
+import { EventChannel, type FilteringLogEvent, type FilteringLogInterface } from '../../../../src/lib';
 
 /**
  * Filtering log mock.

@@ -1,11 +1,8 @@
 /* eslint-disable guard-for-in */
 import { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
-import {
-    getRequestType,
-    ContentType,
-    type RequestTypeData,
-} from '@lib/common/request-type';
+
+import { ContentType, getRequestType, type RequestTypeData } from '../../../../../src/lib';
 
 describe('Request Type', () => {
     it('correctly maps resource type with Request and Content Type', () => {
