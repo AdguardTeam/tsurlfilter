@@ -11,6 +11,7 @@ import {
 } from '../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.

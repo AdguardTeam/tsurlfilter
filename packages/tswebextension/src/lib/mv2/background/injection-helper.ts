@@ -38,7 +38,11 @@ const escapeJs = (match: string): string => {
  * @param startTimeMs App start time in milliseconds.
  * @returns Script to inject.
  */
-export const buildScriptText = (scriptText: string, startTimeMs: number): string => {
+export const buildScriptText = (scriptText: string, startTimeMs: number | undefined): string => {
+    if (!startTimeMs) {
+        throw new Error('Start time is not defined');
+    }
+
     /**
      * We use changing variable name because global properties can be modified across isolated worlds of extension
      * content page and tab page.

@@ -423,6 +423,7 @@ export class WebRequestApi {
      * @param details Navigation event details.
      */
     private static onCommitted(details: browser.WebNavigation.OnCommittedDetailsType): void {
+        console.log(`${Date.now()}onCommitted fired`)
         const { tabId, frameId } = details;
 
         // Note: this is async function, but we will not await it because

@@ -10,7 +10,7 @@ import { appContext } from './context';
 import { getDomain } from '../../common/utils/url';
 import { USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { buildScriptText } from '../../common/injection-helper';
+import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
@@ -86,7 +86,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static async injectScript(scriptText: string, tabId: number, frameId = 0): Promise<void> {
-        return TabsApi.injectScript(buildScriptText(scriptText, appContext), tabId, frameId);
+        return TabsApi.injectScript(buildScriptText(scriptText, appContext.startTimeMs), tabId, frameId);
     }
 
     /**

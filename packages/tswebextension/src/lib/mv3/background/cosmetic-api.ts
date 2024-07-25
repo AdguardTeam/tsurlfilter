@@ -15,13 +15,19 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { ScriptingApi } from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
 
+/**
+ * Parameters for applying css rules.
+ */
 export type ApplyCssRulesParams = {
     tabId: number,
     frameId: number,
     cssText: string,
 };
 
-export type ApplyScriptRulesParams = {
+/**
+ * Parameters for executing script.
+ */
+export type ExecuteScriptParams = {
     tabId: number,
     frameId: number,
     scriptText: string,
@@ -163,8 +169,13 @@ export class CosmeticApi extends CosmeticApiCommon {
             frameUrl,
         };
 
-        const scriptText = rules
-            .map((rule) => rule.getScript(scriptParams))
+        const uniqueScripts = new Set();
+        for (let i = 0; i < rules.length; i += 1) {
+            const rule = rules[i];
+            uniqueScripts.add(rule.getScript(scriptParams));
+        }
+
+        const scriptText = [...uniqueScripts]
             .join(';\n');
 
         if (!scriptText) {
@@ -254,7 +265,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @param params Data for js rule injecting.
      */
-    public static async applyJsRules(params: ApplyScriptRulesParams): Promise<void> {
+    public static async applyJsRules(params: ExecuteScriptParams): Promise<void> {
         await ScriptingApi.executeScript(params); // FIXME get rid of this function
     }
 
@@ -270,9 +281,10 @@ export class CosmeticApi extends CosmeticApiCommon {
                 await CosmeticApi.applyJsRules({
                     tabId: requestContext.tabId,
                     frameId: requestContext.frameId,
-                    scriptText: requestContext.scriptText,
+                    scriptText: 'console.log(Date.now(), "on response started");' + requestContext.scriptText,
                 });
             } catch (e) {
+                console.log(e);
                 logger.debug('[applyJsByRequest] error occurred during injection', getErrorMessage(e));
             }
         }
@@ -291,7 +303,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 await CosmeticApi.applyJsRules({
                     tabId,
                     frameId,
-                    scriptText: requestContext.scriptText,
+                    scriptText: 'console.log(Date.now(), "on commited");' + requestContext.scriptText,
                 });
             } catch (e) {
                 logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));

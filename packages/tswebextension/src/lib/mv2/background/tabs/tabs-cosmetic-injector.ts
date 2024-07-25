@@ -10,6 +10,7 @@ import { TabContext } from './tab-context';
 import type { EngineApi } from '../engine-api';
 import type { DocumentApi } from '../document-api';
 import type { TabsApi } from './tabs-api';
+import { MAIN_FRAME_ID } from '../../../common/constants';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.

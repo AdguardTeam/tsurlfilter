@@ -1,13 +1,14 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { Frame, MAIN_FRAME_ID } from './frame';
+import { Frame } from './frame';
 import { TabContext } from './tab-context';
 import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
 import { CosmeticJsApi } from '../background/cosmetic-js-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
