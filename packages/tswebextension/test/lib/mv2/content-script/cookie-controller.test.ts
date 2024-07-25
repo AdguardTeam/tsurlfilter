@@ -2,10 +2,10 @@
  * @jest-environment jsdom
  */
 
-import { CookieController } from '@lib/common/content-script/cookie-controller';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 import { createNetworkRule } from '../../../helpers/rule-creator';
 import { getNetworkRuleFields } from '../background/helpers/rule-fields';
+import { CookieController } from '../../../../src/lib';
 
 describe('Cookie Controller Tests', () => {
     const onAppliedCallback = jest.fn(() => {});

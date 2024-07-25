@@ -1,6 +1,6 @@
-import CookieUtils from '@lib/mv2/background/services/cookie-filtering/utils';
-import { ParsedCookie } from '@lib/common/cookie-filtering/parsed-cookie';
 import { getResponseHeaders } from '../../fixtures/response-headers';
+import CookieUtils from '../../../../../../src/lib/mv2/background/services/cookie-filtering/utils';
+import { ParsedCookie } from '../../../../../../src/lib/common/cookie-filtering/parsed-cookie';
 
 const TEST_URL = 'https://test.com/url';
 

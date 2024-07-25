@@ -7,21 +7,22 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
-import { BrowserCookieApi } from '@lib/common/cookie-filtering/browser-cookie-api';
-import {
-    type RequestContext,
-    RequestContextState,
-    requestContextStorage,
-} from '@lib/mv2/background/request/request-context-storage';
-import { FilteringEventType, ContentType } from '@lib/common';
-import { engineApi, tabsApi } from '@lib/mv2/background/api';
-
 import { createNetworkRule } from '../../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../../common/mocks';
 
 import HttpHeaders = WebRequest.HttpHeaders;
 import { getNetworkRuleFields } from '../../helpers/rule-fields';
+import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
+import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
+import {
+    ContentType,
+    engineApi,
+    FilteringEventType,
+    type RequestContext,
+    RequestContextState,
+    requestContextStorage,
+    tabsApi,
+} from '../../../../../../src/lib';
 
 jest.mock('@lib/common/utils/logger');
 jest.mock('@lib/common/cookie-filtering/browser-cookie-api');

@@ -1,5 +1,5 @@
-import { RedirectsService } from '@lib/mv2/background/services/redirects/redirects-service';
-import { ResourcesService } from '@lib/mv2/background/services/resources-service';
+import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
+import { RedirectsService } from '../../../../../src/lib/mv2/background/services/redirects/redirects-service';
 
 jest.mock('@lib/mv2/background/services/resources-service', () => ({
     ...jest.requireActual('../mocks/resources-service-mock'),

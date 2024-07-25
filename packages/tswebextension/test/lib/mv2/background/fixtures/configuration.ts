@@ -1,5 +1,4 @@
-import { type ConfigurationMV2 } from '@lib/mv2/background/configuration';
-import { LF } from '@lib/common';
+import { type ConfigurationMV2, LF } from '../../../../../src/lib';
 
 const { FilterListPreprocessor } = jest.requireActual('@adguard/tsurlfilter');
 

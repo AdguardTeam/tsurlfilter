@@ -1,5 +1,5 @@
 import type { MatchingResult, CosmeticResult } from '@adguard/tsurlfilter';
-import { Frame } from '@lib/mv3/tabs/frame';
+import { Frame } from '../../../../src/lib/mv3/tabs/frame';
 
 describe('Frame', () => {
     describe('constructor', () => {

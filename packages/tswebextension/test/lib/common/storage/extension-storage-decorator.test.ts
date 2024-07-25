@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/require-jsdoc */
 import browser from 'webextension-polyfill';
-import { createExtensionStorageDecorator } from '@lib/common/storage/extension-storage-decorator';
-import { ExtensionStorage } from '@lib/common/storage/extension-storage';
+
+import { createExtensionStorageDecorator, ExtensionStorage } from '../../../../src/lib';
 
 describe('createExtensionStorageDecorator', () => {
     const key = 'test-key';

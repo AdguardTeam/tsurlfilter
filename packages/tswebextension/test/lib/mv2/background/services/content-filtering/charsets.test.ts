@@ -1,10 +1,10 @@
 import {
     DEFAULT_CHARSET,
+    parseCharsetFromCss,
     parseCharsetFromHeader,
     parseCharsetFromHtml,
-    parseCharsetFromCss,
     WIN_1251,
-} from '@lib/mv2/background/services/content-filtering/charsets';
+} from '../../../../../../src/lib/mv2/background/services/content-filtering/charsets';
 
 describe('Content filtering - charsets', () => {
     it('checks parsing charset from header', () => {

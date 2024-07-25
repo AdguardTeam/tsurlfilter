@@ -1,13 +1,11 @@
 import { MatchingResult } from '@adguard/tsurlfilter';
 
-import { AppContext } from '@lib/mv2/background/context';
-import { type ConfigurationMV2Context } from '@lib/mv2/background/configuration';
-import { defaultFilteringLog } from '@lib/common';
-import { StealthApi } from '@lib/mv2/background/stealth-api';
-import { StealthService } from '@lib/mv2/background/services/stealth-service';
-
 import { createNetworkRule } from '../../../helpers/rule-creator';
 import { MockAppContext } from './mocks/mock-context';
+import { type ConfigurationMV2Context, defaultFilteringLog } from '../../../../src/lib';
+import { AppContext } from '../../../../src/lib/mv2/background/context';
+import { StealthService } from '../../../../src/lib/mv2/background/services/stealth-service';
+import { StealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
 jest.mock('@lib/mv2/background/context', () => ({
     __esModule: true,

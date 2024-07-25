@@ -1,5 +1,5 @@
-import { AllowlistApi } from '@lib/mv3/background/allowlist-api';
 import { getConfigurationMv3Fixture } from './fixtures/configuration';
+import { AllowlistApi } from '../../../src/lib/mv3/background/allowlist-api';
 
 describe('Allowlist Api', () => {
     let allowlist: AllowlistApi;

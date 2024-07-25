@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
-import UserRulesApi from '@lib/mv3/background/user-rules-api';
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import UserRulesApi from '../../../../src/lib/mv3/background/user-rules-api';
 
 const createFilter = (content: string[], filterId: number): IFilter => {
     return new Filter(

@@ -7,11 +7,12 @@ import {
     CosmeticResult,
     HTTPMethod,
 } from '@adguard/tsurlfilter';
-import { ContentType } from '@lib/common';
-import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
-import { ContentFiltering } from '@lib/mv2/background/services/content-filtering/content-filtering';
-import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
+import { ContentType, type RequestContext, RequestContextState } from '../../../../../../src/lib';
+import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
+import {
+    ContentFiltering,
+} from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
 
 describe('Content filtering', () => {
     const requestContext: RequestContext = {
