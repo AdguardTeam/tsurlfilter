@@ -7,7 +7,7 @@ import {
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
-import { companiesService } from '../services/companies';
+import { companiesDbService } from '../services/companies-db-service';
 import { ContentType } from '..';
 
 /**
@@ -157,7 +157,7 @@ export class RequestBlockingApi {
             return;
         }
 
-        const companyCategory = companiesService.match(requestUrl);
+        const companyCategory = companiesDbService.match(requestUrl);
 
         // We need this only for count total blocked requests,
         // so we can skip contentType.
