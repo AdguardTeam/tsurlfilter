@@ -35,16 +35,17 @@ const escapeJs = (match: string): string => {
  *
  * @see {@link LocalScriptRulesService} for details about script source.
  * @param scriptText Script text.
+ * @param startTimeMs App start time in milliseconds.
  * @returns Script to inject.
  */
-export const buildScriptText = (scriptText: string, appContext: any): string => { // FIXME specify appContext type
+export const buildScriptText = (scriptText: string, startTimeMs: number): string => {
     /**
      * We use changing variable name because global properties can be modified across isolated worlds of extension
      * content page and tab page.
      *
      * Issue: @see {@link https://bugs.chromium.org/p/project-zero/issues/detail?id=1225&desc=6}.
      */
-    const variableName = `scriptExecuted${appContext.startTimeMs}`;
+    const variableName = `scriptExecuted${startTimeMs}`;
 
     /**
      * Executes scripts in a scope of the page, but the `window` fields are in

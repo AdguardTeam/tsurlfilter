@@ -2,8 +2,7 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
-import { findHeaderByName, getHost, isThirdPartyRequest } from '../../../common/utils';
-import { removeHeader } from '../utils/headers';
+import { findHeaderByName, removeHeader } from '../utils/headers';
 import {
     FilteringEventType,
     type FilteringLogInterface,
@@ -13,6 +12,7 @@ import { StealthHelper } from '../../../common/stealth-helper';
 
 import type { RequestContext } from '../request';
 import type { AppContext } from '../context';
+import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
 
 /**
  * Stealth action bitwise masks used on the background page and on the filtering log page.

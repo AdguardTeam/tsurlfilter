@@ -1,6 +1,6 @@
 import { type RuleInfo } from './content-script/rule-info';
 import type { ContentType } from './request-type';
-import { EventChannel, type EventChannelInterface } from './utils';
+import { EventChannel, type EventChannelInterface } from './utils/channels';
 
 /**
  * Types of filtering events that can occur during request processing.

@@ -5,12 +5,10 @@ import type { Tabs } from 'webextension-polyfill';
 
 import { Frame } from './frame';
 import type { DocumentApi } from '../document-api';
-import {
-    type FilteringLog,
-    defaultFilteringLog,
-    isHttpOrWsRequest,
-    isHttpRequest,
-} from '../../../common';
+import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
+import { MAIN_FRAME_ID } from '../../../common/constants';
+import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
+
 /**
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.

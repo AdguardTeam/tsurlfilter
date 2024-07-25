@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { basicFilterValidator, configurationValidator } from '../../common';
+import { basicFilterValidator, configurationValidator } from '../../common/configuration';
 
 /**
  * Filter list configuration validator for MV2.
