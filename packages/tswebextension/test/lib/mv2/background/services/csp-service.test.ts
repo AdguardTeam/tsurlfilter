@@ -1,9 +1,10 @@
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
-import { CspService } from '@lib/mv2/background/services/csp-service';
-import { type RequestContext } from '@lib/mv2/background/request';
-import { FilteringEventType, ContentType } from '@lib/common';
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { CspService } from '../../../../../src/lib/mv2/background/services/csp-service';
+import { RequestContext } from '../../../../../src/lib';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 
 describe('Content Security Policy service', () => {
     const mockFilteringLog = new MockFilteringLog();

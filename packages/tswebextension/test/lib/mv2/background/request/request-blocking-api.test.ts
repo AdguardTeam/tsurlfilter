@@ -1,8 +1,14 @@
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
-import { type GetBlockingResponseParams, RequestBlockingApi } from '@lib/mv2/background/request/request-blocking-api';
-import { documentBlockingService, engineApi, tabsApi } from '@lib/mv2/background/api';
-import { ContentType } from '@lib/common';
+
 import { createNetworkRule } from '../../../../helpers/rule-creator';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+import {
+    documentBlockingService,
+    engineApi,
+    GetBlockingResponseParams,
+    RequestBlockingApi,
+    tabsApi
+} from '../../../../../src/lib';
 
 jest.mock('@lib/mv2/background/api');
 
