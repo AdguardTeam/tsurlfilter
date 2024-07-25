@@ -249,6 +249,12 @@ export class MatchingResult {
      */
     getBasicResult(): NetworkRule | null {
         let basic = this.basicRule;
+
+        // e.g. @@||example.com^$generichide
+        if (this.cosmeticExceptionRule && (!basic || this.cosmeticExceptionRule.isHigherPriority(basic))) {
+            return this.cosmeticExceptionRule;
+        }
+
         if (!basic) {
             // Only document-level frame rule would be returned as a basic result,
             // cause only those rules could block or modify page sub-requests.

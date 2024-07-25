@@ -1400,6 +1400,13 @@ packages:
       js-yaml: 3.14.1
     dev: false
 
+  /@adguard/scriptlets@1.11.6:
+    resolution: {integrity: sha512-ArHRCGGOprZNQet+zpNNPWo8O4/Y/TdJ3k1y7XlKDE/FlEo/BDBDqD0GCYthAXEPtJvnmIFBOyV1MhlONqhM1A==}
+    dependencies:
+      '@babel/runtime': 7.24.1
+      js-yaml: 3.14.1
+    dev: false
+
   /@adguard/tsurlfilter@1.0.81:
     resolution: {integrity: sha512-soS6aQ9mKsynjXcTyhL+MeERrx3MRO/ETFzV2RjB6ImTiLPhotKOCMW+qaaMaBYOofnzoAiR9ZJvlnUzj1N0PQ==}
     engines: {node: '>=6.0.0'}
