@@ -1,4 +1,3 @@
-import { type ScriptletData } from '@adguard/tsurlfilter';
 import { appContext } from './app-context';
 import { type ApplyScriptRulesParams } from './cosmetic-api';
 
@@ -103,61 +102,5 @@ export class ScriptingApi {
             world: 'MAIN', // ISOLATED doesn't allow to execute code inline
             args: [scriptText, variableName],
         });
-    }
-
-    /**
-     * Executes scriptlets data via browser.scripting.executeScript api.
-     *
-     * @param tabId Tab id.
-     * @param scriptletsData List of {@link ScriptletData}.
-     * @param frameId
-     */
-    public static async executeScriptletsData(
-        scriptletsData: ScriptletData[],
-        tabId: number,
-        frameId: number,
-    ): Promise<void> {
-        // FIXME another way to check if scriptlets were injected
-        // const isInjectedFn = (randomVariable: string) => {
-        //     // FIXME
-        //     // @ts-ignore
-        //     if (window[randomVariable]) {
-        //         return true;
-        //     }
-        //
-        //     // FIXME
-        //     // @ts-ignore
-        //     window[randomVariable] = true;
-        //     return false;
-        // };
-        //
-        // // check if scriptlets were already injected
-        // const result = await ScriptingApi.promisifiedExecuteScript({
-        //     target: { tabId, frameIds: [frameId] },
-        //     func: isInjectedFn,
-        //     injectImmediately: true,
-        //     world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-        //     args: [`scriptletsExecuted${appContext.startTimeMs}`],
-        // });
-        //
-        // if (result[0]?.result) {
-        //     return;
-        // }
-
-        const promises = scriptletsData.map(async (scriptletData) => {
-            // FIXME make scriptlets verbose
-            // scriptletData.params.verbose = CosmeticJsApi.verbose;
-            scriptletData.params.verbose = true;
-
-            await ScriptingApi.promisifiedExecuteScript({
-                target: { tabId, frameIds: [frameId] },
-                func: scriptletData.func,
-                injectImmediately: true,
-                world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-                args: [scriptletData.params, scriptletData.params.args],
-            });
-        });
-
-        await Promise.all(promises);
     }
 }

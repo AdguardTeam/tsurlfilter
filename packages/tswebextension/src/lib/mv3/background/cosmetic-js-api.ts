@@ -1,4 +1,4 @@
-import { CosmeticOption, type ScriptletData } from '@adguard/tsurlfilter';
+import { CosmeticOption } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
 import { isHttpRequest } from '../../common/utils';
@@ -59,41 +59,6 @@ export class CosmeticJsApi {
     }
 
     /**
-     * Executes scriptlets data via browser.scripting.executeScript api.
-     *
-     * @param tabId Tab id.
-     * @param scriptletsData List of {@link ScriptletData}.
-     */
-    public static async executeScriptletsData(
-        tabId: number,
-        scriptletsData: ScriptletData[],
-    ): Promise<void> {
-        const promises = scriptletsData.map(async (scriptletData) => {
-            scriptletData.params.verbose = CosmeticJsApi.verbose;
-
-            try {
-                await browser.scripting.executeScript({
-                    target: { tabId },
-                    func: scriptletData.func,
-                    injectImmediately: true,
-                    // FIXME later
-                    // @ts-ignore
-                    world: 'MAIN', // ISOLATED doesn't allow to execute code inline
-                    args: [scriptletData.params, scriptletData.params.args],
-                });
-            } catch (e) {
-                logger.debug(
-                    `[tswebextension.executeScriptletsData]: Error on executeScriptlet in the tab ${tabId}:`,
-                    browser.runtime.lastError,
-                    e,
-                );
-            }
-        });
-
-        await Promise.all(promises);
-    }
-
-    /**
      * Get scripts and executing them.
      *
      * @param tabId Tab id.
@@ -123,11 +88,7 @@ export class CosmeticJsApi {
                 executeScriptPromise = CosmeticJsApi.executeScript(wrappedScript, tabId);
             }
 
-            // TODO: Extract cosmetic option from matching result (AG-24586)
-            const scriptletData = engineApi.getScriptletsDataForUrl(url, CosmeticOption.CosmeticOptionAll);
-            const executeScriptletsData = CosmeticJsApi.executeScriptletsData(tabId, scriptletData);
-
-            await Promise.all([executeScriptPromise, executeScriptletsData]);
+            await Promise.all([executeScriptPromise]);
         }
     }
 }
