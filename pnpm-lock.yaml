@@ -169,9 +169,6 @@ importers:
       '@adguard/css-tokenizer':
         specifier: workspace:^
         version: link:../css-tokenizer
-      '@adguard/scriptlets':
-        specifier: ^1.9.61
-        version: 1.11.1
       clone-deep:
         specifier: ^4.0.1
         version: 4.0.1
