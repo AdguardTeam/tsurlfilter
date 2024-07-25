@@ -20,13 +20,13 @@ import browser from 'webextension-polyfill';
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
-import { getHost, isHttpOrWsRequest } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
+import { getHost, isHttpOrWsRequest } from '../../common/utils/url';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -191,60 +191,6 @@ export class EngineApi {
         return this.engine.getCosmeticResult(request, option);
     }
 
-    // FIXME remove this line
-    // /**
-    //  * Builds CSS for the specified web page.
-    //  *
-    //  * @see http://adguard.com/en/filterrules.html#hideRules
-    //  *
-    //  * @param url Page URL.
-    //  * @param options Bitmask.
-    //  * @param ignoreTraditionalCss Flag.
-    //  * @param ignoreExtCss Flag.
-    //  *
-    //  * @returns CSS and ExtCss data for the webpage.
-    //  */
-    // public buildCosmeticCss(
-    //     url: string,
-    //     options: CosmeticOption,
-    //     ignoreTraditionalCss: boolean,
-    //     ignoreExtCss: boolean,
-    // ): CosmeticRules {
-    //     const cosmeticResult = this.getCosmeticResult(url, options);
-    //
-    //     const elemhideCss = [
-    //         ...cosmeticResult.elementHiding.generic,
-    //         ...cosmeticResult.elementHiding.specific,
-    //     ];
-    //     const injectCss = [
-    //         ...cosmeticResult.CSS.generic,
-    //         ...cosmeticResult.CSS.specific,
-    //     ];
-    //
-    //     const elemhideExtCss = [
-    //         ...cosmeticResult.elementHiding.genericExtCss,
-    //         ...cosmeticResult.elementHiding.specificExtCss,
-    //     ];
-    //     const injectExtCss = [
-    //         ...cosmeticResult.CSS.genericExtCss,
-    //         ...cosmeticResult.CSS.specificExtCss,
-    //     ];
-    //
-    //     const styles = !ignoreTraditionalCss
-    //         ? CosmeticApiCommon.buildStyleSheets(elemhideCss, injectCss, true)
-    //         : [];
-    //     const extStyles = !ignoreExtCss
-    //         ? CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false)
-    //         : [];
-    //
-    //     logger.debug('[tswebextension.buildCosmeticCss]: builded');
-    //
-    //     return {
-    //         css: styles,
-    //         extendedCss: extStyles,
-    //     };
-    // }
-
     /**
      * Gets current loaded rules in the filtering engine
      * (except declarative rules).
@@ -361,8 +307,6 @@ export class EngineApi {
      */
     public getScriptsStringForUrl(url: string, option: CosmeticOption): string | null {
         const scriptRules = this.getScriptsForUrl(url, option);
-
-        // TODO: Add check for firefox AMO
 
         // scriptlet rules would are handled separately
         const scripts = scriptRules
