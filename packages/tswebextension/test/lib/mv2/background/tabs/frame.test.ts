@@ -1,4 +1,5 @@
 import type { MatchingResult, CosmeticResult } from '@adguard/tsurlfilter';
+
 import { Frame } from '../../../../../src/lib';
 
 describe('Frame', () => {

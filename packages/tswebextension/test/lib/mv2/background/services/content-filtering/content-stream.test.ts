@@ -8,11 +8,11 @@ import {
     WIN_1251,
     WIN_1252,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/charsets';
-import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
-import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import {
     type ContentStringFilterInterface,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
+import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
+import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 
 jest.mock('../../../../../../src/lib/common/utils/logger');
 

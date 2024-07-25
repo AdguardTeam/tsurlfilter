@@ -1,15 +1,15 @@
 import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { EngineApi, type MatchQuery } from '../../../../src/lib/mv2/background/engine-api';
+import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
 jest.mock('@adguard/tsurlfilter');
-jest.mock('../../../../src/lib/mv2/background/allowlist');
-jest.mock('../../../../src/lib/mv2/background/context');
-jest.mock('../../../../src/lib/mv2/background/stealth-api');
+jest.mock('@lib/mv2/background/allowlist');
+jest.mock('@lib/mv2/background/context');
+jest.mock('@lib/mv2/background/stealth-api');
 
 describe('Engine Api', () => {
     let engineApi: EngineApi;

@@ -1,8 +1,8 @@
 import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
-import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 import { appContext } from '../../../../src/lib/mv2/background/context';
+import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
 jest.mock('@lib/mv2/background/allowlist');
 jest.mock('@lib/mv2/background/engine-api');

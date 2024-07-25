@@ -1,10 +1,11 @@
 import { CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
+
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
 import { MockAppContext } from './mocks/mock-context';
 import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
-import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
 import { localScriptRulesService } from '../../../../src/lib/mv2/background/services/local-script-rules-service';
+import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
 
 jest.mock('@lib/mv2/background/context', () => ({
     appContext: jest.fn(() => new MockAppContext()),

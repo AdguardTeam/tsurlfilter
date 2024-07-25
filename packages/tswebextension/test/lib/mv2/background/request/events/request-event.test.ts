@@ -1,4 +1,5 @@
 import browser from 'sinon-chrome';
+
 import { RequestEvent } from '../../../../../../src/lib';
 
 describe('Request Event', () => {

@@ -10,11 +10,11 @@ import {
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
-import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 import {
     ContentFiltering,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
 
 describe('Content filtering', () => {
     const requestContext: RequestContext = {

@@ -4,10 +4,10 @@ import {
 } from '@adguard/tsurlfilter';
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 import { RequestContextState } from '../../../../../../src/lib';
-import { ContentType } from '../../../../../../src/lib/common/request-type';
 import {
     ContentStringFilter,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { defaultFilteringLog } from '../../../../../../src/lib/common/filtering-log';
 
 describe('Content string filter', () => {

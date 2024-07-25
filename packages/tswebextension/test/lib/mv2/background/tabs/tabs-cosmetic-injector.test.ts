@@ -1,5 +1,6 @@
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+
 import { TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';

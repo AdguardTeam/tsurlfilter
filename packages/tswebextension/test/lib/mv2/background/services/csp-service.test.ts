@@ -1,4 +1,5 @@
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 import { CspService } from '../../../../../src/lib/mv2/background/services/csp-service';

@@ -1,4 +1,5 @@
 import { type NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
+
 import { type ApplyBasicRuleEventData } from '../../../../../src/lib/common/filtering-log';
 
 type Fields = Pick<
