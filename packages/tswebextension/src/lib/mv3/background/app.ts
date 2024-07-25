@@ -5,8 +5,6 @@ import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { extSessionStorage } from './ext-session-storage';
 import { appContext } from './app-context';
-import { type AppInterface, defaultFilteringLog } from '../../common';
-import { getErrorMessage } from '../../common';
 import { logger } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
@@ -29,6 +27,9 @@ import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
 import { CosmeticJsApi } from './cosmetic-js-api';
+import { type AppInterface } from '../../common/app';
+import { defaultFilteringLog } from '../../common/filtering-log';
+import { getErrorMessage } from '../../common/error';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -210,7 +211,7 @@ export class TsWebExtension implements AppInterface<
     public async stop(): Promise<void> {
         await TsWebExtension.removeAllFilteringRules();
 
-        await declarativeFilteringLog.stop();
+        declarativeFilteringLog.stop();
 
         // Stop handle request events.
         WebRequestApi.stop();
