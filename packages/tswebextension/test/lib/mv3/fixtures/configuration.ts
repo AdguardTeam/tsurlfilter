@@ -1,4 +1,4 @@
-import { type ConfigurationMV3 } from '@lib/mv3/background/configuration';
+import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
 
 export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     staticFiltersIds: [1, 2],

@@ -1,8 +1,8 @@
 import { BufferRuleList, FilterListPreprocessor } from '@adguard/tsurlfilter';
-import { Allowlist } from '@lib/mv2/background/allowlist';
-import { ALLOWLIST_FILTER_ID } from '@lib/common/constants';
 import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
 import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
+import { Allowlist } from '../../../src/lib/mv2/background/allowlist';
+import { ALLOWLIST_FILTER_ID } from '../../../src/lib';
 
 describe('Allowlist Api', () => {
     let allowlist: Allowlist;

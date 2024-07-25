@@ -4,12 +4,15 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { ParamsService } from '@lib/mv2/background/services/params-service';
-import { RequestContextState, requestContextStorage } from '@lib/mv2/background/request';
-import { ContentType, FilteringEventType } from '@lib/common';
-
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { ParamsService } from '../../../../../src/lib/mv2/background/services/params-service';
+import {
+    ContentType,
+    FilteringEventType,
+    RequestContextState,
+    requestContextStorage,
+} from '../../../../../src/lib';
 
 describe('Params service', () => {
     const mockFilteringLog = new MockFilteringLog();
