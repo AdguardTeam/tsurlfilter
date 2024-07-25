@@ -1,5 +1,6 @@
 import browser from 'sinon-chrome';
-import { ResourcesService } from '@lib/mv2/background/services/resources-service';
+
+import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
 
 global.fetch = jest.fn(() => {
     return Promise.resolve({

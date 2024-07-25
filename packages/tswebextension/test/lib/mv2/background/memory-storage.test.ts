@@ -1,4 +1,4 @@
-import { MemoryStorage } from '@lib/common/memory-storage';
+import { MemoryStorage } from '../../../../src/lib/common/memory-storage';
 
 describe('MemoryStorage', () => {
     let memoryStorage: MemoryStorage;

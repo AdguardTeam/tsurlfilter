@@ -1,10 +1,8 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-
-import { hideRequestInitiatorElement, InitiatorTag } from '@lib/mv2/background/request/request-initiator-element';
-import { HIDING_STYLE } from '@lib/mv2/common/hidden-style';
-import { BACKGROUND_TAB_ID } from '@lib/common/constants';
-
-import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
+import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
+import { hideRequestInitiatorElement, InitiatorTag } from '../../../../../src/lib';
+import { HIDING_STYLE } from '../../../../../src/lib/mv2/common/hidden-style';
+import { BACKGROUND_TAB_ID } from '../../../../../src/lib/common/constants';
 
 describe('Request Initiator Element', () => {
     beforeEach(() => {

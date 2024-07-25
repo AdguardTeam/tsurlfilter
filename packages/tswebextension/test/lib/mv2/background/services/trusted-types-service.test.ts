@@ -1,7 +1,8 @@
 import { CosmeticResult } from '@adguard/tsurlfilter';
-import { type RequestContext } from '@lib/mv2';
-import { TrustedTypesService } from '@lib/mv2/background/services/trusted-types-service';
+
 import { createCosmeticRule } from '../../../../helpers/rule-creator';
+import { TrustedTypesService } from '../../../../../src/lib/mv2/background/services/trusted-types-service';
+import { type RequestContext } from '../../../../../src/lib';
 
 /**
  * Expects that header is modified as expected.
