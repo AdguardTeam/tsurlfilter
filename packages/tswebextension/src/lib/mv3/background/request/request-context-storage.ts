@@ -1,9 +1,9 @@
 import type { WebRequest } from 'webextension-polyfill';
 import type { MatchingResult, HTTPMethod, CosmeticResult } from '@adguard/tsurlfilter';
 
-import type { ContentType } from '../../../common';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../../tabs/tabs-api';
+import { type ContentType } from '../../../common/request-type';
 
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
@@ -42,44 +42,71 @@ export type RequestContext = TabFrameRequestContext & {
      */
     cosmeticResult?: CosmeticResult;
 
-    // FIXME document
+    /**
+     * Script text to be injected.
+     * It is precalculated onBeforeRequest and used later.
+     */
     scriptText?: string,
 
-    // FIXME document
+    /**
+     * CSS text to be injected.
+     * It is precalculated onBeforeRequest and used later.
+     */
     cssText?: string,
 };
 
 /**
- *
+ * Map of request context data.
+ */
+type RequestMap = Map<string, RequestContext>;
+
+/**
+ * Map of tab and frame id to request id.
+ */
+type TabAndFrameMap = Map<string, string>;
+
+/**
+ * Request context storage used to keep track of request data
+ * and calculated rules for it.
  */
 export class RequestContextStorage {
-    requestMap = new Map();
-
-    tabAndFrameMap = new Map();
+    /**
+     * Map of request context data.
+     */
+    requestMap:RequestMap = new Map();
 
     /**
-     *
-     * @param tabId
-     * @param frameId
+     * Map of tab and frame id to request id.
+     * We use second map for faster search of context data when we have tab id and frame id only.
      */
-    private getTabAndFrameKey(tabId: number, frameId: number): string {
+    tabAndFrameMap:TabAndFrameMap = new Map();
+
+    /**
+     * Generates key based on tab id and frame id.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @returns Generated script key.
+     */
+    private static getTabAndFrameKey(tabId: number, frameId: number): string {
         return `${tabId}-${frameId}`;
     }
 
     /**
-     *
-     * @param requestId
-     * @param data
+     * Sets requestData context by requestData id.
+     * @param requestId Request id.
+     * @param requestData Request context data.
      */
-    public set(requestId: string, data: RequestContext): void {
-        this.requestMap.set(requestId, data);
-        this.tabAndFrameMap.set(this.getTabAndFrameKey(data.tabId, data.frameId), requestId);
+    public set(requestId: string, requestData: RequestContext): void {
+        this.requestMap.set(requestId, requestData);
+        const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(requestData.tabId, requestData.frameId);
+        this.tabAndFrameMap.set(tabAndFrameKey, requestId);
     }
 
     /**
-     *
-     * @param requestId
-     * @param data
+     * Updates request context fields. Can be done partially.
+     * @param requestId Request id.
+     * @param data Partial request context.
+     * @returns Updated request context or undefined if request context not found.
      */
     public update(requestId: string, data: Partial<RequestContext>): RequestContext | undefined {
         const requestContext = this.requestMap.get(requestId);
@@ -93,21 +120,26 @@ export class RequestContextStorage {
     }
 
     /**
-     *
-     * @param requestId
+     * Returns request context by request id.
+     * @param requestId Request id.
+     * @returns Request context or undefined if request context not found.
      */
     public get(requestId: string): RequestContext | undefined {
         return this.requestMap.get(requestId);
     }
 
     /**
-     *
-     * @param tabId
-     * @param frameId
+     * Returns request context by tab id and frame id.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @returns Request context or undefined if request context not found.
      */
     public getByTabAndFrame(tabId: number, frameId: number): RequestContext | undefined {
-        const tabAndFrameKey = this.getTabAndFrameKey(tabId, frameId);
+        const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
         const requestId = this.tabAndFrameMap.get(tabAndFrameKey);
+        if (!requestId) {
+            return undefined;
+        }
         return this.requestMap.get(requestId);
     }
 
@@ -119,58 +151,19 @@ export class RequestContextStorage {
         const requestContext = this.requestMap.get(requestId);
         if (requestContext) {
             const { tabId, frameId } = requestContext;
-            const tabAndFrameKey = this.getTabAndFrameKey(tabId, frameId);
+            const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
             this.tabAndFrameMap.delete(tabAndFrameKey);
             this.requestMap.delete(requestId);
         }
     }
 
     /**
-     *
+     * Clears all request context data.
      */
     public clear(): void {
         this.requestMap.clear();
+        this.tabAndFrameMap.clear();
     }
 }
-
-// /**
-//  * Implementation of the request context storage.
-//  *
-//  * TODO: Add persistent storage for cases of deaths service worker.
-//  */
-// export class RequestContextStorage extends Map<string, RequestContext> {
-//     /**
-//      * Create new request context.
-//      *
-//      * @param requestId Request id.
-//      * @param data Request context with a omitted eventId field. It is automatically generated.
-//      * @returns Request context storage instance.
-//      */
-//     public create(requestId: string, data: RequestContext): RequestContext {
-//         super.set(requestId, data);
-//
-//         return data;
-//     }
-//
-//     /**
-//      * Update request context fields. Can be done partially.
-//      *
-//      * @param requestId Request id.
-//      * @param data Partial request context.
-//      * @returns Updated request context.
-//      */
-//     public update(requestId: string, data: Partial<RequestContext>): RequestContext | undefined {
-//         const requestContext = super.get(requestId);
-//
-//         if (requestContext) {
-//             Object.assign(requestContext, data);
-//             return requestContext;
-//         }
-//
-//         // TODO: Throws error if request context not found after RequestEvents refactoring.
-//         super.set(requestId, data as RequestContext);
-//         return undefined;
-//     }
-// }
 
 export const requestContextStorage = new RequestContextStorage();
