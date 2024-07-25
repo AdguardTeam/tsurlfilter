@@ -281,10 +281,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 await CosmeticApi.applyJsRules({
                     tabId: requestContext.tabId,
                     frameId: requestContext.frameId,
-                    scriptText: 'console.log(Date.now(), "on response started");' + requestContext.scriptText,
+                    scriptText: requestContext.scriptText,
                 });
             } catch (e) {
-                console.log(e);
                 logger.debug('[applyJsByRequest] error occurred during injection', getErrorMessage(e));
             }
         }
@@ -303,10 +302,10 @@ export class CosmeticApi extends CosmeticApiCommon {
                 await CosmeticApi.applyJsRules({
                     tabId,
                     frameId,
-                    scriptText: 'console.log(Date.now(), "on commited");' + requestContext.scriptText,
+                    scriptText: requestContext.scriptText,
                 });
             } catch (e) {
-                logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
+                logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
             }
         }
     }

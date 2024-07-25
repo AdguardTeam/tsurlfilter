@@ -25,48 +25,6 @@ export class ScriptingApi {
     }
 
     /**
-     * Executes scripts in a scope of the page.
-     * In order to prevent multiple script execution, the function checks if the script was already executed.
-     *
-     * @param scriptText Script text.
-     * @param executedFlag Flag to check if the script was already executed.
-     */
-    private static functionToInject = (scriptText: string, executedFlag: string) => {
-        // We don't care about types here
-        // @ts-ignore
-        if (window[executedFlag]) {
-            return;
-        }
-
-        const injectViaScriptTag = (): void => {
-            const scriptTag = document.createElement('script');
-            scriptTag.setAttribute('type', 'text/javascript');
-            scriptTag.textContent = scriptText;
-
-            const parent = document.head || document.documentElement;
-            parent.appendChild(scriptTag);
-
-            if (scriptTag.parentNode) {
-                scriptTag.parentNode.removeChild(scriptTag);
-            }
-        };
-
-        try {
-            // eslint-disable-next-line no-eval
-            eval(scriptText);
-        } catch (e) {
-            console.log(e);
-            // if eval fails, inject via script tag
-            injectViaScriptTag();
-        }
-
-        // We don't care about types here
-        // @ts-ignore
-        window[executedFlag] = true;
-    };
-
-
-    /**
      * Executes script in a scope of the page.
      * @param params Parameters.
      */
@@ -78,12 +36,52 @@ export class ScriptingApi {
             return;
         }
 
+        /**
+         * Executes scripts in a scope of the page.
+         * In order to prevent multiple script execution, the function checks if the script was already executed.
+         *
+         * @param scriptText Script text.
+         * @param executedFlag Flag to check if the script was already executed.
+         */
+        function injectFunc(scriptText: string, executedFlag: string): void {
+            // We don't care about types here
+            // @ts-ignore
+            if (window[executedFlag]) {
+                return;
+            }
+
+            const injectViaScriptTag = (): void => {
+                const scriptTag = document.createElement('script');
+                scriptTag.setAttribute('type', 'text/javascript');
+                scriptTag.textContent = scriptText;
+
+                const parent = document.head || document.documentElement;
+                parent.appendChild(scriptTag);
+
+                if (scriptTag.parentNode) {
+                    scriptTag.parentNode.removeChild(scriptTag);
+                }
+            };
+
+            try {
+                // eslint-disable-next-line no-eval
+                eval(scriptText);
+            } catch (e) {
+                // if eval fails, inject via script tag
+                injectViaScriptTag();
+            }
+
+            // We don't care about types here
+            // @ts-ignore
+            window[executedFlag] = true;
+        }
+
         // TODO figure out how to avoid double injection without polluting global scope
         const executedFlag = `executed${appContext.startTimeMs}`;
 
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
-            func: ScriptingApi.functionToInject,
+            func: injectFunc,
             injectImmediately: true,
             world: 'MAIN', // ISOLATED doesn't allow to execute code inline
             args: [scriptText, executedFlag],

@@ -37,6 +37,7 @@ const escapeJs = (match: string): string => {
  * @param scriptText Script text.
  * @param startTimeMs App start time in milliseconds.
  * @returns Script to inject.
+ * @throws Error if start time is not defined.
  */
 export const buildScriptText = (scriptText: string, startTimeMs: number | undefined): string => {
     if (!startTimeMs) {
