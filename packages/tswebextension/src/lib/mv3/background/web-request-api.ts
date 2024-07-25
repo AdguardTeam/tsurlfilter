@@ -138,12 +138,6 @@ import browser, { type WebRequest, type WebNavigation } from 'webextension-polyf
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
-import {
-    BACKGROUND_TAB_ID,
-    FilteringEventType,
-    defaultFilteringLog,
-    getErrorMessage,
-} from '../../common';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -152,6 +146,9 @@ import { tabsApi } from '../tabs/tabs-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { DocumentApi } from './document-api';
 import { CosmeticApi } from './cosmetic-api';
+import { getErrorMessage } from '../../common/error';
+import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -172,7 +169,6 @@ export class WebRequestApi {
         RequestEvents.onResponseStarted.addListener(WebRequestApi.onResponseStarted);
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(WebRequestApi.onHeadersReceived);
-        RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
         RequestEvents.onErrorOccurred.addListener(WebRequestApi.onErrorOccurred);
 
         // browser.webNavigation Events
@@ -190,7 +186,6 @@ export class WebRequestApi {
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onErrorOccurred.removeListener(WebRequestApi.onErrorOccurred);
-        RequestEvents.onCompleted.removeListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
         browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
