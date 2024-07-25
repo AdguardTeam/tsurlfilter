@@ -2,11 +2,6 @@ import { type MatchingResult, NetworkRuleOption, RequestType } from '@adguard/ts
 import browser from 'webextension-polyfill';
 
 import { type CookieRule } from '../../common/content-script/cookie-controller';
-import {
-    getAssistantCreateRulePayloadValidator,
-    getCosmeticDataPayloadValidator,
-} from '../../common';
-import { isEmptySrcFrame, isHttpOrWsRequest } from '../../common/utils';
 import { logger } from '../../common/utils/logger';
 
 import { engineApi } from './engine-api';
@@ -22,6 +17,9 @@ import {
 import { Assistant } from './assistant';
 import { DocumentApi } from './document-api';
 import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { getAssistantCreateRulePayloadValidator, getCosmeticDataPayloadValidator } from '../../common/message';
+import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { isHttpOrWsRequest } from '../../common/utils/url';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
