@@ -3,8 +3,9 @@ import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
-import { type AppInterface, defaultFilteringLog } from '../../common';
-import { getErrorMessage } from '../../common';
+import { defaultFilteringLog } from '../../common/filtering-log';
+import { type AppInterface } from '../../common/app';
+import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 

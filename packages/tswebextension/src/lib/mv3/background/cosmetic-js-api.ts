@@ -1,7 +1,7 @@
 import { CosmeticOption, type ScriptletData } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
-import { isHttpRequest } from '../../common/utils';
+import { isHttpRequest } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 
 import { engineApi } from './engine-api';

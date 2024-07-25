@@ -15,6 +15,13 @@ import {
     UnavailableRuleSetSourceError,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 
+export {
+    getRuleSourceIndex,
+    getRuleSourceText,
+    type PreprocessedFilterList,
+    FilterListPreprocessor,
+} from '@adguard/tsurlfilter';
+
 export * from './app';
 
 export { USER_FILTER_ID } from './user-rules-api';
@@ -35,6 +42,7 @@ export {
 } from '../../common/utils/url';
 export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
 export { type Message } from '../../common/message';
+export { StealthActions } from '../../common/stealth-actions';
 export { EventChannel, type EventChannelListener } from '../../common/utils/channels';
 export {
     defaultFilteringLog,
@@ -52,6 +60,8 @@ export {
     type ReplaceRuleApplyEvent,
     type StealthActionEvent,
     type CspReportBlockedEvent,
+    type StealthAllowlistActionEvent,
+    type ApplyPermissionsRuleEvent,
 } from '../../common/filtering-log';
 export { BACKGROUND_TAB_ID } from '../../common/constants';
 export { ContentType } from '../../common/request-type';
@@ -59,7 +69,7 @@ export type { RequestData } from './request/events/request-event';
 export type { MessagesHandlerMV3 } from './messages-api';
 
 // re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
-export {
+export type {
     NetworkRule,
     CosmeticRule,
     CosmeticRuleType,

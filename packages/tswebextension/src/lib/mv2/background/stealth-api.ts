@@ -8,7 +8,7 @@ import {
     FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 
-import { StealthActions, StealthService } from './services/stealth-service';
+import { StealthService } from './services/stealth-service';
 import { type RequestContext } from './request';
 import {
     type FilteringLogInterface,
@@ -17,6 +17,7 @@ import {
     logger,
     getErrorMessage,
 } from '../../common';
+import { StealthActions } from '../../common/stealth-actions';
 import { appContext, type AppContext } from './context';
 
 /**
