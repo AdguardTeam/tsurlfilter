@@ -26,7 +26,7 @@ import { logger } from '../../common/utils/logger';
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
-import { getHost, isHttpOrWsRequest } from '../../common/utils/url';
+import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -251,10 +251,9 @@ export class EngineApi {
      * @returns Cosmetic result.
      */
     public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
-        // FIXME
-        // if (!this.engine || !this.isFilteringEnabled || !isHttpRequest(matchQuery.frameUrl)) {
-        //     return new CosmeticResult();
-        // }
+        if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
+            return new CosmeticResult();
+        }
 
         const matchingResult = this.matchRequest(matchQuery);
 

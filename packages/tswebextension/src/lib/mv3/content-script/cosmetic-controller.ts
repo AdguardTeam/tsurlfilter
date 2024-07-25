@@ -11,7 +11,6 @@ import { sendAppMessage } from '../../common/content-script/send-app-message';
 // TODO: Move to shared 'messages' module, when it will be implemented
 import type { ContentScriptCosmeticData } from '../background/cosmetic-api';
 
-// FIXME CosmeticController can be moved to common, except for collapser
 /**
  * This class applies cosmetic rules in page context.
  */
