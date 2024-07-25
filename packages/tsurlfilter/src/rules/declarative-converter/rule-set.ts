@@ -345,14 +345,10 @@ export class RuleSet implements IRuleSet {
             this.initialized = true;
         };
 
-        this.initializerPromise = new Promise((resolve, reject) => {
-            initialize()
-                .then(() => {
-                    resolve();
-                    this.initializerPromise = undefined;
-                })
-                .catch((e) => reject(e));
+        this.initializerPromise = initialize().then(() => {
+            this.initializerPromise = undefined;
         });
+        await this.initializerPromise;
     }
 
     /** @inheritdoc */
