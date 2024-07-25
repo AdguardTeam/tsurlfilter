@@ -51,8 +51,8 @@ export default class UserRulesApi {
      * @param allowlistRule String with combined allowlist rules in AG format
      * (e.g. '@@$document,domain=example.com|example.org').
      * @param customFilters List of custom filters.
-     * @param staticRuleSets List of static rule sets to apply $badfilter rules
-     * from dynamic rules to static.
+     * @param staticRuleSets List of enabled static rule sets to apply
+     * $badfilter rules from dynamic rules to static.
      * @param resourcesPath String path to web accessible resources,
      * relative to the extension root dir. Should start with leading slash '/'.
      *
@@ -89,6 +89,7 @@ export default class UserRulesApi {
         const converter = new DeclarativeFilterConverter();
         const conversionResult = await converter.convertDynamicRuleSets(
             filterList,
+            // TODO: (AG-34651) Pass only enabled rulesets
             staticRuleSets,
             {
                 resourcesPath,
@@ -112,6 +113,10 @@ export default class UserRulesApi {
             // Apply $badfilter rules from dynamic filters.
             await this.applyBadFilterRules(declarativeRulesToCancel);
         } else {
+            // TODO: (AG-34651) Check, if filter_1 has been enabled and we disable some
+            // rules there - should we enable them back before disable filter?
+            // Because in other case, when we will re-enable filter - maybe it
+            // will contains already disabled rules?
             // Undoes all previously applied changes.
             await this.cancelAllStaticRulesUpdates(staticRuleSets);
         }
