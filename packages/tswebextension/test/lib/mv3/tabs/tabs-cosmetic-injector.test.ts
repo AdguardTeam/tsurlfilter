@@ -1,6 +1,6 @@
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
-import { CosmeticJsApi } from '../../../../src/lib/mv3/background/cosmetic-js-api';
+import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
 
@@ -8,7 +8,7 @@ jest.mock('@lib/mv3/background/engine-api');
 
 describe('TabsCosmeticInjector', () => {
     beforeEach(() => {
-        jest.spyOn(CosmeticJsApi, 'getAndExecuteScripts');
+        jest.spyOn(CosmeticApi, 'getAndExecuteScripts');
     });
 
     afterEach(() => {
@@ -49,7 +49,7 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticJsApi.getAndExecuteScripts).toBeCalledWith(tabId, url);
+            expect(CosmeticApi.getAndExecuteScripts).toBeCalledWith(tabId, frameId, url);
             // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
             // expect(CosmeticApi.applyCssByTabAndFrame).toBeCalledWith(frameId, tabId);
             // expect(CosmeticApi.applyJsByRequest).toBeCalledWith(frameId, tabId);
@@ -63,7 +63,7 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticJsApi.getAndExecuteScripts).not.toBeCalled();
+            expect(CosmeticApi.getAndExecuteScripts).not.toBeCalled();
             // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
             // expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
             // expect(CosmeticApi.applyJsByRequest).not.toBeCalled();
@@ -80,7 +80,7 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticJsApi.getAndExecuteScripts).not.toBeCalled();
+            expect(CosmeticApi.getAndExecuteScripts).not.toBeCalled();
 
             // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
             // expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();

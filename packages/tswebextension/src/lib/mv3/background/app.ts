@@ -122,7 +122,6 @@ export class TsWebExtension implements AppInterface<
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[tswebextension.innerStart]: start');
 
-        // FIXME use this for scripts
         if (!appContext.startTimeMs) {
             appContext.startTimeMs = Date.now();
         }
@@ -239,9 +238,7 @@ export class TsWebExtension implements AppInterface<
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
         // Update log level before first log message.
-        // FIXME uncomment
-        // TsWebExtension.updateLogLevel(config.logLevel);
-        TsWebExtension.updateLogLevel(LogLevel.Info); // FIXME remove
+        TsWebExtension.updateLogLevel(config.logLevel);
 
         logger.debug('[tswebextension.configure]: start with ', config);
 

@@ -9,6 +9,7 @@ import { isHttpOrWsRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
 import { CosmeticJsApi } from '../background/cosmetic-js-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { CosmeticApi } from '../background/cosmetic-api';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -83,8 +84,7 @@ export class TabsCosmeticInjector {
 
             frame.cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
 
-            // TODO: Should be moved to CosmeticApi
-            CosmeticJsApi.getAndExecuteScripts(tabId, frameUrl);
+            CosmeticApi.getAndExecuteScripts(tabId, frameId, frameUrl);
 
             // const { cosmeticResult } = frame;
 

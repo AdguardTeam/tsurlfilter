@@ -1,4 +1,5 @@
 import {
+    CosmeticOption,
     type CosmeticResult,
     type CosmeticRule,
 } from '@adguard/tsurlfilter';
@@ -6,7 +7,6 @@ import {
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
-// FIXME copy to common
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
@@ -14,6 +14,7 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
 import { ScriptingApi } from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
+import { isHttpRequest } from '../../common/utils/url';
 
 /**
  * Parameters for applying css rules.
@@ -86,7 +87,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns Css styles as string, or `undefined` if no styles found.
      */
     public static getCssText(cosmeticResult: CosmeticResult): string | undefined {
-        // FIXME uncomment
+        // FIXME this will be needed for css hits counter
         // const { configuration } = appContext;
         //
         // const collectingCosmeticRulesHits = configuration?.settings.collectStats || false;
@@ -219,9 +220,10 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        // FIXME bring back concept of appContext
-        // const { isAppStarted, configuration } = appContext;
-        const isAppStarted = true;
+        const { isAppStarted } = appContext;
+
+        // FIXME uncomment for css hits stats
+        // const { configuration } = appContext;
         // const areHitsStatsCollected = configuration?.settings.collectStats || false;
         const areHitsStatsCollected = false;
 
@@ -234,8 +236,6 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        // FIXME remove ts-ignore
-        // @ts-ignore
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
         const cosmeticResult = engineApi.matchCosmetic(matchQuery);
@@ -261,15 +261,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Applies js rules to specific frame.
-     *
-     * @param params Data for js rule injecting.
-     */
-    public static async applyJsRules(params: ExecuteScriptParams): Promise<void> {
-        await ScriptingApi.executeScript(params); // FIXME get rid of this function
-    }
-
-    /**
      * Injects js to specified frame based on provided data and injection FSM state.
      *
      * @param requestId Request id.
@@ -278,7 +269,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const requestContext = requestContextStorage.get(requestId);
         if (requestContext?.scriptText) {
             try {
-                await CosmeticApi.applyJsRules({
+                await ScriptingApi.executeScript({
                     tabId: requestContext.tabId,
                     frameId: requestContext.frameId,
                     scriptText: requestContext.scriptText,
@@ -299,7 +290,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
         if (requestContext?.scriptText) {
             try {
-                await CosmeticApi.applyJsRules({
+                await ScriptingApi.executeScript({
                     tabId,
                     frameId,
                     scriptText: requestContext.scriptText,
@@ -328,6 +319,46 @@ export class CosmeticApi extends CosmeticApiCommon {
             } catch (e) {
                 logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
             }
+        }
+    }
+
+    /**
+     * Get scripts and executing them.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param url Page URL.
+     */
+    public static async getAndExecuteScripts(
+        tabId: number,
+        frameId: number,
+        url: string,
+    ): Promise<void> {
+        /**
+         * The url from the details have http even on the new tab page.
+         */
+        const NEW_TAB_PAGE = 'new-tab-page';
+
+        /**
+         * In the case when the frame does not have a source, we use the url of the main frame.
+         */
+        if (!isHttpRequest(url)) {
+            url = tabsApi.getMainFrameUrl(tabId) || '';
+        }
+
+        if (isHttpRequest(url) && !url.includes(NEW_TAB_PAGE)) {
+            // TODO: Extract cosmetic option from matching result (AG-24586)
+            const scriptText = engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
+            let executeScriptPromise = Promise.resolve();
+            if (scriptText) {
+                executeScriptPromise = ScriptingApi.executeScript({
+                    scriptText,
+                    tabId,
+                    frameId,
+                });
+            }
+
+            await Promise.all([executeScriptPromise]);
         }
     }
 

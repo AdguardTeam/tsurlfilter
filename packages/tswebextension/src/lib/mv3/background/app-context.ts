@@ -23,7 +23,7 @@ export class AppContext {
     accessor isAppStarted!: boolean;
 
     /**
-     * MV2 ConfigurationMV2 excludes heavyweight fields with rules.
+     * MV3 ConfigurationMV3 excludes heavyweight fields with rules.
      */
     @sessionDecorator(SessionStorageKey.Configuration)
     accessor configuration: ConfigurationMV3Context | undefined;
