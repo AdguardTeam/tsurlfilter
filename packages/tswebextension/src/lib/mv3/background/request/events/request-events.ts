@@ -3,8 +3,10 @@ import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
-import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
 import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
+import { getRequestType } from '../../../../common/request-type';
+import { MAIN_FRAME_ID } from '../../../../common/constants';
+import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -131,10 +133,6 @@ export class RequestEvents {
     private static handleOnResponseStarted(
         details: WebRequest.OnResponseStartedDetailsType,
     ): RequestData<WebRequest.OnResponseStartedDetailsType> {
-        if (details.url.includes('ameshkov.w3spaces.com')) {
-            console.log('handleOnResponseStarted', details);
-        }
-
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -154,10 +152,6 @@ export class RequestEvents {
     private static handleOnBeforeRequest(
         details: OnBeforeRequestDetailsType,
     ): RequestData<OnBeforeRequestDetailsType> {
-        if (details.url.includes('ameshkov.w3spaces.com')) {
-            console.log('handleOnBeforeRequest', details);
-        }
-
         const {
             requestId,
             type,
@@ -194,7 +188,7 @@ export class RequestEvents {
         const isDocumentRequest = requestType === RequestType.Document;
 
         // Pre-rendered documents can have a frame ID other than zero
-        frameId = isDocumentRequest ? MAIN_FRAME_ID : details.frameId;
+        frameId = isDocumentRequest ? MAIN_FRAME_ID : frameId;
 
         let requestFrameId = isDocumentRequest ? frameId : parentFrameId;
 
@@ -253,9 +247,6 @@ export class RequestEvents {
     private static handleOnBeforeSendHeaders(
         details: WebRequest.OnBeforeSendHeadersDetailsType,
     ): RequestData<WebRequest.OnBeforeSendHeadersDetailsType> {
-        if (details.url.includes('ameshkov.w3spaces.com')) {
-            console.log('handleOnBeforeSendHeaders', details);
-        }
         const { requestId, timeStamp, requestHeaders } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -276,9 +267,6 @@ export class RequestEvents {
     private static handleOnHeadersReceived(
         details: WebRequest.OnHeadersReceivedDetailsType,
     ): RequestData<WebRequest.OnHeadersReceivedDetailsType> {
-        if (details.url.includes('ameshkov.w3spaces.com')) {
-            console.log('handleOnHeadersReceived', details);
-        }
         const {
             requestId,
             responseHeaders,
@@ -301,9 +289,6 @@ export class RequestEvents {
     private static handleOnCompleted(
         details: WebRequest.OnCompletedDetailsType,
     ): RequestData<WebRequest.OnCompletedDetailsType> {
-        if (details.url.includes('ameshkov.w3spaces.com')) {
-            console.log('handleOnCompleted', details);
-        }
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
@@ -323,9 +308,6 @@ export class RequestEvents {
     private static handleOnErrorOccurred(
         details: WebRequest.OnErrorOccurredDetailsType,
     ): RequestData<WebRequest.OnErrorOccurredDetailsType> {
-        if (details.url.includes('ameshkov.w3spaces.com')) {
-            console.log('handleOnErrorOccurred', details);
-        }
         const { requestId, timeStamp } = details;
 
         const context = requestContextStorage.update(requestId, {
