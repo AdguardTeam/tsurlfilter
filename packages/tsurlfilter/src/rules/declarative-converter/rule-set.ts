@@ -346,7 +346,12 @@ export class RuleSet implements IRuleSet {
         };
 
         this.initializerPromise = new Promise((resolve, reject) => {
-            initialize().then(resolve).catch((e) => reject(e));
+            initialize()
+                .then(() => {
+                    resolve();
+                    this.initializerPromise = undefined;
+                })
+                .catch((e) => reject(e));
         });
     }
 
