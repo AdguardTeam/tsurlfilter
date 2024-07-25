@@ -5,7 +5,6 @@ import { requestContextStorage, RequestContextState } from '../request-context-s
 import { RequestEvent, type RequestData } from './request-event';
 import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
 import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
-import { MAIN_FRAME_ID } from '../../../tabs/frame';
 
 const MAX_URL_LENGTH = 1024 * 16;
 

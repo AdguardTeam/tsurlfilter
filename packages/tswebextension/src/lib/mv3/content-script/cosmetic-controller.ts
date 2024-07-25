@@ -137,7 +137,8 @@ export class CosmeticController {
      */
     private static createCssHitsCounter(): CssHitsCounter {
         return new CssHitsCounter((stats) => {
-            // FIXME add this message handling
+            // TODO add this message handling, when logging will be added
+            // eslint-disable-next-line no-console
             console.log(stats);
             // sendAppMessage({
             //     type: MessageType.SaveCssHitsStats,

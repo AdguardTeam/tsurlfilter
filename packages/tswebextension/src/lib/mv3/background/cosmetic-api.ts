@@ -7,12 +7,11 @@ import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
 // FIXME copy to common
-import { createFrameMatchQuery } from '../../mv2/background/utils/create-frame-match-query';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
-import type { ContentType } from '../../common/request-type';
 import { ScriptingApi } from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
 
@@ -26,14 +25,6 @@ export type ApplyScriptRulesParams = {
     tabId: number,
     frameId: number,
     scriptText: string,
-};
-
-export type LogJsRulesParams = {
-    tabId: number,
-    cosmeticResult: CosmeticResult,
-    url: string,
-    contentType: ContentType,
-    timestamp: number,
 };
 
 export type ContentScriptCosmeticData = {

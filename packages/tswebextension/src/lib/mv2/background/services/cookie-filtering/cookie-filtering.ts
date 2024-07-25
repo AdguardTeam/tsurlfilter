@@ -15,7 +15,7 @@ import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-co
 import CookieUtils from './utils';
 import { type RequestContext, requestContextStorage } from '../../request';
 import { engineApi, tabsApi } from '../../api';
-import { createFrameMatchQuery } from '../../utils/create-frame-match-query';
+import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
 
 /**
  * Cookie filtering.

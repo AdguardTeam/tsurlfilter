@@ -11,7 +11,7 @@ import {
     defaultFilteringLog,
     FilteringEventType,
 } from '../../../../common';
-import { MAIN_FRAME_ID, type TabFrameRequestContext } from '../../tabs';
+import { type TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
 import { isFirefox } from '../../utils';
 import CookieUtils from '../../services/cookie-filtering/utils';

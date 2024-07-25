@@ -26,15 +26,12 @@ export class CosmeticJsApi {
      * @param tabId Tab id.
      */
     public static async executeScript(scripts: string, tabId: number): Promise<void> {
-        // FIXME compare speed of injection between content script and executeScript
-        // FIXME check if this executes sync by default
         const functionToInject = (script: string): void => {
             const scriptTag = document.createElement('script');
             scriptTag.setAttribute('type', 'text/javascript');
             scriptTag.textContent = script;
 
             const parent = document.head || document.documentElement;
-            console.log('append');
             parent.appendChild(scriptTag);
 
             if (scriptTag.parentNode) {

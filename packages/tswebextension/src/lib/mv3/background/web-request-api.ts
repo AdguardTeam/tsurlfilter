@@ -3,7 +3,7 @@
  * API for applying rules from background service
  * by handling web Request API and web navigation events.
  *
- * TODO: Update description of flow.
+ * FIXME: Update description of flow for MV3.
  *
  * This scheme describes flow for MV3.
  *
@@ -149,7 +149,6 @@ import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
-import { MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
 import { DocumentApi } from './document-api';
 import { CosmeticApi } from './cosmetic-api';
@@ -392,34 +391,7 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
-        // FIXME probably should be removed after successful inject
-        // Do not remove request context immediately to allow retry inject
-        // if it could not inject on ResponseStarted
-        // setTimeout(() => {
-        //     requestContextStorage.delete(details.requestId);
-        // }, 3000);
-    }
-
-    /**
-     * This is handler for the last event from the request lifecycle.
-     *
-     * @param event On completed event.
-     * @param event.context Request context.
-     * @private
-     */
-    private static onCompleted({
-        context,
-    }: RequestData<WebRequest.OnCompletedDetailsType>): void {
-        if (!context) {
-            return;
-        }
-
-        // FIXME probably should be removed after successful inject
-        // Do not remove request context immediately to allow retry inject
-        // if it could not inject on ResponseStarted
-        // setTimeout(() => {
-        //     requestContextStorage.delete(context.requestId);
-        // }, 3000);
+        requestContextStorage.delete(details.requestId);
     }
 
     /**

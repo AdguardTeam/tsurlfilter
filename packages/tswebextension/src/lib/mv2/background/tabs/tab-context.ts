@@ -3,7 +3,7 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 import type { Tabs } from 'webextension-polyfill';
 
-import { Frame, MAIN_FRAME_ID } from './frame';
+import { Frame } from './frame';
 import type { DocumentApi } from '../document-api';
 import {
     type FilteringLog,
