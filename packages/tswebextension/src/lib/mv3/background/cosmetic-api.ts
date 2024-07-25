@@ -67,6 +67,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param cssText Css text.
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @returns Promise.
      */
     public static async injectCss(cssText: string, tabId: number, frameId = 0): Promise<void> {
         return ScriptingApi.insertCss(cssText, tabId, frameId);
