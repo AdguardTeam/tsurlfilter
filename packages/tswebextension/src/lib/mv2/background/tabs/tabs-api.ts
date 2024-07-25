@@ -516,7 +516,6 @@ export class TabsApi {
             matchAboutBlank: true,
         };
 
-        console.log(`${new Date().getTime()} before executeScript`);
         await browser.tabs.executeScript(tabId, injectDetails);
     }
 
@@ -536,7 +535,6 @@ export class TabsApi {
             cssOrigin: 'user',
         };
 
-        console.log(`${new Date().getTime()} before insertCSS`);
         await browser.tabs.insertCSS(tabId, injectDetails);
     }
 }
