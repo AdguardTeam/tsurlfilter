@@ -16,10 +16,10 @@ import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filter
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import {
     engineApi,
-    RequestContext,
+    type RequestContext,
     RequestContextState,
     requestContextStorage,
-    tabsApi
+    tabsApi,
 } from '../../../../../../src/lib';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';

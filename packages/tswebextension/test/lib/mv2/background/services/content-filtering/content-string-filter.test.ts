@@ -6,7 +6,7 @@ import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/ru
 import { RequestContextState } from '../../../../../../src/lib';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import {
-    ContentStringFilter
+    ContentStringFilter,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
 import { defaultFilteringLog } from '../../../../../../src/lib/common/filtering-log';
 

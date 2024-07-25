@@ -2,7 +2,7 @@ import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
-import { EngineApi, MatchQuery } from '../../../../src/lib/mv2/background/engine-api';
+import { EngineApi, type MatchQuery } from '../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 

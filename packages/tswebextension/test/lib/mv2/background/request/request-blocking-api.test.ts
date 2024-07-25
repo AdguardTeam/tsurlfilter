@@ -5,9 +5,9 @@ import { ContentType } from '../../../../../src/lib/common/request-type';
 import {
     documentBlockingService,
     engineApi,
-    GetBlockingResponseParams,
+    type GetBlockingResponseParams,
     RequestBlockingApi,
-    tabsApi
+    tabsApi,
 } from '../../../../../src/lib';
 
 jest.mock('@lib/mv2/background/api');

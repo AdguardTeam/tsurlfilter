@@ -9,11 +9,11 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
-import { RequestContext, RequestContextState } from '../../../../../../src/lib';
+import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 import {
-    ContentFiltering
+    ContentFiltering,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-filtering';
 
 describe('Content filtering', () => {

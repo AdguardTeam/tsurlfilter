@@ -2,9 +2,15 @@ import type { Runtime } from 'webextension-polyfill';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { MockAppContext } from './mocks/mock-context';
-import { ConfigurationMV2, createTsWebExtension, engineApi, messagesApi, TsWebExtension } from '../../../../src/lib';
+import {
+    type ConfigurationMV2,
+    createTsWebExtension,
+    engineApi,
+    messagesApi,
+    TsWebExtension,
+} from '../../../../src/lib';
 import { Assistant } from '../../../../src/lib/mv2/background/assistant';
-import { Message } from '../../../../src/lib/common/message';
+import { type Message } from '../../../../src/lib/common/message';
 
 jest.mock('@lib/mv2/background/ext-session-storage');
 jest.mock('@lib/mv2/background/context', () => ({

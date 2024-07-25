@@ -1,7 +1,7 @@
 import { ZodError } from 'zod';
-import { LF } from '../../../../src/lib/common/constants';
-import { ConfigurationMV2, configurationMV2Validator } from '../../../../src/lib';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { LF } from '../../../../src/lib/common/constants';
+import { type ConfigurationMV2, configurationMV2Validator } from '../../../../src/lib';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {

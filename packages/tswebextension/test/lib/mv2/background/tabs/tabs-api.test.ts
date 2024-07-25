@@ -5,7 +5,13 @@ import type {
     MatchingResult,
     NetworkRule,
 } from '@adguard/tsurlfilter';
-import { Frame, TabContext, TabFrameRequestContext, TabInfo, TabsApi } from '../../../../../src/lib';
+import {
+    Frame,
+    TabContext,
+    type TabFrameRequestContext,
+    type TabInfo,
+    TabsApi,
+} from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';

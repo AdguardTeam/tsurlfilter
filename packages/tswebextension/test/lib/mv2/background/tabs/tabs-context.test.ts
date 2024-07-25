@@ -1,6 +1,6 @@
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { Frame, TabContext, TabInfo } from '../../../../../src/lib';
+import { Frame, TabContext, type TabInfo } from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../../src/lib/mv2/background/context';

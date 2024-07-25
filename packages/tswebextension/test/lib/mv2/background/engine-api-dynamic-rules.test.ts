@@ -2,7 +2,7 @@ import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/a
 
 import { extendConfig, type RecursivePartial } from '../../../helpers/config-extend';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { ConfigurationMV2 } from '../../../../src/lib';
+import { type ConfigurationMV2 } from '../../../../src/lib';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';

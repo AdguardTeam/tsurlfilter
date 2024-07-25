@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 import { appContext } from './app-context';
 import { type ExecuteScriptParams } from './cosmetic-api';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
