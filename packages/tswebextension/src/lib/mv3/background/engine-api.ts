@@ -7,8 +7,6 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    type ScriptletData,
-    type CosmeticRule,
     type NetworkRule,
     type MatchingResult,
     type HTTPMethod,
@@ -202,49 +200,6 @@ export class EngineApi {
     }
 
     /**
-     * Builds domain-specific JS injection for the specified page.
-     *
-     * @see http://adguard.com/en/filterrules.html#javascriptInjection
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns Javascript for the specified URL.
-     */
-    public getScriptsForUrl = (url: string, option: CosmeticOption): CosmeticRule[] => {
-        const cosmeticResult = this.getCosmeticResult(url, option);
-
-        return cosmeticResult.getScriptRules();
-    };
-
-    /**
-     * Returns scriptlets data by url.
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns List of {@link ScriptletData}.
-     */
-    public getScriptletsDataForUrl(url: string, option: CosmeticOption): ScriptletData[] {
-        const scriptRules = this.getScriptsForUrl(url, option);
-        const scriptletDataList: ScriptletData[] = [];
-        scriptRules.forEach((scriptRule) => {
-            if (!scriptRule.isScriptlet) {
-                return;
-            }
-
-            const scriptletData = scriptRule.getScriptletData();
-            if (!scriptletData) {
-                return;
-            }
-
-            scriptletDataList.push(scriptletData);
-        });
-
-        return scriptletDataList;
-    }
-
-    /**
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
@@ -292,44 +247,6 @@ export class EngineApi {
         );
 
         return this.engine.matchRequest(request, frameRule);
-    }
-
-    /**
-     * Builds the final output string for the specified page.
-     * Depending on the browser we either allow or forbid the new remote rules
-     * grep "localScriptRulesService" for details about script source.
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns Wrapped script in IIFE form to be applied or null if no scripts found.
-     */
-    public getScriptsStringForUrl(url: string, option: CosmeticOption): string | null {
-        const scriptRules = this.getScriptsForUrl(url, option);
-
-        // scriptlet rules would are handled separately
-        const scripts = scriptRules
-            .filter((rule) => !rule.isScriptlet)
-            .map((scriptRule) => scriptRule.getScript());
-
-        if (scripts.length === 0) {
-            return null;
-        }
-
-        // remove repeating scripts
-        const scriptsCode = [...new Set(scripts)].join('\r\n');
-
-        // TODO: Check call to filtering log
-
-        return `
-                (function () {
-                    try {
-                        ${scriptsCode}
-                    } catch (ex) {
-                        console.error('Error executing AG js: ' + ex);
-                    }
-                })();
-            `;
     }
 }
 

@@ -32,7 +32,7 @@ export class ScriptingApi {
      * @param params.cssText CSS text.
      * @returns Promise that resolves when the CSS is injected.
      */
-    public static async insertCss({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
+    public static async insertCSS({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
         if (tabId === BACKGROUND_TAB_ID) {
             return;
         }

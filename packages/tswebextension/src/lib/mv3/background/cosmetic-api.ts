@@ -279,7 +279,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         try {
-            await ScriptingApi.insertCss({
+            await ScriptingApi.insertCSS({
                 cssText: requestContext.cssText,
                 tabId,
                 frameId,
@@ -308,10 +308,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         }: ApplyCosmeticResultParams,
     ): Promise<void> {
         const scriptText = CosmeticApi.getScriptText(cosmeticResult, frameUrl);
+        console.log({ scriptText });
         const cssText = CosmeticApi.getCssText(cosmeticResult);
+        console.log({ cssText });
 
         if (cssText) {
-            ScriptingApi.insertCss({
+            ScriptingApi.insertCSS({
                 tabId,
                 frameId,
                 cssText,
