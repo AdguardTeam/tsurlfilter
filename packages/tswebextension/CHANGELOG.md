@@ -43,14 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Handling of internal urls (e.g `view-source:...`) [AdguardBrowserExtension#2549].
 - Blocked ads count leaking between websites [AdguardBrowserExtension#2080].
-- Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2549].
+- Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2552].
 
 [2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
 [AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
 [AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
-[AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
+[AdguardBrowserExtension#2552]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2552
 
 ## [1.0.30] - 2024-07-17
 
