@@ -227,16 +227,18 @@ export class CosmeticApi extends CosmeticApiCommon {
      */
     public static async applyJsByRequest(requestId: string): Promise<void> {
         const requestContext = requestContextStorage.get(requestId);
-        if (requestContext?.scriptText) {
-            try {
-                await ScriptingApi.executeScript({
-                    tabId: requestContext.tabId,
-                    frameId: requestContext.frameId,
-                    scriptText: requestContext.scriptText,
-                });
-            } catch (e) {
-                logger.debug('[applyJsByRequest] error occurred during injection', getErrorMessage(e));
-            }
+        if (!requestContext?.scriptText) {
+            return;
+        }
+
+        try {
+            await ScriptingApi.executeScript({
+                tabId: requestContext.tabId,
+                frameId: requestContext.frameId,
+                scriptText: requestContext.scriptText,
+            });
+        } catch (e) {
+            logger.debug('[applyJsByRequest] error occurred during injection', getErrorMessage(e));
         }
     }
 
@@ -249,16 +251,18 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
 
-        if (requestContext?.scriptText) {
-            try {
-                await ScriptingApi.executeScript({
-                    tabId,
-                    frameId,
-                    scriptText: requestContext.scriptText,
-                });
-            } catch (e) {
-                logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
-            }
+        if (!requestContext?.scriptText) {
+            return;
+        }
+
+        try {
+            await ScriptingApi.executeScript({
+                tabId,
+                frameId,
+                scriptText: requestContext.scriptText,
+            });
+        } catch (e) {
+            logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
     }
 
