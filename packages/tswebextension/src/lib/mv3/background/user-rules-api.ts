@@ -1,7 +1,7 @@
 import {
     DeclarativeFilterConverter,
-    type ConversionResult,
     type IFilter,
+    type ConversionResult,
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -38,17 +38,13 @@ export default class UserRulesApi {
      * limitations. @see {@link ConversionResult}.
      */
     public static async updateDynamicFiltering(
-        userRules: Uint8Array[],
+        userRules: IFilter,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
-            // FIXME (David, v2.3): Change declarative converter to AST-based
-            // new Filter(
-            //     USER_FILTER_ID,
-            //     { getContent: () => Promise.resolve(userRules) },
-            // ),
+            userRules,
             ...customFilters,
         ];
 

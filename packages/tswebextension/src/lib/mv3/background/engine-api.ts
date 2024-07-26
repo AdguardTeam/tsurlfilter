@@ -75,29 +75,40 @@ export class EngineApi {
 
         const lists: IRuleList[] = [];
 
-        // FIXME (David, v2.3): Make declarative converter AST-based
-        // Wrap IFilter to IRuleList
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const tasks = filters.map(async (filter) => {
-            // const content = await filter.getContent();
-            // lists.push(new BufferRuleList(filter.getId(), content));
-        });
+        for (let i = 0; i < filters.length; i += 1) {
+            try {
+                const filter = filters[i];
+                // eslint-disable-next-line no-await-in-loop
+                const content = await filter.getContent();
 
-        try {
-            await Promise.all(tasks);
-        } catch (e) {
-            const filterListIds = filters.map((f) => f.getId());
-
-            // eslint-disable-next-line max-len
-            logger.error(`Cannot create IRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
-
-            // Do not return value here because we can try to convert at least user rules.
+                lists.push(
+                    new BufferRuleList(
+                        filter.getId(),
+                        content.filterList,
+                        false,
+                        false,
+                        false,
+                        content.sourceMap,
+                    ),
+                );
+            } catch (e) {
+                const filterId = filters[i].getId();
+                logger.error(`Cannot create IRuleList for filter ${filterId} due to: ${getErrorMessage(e)}`);
+            }
         }
 
-        // Wrap user rules to IRuleList
         if (userrules.content.length > 0) {
             // Note: rules are already converted at the extension side
-            lists.push(new BufferRuleList(USER_FILTER_ID, userrules.content));
+            lists.push(
+                new BufferRuleList(
+                    USER_FILTER_ID,
+                    userrules.content,
+                    false,
+                    false,
+                    false,
+                    userrules.sourceMap,
+                ),
+            );
         }
 
         const ruleStorage = new RuleStorage(lists);

@@ -3,6 +3,7 @@ import {
     Configuration,
     CommonMessageType,
 } from '@adguard/tswebextension/mv3';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
@@ -39,7 +40,7 @@ interface IMessageInner {
 export type ConfigResponse = {
     status: boolean,
     filters: number[],
-    rules: string[],
+    rules: string,
 };
 
 let config: Configuration;
@@ -51,23 +52,16 @@ let initializingPromise: Promise<void> | undefined;
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
 const messageHandler = async (message: IMessage) => {
-    // FIXME: Handle Uint8Array[] later
-    const userrules = config.userrules.content;
-
-    if (!userrules) {
-        config.userrules = {
-            content: [],
-        };
-    }
-
     const { type, data } = message;
     switch (type) {
         case Message.GetConfig: {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                // FIXME (David): Handle this
-                rules: [],
+                rules: FilterListPreprocessor.getOriginalFilterListText({
+                    rawFilterList: config.userrules.rawFilterList,
+                    conversionMap: config.userrules.conversionMap,
+                }),
             };
 
             return res;
@@ -108,9 +102,13 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
+            const preprocessed = FilterListPreprocessor.preprocess(data as string);
+
             config.userrules = {
-                // FIXME (David): Handle this
-                content: [],
+                rawFilterList: preprocessed.rawFilterList,
+                conversionMap: preprocessed.conversionMap,
+                content: preprocessed.filterList,
+                sourceMap: preprocessed.sourceMap,
             };
 
             await tsWebExtension.configure(config);

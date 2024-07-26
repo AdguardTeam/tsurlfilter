@@ -1,25 +1,40 @@
+import { RuleParser } from '@adguard/agtree';
+
 import {
     Filter,
+    type IFilter,
     IndexedNetworkRuleWithHash,
     RuleSet,
     type RuleSetContentProvider,
     RulesHashMap,
     SourceMap,
 } from '../../../src/rules/declarative-converter';
-import { NetworkRulesScanner } from '../../../src/rules/declarative-converter/network-rules-scanner';
+// eslint-disable-next-line import-newlines/enforce
+import {
+    NetworkRulesScanner,
+    type ScannedFilter,
+} from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
+import { FilterListPreprocessor } from '../../../src';
 
 const createFilter = (
     rules: string[],
     filterId: number = 0,
-) => {
-    return new Filter(
-        filterId,
-        { getContent: async () => rules },
-    );
+): IFilter => {
+    return new Filter(filterId, {
+        getContent: async () => FilterListPreprocessor.preprocess(rules.join('\n')),
+    });
 };
 
 describe('RuleSet', () => {
+    const createScannedFilter = async (content: string[], filterId = 0): Promise<ScannedFilter[]> => {
+        const filter = createFilter(content, filterId);
+
+        const { filters } = await NetworkRulesScanner.scanRules([filter]);
+
+        return filters;
+    };
+
     const createRuleSet = async (content: string[], filterId = 0): Promise<RuleSet> => {
         const filter = createFilter(content, filterId);
 
@@ -87,6 +102,8 @@ describe('RuleSet', () => {
         const sourceRuleIndex = 2;
         const filterId = 99;
 
+        const [scannedFilter] = await createScannedFilter(content, filterId);
+
         const ruleSet = await createRuleSet(content, filterId);
 
         expect(ruleSet.getRulesCount()).toStrictEqual(1);
@@ -96,7 +113,7 @@ describe('RuleSet', () => {
         expect(originalRules[0].sourceRule).toStrictEqual(content[sourceRuleIndex]);
 
         const declarativeRulesIds = await ruleSet.getDeclarativeRulesIdsBySourceRuleIndex({
-            sourceRuleIndex,
+            sourceRuleIndex: scannedFilter.rules[0]?.index,
             filterId,
         });
         expect(declarativeRulesIds[0]).toStrictEqual(declarativeRule.id);
@@ -112,6 +129,9 @@ describe('RuleSet', () => {
         const filterId = 99;
 
         const originalFilter = createFilter(content, filterId);
+
+        const [scannedFilter] = await createScannedFilter(content, filterId);
+        const badFilterRuleIndex = scannedFilter.rules[2].index;
 
         const ruleSet = await createRuleSet(content, filterId);
 
@@ -142,7 +162,13 @@ describe('RuleSet', () => {
         const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
         const ruleSetHashMap = new RulesHashMap(sources);
         const badFilterRules = badFilterRulesRaw
-            .map((rawString) => IndexedNetworkRuleWithHash.createFromRawString(filterId, 3, rawString))
+            .map(
+                (rawString) => IndexedNetworkRuleWithHash.createFromNode(
+                    filterId,
+                    badFilterRuleIndex,
+                    RuleParser.parse(rawString),
+                ),
+            )
             .flat();
 
         const deserializedRuleSet = new RuleSet(
@@ -168,7 +194,7 @@ describe('RuleSet', () => {
 
         // check source map works
         const [dRuleId] = await deserializedRuleSet.getDeclarativeRulesIdsBySourceRuleIndex({
-            sourceRuleIndex: 2,
+            sourceRuleIndex: scannedFilter.rules[1]?.index,
             filterId,
         });
         expect(d2.find((d) => d.id === dRuleId)).toStrictEqual(d1[1]);
