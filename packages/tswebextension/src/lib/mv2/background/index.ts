@@ -14,7 +14,7 @@ export {
     RuleCategorizer,
 } from '@adguard/tsurlfilter';
 
-// Re-export needed to print the library version in extension popup.
+// Re-export needed to print the library version on the extension About page.
 // NOTE: Do not export anything from extended-css in MV3 environment to prevent
 // environment runtime errors, like call window.console, which is not available
 // in the service worker in MV3.
