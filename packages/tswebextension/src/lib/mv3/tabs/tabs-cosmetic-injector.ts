@@ -91,6 +91,7 @@ export class TabsCosmeticInjector {
                 frameUrl,
             });
 
+            // FIXME enable logging script rules
             // CosmeticApi.logScriptRules({
             //     url: frameUrl,
             //     tabId,
