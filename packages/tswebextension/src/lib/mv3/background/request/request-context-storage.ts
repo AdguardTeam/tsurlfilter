@@ -158,6 +158,20 @@ export class RequestContextStorage {
     }
 
     /**
+     * Removes request context from the map by tab id and frame id.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public deleteByTabAndFrame(tabId: number, frameId: number): void {
+        const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
+        const requestId = this.tabAndFrameMap.get(tabAndFrameKey);
+        if (requestId) {
+            this.requestMap.delete(requestId);
+            this.tabAndFrameMap.delete(tabAndFrameKey);
+        }
+    }
+
+    /**
      * Clears all request context data.
      */
     public clear(): void {

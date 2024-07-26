@@ -146,6 +146,7 @@ import { CosmeticApi } from './cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { logger } from '../../common/utils/logger';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -426,7 +427,11 @@ export class WebRequestApi {
 
         // Note: this is async function, but we will not await it because
         // events do not support async listeners.
-        CosmeticApi.applyJsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyCssByTabAndFrame(tabId, frameId);
+        Promise.all([
+            CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+        ]).then(() => {
+            requestContextStorage.deleteByTabAndFrame(tabId, frameId)
+        }).catch(e => logger.error(e));
     }
 }
