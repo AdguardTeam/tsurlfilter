@@ -3,18 +3,15 @@
  * API for applying rules from background service
  * by handling web Request API and web navigation events.
  *
- * FIXME: Update description of flow for MV3.
- *
  * This scheme describes flow for MV3.
  *
  * Event data is aggregated into two contexts: {@link RequestContext},
  * which contains data about the specified request
  * and {@link TabContext} which contains data about the specified tab.
  *
- *
  * Applying {@link NetworkRule} from the background page:
  *
- * The {@link MatchingResult} of specified request is calculated and stored in context storages,
+ * The cssText and scriptText for specified request are calculated and stored in context storages,
  * at the time {@link RequestEvents.onBeforeRequest} is processed.
  *
  * At {@link RequestEvents.onBeforeSendHeaders}, the request headers will be parsed to apply $cookie rules
@@ -22,7 +19,7 @@
  * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way.
  *
  * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
- * on {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred} events.
+ * on {@link WebNavigation.onCommitted} after injection or {@link RequestEvents.onErrorOccurred} events.
  *
  *
  * Web Request API Event Handling:
@@ -72,13 +69,13 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Remove the request information        │                             │
- * from {@link requestContextStorage}.   │         onCompleted         │
+ *                                       │                             │
+ *                                       │         onCompleted         │
  *                                       │                             │
  *                                       └─────────────────────────────┘.
  *
  *                                       ┌─────────────────────────────┐
- * Remove the request information        │                             │
+ * Removes the request information       │                             │
  * from {@link requestContextStorage}.   │       onErrorOccurred       │
  *                                       │                             │
  *                                       └─────────────────────────────┘.
@@ -98,11 +95,11 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Try injecting JS rules                │                             │
+ * Try injecting js and css              │                             │
  * into the frame with source            │         onCommitted         │
  * based on {@link CosmeticRule}.        │                             │
- *                                       └──────────────┬──────────────┘
- *                                                      │
+ * and remove data from the              └──────────────┬──────────────┘
+ * {@link RequestContextStorage}                        │
  *                                       ┌──────────────▼──────────────┐
  *                                       │                             │
  *                                       │      onDOMContentLoaded     ├─┐
@@ -156,7 +153,7 @@ const FRAME_DELETION_TIMEOUT = 3000;
  * API for applying rules from background service by handling
  * Web Request API and web navigation events.
  *
- * TODO: Calculate  matchingResult and cosmeticResult save them to the cache
+ * Calculates matchingResult and cosmeticResult and saves them to the cache
  * related to pair tabId+documentId to save execution time of future requests
  * cosmetic rules from content-script.
  */
@@ -165,6 +162,7 @@ export class WebRequestApi {
      * Adds listeners to web request events.
      */
     public static start(): void {
+        // browser.webRequest Events
         RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeRequest);
         RequestEvents.onResponseStarted.addListener(WebRequestApi.onResponseStarted);
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
@@ -182,6 +180,7 @@ export class WebRequestApi {
      * Removes web request event handlers.
      */
     public static stop(): void {
+        // browser.webRequest Events
         RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeRequest);
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
