@@ -10,16 +10,18 @@ import { DeclarativeRulesConverter } from '../../../src/rules/declarative-conver
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 import { createNetworkRule } from '../../helpers/rule-creator';
+import { FilterListPreprocessor } from '../../../src';
+import { Filter } from '../../../src/rules/declarative-converter';
 
 const createFilter = async (
     filterId: number,
     lines: string[],
 ): Promise<ScannedFilter> => {
-    const scanner = await FilterScanner.createNew({
-        getId: () => filterId,
-        getContent: async () => lines,
-        getRuleByIndex: async (index) => lines[index],
-    });
+    const scanner = await FilterScanner.createNew(
+        new Filter(filterId, {
+            getContent: async () => FilterListPreprocessor.preprocess(lines.join('\n')),
+        }),
+    );
 
     const { rules } = scanner.getIndexedRules();
 
@@ -39,7 +41,6 @@ const allResourcesTypes = Object.values(ResourceType);
 describe('DeclarativeRuleConverter', () => {
     it('converts simple blocking rules', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filter = await createFilter(
             filterId,
@@ -49,7 +50,7 @@ describe('DeclarativeRuleConverter', () => {
             declarativeRules: [declarativeRule],
         } = DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 1,
             action: {
                 type: 'block',
@@ -67,12 +68,11 @@ describe('DeclarativeRuleConverter', () => {
             filterId,
             ['@@||example.org^'],
         );
-        const ruleId = 1;
         const {
             declarativeRules: [declarativeRule],
         } = DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 100001,
             action: {
                 type: 'allow',
@@ -90,12 +90,11 @@ describe('DeclarativeRuleConverter', () => {
             filterId,
             ['@@||example.org^$important'],
         );
-        const ruleId = 1;
         const {
             declarativeRules: [declarativeRule],
         } = DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRule).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 1100001,
             action: {
                 type: 'allow',
@@ -109,7 +108,6 @@ describe('DeclarativeRuleConverter', () => {
 
     it('converts rules with $third-party modifiers', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filterWithThirdPartyRules = await createFilter(
             filterId,
@@ -121,7 +119,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithThirdPartyRules],
         );
         expect(thirdPartyDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -144,7 +142,7 @@ describe('DeclarativeRuleConverter', () => {
         );
 
         expect(negateFirstPartyDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -159,7 +157,6 @@ describe('DeclarativeRuleConverter', () => {
 
     it('converts rules with first-party modifiers', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filterWithFirstPartyRules = await createFilter(
             filterId,
@@ -171,7 +168,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithFirstPartyRules],
         );
         expect(firstPartyDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -209,7 +206,6 @@ describe('DeclarativeRuleConverter', () => {
 
     it('converts rules with $domain modifiers', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filterWithDomainRules = await createFilter(
             filterId,
@@ -221,7 +217,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithDomainRules],
         );
         expect(domainDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 201,
             action: {
                 type: 'block',
@@ -243,7 +239,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithMultipleDomainRules],
         );
         expect(multipleDomainDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 152,
             action: {
                 type: 'block',
@@ -266,7 +262,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithNegateDomainRules],
         );
         expect(negateDomainDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -281,7 +277,6 @@ describe('DeclarativeRuleConverter', () => {
 
     it('converts rules with specified request types', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filterWithScriptRules = await createFilter(
             filterId,
@@ -293,7 +288,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithScriptRules],
         );
         expect(scriptRuleDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 101,
             action: {
                 type: 'block',
@@ -315,7 +310,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithNegatedScriptRules],
         );
         expect(negatedScriptRuleDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -354,7 +349,6 @@ describe('DeclarativeRuleConverter', () => {
 
     it('set rules case sensitive if necessary', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filterWithMatchCaseRules = await createFilter(
             filterId,
@@ -366,7 +360,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithMatchCaseRules],
         );
         expect(matchCaseDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -387,7 +381,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithNegatedMatchCaseRules],
         );
         expect(negatedMatchCaseDeclarative).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 2,
             action: {
                 type: 'block',
@@ -401,7 +395,6 @@ describe('DeclarativeRuleConverter', () => {
 
     it('converts wildcard blocking rules', async () => {
         const filterId = 0;
-        const ruleId = 1;
 
         const filter = await createFilter(
             filterId,
@@ -412,7 +405,7 @@ describe('DeclarativeRuleConverter', () => {
         } = DeclarativeRulesConverter.convert([filter]);
 
         expect(declarativeRule).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 1,
             action: {
                 type: 'block',
@@ -504,7 +497,6 @@ describe('DeclarativeRuleConverter', () => {
     describe('converts cyrillic domain rules', () => {
         it('converts domains section', async () => {
             const filterId = 0;
-            const ruleId = 1;
             const filter = await createFilter(
                 filterId,
                 ['path$domain=меил.рф'],
@@ -515,7 +507,7 @@ describe('DeclarativeRuleConverter', () => {
             } = DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 201,
                 action: {
                     type: 'block',
@@ -532,7 +524,6 @@ describe('DeclarativeRuleConverter', () => {
 
         it('converts urlFilterSection', async () => {
             const filterId = 0;
-            const ruleId = 1;
             const filter = await createFilter(
                 filterId,
                 ['||банрек.рус^$third-party'],
@@ -543,7 +534,7 @@ describe('DeclarativeRuleConverter', () => {
             } = DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 2,
                 action: {
                     type: 'block',
@@ -560,7 +551,6 @@ describe('DeclarativeRuleConverter', () => {
     it('converts $redirect rules', async () => {
         const resourcesPath = '/war/redirects';
         const filterId = 0;
-        const ruleId = 1;
 
         const filter = await createFilter(
             filterId,
@@ -575,7 +565,7 @@ describe('DeclarativeRuleConverter', () => {
         );
 
         expect(declarativeRule).toStrictEqual({
-            id: ruleId,
+            id: expect.any(Number),
             priority: 1101,
             action: {
                 type: 'redirect',
@@ -596,7 +586,6 @@ describe('DeclarativeRuleConverter', () => {
     describe('converts $denyallow rules', () => {
         it('converts denyallow simple rule', async () => {
             const filterId = 0;
-            const ruleId = 1;
 
             const filter = await createFilter(
                 filterId,
@@ -608,7 +597,7 @@ describe('DeclarativeRuleConverter', () => {
             } = DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toStrictEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 252,
                 action: { type: 'block' },
                 condition: {
@@ -626,7 +615,6 @@ describe('DeclarativeRuleConverter', () => {
 
         it('converts denyallow exclude rule', async () => {
             const filterId = 0;
-            const ruleId = 1;
 
             const filter = await createFilter(
                 filterId,
@@ -639,7 +627,7 @@ describe('DeclarativeRuleConverter', () => {
             } = DeclarativeRulesConverter.convert([filter]);
 
             expect(declarativeRule).toStrictEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 100252,
                 action: { type: 'allow' },
                 condition: {
@@ -666,13 +654,12 @@ describe('DeclarativeRuleConverter', () => {
                 filterId,
                 ['||example.com$removeparam=param'],
             );
-            const ruleId = 1;
 
             const {
                 declarativeRules: [declarativeRule],
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'redirect',
@@ -711,13 +698,12 @@ describe('DeclarativeRuleConverter', () => {
                 filterId,
                 ['||example.com$removeparam'],
             );
-            const ruleId = 1;
 
             const {
                 declarativeRules: [declarativeRule],
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'redirect',
@@ -759,14 +745,12 @@ describe('DeclarativeRuleConverter', () => {
                     '$xmlhttprequest,removeparam=p1case2',
                 ],
             );
-            const firstGroupedRuleId = 1;
-            const secondGroupedRuleId = 4;
 
             const { declarativeRules } = DeclarativeRulesConverter.convert(
                 [filter],
             );
             expect(declarativeRules[0]).toStrictEqual({
-                id: firstGroupedRuleId,
+                id: expect.any(Number),
                 priority: 101,
                 action: {
                     type: 'redirect',
@@ -789,7 +773,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: secondGroupedRuleId,
+                id: expect.any(Number),
                 priority: 101,
                 action: {
                     type: 'redirect',
@@ -814,13 +798,12 @@ describe('DeclarativeRuleConverter', () => {
                 filterId,
                 ['||testcases.adguard.com$xmlhttprequest,removeparam=p2case2'],
             );
-            const ruleId = 1;
 
             const {
                 declarativeRules: [declarativeRule],
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 101,
                 action: {
                     type: 'redirect',
@@ -869,7 +852,7 @@ describe('DeclarativeRuleConverter', () => {
 
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
-            id: 2,
+            id: expect.any(Number),
             priority: 101,
             action: {
                 type: 'block',
@@ -892,7 +875,7 @@ describe('DeclarativeRuleConverter', () => {
         const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
-            id: 1,
+            id: expect.any(Number),
             priority: 55,
             action: {
                 type: 'block',
@@ -904,7 +887,7 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
         expect(declarativeRules[1]).toStrictEqual({
-            id: 2,
+            id: expect.any(Number),
             priority: 101,
             action: {
                 type: 'block',
@@ -934,7 +917,7 @@ describe('DeclarativeRuleConverter', () => {
         );
         expect(declarativeRules).toHaveLength(2);
         expect(declarativeRules[0]).toStrictEqual({
-            id: 1,
+            id: expect.any(Number),
             priority: 1101,
             action: {
                 type: 'redirect',
@@ -951,7 +934,7 @@ describe('DeclarativeRuleConverter', () => {
             },
         });
         expect(declarativeRules[1]).toStrictEqual({
-            id: 2,
+            id: expect.any(Number),
             priority: 101,
             action: {
                 type: 'block',
@@ -971,13 +954,12 @@ describe('DeclarativeRuleConverter', () => {
                 filterId,
                 ['||example.com$removeheader=refresh'],
             );
-            const ruleId = 1;
 
             const {
                 declarativeRules: [declarativeRule],
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toStrictEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -999,13 +981,12 @@ describe('DeclarativeRuleConverter', () => {
                 filterId,
                 ['||example.com$removeheader=request:location'],
             );
-            const ruleId = 1;
 
             const {
                 declarativeRules: [declarativeRule],
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toStrictEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1030,13 +1011,12 @@ describe('DeclarativeRuleConverter', () => {
                     '||example.com$removeheader=request:location',
                 ],
             );
-            const ruleId = 1;
 
             const {
                 declarativeRules: [declarativeRule],
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRule).toStrictEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1072,7 +1052,7 @@ describe('DeclarativeRuleConverter', () => {
             } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 2,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1123,7 +1103,7 @@ describe('DeclarativeRuleConverter', () => {
             const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1156,7 +1136,7 @@ describe('DeclarativeRuleConverter', () => {
             const { declarativeRules } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1172,7 +1152,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: 3,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1227,7 +1207,7 @@ describe('DeclarativeRuleConverter', () => {
             } = DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1264,7 +1244,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1299,7 +1279,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(3);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1316,7 +1296,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: 3,
+                id: expect.any(Number),
                 priority: 101,
                 action: {
                     type: 'modifyHeaders',
@@ -1333,7 +1313,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
             });
             expect(declarativeRules[2]).toStrictEqual({
-                id: 4,
+                id: expect.any(Number),
                 priority: 151,
                 action: {
                     type: 'modifyHeaders',
@@ -1387,7 +1367,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules.length).toBe(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1475,7 +1455,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 2,
                 action: {
                     type: 'block',
@@ -1505,8 +1485,7 @@ describe('DeclarativeRuleConverter', () => {
                 [filter],
             );
             expect(declarativeRules).toHaveLength(1);
-            expect(declarativeRules[0]).toEqual({
-                id: 1,
+            expect(declarativeRules[0]).toMatchObject({
                 priority: 2,
                 action: {
                     type: 'block',
@@ -1535,7 +1514,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 2,
                 action: {
                     type: 'block',
@@ -1568,7 +1547,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 76,
                 action: {
                     type: 'block',
@@ -1596,7 +1575,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 2,
                 action: {
                     type: 'block',
@@ -1624,7 +1603,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 100101,
                 action: {
                     type: 'allow',
@@ -1652,7 +1631,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 100002,
                 action: {
                     type: 'allow',
@@ -1706,7 +1685,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: {
                     type: 'modifyHeaders',
@@ -1738,7 +1717,7 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 151,
                 action: {
                     type: 'modifyHeaders',

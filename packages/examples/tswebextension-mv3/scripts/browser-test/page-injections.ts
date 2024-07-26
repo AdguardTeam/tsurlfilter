@@ -1,5 +1,6 @@
 import { Configuration, TsWebExtension } from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
+import { FilterListPreprocessor } from '@adguard/tswebextension';
 
 declare global {
     interface Window {
@@ -35,13 +36,14 @@ export const addQunitListeners = (logResultFnName: string) => {
 export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrules: string ];
 
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
-    // FIXME (David): Handle this
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ defaultConfig, userrules ] = arg;
     const configuration: Configuration = defaultConfig;
+    const preprocessed = FilterListPreprocessor.preprocess(userrules);
     configuration.userrules = {
-        // FIXME (David): Handle this
-        content: [],
+        content: preprocessed.filterList,
+        sourceMap: preprocessed.sourceMap,
+        conversionMap: preprocessed.conversionMap,
+        rawFilterList: preprocessed.rawFilterList,
     };
     await self.tsWebExtension.configure(configuration);
 };

@@ -12,6 +12,8 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     userrules: {
         content: [],
         sourceMap: {},
+        rawFilterList: '',
+        conversionMap: {},
     },
     trustedDomains: [],
     verbose: false,

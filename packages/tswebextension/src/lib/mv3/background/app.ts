@@ -1,4 +1,4 @@
-import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
 import { type AnyRule } from '@adguard/agtree';
@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { type ConversionResult } from './user-rules-api';
+import UserRulesApi, { USER_FILTER_ID, type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { getAndExecuteScripts } from './scriptlets';
 import { engineApi } from './engine-api';
@@ -269,8 +269,14 @@ MessagesHandlerMV3
 
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
-            // FIXME (David, v2.3): Handle this later
-            configuration.userrules.content,
+            new Filter(USER_FILTER_ID, {
+                getContent: () => Promise.resolve({
+                    filterList: configuration.userrules.content,
+                    sourceMap: configuration.userrules.sourceMap ?? {},
+                    conversionMap: configuration.userrules.conversionMap ?? {},
+                    rawFilterList: configuration.userrules.rawFilterList ?? '',
+                }),
+            }),
             customFilters,
             staticRuleSets,
             this.webAccessibleResourcesPath,
