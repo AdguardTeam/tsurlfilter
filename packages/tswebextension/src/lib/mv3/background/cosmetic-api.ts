@@ -248,6 +248,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      */
     public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
+
         if (requestContext?.scriptText) {
             try {
                 await ScriptingApi.executeScript({

@@ -1,5 +1,10 @@
 import type { WebRequest } from 'webextension-polyfill';
-import type { MatchingResult, HTTPMethod, CosmeticResult } from '@adguard/tsurlfilter';
+import {
+    type MatchingResult,
+    type HTTPMethod,
+    type CosmeticResult,
+    RequestType,
+} from '@adguard/tsurlfilter';
 
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../../tabs/tabs-api';
@@ -98,8 +103,15 @@ export class RequestContextStorage {
      */
     public set(requestId: string, requestData: RequestContext): void {
         this.requestMap.set(requestId, requestData);
-        const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(requestData.tabId, requestData.frameId);
-        this.tabAndFrameMap.set(tabAndFrameKey, requestId);
+
+        /**
+         * We store tab and frame id to request id mapping only for document and subdocument requests.
+         * Otherwise, there might be other requests that can rewrite this mapping with unrelated data.
+         */
+        if (RequestContextStorage.isDocumentOrSubDocument(requestData.requestType)) {
+            const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(requestData.tabId, requestData.frameId);
+            this.tabAndFrameMap.set(tabAndFrameKey, requestId);
+        }
     }
 
     /**
@@ -144,17 +156,31 @@ export class RequestContextStorage {
     }
 
     /**
-     * Removes request context from the map by request id.
+     * Removes non document/subdocument request context from the map by request id.
      * @param requestId Request id.
      */
     public delete(requestId: string): void {
-        const requestContext = this.requestMap.get(requestId);
-        if (requestContext) {
-            const { tabId, frameId } = requestContext;
-            const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
-            this.tabAndFrameMap.delete(tabAndFrameKey);
+        this.requestMap.delete(requestId);
+        const context = this.requestMap.get(requestId);
+        if (!context) {
+            return;
+        }
+
+        /**
+         * Document and subdocument requests are deleted from the deleteByTabAndFrame method.
+         */
+        if (!RequestContextStorage.isDocumentOrSubDocument(context.requestType)) {
             this.requestMap.delete(requestId);
         }
+    }
+
+    /**
+     * Checks if request type is document or subdocument.
+     * @param requestType Request type.
+     * @returns True if request type is document or subdocument.
+     */
+    private static isDocumentOrSubDocument(requestType: RequestType): boolean {
+        return requestType === RequestType.Document || requestType === RequestType.SubDocument;
     }
 
     /**
@@ -181,3 +207,7 @@ export class RequestContextStorage {
 }
 
 export const requestContextStorage = new RequestContextStorage();
+
+// @ts-ignore
+// eslint-disable-next-line no-restricted-globals
+self.requestContextStorage = requestContextStorage;

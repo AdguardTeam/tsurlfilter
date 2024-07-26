@@ -169,6 +169,7 @@ export class WebRequestApi {
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onErrorOccurred.addListener(WebRequestApi.onErrorOccurred);
+        RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
         browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
@@ -390,6 +391,18 @@ export class WebRequestApi {
     }
 
     /**
+     * Event handler for onErrorOccurred event. It fires when an error occurs.
+     *
+     * @param event On error occurred event.
+     * @param event.details On error occurred event details.
+     */
+    private static onCompleted({
+        details,
+    }: RequestData<WebRequest.OnCompletedDetailsType>): void {
+        requestContextStorage.delete(details.requestId);
+    }
+
+    /**
      * Delete frame data from tab context when navigation is finished.
      * @param details Navigation event details.
      */
@@ -397,6 +410,11 @@ export class WebRequestApi {
         details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnErrorOccurredDetailsType,
     ): void {
         const { tabId, frameId } = details;
+
+        setTimeout(() => {
+            requestContextStorage.deleteByTabAndFrame(tabId, frameId);
+        }, FRAME_DELETION_TIMEOUT);
+
         const tabContext = tabsApi.getTabContext(tabId);
 
         if (!tabContext) {
