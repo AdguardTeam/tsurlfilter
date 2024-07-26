@@ -65,6 +65,11 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static readonly HIT_END = "' !important; }";
 
     /**
+     * Flag to enable verbose logging.
+     */
+    public static verbose: boolean = false;
+
+    /**
      * Applies css from cosmetic result.
      *
      * Patches rule selector adding adguard mark rule info in the content attribute.

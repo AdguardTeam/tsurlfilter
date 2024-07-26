@@ -26,10 +26,10 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
-import { CosmeticJsApi } from './cosmetic-js-api';
 import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
+import { CosmeticApi } from './cosmetic-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -323,7 +323,7 @@ export class TsWebExtension implements AppInterface<
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
 
-        CosmeticJsApi.verbose = this.configuration?.settings.debugScriptlets || false;
+        CosmeticApi.verbose = this.configuration?.settings.debugScriptlets || false;
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 

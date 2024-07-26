@@ -7,7 +7,6 @@ import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
-import { CosmeticJsApi } from '../background/cosmetic-js-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
 
